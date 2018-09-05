@@ -1,0 +1,40 @@
+
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/flubbertest.jpg
+  bytesUploaded:0
+  currentState:2
+  uploadUri:<none>
+  total bytes:3367710
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/flubbertest.jpg
+  bytesUploaded:0
+  currentState:4
+  uploadUri:<none>
+  total bytes:3367710
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/flubbertest.jpg
+  bytesUploaded:262144
+  currentState:4
+  uploadUri:https://firebasestorage.googleapis.com/v0/b/project-5516366556574091405.appspot.com/o?name=flubbertest.jpg&uploadType=resumable&upload_id=AEnB2UowprDYTVT0mtZ8Iz5J82XheLEb1COYorE5MXa6jTNryXWK6dL_a2vFg1KZ3KnA_LiBQ1b6PD45wcGVAG1C2Ehury4nyA&upload_protocol=resumable
+  total bytes:3367710
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/flubbertest.jpg
+  bytesUploaded:524288
+  currentState:4
+  uploadUri:https://firebasestorage.googleapis.com/v0/b/project-5516366556574091405.appspot.com/o?name=flubbertest.jpg&uploadType=resumable&upload_id=AEnB2UowprDYTVT0mtZ8Iz5J82XheLEb1COYorE5MXa6jTNryXWK6dL_a2vFg1KZ3KnA_LiBQ1b6PD45wcGVAG1C2Ehury4nyA&upload_protocol=resumable
+  total bytes:3367710
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/flubbertest.jpg
+  bytesUploaded:1048576
+  currentState:4
+  uploadUri:https://firebasestorage.googleapis.com/v0/b/project-5516366556574091405.appspot.com/o?name=flubbertest.jpg&uploadType=resumable&upload_id=AEnB2UowprDYTVT0mtZ8Iz5J82XheLEb1COYorE5MXa6jTNryXWK6dL_a2vFg1KZ3KnA_LiBQ1b6PD45wcGVAG1C2Ehury4nyA&upload_protocol=resumable
+  total bytes:3367710
+onFailure:
+com.google.firebase.storage.StorageException: The operation retry limit has been exceeded.
+onComplete:Success=
+false

@@ -1,0 +1,24 @@
+
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/foo.txt
+  bytesUploaded:0
+  currentState:4
+  uploadUri:<none>
+  total bytes:3
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/foo.txt
+  bytesUploaded:0
+  currentState:32
+  uploadUri:<none>
+  total bytes:3
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/foo.txt
+  bytesUploaded:0
+  currentState:32
+  uploadUri:<none>
+  total bytes:3
+onCanceled:
+done.

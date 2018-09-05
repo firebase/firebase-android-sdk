@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.google.firebase.firestore">
+  <uses-sdk android:minSdkVersion="15"
+    android:targetSdkVersion="23" />
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <application>
+    <uses-library android:name="android.test.runner" />
+  </application>
+
+  <instrumentation
+    android:name="android.support.test.runner.AndroidJUnitRunner"
+    android:targetPackage="com.google.firebase.firestore" />
+</manifest>

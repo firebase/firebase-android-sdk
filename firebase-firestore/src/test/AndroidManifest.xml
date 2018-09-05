@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.google.firebase.firestore.model">
+    <uses-sdk android:minSdkVersion="14"/>
+    <application
+        android:label="FirebaseCommonTests" >
+        <uses-library android:name="android.test.runner" />
+    </application>
+    <instrumentation
+        android:name="com.google.android.apps.common.testing.testrunner.Google3InstrumentationTestRunner"
+        android:targetPackage="com.google.firebase.firestore.model" />
+</manifest>

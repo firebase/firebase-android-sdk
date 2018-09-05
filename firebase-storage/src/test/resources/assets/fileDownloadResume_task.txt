@@ -1,0 +1,37 @@
+
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:0
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:0
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:262144
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:269083
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:531227
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:538102
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:800246
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:807123
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:1069267
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:1076408
+onSuccess:
+  exceptionMessage:<none>
+  bytesDownloaded:1076408
+onComplete:Success=
+true
+done.

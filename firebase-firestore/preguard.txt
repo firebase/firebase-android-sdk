@@ -1,0 +1,5 @@
+-repackageclasses 'com.google.firebase.firestore.obfuscated'
+
+-dontwarn okio.**
+-dontwarn com.google.j2objc.annotations.**
+-dontwarn java.lang.invoke.LambdaMetafactory

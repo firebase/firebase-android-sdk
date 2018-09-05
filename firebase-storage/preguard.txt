@@ -1,0 +1,10 @@
+-repackageclasses 'com.google.firebase.storage.obfuscated'
+-dontwarn okio.**
+-dontwarn com.google.j2objc.annotations.**
+-dontwarn java.lang.invoke.LambdaMetafactory
+
+-keepparameternames
+-renamesourcefileattribute SourceFile
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,
+                SourceFile,LineNumberTable,*Annotation*,EnclosingMethod
+

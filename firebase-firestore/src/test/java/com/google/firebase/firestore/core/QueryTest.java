@@ -1,0 +1,458 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.firebase.firestore.core;
+
+import static com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME;
+import static com.google.firebase.firestore.testutil.Assert.assertThrows;
+import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.filter;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
+import static com.google.firebase.firestore.testutil.TestUtil.path;
+import static com.google.firebase.firestore.testutil.TestUtil.ref;
+import static com.google.firebase.firestore.testutil.TestUtil.testEquality;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.testutil.ComparatorTester;
+import java.util.List;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
+
+/** Tests Query */
+@RunWith(RobolectricTestRunner.class)
+@Config(manifest = Config.NONE)
+public class QueryTest {
+  @Test
+  public void testMatchesBasedDocumentKey() {
+    ResourcePath queryPath = ResourcePath.fromString("rooms/eros/messages/1");
+    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"), false);
+    Document doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"), false);
+    Document doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"), false);
+
+    Query query = Query.atPath(queryPath);
+    assertTrue(query.matches(doc1));
+    assertFalse(query.matches(doc2));
+    assertFalse(query.matches(doc3));
+  }
+
+  @Test
+  public void testMatchesShallowAncestorQuery() {
+    ResourcePath queryPath = ResourcePath.fromString("rooms/eros/messages");
+    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"), false);
+    Document doc1meta = doc("rooms/eros/messages/1/meta/1", 0, map("meta", "meta-value"), false);
+    Document doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"), false);
+    Document doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"), false);
+
+    Query query = Query.atPath(queryPath);
+    assertTrue(query.matches(doc1));
+    assertFalse(query.matches(doc1meta));
+    assertTrue(query.matches(doc2));
+    assertFalse(query.matches(doc3));
+  }
+
+  @Test
+  public void testEmptyFieldsAreAllowedForQueries() {
+    ResourcePath queryPath = ResourcePath.fromString("rooms/eros/messages");
+    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"), false);
+    Document doc2 = doc("rooms/eros/messages/2", 0, map(), false);
+
+    Query query = Query.atPath(queryPath).filter(filter("text", "==", "msg1"));
+    assertTrue(query.matches(doc1));
+    assertFalse(query.matches(doc2));
+  }
+
+  @Test
+  public void testPrimitiveValueFilter() {
+    Query query1 =
+        Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", ">=", 2));
+    Query query2 =
+        Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "<=", 2));
+
+    Document doc1 = doc("collection/1", 0, map("sort", 1), false);
+    Document doc2 = doc("collection/2", 0, map("sort", 2), false);
+    Document doc3 = doc("collection/3", 0, map("sort", 3), false);
+    Document doc4 = doc("collection/4", 0, map("sort", false), false);
+    Document doc5 = doc("collection/5", 0, map("sort", "string"), false);
+
+    assertFalse(query1.matches(doc1));
+    assertTrue(query1.matches(doc2));
+    assertTrue(query1.matches(doc3));
+    assertFalse(query1.matches(doc4));
+    assertFalse(query1.matches(doc5));
+
+    assertTrue(query2.matches(doc1));
+    assertTrue(query2.matches(doc2));
+    assertFalse(query2.matches(doc3));
+    assertFalse(query2.matches(doc4));
+    assertFalse(query2.matches(doc5));
+  }
+
+  @Test
+  public void testArrayContainsFilters() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("array", "array-contains", 42L));
+
+    // not an array
+    Document document = doc("collection/1", 0, map("array", 1));
+    assertFalse(query.matches(document));
+
+    // empty array
+    document = doc("collection/1", 0, map("array", asList()));
+    assertFalse(query.matches(document));
+
+    // array without element (and make sure it doesn't match in a nested field or a different field)
+    document =
+        doc(
+            "collection/1",
+            0,
+            map("array", asList(41L, "42", map("a", 42L, "b", asList(42L))), "different", 42L));
+    assertFalse(query.matches(document));
+
+    // array with element
+    document = doc("collection/1", 0, map("array", asList(1L, "2", 42L, map("a", 1L))));
+    assertTrue(query.matches(document));
+  }
+
+  @Test
+  public void testArrayContainsFiltersWithObjectValues() {
+    // Search for arrays containing the object { a: [42] }
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("array", "array-contains", map("a", asList(42))));
+
+    // array without element
+    Document document =
+        doc(
+            "collection/1",
+            0,
+            map(
+                "array",
+                asList(
+                    map("a", 42L),
+                    map("a", asList(42L, 43L)),
+                    map("b", asList(42L)),
+                    map("a", asList(42L), "b", 42L))));
+    assertFalse(query.matches(document));
+
+    // array with element
+    document = doc("collection/1", 0, map("array", asList(1L, "2", 42L, map("a", asList(42L)))));
+    assertTrue(query.matches(document));
+  }
+
+  @Test
+  public void testNaNFilter() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("sort", "==", Double.NaN));
+    Document doc1 = doc("collection/1", 0, map("sort", Double.NaN), false);
+    Document doc2 = doc("collection/2", 0, map("sort", 2), false);
+    Document doc3 = doc("collection/3", 0, map("sort", 3.1), false);
+    Document doc4 = doc("collection/4", 0, map("sort", false), false);
+    Document doc5 = doc("collection/5", 0, map("sort", "string"), false);
+
+    assertTrue(query.matches(doc1));
+    assertFalse(query.matches(doc2));
+    assertFalse(query.matches(doc3));
+    assertFalse(query.matches(doc4));
+    assertFalse(query.matches(doc5));
+  }
+
+  @Test
+  public void testNullFilter() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "==", null));
+    Document doc1 = doc("collection/1", 0, map("sort", null), false);
+    Document doc2 = doc("collection/2", 0, map("sort", 2), false);
+    Document doc3 = doc("collection/3", 0, map("sort", 3.1), false);
+    Document doc4 = doc("collection/4", 0, map("sort", false), false);
+    Document doc5 = doc("collection/5", 0, map("sort", "string"), false);
+
+    assertTrue(query.matches(doc1));
+    assertFalse(query.matches(doc2));
+    assertFalse(query.matches(doc3));
+    assertFalse(query.matches(doc4));
+    assertFalse(query.matches(doc5));
+  }
+
+  @Test
+  public void testOnlySupportsEqualsForNull() {
+    List<String> invalidOps = asList("<", "<=", ">", ">=");
+    Query query = Query.atPath(ResourcePath.fromString("collection"));
+    for (String op : invalidOps) {
+      assertThrows(IllegalArgumentException.class, () -> query.filter(filter("sort", op, null)));
+    }
+  }
+
+  @Test
+  public void testComplexObjectFilters() {
+    Query query1 =
+        Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "<=", 2));
+    Query query2 =
+        Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", ">=", 2));
+
+    Document doc1 = doc("collection/1", 0, map("sort", 2), false);
+    Document doc2 = doc("collection/2", 0, map("sort", asList()), false);
+    Document doc3 = doc("collection/3", 0, map("sort", asList(1)), false);
+    Document doc4 = doc("collection/4", 0, map("sort", map("foo", 2)), false);
+    Document doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")), false);
+    Document doc6 = doc("collection/6", 0, map("sort", map()), false);
+    Document doc7 = doc("collection/7", 0, map("sort", asList(3, 1)), false);
+
+    assertTrue(query1.matches(doc1));
+    assertFalse(query1.matches(doc2));
+    assertFalse(query1.matches(doc3));
+    assertFalse(query1.matches(doc4));
+    assertFalse(query1.matches(doc5));
+    assertFalse(query1.matches(doc6));
+    assertFalse(query1.matches(doc7));
+
+    assertTrue(query2.matches(doc1));
+    assertFalse(query2.matches(doc2));
+    assertFalse(query2.matches(doc3));
+    assertFalse(query2.matches(doc4));
+    assertFalse(query2.matches(doc5));
+    assertFalse(query2.matches(doc6));
+    assertFalse(query2.matches(doc7));
+  }
+
+  @Test
+  public void testDoesNotRemoveComplexObjectsWithOrderBy() {
+    Query query = Query.atPath(ResourcePath.fromString("collection")).orderBy(orderBy("sort"));
+
+    Document doc1 = doc("collection/1", 0, map("sort", 2), false);
+    Document doc2 = doc("collection/2", 0, map("sort", asList()), false);
+    Document doc3 = doc("collection/3", 0, map("sort", asList(1)), false);
+    Document doc4 = doc("collection/4", 0, map("sort", map("foo", 2)), false);
+    Document doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")), false);
+
+    assertTrue(query.matches(doc1));
+    assertTrue(query.matches(doc2));
+    assertTrue(query.matches(doc3));
+    assertTrue(query.matches(doc4));
+    assertTrue(query.matches(doc5));
+  }
+
+  @Test
+  public void testFiltersArrays() {
+    Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
+    Document doc1 = doc("collection/doc", 0, map("tags", asList("foo", 1, true)), false);
+    List<Filter> matchingFilters = asList(filter("tags", "==", asList("foo", 1, true)));
+
+    List<Filter> nonMatchingFilters =
+        asList(
+            filter("tags", "==", "foo"),
+            filter("tags", "==", asList("foo", 1)),
+            filter("tags", "==", asList("foo", true, 1)));
+
+    for (Filter filter : matchingFilters) {
+      assertTrue(baseQuery.filter(filter).matches(doc1));
+    }
+
+    for (Filter filter : nonMatchingFilters) {
+      assertFalse(baseQuery.filter(filter).matches(doc1));
+    }
+  }
+
+  @Test
+  public void testFiltersObjects() {
+    Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
+    Document doc1 =
+        doc(
+            "collection/doc",
+            0,
+            map("tags", map("foo", "foo", "a", 0, "b", true, "c", Double.NaN)),
+            false);
+    List<Filter> matchingFilters =
+        asList(
+            filter("tags", "==", map("foo", "foo", "a", 0, "b", true, "c", Double.NaN)),
+            filter("tags", "==", map("b", true, "a", 0, "foo", "foo", "c", Double.NaN)),
+            filter("tags.foo", "==", "foo"));
+
+    List<Filter> nonMatchingFilters =
+        asList(
+            filter("tags", "==", "foo"),
+            filter("tags", "==", map("foo", "foo", "a", 0, "b", true)));
+
+    for (Filter filter : matchingFilters) {
+      assertTrue(baseQuery.filter(filter).matches(doc1));
+    }
+
+    for (Filter filter : nonMatchingFilters) {
+      assertFalse(baseQuery.filter(filter).matches(doc1));
+    }
+  }
+
+  @Test
+  public void testSortsDocuments() {
+    Query query = Query.atPath(ResourcePath.fromString("collection")).orderBy(orderBy("sort"));
+    new ComparatorTester(query.comparator())
+        .addEqualityGroup(doc("collection/1", 0, map("sort", null)))
+        .addEqualityGroup(doc("collection/1", 0, map("sort", false)))
+        .addEqualityGroup(doc("collection/1", 0, map("sort", true)))
+        .addEqualityGroup(doc("collection/1", 0, map("sort", 1)))
+        .addEqualityGroup(doc("collection/2", 0, map("sort", 1))) // by key
+        .addEqualityGroup(doc("collection/3", 0, map("sort", 1))) // by key
+        .addEqualityGroup(doc("collection/1", 0, map("sort", 1.9)))
+        .addEqualityGroup(doc("collection/1", 0, map("sort", 2)))
+        .addEqualityGroup(doc("collection/1", 0, map("sort", 2.1)))
+        .addEqualityGroup(doc("collection/1", 0, map("sort", "")))
+        .addEqualityGroup(doc("collection/1", 0, map("sort", "a")))
+        .addEqualityGroup(doc("collection/1", 0, map("sort", "ab")))
+        .addEqualityGroup(doc("collection/1", 0, map("sort", "b")))
+        .addEqualityGroup(doc("collection/1", 0, map("sort", ref("collection/id1"))))
+        .testCompare();
+  }
+
+  @Test
+  public void testSortsWithMultipleFields() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .orderBy(orderBy("sort1"))
+            .orderBy(orderBy("sort2"));
+
+    new ComparatorTester(query.comparator())
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 1, "sort2", 1)))
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 1, "sort2", 2)))
+        .addEqualityGroup(doc("collection/2", 0, map("sort1", 1, "sort2", 2))) // by key
+        .addEqualityGroup(doc("collection/3", 0, map("sort1", 1, "sort2", 2))) // by key
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 1, "sort2", 3)))
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 2, "sort2", 1)))
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 2, "sort2", 2)))
+        .addEqualityGroup(doc("collection/2", 0, map("sort1", 2, "sort2", 2))) // by key
+        .addEqualityGroup(doc("collection/3", 0, map("sort1", 2, "sort2", 2))) // by key
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 2, "sort2", 3)))
+        .testCompare();
+  }
+
+  @Test
+  public void testSortsDescending() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .orderBy(orderBy("sort1", "desc"))
+            .orderBy(orderBy("sort2", "desc"));
+
+    new ComparatorTester(query.comparator())
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 2, "sort2", 3)))
+        .addEqualityGroup(doc("collection/3", 0, map("sort1", 2, "sort2", 2)))
+        .addEqualityGroup(doc("collection/2", 0, map("sort1", 2, "sort2", 2))) // by key
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 2, "sort2", 2))) // by key
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 2, "sort2", 1)))
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 1, "sort2", 3)))
+        .addEqualityGroup(doc("collection/3", 0, map("sort1", 1, "sort2", 2)))
+        .addEqualityGroup(doc("collection/2", 0, map("sort1", 1, "sort2", 2))) // by key
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 1, "sort2", 2))) // by key
+        .addEqualityGroup(doc("collection/1", 0, map("sort1", 1, "sort2", 1)))
+        .testCompare();
+  }
+
+  @Test
+  public void testHashCode() {
+    Query q1a =
+        Query.atPath(ResourcePath.fromString("foo"))
+            .filter(filter("i1", "<", 2))
+            .filter(filter("i2", "==", 3));
+
+    // TODO uncomment this when hashcode does not depend on filter order.
+    /*
+    Query q1b =
+        Query.atPath(ResourcePath.fromString("foo"))
+            .filter(filter("i2", "==", 3))
+            .filter(filter("i1", "<", 2));
+    */
+
+    Query q2a = Query.atPath(ResourcePath.fromString("foo"));
+    Query q2b = Query.atPath(ResourcePath.fromString("foo"));
+
+    Query q3a = Query.atPath(ResourcePath.fromString("foo/bar"));
+    Query q3b = Query.atPath(ResourcePath.fromString("foo/bar"));
+
+    Query q4a =
+        Query.atPath(ResourcePath.fromString("foo"))
+            .orderBy(orderBy("foo"))
+            .orderBy(orderBy("bar"));
+    Query q4b =
+        Query.atPath(ResourcePath.fromString("foo"))
+            .orderBy(orderBy("foo"))
+            .orderBy(orderBy("bar"));
+
+    Query q5a =
+        Query.atPath(ResourcePath.fromString("foo"))
+            .orderBy(orderBy("bar"))
+            .orderBy(orderBy("foo"));
+
+    Query q6a =
+        Query.atPath(ResourcePath.fromString("foo"))
+            .filter(filter("bar", ">", 2))
+            .orderBy(orderBy("bar"));
+
+    Query q7a = Query.atPath(ResourcePath.fromString("foo")).limit(10);
+
+    // TODO: Add test cases with{Lower,Upper}Bound once cursors are implemented.
+    testEquality(
+        asList(
+            asList(q1a.hashCode()),
+            asList(q2a.hashCode(), q2b.hashCode()),
+            asList(q3a.hashCode(), q3b.hashCode()),
+            asList(q4a.hashCode(), q4b.hashCode()),
+            asList(q5a.hashCode()),
+            asList(q6a.hashCode()),
+            asList(q7a.hashCode())));
+  }
+
+  @Test
+  public void testImplicitOrderBy() {
+    Query baseQuery = Query.atPath(path("foo"));
+    // Default is ascending
+    assertEquals(asList(orderBy(KEY_FIELD_NAME, "asc")), baseQuery.getOrderBy());
+
+    // Explicit key ordering is respected
+    assertEquals(
+        asList(orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery.orderBy(orderBy(KEY_FIELD_NAME, "asc")).getOrderBy());
+    assertEquals(
+        asList(orderBy(KEY_FIELD_NAME, "desc")),
+        baseQuery.orderBy(orderBy(KEY_FIELD_NAME, "desc")).getOrderBy());
+    assertEquals(
+        asList(orderBy("foo"), orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery.orderBy(orderBy("foo")).orderBy(orderBy(KEY_FIELD_NAME, "asc")).getOrderBy());
+    assertEquals(
+        asList(orderBy("foo"), orderBy(KEY_FIELD_NAME, "desc")),
+        baseQuery.orderBy(orderBy("foo")).orderBy(orderBy(KEY_FIELD_NAME, "desc")).getOrderBy());
+
+    // Inequality filters add order bys
+    assertEquals(
+        asList(orderBy("foo"), orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery.filter(filter("foo", "<", 5)).getOrderBy());
+
+    // Descending order by applies to implicit key ordering
+    assertEquals(
+        asList(orderBy("foo", "desc"), orderBy(KEY_FIELD_NAME, "desc")),
+        baseQuery.orderBy(orderBy("foo", "desc")).getOrderBy());
+    assertEquals(
+        asList(orderBy("foo", "asc"), orderBy("bar", "desc"), orderBy(KEY_FIELD_NAME, "desc")),
+        baseQuery.orderBy(orderBy("foo", "asc")).orderBy(orderBy("bar", "desc")).getOrderBy());
+    assertEquals(
+        asList(orderBy("foo", "desc"), orderBy("bar", "asc"), orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery.orderBy(orderBy("foo", "desc")).orderBy(orderBy("bar", "asc")).getOrderBy());
+  }
+}

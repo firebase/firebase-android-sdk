@@ -1,0 +1,412 @@
+com.google.firebase.AutomaticDataCollectionChange -> com.google.firebase.AutomaticDataCollectionChange:
+    boolean enabled -> enabled
+    8:10:void <init>(boolean) -> <init>
+com.google.firebase.FirebaseApp -> com.google.firebase.FirebaseApp:
+    java.lang.String DEFAULT_APP_NAME -> DEFAULT_APP_NAME
+    java.util.List API_INITIALIZERS -> zzb
+    java.util.List DEFAULT_APP_API_INITITALIZERS -> zzc
+    java.util.List DEFAULT_CONTEXT_API_INITITALIZERS -> zzd
+    java.util.List DIRECT_BOOT_COMPATIBLE_API_INITIALIZERS -> zze
+    java.util.Set CORE_CLASSES -> zzf
+    java.lang.Object LOCK -> zzg
+    java.util.concurrent.Executor UI_EXECUTOR -> zzh
+    java.util.Map INSTANCES -> zza
+    android.content.Context applicationContext -> zzi
+    java.lang.String name -> zzj
+    com.google.firebase.FirebaseOptions options -> zzk
+    com.google.firebase.components.ComponentRuntime componentRuntime -> zzl
+    android.content.SharedPreferences sharedPreferences -> zzm
+    com.google.firebase.events.Publisher publisher -> zzn
+    java.util.concurrent.atomic.AtomicBoolean automaticResourceManagementEnabled -> zzo
+    java.util.concurrent.atomic.AtomicBoolean deleted -> zzp
+    java.util.concurrent.atomic.AtomicBoolean automaticDataCollectionEnabled -> zzq
+    java.util.List idTokenListeners -> zzr
+    java.util.List backgroundStateChangeListeners -> zzs
+    java.util.List lifecycleListeners -> zzt
+    com.google.firebase.FirebaseApp$IdTokenListenersCountChangedListener idTokenListenersCountChangedListener -> zzu
+    162:163:android.content.Context getApplicationContext() -> getApplicationContext
+    169:170:java.lang.String getName() -> getName
+    176:177:com.google.firebase.FirebaseOptions getOptions() -> getOptions
+    182:185:boolean equals(java.lang.Object) -> equals
+    190:190:int hashCode() -> hashCode
+    195:195:java.lang.String toString() -> toString
+    200:202:java.util.List getApps(android.content.Context) -> getApps
+    212:223:com.google.firebase.FirebaseApp getInstance() -> getInstance
+    234:252:com.google.firebase.FirebaseApp getInstance(java.lang.String) -> getInstance
+    1768:1768:java.lang.String normalize(java.lang.String):768:768 -> getInstance
+    1768:1768:com.google.firebase.FirebaseApp getInstance(java.lang.String):235 -> getInstance
+    273:282:com.google.firebase.FirebaseApp initializeApp(android.content.Context) -> initializeApp
+    294:294:com.google.firebase.FirebaseApp initializeApp(android.content.Context,com.google.firebase.FirebaseOptions) -> initializeApp
+    308:329:com.google.firebase.FirebaseApp initializeApp(android.content.Context,com.google.firebase.FirebaseOptions,java.lang.String) -> initializeApp
+    1774:1788:void maybeRegisterBackgroundStateDetector(android.content.Context):774:788 -> initializeApp
+    1774:1788:com.google.firebase.FirebaseApp initializeApp(android.content.Context,com.google.firebase.FirebaseOptions,java.lang.String):308 -> initializeApp
+    2768:2768:java.lang.String normalize(java.lang.String):768:768 -> initializeApp
+    2768:2768:com.google.firebase.FirebaseApp initializeApp(android.content.Context,com.google.firebase.FirebaseOptions,java.lang.String):309 -> initializeApp
+    334:341:void onBackgroundStateChanged(boolean) -> onBackgroundStateChanged
+    345:346:void setTokenProvider(com.google.firebase.internal.InternalTokenProvider) -> setTokenProvider
+    351:355:void setIdTokenListenersCountChangedListener(com.google.firebase.FirebaseApp$IdTokenListenersCountChangedListener) -> setIdTokenListenersCountChangedListener
+    367:374:com.google.android.gms.tasks.Task getToken(boolean) -> getToken
+    385:390:java.lang.String getUid() -> getUid
+    402:412:void delete() -> delete
+    3659:3662:void notifyOnAppDeleted():659:662 -> delete
+    3659:3662:void delete():411 -> delete
+    420:421:java.lang.Object get(java.lang.Class) -> get
+    429:445:void setAutomaticResourceManagementEnabled(boolean) -> setAutomaticResourceManagementEnabled
+    457:458:boolean isAutomaticDataCollectionEnabled() -> isAutomaticDataCollectionEnabled
+    471:479:void setAutomaticDataCollectionEnabled(boolean) -> setAutomaticDataCollectionEnabled
+    146:505:void <init>(android.content.Context,java.lang.String,com.google.firebase.FirebaseOptions) -> <init>
+    508:526:boolean readAutoDataCollectionEnabled() -> zzb
+    530:531:void checkNotDeleted() -> zzc
+    535:536:java.util.List getListeners() -> getListeners
+    542:542:boolean isDefaultApp() -> isDefaultApp
+    548:555:void notifyIdTokenListeners(com.google.firebase.internal.InternalTokenResult) -> notifyIdTokenListeners
+    558:562:void notifyBackgroundStateChangeListeners(boolean) -> zza
+    573:577:void addIdTokenListener(com.google.firebase.FirebaseApp$IdTokenListener) -> addIdTokenListener
+    588:592:void removeIdTokenListener(com.google.firebase.FirebaseApp$IdTokenListener) -> removeIdTokenListener
+    606:612:void addBackgroundStateChangeListener(com.google.firebase.FirebaseApp$BackgroundStateChangeListener) -> addBackgroundStateChangeListener
+    620:622:void removeBackgroundStateChangeListener(com.google.firebase.FirebaseApp$BackgroundStateChangeListener) -> removeBackgroundStateChangeListener
+    630:632:java.lang.String getPersistenceKey() -> getPersistenceKey
+    643:646:void addLifecycleEventListener(com.google.firebase.FirebaseAppLifecycleListener) -> addLifecycleEventListener
+    650:653:void removeLifecycleEventListener(com.google.firebase.FirebaseAppLifecycleListener) -> removeLifecycleEventListener
+    668:671:void clearInstancesForTest() -> clearInstancesForTest
+    680:682:java.lang.String getPersistenceKey(java.lang.String,com.google.firebase.FirebaseOptions) -> getPersistenceKey
+    686:693:java.util.List getAllAppNames() -> zzd
+    698:715:void initializeAllApis() -> zze
+    728:764:void initializeApis(java.lang.Class,java.lang.Object,java.lang.Iterable,boolean) -> zza
+    84:84:java.lang.Object access$200() -> zza
+    84:84:void access$300(com.google.firebase.FirebaseApp) -> zza
+    105:135:void <clinit>() -> <clinit>
+com.google.firebase.FirebaseApp$1 -> com.google.firebase.FirebaseApp$1:
+    780:780:void <init>() -> <init>
+    783:784:void onBackgroundStateChanged(boolean) -> onBackgroundStateChanged
+com.google.firebase.FirebaseApp$BackgroundStateChangeListener -> com.google.firebase.FirebaseApp$BackgroundStateChangeListener:
+    void onBackgroundStateChanged(boolean) -> onBackgroundStateChanged
+com.google.firebase.FirebaseApp$IdTokenListener -> com.google.firebase.FirebaseApp$IdTokenListener:
+    void onIdTokenChanged(com.google.firebase.internal.InternalTokenResult) -> onIdTokenChanged
+com.google.firebase.FirebaseApp$IdTokenListenersCountChangedListener -> com.google.firebase.FirebaseApp$IdTokenListenersCountChangedListener:
+    void onListenerCountChanged(int) -> onListenerCountChanged
+com.google.firebase.FirebaseApp$UiExecutor -> com.google.firebase.FirebaseApp$zza:
+    android.os.Handler HANDLER -> zza
+    887:887:void <init>() -> <init>
+    892:893:void execute(java.lang.Runnable) -> execute
+    887:887:void <init>(byte) -> <init>
+    888:888:void <clinit>() -> <clinit>
+com.google.firebase.FirebaseApp$UserUnlockReceiver -> com.google.firebase.FirebaseApp$zzb:
+    java.util.concurrent.atomic.AtomicReference INSTANCE -> zza
+    android.content.Context applicationContext -> zzb
+    857:859:void <init>(android.content.Context) -> <init>
+    874:880:void onReceive(android.content.Context,android.content.Intent) -> onReceive
+    1883:1884:void unregister():883:884 -> onReceive
+    1883:1884:void onReceive(android.content.Context,android.content.Intent):879 -> onReceive
+    852:852:void access$100(android.content.Context) -> zza
+    2862:2869:void ensureReceiverRegistered(android.content.Context):862:869 -> zza
+    2862:2869:void access$100(android.content.Context):852 -> zza
+    854:854:void <clinit>() -> <clinit>
+com.google.firebase.FirebaseAppLifecycleListener -> com.google.firebase.zza:
+com.google.firebase.FirebaseError -> com.google.firebase.FirebaseError:
+    int ERROR_INVALID_CUSTOM_TOKEN -> ERROR_INVALID_CUSTOM_TOKEN
+    int ERROR_CUSTOM_TOKEN_MISMATCH -> ERROR_CUSTOM_TOKEN_MISMATCH
+    int ERROR_INVALID_CREDENTIAL -> ERROR_INVALID_CREDENTIAL
+    int ERROR_USER_DISABLED -> ERROR_USER_DISABLED
+    int ERROR_OPERATION_NOT_ALLOWED -> ERROR_OPERATION_NOT_ALLOWED
+    int ERROR_EMAIL_ALREADY_IN_USE -> ERROR_EMAIL_ALREADY_IN_USE
+    int ERROR_INVALID_EMAIL -> ERROR_INVALID_EMAIL
+    int ERROR_WRONG_PASSWORD -> ERROR_WRONG_PASSWORD
+    int ERROR_TOO_MANY_REQUESTS -> ERROR_TOO_MANY_REQUESTS
+    int ERROR_USER_NOT_FOUND -> ERROR_USER_NOT_FOUND
+    int ERROR_ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL -> ERROR_ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL
+    int ERROR_REQUIRES_RECENT_LOGIN -> ERROR_REQUIRES_RECENT_LOGIN
+    int ERROR_PROVIDER_ALREADY_LINKED -> ERROR_PROVIDER_ALREADY_LINKED
+    int ERROR_NO_SUCH_PROVIDER -> ERROR_NO_SUCH_PROVIDER
+    int ERROR_INVALID_USER_TOKEN -> ERROR_INVALID_USER_TOKEN
+    int ERROR_NETWORK_REQUEST_FAILED -> ERROR_NETWORK_REQUEST_FAILED
+    int ERROR_USER_TOKEN_EXPIRED -> ERROR_USER_TOKEN_EXPIRED
+    int ERROR_INVALID_API_KEY -> ERROR_INVALID_API_KEY
+    int ERROR_USER_MISMATCH -> ERROR_USER_MISMATCH
+    int ERROR_CREDENTIAL_ALREADY_IN_USE -> ERROR_CREDENTIAL_ALREADY_IN_USE
+    int ERROR_WEAK_PASSWORD -> ERROR_WEAK_PASSWORD
+    int ERROR_APP_NOT_AUTHORIZED -> ERROR_APP_NOT_AUTHORIZED
+    int ERROR_NO_SIGNED_IN_USER -> ERROR_NO_SIGNED_IN_USER
+    int ERROR_INTERNAL_ERROR -> ERROR_INTERNAL_ERROR
+    int errorCode -> zza
+    87:89:void <init>(int) -> <init>
+    93:93:int getErrorCode() -> getErrorCode
+com.google.firebase.FirebaseNetworkException -> com.google.firebase.FirebaseNetworkException:
+    12:13:void <init>(java.lang.String) -> <init>
+com.google.firebase.FirebaseOptions -> com.google.firebase.FirebaseOptions:
+    java.lang.String apiKey -> zza
+    java.lang.String applicationId -> zzb
+    java.lang.String databaseUrl -> zzc
+    java.lang.String gaTrackingId -> zzd
+    java.lang.String gcmSenderId -> zze
+    java.lang.String storageBucket -> zzf
+    java.lang.String projectId -> zzg
+    114:123:void <init>(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String) -> <init>
+    131:143:com.google.firebase.FirebaseOptions fromResource(android.content.Context) -> fromResource
+    151:151:java.lang.String getApiKey() -> getApiKey
+    156:156:java.lang.String getApplicationId() -> getApplicationId
+    161:161:java.lang.String getDatabaseUrl() -> getDatabaseUrl
+    171:171:java.lang.String getGaTrackingId() -> getGaTrackingId
+    179:179:java.lang.String getGcmSenderId() -> getGcmSenderId
+    184:184:java.lang.String getStorageBucket() -> getStorageBucket
+    189:189:java.lang.String getProjectId() -> getProjectId
+    194:204:boolean equals(java.lang.Object) -> equals
+    209:209:int hashCode() -> hashCode
+    215:222:java.lang.String toString() -> toString
+    15:15:java.lang.String access$000(com.google.firebase.FirebaseOptions) -> zza
+    15:15:java.lang.String access$100(com.google.firebase.FirebaseOptions) -> zzb
+    15:15:java.lang.String access$200(com.google.firebase.FirebaseOptions) -> zzc
+    15:15:java.lang.String access$300(com.google.firebase.FirebaseOptions) -> zzd
+    15:15:java.lang.String access$400(com.google.firebase.FirebaseOptions) -> zze
+    15:15:java.lang.String access$500(com.google.firebase.FirebaseOptions) -> zzf
+    15:15:java.lang.String access$600(com.google.firebase.FirebaseOptions) -> zzg
+    15:15:void <init>(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,byte) -> <init>
+com.google.firebase.FirebaseOptions$Builder -> com.google.firebase.FirebaseOptions$Builder:
+    java.lang.String apiKey -> zza
+    java.lang.String applicationId -> zzb
+    java.lang.String databaseUrl -> zzc
+    java.lang.String gaTrackingId -> zzd
+    java.lang.String gcmSenderId -> zze
+    java.lang.String storageBucket -> zzf
+    java.lang.String projectId -> zzg
+    46:46:void <init>() -> <init>
+    54:62:void <init>(com.google.firebase.FirebaseOptions) -> <init>
+    65:66:com.google.firebase.FirebaseOptions$Builder setApiKey(java.lang.String) -> setApiKey
+    70:71:com.google.firebase.FirebaseOptions$Builder setApplicationId(java.lang.String) -> setApplicationId
+    75:76:com.google.firebase.FirebaseOptions$Builder setDatabaseUrl(java.lang.String) -> setDatabaseUrl
+    82:83:com.google.firebase.FirebaseOptions$Builder setGaTrackingId(java.lang.String) -> setGaTrackingId
+    87:88:com.google.firebase.FirebaseOptions$Builder setGcmSenderId(java.lang.String) -> setGcmSenderId
+    92:93:com.google.firebase.FirebaseOptions$Builder setStorageBucket(java.lang.String) -> setStorageBucket
+    97:98:com.google.firebase.FirebaseOptions$Builder setProjectId(java.lang.String) -> setProjectId
+    102:102:com.google.firebase.FirebaseOptions build() -> build
+com.google.firebase.FirebaseTooManyRequestsException -> com.google.firebase.FirebaseTooManyRequestsException:
+    10:11:void <init>(java.lang.String) -> <init>
+com.google.firebase.auth.FirebaseAuthException -> com.google.firebase.auth.FirebaseAuthException:
+    java.lang.String errorCode -> zza
+    22:24:void <init>(java.lang.String,java.lang.String) -> <init>
+    29:29:java.lang.String getErrorCode() -> getErrorCode
+com.google.firebase.auth.GetTokenResult -> com.google.firebase.auth.GetTokenResult:
+    java.lang.String token -> zza
+    java.util.Map claims -> zzb
+    24:27:void <init>(java.lang.String,java.util.Map) -> <init>
+    36:36:java.lang.String getToken() -> getToken
+    41:41:long getExpirationTimestamp() -> getExpirationTimestamp
+    49:49:long getAuthTimestamp() -> getAuthTimestamp
+    57:57:long getIssuedAtTimestamp() -> getIssuedAtTimestamp
+    69:73:java.lang.String getSignInProvider() -> getSignInProvider
+    83:83:java.util.Map getClaims() -> getClaims
+    87:88:long getLongFromClaimsSafely(java.lang.String) -> zza
+com.google.firebase.components.Component -> com.google.firebase.components.Component:
+    java.util.Set providedInterfaces -> zza
+    java.util.Set dependencies -> zzb
+    int instantiation -> zzc
+    com.google.firebase.components.ComponentFactory factory -> zzd
+    java.util.Set publishedEvents -> zze
+    44:50:void <init>(java.util.Set,java.util.Set,int,com.google.firebase.components.ComponentFactory,java.util.Set) -> <init>
+    58:58:java.util.Set getProvidedInterfaces() -> zza
+    63:63:java.util.Set getDependencies() -> zzb
+    68:68:com.google.firebase.components.ComponentFactory getFactory() -> zzc
+    72:72:java.util.Set getPublishedEvents() -> zzd
+    90:90:boolean isAlwaysEager() -> zze
+    99:99:boolean isEagerInDefaultApp() -> zzf
+    104:112:java.lang.String toString() -> toString
+    118:118:com.google.firebase.components.Component$Builder builder(java.lang.Class) -> builder
+    125:125:com.google.firebase.components.Component$Builder builder(java.lang.Class,java.lang.Class[]) -> builder
+    136:136:com.google.firebase.components.Component of(java.lang.Class,java.lang.Object) -> of
+    144:144:com.google.firebase.components.Component of(java.lang.Object,java.lang.Class,java.lang.Class[]) -> of
+    144:144:java.lang.Object lambda$of$1$Component$528fb0e1(java.lang.Object) -> zza
+    136:136:java.lang.Object lambda$of$0$Component$528fb0e1(java.lang.Object) -> zzb
+    23:23:void <init>(java.util.Set,java.util.Set,int,com.google.firebase.components.ComponentFactory,java.util.Set,byte) -> <init>
+com.google.firebase.components.Component$$Lambda$0 -> com.google.firebase.components.zza:
+    java.lang.Object arg$1 -> zza
+    void <init>(java.lang.Object) -> <init>
+    java.lang.Object create(com.google.firebase.components.ComponentContainer) -> create
+com.google.firebase.components.Component$$Lambda$1 -> com.google.firebase.components.zzb:
+    java.lang.Object arg$1 -> zza
+    void <init>(java.lang.Object) -> <init>
+    java.lang.Object create(com.google.firebase.components.ComponentContainer) -> create
+com.google.firebase.components.Component$Builder -> com.google.firebase.components.Component$Builder:
+    java.util.Set providedInterfaces -> zza
+    java.util.Set dependencies -> zzb
+    int instantiation -> zzc
+    com.google.firebase.components.ComponentFactory factory -> zzd
+    java.util.Set publishedEvents -> zze
+    150:163:void <init>(java.lang.Class,java.lang.Class[]) -> <init>
+    167:170:com.google.firebase.components.Component$Builder add(com.google.firebase.components.Dependency) -> add
+    1197:1200:void validateInterface(java.lang.Class):197:200 -> add
+    1197:1200:com.google.firebase.components.Component$Builder add(com.google.firebase.components.Dependency):168 -> add
+    175:175:com.google.firebase.components.Component$Builder alwaysEager() -> alwaysEager
+    180:180:com.google.firebase.components.Component$Builder eagerInDefaultApp() -> eagerInDefaultApp
+    185:186:com.google.firebase.components.Component$Builder publishes(java.lang.Class) -> publishes
+    190:193:com.google.firebase.components.Component$Builder setInstantiation(int) -> zza
+    204:205:com.google.firebase.components.Component$Builder factory(com.google.firebase.components.ComponentFactory) -> factory
+    210:211:com.google.firebase.components.Component build() -> build
+    149:149:void <init>(java.lang.Class,java.lang.Class[],byte) -> <init>
+com.google.firebase.components.ComponentContainer -> com.google.firebase.components.ComponentContainer:
+    java.lang.Object get(java.lang.Class) -> get
+    com.google.firebase.inject.Provider getProvider(java.lang.Class) -> getProvider
+com.google.firebase.components.ComponentContainer$$CC -> com.google.firebase.components.ComponentContainer$$CC:
+    11:15:java.lang.Object get(com.google.firebase.components.ComponentContainer,java.lang.Class) -> get
+com.google.firebase.components.ComponentDiscovery -> com.google.firebase.components.zzc:
+    android.content.Context context -> zza
+    com.google.firebase.components.ComponentDiscovery$RegistrarNameRetriever retriever -> zzb
+    45:46:void <init>(android.content.Context) -> <init>
+    49:52:void <init>(android.content.Context,com.google.firebase.components.ComponentDiscovery$RegistrarNameRetriever) -> <init>
+    56:56:java.util.List discover() -> zza
+    60:80:java.util.List instantiate(java.util.List) -> zza
+com.google.firebase.components.ComponentDiscovery$MetadataRegistrarNameRetriever -> com.google.firebase.components.zzc$zza:
+    83:83:void <init>() -> <init>
+    87:101:java.util.List retrieve(android.content.Context) -> zza
+    106:122:android.os.Bundle getMetadata(android.content.Context) -> zzb
+    83:83:void <init>(byte) -> <init>
+com.google.firebase.components.ComponentDiscovery$RegistrarNameRetriever -> com.google.firebase.components.zzc$zzb:
+    java.util.List retrieve(android.content.Context) -> zza
+com.google.firebase.components.ComponentDiscoveryService -> com.google.firebase.components.ComponentDiscoveryService:
+    9:9:void <init>() -> <init>
+    14:14:android.os.IBinder onBind(android.content.Intent) -> onBind
+com.google.firebase.components.ComponentFactory -> com.google.firebase.components.ComponentFactory:
+    java.lang.Object create(com.google.firebase.components.ComponentContainer) -> create
+com.google.firebase.components.ComponentRegistrar -> com.google.firebase.components.ComponentRegistrar:
+    java.util.List getComponents() -> getComponents
+com.google.firebase.components.ComponentRuntime -> com.google.firebase.components.zzd:
+    java.util.List components -> zza
+    java.util.Map lazyInstanceMap -> zzb
+    com.google.firebase.components.EventBus eventBus -> zzc
+    22:48:void <init>(java.util.concurrent.Executor,java.lang.Iterable,com.google.firebase.components.Component[]) -> <init>
+    53:54:com.google.firebase.inject.Provider getProvider(java.lang.Class) -> getProvider
+    65:73:void initializeEagerComponents(boolean) -> zza
+    76:82:void register(com.google.firebase.components.Component) -> zza
+    85:95:void validateDependencies() -> zza
+    java.lang.Object get(java.lang.Class) -> get
+com.google.firebase.components.ComponentSorter -> com.google.firebase.components.zze:
+    60:92:java.util.List sorted(java.util.List) -> zza
+    1096:1123:java.util.Set toGraph(java.util.List):96:123 -> zza
+    1096:1123:java.util.List sorted(java.util.List):60 -> zza
+    128:134:java.util.Set getRoots(java.util.Set) -> zza
+com.google.firebase.components.ComponentSorter$ComponentNode -> com.google.firebase.components.zze$zza:
+    com.google.firebase.components.Component component -> zza
+    java.util.Set dependencies -> zzb
+    java.util.Set dependents -> zzc
+    15:20:void <init>(com.google.firebase.components.Component) -> <init>
+    23:24:void addDependency(com.google.firebase.components.ComponentSorter$ComponentNode) -> zza
+    27:28:void addDependent(com.google.firebase.components.ComponentSorter$ComponentNode) -> zzb
+    31:31:java.util.Set getDependencies() -> zza
+    35:36:void removeDependent(com.google.firebase.components.ComponentSorter$ComponentNode) -> zzc
+    39:39:com.google.firebase.components.Component getComponent() -> zzb
+    43:43:boolean isRoot() -> zzc
+    47:47:boolean isLeaf() -> zzd
+com.google.firebase.components.Dependency -> com.google.firebase.components.Dependency:
+    java.lang.Class anInterface -> zza
+    int type -> zzb
+    int injection -> zzc
+    31:35:void <init>(java.lang.Class,int,int) -> <init>
+    39:39:com.google.firebase.components.Dependency optional(java.lang.Class) -> optional
+    44:44:com.google.firebase.components.Dependency required(java.lang.Class) -> required
+    49:49:com.google.firebase.components.Dependency optionalProvider(java.lang.Class) -> optionalProvider
+    54:54:com.google.firebase.components.Dependency requiredProvider(java.lang.Class) -> requiredProvider
+    58:58:java.lang.Class getInterface() -> zza
+    62:62:boolean isRequired() -> zzb
+    66:66:boolean isDirectInjection() -> zzc
+    71:75:boolean equals(java.lang.Object) -> equals
+    80:86:int hashCode() -> hashCode
+    91:99:java.lang.String toString() -> toString
+com.google.firebase.components.DependencyCycleException -> com.google.firebase.components.DependencyCycleException:
+    java.util.List componentsInCycle -> zza
+    14:16:void <init>(java.util.List) -> <init>
+    21:21:java.util.List getComponentsInCycle() -> getComponentsInCycle
+com.google.firebase.components.DependencyException -> com.google.firebase.components.DependencyException:
+    10:11:void <init>(java.lang.String) -> <init>
+com.google.firebase.components.EventBus -> com.google.firebase.components.zzf:
+    java.util.Map handlerMap -> zza
+    java.util.Queue pendingEvents -> zzb
+    java.util.concurrent.Executor defaultExecutor -> zzc
+    29:42:void <init>(java.util.concurrent.Executor) -> <init>
+    46:61:void publish(com.google.firebase.events.Event) -> publish
+    64:65:java.util.Set getHandlers(com.google.firebase.events.Event) -> zza
+    71:81:void subscribe(java.lang.Class,com.google.firebase.events.EventHandler,java.util.concurrent.Executor) -> subscribe
+    85:86:void subscribe(java.lang.Class,com.google.firebase.events.EventHandler) -> subscribe
+    90:106:void unsubscribe(java.lang.Class,com.google.firebase.events.EventHandler) -> unsubscribe
+    109:121:void enablePublishingAndFlushPending() -> zza
+    59:59:void lambda$publish$0$EventBus(java.util.Map$Entry,com.google.firebase.events.Event) -> zza
+com.google.firebase.components.EventBus$$Lambda$0 -> com.google.firebase.components.zzg:
+    java.util.Map$Entry arg$1 -> zza
+    com.google.firebase.events.Event arg$2 -> zzb
+    void <init>(java.util.Map$Entry,com.google.firebase.events.Event) -> <init>
+    void run() -> run
+com.google.firebase.components.Lazy -> com.google.firebase.components.zzh:
+    java.lang.Object UNINITIALIZED -> zza
+    java.lang.Object instance -> zzb
+    com.google.firebase.inject.Provider provider -> zzc
+    18:29:void <init>(com.google.firebase.components.ComponentFactory,com.google.firebase.components.ComponentContainer) -> <init>
+    34:47:java.lang.Object get() -> get
+    28:28:java.lang.Object lambda$new$0$Lazy(com.google.firebase.components.ComponentFactory,com.google.firebase.components.ComponentContainer) -> zza
+    16:16:void <clinit>() -> <clinit>
+com.google.firebase.components.Lazy$$Lambda$0 -> com.google.firebase.components.zzi:
+    com.google.firebase.components.ComponentFactory arg$1 -> zza
+    com.google.firebase.components.ComponentContainer arg$2 -> zzb
+    void <init>(com.google.firebase.components.ComponentFactory,com.google.firebase.components.ComponentContainer) -> <init>
+    java.lang.Object get() -> get
+com.google.firebase.components.MissingDependencyException -> com.google.firebase.components.MissingDependencyException:
+    10:11:void <init>(java.lang.String) -> <init>
+com.google.firebase.components.RestrictedComponentContainer -> com.google.firebase.components.zzj:
+    java.util.Set allowedDirectInterfaces -> zza
+    java.util.Set allowedProviderInterfaces -> zzb
+    java.util.Set allowedPublishedEvents -> zzc
+    com.google.firebase.components.ComponentContainer delegateContainer -> zzd
+    20:37:void <init>(com.google.firebase.components.Component,com.google.firebase.components.ComponentContainer) -> <init>
+    41:57:java.lang.Object get(java.lang.Class) -> get
+    62:66:com.google.firebase.inject.Provider getProvider(java.lang.Class) -> getProvider
+com.google.firebase.components.RestrictedComponentContainer$RestrictedPublisher -> com.google.firebase.components.zzj$zza:
+    java.util.Set allowedPublishedEvents -> zza
+    com.google.firebase.events.Publisher delegate -> zzb
+    77:80:void <init>(java.util.Set,com.google.firebase.events.Publisher) -> <init>
+    84:89:void publish(com.google.firebase.events.Event) -> publish
+com.google.firebase.events.Event -> com.google.firebase.events.Event:
+    java.lang.Class type -> zza
+    java.lang.Object payload -> zzb
+    20:23:void <init>(java.lang.Class,java.lang.Object) -> <init>
+    28:28:java.lang.Class getType() -> getType
+    34:34:java.lang.Object getPayload() -> getPayload
+    39:39:java.lang.String toString() -> toString
+com.google.firebase.events.EventHandler -> com.google.firebase.events.EventHandler:
+    void handle(com.google.firebase.events.Event) -> handle
+com.google.firebase.events.Publisher -> com.google.firebase.events.Publisher:
+    void publish(com.google.firebase.events.Event) -> publish
+com.google.firebase.events.Subscriber -> com.google.firebase.events.Subscriber:
+    void subscribe(java.lang.Class,com.google.firebase.events.EventHandler,java.util.concurrent.Executor) -> subscribe
+    void subscribe(java.lang.Class,com.google.firebase.events.EventHandler) -> subscribe
+    void unsubscribe(java.lang.Class,com.google.firebase.events.EventHandler) -> unsubscribe
+com.google.firebase.inject.Provider -> com.google.firebase.inject.Provider:
+    java.lang.Object get() -> get
+com.google.firebase.internal.DefaultIdTokenListenersCountChangedListener -> com.google.firebase.internal.zza:
+    11:11:void <init>() -> <init>
+    17:17:void onListenerCountChanged(int) -> onListenerCountChanged
+com.google.firebase.internal.FirebaseAppHelper -> com.google.firebase.internal.FirebaseAppHelper:
+    17:17:void <init>() -> <init>
+    25:25:com.google.android.gms.tasks.Task getToken(com.google.firebase.FirebaseApp,boolean) -> getToken
+    35:36:void addIdTokenListener(com.google.firebase.FirebaseApp,com.google.firebase.FirebaseApp$IdTokenListener) -> addIdTokenListener
+    44:45:void removeIdTokenListener(com.google.firebase.FirebaseApp,com.google.firebase.FirebaseApp$IdTokenListener) -> removeIdTokenListener
+    54:54:java.lang.String getUid(com.google.firebase.FirebaseApp) -> getUid
+com.google.firebase.internal.InternalTokenProvider -> com.google.firebase.internal.InternalTokenProvider:
+    com.google.android.gms.tasks.Task getAccessToken(boolean) -> getAccessToken
+    java.lang.String getUid() -> getUid
+com.google.firebase.internal.InternalTokenResult -> com.google.firebase.internal.InternalTokenResult:
+    java.lang.String token -> zza
+    14:16:void <init>(java.lang.String) -> <init>
+    21:21:java.lang.String getToken() -> getToken
+    26:26:int hashCode() -> hashCode
+    31:35:boolean equals(java.lang.Object) -> equals
+    40:40:java.lang.String toString() -> toString
+com.google.firebase.internal.api.FirebaseNoSignedInUserException -> com.google.firebase.internal.api.FirebaseNoSignedInUserException:
+    17:18:void <init>(java.lang.String) -> <init>
+com.google.firebase.provider.FirebaseInitProvider -> com.google.firebase.provider.FirebaseInitProvider:
+    18:18:void <init>() -> <init>
+    30:32:void attachInfo(android.content.Context,android.content.pm.ProviderInfo) -> attachInfo
+    1050:1056:void checkContentProviderAuthority(android.content.pm.ProviderInfo):50:56 -> attachInfo
+    1050:1056:void attachInfo(android.content.Context,android.content.pm.ProviderInfo):30 -> attachInfo
+    37:42:boolean onCreate() -> onCreate
+    62:62:android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String) -> query
+    68:68:java.lang.String getType(android.net.Uri) -> getType
+    74:74:android.net.Uri insert(android.net.Uri,android.content.ContentValues) -> insert
+    79:79:int delete(android.net.Uri,java.lang.String,java.lang.String[]) -> delete
+    84:84:int update(android.net.Uri,android.content.ContentValues,java.lang.String,java.lang.String[]) -> update

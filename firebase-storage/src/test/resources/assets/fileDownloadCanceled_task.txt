@@ -1,0 +1,11 @@
+
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:0
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:0
+onCanceled:
+onComplete:Success=
+false
+done.

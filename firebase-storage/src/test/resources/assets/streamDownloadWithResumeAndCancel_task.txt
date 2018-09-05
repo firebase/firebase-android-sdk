@@ -1,0 +1,17 @@
+
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:0
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:0
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:262144
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:262144
+onCanceled:
+onComplete:Success=
+false
+done.

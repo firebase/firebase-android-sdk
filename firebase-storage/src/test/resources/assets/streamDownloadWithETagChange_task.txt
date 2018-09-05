@@ -1,0 +1,15 @@
+
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:0
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:0
+onProgressUpdate:
+  exceptionMessage:<none>
+  bytesDownloaded:262144
+onFailure:
+com.google.firebase.storage.StorageException: Object has a checksum which does not match. Please retry the operation.
+onComplete:Success=
+false
+done.

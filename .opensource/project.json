@@ -1,0 +1,16 @@
+{
+    "name": "Firebase SDK for Android",
+    "type": "library",
+    "platforms": [
+        "Android"
+    ],
+    "content": "README.md",
+    "pages": [
+        "firebase-common/README.md",
+        "firebase-firestore/README.md",
+        "protolite-well-known-types/README.md"
+    ],
+    "related": [
+        "firebase/quickstart-android"
+    ]
+}

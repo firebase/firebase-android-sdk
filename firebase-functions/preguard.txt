@@ -1,0 +1,32 @@
+-repackageclasses 'com.google.firebase.functions.obfuscated'
+
+-dontwarn okio.**
+-dontwarn java.lang.invoke.LambdaMetafactory
+
+# TODO: switch to @PublicApi and @KeepForSdk at which point everything below can be removed.
+
+-keep public class com.google.firebase.functions.* {
+      public protected *;
+}
+
+-keepclassmembernames class com.google.firebase.functions.* {
+    java.lang.Class class$(java.lang.String);
+    java.lang.Class class$(java.lang.String, boolean);
+}
+
+-keepclasseswithmembernames,includedescriptorclasses class com.google.firebase.functions.* {
+    native <methods>;
+}
+
+-keepclassmembers,allowoptimization enum * {
+    public static **[] values(); public static ** valueOf(java.lang.String);
+}
+
+-keepclassmembers class com.google.firebase.functions.* implements java.io.Serializable {
+    static final long serialVersionUID;
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}

@@ -1,0 +1,476 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.firebase.firestore.local;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static java.util.Collections.emptyList;
+
+import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.firebase.firestore.remote.WriteStream;
+import com.google.firebase.firestore.util.Util;
+import com.google.protobuf.ByteString;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import javax.annotation.Nullable;
+
+final class MemoryMutationQueue implements MutationQueue {
+
+  /**
+   * A FIFO queue of all mutations to apply to the backend. Mutations are added to the end of the
+   * queue as they're written, and removed from the front of the queue as the mutations become
+   * visible or are rejected.
+   *
+   * <p>When successfully applied, mutations must be acknowledged by the write stream and made
+   * visible on the watch stream. It's possible for the watch stream to fall behind in which case
+   * the batches at the head of the queue will be acknowledged but held until the watch stream sees
+   * the changes.
+   *
+   * <p>If a batch is rejected while there are held write acknowledgements at the head of the queue
+   * the rejected batch is converted to a tombstone: its mutations are removed but the batch remains
+   * in the queue. This maintains a simple consecutive ordering of batches in the queue.
+   *
+   * <p>Once the held write acknowledgements become visible they are removed from the head of the
+   * queue along with any tombstones that follow.
+   */
+  private final List<MutationBatch> queue;
+
+  /** An ordered mapping between documents and the mutation batch IDs. */
+  private ImmutableSortedSet<DocumentReference> batchesByDocumentKey;
+
+  /** The next value to use when assigning sequential IDs to each mutation batch. */
+  private int nextBatchId;
+
+  /** The highest acknowledged mutation in the queue. */
+  private int highestAcknowledgedBatchId;
+
+  /**
+   * The last received stream token from the server, used to acknowledge which responses the client
+   * has processed. Stream tokens are opaque checkpoint markers whose only real value is their
+   * inclusion in the next request.
+   */
+  private ByteString lastStreamToken;
+
+  private final MemoryPersistence persistence;
+
+  MemoryMutationQueue(MemoryPersistence persistence) {
+    this.persistence = persistence;
+    queue = new ArrayList<>();
+
+    batchesByDocumentKey = new ImmutableSortedSet<>(emptyList(), DocumentReference.BY_KEY);
+    nextBatchId = 1;
+    highestAcknowledgedBatchId = MutationBatch.UNKNOWN;
+    lastStreamToken = WriteStream.EMPTY_STREAM_TOKEN;
+  }
+
+  // MutationQueue implementation
+
+  @Override
+  public void start() {
+    // Note: The queue may be shutdown / started multiple times, since we maintain the queue for the
+    // duration of the app session in case a user logs out / back in. To behave like the
+    // SQLite-backed MutationQueue (and accommodate tests that expect as much), we reset nextBatchId
+    // and highestAcknowledgedBatchId if the queue is empty.
+    if (isEmpty()) {
+      nextBatchId = 1;
+      highestAcknowledgedBatchId = MutationBatch.UNKNOWN;
+    }
+    hardAssert(
+        highestAcknowledgedBatchId < nextBatchId,
+        "highestAcknowledgedBatchId must be less than the nextBatchId");
+  }
+
+  @Override
+  public boolean isEmpty() {
+    // If the queue has any entries at all, the first entry must not be a tombstone (otherwise it
+    // would have been removed already).
+    return queue.isEmpty();
+  }
+
+  @Override
+  public int getNextBatchId() {
+    return nextBatchId;
+  }
+
+  @Override
+  public int getHighestAcknowledgedBatchId() {
+    return highestAcknowledgedBatchId;
+  }
+
+  @Override
+  public void acknowledgeBatch(MutationBatch batch, ByteString streamToken) {
+    int batchId = batch.getBatchId();
+    hardAssert(
+        batchId > highestAcknowledgedBatchId, "Mutation batchIds must be acknowledged in order");
+
+    int batchIndex = indexOfExistingBatchId(batchId, "acknowledged");
+
+    // Verify that the batch in the queue is the one to be acknowledged.
+    MutationBatch check = queue.get(batchIndex);
+    hardAssert(
+        batchId == check.getBatchId(),
+        "Queue ordering failure: expected batch %d, got batch %d",
+        batchId,
+        check.getBatchId());
+    hardAssert(!check.isTombstone(), "Can't acknowledge a previously removed batch");
+
+    highestAcknowledgedBatchId = batchId;
+    lastStreamToken = checkNotNull(streamToken);
+  }
+
+  @Override
+  public ByteString getLastStreamToken() {
+    return lastStreamToken;
+  }
+
+  @Override
+  public void setLastStreamToken(ByteString streamToken) {
+    this.lastStreamToken = checkNotNull(streamToken);
+  }
+
+  @Override
+  public MutationBatch addMutationBatch(Timestamp localWriteTime, List<Mutation> mutations) {
+    hardAssert(!mutations.isEmpty(), "Mutation batches should not be empty");
+
+    int batchId = nextBatchId;
+    nextBatchId += 1;
+
+    int size = queue.size();
+    if (size > 0) {
+      MutationBatch prior = queue.get(size - 1);
+      hardAssert(
+          prior.getBatchId() < batchId, "Mutation batchIds must be monotonically increasing order");
+    }
+
+    MutationBatch batch = new MutationBatch(batchId, localWriteTime, mutations);
+    queue.add(batch);
+
+    // Track references by document key.
+    for (Mutation mutation : mutations) {
+      batchesByDocumentKey =
+          batchesByDocumentKey.insert(new DocumentReference(mutation.getKey(), batchId));
+    }
+
+    return batch;
+  }
+
+  @Nullable
+  @Override
+  public MutationBatch lookupMutationBatch(int batchId) {
+    int index = indexOfBatchId(batchId);
+    if (index < 0 || index >= queue.size()) {
+      return null;
+    }
+
+    MutationBatch batch = queue.get(index);
+    hardAssert(batch.getBatchId() == batchId, "If found batch must match");
+    return batch.isTombstone() ? null : batch;
+  }
+
+  @Nullable
+  @Override
+  public MutationBatch getNextMutationBatchAfterBatchId(int batchId) {
+    int size = queue.size();
+
+    // All batches with batchId <= highestAcknowledgedBatchId have been acknowledged so the
+    // first unacknowledged batch after batchId will have a batchId larger than both of these
+    // values.
+    int nextBatchId = Math.max(batchId, highestAcknowledgedBatchId) + 1;
+
+    // The requested batchId may still be out of range so normalize it to the start of the queue.
+    int rawIndex = indexOfBatchId(nextBatchId);
+    int index = rawIndex < 0 ? 0 : rawIndex;
+
+    // Finally return the first non-tombstone batch.
+    for (; index < size; index++) {
+      MutationBatch batch = queue.get(index);
+      if (!batch.isTombstone()) {
+        return batch;
+      }
+    }
+
+    return null;
+  }
+
+  @Override
+  public List<MutationBatch> getAllMutationBatches() {
+    return getAllLiveMutationBatchesBeforeIndex(queue.size());
+  }
+
+  @Override
+  public List<MutationBatch> getAllMutationBatchesThroughBatchId(int batchId) {
+    int count = queue.size();
+
+    int endIndex = indexOfBatchId(batchId);
+    if (endIndex < 0) {
+      endIndex = 0;
+    } else if (endIndex >= count) {
+      endIndex = count;
+    } else {
+      // The endIndex is in the queue so increment to pull everything in the queue including it.
+      endIndex += 1;
+    }
+
+    return getAllLiveMutationBatchesBeforeIndex(endIndex);
+  }
+
+  @Override
+  public List<MutationBatch> getAllMutationBatchesAffectingDocumentKey(DocumentKey documentKey) {
+    DocumentReference start = new DocumentReference(documentKey, 0);
+
+    List<MutationBatch> result = new ArrayList<>();
+    Iterator<DocumentReference> iterator = batchesByDocumentKey.iteratorFrom(start);
+    while (iterator.hasNext()) {
+      DocumentReference reference = iterator.next();
+      if (!documentKey.equals(reference.getKey())) {
+        break;
+      }
+
+      MutationBatch batch = lookupMutationBatch(reference.getId());
+      hardAssert(batch != null, "Batches in the index must exist in the main table");
+      result.add(batch);
+    }
+
+    return result;
+  }
+
+  @Override
+  public List<MutationBatch> getAllMutationBatchesAffectingDocumentKeys(
+      Iterable<DocumentKey> documentKeys) {
+    ImmutableSortedSet<Integer> uniqueBatchIDs =
+        new ImmutableSortedSet<Integer>(emptyList(), Util.comparator());
+
+    for (DocumentKey key : documentKeys) {
+      DocumentReference start = new DocumentReference(key, 0);
+      Iterator<DocumentReference> batchesIter = batchesByDocumentKey.iteratorFrom(start);
+      while (batchesIter.hasNext()) {
+        DocumentReference reference = batchesIter.next();
+        if (!key.equals(reference.getKey())) {
+          break;
+        }
+        uniqueBatchIDs = uniqueBatchIDs.insert(reference.getId());
+      }
+    }
+
+    return lookupMutationBatches(uniqueBatchIDs);
+  }
+
+  @Override
+  public List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
+    // Use the query path as a prefix for testing if a document matches the query.
+    ResourcePath prefix = query.getPath();
+    int immediateChildrenPathLength = prefix.length() + 1;
+
+    // Construct a document reference for actually scanning the index. Unlike the prefix, the
+    // document key in this reference must have an even number of segments. The empty segment can be
+    // used as a suffix of the query path because it precedes all other segments in an ordered
+    // traversal.
+    ResourcePath startPath = prefix;
+    if (!DocumentKey.isDocumentKey(startPath)) {
+      startPath = startPath.append("");
+    }
+    DocumentReference start = new DocumentReference(DocumentKey.fromPath(startPath), 0);
+
+    // Find unique batchIDs referenced by all documents potentially matching the query.
+    ImmutableSortedSet<Integer> uniqueBatchIDs =
+        new ImmutableSortedSet<Integer>(emptyList(), Util.comparator());
+
+    Iterator<DocumentReference> iterator = batchesByDocumentKey.iteratorFrom(start);
+    while (iterator.hasNext()) {
+      DocumentReference reference = iterator.next();
+      ResourcePath rowKeyPath = reference.getKey().getPath();
+      if (!prefix.isPrefixOf(rowKeyPath)) {
+        break;
+      }
+
+      // Rows with document keys more than one segment longer than the query path can't be matches.
+      // For example, a query on 'rooms' can't match the document /rooms/abc/messages/xyx.
+      // TODO: we'll need a different scanner when we implement ancestor queries.
+      if (rowKeyPath.length() == immediateChildrenPathLength) {
+        uniqueBatchIDs = uniqueBatchIDs.insert(reference.getId());
+      }
+    }
+
+    return lookupMutationBatches(uniqueBatchIDs);
+  }
+
+  private List<MutationBatch> lookupMutationBatches(ImmutableSortedSet<Integer> batchIds) {
+    // Construct an array of matching batches, sorted by batchID to ensure that multiple mutations
+    // affecting the same document key are applied in order.
+    List<MutationBatch> result = new ArrayList<>();
+    for (Integer batchId : batchIds) {
+      MutationBatch batch = lookupMutationBatch(batchId);
+      if (batch != null) {
+        result.add(batch);
+      }
+    }
+
+    return result;
+  }
+
+  @Override
+  public void removeMutationBatches(List<MutationBatch> batches) {
+    int batchCount = batches.size();
+    hardAssert(batchCount > 0, "Should not remove mutations when none exist.");
+
+    int firstBatchId = batches.get(0).getBatchId();
+
+    int queueCount = queue.size();
+
+    // Find the position of the first batch for removal. This need not be the first entry in the
+    // queue.
+    int startIndex = indexOfExistingBatchId(firstBatchId, "removed");
+    hardAssert(
+        queue.get(startIndex).getBatchId() == firstBatchId,
+        "Removed batches must exist in the queue");
+
+    // Check that removed batches are contiguous (while excluding tombstones).
+    int batchIndex = 1;
+    int queueIndex = startIndex + 1;
+    while (batchIndex < batchCount && queueIndex < queueCount) {
+      MutationBatch batch = queue.get(queueIndex);
+      if (batch.isTombstone()) {
+        queueIndex++;
+        continue;
+      }
+
+      hardAssert(
+          batch.getBatchId() == batches.get(batchIndex).getBatchId(),
+          "Removed batches must be contiguous in the queue");
+      batchIndex++;
+      queueIndex++;
+    }
+
+    // Only actually remove batches if removing at the front of the queue. Previously rejected
+    // batches may have left tombstones in the queue, so expand the removal range to include any
+    // tombstones.
+    if (startIndex == 0) {
+      for (; queueIndex < queueCount; queueIndex++) {
+        MutationBatch batch = queue.get(queueIndex);
+        if (!batch.isTombstone()) {
+          break;
+        }
+      }
+
+      queue.subList(startIndex, queueIndex).clear();
+
+    } else {
+      // Mark tombstones
+      for (int i = startIndex; i < queueIndex; i++) {
+        queue.set(i, queue.get(i).toTombstone());
+      }
+    }
+
+    // Remove entries from the index too.
+    ImmutableSortedSet<DocumentReference> references = batchesByDocumentKey;
+    for (MutationBatch batch : batches) {
+      int batchId = batch.getBatchId();
+      for (Mutation mutation : batch.getMutations()) {
+        DocumentKey key = mutation.getKey();
+        persistence.getReferenceDelegate().removeMutationReference(key);
+
+        DocumentReference reference = new DocumentReference(key, batchId);
+        references = references.remove(reference);
+      }
+    }
+    batchesByDocumentKey = references;
+  }
+
+  @Override
+  public void performConsistencyCheck() {
+    if (queue.isEmpty()) {
+      hardAssert(
+          batchesByDocumentKey.isEmpty(),
+          "Document leak -- detected dangling mutation references when queue is empty.");
+    }
+  }
+
+  boolean containsKey(DocumentKey key) {
+    // Create a reference with a zero ID as the start position to find any document reference with
+    // this key.
+    DocumentReference reference = new DocumentReference(key, 0);
+
+    Iterator<DocumentReference> iterator = batchesByDocumentKey.iteratorFrom(reference);
+    if (!iterator.hasNext()) {
+      return false;
+    }
+
+    DocumentKey firstKey = iterator.next().getKey();
+    return firstKey.equals(key);
+  }
+
+  // Helpers
+
+  /**
+   * A private helper that collects all the mutation batches in the queue up to but not including
+   * the given endIndex. All tombstones in the queue are excluded.
+   */
+  private List<MutationBatch> getAllLiveMutationBatchesBeforeIndex(int endIndex) {
+    List<MutationBatch> result = new ArrayList<>(endIndex);
+
+    for (int i = 0; i < endIndex; i++) {
+      MutationBatch batch = queue.get(i);
+
+      if (!batch.isTombstone()) {
+        result.add(batch);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Finds the index of the given batchId in the mutation queue. This operation is O(1).
+   *
+   * @return The computed index of the batch with the given batchId, based on the state of the
+   *     queue. Note this index can be negative if the requested batchId has already been removed
+   *     from the queue or past the end of the queue if the batchId is larger than the last added
+   *     batch.
+   */
+  private int indexOfBatchId(int batchId) {
+    if (queue.isEmpty()) {
+      // As an index this is past the end of the queue
+      return 0;
+    }
+
+    // Examine the front of the queue to figure out the difference between the batchId and indexes
+    // in the array. Note that since the queue is ordered by batchId, if the first batch has a
+    // larger batchId then the requested batchId doesn't exist in the queue.
+    MutationBatch firstBatch = queue.get(0);
+    int firstBatchId = firstBatch.getBatchId();
+    return batchId - firstBatchId;
+  }
+
+  /**
+   * Finds the index of the given batchId in the mutation queue and asserts that the resulting index
+   * is within the bounds of the queue.
+   *
+   * @param batchId The batchId to search for
+   * @param action A description of what the caller is doing, phrased in passive form (e.g.
+   *     "acknowledged" in a routine that acknowledges batches).
+   */
+  private int indexOfExistingBatchId(int batchId, String action) {
+    int index = indexOfBatchId(batchId);
+    hardAssert(index >= 0 && index < queue.size(), "Batches must exist to be %s", action);
+    return index;
+  }
+}

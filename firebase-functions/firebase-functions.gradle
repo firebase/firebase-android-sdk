@@ -1,0 +1,92 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+apply plugin: 'com.android.library'
+
+def androidVersion = 26
+
+android {
+    adbOptions {
+        timeOutInMs 60 * 1000
+    }
+
+    compileSdkVersion androidVersion
+    defaultConfig {
+        targetSdkVersion androidVersion
+
+        multiDexEnabled true
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    sourceSets {
+        main {
+            java {
+            }
+        }
+        androidTest {
+            java {
+                srcDir 'src/testUtil'
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation project(':firebase-common')
+    implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
+    implementation "com.google.android.gms:play-services-base:$playServicesVersion"
+    implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
+    implementation ('com.google.firebase:firebase-iid:16.0.0') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+    }
+    implementation ('com.google.firebase:firebase-auth-interop:16.0.0') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+    }
+    implementation 'com.google.firebase:firebase-iid-interop:16.0.0'
+
+    implementation 'com.squareup.okhttp:okhttp:2.7.2'
+
+    annotationProcessor 'com.google.auto.value:auto-value:1.6'
+
+    androidTestCompile 'junit:junit:4.11'
+    androidTestCompile 'com.google.truth:truth:0.36'
+    androidTestCompile 'com.android.support.test:runner:1.0.2'
+    androidTestCompile 'org.mockito:mockito-core:1.10.19'
+    androidTestCompile 'com.google.truth:truth:0.36'
+    androidTestCompile 'com.linkedin.dexmaker:dexmaker:2.16.0'
+    androidTestCompile 'com.linkedin.dexmaker:dexmaker-mockito:2.16.0'
+
+
+}
+
+task startFunctionsEmulator(type: Exec) {
+    workingDir "$projectDir/src/androidTest/test"
+    commandLine 'bash', './start.sh'
+}
+
+task stopFunctionsEmulator(type: Exec) {
+    commandLine 'killall', 'node'
+}
+
+// This is neccesary because the connectedAndroidTest task doesn't exist yet. It is added later
+// by the android plugin.
+tasks.all { Task t ->
+    if (t.name == 'connectedAndroidTest' || t.name == 'connectedDebugAndroidTest') {
+        t.dependsOn(startFunctionsEmulator)
+        t.finalizedBy(stopFunctionsEmulator)
+    }
+}

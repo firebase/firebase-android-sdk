@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+    Normally this would be injected by the gradle plugin, but we're
+    simulating its presence here for testing purposes.
+    -->
+    <string name="google_app_id">1:855246033427:android:6e48bff8253f3f6e6e</string>
+    <string name="google_api_key">AIzaSyD3asb-2pEZVqMkmL6M9N6nHZRR_znhrh0</string>
+    <string name="ga_trackingId">UA-123456-1</string>
+    <string name="firebase_database_url">https://ghconfigtest-644f2.firebaseio.com</string>
+    <string name="google_storage_bucket">ghconfigtest-644f2</string>
+    <string name="gcm_defaultSenderId">309678045053</string>
+
+</resources>

@@ -1,0 +1,130 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+apply plugin: 'com.android.library'
+apply plugin: 'com.google.protobuf'
+
+def androidVersion = 26
+
+protobuf {
+    // Configure the protoc executable
+    protoc {
+        // Download from repositories
+        artifact = 'com.google.protobuf:protoc:3.4.0'
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.12.0'
+        }
+        javalite {
+            // The codegen for lite comes as a separate artifact
+            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                // In most cases you don't need the full Java output
+                // if you use the lite output.
+                remove java
+            }
+            task.plugins {
+                grpc {
+                    option 'lite'
+                }
+                javalite {}
+            }
+        }
+    }
+}
+android {
+    adbOptions {
+        timeOutInMs 60 * 1000
+    }
+
+    compileSdkVersion androidVersion
+    defaultConfig {
+        targetSdkVersion androidVersion
+        multiDexEnabled true
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    lintOptions {
+        abortOnError false
+    }
+    sourceSets {
+        main {
+            proto {
+                srcDir 'src/proto'
+            }
+            java {
+            }
+        }
+        test {
+            java {
+                srcDir 'src/testUtil/java'
+            }
+        }
+        androidTest {
+            java {
+                srcDir 'src/testUtil/java'
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation project(':firebase-common')
+    implementation project(':protolite-well-known-types')
+    implementation project(':firebase-database-collection')
+
+    implementation 'io.grpc:grpc-stub:1.12.0'
+    implementation 'io.grpc:grpc-protobuf-lite:1.12.0'
+    implementation 'io.grpc:grpc-okhttp:1.12.0'
+    implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
+    implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
+    implementation "com.google.android.gms:play-services-base:$playServicesVersion"
+
+    implementation 'com.squareup.okhttp:okhttp:2.7.2'
+    implementation ('com.google.firebase:firebase-auth-interop:16.0.0') {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
+
+    implementation 'android.arch.lifecycle:runtime:1.1.1'
+    implementation 'android.arch.lifecycle:common:1.1.1'
+
+    testCompile 'junit:junit:4.11'
+    testCompile 'org.mockito:mockito-core:1.10.19'
+    testCompile 'org.robolectric:robolectric:4.0-alpha-3'
+    testCompile 'com.google.truth:truth:0.36'
+    testCompile 'com.fasterxml.jackson.core:jackson-databind:2.0.1'
+    testCompile 'com.google.guava:guava-testlib:12.0-rc2'
+
+    androidTestCompile 'junit:junit:4.11'
+    androidTestCompile 'com.google.truth:truth:0.36'
+    androidTestCompile 'com.fasterxml.jackson.core:jackson-databind:2.0.1'
+    androidTestCompile "com.android.support:support-annotations:$supportAnnotationsVersion"
+    androidTestCompile 'com.android.support.test:runner:1.0.2'
+    androidTestCompile 'com.android.support.test:rules:1.0.2'
+}
+
+// ==========================================================================
+// Copy from here down if you want to use the google-services plugin in your
+// androidTest integration tests.
+// ==========================================================================
+ext.packageName = "com.google.firebase.firestore"
+apply from: '../gradle/googleServices.gradle'

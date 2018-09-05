@@ -1,0 +1,56 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.firebase.firestore.model.mutation;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import android.support.annotation.Nullable;
+import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.value.FieldValue;
+import java.util.List;
+
+/**
+ * The result of applying a mutation to the server. This is a model of the WriteResult proto
+ * message.
+ *
+ * <p>Note that MutationResult does not name which document was mutated. The association is implied
+ * positionally: for each entry in the array of Mutations, there's a corresponding entry in the
+ * array of MutationResults.
+ */
+public final class MutationResult {
+  private final SnapshotVersion version;
+  @Nullable private final List<FieldValue> transformResults;
+
+  public MutationResult(SnapshotVersion version, @Nullable List<FieldValue> transformResults) {
+    this.version = checkNotNull(version);
+    this.transformResults = transformResults;
+  }
+
+  /** The version at which the mutation was committed. */
+  public SnapshotVersion getVersion() {
+    return version;
+  }
+
+  /**
+   * The resulting fields returned from the backend after a TransformMutation has been committed.
+   * Contains one FieldValue for each FieldTransform that was in the mutation.
+   *
+   * <p>Will be null if the mutation was not a TransformMutation.
+   */
+  @Nullable
+  public List<FieldValue> getTransformResults() {
+    return transformResults;
+  }
+}

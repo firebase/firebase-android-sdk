@@ -1,0 +1,588 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.firebase.firestore.local;
+
+import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.keySet;
+import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static com.google.firebase.firestore.testutil.TestUtil.resumeToken;
+import static com.google.firebase.firestore.testutil.TestUtil.version;
+import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.ListenSequence;
+import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.Precondition;
+import com.google.firebase.firestore.model.mutation.SetMutation;
+import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.protobuf.ByteString;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public abstract class LruGarbageCollectorTestCase {
+  private Persistence persistence;
+  private QueryCache queryCache;
+  private MutationQueue mutationQueue;
+  private RemoteDocumentCache documentCache;
+  private LruGarbageCollector garbageCollector;
+  private int previousTargetId;
+  private int previousDocNum;
+  private long initialSequenceNumber;
+  private ObjectValue testValue;
+
+  abstract Persistence createPersistence();
+
+  @Before
+  public void setUp() {
+    previousTargetId = 500;
+    previousDocNum = 10;
+    Map<String, Object> dataMap = new HashMap<>();
+    dataMap.put("test", "data");
+    dataMap.put("foo", true);
+    dataMap.put("bar", 3);
+    testValue = wrapObject(dataMap);
+
+    newTestResources();
+  }
+
+  @After
+  public void tearDown() {
+    persistence.shutdown();
+  }
+
+  private void newTestResources() {
+    persistence = createPersistence();
+    persistence.getReferenceDelegate().setAdditionalReferences(new ReferenceSet());
+    queryCache = persistence.getQueryCache();
+    documentCache = persistence.getRemoteDocumentCache();
+    User user = new User("user");
+    mutationQueue = persistence.getMutationQueue(user);
+    initialSequenceNumber = queryCache.getHighestListenSequenceNumber();
+    garbageCollector = ((LruDelegate) persistence.getReferenceDelegate()).getGarbageCollector();
+  }
+
+  private QueryData nextQueryData() {
+    int targetId = ++previousTargetId;
+    long sequenceNumber = persistence.getReferenceDelegate().getCurrentSequenceNumber();
+    Query query = query("path" + targetId);
+    return new QueryData(query, targetId, sequenceNumber, QueryPurpose.LISTEN);
+  }
+
+  private void updateTargetInTransaction(QueryData queryData) {
+    SnapshotVersion version = version(2);
+    ByteString resumeToken = resumeToken(2);
+    QueryData updated =
+        queryData.copy(
+            version, resumeToken, persistence.getReferenceDelegate().getCurrentSequenceNumber());
+    queryCache.updateQueryData(updated);
+  }
+
+  private QueryData addNextQueryInTransaction() {
+    QueryData queryData = nextQueryData();
+    queryCache.addQueryData(queryData);
+    return queryData;
+  }
+
+  private QueryData addNextQuery() {
+    return persistence.runTransaction("Add query", this::addNextQueryInTransaction);
+  }
+
+  private DocumentKey nextTestDocumentKey() {
+    return DocumentKey.fromPathString("docs/doc_" + (++previousDocNum));
+  }
+
+  private Document nextTestDocument() {
+    DocumentKey key = nextTestDocumentKey();
+    long version = 1;
+    Map<String, Object> data = new HashMap<>();
+    data.put("baz", true);
+    data.put("ok", "fine");
+    return doc(key, version, data);
+  }
+
+  private Document cacheADocumentInTransaction() {
+    Document doc = nextTestDocument();
+    documentCache.add(doc);
+    return doc;
+  }
+
+  private void markDocumentEligibleForGcInTransaction(DocumentKey key) {
+    persistence.getReferenceDelegate().removeMutationReference(key);
+  }
+
+  private void markDocumentEligibleForGc(DocumentKey key) {
+    persistence.runTransaction(
+        "Removing mutation reference", () -> markDocumentEligibleForGcInTransaction(key));
+  }
+
+  private void markADocumentEligibleForGc() {
+    DocumentKey key = nextTestDocumentKey();
+    markDocumentEligibleForGc(key);
+  }
+
+  private void markADocumentEligibleForGcInTransaction() {
+    DocumentKey key = nextTestDocumentKey();
+    markDocumentEligibleForGcInTransaction(key);
+  }
+
+  private void addDocumentToTarget(DocumentKey key, int targetId) {
+    queryCache.addMatchingKeys(keySet(key), targetId);
+  }
+
+  private void removeDocumentFromTarget(DocumentKey key, int targetId) {
+    queryCache.removeMatchingKeys(keySet(key), targetId);
+  }
+
+  private int removeQueries(long upperBound, Set<Integer> liveQueries) {
+    return persistence.runTransaction(
+        "Remove queries", () -> garbageCollector.removeQueries(upperBound, liveQueries));
+  }
+
+  private SetMutation mutation(DocumentKey key) {
+    return new SetMutation(key, testValue, Precondition.NONE);
+  }
+
+  @Test
+  public void testPickSequenceNumberPercentile() {
+    int[] queryCounts = new int[] {0, 10, 9, 50, 49};
+    int[] expectedCounts = new int[] {0, 1, 0, 5, 4};
+
+    for (int i = 0; i < queryCounts.length; i++) {
+      int numQueries = queryCounts[i];
+      int expectedTenthPercentile = expectedCounts[i];
+      newTestResources();
+      for (int j = 0; j < numQueries; j++) {
+        addNextQuery();
+      }
+      int tenth = garbageCollector.calculateQueryCount(10);
+      assertEquals(expectedTenthPercentile, tenth);
+      persistence.shutdown();
+      newTestResources();
+    }
+  }
+
+  @Test
+  public void testSequenceNumberNoQueries() {
+    assertEquals(ListenSequence.INVALID, garbageCollector.nthSequenceNumber(0));
+  }
+
+  @Test
+  public void testSequenceNumberForFiftyQueries() {
+    // Add 50 queries sequentially, aim to collect 10 of them.
+    // The sequence number to collect should be 10 past the initial sequence number.
+    for (int i = 0; i < 50; i++) {
+      addNextQuery();
+    }
+    assertEquals(initialSequenceNumber + 10, garbageCollector.nthSequenceNumber(10));
+  }
+
+  @Test
+  public void testSequenceNumberForMultipleQueriesInATransaction() {
+    // 50 queries, 9 with one transaction, incrementing from there. Should get second sequence
+    // number.
+    persistence.runTransaction(
+        "9 queries in a batch",
+        () -> {
+          for (int i = 0; i < 9; i++) {
+            addNextQueryInTransaction();
+          }
+        });
+    for (int i = 9; i < 50; i++) {
+      addNextQuery();
+    }
+    assertEquals(2 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+  }
+
+  @Test
+  public void testAllCollectedQueriesInSingleTransaction() {
+    // Ensure that even if all of the queries are added in a single transaction, we still
+    // pick a sequence number and GC. In this case, the initial transaction contains all of the
+    // targets that will get GC'd, since they account for more than the first 10 targets.
+    // 50 queries, 11 with one transaction, incrementing from there. Should get first sequence
+    // number.
+    persistence.runTransaction(
+        "9 queries in a batch",
+        () -> {
+          for (int i = 0; i < 11; i++) {
+            addNextQueryInTransaction();
+          }
+        });
+    for (int i = 11; i < 50; i++) {
+      addNextQuery();
+    }
+    assertEquals(1 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+  }
+
+  @Test
+  public void testSequenceNumbersWithMutationAndSequentialQueries() {
+    // Remove a mutated doc reference, marking it as eligible for GC.
+    // Then add 50 queries. Should get 10 past initial (9 queries).
+    markADocumentEligibleForGc();
+    for (int i = 0; i < 50; i++) {
+      addNextQuery();
+    }
+    assertEquals(10 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+  }
+
+  @Test
+  public void testSequenceNumbersWithMutationsInQueries() {
+    // Add mutated docs, then add one of them to a query target so it doesn't get GC'd.
+    // Expect 3 past the initial value: the mutations not part of a query, and two queries
+    DocumentKey docInQuery = nextTestDocumentKey();
+    persistence.runTransaction(
+        "mark mutations",
+        () -> {
+          // Adding 9 doc keys in a transaction. If we remove one of them, we'll have room for two
+          // actual queries.
+          markDocumentEligibleForGcInTransaction(docInQuery);
+          for (int i = 0; i < 8; i++) {
+            markADocumentEligibleForGcInTransaction();
+          }
+        });
+    for (int i = 0; i < 49; i++) {
+      addNextQuery();
+    }
+    persistence.runTransaction(
+        "query with a mutation",
+        () -> {
+          QueryData queryData = addNextQueryInTransaction();
+          addDocumentToTarget(docInQuery, queryData.getTargetId());
+        });
+    // This should catch the remaining 8 documents, plus the first two queries we added.
+    assertEquals(3 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+  }
+
+  @Test
+  public void testRemoveQueriesUpThroughSequenceNumber() {
+    Map<Integer, QueryData> liveQueries = new HashMap<>();
+    for (int i = 0; i < 100; i++) {
+      QueryData queryData = addNextQuery();
+      // Mark odd queries as live so we can test filtering out live queries.
+      int targetId = queryData.getTargetId();
+      if (targetId % 2 == 1) {
+        liveQueries.put(targetId, queryData);
+      }
+    }
+    // GC up through 20th query, which is 20%.
+    // Expect to have GC'd 10 targets, since every other target is live
+    long upperBound = 20 + initialSequenceNumber;
+    int removed = removeQueries(upperBound, liveQueries.keySet());
+    assertEquals(10, removed);
+    // Make sure we removed the even targets with targetID <= 20.
+    persistence.runTransaction(
+        "verify remaining targets are > 20 or odd",
+        () ->
+            queryCache.forEachTarget(
+                (QueryData queryData) -> {
+                  boolean isOdd = queryData.getTargetId() % 2 == 1;
+                  boolean isOver20 = queryData.getTargetId() > 20;
+                  assertTrue(isOdd || isOver20);
+                }));
+  }
+
+  @Test
+  public void testRemoveOrphanedDocuments() {
+    // Track documents we expect to be retained so we can verify post-GC.
+    // This will contain documents associated with targets that survive GC, as well
+    // as any documents with pending mutations.
+    Set<DocumentKey> expectedRetained = new HashSet<>();
+    // we add two mutations later, for now track them in an array.
+    List<Mutation> mutations = new ArrayList<>();
+
+    persistence.runTransaction(
+        "add a target and add two documents to it",
+        () -> {
+          // Add two documents to first target, queue a mutation on the second document
+          QueryData queryData = addNextQueryInTransaction();
+          Document doc1 = cacheADocumentInTransaction();
+          addDocumentToTarget(doc1.getKey(), queryData.getTargetId());
+          expectedRetained.add(doc1.getKey());
+
+          Document doc2 = cacheADocumentInTransaction();
+          addDocumentToTarget(doc2.getKey(), queryData.getTargetId());
+          expectedRetained.add(doc2.getKey());
+          mutations.add(mutation(doc2.getKey()));
+        });
+
+    // Add a second query and register a third document on it
+    persistence.runTransaction(
+        "second query",
+        () -> {
+          QueryData queryData = addNextQueryInTransaction();
+          Document doc3 = cacheADocumentInTransaction();
+          addDocumentToTarget(doc3.getKey(), queryData.getTargetId());
+          expectedRetained.add(doc3.getKey());
+        });
+
+    // cache another document and prepare a mutation on it.
+    persistence.runTransaction(
+        "queue a mutation",
+        () -> {
+          Document doc4 = cacheADocumentInTransaction();
+          mutations.add(mutation(doc4.getKey()));
+          expectedRetained.add(doc4.getKey());
+        });
+
+    // Insert the mutations. These operations don't have a sequence number, they just
+    // serve to keep the mutated documents from being GC'd while the mutations are outstanding.
+    persistence.runTransaction(
+        "actually register the mutations",
+        () -> {
+          Timestamp writeTime = Timestamp.now();
+          mutationQueue.addMutationBatch(writeTime, mutations);
+        });
+
+    // Mark 5 documents eligible for GC. This simulates documents that were mutated then ack'd.
+    // Since they were ack'd, they are no longer in a mutation queue, and there is nothing keeping
+    // them alive.
+    Set<DocumentKey> toBeRemoved = new HashSet<>();
+    persistence.runTransaction(
+        "add orphaned docs (previously mutated, then ack'd)",
+        () -> {
+          for (int i = 0; i < 5; i++) {
+            Document doc = cacheADocumentInTransaction();
+            toBeRemoved.add(doc.getKey());
+            markDocumentEligibleForGcInTransaction(doc.getKey());
+          }
+        });
+
+    // We expect only the orphaned documents, those not in a mutation or a target, to be removed.
+    // use a large sequence number to remove as much as possible
+    int removed = garbageCollector.removeOrphanedDocuments(1000);
+    assertEquals(toBeRemoved.size(), removed);
+    persistence.runTransaction(
+        "verify",
+        () -> {
+          for (DocumentKey key : toBeRemoved) {
+            assertNull(documentCache.get(key));
+            assertFalse(queryCache.containsKey(key));
+          }
+          for (DocumentKey key : expectedRetained) {
+            assertNotNull(documentCache.get(key));
+          }
+        });
+  }
+
+  @Test
+  public void testRemoveTargetsThenGC() {
+    // Create 3 targets, add docs to all of them
+    // Leave oldest target alone, it is still live
+    // Remove newest target
+    // Blind write 2 documents
+    // Add one of the blind write docs to oldest target (preserves it)
+    // Remove some documents from middle target (bumps sequence number)
+    // Add some documents from newest target to oldest target (preserves them)
+    // Update a doc from middle target
+    // Remove middle target
+    // Do a blind write
+    // GC up to but not including the removal of the middle target
+    //
+    // Expect:
+    // All docs in oldest target are still around
+    // One blind write is gone, the first one not added to oldest target
+    // Documents removed from middle target are gone, except ones added to oldest target
+    // Documents from newest target are gone, except
+
+    // Through the various steps, track which documents we expect to be removed vs
+    // documents we expect to be retained.
+    Set<DocumentKey> expectedRetained = new HashSet<>();
+    Set<DocumentKey> expectedRemoved = new HashSet<>();
+
+    // Add oldest target, 5 documents, and add those documents to the target.
+    // This target will not be removed, so all documents that are part of it will
+    // be retained.
+    QueryData oldestTarget =
+        persistence.runTransaction(
+            "Add oldest target and docs",
+            () -> {
+              QueryData queryData = addNextQueryInTransaction();
+              for (int i = 0; i < 5; i++) {
+                Document doc = cacheADocumentInTransaction();
+                expectedRetained.add(doc.getKey());
+                addDocumentToTarget(doc.getKey(), queryData.getTargetId());
+              }
+              return queryData;
+            });
+
+    // Add middle target and docs. Some docs will be removed from this target later,
+    // which we track here.
+    Set<DocumentKey> middleDocsToRemove = new HashSet<>();
+    // This will be the document in this target that gets an update later.
+    DocumentKey[] middleDocToUpdateHolder = new DocumentKey[1];
+    QueryData middleTarget =
+        persistence.runTransaction(
+            "Add middle target and docs",
+            () -> {
+              QueryData queryData = addNextQueryInTransaction();
+              // these docs will be removed from this target later, triggering a bump
+              // to their sequence numbers. Since they will not be a part of the target, we
+              // expect them to be removed.
+              for (int i = 0; i < 2; i++) {
+                Document doc = cacheADocumentInTransaction();
+                addDocumentToTarget(doc.getKey(), queryData.getTargetId());
+                expectedRemoved.add(doc.getKey());
+                middleDocsToRemove.add(doc.getKey());
+              }
+              // these docs stay in this target and only this target. There presence in this
+              // target prevents them from being GC'd, so they are also expected to be retained.
+              for (int i = 2; i < 4; i++) {
+                Document doc = cacheADocumentInTransaction();
+                expectedRetained.add(doc.getKey());
+                addDocumentToTarget(doc.getKey(), queryData.getTargetId());
+              }
+              // This doc stays in this target, but gets updated.
+              {
+                Document doc = cacheADocumentInTransaction();
+                expectedRetained.add(doc.getKey());
+                addDocumentToTarget(doc.getKey(), queryData.getTargetId());
+                middleDocToUpdateHolder[0] = doc.getKey();
+              }
+              return queryData;
+            });
+    DocumentKey middleDocToUpdate = middleDocToUpdateHolder[0];
+
+    // Add the newest target and add 5 documents to it. Some of those documents will
+    // additionally be added to the oldest target, which will cause those documents to
+    // be retained. The remaining documents are expected to be removed, since this target
+    // will be removed.
+    Set<DocumentKey> newestDocsToAddToOldest = new HashSet<>();
+    persistence.runTransaction(
+        "Add newest target and docs",
+        () -> {
+          QueryData queryData = addNextQueryInTransaction();
+          // These documents are only in this target. They are expected to be removed
+          // because this target will also be removed.
+          for (int i = 0; i < 3; i++) {
+            Document doc = cacheADocumentInTransaction();
+            expectedRemoved.add(doc.getKey());
+            addDocumentToTarget(doc.getKey(), queryData.getTargetId());
+          }
+          // docs to add to the oldest target in addition to this target. They will be retained
+          for (int i = 3; i < 5; i++) {
+            Document doc = cacheADocumentInTransaction();
+            expectedRetained.add(doc.getKey());
+            addDocumentToTarget(doc.getKey(), queryData.getTargetId());
+            newestDocsToAddToOldest.add(doc.getKey());
+          }
+        });
+
+    // 2 doc writes, add one of them to the oldest target.
+    persistence.runTransaction(
+        "2 doc writes, add one of them to the oldest target",
+        () -> {
+          // write two docs and have them ack'd by the server. can skip mutation queue
+          // and set them in document cache. Add potentially orphaned first, also add one
+          // doc to a target.
+          Document doc1 = cacheADocumentInTransaction();
+          markDocumentEligibleForGcInTransaction(doc1.getKey());
+          updateTargetInTransaction(oldestTarget);
+          addDocumentToTarget(doc1.getKey(), oldestTarget.getTargetId());
+          // doc1 should be retained by being added to oldestTarget
+          expectedRetained.add(doc1.getKey());
+
+          Document doc2 = cacheADocumentInTransaction();
+          markDocumentEligibleForGcInTransaction(doc2.getKey());
+          // nothing is keeping doc2 around, it should be removed
+          expectedRemoved.add(doc2.getKey());
+        });
+
+    // Remove some documents from the middle target.
+    persistence.runTransaction(
+        "Remove some documents from the middle target",
+        () -> {
+          updateTargetInTransaction(middleTarget);
+          for (DocumentKey key : middleDocsToRemove) {
+            removeDocumentFromTarget(key, middleTarget.getTargetId());
+          }
+        });
+
+    // Add a couple docs from the newest target to the oldest (preserves them past the point where
+    // newest was removed)
+    // upperBound is the sequence number right before middleTarget is updated, then removed.
+    long upperBound =
+        persistence.runTransaction(
+            "Add a couple docs from the newest target to the oldest",
+            () -> {
+              updateTargetInTransaction(oldestTarget);
+              for (DocumentKey key : newestDocsToAddToOldest) {
+                addDocumentToTarget(key, oldestTarget.getTargetId());
+              }
+              return persistence.getReferenceDelegate().getCurrentSequenceNumber();
+            });
+
+    // Update a doc in the middle target
+    persistence.runTransaction(
+        "Update a doc in the middle target",
+        () -> {
+          SnapshotVersion newVersion = version(3);
+          Document doc = new Document(middleDocToUpdate, newVersion, testValue, false);
+          documentCache.add(doc);
+          updateTargetInTransaction(middleTarget);
+        });
+
+    // Remove the middle target
+    persistence.runTransaction(
+        "remove middle target",
+        () -> persistence.getReferenceDelegate().removeTarget(middleTarget));
+
+    // Write a doc and get an ack, not part of a target
+    persistence.runTransaction(
+        "Write a doc and get an ack, not part of a target",
+        () -> {
+          Document doc = cacheADocumentInTransaction();
+          // Mark it as eligible for GC, but this is after our upper bound for what we will collect.
+          markDocumentEligibleForGcInTransaction(doc.getKey());
+          // This should be retained, it's too new to get removed.
+          expectedRetained.add(doc.getKey());
+        });
+
+    // Finally, do the garbage collection, up to but not including the removal of middleTarget
+    Set<Integer> liveQueries = new HashSet<>();
+    liveQueries.add(oldestTarget.getTargetId());
+    int queriesRemoved = garbageCollector.removeQueries(upperBound, liveQueries);
+    // Expect to remove newest target
+    assertEquals(1, queriesRemoved);
+    int docsRemoved = garbageCollector.removeOrphanedDocuments(upperBound);
+    assertEquals(expectedRemoved.size(), docsRemoved);
+    persistence.runTransaction(
+        "verify results",
+        () -> {
+          for (DocumentKey key : expectedRemoved) {
+            assertNull(documentCache.get(key));
+            assertFalse(queryCache.containsKey(key));
+          }
+          for (DocumentKey key : expectedRetained) {
+            assertNotNull(documentCache.get(key));
+          }
+        });
+  }
+}

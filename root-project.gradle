@@ -1,0 +1,185 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
+import groovy.io.FileType
+
+buildscript {
+
+    repositories {
+        google()
+        jcenter()
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.0.1'
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.3'
+        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.13'
+        classpath 'org.jsoup:jsoup:1.11.2'
+        classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.6'
+        classpath 'com.google.gms:google-services:4.1.0'
+        classpath 'me.tatarka:gradle-retrolambda:3.7.0'
+        classpath 'digital.wup:android-maven-publish:3.6.2'
+    }
+}
+
+ext {
+    playServicesVersion = '15.0.1'
+    supportAnnotationsVersion = '26.1.0'
+}
+
+apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
+
+configure(subprojects) {
+    repositories {
+        google()
+        jcenter()
+        mavenLocal()
+        maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots"
+        }
+    }
+    apply plugin: 'net.ltgt.errorprone'
+    apply plugin: 'com.github.sherter.google-java-format'
+    googleJavaFormat {
+        toolVersion = '1.6'
+    }
+    tasks.googleJavaFormat {
+        source '.'
+        include '**/*.java'
+        exclude '**/generated/**'
+        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
+        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
+        exclude '**/package-info.java'
+    }
+    tasks.verifyGoogleJavaFormat {
+        source '.'
+        include '**/*.java'
+        exclude '**/generated/**'
+        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
+        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
+        exclude '**/package-info.java'
+    }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs += ['-XepExcludedPaths:.*/build/generated/.*']
+    }
+
+    // Adds firebase custom errorprone checks to the annotation processor classpath.
+    configurations.whenObjectAdded {
+        if (it.name == 'annotationProcessor' && project != project(':tools:errorprone')) {
+            dependencies {
+                annotationProcessor project(':tools:errorprone')
+            }
+        }
+    }
+}
+
+/**
+ * Configure "Preguarding" and Desugaring for the subprojects.
+ *
+ * <p>Desugaring is enabled with the 'me.tatarka:gradle-retrolambda' plugin as the built-in Android
+ * desugaring is not supported for libraries.
+ *
+ * <p> The way it works is every library subproject that has the android plugin applied and:
+ *
+ *  <ul>
+ *    <li>Contains a file named "preguard.txt" will get proguarded using that file as proguard
+ *        configuration in release mode.
+ *    <li>Contains a file named "proguard.txt" will ship this file inside its release aar as a
+ *        consumer proguard file.
+ */
+configure(subprojects) {
+    def PREGUARD_FILE_NAME = 'preguard.txt'
+    def CONSUMER_PROGUARD_FILE_NAME = 'proguard.txt'
+    afterEvaluate { Project sub ->
+
+        if (sub.plugins.findPlugin('com.android.library') == null) {
+            return
+        }
+
+        // Apply the retrolambda plugin
+        sub.apply plugin: 'me.tatarka.retrolambda'
+
+        boolean skipPreguard = sub.getProperties().getOrDefault('firebaseSkipPreguard', 'false').toBoolean()
+        def defaultPreguard = rootProject.getProperties().getOrDefault('firebaseDefaultPreguardFile', 'default-preguard.txt')
+
+        if(!skipPreguard) {
+
+            sub.android {
+                buildTypes {
+                    release {
+                        // default behavior for minifyEnabled is:
+                        // useProguard true
+                        // shrinkResources false
+                        minifyEnabled true
+                        proguardFiles file(defaultPreguard), sub.file(PREGUARD_FILE_NAME)
+                    }
+                }
+            }
+        }
+
+        // Ship consumer proguard config if it exists.
+        if (sub.file(CONSUMER_PROGUARD_FILE_NAME).exists()) {
+            sub.android { buildTypes { release { consumerProguardFiles 'proguard.txt' } } }
+        }
+
+        sub.apply plugin: LicenseResolverPlugin
+        sub.thirdPartyLicenses {
+            def root = "file://$rootDir/third_party/licenses"
+
+            add 'CCTZ', "$root/apache-2.0.txt"
+            add 'ICU4C', "$root/icu.txt"
+            add 'JSR 305', "$root/jsr305.txt"
+            add 'PCRE', "$root/pcre.txt"
+            add 'Protobuf Nano', "$root/nanoproto.txt"
+            add 'RE2', "$root/re2.txt"
+            add 'STL', "$root/sgi-stl.txt"
+            add 'UTF', "$root/utf.txt"
+            add 'darts_clone', "$root/darts_clone.txt"
+            add 'flatbuffers', "$root/apache-2.0.txt"
+            add 'safeparcel', "$root/apache-2.0.txt"
+            add 'zlib', "$root/zlib.txt"
+        }
+    }
+}
+
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+task copyrightCheck {
+    doLast {
+        def nonConformingFiles = []
+        projectDir.traverse(type: FileType.FILES,
+                nameFilter: ~/.+\.(java|groovy|sh|proto|gradle|py)$/,
+                excludeFilter: ~/(^\.git|.*\/build\/.*)/) { File currentFile ->
+
+            if (!currentFile.any { it.matches(/.*Copyright [0-9]{4} Google LLC/) }) {
+                nonConformingFiles.add(currentFile.path - projectDir.path - '/')
+            }
+
+        }
+
+        if (nonConformingFiles) {
+            throw new GradleException(
+                "Add copyright and license header to the following files:\n${nonConformingFiles.join('\n')}.")
+        }
+    }
+}

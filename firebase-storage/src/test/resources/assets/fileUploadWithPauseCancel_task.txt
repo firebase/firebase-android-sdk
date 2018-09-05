@@ -1,0 +1,40 @@
+
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/image.jpg
+  bytesUploaded:0
+  currentState:2
+  uploadUri:<none>
+  total bytes:1076408
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/image.jpg
+  bytesUploaded:0
+  currentState:4
+  uploadUri:<none>
+  total bytes:1076408
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/image.jpg
+  bytesUploaded:262144
+  currentState:4
+  uploadUri:https://firebasestorage.googleapis.com/v0/b/project-5516366556574091405.appspot.com/o?name=image.jpg&uploadType=resumable&upload_id=AEnB2UqMbZoZuRu6o2ZrokFilAk0gAxqaG8h4FiPYSysre3jXuFPbEDSjf78jcSt_g5RIqhv090wJnVmPZAEWfNJoN2VAswscg&upload_protocol=resumable
+  total bytes:1076408
+onPaused:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/image.jpg
+  bytesUploaded:786432
+  currentState:16
+  uploadUri:https://firebasestorage.googleapis.com/v0/b/project-5516366556574091405.appspot.com/o?name=image.jpg&uploadType=resumable&upload_id=AEnB2UqMbZoZuRu6o2ZrokFilAk0gAxqaG8h4FiPYSysre3jXuFPbEDSjf78jcSt_g5RIqhv090wJnVmPZAEWfNJoN2VAswscg&upload_protocol=resumable
+  total bytes:1076408
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://project-5516366556574091405.appspot.com/image.jpg
+  bytesUploaded:786432
+  currentState:2
+  uploadUri:https://firebasestorage.googleapis.com/v0/b/project-5516366556574091405.appspot.com/o?name=image.jpg&uploadType=resumable&upload_id=AEnB2UqMbZoZuRu6o2ZrokFilAk0gAxqaG8h4FiPYSysre3jXuFPbEDSjf78jcSt_g5RIqhv090wJnVmPZAEWfNJoN2VAswscg&upload_protocol=resumable
+  total bytes:1076408
+onCanceled:
+onComplete:Success=
+false
+done.
