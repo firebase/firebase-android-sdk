@@ -133,6 +133,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           : Sets.newHashSet("no-android", "benchmark", "multi-client");
 
   private boolean garbageCollectionEnabled;
+  private boolean networkEnabled = true;
 
   //
   // Parts of the Firestore system that the spec tests need to control.
@@ -670,6 +671,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   }
 
   private void doDisableNetwork() throws Exception {
+    networkEnabled = false;
     queue.runSync(
         () -> {
           // Make sure to execute all writes that are currently queued. This allows us
@@ -680,6 +682,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   }
 
   private void doEnableNetwork() throws Exception {
+    networkEnabled = true;
     queue.runSync(() -> remoteStore.enableNetwork());
   }
 
@@ -939,6 +942,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   }
 
   private void validateActiveTargets() {
+    if (!networkEnabled) {
+      return;
+    }
+
     // Create a copy so we can modify it in tests
     Map<Integer, QueryData> actualTargets = new HashMap<>(datastore.activeTargets());
 
