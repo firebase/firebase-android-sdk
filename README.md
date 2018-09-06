@@ -17,7 +17,6 @@ https://firebase.google.com.
 ## Table of contents
 
 1. [Getting Started](#getting-started)
-1. [Building](#building)
 1. [Testing](#testing)
    1. [Unit Testing](#unit-testing)
    1. [Integration Testing](#integration-testing)
@@ -39,14 +38,6 @@ https://firebase.google.com.
 * Clone the repo (`git clone git@github.com:firebase/firebase-android-sdk.git`)
 * Import the firebase-android-sdk gradle project into Android Studio using the
   **Import project(Gradle, Eclipse ADT, etc.** option.
-
-## Building
-
-Building the Firebase SDKs can be performed by invoking the following on the
-command line:
-```bash
-./gradlew :<firebase-project>:assemble`
-```
 
 ## Testing
 
@@ -218,8 +209,8 @@ projects may be published as follows.
     publishProjectsToMavenLocal
 ```
 
-To generate the Maven dependency tree under `build/` instead, you can use
-`firebasePublish` instead of `publishProjectsToMavenLocal`
+To generate the Maven dependency tree under `build/` instead, you can replace
+`publishProjectsToMavenLocal` in the above command with `firebasePublish`.
 
 ### Code Formatting
 
