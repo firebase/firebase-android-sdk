@@ -325,8 +325,16 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     // The watch stream might not be started if we're in a disconnected state
     if (watchStream.isOpen()) {
       sendUnwatchRequest(targetId);
-      if (listenTargets.isEmpty()) {
+    }
+
+    if (listenTargets.isEmpty()) {
+      if (watchStream.isOpen()) {
         watchStream.markIdle();
+      } else if (this.canUseNetwork()) {
+        // Revert to OnlineState.UNKNOWN if the watch stream is not open and we have no listeners,
+        // since without any listens to send we cannot confirm if the stream is healthy and upgrade
+        // to OnlineState.ONLINE.
+        this.onlineStateTracker.updateState(OnlineState.UNKNOWN);
       }
     }
   }
