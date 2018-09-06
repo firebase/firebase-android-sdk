@@ -17,6 +17,7 @@ https://firebase.google.com.
 ## Table of contents
 
 1. [Getting Started](#getting-started)
+1. [Building](#building)
 1. [Testing](#testing)
    1. [Unit Testing](#unit-testing)
    1. [Integration Testing](#integration-testing)
@@ -38,6 +39,14 @@ https://firebase.google.com.
 * Clone the repo (`git clone git@github.com:firebase/firebase-android-sdk.git`)
 * Import the firebase-android-sdk gradle project into Android Studio using the
   **Import project(Gradle, Eclipse ADT, etc.** option.
+
+## Building
+
+Building the Firebase SDKs can be performed by invoking the following on the
+command line:
+```bash
+./gradlew :<firebase-project>:assemble`
+```
 
 ## Testing
 
@@ -86,6 +95,11 @@ If you don't have a suitable testing project already:
   * Give the app any package name you like.
   * Download the resulting `google-services.json` file and put it in the root of
     your checkout.
+
+For now, you have to disable security rule enforcement for the Realtime
+Database, Cloud Firestore, and Cloud Storage in your test project (if running
+the integration tests for any of those). Re-enable your security rules after
+your test run.
 
 #### Running Integration Tests
 
@@ -203,6 +217,9 @@ projects may be published as follows.
 ./gradlew -PprojectsToPublish=":firebase-firestore,:firebase-functions" \
     publishProjectsToMavenLocal
 ```
+
+To generate the Maven dependency tree under `build/` instead, you can use
+`firebasePublish` instead of `publishProjectsToMavenLocal`
 
 ### Code Formatting
 
