@@ -34,11 +34,13 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class TransactionTest {
+  @Rule public RetryRule retryRule = new RetryRule(3);
 
   @After
   public void tearDown() {

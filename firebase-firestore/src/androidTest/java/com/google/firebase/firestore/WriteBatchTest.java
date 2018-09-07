@@ -34,11 +34,13 @@ import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Arrays;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class WriteBatchTest {
+  @Rule public RetryRule retryRule = new RetryRule(3);
 
   @After
   public void tearDown() {

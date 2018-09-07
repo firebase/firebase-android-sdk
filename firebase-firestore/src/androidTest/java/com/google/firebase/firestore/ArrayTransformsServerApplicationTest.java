@@ -24,7 +24,9 @@ import static junit.framework.Assert.assertEquals;
 
 import android.support.test.runner.AndroidJUnit4;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import java.util.Random;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -36,6 +38,8 @@ import org.junit.runner.RunWith;
  */
 @RunWith(AndroidJUnit4.class)
 public class ArrayTransformsServerApplicationTest {
+  @Rule public RetryRule retryRule = new RetryRule(3);
+
   // A document reference to read and write to.
   DocumentReference docRef;
 

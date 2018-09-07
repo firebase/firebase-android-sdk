@@ -27,6 +27,7 @@ import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -37,6 +38,8 @@ import org.junit.runner.RunWith;
  */
 @RunWith(AndroidJUnit4.class)
 public class ArrayTransformsTest {
+  @Rule public RetryRule retryRule = new RetryRule(3);
+
   // A document reference to read and write to.
   private DocumentReference docRef;
 

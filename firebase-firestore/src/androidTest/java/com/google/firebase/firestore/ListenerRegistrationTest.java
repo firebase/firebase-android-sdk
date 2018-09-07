@@ -24,11 +24,13 @@ import android.support.test.runner.AndroidJUnit4;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class ListenerRegistrationTest {
+  @Rule public RetryRule retryRule = new RetryRule(3);
 
   @After
   public void tearDown() {
