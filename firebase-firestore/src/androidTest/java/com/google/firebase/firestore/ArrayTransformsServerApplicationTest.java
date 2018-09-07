@@ -24,7 +24,6 @@ import static junit.framework.Assert.assertEquals;
 
 import android.support.test.runner.AndroidJUnit4;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import java.util.Random;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

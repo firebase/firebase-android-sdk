@@ -32,7 +32,7 @@ public class RetryRule implements TestRule {
         Throwable caughtThrowable = null;
 
         for (int i = 0; i < retryCount; i++) {
-          System.out.println("Trying...." +  i);
+          System.out.println("Trying...." + i);
           try {
             base.evaluate();
             return;
