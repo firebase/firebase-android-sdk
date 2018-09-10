@@ -47,15 +47,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 // TODO: Add the skipped tests from typescript.
 @RunWith(AndroidJUnit4.class)
 public class FirestoreTest {
-  @Rule public RetryRule retryRule = new RetryRule(3);
-
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();

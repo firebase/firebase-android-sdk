@@ -40,15 +40,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 // NOTE: The SDK has exhaustive nullability checks, but we don't exhaustively test them. :-)
 @RunWith(AndroidJUnit4.class)
 public class ValidationTest {
-  @Rule public RetryRule retryRule = new RetryRule(3);
-
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();

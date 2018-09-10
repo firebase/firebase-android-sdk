@@ -37,14 +37,11 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class ServerTimestampTest {
-  @Rule public RetryRule retryRule = new RetryRule(3);
-
   // Data written in tests via set.
   private static final Map<String, Object> setData =
       map(
