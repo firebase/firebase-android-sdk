@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class POJOTest {
-
   public static class POJO {
 
     double number;
