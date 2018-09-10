@@ -53,6 +53,7 @@ import org.junit.runner.RunWith;
 // TODO: Add the skipped tests from typescript.
 @RunWith(AndroidJUnit4.class)
 public class FirestoreTest {
+
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();

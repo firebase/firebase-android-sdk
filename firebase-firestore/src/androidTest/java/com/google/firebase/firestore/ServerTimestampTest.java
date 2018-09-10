@@ -42,6 +42,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class ServerTimestampTest {
+
   // Data written in tests via set.
   private static final Map<String, Object> setData =
       map(

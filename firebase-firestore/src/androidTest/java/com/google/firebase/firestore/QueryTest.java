@@ -42,6 +42,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class QueryTest {
+
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();

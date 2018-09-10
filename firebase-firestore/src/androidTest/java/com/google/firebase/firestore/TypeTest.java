@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class TypeTest {
+
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();

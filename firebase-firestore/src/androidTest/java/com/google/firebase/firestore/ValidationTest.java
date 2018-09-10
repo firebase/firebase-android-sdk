@@ -46,6 +46,7 @@ import org.junit.runner.RunWith;
 // NOTE: The SDK has exhaustive nullability checks, but we don't exhaustively test them. :-)
 @RunWith(AndroidJUnit4.class)
 public class ValidationTest {
+
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();
