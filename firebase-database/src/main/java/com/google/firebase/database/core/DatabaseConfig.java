@@ -20,8 +20,8 @@ import com.google.firebase.database.Logger;
 import java.util.List;
 
 /**
- * TODO: Since this is no longer public, we should merge it with Context and clean all this crap up.
- * Some methods may need to be re-added to FirebaseDatabase if we want to still expose them.
+ * TODO: Merge this class with Context and clean this up. Some methods may need to be re-added to
+ * FirebaseDatabase if we want to still expose them.
  */
 public class DatabaseConfig extends Context {
 
