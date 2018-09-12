@@ -87,6 +87,11 @@ If you don't have a suitable testing project already:
   * Download the resulting `google-services.json` file and put it in the root of
     your checkout.
 
+For now, you have to disable security rule enforcement for the Realtime
+Database, Cloud Firestore, and Cloud Storage in your test project (if running
+the integration tests for any of those). Re-enable your security rules after
+your test run.
+
 #### Running Integration Tests
 
 Integration tests can be executed on the command line by running
@@ -203,6 +208,9 @@ projects may be published as follows.
 ./gradlew -PprojectsToPublish=":firebase-firestore,:firebase-functions" \
     publishProjectsToMavenLocal
 ```
+
+To generate the Maven dependency tree under `build/` instead, you can replace
+`publishProjectsToMavenLocal` in the above command with `firebasePublish`.
 
 ### Code Formatting
 
