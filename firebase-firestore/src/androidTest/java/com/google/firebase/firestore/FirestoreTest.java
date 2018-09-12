@@ -636,7 +636,7 @@ public class FirestoreTest {
                   assertFalse(doc2.getMetadata().hasPendingWrites());
                   break;
                 default:
-                  fail("unexpected call to onSnapshot: %s", snapshot);
+                  fail("unexpected call to onSnapshot: " + snapshot);
               }
             });
     waitFor(emptyLatch);
@@ -682,7 +682,7 @@ public class FirestoreTest {
                   assertFalse(document3.getMetadata().hasPendingWrites());
                   break;
                 default:
-                  fail("unexpected event %s", snapshot);
+                  fail("unexpected event " + snapshot);
               }
             });
     waitFor(initialLatch);
@@ -717,7 +717,7 @@ public class FirestoreTest {
                   assertEquals(0, snapshot.size());
                   break;
                 default:
-                  fail("unexpected event %s", snapshot);
+                  fail("unexpected event " + snapshot);
               }
             });
     waitFor(initialLatch);
@@ -747,7 +747,7 @@ public class FirestoreTest {
                   assertEquals(map("b", 1.0), snapshot.getData());
                   break;
                 default:
-                  fail("unexpected event %s", snapshot);
+                  fail("unexpected event " + snapshot);
               }
             });
 

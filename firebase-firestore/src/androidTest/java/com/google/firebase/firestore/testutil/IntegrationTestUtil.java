@@ -160,7 +160,7 @@ public class IntegrationTestUtil {
     try {
       asyncQueue = new AsyncQueue();
     } catch (Exception e) {
-      fail(e, "Failed to initialize AsyncQueue");
+      fail("Failed to initialize AsyncQueue:" + e);
     }
 
     FirebaseFirestore firestore =
