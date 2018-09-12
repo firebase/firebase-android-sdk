@@ -287,7 +287,7 @@ public final class RemoteSerializer {
       DocumentKey key = (DocumentKey) encodedValue;
       builder.setReferenceValue(encodeResourceName(id, key.getPath()));
     } else {
-      throw fail("Can't serialize " + value);
+      throw fail("Can't serialize %s", value);
     }
 
     return builder.build();
@@ -330,7 +330,7 @@ public final class RemoteSerializer {
       case MAP_VALUE:
         return decodeMapValue(proto.getMapValue());
       default:
-        throw fail("Unknown value " + proto);
+        throw fail("Unknown value %s", proto);
     }
   }
 
@@ -446,7 +446,7 @@ public final class RemoteSerializer {
     } else if (mutation instanceof DeleteMutation) {
       builder.setDelete(encodeKey(mutation.getKey()));
     } else {
-      throw fail("unknown mutation type ", mutation.getClass());
+      throw fail("unknown mutation type %s", mutation.getClass());
     }
 
     if (!mutation.getPrecondition().isNone()) {
@@ -579,7 +579,8 @@ public final class RemoteSerializer {
         hardAssert(
             fieldTransform.getSetToServerValue()
                 == DocumentTransform.FieldTransform.ServerValue.REQUEST_TIME,
-            "Unknown transform setToServerValue: " + fieldTransform.getSetToServerValue());
+            "Unknown transform setToServerValue: %s",
+            fieldTransform.getSetToServerValue());
         return new FieldTransform(
             FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
             ServerTimestampOperation.getInstance());
@@ -857,7 +858,7 @@ public final class RemoteSerializer {
     } else if (filter instanceof NullFilter) {
       proto.setOp(UnaryFilter.Operator.IS_NULL);
     } else {
-      throw fail("Unrecognized filter: " + filter.getCanonicalId());
+      throw fail("Unrecognized filter: %s", filter.getCanonicalId());
     }
     return StructuredQuery.Filter.newBuilder().setUnaryFilter(proto).build();
   }

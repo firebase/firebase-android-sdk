@@ -718,7 +718,7 @@ public class CustomClassMapper {
           if (throwOnUnknownProperties) {
             throw new RuntimeException(message);
           } else if (warnOnUnknownProperties) {
-            Logger.warn(CustomClassMapper.class.getSimpleName(), message);
+            Logger.warn(CustomClassMapper.class.getSimpleName(), "%s", message);
           }
         }
       }

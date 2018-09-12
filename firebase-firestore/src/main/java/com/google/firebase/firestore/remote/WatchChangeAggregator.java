@@ -148,7 +148,7 @@ public class WatchChangeAggregator {
           }
           break;
         default:
-          throw fail("Unknown target watch change state: " + targetChange.getChangeType());
+          throw fail("Unknown target watch change state: %s", targetChange.getChangeType());
       }
     }
   }
@@ -187,7 +187,7 @@ public class WatchChangeAggregator {
           removeDocumentFromTarget(targetId, key, new NoDocument(key, SnapshotVersion.NONE));
         } else {
           hardAssert(
-              expectedCount == 1, "Single document existence filter with count: " + expectedCount);
+              expectedCount == 1, "Single document existence filter with count: %d", expectedCount);
         }
       } else {
         long currentSize = getCurrentDocumentCountForTarget(targetId);
