@@ -306,7 +306,7 @@ public class ValidationTest {
                             try {
                               transaction.get(badRef);
                             } catch (FirebaseFirestoreException e) {
-                              fail("transaction.get() triggered wrong exception: %s", e);
+                              fail("transaction.get() triggered wrong exception: " + e);
                             }
                           },
                           reason);
