@@ -104,11 +104,14 @@ class PublishingPlugin implements Plugin<Project> {
                             from sub.components.android
                             pom {
                                 licenses {
-                                    //TODO(vkryachko): change to apache2 before open-sourcing.
                                     license {
-                                        name = 'Android Software Development Kit License'
-                                        url = 'https://developer.android.com/studio/terms.html'
+                                        name = 'The Apache Software License, Version 2.0'
+                                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
                                     }
+                                }
+                                scm {
+                                    connection = 'scm:git:https://github.com/firebase/firebase-android-sdk.git'
+                                    url = 'https://github.com/firebase/firebase-android-sdk'
                                 }
                             }
                             publisher.decorate(sub, it)
