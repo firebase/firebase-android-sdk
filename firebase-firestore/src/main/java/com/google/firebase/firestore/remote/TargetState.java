@@ -106,7 +106,7 @@ final class TargetState {
           removedDocuments = removedDocuments.insert(key);
           break;
         default:
-          throw fail("Encountered invalid change type: " + changeType);
+          throw fail("Encountered invalid change type: %s", changeType);
       }
     }
 

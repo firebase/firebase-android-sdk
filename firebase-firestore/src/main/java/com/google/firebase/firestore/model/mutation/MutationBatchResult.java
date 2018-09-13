@@ -55,10 +55,9 @@ public final class MutationBatchResult {
       ByteString streamToken) {
     Assert.hardAssert(
         batch.getMutations().size() == mutationResults.size(),
-        "Mutations sent "
-            + batch.getMutations().size()
-            + " must equal results received "
-            + mutationResults.size());
+        "Mutations sent %d must equal results received %d",
+        batch.getMutations().size(),
+        mutationResults.size());
     ImmutableSortedMap<DocumentKey, SnapshotVersion> docVersions =
         DocumentCollections.emptyVersionMap();
     List<Mutation> mutations = batch.getMutations();

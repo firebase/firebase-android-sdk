@@ -344,7 +344,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       }
       return query;
     } else {
-      throw Assert.fail("Invalid query: " + querySpec);
+      throw Assert.fail("Invalid query: %s", querySpec);
     }
   }
 
@@ -761,7 +761,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       throw Assert.fail(
           "'applyClientState' is not supported on Android and should only be used in multi-client tests");
     } else {
-      throw Assert.fail("Unknown step: " + step);
+      throw Assert.fail("Unknown step: %s", step);
     }
   }
 

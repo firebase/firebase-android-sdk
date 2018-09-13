@@ -94,7 +94,7 @@ public class RelationFilter extends Filter {
       case GREATER_THAN_OR_EQUAL:
         return comp >= 0;
       default:
-        throw Assert.fail("Unknown operator: ", operator);
+        throw Assert.fail("Unknown operator: %s", operator);
     }
   }
 
