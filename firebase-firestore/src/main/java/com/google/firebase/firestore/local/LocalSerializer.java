@@ -68,7 +68,7 @@ public final class LocalSerializer {
         return decodeNoDocument(proto.getNoDocument());
 
       default:
-        throw fail("Unknown MaybeDocument " + proto);
+        throw fail("Unknown MaybeDocument %s", proto);
     }
   }
 

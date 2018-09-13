@@ -376,7 +376,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       handleRemoteEvent(event);
     } else {
       QueryView queryView = queryViewsByTarget.get(targetId);
-      hardAssert(queryView != null, "Unknown target: " + targetId);
+      hardAssert(queryView != null, "Unknown target: %s", targetId);
       localStore.releaseQuery(queryView.getQuery());
       removeAndCleanup(queryView);
       callback.onError(queryView.getQuery(), error);

@@ -187,10 +187,10 @@ class OnlineStateTracker {
             reason);
 
     if (shouldWarnClientIsOffline) {
-      Logger.warn(LOG_TAG, message);
+      Logger.warn(LOG_TAG, "%s", message);
       shouldWarnClientIsOffline = false;
     } else {
-      Logger.debug(LOG_TAG, message);
+      Logger.debug(LOG_TAG, "%s", message);
     }
   }
 
