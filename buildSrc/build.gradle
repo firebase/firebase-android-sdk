@@ -17,6 +17,11 @@ plugins {
 }
 
 repositories {
+    if (System.getenv().containsKey("FIREBASE_CI")) {
+        maven {
+            url "http://maven-proxy/"
+        }
+    }
     maven {
         url 'https://maven.google.com/'
     }
