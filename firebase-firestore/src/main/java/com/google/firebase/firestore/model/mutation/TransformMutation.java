@@ -126,7 +126,7 @@ public final class TransformMutation extends Mutation {
    * method is guaranteed to be safe.
    */
   private Document requireDocument(@Nullable MaybeDocument maybeDoc) {
-    hardAssert(maybeDoc instanceof Document, "Unknown MaybeDocument type " + maybeDoc);
+    hardAssert(maybeDoc instanceof Document, "Unknown MaybeDocument type %s", maybeDoc);
     Document doc = (Document) maybeDoc;
     hardAssert(doc.getKey().equals(getKey()), "Can only transform a document with the same key");
     return doc;

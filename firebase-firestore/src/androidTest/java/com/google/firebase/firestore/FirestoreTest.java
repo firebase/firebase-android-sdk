@@ -636,7 +636,7 @@ public class FirestoreTest {
                   assertFalse(doc2.getMetadata().hasPendingWrites());
                   break;
                 default:
-                  fail("unexpected call to onSnapshot:" + snapshot);
+                  fail("unexpected call to onSnapshot: " + snapshot);
               }
             });
     waitFor(emptyLatch);

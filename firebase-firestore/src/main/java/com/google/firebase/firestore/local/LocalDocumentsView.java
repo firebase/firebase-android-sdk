@@ -143,7 +143,7 @@ final class LocalDocumentsView {
         } else if (mutatedDoc instanceof Document) {
           results = results.insert(key, (Document) mutatedDoc);
         } else {
-          throw fail("Unknown document type: " + mutatedDoc);
+          throw fail("Unknown document type: %s", mutatedDoc);
         }
       }
     }

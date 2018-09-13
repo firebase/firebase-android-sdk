@@ -39,7 +39,7 @@ public class EventAccumulator<T> {
   public EventListener<T> listener() {
     return (value, error) -> {
       synchronized (EventAccumulator.this) {
-        hardAssert(error == null, "Unexpected error: " + error);
+        hardAssert(error == null, "Unexpected error: %s", error);
         Log.i("EventAccumulator", "Received new event: " + value);
         events.add(value);
         checkFulfilled();
