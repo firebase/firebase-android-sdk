@@ -51,7 +51,7 @@ public class UserData {
     Update,
     /**
      * Indicates the source is a where clause, cursor bound, arrayUnion() element, etc. Of note,
-     * isWrite(Argument) will return false.
+     * ParseContext.isWrite() will return false.
      */
     Argument
   }
@@ -66,7 +66,6 @@ public class UserData {
    * </ul>
    */
   public static class ParseAccumulator {
-
     /**
      * What type of API method provided the data being parsed; useful for determining which error
      * conditions apply during parsing and providing better error messages.
@@ -99,7 +98,9 @@ public class UserData {
       return new ParseContext(this, FieldPath.EMPTY_PATH, /* arrayElement= */ false);
     }
 
-    /** Returns 'true' if 'fieldPath' was traversed when creating this context. */
+    /**
+     * Returns {@code true} if the given {@code fieldPath} was encountered in the current document.
+     */
     public boolean contains(FieldPath fieldPath) {
       for (FieldPath field : fieldMask) {
         if (fieldPath.isPrefixOf(field)) {
@@ -130,7 +131,7 @@ public class UserData {
      * Wraps the given {@code data} along with any accumulated field mask and transforms into a
      * ParsedSetData representing a user-issued merge.
      *
-     * @return ParsedSetData that has consumed the contents of this ParseAccumulator.
+     * @return ParsedSetData that wraps the contents of this ParseAccumulator.
      */
     public ParsedSetData toMergeData(ObjectValue data) {
       return new ParsedSetData(
@@ -145,7 +146,7 @@ public class UserData {
      * @param data The converted user data.
      * @param userFieldMask The user-supplied field mask that masks out any changes that have been
      *     accumulated so far.
-     * @return ParsedSetData that has consumed the contents of this ParseAccumulator. The field mask
+     * @return ParsedSetData that wraps the contents of this ParseAccumulator. The field mask
      *     in the result will be the userFieldMask and only transforms that are covered by the mask
      *     will be included.
      */
@@ -166,7 +167,7 @@ public class UserData {
      * Wraps the given {@code data} along with any accumulated transforms into a ParsedSetData that
      * represents a user-issued Set.
      *
-     * @return ParsedSetData that has consumed the contents of this ParseAccumulator.
+     * @return ParsedSetData that wraps the contents of this ParseAccumulator.
      */
     public ParsedSetData toSetData(ObjectValue data) {
       return new ParsedSetData(data, /* fieldMask= */ null, unmodifiableList(fieldTransforms));
@@ -176,7 +177,7 @@ public class UserData {
      * Wraps the given {@code data} along with any accumulated field mask and transforms into a
      * ParsedUpdateData that represents a user-issued Update.
      *
-     * @return ParsedSetData that has consumed the contents of this ParseAccumulator.
+     * @return ParsedSetData that wraps the contents of this ParseAccumulator.
      */
     public ParsedUpdateData toUpdateData(ObjectValue data) {
       return new ParsedUpdateData(
@@ -184,7 +185,11 @@ public class UserData {
     }
   }
 
-  /** A "context" object passed around while parsing user data. */
+  /**
+   * A "context" object that wraps a ParseAccumulator and refers to a specific location in a
+   * user-supplied document. Instances are created and passed around while traversing user data
+   * during parsing in order to conveniently accumulate data in the ParseAccumulator.
+   */
   public static class ParseContext {
 
     private final Pattern reservedFieldRegex = Pattern.compile("^__.*__$");
@@ -201,6 +206,7 @@ public class UserData {
     /**
      * Initializes a ParseContext with the given source and path.
      *
+     * @param accumulator The ParseAccumulator on which to add results.
      * @param path A path within the object being parsed. This could be an empty path (in which case
      *     the context represents the root of the data being parsed), or a nonempty path (indicating
      *     the context represents a nested location within the data).
