@@ -12,5 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version=16.0.3
-latestReleasedVersion=16.0.2
+import logging
+
+_logger = logging.getLogger('fireci.emulator')
+
+
+# TODO(vkryachko): start/shutdown the emulator.
+class EmulatorHandler:
+
+  def __init__(self, artifacts_dir):
+    self._artifacts_dir = artifacts_dir
+
+  def __enter__(self):
+    _logger.debug('Pretend to start the emulator(TODO)')
+
+  def __exit__(self, exception_type, exception_value, traceback):
+    _logger.debug('Pretend to stop the emulator(TODO)')

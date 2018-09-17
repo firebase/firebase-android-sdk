@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+#
 # Copyright 2018 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,5 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version=16.0.3
-latestReleasedVersion=16.0.2
+import os
+from setuptools import find_packages, setup
+
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+
+requires = []
+
+setup(
+    name='fireci',
+    version='0.1',
+    install_requires=[
+        'click==6.7',
+    ],
+    packages=find_packages(exclude=['tests']),
+    entry_points={
+        'console_scripts': ['fireci = fireci.main:cli'],
+    },
+)

@@ -12,5 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version=16.0.3
-latestReleasedVersion=16.0.2
+import logging
+
+from . import commands
+from .internal import main
+
+logging.basicConfig(
+    format='%(name)s: [%(levelname)s] %(message)s',
+    level=logging.DEBUG,
+)
+
+cli = main

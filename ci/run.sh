@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+#
 # Copyright 2018 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,5 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version=16.0.3
-latestReleasedVersion=16.0.2
+set -e
+
+DIRECTORY=$(cd `dirname $0` && pwd)
+echo $DIRECTORY
+$DIRECTORY/fireci/setup.py develop
+fireci $@

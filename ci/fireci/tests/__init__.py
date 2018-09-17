@@ -12,5 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version=16.0.3
-latestReleasedVersion=16.0.2
+import logging
+
+logging.disable(logging.CRITICAL)
