@@ -6,3 +6,4 @@ captures/
 local.properties
 google-services.json
 /build.gradle
+_artifacts
