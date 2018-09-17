@@ -59,9 +59,11 @@ public class UserData {
   /**
    * Accumulates the side-effect results of parsing user input. These include:
    *
-   * <p>* The field mask naming all the fields that have values. * The transform operations that
-   * must be applied in the batch to implement server-generated behavior. In the wire protocol these
-   * are encoded separately from the Value.
+   * <ul>
+   *   <li>The field mask naming all the fields that have values.</li>
+   *   <li>The transform operations that must be applied in the batch to implement server-generated
+   *     behavior. In the wire protocol these are encoded separately from the Value.</li>
+   * </ul>
    */
   public static class ParseAccumulator {
 
