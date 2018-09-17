@@ -18,8 +18,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import com.google.firebase.firestore.UserDataConverter.ParsedDocumentData;
-import com.google.firebase.firestore.UserDataConverter.ParsedUpdateData;
+import com.google.firebase.firestore.core.UserData.ParsedSetData;
+import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
@@ -141,7 +141,7 @@ public class Transaction {
   }
 
   /** Stores a set mutation for the given key and value, to be committed when commit() is called. */
-  public void set(DocumentKey key, ParsedDocumentData data) {
+  public void set(DocumentKey key, ParsedSetData data) {
     write(data.toMutationList(key, precondition(key)));
   }
 
