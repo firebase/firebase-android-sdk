@@ -22,11 +22,11 @@ _logger = logging.getLogger('fireci.gradle')
 ADB_INSTALL_TIMEOUT = '5'
 
 
-def run(*args, gradle_opts=[], workdir=None):
+def run(*args, gradle_opts='', workdir=None):
   """Invokes gradle with specified args and gradle_opts."""
   new_env = dict(os.environ)
   if gradle_opts:
-    new_env['GRADLE_OPTS'] = ' '.join(gradle_opts)
+    new_env['GRADLE_OPTS'] = gradle_opts
   new_env[
       'ADB_INSTALL_TIMEOUT'] = ADB_INSTALL_TIMEOUT  # 5 minutes, rather than 2 minutes
 

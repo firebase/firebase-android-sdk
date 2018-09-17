@@ -22,35 +22,7 @@ from .fileutil import (
     create_artifacts,
     in_tempdir,
 )
-
-_SCRIPT_WITH_EXIT_TEMPLATE = """\
-#!/usr/bin/env python3
-import sys
-sys.exit({})
-"""
-
-
-def script_with_exit(exit_code):
-  return _SCRIPT_WITH_EXIT_TEMPLATE.format(exit_code)
-
-
-_SCRIPT_WITH_EXPECTED_ARGUMENTS_TEMPLATE = """\
-#!/usr/bin/env python3
-import sys, os
-expected_args = [{}]
-expected_env = {}
-if sys.argv != expected_args:
-    raise ValueError('Expected args: %s, but got %s' % (expected_args, sys.argv))
-for k, v in expected_env.items():
-    envval = os.environ.get(k, '')
-    if envval != v:
-        raise ValueError("Expected env[%s] == '%s', but got '%s'" % (k, v, envval))
-"""
-
-
-def script_with_expected_arguments(args, env):
-  arg_string = ', '.join(['"{}"'.format(arg) for arg in args])
-  return _SCRIPT_WITH_EXPECTED_ARGUMENTS_TEMPLATE.format(arg_string, env)
+from . import scripts
 
 
 class GradleTest(unittest.TestCase):
@@ -58,13 +30,13 @@ class GradleTest(unittest.TestCase):
   @in_tempdir
   def test_when_gradle_suceeds_should_not_throw(self):
     create_artifacts(
-        Artifact('gradlew', content=script_with_exit(0), mode=0o744))
+        Artifact('gradlew', content=scripts.with_exit(0), mode=0o744))
     self.assertEqual(gradle.run('tasks'), 0)
 
   @in_tempdir
   def test_when_gradle_suceeds_should_not_throw(self):
     create_artifacts(
-        Artifact('gradlew', content=script_with_exit(1), mode=0o744))
+        Artifact('gradlew', content=scripts.with_exit(1), mode=0o744))
     self.assertRaises(subprocess.CalledProcessError,
                       lambda: gradle.run('tasks'))
 
@@ -75,11 +47,11 @@ class GradleTest(unittest.TestCase):
     create_artifacts(
         Artifact(
             'gradlew',
-            content=script_with_expected_arguments(
+            content=scripts.with_expected_arguments(
                 ['./gradlew'] + args, {
                     'GRADLE_OPTS': gradle_opts,
                     'ADB_INSTALL_TIMEOUT': gradle.ADB_INSTALL_TIMEOUT
                 }),
             mode=0o744,
         ))
-    self.assertEqual(gradle.run(*args, gradle_opts=gradle_opts.split()), 0)
+    self.assertEqual(gradle.run(*args, gradle_opts=gradle_opts), 0)
