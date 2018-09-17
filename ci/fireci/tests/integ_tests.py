@@ -79,7 +79,8 @@ class CliInvocationTests(unittest.TestCase):
     self.assertNotEqual(result.exit_code, 0)
 
   @in_tempdir
-  def test_smoke_test_when_build_succeeds_and_tests_succeed_should_succeed(self):
+  def test_smoke_test_when_build_succeeds_and_tests_succeed_should_succeed(
+      self):
     create_artifacts(
         Artifact('gradlew', content=scripts.with_exit(0), mode=0o744),
         Artifact('test-apps/gradlew', content=scripts.with_exit(0), mode=0o744),
