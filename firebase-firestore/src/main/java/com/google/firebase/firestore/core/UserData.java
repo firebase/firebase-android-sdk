@@ -60,9 +60,9 @@ public class UserData {
    * Accumulates the side-effect results of parsing user input. These include:
    *
    * <ul>
-   *   <li>The field mask naming all the fields that have values.</li>
+   *   <li>The field mask naming all the fields that have values.
    *   <li>The transform operations that must be applied in the batch to implement server-generated
-   *     behavior. In the wire protocol these are encoded separately from the Value.</li>
+   *       behavior. In the wire protocol these are encoded separately from the Value.
    * </ul>
    */
   public static class ParseAccumulator {
@@ -146,9 +146,9 @@ public class UserData {
      * @param data The converted user data.
      * @param userFieldMask The user-supplied field mask that masks out any changes that have been
      *     accumulated so far.
-     * @return ParsedSetData that wraps the contents of this ParseAccumulator. The field mask
-     *     in the result will be the userFieldMask and only transforms that are covered by the mask
-     *     will be included.
+     * @return ParsedSetData that wraps the contents of this ParseAccumulator. The field mask in the
+     *     result will be the userFieldMask and only transforms that are covered by the mask will be
+     *     included.
      */
     public ParsedSetData toMergeData(ObjectValue data, FieldMask userFieldMask) {
 
@@ -216,9 +216,7 @@ public class UserData {
      * @param arrayElement Whether or not this context corresponds to an element of an array.
      */
     private ParseContext(
-        ParseAccumulator accumulator,
-        @Nullable FieldPath path,
-        boolean arrayElement) {
+        ParseAccumulator accumulator, @Nullable FieldPath path, boolean arrayElement) {
       this.accumulator = accumulator;
       this.path = path;
       this.arrayElement = arrayElement;
@@ -230,9 +228,8 @@ public class UserData {
     }
 
     /**
-     * What type of API method provided the data being parsed; useful for
-     * determining which error conditions apply during parsing and providing
-     * better error messages.
+     * What type of API method provided the data being parsed; useful for determining which error
+     * conditions apply during parsing and providing better error messages.
      */
     public Source getDataSource() {
       return accumulator.dataSource;
@@ -242,9 +239,7 @@ public class UserData {
       return path;
     }
 
-    /**
-     * Returns true for the non-query parse contexts (Set, MergeSet and Update).
-     */
+    /** Returns true for the non-query parse contexts (Set, MergeSet and Update). */
     public boolean isWrite() {
       switch (accumulator.dataSource) {
         case Set: // fall through
@@ -254,24 +249,21 @@ public class UserData {
         case Argument:
           return false;
         default:
-          throw Assert.fail("Unexpected case for UserDataSource: %s", accumulator.dataSource.name());
+          throw Assert.fail(
+              "Unexpected case for UserDataSource: %s", accumulator.dataSource.name());
       }
     }
 
     public ParseContext childContext(String fieldName) {
       FieldPath childPath = path == null ? null : path.append(fieldName);
-      ParseContext context =
-          new ParseContext(
-              accumulator, childPath, /*arrayElement=*/ false);
+      ParseContext context = new ParseContext(accumulator, childPath, /*arrayElement=*/ false);
       context.validatePathSegment(fieldName);
       return context;
     }
 
     public ParseContext childContext(FieldPath fieldPath) {
       FieldPath childPath = path == null ? null : path.append(fieldPath);
-      ParseContext context =
-          new ParseContext(
-              accumulator, childPath, /*arrayElement=*/ false);
+      ParseContext context = new ParseContext(accumulator, childPath, /*arrayElement=*/ false);
       context.validatePath();
       return context;
     }
@@ -279,8 +271,7 @@ public class UserData {
     @SuppressWarnings("unused")
     public ParseContext childContext(int arrayIndex) {
       // TODO: We don't support array paths right now; so make path null.
-      return new ParseContext(
-          accumulator, /*path=*/ null, /*arrayElement=*/ true);
+      return new ParseContext(accumulator, /*path=*/ null, /*arrayElement=*/ true);
     }
 
     /** Adds the given {@code fieldPath} to the accumulated FieldMask. */
