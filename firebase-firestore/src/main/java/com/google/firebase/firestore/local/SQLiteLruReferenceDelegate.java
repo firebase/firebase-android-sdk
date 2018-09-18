@@ -103,7 +103,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public int removeQueries(long upperBound, Set<Integer> activeTargetIds) {
+  public int removeTargets(long upperBound, Set<Integer> activeTargetIds) {
     return persistence.getQueryCache().removeQueries(upperBound, activeTargetIds);
   }
 

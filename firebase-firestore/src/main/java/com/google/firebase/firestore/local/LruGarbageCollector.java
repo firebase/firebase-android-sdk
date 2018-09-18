@@ -80,8 +80,8 @@ class LruGarbageCollector {
    * Removes targets with a sequence number equal to or less than the given upper bound, and removes
    * document associations with those targets.
    */
-  int removeQueries(long upperBound, Set<Integer> liveQueries) {
-    return delegate.removeQueries(upperBound, liveQueries);
+  int removeTargets(long upperBound, Set<Integer> activeTargetIds) {
+    return delegate.removeTargets(upperBound, activeTargetIds);
   }
 
   /**

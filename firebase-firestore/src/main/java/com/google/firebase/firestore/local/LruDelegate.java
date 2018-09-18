@@ -37,7 +37,7 @@ interface LruDelegate {
    *
    * @return the number of targets removed.
    */
-  int removeQueries(long upperBound, Set<Integer> activeTargetIds);
+  int removeTargets(long upperBound, Set<Integer> activeTargetIds);
 
   /**
    * Removes all unreferenced documents from the cache that have a sequence number less than or
