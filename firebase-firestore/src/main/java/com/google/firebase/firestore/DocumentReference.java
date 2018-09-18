@@ -26,10 +26,10 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import com.google.firebase.firestore.UserDataConverter.ParsedDocumentData;
-import com.google.firebase.firestore.UserDataConverter.ParsedUpdateData;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.QueryListener;
+import com.google.firebase.firestore.core.UserData.ParsedSetData;
+import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -166,7 +166,7 @@ public class DocumentReference {
   public Task<Void> set(@NonNull Map<String, Object> data, @NonNull SetOptions options) {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
-    ParsedDocumentData parsed =
+    ParsedSetData parsed =
         options.isMerge()
             ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
             : firestore.getDataConverter().parseSetData(data);
