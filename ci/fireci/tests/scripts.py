@@ -61,7 +61,10 @@ def with_expected_arguments_and_artifacts(args, env, *artifacts):
 
 
 _SCRIPT_WAITING_FOR_STATUS = """\
-#!/usr/bin/env python3 -u
+#!/bin/sh
+'''true'
+exec python3 -u "$0" "$@"
+'''
 import sys
 print(' '.join(sys.argv), file=sys.stdout)
 print('stderr', file=sys.stderr)
