@@ -35,7 +35,6 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.Transaction.Function;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.Consumer;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +43,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 // NOTE: The SDK has exhaustive nullability checks, but we don't exhaustively test them. :-)
+@SuppressWarnings("ConstantConditions")
 @RunWith(AndroidJUnit4.class)
 public class ValidationTest {
 
@@ -387,9 +387,8 @@ public class ValidationTest {
     DocumentReference doc = testDocument();
     // This would result in a directly nested array which is not supported.
     String reason = "Invalid data. Nested arrays are not supported";
-    expectError(() -> doc.set(map("x", FieldValue.arrayUnion(1, Arrays.asList("nested")))), reason);
-    expectError(
-        () -> doc.set(map("x", FieldValue.arrayRemove(1, Arrays.asList("nested")))), reason);
+    expectError(() -> doc.set(map("x", FieldValue.arrayUnion(1, asList("nested")))), reason);
+    expectError(() -> doc.set(map("x", FieldValue.arrayRemove(1, asList("nested")))), reason);
   }
 
   @Test
