@@ -176,7 +176,9 @@ public final class LocalStore {
             if (!batches.isEmpty()) {
               // NOTE: This could be more efficient if we had a removeBatchesThroughBatchID, but
               // this set should be very small and this code should go away eventually.
-              mutationQueue.removeMutationBatches(batches);
+              for (MutationBatch batch : batches) {
+                mutationQueue.removeMutationBatch(batch);
+              }
             }
           }
         });
@@ -641,9 +643,9 @@ public final class LocalStore {
       for (Mutation mutation : batch.getMutations()) {
         affectedDocs.add(mutation.getKey());
       }
+      mutationQueue.removeMutationBatch(batch);
     }
 
-    mutationQueue.removeMutationBatches(batches);
     return affectedDocs;
   }
 

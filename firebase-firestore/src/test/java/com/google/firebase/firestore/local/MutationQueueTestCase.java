@@ -143,7 +143,7 @@ public abstract class MutationQueueTestCase {
         name.getMethodName(),
         () -> {
           mutationQueue.acknowledgeBatch(batch1, WriteStream.EMPTY_STREAM_TOKEN);
-          mutationQueue.removeMutationBatches(asList(batch1));
+          mutationQueue.removeMutationBatch(batch1);
         });
 
     assertEquals(0, batchCount());
@@ -536,7 +536,12 @@ public abstract class MutationQueueTestCase {
   /** Calls removeMutationBatches on the mutation queue in a new transaction and commits. */
   private void removeMutationBatches(MutationBatch... batches) {
     persistence.runTransaction(
-        "Remove mutation batches", () -> mutationQueue.removeMutationBatches(asList(batches)));
+        "Remove mutation batches",
+        () -> {
+          for (MutationBatch batch : batches) {
+            mutationQueue.removeMutationBatch(batch);
+          }
+        });
   }
 
   /** Returns the number of mutation batches in the mutation queue. */

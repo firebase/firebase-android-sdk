@@ -137,18 +137,14 @@ interface MutationQueue {
   List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query);
 
   /**
-   * Removes the given mutation batches from the queue. This is useful in two circumstances:
+   * Removes the given mutation batch from the queue. This is useful in two circumstances:
    *
    * <ul>
    *   <li>Removing applied mutations from the head of the queue
    *   <li>Removing rejected mutations from anywhere in the queue
    * </ul>
-   *
-   * <p>In both cases, the array of mutations to remove must be a contiguous range of batchIds. This
-   * is most easily accomplished by loading mutations with {@link
-   * #getAllMutationBatchesThroughBatchId}.
    */
-  void removeMutationBatches(List<MutationBatch> batches);
+  void removeMutationBatch(MutationBatch batch);
 
   /** Performs a consistency check, examining the mutation queue for any leaks, if possible. */
   void performConsistencyCheck();
