@@ -28,7 +28,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   private ListenSequence listenSequence;
   private long currentSequenceNumber;
   private final LruGarbageCollector garbageCollector;
-  private ReferenceSet additionalReferences;
+  private ReferenceSet inMemoryPins;
 
   SQLiteLruReferenceDelegate(SQLitePersistence persistence) {
     this.currentSequenceNumber = ListenSequence.INVALID;
@@ -88,8 +88,8 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public void setAdditionalReferences(ReferenceSet additionalReferences) {
-    this.additionalReferences = additionalReferences;
+  public void setInMemoryPins(ReferenceSet inMemoryPins) {
+    this.inMemoryPins = inMemoryPins;
   }
 
   @Override
@@ -126,7 +126,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
    * equal to the upper bound for the collection run.
    */
   private boolean isPinned(DocumentKey key) {
-    if (additionalReferences.containsKey(key)) {
+    if (inMemoryPins.containsKey(key)) {
       return true;
     }
 

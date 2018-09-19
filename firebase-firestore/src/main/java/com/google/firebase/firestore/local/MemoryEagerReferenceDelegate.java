@@ -21,7 +21,7 @@ import java.util.Set;
 
 /** Provides eager garbage collection for MemoryPersistence. */
 class MemoryEagerReferenceDelegate implements ReferenceDelegate {
-  private ReferenceSet additionalReferences;
+  private ReferenceSet inMemoryPins;
   private final MemoryPersistence persistence;
   private Set<DocumentKey> orphanedDocuments;
 
@@ -35,8 +35,8 @@ class MemoryEagerReferenceDelegate implements ReferenceDelegate {
   }
 
   @Override
-  public void setAdditionalReferences(ReferenceSet additionalReferences) {
-    this.additionalReferences = additionalReferences;
+  public void setInMemoryPins(ReferenceSet inMemoryPins) {
+    this.inMemoryPins = inMemoryPins;
   }
 
   @Override
@@ -108,7 +108,7 @@ class MemoryEagerReferenceDelegate implements ReferenceDelegate {
       return true;
     }
 
-    if (additionalReferences != null && additionalReferences.containsKey(key)) {
+    if (inMemoryPins != null && inMemoryPins.containsKey(key)) {
       return true;
     }
 

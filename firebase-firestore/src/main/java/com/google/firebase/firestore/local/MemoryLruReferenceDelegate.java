@@ -27,7 +27,7 @@ import java.util.Set;
 class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   private final MemoryPersistence persistence;
   private final Map<DocumentKey, Long> orphanedSequenceNumbers;
-  private ReferenceSet additionalReferences;
+  private ReferenceSet inMemoryPins;
   private final LruGarbageCollector garbageCollector;
   private final ListenSequence listenSequence;
   private long currentSequenceNumber;
@@ -88,8 +88,8 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public void setAdditionalReferences(ReferenceSet additionalReferences) {
-    this.additionalReferences = additionalReferences;
+  public void setInMemoryPins(ReferenceSet inMemoryPins) {
+    this.inMemoryPins = inMemoryPins;
   }
 
   @Override
@@ -144,7 +144,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
       return true;
     }
 
-    if (additionalReferences.containsKey(key)) {
+    if (inMemoryPins.containsKey(key)) {
       return true;
     }
 

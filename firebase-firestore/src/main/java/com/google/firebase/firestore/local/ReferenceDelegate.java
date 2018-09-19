@@ -32,7 +32,7 @@ interface ReferenceDelegate {
    * Registers a ReferenceSet of documents that should be considered 'referenced' and not eligible
    * for removal during garbage collection.
    */
-  void setAdditionalReferences(ReferenceSet additionalReferences);
+  void setInMemoryPins(ReferenceSet inMemoryPins);
 
   /** Notify the delegate that the given document was added to a target. */
   void addReference(DocumentKey key);
