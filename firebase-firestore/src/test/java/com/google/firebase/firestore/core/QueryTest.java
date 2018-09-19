@@ -44,9 +44,9 @@ public class QueryTest {
   @Test
   public void testMatchesBasedDocumentKey() {
     ResourcePath queryPath = ResourcePath.fromString("rooms/eros/messages/1");
-    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"), false);
-    Document doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"), false);
-    Document doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"), false);
+    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
+    Document doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
+    Document doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"));
 
     Query query = Query.atPath(queryPath);
     assertTrue(query.matches(doc1));
@@ -57,10 +57,10 @@ public class QueryTest {
   @Test
   public void testMatchesShallowAncestorQuery() {
     ResourcePath queryPath = ResourcePath.fromString("rooms/eros/messages");
-    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"), false);
-    Document doc1meta = doc("rooms/eros/messages/1/meta/1", 0, map("meta", "meta-value"), false);
-    Document doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"), false);
-    Document doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"), false);
+    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
+    Document doc1meta = doc("rooms/eros/messages/1/meta/1", 0, map("meta", "meta-value"));
+    Document doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
+    Document doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"));
 
     Query query = Query.atPath(queryPath);
     assertTrue(query.matches(doc1));
@@ -72,8 +72,8 @@ public class QueryTest {
   @Test
   public void testEmptyFieldsAreAllowedForQueries() {
     ResourcePath queryPath = ResourcePath.fromString("rooms/eros/messages");
-    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"), false);
-    Document doc2 = doc("rooms/eros/messages/2", 0, map(), false);
+    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
+    Document doc2 = doc("rooms/eros/messages/2", 0, map());
 
     Query query = Query.atPath(queryPath).filter(filter("text", "==", "msg1"));
     assertTrue(query.matches(doc1));
@@ -87,11 +87,11 @@ public class QueryTest {
     Query query2 =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "<=", 2));
 
-    Document doc1 = doc("collection/1", 0, map("sort", 1), false);
-    Document doc2 = doc("collection/2", 0, map("sort", 2), false);
-    Document doc3 = doc("collection/3", 0, map("sort", 3), false);
-    Document doc4 = doc("collection/4", 0, map("sort", false), false);
-    Document doc5 = doc("collection/5", 0, map("sort", "string"), false);
+    Document doc1 = doc("collection/1", 0, map("sort", 1));
+    Document doc2 = doc("collection/2", 0, map("sort", 2));
+    Document doc3 = doc("collection/3", 0, map("sort", 3));
+    Document doc4 = doc("collection/4", 0, map("sort", false));
+    Document doc5 = doc("collection/5", 0, map("sort", "string"));
 
     assertFalse(query1.matches(doc1));
     assertTrue(query1.matches(doc2));
@@ -164,11 +164,11 @@ public class QueryTest {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("sort", "==", Double.NaN));
-    Document doc1 = doc("collection/1", 0, map("sort", Double.NaN), false);
-    Document doc2 = doc("collection/2", 0, map("sort", 2), false);
-    Document doc3 = doc("collection/3", 0, map("sort", 3.1), false);
-    Document doc4 = doc("collection/4", 0, map("sort", false), false);
-    Document doc5 = doc("collection/5", 0, map("sort", "string"), false);
+    Document doc1 = doc("collection/1", 0, map("sort", Double.NaN));
+    Document doc2 = doc("collection/2", 0, map("sort", 2));
+    Document doc3 = doc("collection/3", 0, map("sort", 3.1));
+    Document doc4 = doc("collection/4", 0, map("sort", false));
+    Document doc5 = doc("collection/5", 0, map("sort", "string"));
 
     assertTrue(query.matches(doc1));
     assertFalse(query.matches(doc2));
@@ -181,11 +181,11 @@ public class QueryTest {
   public void testNullFilter() {
     Query query =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "==", null));
-    Document doc1 = doc("collection/1", 0, map("sort", null), false);
-    Document doc2 = doc("collection/2", 0, map("sort", 2), false);
-    Document doc3 = doc("collection/3", 0, map("sort", 3.1), false);
-    Document doc4 = doc("collection/4", 0, map("sort", false), false);
-    Document doc5 = doc("collection/5", 0, map("sort", "string"), false);
+    Document doc1 = doc("collection/1", 0, map("sort", null));
+    Document doc2 = doc("collection/2", 0, map("sort", 2));
+    Document doc3 = doc("collection/3", 0, map("sort", 3.1));
+    Document doc4 = doc("collection/4", 0, map("sort", false));
+    Document doc5 = doc("collection/5", 0, map("sort", "string"));
 
     assertTrue(query.matches(doc1));
     assertFalse(query.matches(doc2));
@@ -210,13 +210,13 @@ public class QueryTest {
     Query query2 =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", ">=", 2));
 
-    Document doc1 = doc("collection/1", 0, map("sort", 2), false);
-    Document doc2 = doc("collection/2", 0, map("sort", asList()), false);
-    Document doc3 = doc("collection/3", 0, map("sort", asList(1)), false);
-    Document doc4 = doc("collection/4", 0, map("sort", map("foo", 2)), false);
-    Document doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")), false);
-    Document doc6 = doc("collection/6", 0, map("sort", map()), false);
-    Document doc7 = doc("collection/7", 0, map("sort", asList(3, 1)), false);
+    Document doc1 = doc("collection/1", 0, map("sort", 2));
+    Document doc2 = doc("collection/2", 0, map("sort", asList()));
+    Document doc3 = doc("collection/3", 0, map("sort", asList(1)));
+    Document doc4 = doc("collection/4", 0, map("sort", map("foo", 2)));
+    Document doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")));
+    Document doc6 = doc("collection/6", 0, map("sort", map()));
+    Document doc7 = doc("collection/7", 0, map("sort", asList(3, 1)));
 
     assertTrue(query1.matches(doc1));
     assertFalse(query1.matches(doc2));
@@ -239,11 +239,11 @@ public class QueryTest {
   public void testDoesNotRemoveComplexObjectsWithOrderBy() {
     Query query = Query.atPath(ResourcePath.fromString("collection")).orderBy(orderBy("sort"));
 
-    Document doc1 = doc("collection/1", 0, map("sort", 2), false);
-    Document doc2 = doc("collection/2", 0, map("sort", asList()), false);
-    Document doc3 = doc("collection/3", 0, map("sort", asList(1)), false);
-    Document doc4 = doc("collection/4", 0, map("sort", map("foo", 2)), false);
-    Document doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")), false);
+    Document doc1 = doc("collection/1", 0, map("sort", 2));
+    Document doc2 = doc("collection/2", 0, map("sort", asList()));
+    Document doc3 = doc("collection/3", 0, map("sort", asList(1)));
+    Document doc4 = doc("collection/4", 0, map("sort", map("foo", 2)));
+    Document doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")));
 
     assertTrue(query.matches(doc1));
     assertTrue(query.matches(doc2));
@@ -255,7 +255,7 @@ public class QueryTest {
   @Test
   public void testFiltersArrays() {
     Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
-    Document doc1 = doc("collection/doc", 0, map("tags", asList("foo", 1, true)), false);
+    Document doc1 = doc("collection/doc", 0, map("tags", asList("foo", 1, true)));
     List<Filter> matchingFilters = asList(filter("tags", "==", asList("foo", 1, true)));
 
     List<Filter> nonMatchingFilters =
@@ -280,8 +280,7 @@ public class QueryTest {
         doc(
             "collection/doc",
             0,
-            map("tags", map("foo", "foo", "a", 0, "b", true, "c", Double.NaN)),
-            false);
+            map("tags", map("foo", "foo", "a", 0, "b", true, "c", Double.NaN)));
     List<Filter> matchingFilters =
         asList(
             filter("tags", "==", map("foo", "foo", "a", 0, "b", true, "c", Double.NaN)),

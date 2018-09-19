@@ -22,6 +22,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import javax.annotation.Nullable;
@@ -93,7 +94,6 @@ public final class PatchMutation extends Mutation {
     return mask;
   }
 
-  @Nullable
   @Override
   public MaybeDocument applyToRemoteDocument(
       @Nullable MaybeDocument maybeDoc, MutationResult mutationResult) {
@@ -103,17 +103,16 @@ public final class PatchMutation extends Mutation {
         mutationResult.getTransformResults() == null,
         "Transform results received by PatchMutation.");
 
-    // TODO: Relax enforcement of this precondition
-    // We shouldn't actually enforce the precondition since it already passed on the backend, but we
-    // may not have a local version of the document to patch, so we use the precondition to prevent
-    // incorrectly putting a partial document into our cache.
     if (!this.getPrecondition().isValidFor(maybeDoc)) {
-      return maybeDoc;
+      // Since the mutation was not rejected, we know that the precondition matched on the backend.
+      // We therefore must not have the expected version of the document in our cache and return an
+      // UnknownDocument with the known updateTime.
+      return new UnknownDocument(this.getKey(), mutationResult.getVersion());
     }
 
-    SnapshotVersion version = getPostMutationVersion(maybeDoc);
+    SnapshotVersion version = mutationResult.getVersion();
     ObjectValue newData = patchDocument(maybeDoc);
-    return new Document(getKey(), version, newData, /* hasLocalMutations= */ false);
+    return new Document(getKey(), version, newData, Document.DocumentState.COMMITTED_MUTATIONS);
   }
 
   @Nullable
@@ -128,7 +127,7 @@ public final class PatchMutation extends Mutation {
 
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
     ObjectValue newData = patchDocument(maybeDoc);
-    return new Document(getKey(), version, newData, /* hasLocalMutations= */ true);
+    return new Document(getKey(), version, newData, Document.DocumentState.LOCAL_MUTATIONS);
   }
 
   /**

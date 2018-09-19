@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
+import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
@@ -31,6 +32,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -121,7 +123,7 @@ public final class LocalSerializerTest {
 
   @Test
   public void testEncodesDocumentAsMaybeDocument() {
-    Document document = doc("some/path", 42, map("foo", "bar"), false);
+    Document document = doc("some/path", 42, map("foo", "bar"));
 
     com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
@@ -154,6 +156,25 @@ public final class LocalSerializerTest {
     assertEquals(maybeDocProto, serializer.encodeMaybeDocument(deletedDoc));
     MaybeDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
     assertEquals(deletedDoc, decoded);
+  }
+
+  @Test
+  public void testEncodesUnknownDocumentAsMaybeDocument() {
+    UnknownDocument unknownDoc = unknownDoc("some/path", 42);
+
+    com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
+        com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
+            .setUnknownDocument(
+                com.google.firebase.firestore.proto.UnknownDocument.newBuilder()
+                    .setName("projects/p/databases/d/documents/some/path")
+                    .setVersion(
+                        com.google.protobuf.Timestamp.newBuilder().setSeconds(0).setNanos(42000)))
+            .setHasCommittedMutations(true)
+            .build();
+
+    assertEquals(maybeDocProto, serializer.encodeMaybeDocument(unknownDoc));
+    MaybeDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
+    assertEquals(unknownDoc, decoded);
   }
 
   @Test

@@ -20,6 +20,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
@@ -40,6 +41,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
+import static com.google.firebase.firestore.util.Assert.fail;
+
 /**
  * Internal transaction object responsible for accumulating the mutations to perform and the base
  * versions for any documents read.
@@ -55,10 +58,14 @@ public class Transaction {
   }
 
   private void recordVersion(MaybeDocument doc) throws FirebaseFirestoreException {
-    SnapshotVersion docVersion = doc.getVersion();
-    if (doc instanceof NoDocument) {
+    SnapshotVersion docVersion;
+    if (doc instanceof Document) {
+      docVersion = doc.getVersion();
+    } else if (doc instanceof NoDocument) {
       // For nonexistent docs, we must use precondition with version 0 when we overwrite them.
       docVersion = SnapshotVersion.NONE;
+    } else {
+      throw fail("Unexpected document type in transaction: " + doc.getClass().getCanonicalName());
     }
 
     if (readVersions.containsKey(doc.getKey())) {

@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Assert.fail;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -26,7 +27,6 @@ import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
-import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import java.util.Collections;
@@ -237,15 +237,19 @@ public class Transaction {
               }
               List<MaybeDocument> docs = task.getResult();
               if (docs.size() != 1) {
-                throw Assert.fail("Mismatch in docs returned from document lookup.");
+                throw fail("Mismatch in docs returned from document lookup.");
               }
               MaybeDocument doc = docs.get(0);
-              if (doc instanceof NoDocument) {
+              if (doc instanceof Document) {
+                return DocumentSnapshot.fromDocument(
+                    firestore, (Document) doc, /*fromCache=*/ false);
+              } else if (doc instanceof NoDocument) {
                 return DocumentSnapshot.fromNoDocument(
                     firestore, doc.getKey(), /*fromCache=*/ false);
               } else {
-                return DocumentSnapshot.fromDocument(
-                    firestore, (Document) doc, /*fromCache=*/ false);
+                throw fail(
+                    "BatchGetDocumentsRequest returned unexpected document type: "
+                        + doc.getClass().getCanonicalName());
               }
             });
   }

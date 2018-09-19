@@ -98,11 +98,12 @@ public class QuerySnapshotTest {
 
   @Test
   public void testIncludeMetadataChanges() {
-    Document doc1Old = doc("foo/bar", 1, wrapObject("a", "b"), /*hasLocalMutations=*/ true);
-    Document doc1New = doc("foo/bar", 1, wrapObject("a", "b"), /*hasLocalMutations=*/ false);
+    Document doc1Old =
+        doc("foo/bar", 1, wrapObject("a", "b"), Document.DocumentState.LOCAL_MUTATIONS);
+    Document doc1New = doc("foo/bar", 1, wrapObject("a", "b"), Document.DocumentState.SYNCED);
 
-    Document doc2Old = doc("foo/baz", 1, wrapObject("a", "b"), /*hasLocalMutations=*/ false);
-    Document doc2New = doc("foo/baz", 1, wrapObject("a", "c"), /*hasLocalMutations=*/ false);
+    Document doc2Old = doc("foo/baz", 1, wrapObject("a", "b"), Document.DocumentState.SYNCED);
+    Document doc2New = doc("foo/baz", 1, wrapObject("a", "c"), Document.DocumentState.SYNCED);
 
     DocumentSet oldDocuments = docSet(Document.keyComparator(), doc1Old, doc2Old);
     DocumentSet newDocuments = docSet(Document.keyComparator(), doc1New, doc2New);

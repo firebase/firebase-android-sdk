@@ -89,12 +89,26 @@ public class TestUtil {
     DocumentSet oldDocuments = docSet(Document.keyComparator());
     for (Map.Entry<String, ObjectValue> pair : oldDocs.entrySet()) {
       oldDocuments =
-          oldDocuments.add(doc(path + "/" + pair.getKey(), 1L, pair.getValue(), hasPendingWrites));
+          oldDocuments.add(
+              doc(
+                  path + "/" + pair.getKey(),
+                  1L,
+                  pair.getValue(),
+                  hasPendingWrites
+                      ? Document.DocumentState.SYNCED
+                      : Document.DocumentState.LOCAL_MUTATIONS));
     }
     DocumentSet newDocuments = docSet(Document.keyComparator());
     List<DocumentViewChange> documentChanges = new ArrayList<>();
     for (Map.Entry<String, ObjectValue> pair : docsToAdd.entrySet()) {
-      Document docToAdd = doc(path + "/" + pair.getKey(), 1L, pair.getValue(), hasPendingWrites);
+      Document docToAdd =
+          doc(
+              path + "/" + pair.getKey(),
+              1L,
+              pair.getValue(),
+              hasPendingWrites
+                  ? Document.DocumentState.SYNCED
+                  : Document.DocumentState.LOCAL_MUTATIONS);
       newDocuments = newDocuments.add(docToAdd);
       documentChanges.add(DocumentViewChange.create(Type.ADDED, docToAdd));
     }

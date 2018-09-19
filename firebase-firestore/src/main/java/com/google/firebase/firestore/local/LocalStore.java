@@ -387,7 +387,7 @@ public final class LocalStore {
             // resolution failing).
             if (existingDoc == null
                 || doc.getVersion().equals(SnapshotVersion.NONE)
-                || authoritativeUpdates.contains(doc.getKey())
+                || (authoritativeUpdates.contains(doc.getKey()) && !existingDoc.hasPendingWrites())
                 || doc.getVersion().compareTo(existingDoc.getVersion()) >= 0) {
               remoteDocuments.add(doc);
             } else {
