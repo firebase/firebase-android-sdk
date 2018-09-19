@@ -377,9 +377,11 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     } else {
       QueryView queryView = queryViewsByTarget.get(targetId);
       hardAssert(queryView != null, "Unknown target: %s", targetId);
-      localStore.releaseQuery(queryView.getQuery());
+      Query query = queryView.getQuery();
+      localStore.releaseQuery(query);
       removeAndCleanup(queryView);
-      callback.onError(queryView.getQuery(), error);
+      logErrorIfInteresting(error, "Listen for %s failed", query);
+      callback.onError(query, error);
     }
   }
 
@@ -401,13 +403,17 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   @Override
   public void handleRejectedWrite(int batchId, Status status) {
     assertCallback("handleRejectedWrite");
+    ImmutableSortedMap<DocumentKey, MaybeDocument> changes = localStore.rejectBatch(batchId);
+
+    if (!changes.isEmpty()) {
+      logErrorIfInteresting(status, "Write failed at %s", changes.getMinKey().getPath());
+    }
 
     // The local store may or may not be able to apply the write result and raise events immediately
     // (depending on whether the watcher is caught up), so we raise user callbacks first so that
     // they consistently happen before listen events.
     notifyUser(batchId, status);
 
-    ImmutableSortedMap<DocumentKey, MaybeDocument> changes = localStore.rejectBatch(batchId);
     emitNewSnapshot(changes, /*remoteEvent=*/ null);
   }
 
@@ -550,5 +556,29 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     // Notify remote store so it can restart its streams.
     remoteStore.handleCredentialChange();
+  }
+
+  /**
+   * Logs the error as a warnings if it likely represents a developer mistake such as forgetting to
+   * create an index or permission denied.
+   */
+  private void logErrorIfInteresting(Status error, String contextString, Object... contextArgs) {
+    if (errorIsInteresting(error)) {
+      String context = String.format(contextString, contextArgs);
+      Logger.warn("Firestore", "%s: %s", context, error);
+    }
+  }
+
+  private boolean errorIsInteresting(Status error) {
+    Status.Code code = error.getCode();
+    String description = error.getDescription() != null ? error.getDescription() : "";
+
+    if (code == Status.Code.FAILED_PRECONDITION && description.contains("requires an index")) {
+      return true;
+    } else if (code == Status.Code.PERMISSION_DENIED) {
+      return true;
+    }
+
+    return false;
   }
 }

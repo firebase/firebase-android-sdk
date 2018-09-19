@@ -6,6 +6,9 @@
   it would make 2 attempts, to work around a backend bug.
 - [fixed] Fixed an issue that caused us to drop empty objects from calls to
   `set(..., SetOptions.merge())`.
+- [changed] Some SDK errors that represent common mistakes (such as permission
+  denied or a missing index) will automatically be logged as a warning in
+  addition to being surfaced via the API.
 
 # 17.1.0
 - [feature] Added `FieldValue.arrayUnion()` and `FieldValue.arrayRemove()` to
