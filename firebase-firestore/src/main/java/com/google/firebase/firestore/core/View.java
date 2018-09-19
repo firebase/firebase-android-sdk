@@ -214,6 +214,7 @@ public class View {
       while (newDocumentSet.size() > query.getLimit()) {
         Document oldDoc = newDocumentSet.getLastDocument();
         newDocumentSet = newDocumentSet.remove(oldDoc.getKey());
+        newMutatedKeys = newMutatedKeys.remove(oldDoc.getKey());
         changeSet.addChange(DocumentViewChange.create(Type.REMOVED, oldDoc));
       }
     }

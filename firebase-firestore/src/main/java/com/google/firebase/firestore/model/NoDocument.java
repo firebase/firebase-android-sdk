@@ -36,6 +36,17 @@ public class NoDocument extends MaybeDocument {
   }
 
   @Override
+  public boolean hasPendingWrites() {
+    return hasCommittedMutations();
+  }
+
+  public boolean hasCommittedMutations() {
+    // We currently don't raise `hasPendingWrites` for deleted documents, even if Watch hasn't
+    // caught up to the deleted version yet.
+    return false;
+  }
+
+  @Override
   public int hashCode() {
     int result = getKey().hashCode();
     result = 31 * result + getVersion().hashCode();

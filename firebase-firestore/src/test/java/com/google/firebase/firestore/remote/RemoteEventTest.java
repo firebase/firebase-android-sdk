@@ -146,8 +146,8 @@ public class RemoteEventTest {
   public void testWillAccumulateDocumentAddedAndRemovedEvents() {
     Map<Integer, QueryData> targetMap = activeQueries(1, 2, 3, 4, 5, 6);
 
-    Document existingDoc = doc("docs/1", 1, map("value", 1), false);
-    Document newDoc = doc("docs/2", 2, map("value", 2), false);
+    Document existingDoc = doc("docs/1", 1, map("value", 1));
+    Document newDoc = doc("docs/2", 2, map("value", 2));
 
     WatchChange change1 =
         new DocumentChange(asList(1, 2, 3), asList(4, 5, 6), existingDoc.getKey(), existingDoc);
@@ -188,8 +188,8 @@ public class RemoteEventTest {
   public void testWillIgnoreEventsForPendingTargets() {
     Map<Integer, QueryData> targetMap = activeQueries(1);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1), false);
-    Document doc2 = doc("docs/2", 2, map("value", 2), false);
+    Document doc1 = doc("docs/1", 1, map("value", 1));
+    Document doc2 = doc("docs/2", 2, map("value", 2));
 
     // We're waiting for the watch and unwatch ack
     Map<Integer, Integer> outstanding = new HashMap<>();
@@ -216,7 +216,7 @@ public class RemoteEventTest {
   public void testWillIgnoreEventsForRemovedTargets() {
     Map<Integer, QueryData> targetMap = activeQueries();
 
-    Document doc1 = doc("docs/1", 1, map("value", 1), false);
+    Document doc1 = doc("docs/1", 1, map("value", 1));
 
     // We're waiting for the unwatch ack
     Map<Integer, Integer> outstanding = new HashMap<>();
@@ -238,9 +238,9 @@ public class RemoteEventTest {
   public void testWillKeepResetMappingEvenWithUpdates() {
     Map<Integer, QueryData> targetMap = activeQueries(1);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1), false);
-    Document doc2 = doc("docs/2", 2, map("value", 2), false);
-    Document doc3 = doc("docs/3", 3, map("value", 3), false);
+    Document doc1 = doc("docs/1", 1, map("value", 1));
+    Document doc2 = doc("docs/2", 2, map("value", 2));
+    Document doc3 = doc("docs/3", 3, map("value", 3));
 
     WatchChange change1 = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
     // Reset stream, ignoring doc1
@@ -303,8 +303,8 @@ public class RemoteEventTest {
   public void testWillHandleTargetAddAndRemovalInSameBatch() {
     Map<Integer, QueryData> targetMap = activeQueries(1, 2);
 
-    Document doc1a = doc("docs/1", 1, map("value", 1), false);
-    Document doc1b = doc("docs/1", 1, map("value", 2), false);
+    Document doc1a = doc("docs/1", 1, map("value", 1));
+    Document doc1b = doc("docs/1", 1, map("value", 2));
 
     WatchChange change1 = new DocumentChange(asList(1), asList(2), doc1a.getKey(), doc1a);
     WatchChange change2 = new DocumentChange(asList(2), asList(1), doc1b.getKey(), doc1b);
@@ -345,8 +345,8 @@ public class RemoteEventTest {
   public void testTargetAddedChangeWillResetPreviousState() {
     Map<Integer, QueryData> targetMap = activeQueries(1, 3);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1), false);
-    Document doc2 = doc("docs/2", 2, map("value", 2), false);
+    Document doc1 = doc("docs/1", 1, map("value", 1));
+    Document doc2 = doc("docs/2", 2, map("value", 2));
 
     WatchChange change1 = new DocumentChange(asList(1, 3), asList(2), doc1.getKey(), doc1);
     WatchChange change2 = new WatchTargetChange(WatchTargetChangeType.Current, asList(1, 2, 3));
@@ -413,8 +413,8 @@ public class RemoteEventTest {
   public void testExistenceFilterMismatchClearsTarget() {
     Map<Integer, QueryData> targetMap = activeQueries(1, 2);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1), false);
-    Document doc2 = doc("docs/2", 2, map("value", 2), false);
+    Document doc1 = doc("docs/1", 1, map("value", 1));
+    Document doc2 = doc("docs/2", 2, map("value", 2));
 
     WatchChange change1 = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
     WatchChange change2 = new DocumentChange(asList(1), emptyList(), doc2.getKey(), doc2);
@@ -466,7 +466,7 @@ public class RemoteEventTest {
     WatchTargetChange markCurrent = new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
     aggregator.handleTargetChange(markCurrent);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1), false);
+    Document doc1 = doc("docs/1", 1, map("value", 1));
     DocumentChange addDoc = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
     aggregator.handleDocumentChange(addDoc);
 
@@ -493,10 +493,10 @@ public class RemoteEventTest {
   public void testDocumentUpdate() {
     Map<Integer, QueryData> targetMap = activeQueries(1);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1), false);
+    Document doc1 = doc("docs/1", 1, map("value", 1));
     WatchChange change1 = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
 
-    Document doc2 = doc("docs/2", 2, map("value", 2), false);
+    Document doc2 = doc("docs/2", 2, map("value", 2));
     WatchChange change2 = new DocumentChange(asList(1), emptyList(), doc2.getKey(), doc2);
 
     WatchChangeAggregator aggregator =
@@ -514,12 +514,12 @@ public class RemoteEventTest {
         new DocumentChange(asList(1), emptyList(), deletedDoc1.getKey(), deletedDoc1);
     aggregator.handleDocumentChange(change3);
 
-    Document updatedDoc2 = doc("docs/2", 3, map("value", 3), false);
+    Document updatedDoc2 = doc("docs/2", 3, map("value", 3));
     DocumentChange change4 =
         new DocumentChange(asList(1), emptyList(), updatedDoc2.getKey(), updatedDoc2);
     aggregator.handleDocumentChange(change4);
 
-    Document doc3 = doc("docs/3", 3, map("value", 3), false);
+    Document doc3 = doc("docs/3", 3, map("value", 3));
     DocumentChange change5 = new DocumentChange(asList(1), emptyList(), doc3.getKey(), doc3);
     aggregator.handleDocumentChange(change5);
 

@@ -37,7 +37,9 @@ public class DocumentTest {
 
   @Test
   public void testConstructor() {
-    Document document = new Document(key("messages/first"), version(1), wrapObject("a", 1), false);
+    Document document =
+        new Document(
+            key("messages/first"), version(1), wrapObject("a", 1), Document.DocumentState.SYNCED);
 
     assertEquals(key("messages/first"), document.getKey());
     assertEquals(version(1), document.getVersion());
@@ -53,7 +55,8 @@ public class DocumentTest {
             "Discuss all the project related stuff",
             "owner",
             map("name", "Jonny", "title", "scallywag"));
-    Document document = new Document(key("rooms/eros"), version(1), data, false);
+    Document document =
+        new Document(key("rooms/eros"), version(1), data, Document.DocumentState.SYNCED);
 
     assertEquals("Discuss all the project related stuff", document.getFieldValue(field("desc")));
     assertEquals("scallywag", document.getFieldValue(field("owner.title")));
@@ -65,15 +68,15 @@ public class DocumentTest {
     String key2 = "messages/second";
     Map<String, Object> data1 = map("a", 1);
     Map<String, Object> data2 = map("a", 2);
-    Document doc1 = doc(key1, 1, data1, false);
-    Document doc2 = doc(key1, 1, data1, false);
+    Document doc1 = doc(key1, 1, data1);
+    Document doc2 = doc(key1, 1, data1);
 
     assertEquals(doc1, doc2);
-    assertEquals(doc1, doc("messages/first", 1, map("a", 1), false));
+    assertEquals(doc1, doc("messages/first", 1, map("a", 1)));
 
-    assertNotEquals(doc1, doc(key1, 1, data2, false));
-    assertNotEquals(doc1, doc(key2, 1, data1, false));
-    assertNotEquals(doc1, doc(key1, 2, data1, false));
-    assertNotEquals(doc1, doc(key1, 1, data1, true));
+    assertNotEquals(doc1, doc(key1, 1, data2));
+    assertNotEquals(doc1, doc(key2, 1, data1));
+    assertNotEquals(doc1, doc(key1, 2, data1));
+    assertNotEquals(doc1, doc(key1, 1, data1, Document.DocumentState.LOCAL_MUTATIONS));
   }
 }

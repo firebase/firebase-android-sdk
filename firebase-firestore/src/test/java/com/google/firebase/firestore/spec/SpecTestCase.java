@@ -348,21 +348,18 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
-  /*
-   * The format for change is [path, version, values, options...] for a doc.
-   * https://github.com/firebase/firebase-js-sdk/blob/master/packages/firestore/test/unit/specs/spec_test_runner.ts#L1137
-   */
-  private DocumentViewChange parseChange(JSONArray change, DocumentViewChange.Type type)
+  private DocumentViewChange parseChange(JSONObject jsonDoc, DocumentViewChange.Type type)
       throws JSONException {
-    boolean hasMutations = false;
-    for (int i = 3; i < change.length(); ++i) {
-      if ("local".equals(change.get(i))) {
-        hasMutations = true;
-      }
-    }
-    long version = change.getLong(1);
-    Map<String, Object> values = parseMap(change.getJSONObject(2));
-    Document doc = doc(change.getString(0), version, values, hasMutations);
+    long version = jsonDoc.getLong("version");
+    JSONObject options = jsonDoc.getJSONObject("options");
+    Document.DocumentState documentState =
+        options.optBoolean("hasLocalMutations")
+            ? Document.DocumentState.LOCAL_MUTATIONS
+            : (options.optBoolean("hasCommittedMutations")
+                ? Document.DocumentState.COMMITTED_MUTATIONS
+                : Document.DocumentState.SYNCED);
+    Map<String, Object> values = parseMap(jsonDoc.getJSONObject("value"));
+    Document doc = doc(jsonDoc.getString("key"), version, values, documentState);
     return DocumentViewChange.create(type, doc);
   }
 
@@ -524,7 +521,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       Assert.hardAssert(!watchEntity.has("doc"), "Exactly one of |doc| or |docs| needs to be set.");
       JSONArray docs = watchEntity.getJSONArray("docs");
       for (int i = 0; i < docs.length(); ++i) {
-        JSONArray doc = docs.getJSONArray(i);
+        JSONObject doc = docs.getJSONObject(i);
         JSONObject watchSpec = new JSONObject();
         watchSpec.put("doc", doc);
         if (watchEntity.has("targets")) {
@@ -536,11 +533,12 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         doWatchEntity(watchSpec);
       }
     } else if (watchEntity.has("doc")) {
-      JSONArray docSpec = watchEntity.getJSONArray("doc");
-      String key = docSpec.getString(0);
+      JSONObject docSpec = watchEntity.getJSONObject("doc");
+      String key = docSpec.getString("key");
       @Nullable
-      Map<String, Object> value = !docSpec.isNull(2) ? parseMap(docSpec.getJSONObject(2)) : null;
-      long version = docSpec.getLong(1);
+      Map<String, Object> value =
+          !docSpec.isNull("value") ? parseMap(docSpec.getJSONObject("value")) : null;
+      long version = docSpec.getLong("version");
       MaybeDocument doc = value != null ? doc(key, version, value) : deletedDoc(key, version);
       List<Integer> updated = parseIntList(watchEntity.optJSONArray("targets"));
       List<Integer> removed = parseIntList(watchEntity.optJSONArray("removedTargets"));
@@ -779,19 +777,19 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       List<DocumentViewChange> expectedChanges = new ArrayList<>();
       JSONArray removed = expected.optJSONArray("removed");
       for (int i = 0; removed != null && i < removed.length(); ++i) {
-        expectedChanges.add(parseChange(removed.getJSONArray(i), Type.REMOVED));
+        expectedChanges.add(parseChange(removed.getJSONObject(i), Type.REMOVED));
       }
       JSONArray added = expected.optJSONArray("added");
       for (int i = 0; added != null && i < added.length(); ++i) {
-        expectedChanges.add(parseChange(added.getJSONArray(i), Type.ADDED));
+        expectedChanges.add(parseChange(added.getJSONObject(i), Type.ADDED));
       }
       JSONArray modified = expected.optJSONArray("modified");
       for (int i = 0; modified != null && i < modified.length(); ++i) {
-        expectedChanges.add(parseChange(modified.getJSONArray(i), Type.MODIFIED));
+        expectedChanges.add(parseChange(modified.getJSONObject(i), Type.MODIFIED));
       }
       JSONArray metadata = expected.optJSONArray("metadata");
       for (int i = 0; metadata != null && i < metadata.length(); ++i) {
-        expectedChanges.add(parseChange(metadata.getJSONArray(i), Type.METADATA));
+        expectedChanges.add(parseChange(metadata.getJSONObject(i), Type.METADATA));
       }
       assertEquals(expectedChanges, actual.view.getChanges());
 
