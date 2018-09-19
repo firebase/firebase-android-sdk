@@ -19,7 +19,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.os.Looper;
 import android.support.test.InstrumentationRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -489,7 +488,6 @@ public class TestHelpers {
 
   public static void ensureAppInitialized() {
     if (!appInitialized) {
-      Looper.prepare();
       appInitialized = true;
       android.content.Context context = InstrumentationRegistry.getTargetContext();
       FirebaseApp.initializeApp(
@@ -504,7 +502,6 @@ public class TestHelpers {
 
   public static void ensureConstantsInitialized() {
     if (!appInitialized) {
-      Looper.prepare();
       appInitialized = true;
       android.content.Context context = InstrumentationRegistry.getTargetContext();
       FirebaseApp.initializeApp(
