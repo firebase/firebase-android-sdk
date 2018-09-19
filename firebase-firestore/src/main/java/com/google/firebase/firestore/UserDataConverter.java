@@ -258,15 +258,23 @@ public final class UserDataConverter {
 
   private <K, V> ObjectValue parseMap(Map<K, V> map, ParseContext context) {
     Map<String, FieldValue> result = new HashMap<>();
-    for (Entry<K, V> entry : map.entrySet()) {
-      if (!(entry.getKey() instanceof String)) {
-        throw context.createError(
-            String.format("Non-String Map key (%s) is not allowed", entry.getValue()));
+
+    if (map.isEmpty()) {
+      if (context.getPath() != null && !context.getPath().isEmpty()) {
+        context.addToFieldMask(context.getPath());
       }
-      String key = (String) entry.getKey();
-      @Nullable FieldValue parsedValue = parseData(entry.getValue(), context.childContext(key));
-      if (parsedValue != null) {
-        result.put(key, parsedValue);
+      return ObjectValue.emptyObject();
+    } else {
+      for (Entry<K, V> entry : map.entrySet()) {
+        if (!(entry.getKey() instanceof String)) {
+          throw context.createError(
+              String.format("Non-String Map key (%s) is not allowed", entry.getValue()));
+        }
+        String key = (String) entry.getKey();
+        @Nullable FieldValue parsedValue = parseData(entry.getValue(), context.childContext(key));
+        if (parsedValue != null) {
+          result.put(key, parsedValue);
+        }
       }
     }
     return ObjectValue.fromMap(result);
