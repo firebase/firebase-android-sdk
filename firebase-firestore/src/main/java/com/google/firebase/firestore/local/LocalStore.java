@@ -146,7 +146,7 @@ public final class LocalStore {
     queryEngine = new SimpleQueryEngine(localDocuments);
 
     localViewReferences = new ReferenceSet();
-    persistence.getReferenceDelegate().setAdditionalReferences(localViewReferences);
+    persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
 
     targetIds = new SparseArray<>();
     heldBatchResults = new ArrayList<>();
