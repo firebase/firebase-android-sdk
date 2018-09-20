@@ -83,17 +83,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     return result;
   }
 
-  /** Remove any documents that the delegate reports as not pinned at the given upper bound. */
-  int removeOrphanedDocuments(MemoryLruReferenceDelegate delegate, long upperBound) {
-    int count = 0;
-    ImmutableSortedMap<DocumentKey, MaybeDocument> updated = docs;
-    for (Map.Entry<DocumentKey, MaybeDocument> entry : docs) {
-      if (!delegate.isPinned(entry.getKey(), upperBound)) {
-        updated = updated.remove(entry.getKey());
-        count++;
-      }
-    }
-    docs = updated;
-    return count;
+  ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments() {
+    return docs;
   }
 }
