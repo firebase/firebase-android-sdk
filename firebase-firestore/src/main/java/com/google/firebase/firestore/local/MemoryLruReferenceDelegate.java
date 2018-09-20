@@ -152,7 +152,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
   /**
    * @return true if there is anything that would keep the given document alive or if the document's
-   * sequence number is greater than the provided upper bound.
+   *     sequence number is greater than the provided upper bound.
    */
   private boolean isPinned(DocumentKey key, long upperBound) {
     if (mutationQueuesContainsKey(key)) {
