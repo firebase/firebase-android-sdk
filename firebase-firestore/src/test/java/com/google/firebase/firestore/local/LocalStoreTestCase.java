@@ -255,8 +255,15 @@ public abstract class LocalStoreTestCase {
 
     // The last seen version is zero, so this ack must be held.
     acknowledgeMutation(1);
-    assertChanged();
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertChanged(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    if (garbageCollectorIsEager()) {
+      // Nothing is pinning this anymore, as it has been acknowledged and there are no targets
+      // active.
+      assertNotContains("foo/bar");
+    } else {
+      assertContains(
+          doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    }
 
     writeMutation(setMutation("bar/baz", map("bar", "baz")));
     assertChanged(doc("bar/baz", 0, map("bar", "baz"), Document.DocumentState.LOCAL_MUTATIONS));
@@ -327,8 +334,9 @@ public abstract class LocalStoreTestCase {
 
     acknowledgeMutation(3);
     // We haven't seen the remote event yet.
-    assertChanged();
-    assertContains(doc("foo/bar", 2, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertChanged(doc("foo/bar", 3, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    assertContains(
+        doc("foo/bar", 3, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
 
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 3, map("it", "changed")), asList(targetId), emptyList()));
@@ -374,9 +382,18 @@ public abstract class LocalStoreTestCase {
 
     acknowledgeMutation(2);
 
-    assertChanged();
+    assertChanged(
+        doc(
+            "foo/bar",
+            2,
+            map("foo", "bar", "it", "base"),
+            Document.DocumentState.COMMITTED_MUTATIONS));
     assertContains(
-        doc("foo/bar", 1, map("foo", "bar", "it", "base"), Document.DocumentState.LOCAL_MUTATIONS));
+        doc(
+            "foo/bar",
+            2,
+            map("foo", "bar", "it", "base"),
+            Document.DocumentState.COMMITTED_MUTATIONS));
 
     applyRemoteEvent(
         updateRemoteEvent(
