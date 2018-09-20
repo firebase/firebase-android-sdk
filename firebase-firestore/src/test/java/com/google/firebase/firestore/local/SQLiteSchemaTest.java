@@ -22,6 +22,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.proto.WriteBatch;
+import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firestore.v1beta1.Document;
+import com.google.firestore.v1beta1.Write;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +56,9 @@ public class SQLiteSchemaTest {
           public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {}
         };
     db = opener.getWritableDatabase();
-    schema = new SQLiteSchema(db);
+    schema =
+        new SQLiteSchema(
+            db, new LocalSerializer(new RemoteSerializer(DatabaseId.forProject("projectId"))));
   }
 
   @After
@@ -121,6 +128,68 @@ public class SQLiteSchemaTest {
         "firestore.%5BDEFAULT%5D.my-project.my-database",
         SQLitePersistence.databaseName(
             "[DEFAULT]", DatabaseId.forDatabase("my-project", "my-database")));
+  }
+
+  @Test
+  public void dropsHeldWriteAcks() {
+    // This test creates a database with schema version 5 that has two users, both of which have
+    // acknowledged mutations that haven't yet been removed from IndexedDb ("heldWriteAcks").
+    // Schema version 6 removes heldWriteAcks, and as such these mutations are deleted.
+    schema.runMigrations(0, 5);
+
+    // User 'userA' has two acknowledged mutations and one that is pending.
+    // User 'userB' has one acknowledged mutation and one that is pending.
+    addMutationBatch(db, 1, "userA", "docs/foo");
+    addMutationBatch(db, 2, "userA", "docs/foo");
+    addMutationBatch(db, 3, "userB", "docs/bar", "doc/baz");
+    addMutationBatch(db, 4, "userB", "docs/pending");
+    addMutationBatch(db, 5, "userA", "docs/pending");
+
+    // Populate the mutation queues' metadata
+    db.execSQL(
+        "INSERT INTO mutation_queues (uid, last_acknowledged_batch_id) VALUES (?, ?)",
+        new Object[] {"userA", 2});
+    db.execSQL(
+        "INSERT INTO mutation_queues (uid, last_acknowledged_batch_id) VALUES (?, ?)",
+        new Object[] {"userB", 3});
+    db.execSQL(
+        "INSERT INTO mutation_queues (uid, last_acknowledged_batch_id) VALUES (?, ?)",
+        new Object[] {"userC", -1});
+
+    schema.runMigrations(5, 6);
+
+    // Verify that all but the two pending mutations have been cleared by the migration.
+    new SQLitePersistence.Query(db, "SELECT COUNT(*) FROM mutations")
+        .first(value -> assertEquals(2, value.getInt(0)));
+
+    // Verify that we still have two index entries for the pending documents
+    new SQLitePersistence.Query(db, "SELECT COUNT(*) FROM document_mutations")
+        .first(value -> assertEquals(2, value.getInt(0)));
+
+    // Verify that we still have one metadata entry for each existing queue
+    new SQLitePersistence.Query(db, "SELECT COUNT(*) FROM mutation_queues")
+        .first(value -> assertEquals(3, value.getInt(0)));
+  }
+
+  private void addMutationBatch(SQLiteDatabase db, int batchId, String uid, String... docs) {
+    WriteBatch.Builder write = WriteBatch.newBuilder();
+    write.setBatchId(batchId);
+
+    for (String doc : docs) {
+      db.execSQL(
+          "INSERT INTO document_mutations (uid, path, batch_id) VALUES (?, ?, ?)",
+          new Object[] {uid, EncodedPath.encode(ResourcePath.fromString(doc)), batchId});
+
+      write.addWrites(
+          Write.newBuilder()
+              .setUpdate(
+                  Document.newBuilder()
+                      .setName("projects/projectId/databases/(default)/documents/" + doc)));
+    }
+
+    db.execSQL(
+        "INSERT INTO mutations (uid, batch_id, mutations) VALUES (?,?,?)",
+        new Object[] {uid, batchId, write.build().toByteArray()});
   }
 
   private void assertNoResultsForQuery(String query, String[] args) {

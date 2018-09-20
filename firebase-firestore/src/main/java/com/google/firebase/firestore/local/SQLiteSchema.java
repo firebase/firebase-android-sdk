@@ -14,9 +14,18 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.content.ContentValues;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import com.google.common.base.Preconditions;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 /**
  * Migrates schemas from version 0 (empty) to whatever the current version is.
@@ -34,12 +43,14 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = (Persistence.INDEXING_SUPPORT_ENABLED) ? 6 : 5;
+  static final int VERSION = (Persistence.INDEXING_SUPPORT_ENABLED) ? 7 : 6;
 
   private final SQLiteDatabase db;
+  private final LocalSerializer serializer;
 
-  SQLiteSchema(SQLiteDatabase db) {
+  SQLiteSchema(SQLiteDatabase db, LocalSerializer serializer) {
     this.db = db;
+    this.serializer = serializer;
   }
 
   void runMigrations() {
@@ -90,9 +101,12 @@ class SQLiteSchema {
     }
 
     if (fromVersion < 6 && toVersion >= 6) {
-      if (Persistence.INDEXING_SUPPORT_ENABLED) {
-        createLocalDocumentsCollectionIndex();
-      }
+      removeAcknowledgedMutations();
+    }
+
+    if (fromVersion < 7 && toVersion >= 7) {
+      Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
+      createLocalDocumentsCollectionIndex();
     }
   }
 
@@ -120,6 +134,61 @@ class SQLiteSchema {
             + "path TEXT, "
             + "batch_id INTEGER, "
             + "PRIMARY KEY (uid, path, batch_id))");
+  }
+
+  private void removeAcknowledgedMutations() {
+    SQLitePersistence.Query mutationQueuesQuery =
+        new SQLitePersistence.Query(
+            db, "SELECT uid, last_acknowledged_batch_id FROM mutation_queues");
+
+    mutationQueuesQuery.forEach(
+        mutationQueueEntry -> {
+          String uid = mutationQueueEntry.getString(0);
+          long lastAcknowledgedBatchId = mutationQueueEntry.getLong(1);
+
+          SQLitePersistence.Query mutationsQuery =
+              new SQLitePersistence.Query(
+                      db, "SELECT mutations FROM mutations WHERE uid = ? AND batch_id <= ?")
+                  .binding(uid, lastAcknowledgedBatchId);
+          mutationsQuery.forEach(
+              value -> {
+                try {
+                  MutationBatch batch =
+                      serializer.decodeMutationBatch(
+                          com.google.firebase.firestore.proto.WriteBatch.parseFrom(
+                              value.getBlob(0)));
+                  removeMutationBatch(uid, batch);
+                } catch (InvalidProtocolBufferException e) {
+                  throw fail("MutationBatch failed to parse: %s", e);
+                }
+              });
+        });
+  }
+
+  private void removeMutationBatch(String uid, MutationBatch batch) {
+    int batchId = batch.getBatchId();
+
+    SQLiteStatement mutationDeleter =
+        db.compileStatement("DELETE FROM mutations WHERE uid = ? AND batch_id = ?");
+    mutationDeleter.bindString(1, uid);
+    mutationDeleter.bindLong(2, batchId);
+    int deleted = mutationDeleter.executeUpdateDelete();
+    hardAssert(deleted != 0, "Mutation batch (%s, %d) did not exist", uid, batch.getBatchId());
+
+    SQLiteStatement indexDeleter =
+        db.compileStatement(
+            "DELETE FROM document_mutations WHERE uid = ? AND path = ? AND batch_id = ?");
+
+    for (Mutation mutation : batch.getMutations()) {
+      DocumentKey key = mutation.getKey();
+      String path = EncodedPath.encode(key.getPath());
+      indexDeleter.bindString(1, uid);
+      indexDeleter.bindString(2, path);
+      indexDeleter.bindLong(3, batchId);
+      deleted = indexDeleter.executeUpdateDelete();
+      hardAssert(
+          deleted != 0, "Index entry (%s, %s, %d) did not exist", uid, key, batch.getBatchId());
+    }
   }
 
   private void createQueryCache() {
