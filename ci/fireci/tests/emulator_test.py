@@ -48,7 +48,7 @@ class EmulatorTests(unittest.TestCase):
   executor = futures.ThreadPoolExecutor(max_workers=1)
 
   @in_tempdir
-  def test_foo(self):
+  def test_emulator_when_not_requested_should_not_produce_logs(self):
     with _emulator_handler(False):
       pass
     self.assertFalse(os.listdir(os.getcwd()))
