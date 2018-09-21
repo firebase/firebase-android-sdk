@@ -29,5 +29,5 @@ def discover():
   """
   modules = pkgutil.iter_modules(fireciplugins.__path__,
                                  fireciplugins.__name__ + ".")
-  for module in modules:
-    importlib.import_module(module.name)
+  for _, name, _ in modules:
+    importlib.import_module(name)
