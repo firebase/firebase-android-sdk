@@ -81,7 +81,7 @@ public abstract class LruGarbageCollectorTestCase {
 
   private void newTestResources() {
     persistence = createPersistence();
-    persistence.getReferenceDelegate().setAdditionalReferences(new ReferenceSet());
+    persistence.getReferenceDelegate().setInMemoryPins(new ReferenceSet());
     queryCache = persistence.getQueryCache();
     documentCache = persistence.getRemoteDocumentCache();
     User user = new User("user");
@@ -162,9 +162,9 @@ public abstract class LruGarbageCollectorTestCase {
     queryCache.removeMatchingKeys(keySet(key), targetId);
   }
 
-  private int removeQueries(long upperBound, Set<Integer> liveQueries) {
+  private int removeTargets(long upperBound, Set<Integer> activeTargetIds) {
     return persistence.runTransaction(
-        "Remove queries", () -> garbageCollector.removeQueries(upperBound, liveQueries));
+        "Remove queries", () -> garbageCollector.removeTargets(upperBound, activeTargetIds));
   }
 
   private SetMutation mutation(DocumentKey key) {
@@ -283,19 +283,19 @@ public abstract class LruGarbageCollectorTestCase {
 
   @Test
   public void testRemoveQueriesUpThroughSequenceNumber() {
-    Map<Integer, QueryData> liveQueries = new HashMap<>();
+    Map<Integer, QueryData> activeTargetIds = new HashMap<>();
     for (int i = 0; i < 100; i++) {
       QueryData queryData = addNextQuery();
       // Mark odd queries as live so we can test filtering out live queries.
       int targetId = queryData.getTargetId();
       if (targetId % 2 == 1) {
-        liveQueries.put(targetId, queryData);
+        activeTargetIds.put(targetId, queryData);
       }
     }
     // GC up through 20th query, which is 20%.
     // Expect to have GC'd 10 targets, since every other target is live
     long upperBound = 20 + initialSequenceNumber;
-    int removed = removeQueries(upperBound, liveQueries.keySet());
+    int removed = removeTargets(upperBound, activeTargetIds.keySet());
     assertEquals(10, removed);
     // Make sure we removed the even targets with targetID <= 20.
     persistence.runTransaction(
@@ -410,7 +410,7 @@ public abstract class LruGarbageCollectorTestCase {
     // All docs in oldest target are still around
     // One blind write is gone, the first one not added to oldest target
     // Documents removed from middle target are gone, except ones added to oldest target
-    // Documents from newest target are gone, except
+    // Documents from newest target are gone, except those added to the old target as well
 
     // Through the various steps, track which documents we expect to be removed vs
     // documents we expect to be retained.
@@ -566,11 +566,11 @@ public abstract class LruGarbageCollectorTestCase {
         });
 
     // Finally, do the garbage collection, up to but not including the removal of middleTarget
-    Set<Integer> liveQueries = new HashSet<>();
-    liveQueries.add(oldestTarget.getTargetId());
-    int queriesRemoved = garbageCollector.removeQueries(upperBound, liveQueries);
+    Set<Integer> activeTargetIds = new HashSet<>();
+    activeTargetIds.add(oldestTarget.getTargetId());
+    int targetsRemoved = garbageCollector.removeTargets(upperBound, activeTargetIds);
     // Expect to remove newest target
-    assertEquals(1, queriesRemoved);
+    assertEquals(1, targetsRemoved);
     int docsRemoved = garbageCollector.removeOrphanedDocuments(upperBound);
     assertEquals(expectedRemoved.size(), docsRemoved);
     persistence.runTransaction(

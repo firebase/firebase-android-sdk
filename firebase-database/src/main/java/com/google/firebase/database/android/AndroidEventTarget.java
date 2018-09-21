@@ -15,13 +15,14 @@
 package com.google.firebase.database.android;
 
 import android.os.Handler;
+import android.os.Looper;
 import com.google.firebase.database.core.EventTarget;
 
 public class AndroidEventTarget implements EventTarget {
   private final Handler handler;
 
   public AndroidEventTarget() {
-    this.handler = new Handler();
+    this.handler = new Handler(Looper.getMainLooper());
   }
 
   @Override

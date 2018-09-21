@@ -21,8 +21,8 @@ import android.support.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.PublicApi;
-import com.google.firebase.firestore.UserDataConverter.ParsedDocumentData;
-import com.google.firebase.firestore.UserDataConverter.ParsedUpdateData;
+import com.google.firebase.firestore.core.UserData.ParsedSetData;
+import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
@@ -87,7 +87,7 @@ public class WriteBatch {
     firestore.validateReference(documentRef);
     checkNotNull(data, "Provided data must not be null.");
     verifyNotCommitted();
-    ParsedDocumentData parsed =
+    ParsedSetData parsed =
         options.isMerge()
             ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
             : firestore.getDataConverter().parseSetData(data);

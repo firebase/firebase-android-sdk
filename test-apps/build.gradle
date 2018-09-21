@@ -16,6 +16,11 @@
 
 buildscript {
     repositories {
+        if (System.getenv().containsKey("FIREBASE_CI")) {
+            maven {
+                url "http://maven-proxy/"
+            }
+        }
         jcenter()
         mavenLocal()
         google()
@@ -44,6 +49,11 @@ allprojects {
     }
 
     repositories {
+        if (System.getenv().containsKey("FIREBASE_CI")) {
+            maven {
+                url "http://maven-proxy/"
+            }
+        }
         //mavenLocal() can be overridden via GRADLE_OPTS="-Dmaven.repo.local=<path>"
         mavenLocal()
         jcenter()
