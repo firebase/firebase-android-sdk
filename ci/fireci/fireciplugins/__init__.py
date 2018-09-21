@@ -11,18 +11,4 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import logging
-
-from . import commands
-from . import plugins
-from .internal import main
-
-logging.basicConfig(
-    format='%(name)s: [%(levelname)s] %(message)s',
-    level=logging.DEBUG,
-)
-
-plugins.discover()
-
-cli = main
+__path__ = __import__('pkgutil').extend_path(__path__, __name__)
