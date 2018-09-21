@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Assert.fail;
+
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -40,8 +42,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
-
-import static com.google.firebase.firestore.util.Assert.fail;
 
 /**
  * Internal transaction object responsible for accumulating the mutations to perform and the base
