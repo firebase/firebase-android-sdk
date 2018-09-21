@@ -72,6 +72,9 @@ allprojects {
         if ( it.name == 'processReleaseGoogleServices') {
             it.dependsOn 'copyRootGoogleServices'
         }
+        if ( it.name == 'processReleaseGoogleServices') {
+            it.dependsOn 'copyRootGoogleServices'
+        }
     }
 
     if(file('test_setup.sh').exists()) {
