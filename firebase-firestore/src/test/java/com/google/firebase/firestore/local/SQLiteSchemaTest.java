@@ -24,7 +24,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.WriteBatch;
-import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firestore.v1beta1.Document;
 import com.google.firestore.v1beta1.Write;
 import org.junit.After;
@@ -56,9 +55,7 @@ public class SQLiteSchemaTest {
           public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {}
         };
     db = opener.getWritableDatabase();
-    schema =
-        new SQLiteSchema(
-            db, new LocalSerializer(new RemoteSerializer(DatabaseId.forProject("projectId"))));
+    schema = new SQLiteSchema(db);
   }
 
   @After

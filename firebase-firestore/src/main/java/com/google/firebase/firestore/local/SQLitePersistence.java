@@ -79,7 +79,7 @@ public final class SQLitePersistence extends Persistence {
   public SQLitePersistence(
       Context context, String persistenceKey, DatabaseId databaseId, LocalSerializer serializer) {
     String databaseName = databaseName(persistenceKey, databaseId);
-    this.opener = new OpenHelper(context, serializer, databaseName);
+    this.opener = new OpenHelper(context, databaseName);
     this.serializer = serializer;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
@@ -194,12 +194,10 @@ public final class SQLitePersistence extends Persistence {
    */
   private static class OpenHelper extends SQLiteOpenHelper {
 
-    private final LocalSerializer serializer;
     private boolean configured;
 
-    OpenHelper(Context context, LocalSerializer serializer, String databaseName) {
+    OpenHelper(Context context, String databaseName) {
       super(context, databaseName, null, SQLiteSchema.VERSION);
-      this.serializer = serializer;
     }
 
     @Override
@@ -225,13 +223,13 @@ public final class SQLitePersistence extends Persistence {
     @Override
     public void onCreate(SQLiteDatabase db) {
       ensureConfigured(db);
-      new SQLiteSchema(db, serializer).runMigrations(0);
+      new SQLiteSchema(db).runMigrations(0);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
       ensureConfigured(db);
-      new SQLiteSchema(db, serializer).runMigrations(oldVersion);
+      new SQLiteSchema(db).runMigrations(oldVersion);
     }
 
     @Override
