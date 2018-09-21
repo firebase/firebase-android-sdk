@@ -98,7 +98,7 @@ class CliInvocationTests(unittest.TestCase):
         Artifact(
             'test-apps/gradlew',
             content=scripts.with_expected_arguments(
-                ['./gradlew', 'connectedReleaseAndroidTest'], {
+                ['./gradlew', 'connectedCheck'], {
                     'GRADLE_OPTS':
                         '-Dmaven.repo.local={}'.format(
                             os.path.join(os.getcwd(), 'build', 'm2repository'))
