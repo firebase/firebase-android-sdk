@@ -19,7 +19,6 @@ buildscript {
         jcenter()
         mavenLocal()
         google()
-        maven { url 'https://maven.fabric.io/public' }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.1.4'
@@ -33,6 +32,8 @@ plugins {
 }
 
 allprojects {
+    ext.testBuildType = project.getProperties().get("testBuildType", "debug")
+
     apply plugin: 'com.github.sherter.google-java-format'
     googleJavaFormat {
         toolVersion = '1.6'
@@ -108,7 +109,7 @@ allprojects {
             }
         }
         tasks.whenTaskAdded {
-            if ( it.name == 'connectedReleaseAndroidTest') {
+            if ( it.name == 'connectedCheck') {
                 it.dependsOn setupSmokeTest
                 it.dependsOn rootProject.tasks.findByName("dependencyUpdates")
             }

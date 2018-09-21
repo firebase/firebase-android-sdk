@@ -17,7 +17,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    testBuildType "release"
+    testBuildType = project.testBuildType
     compileSdkVersion 27
 
     defaultConfig {
@@ -53,7 +53,8 @@ configurations.all {
 dependencies {
     // We intentionally use an open ended version to pick up any SNAPSHOT
     // versions published to the root project' s build/ directory.
-    implementation 'com.google.firebase:firebase-database:+'
+    implementation 'com.google.firebase:firebase-database:16.0.2'
+    implementation 'com.google.firebase:firebase-database:16.0.2:javadoc'
     implementation 'com.google.firebase:firebase-core:16+'
     implementation 'com.google.firebase:firebase-auth:16+'
 
