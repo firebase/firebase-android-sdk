@@ -58,3 +58,26 @@ def in_tempdir(func):
       shutil.rmtree(tempdir_path)
 
   return functools.update_wrapper(do_in_temp_dir, func)
+
+
+def with_env(env, extend=True):
+
+  def inner(func):
+
+    def decorated(*args, **kwargs):
+      original_env = os.environ
+      new_env = original_env if extend else {}
+      expanded_env = {
+          os.path.expandvars(k): os.path.expandvars(v)
+          for (k, v) in env.items()
+      }
+
+      os.environ = {**new_env, **expanded_env}
+      try:
+        func(*args, **kwargs)
+      finally:
+        os.environ = original_env
+
+    return functools.update_wrapper(decorated, func)
+
+  return inner
