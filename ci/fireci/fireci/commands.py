@@ -16,7 +16,7 @@ import click
 import os
 
 from . import gradle
-from .internal import ci_command
+from . import ci_command
 
 
 @click.argument('task', required=True, nargs=-1)

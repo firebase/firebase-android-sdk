@@ -22,6 +22,11 @@ _logger = logging.getLogger('fireci.gradle')
 ADB_INSTALL_TIMEOUT = '5'
 
 
+def P(name, value):
+  """Returns name and value in the format of gradle's project property cli argument."""
+  return '-P{}={}'.format(name, value)
+
+
 def run(*args, gradle_opts='', workdir=None):
   """Invokes gradle with specified args and gradle_opts."""
   new_env = dict(os.environ)
