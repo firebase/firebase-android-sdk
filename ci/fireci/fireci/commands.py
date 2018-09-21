@@ -38,6 +38,14 @@ def smoke_tests_experimental():
   cwd = os.getcwd()
   gradle.run(
       'connectedCheck',
+      '-PtestBuildType=release',
+      gradle_opts='-Dmaven.repo.local={}'.format(
+          os.path.join(cwd, 'build', 'm2repository')),
+      workdir=os.path.join(cwd, 'test-apps'),
+  )
+  gradle.run(
+      'connectedCheck',
+      '-PtestBuildType=debug',
       gradle_opts='-Dmaven.repo.local={}'.format(
           os.path.join(cwd, 'build', 'm2repository')),
       workdir=os.path.join(cwd, 'test-apps'),

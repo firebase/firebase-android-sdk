@@ -98,7 +98,16 @@ class CliInvocationTests(unittest.TestCase):
         Artifact(
             'test-apps/gradlew',
             content=scripts.with_expected_arguments(
-                ['./gradlew', 'connectedCheck'], {
+                ['./gradlew', 'connectedChseck', '-PtestBuildType=debug'], {
+                    'GRADLE_OPTS':
+                        '-Dmaven.repo.local={}'.format(
+                            os.path.join(os.getcwd(), 'build', 'm2repository'))
+                }),
+            mode=0o744),
+        Artifact(
+            'test-apps/gradlew',
+            content=scripts.with_expected_arguments(
+                ['./gradlew', 'connectedChseck', '-PtestBuildType=release'], {
                     'GRADLE_OPTS':
                         '-Dmaven.repo.local={}'.format(
                             os.path.join(os.getcwd(), 'build', 'm2repository'))
