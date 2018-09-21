@@ -72,7 +72,7 @@ allprojects {
         if ( it.name == 'processReleaseGoogleServices') {
             it.dependsOn 'copyRootGoogleServices'
         }
-        if ( it.name == 'processReleaseGoogleServices') {
+        if ( it.name == 'processDebugGoogleServices') {
             it.dependsOn 'copyRootGoogleServices'
         }
     }
