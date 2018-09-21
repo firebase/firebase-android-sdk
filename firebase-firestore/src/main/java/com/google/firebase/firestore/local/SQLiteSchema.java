@@ -14,9 +14,13 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.content.ContentValues;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import com.google.common.base.Preconditions;
 
 /**
  * Migrates schemas from version 0 (empty) to whatever the current version is.
@@ -34,10 +38,11 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = (Persistence.INDEXING_SUPPORT_ENABLED) ? 6 : 5;
+  static final int VERSION = (Persistence.INDEXING_SUPPORT_ENABLED) ? 7 : 6;
 
   private final SQLiteDatabase db;
 
+  // PORTING NOTE: The Android client doesn't need to use a serializer to remove held write acks.
   SQLiteSchema(SQLiteDatabase db) {
     this.db = db;
   }
@@ -90,9 +95,12 @@ class SQLiteSchema {
     }
 
     if (fromVersion < 6 && toVersion >= 6) {
-      if (Persistence.INDEXING_SUPPORT_ENABLED) {
-        createLocalDocumentsCollectionIndex();
-      }
+      removeAcknowledgedMutations();
+    }
+
+    if (fromVersion < 7 && toVersion >= 7) {
+      Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
+      createLocalDocumentsCollectionIndex();
     }
   }
 
@@ -120,6 +128,38 @@ class SQLiteSchema {
             + "path TEXT, "
             + "batch_id INTEGER, "
             + "PRIMARY KEY (uid, path, batch_id))");
+  }
+
+  private void removeAcknowledgedMutations() {
+    SQLitePersistence.Query mutationQueuesQuery =
+        new SQLitePersistence.Query(
+            db, "SELECT uid, last_acknowledged_batch_id FROM mutation_queues");
+
+    mutationQueuesQuery.forEach(
+        mutationQueueEntry -> {
+          String uid = mutationQueueEntry.getString(0);
+          long lastAcknowledgedBatchId = mutationQueueEntry.getLong(1);
+
+          SQLitePersistence.Query mutationsQuery =
+              new SQLitePersistence.Query(
+                      db, "SELECT batch_id FROM mutations WHERE uid = ? AND batch_id <= ?")
+                  .binding(uid, lastAcknowledgedBatchId);
+          mutationsQuery.forEach(value -> removeMutationBatch(uid, value.getInt(0)));
+        });
+  }
+
+  private void removeMutationBatch(String uid, int batchId) {
+    SQLiteStatement mutationDeleter =
+        db.compileStatement("DELETE FROM mutations WHERE uid = ? AND batch_id = ?");
+    mutationDeleter.bindString(1, uid);
+    mutationDeleter.bindLong(2, batchId);
+    int deleted = mutationDeleter.executeUpdateDelete();
+    hardAssert(deleted != 0, "Mutatiohn batch (%s, %d) did not exist", uid, batchId);
+
+    // Delete all index entries for this batch
+    db.execSQL(
+        "DELETE FROM document_mutations WHERE uid = ? AND batch_id = ?",
+        new Object[] {uid, batchId});
   }
 
   private void createQueryCache() {

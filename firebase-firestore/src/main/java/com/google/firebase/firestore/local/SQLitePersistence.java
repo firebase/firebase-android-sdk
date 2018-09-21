@@ -286,7 +286,7 @@ public final class SQLitePersistence extends Persistence {
    * chaining further methods off the query.
    */
   Query query(String sql) {
-    return new Query(sql);
+    return new Query(db, sql);
   }
 
   /**
@@ -326,11 +326,13 @@ public final class SQLitePersistence extends Persistence {
    *   return result;
    * </pre>
    */
-  class Query {
+  static class Query {
+    private final SQLiteDatabase db;
     private final String sql;
     private CursorFactory cursorFactory;
 
-    private Query(String sql) {
+    Query(SQLiteDatabase db, String sql) {
+      this.db = db;
       this.sql = sql;
     }
 
@@ -464,7 +466,7 @@ public final class SQLitePersistence extends Persistence {
    * This method bridges the gap by examining the types of the bindArgs and calling to the
    * appropriate bind method on the program.
    */
-  private void bind(SQLiteProgram program, Object[] bindArgs) {
+  private static void bind(SQLiteProgram program, Object[] bindArgs) {
     for (int i = 0; i < bindArgs.length; i++) {
       Object arg = bindArgs[i];
       if (arg == null) {
