@@ -58,3 +58,26 @@ def with_expected_arguments_and_artifacts(args, env, *artifacts):
   """Python script that checks its argv, environment and creates provided files/directories."""
   arg_string = ', '.join(['"{}"'.format(arg) for arg in args])
   return _SCRIPT_WITH_ARTIFACTS.format(arg_string, env, artifacts)
+
+
+_SCRIPT_WAITING_FOR_STATUS = """\
+#!/bin/sh
+'''true'
+exec python3 -u "$0" "$@"
+'''
+import sys
+print(' '.join(sys.argv), file=sys.stdout)
+print('stderr', file=sys.stderr)
+stdin = sys.stdin.read()
+if stdin:
+    sys.exit(int(stdin))
+"""
+
+
+def waiting_for_status():
+  """Python script with unbuffered that:
+     * Prints argv to stdout
+     * Prints 'stderr to stderr
+     * Waits for exit status to be written to its stdin and exits with it.
+  """
+  return _SCRIPT_WAITING_FOR_STATUS

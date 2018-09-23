@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.util.Consumer;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.Set;
 class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   private final MemoryPersistence persistence;
   private final Map<DocumentKey, Long> orphanedSequenceNumbers;
-  private ReferenceSet additionalReferences;
+  private ReferenceSet inMemoryPins;
   private final LruGarbageCollector garbageCollector;
   private final ListenSequence listenSequence;
   private long currentSequenceNumber;
@@ -88,8 +89,8 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public void setAdditionalReferences(ReferenceSet additionalReferences) {
-    this.additionalReferences = additionalReferences;
+  public void setInMemoryPins(ReferenceSet inMemoryPins) {
+    this.inMemoryPins = inMemoryPins;
   }
 
   @Override
@@ -99,7 +100,17 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
   @Override
   public int removeOrphanedDocuments(long upperBound) {
-    return persistence.getRemoteDocumentCache().removeOrphanedDocuments(this, upperBound);
+    int count = 0;
+    MemoryRemoteDocumentCache cache = persistence.getRemoteDocumentCache();
+    for (Map.Entry<DocumentKey, MaybeDocument> entry : cache.getDocuments()) {
+      DocumentKey key = entry.getKey();
+      if (!isPinned(key, upperBound)) {
+        cache.remove(key);
+        orphanedSequenceNumbers.remove(key);
+        count++;
+      }
+    }
+    return count;
   }
 
   @Override
@@ -139,12 +150,16 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
     return false;
   }
 
-  public boolean isPinned(DocumentKey key, long upperBound) {
+  /**
+   * @return true if there is anything that would keep the given document alive or if the document's
+   *     sequence number is greater than the provided upper bound.
+   */
+  private boolean isPinned(DocumentKey key, long upperBound) {
     if (mutationQueuesContainsKey(key)) {
       return true;
     }
 
-    if (additionalReferences.containsKey(key)) {
+    if (inMemoryPins.containsKey(key)) {
       return true;
     }
 

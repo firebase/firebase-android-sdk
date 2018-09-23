@@ -39,9 +39,11 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.Query.Direction;
+import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -130,6 +132,31 @@ public class FirestoreTest {
     assertTrue(doc.getBoolean("untouched"));
     assertTrue(doc.get("time") instanceof Timestamp);
     assertTrue(doc.get("nested.time") instanceof Timestamp);
+  }
+
+  @Test
+  public void testCanMergeEmptyObject() {
+    DocumentReference documentReference = testDocument();
+    EventAccumulator<DocumentSnapshot> eventAccumulator = new EventAccumulator<>();
+    ListenerRegistration listenerRegistration =
+        documentReference.addSnapshotListener(eventAccumulator.listener());
+    eventAccumulator.await();
+
+    documentReference.set(Collections.emptyMap());
+    DocumentSnapshot snapshot = eventAccumulator.await();
+    assertEquals(Collections.emptyMap(), snapshot.getData());
+
+    waitFor(documentReference.set(map("a", Collections.emptyMap()), SetOptions.mergeFields("a")));
+    snapshot = eventAccumulator.await();
+    assertEquals(map("a", Collections.emptyMap()), snapshot.getData());
+
+    waitFor(documentReference.set(map("b", Collections.emptyMap()), SetOptions.merge()));
+    snapshot = eventAccumulator.await();
+    assertEquals(map("a", Collections.emptyMap(), "b", Collections.emptyMap()), snapshot.getData());
+
+    snapshot = waitFor(documentReference.get(Source.SERVER));
+    assertEquals(map("a", Collections.emptyMap(), "b", Collections.emptyMap()), snapshot.getData());
+    listenerRegistration.remove();
   }
 
   @Test
