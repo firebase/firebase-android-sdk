@@ -229,9 +229,6 @@ public final class LocalStore {
           MutationBatch toReject = mutationQueue.lookupMutationBatch(batchId);
           hardAssert(toReject != null, "Attempt to reject nonexistent batch!");
 
-          int lastAcked = mutationQueue.getHighestAcknowledgedBatchId();
-          hardAssert(batchId > lastAcked, "Acknowledged batches can't be rejected.");
-
           mutationQueue.removeMutationBatch(toReject);
           mutationQueue.performConsistencyCheck();
           return localDocuments.getDocuments(toReject.getKeys());

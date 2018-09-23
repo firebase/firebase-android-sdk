@@ -47,12 +47,6 @@ interface MutationQueue {
    */
   int getNextBatchId();
 
-  /**
-   * Returns the highest batchId that has been acknowledged. If no batches have been acknowledged or
-   * if there are no batches in the queue this can return {@link MutationBatch#UNKNOWN}.
-   */
-  int getHighestAcknowledgedBatchId();
-
   /** Acknowledges the given batch. */
   void acknowledgeBatch(MutationBatch batch, ByteString streamToken);
 
@@ -84,17 +78,6 @@ interface MutationQueue {
   // TODO: PERF: Current consumer only needs mutated keys; if we can provide that
   // cheaply, we should replace this.
   List<MutationBatch> getAllMutationBatches();
-
-  /**
-   * Finds all mutations with a batchId less than or equal to the given batchId.
-   *
-   * <p>Generally the caller should be asking for the next unacknowledged batchId and the number of
-   * acknowledged batches should be very small when things are functioning well.
-   *
-   * @param batchId The batch to search through.
-   * @return an List containing all batches with matching batchIds.
-   */
-  List<MutationBatch> getAllMutationBatchesThroughBatchId(int batchId);
 
   /**
    * Finds all mutation batches that could @em possibly affect the given document key. Not all

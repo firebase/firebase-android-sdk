@@ -23,8 +23,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.streamToken;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -104,38 +102,6 @@ public abstract class MutationQueueTestCase {
   }
 
   @Test
-  public void testAcknowledgeBatchId() {
-    // Initial state of an empty queue
-    assertEquals(MutationBatch.UNKNOWN, mutationQueue.getHighestAcknowledgedBatchId());
-
-    // Adding mutation batches should not change the highest acked batchId.
-    MutationBatch batch1 = addMutationBatch();
-    MutationBatch batch2 = addMutationBatch();
-    MutationBatch batch3 = addMutationBatch();
-    assertThat(batch1.getBatchId(), greaterThan(MutationBatch.UNKNOWN));
-    assertThat(batch2.getBatchId(), greaterThan(batch1.getBatchId()));
-    assertThat(batch3.getBatchId(), greaterThan(batch2.getBatchId()));
-
-    assertEquals(MutationBatch.UNKNOWN, mutationQueue.getHighestAcknowledgedBatchId());
-
-    acknowledgeBatch(batch1);
-    assertEquals(batch1.getBatchId(), mutationQueue.getHighestAcknowledgedBatchId());
-
-    acknowledgeBatch(batch2);
-    assertEquals(batch2.getBatchId(), mutationQueue.getHighestAcknowledgedBatchId());
-
-    removeMutationBatches(batch1);
-    assertEquals(batch2.getBatchId(), mutationQueue.getHighestAcknowledgedBatchId());
-
-    removeMutationBatches(batch2);
-    assertEquals(batch2.getBatchId(), mutationQueue.getHighestAcknowledgedBatchId());
-
-    // Batch 3 never acknowledged.
-    removeMutationBatches(batch3);
-    assertEquals(batch2.getBatchId(), mutationQueue.getHighestAcknowledgedBatchId());
-  }
-
-  @Test
   public void testAcknowledgeThenRemove() {
     MutationBatch batch1 = addMutationBatch();
 
@@ -147,44 +113,6 @@ public abstract class MutationQueueTestCase {
         });
 
     assertEquals(0, batchCount());
-    assertEquals(batch1.getBatchId(), mutationQueue.getHighestAcknowledgedBatchId());
-  }
-
-  @Test
-  public void testHighestAcknowledgedBatchIdNeverExceedsNextBatchId() {
-    MutationBatch batch1 = addMutationBatch();
-    MutationBatch batch2 = addMutationBatch();
-    acknowledgeBatch(batch1);
-    acknowledgeBatch(batch2);
-    assertEquals(batch2.getBatchId(), mutationQueue.getHighestAcknowledgedBatchId());
-
-    removeMutationBatches(batch1, batch2);
-    assertEquals(batch2.getBatchId(), mutationQueue.getHighestAcknowledgedBatchId());
-
-    // Restart the queue so that nextBatchId will be reset.
-    mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
-    mutationQueue.start();
-
-    persistence.runTransaction("Start mutationQueue", () -> mutationQueue.start());
-
-    // Verify that on restart with an empty queue, nextBatchId falls to a lower value.
-    assertThat(mutationQueue.getNextBatchId(), lessThan(batch2.getBatchId()));
-
-    // As a result highestAcknowledgedBatchId must also reset lower.
-    assertEquals(MutationBatch.UNKNOWN, mutationQueue.getHighestAcknowledgedBatchId());
-
-    // The mutation queue will reset the next batchId after all mutations are removed so adding
-    // another mutation will cause a collision.
-    MutationBatch newBatch = addMutationBatch();
-    assertEquals(batch1.getBatchId(), newBatch.getBatchId());
-
-    // Restart the queue with one unacknowledged batch in it.
-    persistence.runTransaction("Start mutationQueue", () -> mutationQueue.start());
-
-    assertEquals(newBatch.getBatchId() + 1, mutationQueue.getNextBatchId());
-
-    // highestAcknowledgedBatchId must still be MutationBatch.UNKNOWN.
-    assertEquals(MutationBatch.UNKNOWN, mutationQueue.getHighestAcknowledgedBatchId());
   }
 
   @Test
@@ -263,24 +191,6 @@ public abstract class MutationQueueTestCase {
     assertEquals(
         batches.get(2),
         mutationQueue.getNextMutationBatchAfterBatchId(batches.get(1).getBatchId()));
-  }
-
-  @Test
-  public void testAllMutationBatchesThroughBatchID() {
-    List<MutationBatch> batches = createBatches(10);
-    makeHoles(asList(2, 6, 7), batches);
-
-    List<MutationBatch> found;
-    List<MutationBatch> expected;
-
-    found = mutationQueue.getAllMutationBatchesThroughBatchId(batches.get(0).getBatchId() - 1);
-    assertEquals(emptyList(), found);
-
-    for (int i = 0; i < batches.size(); i++) {
-      found = mutationQueue.getAllMutationBatchesThroughBatchId(batches.get(i).getBatchId());
-      expected = batches.subList(0, i + 1);
-      assertEquals(expected, found);
-    }
   }
 
   @Test
@@ -442,7 +352,7 @@ public abstract class MutationQueueTestCase {
 
     List<MutationBatch> found;
 
-    found = mutationQueue.getAllMutationBatchesThroughBatchId(last.getBatchId());
+    found = mutationQueue.getAllMutationBatches();
     assertEquals(batches, found);
     assertEquals(9, found.size());
 
@@ -452,14 +362,14 @@ public abstract class MutationQueueTestCase {
     batches.remove(batches.get(0));
     assertEquals(6, batchCount());
 
-    found = mutationQueue.getAllMutationBatchesThroughBatchId(last.getBatchId());
+    found = mutationQueue.getAllMutationBatches();
     assertEquals(batches, found);
     assertEquals(6, found.size());
 
     removeMutationBatches(batches.remove(batches.size() - 1));
     assertEquals(5, batchCount());
 
-    found = mutationQueue.getAllMutationBatchesThroughBatchId(last.getBatchId());
+    found = mutationQueue.getAllMutationBatches();
     assertEquals(batches, found);
     assertEquals(5, found.size());
 
@@ -469,12 +379,12 @@ public abstract class MutationQueueTestCase {
     removeMutationBatches(batches.remove(1));
     assertEquals(3, batchCount());
 
-    found = mutationQueue.getAllMutationBatchesThroughBatchId(last.getBatchId());
+    found = mutationQueue.getAllMutationBatches();
     assertEquals(batches, found);
     assertEquals(3, found.size());
 
     removeMutationBatches(batches.toArray(new MutationBatch[0]));
-    found = mutationQueue.getAllMutationBatchesThroughBatchId(last.getBatchId());
+    found = mutationQueue.getAllMutationBatches();
     assertEquals(emptyList(), found);
     assertEquals(0, found.size());
     assertTrue(mutationQueue.isEmpty());
@@ -496,7 +406,6 @@ public abstract class MutationQueueTestCase {
     persistence.runTransaction(
         "acknowledgeBatchId", () -> mutationQueue.acknowledgeBatch(batch1, streamToken2));
 
-    assertEquals(batch1.getBatchId(), mutationQueue.getHighestAcknowledgedBatchId());
     assertEquals(streamToken2, mutationQueue.getLastStreamToken());
   }
 
