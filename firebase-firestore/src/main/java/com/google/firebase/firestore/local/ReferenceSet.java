@@ -77,19 +77,27 @@ public class ReferenceSet {
     }
   }
 
-  /** Clears all references with a given ID. Calls removeReference() for each key removed. */
-  public void removeReferencesForId(int targetId) {
+  /**
+   * Clears all references with a given ID. Calls removeReference() for each key removed.
+   *
+   * @return The keys of the documents that were removed.
+   */
+  public ImmutableSortedSet<DocumentKey> removeReferencesForId(int targetId) {
     DocumentKey emptyKey = DocumentKey.empty();
     DocumentReference startRef = new DocumentReference(emptyKey, targetId);
     Iterator<DocumentReference> it = referencesByTarget.iteratorFrom(startRef);
+    ImmutableSortedSet<DocumentKey> keys = DocumentKey.emptyKeySet();
     while (it.hasNext()) {
       DocumentReference ref = it.next();
       if (ref.getId() == targetId) {
+        keys = keys.insert(ref.getKey());
         removeReference(ref);
       } else {
         break;
       }
     }
+
+    return keys;
   }
 
   /** Clears all references for all IDs. */
