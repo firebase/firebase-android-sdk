@@ -555,7 +555,19 @@
             "message": "Simulated Backend Error"
           },
           "runBackoffTimer": true
-        }
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "errorCode": 0,
+            "fromCache": true,
+            "hasPendingWrites": false
+          }
+        ]
       },
       {
         "watchAck": [
@@ -665,6 +677,18 @@
           },
           "runBackoffTimer": false
         },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "errorCode": 0,
+            "fromCache": true,
+            "hasPendingWrites": false
+          }
+        ],
         "stateExpect": {
           "activeTargets": {}
         }

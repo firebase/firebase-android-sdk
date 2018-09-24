@@ -506,6 +506,321 @@
       }
     ]
   },
+  "Raises snapshot with 'hasPendingWrites' for unacknowledged write": {
+    "describeName": "Writes:",
+    "itName": "Raises snapshot with 'hasPendingWrites' for unacknowledged write",
+    "tags": [],
+    "config": {
+      "useGarbageCollection": false,
+      "numClients": 1
+    },
+    "steps": [
+      {
+        "userSet": [
+          "collection/doc",
+          {
+            "v": 1
+          }
+        ]
+      },
+      {
+        "userListen": [
+          2,
+          {
+            "path": "collection",
+            "filters": [],
+            "orderBys": []
+          }
+        ],
+        "stateExpect": {
+          "activeTargets": {
+            "2": {
+              "query": {
+                "path": "collection",
+                "filters": [],
+                "orderBys": []
+              },
+              "resumeToken": ""
+            }
+          }
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "added": [
+              {
+                "key": "collection/doc",
+                "version": 0,
+                "value": {
+                  "v": 1
+                },
+                "options": {
+                  "hasLocalMutations": true,
+                  "hasCommittedMutations": false
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": true,
+            "hasPendingWrites": true
+          }
+        ]
+      }
+    ]
+  },
+  "Doesn't raise 'hasPendingWrites' for committed write and new listen": {
+    "describeName": "Writes:",
+    "itName": "Doesn't raise 'hasPendingWrites' for committed write and new listen",
+    "tags": [],
+    "config": {
+      "useGarbageCollection": false,
+      "numClients": 1
+    },
+    "steps": [
+      {
+        "userSet": [
+          "collection/doc",
+          {
+            "v": 1
+          }
+        ]
+      },
+      {
+        "writeAck": {
+          "version": 1000
+        },
+        "stateExpect": {
+          "userCallbacks": {
+            "acknowledgedDocs": [
+              "collection/doc"
+            ],
+            "rejectedDocs": []
+          }
+        }
+      },
+      {
+        "userListen": [
+          2,
+          {
+            "path": "collection",
+            "filters": [],
+            "orderBys": []
+          }
+        ],
+        "stateExpect": {
+          "activeTargets": {
+            "2": {
+              "query": {
+                "path": "collection",
+                "filters": [],
+                "orderBys": []
+              },
+              "resumeToken": ""
+            }
+          }
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "added": [
+              {
+                "key": "collection/doc",
+                "version": 1000,
+                "value": {
+                  "v": 1
+                },
+                "options": {
+                  "hasLocalMutations": false,
+                  "hasCommittedMutations": true
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": true,
+            "hasPendingWrites": false
+          }
+        ]
+      }
+    ]
+  },
+  "Doesn't raise event for document with pending patch": {
+    "describeName": "Writes:",
+    "itName": "Doesn't raise event for document with pending patch",
+    "tags": [],
+    "config": {
+      "useGarbageCollection": false,
+      "numClients": 1
+    },
+    "steps": [
+      {
+        "userListen": [
+          2,
+          {
+            "path": "collection",
+            "filters": [],
+            "orderBys": []
+          }
+        ],
+        "stateExpect": {
+          "activeTargets": {
+            "2": {
+              "query": {
+                "path": "collection",
+                "filters": [],
+                "orderBys": []
+              },
+              "resumeToken": ""
+            }
+          }
+        }
+      },
+      {
+        "watchAck": [
+          2
+        ]
+      },
+      {
+        "watchEntity": {
+          "docs": [],
+          "targets": [
+            2
+          ]
+        }
+      },
+      {
+        "watchCurrent": [
+          [
+            2
+          ],
+          "resume-token-250"
+        ]
+      },
+      {
+        "watchSnapshot": {
+          "version": 250,
+          "targetIds": []
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "errorCode": 0,
+            "fromCache": false,
+            "hasPendingWrites": false
+          }
+        ]
+      },
+      {
+        "userPatch": [
+          "collection/doc",
+          {
+            "v": 2
+          }
+        ]
+      },
+      {
+        "writeAck": {
+          "version": 1000
+        },
+        "stateExpect": {
+          "userCallbacks": {
+            "acknowledgedDocs": [
+              "collection/doc"
+            ],
+            "rejectedDocs": []
+          }
+        }
+      },
+      {
+        "watchEntity": {
+          "docs": [
+            {
+              "key": "collection/doc",
+              "version": 500,
+              "value": {
+                "v": 1
+              },
+              "options": {
+                "hasLocalMutations": false,
+                "hasCommittedMutations": false
+              }
+            }
+          ],
+          "targets": [
+            2
+          ]
+        }
+      },
+      {
+        "watchSnapshot": {
+          "version": 500,
+          "targetIds": []
+        }
+      },
+      {
+        "watchEntity": {
+          "docs": [
+            {
+              "key": "collection/doc",
+              "version": 1000,
+              "value": {
+                "v": 2
+              },
+              "options": {
+                "hasLocalMutations": false,
+                "hasCommittedMutations": false
+              }
+            }
+          ],
+          "targets": [
+            2
+          ]
+        }
+      },
+      {
+        "watchSnapshot": {
+          "version": 1000,
+          "targetIds": []
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "added": [
+              {
+                "key": "collection/doc",
+                "version": 1000,
+                "value": {
+                  "v": 2
+                },
+                "options": {
+                  "hasLocalMutations": false,
+                  "hasCommittedMutations": false
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": false,
+            "hasPendingWrites": false
+          }
+        ]
+      }
+    ]
+  },
   "Cache will not keep data for an outdated write ack": {
     "describeName": "Writes:",
     "itName": "Cache will not keep data for an outdated write ack",
@@ -1123,6 +1438,305 @@
                 "version": 3000,
                 "value": {
                   "v": 3
+                },
+                "options": {
+                  "hasLocalMutations": false,
+                  "hasCommittedMutations": false
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": false,
+            "hasPendingWrites": false
+          }
+        ]
+      }
+    ]
+  },
+  "Local patch is applied to query until watch catches up": {
+    "describeName": "Writes:",
+    "itName": "Local patch is applied to query until watch catches up",
+    "tags": [],
+    "config": {
+      "useGarbageCollection": false,
+      "numClients": 1
+    },
+    "steps": [
+      {
+        "userSet": [
+          "collection/doc",
+          {
+            "local": 1
+          }
+        ]
+      },
+      {
+        "userListen": [
+          2,
+          {
+            "path": "collection",
+            "filters": [],
+            "orderBys": []
+          }
+        ],
+        "stateExpect": {
+          "activeTargets": {
+            "2": {
+              "query": {
+                "path": "collection",
+                "filters": [],
+                "orderBys": []
+              },
+              "resumeToken": ""
+            }
+          }
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "added": [
+              {
+                "key": "collection/doc",
+                "version": 0,
+                "value": {
+                  "local": 1
+                },
+                "options": {
+                  "hasLocalMutations": true,
+                  "hasCommittedMutations": false
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": true,
+            "hasPendingWrites": true
+          }
+        ]
+      },
+      {
+        "writeAck": {
+          "version": 1000
+        },
+        "stateExpect": {
+          "userCallbacks": {
+            "acknowledgedDocs": [
+              "collection/doc"
+            ],
+            "rejectedDocs": []
+          }
+        }
+      },
+      {
+        "watchAck": [
+          2
+        ]
+      },
+      {
+        "watchEntity": {
+          "docs": [
+            {
+              "key": "collection/doc",
+              "version": 2000,
+              "value": {
+                "local": 1,
+                "remote": 2
+              },
+              "options": {
+                "hasLocalMutations": false,
+                "hasCommittedMutations": false
+              }
+            }
+          ],
+          "targets": [
+            2
+          ]
+        }
+      },
+      {
+        "watchCurrent": [
+          [
+            2
+          ],
+          "resume-token-2000"
+        ]
+      },
+      {
+        "watchSnapshot": {
+          "version": 2000,
+          "targetIds": []
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "modified": [
+              {
+                "key": "collection/doc",
+                "version": 2000,
+                "value": {
+                  "local": 1,
+                  "remote": 2
+                },
+                "options": {
+                  "hasLocalMutations": false,
+                  "hasCommittedMutations": false
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": false,
+            "hasPendingWrites": false
+          }
+        ]
+      },
+      {
+        "userPatch": [
+          "collection/doc",
+          {
+            "local": 5
+          }
+        ],
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "modified": [
+              {
+                "key": "collection/doc",
+                "version": 2000,
+                "value": {
+                  "local": 5,
+                  "remote": 2
+                },
+                "options": {
+                  "hasLocalMutations": true,
+                  "hasCommittedMutations": false
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": false,
+            "hasPendingWrites": true
+          }
+        ]
+      },
+      {
+        "writeAck": {
+          "version": 5000
+        },
+        "stateExpect": {
+          "userCallbacks": {
+            "acknowledgedDocs": [
+              "collection/doc"
+            ],
+            "rejectedDocs": []
+          }
+        }
+      },
+      {
+        "watchEntity": {
+          "docs": [
+            {
+              "key": "collection/doc",
+              "version": 3000,
+              "value": {
+                "local": 1,
+                "remote": 3
+              },
+              "options": {
+                "hasLocalMutations": false,
+                "hasCommittedMutations": true
+              }
+            }
+          ],
+          "targets": [
+            2
+          ]
+        }
+      },
+      {
+        "watchSnapshot": {
+          "version": 3000,
+          "targetIds": []
+        }
+      },
+      {
+        "watchEntity": {
+          "docs": [
+            {
+              "key": "collection/doc",
+              "version": 4000,
+              "value": {
+                "local": 1,
+                "remote": 4
+              },
+              "options": {
+                "hasLocalMutations": false,
+                "hasCommittedMutations": true
+              }
+            }
+          ],
+          "targets": [
+            2
+          ]
+        }
+      },
+      {
+        "watchSnapshot": {
+          "version": 4000,
+          "targetIds": []
+        }
+      },
+      {
+        "watchEntity": {
+          "docs": [
+            {
+              "key": "collection/doc",
+              "version": 5000,
+              "value": {
+                "local": 5,
+                "remote": 5
+              },
+              "options": {
+                "hasLocalMutations": false,
+                "hasCommittedMutations": false
+              }
+            }
+          ],
+          "targets": [
+            2
+          ]
+        }
+      },
+      {
+        "watchSnapshot": {
+          "version": 5000,
+          "targetIds": []
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "modified": [
+              {
+                "key": "collection/doc",
+                "version": 5000,
+                "value": {
+                  "local": 5,
+                  "remote": 5
                 },
                 "options": {
                   "hasLocalMutations": false,
@@ -4041,9 +4655,9 @@
       }
     ]
   },
-  "Held writes are not re-sent.": {
+  "Writes are not re-sent.": {
     "describeName": "Writes:",
-    "itName": "Held writes are not re-sent.",
+    "itName": "Writes are not re-sent.",
     "tags": [],
     "config": {
       "useGarbageCollection": true,
@@ -4278,9 +4892,9 @@
       }
     ]
   },
-  "Held writes are not re-sent after disable/enable network.": {
+  "Writes are not re-sent after disable/enable network.": {
     "describeName": "Writes:",
-    "itName": "Held writes are not re-sent after disable/enable network.",
+    "itName": "Writes are not re-sent after disable/enable network.",
     "tags": [],
     "config": {
       "useGarbageCollection": true,
@@ -4497,13 +5111,13 @@
       }
     ]
   },
-  "Held writes are released when there are no queries left.": {
+  "Writes are released when there are no queries left": {
     "describeName": "Writes:",
-    "itName": "Held writes are released when there are no queries left.",
+    "itName": "Writes are released when there are no queries left",
     "tags": [
       "eager-gc"
     ],
-    "comment": "This test expects a new target id for a new listen, but without eager gc, the same target id is reused",
+    "comment": "This test verifies that committed mutations are eligible for garbage collection on target removal",
     "config": {
       "useGarbageCollection": true,
       "numClients": 1
@@ -7862,9 +8476,9 @@
       }
     ]
   },
-  "Held write is released by primary client": {
+  "Writes are released by primary client": {
     "describeName": "Writes:",
-    "itName": "Held write is released by primary client",
+    "itName": "Writes are released by primary client",
     "tags": [
       "multi-client"
     ],
@@ -7993,6 +8607,14 @@
       },
       {
         "drainQueue": true,
+        "stateExpect": {
+          "userCallbacks": {
+            "acknowledgedDocs": [
+              "collection/a"
+            ],
+            "rejectedDocs": []
+          }
+        },
         "clientIndex": 1
       },
       {
@@ -8051,18 +8673,343 @@
           }
         ],
         "clientIndex": 0
-      },
+      }
+    ]
+  },
+  "Writes are held during primary failover": {
+    "describeName": "Writes:",
+    "itName": "Writes are held during primary failover",
+    "tags": [
+      "multi-client"
+    ],
+    "config": {
+      "useGarbageCollection": false,
+      "numClients": 2
+    },
+    "steps": [
       {
         "drainQueue": true,
+        "clientIndex": 0
+      },
+      {
+        "userListen": [
+          2,
+          {
+            "path": "collection",
+            "filters": [],
+            "orderBys": []
+          }
+        ],
+        "stateExpect": {
+          "activeTargets": {
+            "2": {
+              "query": {
+                "path": "collection",
+                "filters": [],
+                "orderBys": []
+              },
+              "resumeToken": ""
+            }
+          }
+        },
+        "clientIndex": 0
+      },
+      {
+        "userSet": [
+          "collection/doc",
+          {
+            "v": 1
+          }
+        ],
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "added": [
+              {
+                "key": "collection/doc",
+                "version": 0,
+                "value": {
+                  "v": 1
+                },
+                "options": {
+                  "hasLocalMutations": true,
+                  "hasCommittedMutations": false
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": true,
+            "hasPendingWrites": true
+          }
+        ],
+        "clientIndex": 0
+      },
+      {
+        "watchAck": [
+          2
+        ],
+        "clientIndex": 0
+      },
+      {
+        "watchEntity": {
+          "docs": [],
+          "targets": [
+            2
+          ]
+        },
+        "clientIndex": 0
+      },
+      {
+        "watchCurrent": [
+          [
+            2
+          ],
+          "resume-token-1000"
+        ],
+        "clientIndex": 0
+      },
+      {
+        "watchSnapshot": {
+          "version": 1000,
+          "targetIds": []
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "errorCode": 0,
+            "fromCache": false,
+            "hasPendingWrites": true
+          }
+        ],
+        "clientIndex": 0
+      },
+      {
+        "writeAck": {
+          "version": 2000
+        },
         "stateExpect": {
           "userCallbacks": {
             "acknowledgedDocs": [
-              "collection/a"
+              "collection/doc"
             ],
             "rejectedDocs": []
           }
         },
+        "clientIndex": 0
+      },
+      {
+        "drainQueue": true,
         "clientIndex": 1
+      },
+      {
+        "applyClientState": {
+          "primary": true
+        },
+        "stateExpect": {
+          "isPrimary": true,
+          "activeTargets": {
+            "2": {
+              "query": {
+                "path": "collection",
+                "filters": [],
+                "orderBys": []
+              },
+              "resumeToken": "resume-token-1000"
+            }
+          }
+        },
+        "clientIndex": 1
+      },
+      {
+        "userListen": [
+          4,
+          {
+            "path": "collection/doc",
+            "filters": [],
+            "orderBys": []
+          }
+        ],
+        "stateExpect": {
+          "activeTargets": {
+            "2": {
+              "query": {
+                "path": "collection",
+                "filters": [],
+                "orderBys": []
+              },
+              "resumeToken": "resume-token-1000"
+            },
+            "4": {
+              "query": {
+                "path": "collection/doc",
+                "filters": [],
+                "orderBys": []
+              },
+              "resumeToken": ""
+            }
+          }
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection/doc",
+              "filters": [],
+              "orderBys": []
+            },
+            "added": [
+              {
+                "key": "collection/doc",
+                "version": 2000,
+                "value": {
+                  "v": 1
+                },
+                "options": {
+                  "hasLocalMutations": false,
+                  "hasCommittedMutations": true
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": true,
+            "hasPendingWrites": false
+          }
+        ],
+        "clientIndex": 1
+      },
+      {
+        "watchAck": [
+          2
+        ],
+        "clientIndex": 1
+      },
+      {
+        "watchAck": [
+          4
+        ],
+        "clientIndex": 1
+      },
+      {
+        "watchEntity": {
+          "docs": [
+            {
+              "key": "collection/doc",
+              "version": 2000,
+              "value": {
+                "v": 1
+              },
+              "options": {
+                "hasLocalMutations": false,
+                "hasCommittedMutations": false
+              }
+            }
+          ],
+          "targets": [
+            2,
+            4
+          ]
+        },
+        "clientIndex": 1
+      },
+      {
+        "watchCurrent": [
+          [
+            2
+          ],
+          "resume-token-2000"
+        ],
+        "clientIndex": 1
+      },
+      {
+        "watchCurrent": [
+          [
+            4
+          ],
+          "resume-token-2000"
+        ],
+        "clientIndex": 1
+      },
+      {
+        "watchSnapshot": {
+          "version": 2000,
+          "targetIds": []
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection/doc",
+              "filters": [],
+              "orderBys": []
+            },
+            "errorCode": 0,
+            "fromCache": false,
+            "hasPendingWrites": false
+          }
+        ],
+        "clientIndex": 1
+      },
+      {
+        "drainQueue": true,
+        "stateExpect": {
+          "activeTargets": {
+            "2": {
+              "query": {
+                "path": "collection",
+                "filters": [],
+                "orderBys": []
+              },
+              "resumeToken": ""
+            },
+            "4": {
+              "query": {
+                "path": "collection/doc",
+                "filters": [],
+                "orderBys": []
+              },
+              "resumeToken": ""
+            }
+          }
+        },
+        "clientIndex": 0
+      },
+      {
+        "runTimer": "client_metadata_refresh",
+        "stateExpect": {
+          "isPrimary": false
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [],
+              "orderBys": []
+            },
+            "metadata": [
+              {
+                "key": "collection/doc",
+                "version": 2000,
+                "value": {
+                  "v": 1
+                },
+                "options": {
+                  "hasLocalMutations": false,
+                  "hasCommittedMutations": false
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": false,
+            "hasPendingWrites": false
+          }
+        ],
+        "clientIndex": 0
       }
     ]
   },

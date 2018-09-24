@@ -37,15 +37,6 @@
             "message": "Simulated Backend Error"
           },
           "runBackoffTimer": true
-        }
-      },
-      {
-        "watchStreamClose": {
-          "error": {
-            "code": 14,
-            "message": "Simulated Backend Error"
-          },
-          "runBackoffTimer": true
         },
         "expect": [
           {
@@ -115,15 +106,6 @@
         "watchAck": [
           2
         ]
-      },
-      {
-        "watchStreamClose": {
-          "error": {
-            "code": 14,
-            "message": "Simulated Backend Error"
-          },
-          "runBackoffTimer": true
-        }
       },
       {
         "watchStreamClose": {
@@ -216,15 +198,6 @@
             "message": "Simulated Backend Error"
           },
           "runBackoffTimer": true
-        }
-      },
-      {
-        "watchStreamClose": {
-          "error": {
-            "code": 14,
-            "message": "Simulated Backend Error"
-          },
-          "runBackoffTimer": true
         },
         "expect": [
           {
@@ -281,15 +254,6 @@
               "resumeToken": ""
             }
           }
-        }
-      },
-      {
-        "watchStreamClose": {
-          "error": {
-            "code": 14,
-            "message": "Simulated Backend Error"
-          },
-          "runBackoffTimer": true
         }
       },
       {
@@ -429,15 +393,6 @@
               "resumeToken": "resume-token-1000"
             }
           }
-        }
-      },
-      {
-        "watchStreamClose": {
-          "error": {
-            "code": 14,
-            "message": "Simulated Backend Error"
-          },
-          "runBackoffTimer": true
         }
       },
       {
@@ -678,15 +633,6 @@
               "resumeToken": "resume-token-1001"
             }
           }
-        }
-      },
-      {
-        "watchStreamClose": {
-          "error": {
-            "code": 14,
-            "message": "Simulated Backend Error"
-          },
-          "runBackoffTimer": true
         }
       },
       {
@@ -999,15 +945,6 @@
             "message": "Simulated Backend Error"
           },
           "runBackoffTimer": true
-        }
-      },
-      {
-        "watchStreamClose": {
-          "error": {
-            "code": 14,
-            "message": "Simulated Backend Error"
-          },
-          "runBackoffTimer": true
         },
         "expect": [
           {
@@ -1159,7 +1096,9 @@
   "Queries return from cache when network disabled": {
     "describeName": "Offline:",
     "itName": "Queries return from cache when network disabled",
-    "tags": ["eager-gc"],
+    "tags": [
+      "eager-gc"
+    ],
     "config": {
       "useGarbageCollection": true,
       "numClients": 1
