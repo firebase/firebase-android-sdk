@@ -558,7 +558,13 @@ public final class LocalStore {
             queryCache.updateQueryData(queryData);
           }
 
-          localViewReferences.removeReferencesForId(queryData.getTargetId());
+          // We remove both locally edited documents and documents that are associated via the query
+          // cache.
+          ImmutableSortedSet<DocumentKey> removedReferences =
+              localViewReferences.removeReferencesForId(queryData.getTargetId());
+          for (DocumentKey key : removedReferences) {
+            persistence.getReferenceDelegate().removeReference(key);
+          }
           persistence.getReferenceDelegate().removeTarget(queryData);
           targetIds.remove(queryData.getTargetId());
 
@@ -622,7 +628,7 @@ public final class LocalStore {
     ArrayList<MutationBatch> batches = new ArrayList<>(batchResults.size());
     // TODO: Call queryEngine.handleDocumentChange() as appropriate.
     for (MutationBatchResult batchResult : batchResults) {
-      applyBatchResult(batchResult);
+      applyWriteToRemoteDocuments(batchResult);
       batches.add(batchResult.getBatch());
     }
 
@@ -647,7 +653,7 @@ public final class LocalStore {
     return affectedDocs;
   }
 
-  private void applyBatchResult(MutationBatchResult batchResult) {
+  private void applyWriteToRemoteDocuments(MutationBatchResult batchResult) {
     MutationBatch batch = batchResult.getBatch();
     Set<DocumentKey> docKeys = batch.getKeys();
     for (DocumentKey docKey : docKeys) {
