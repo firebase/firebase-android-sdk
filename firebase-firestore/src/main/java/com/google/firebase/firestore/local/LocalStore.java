@@ -558,8 +558,10 @@ public final class LocalStore {
             queryCache.updateQueryData(queryData);
           }
 
-          // We remove both locally edited documents and documents that are associated via the query
-          // cache.
+          // References for documents sent via Watch are automatically removed when we delete a
+          // query's target data from the reference delegate. Since this does not remove references
+          // for locally mutated documents, we have to remove the target associations for these
+          // documents manually.
           ImmutableSortedSet<DocumentKey> removedReferences =
               localViewReferences.removeReferencesForId(queryData.getTargetId());
           for (DocumentKey key : removedReferences) {
