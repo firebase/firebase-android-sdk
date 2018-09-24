@@ -244,6 +244,31 @@ public abstract class LocalStoreTestCase {
   }
 
   @Test
+  public void testHandlesSetMutationThenAckThenRelease() {
+    Query query = Query.atPath(ResourcePath.fromSegments(asList("foo")));
+    allocateQuery(query);
+
+    writeMutation(setMutation("foo/bar", map("foo", "bar")));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+
+    acknowledgeMutation(1);
+    notifyLocalViewChanges(viewChanges(2, asList("foo/bar"), emptyList()));
+
+    assertChanged(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    assertContains(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+
+    releaseQuery(query);
+
+    // It has been acknowledged, and should no longer be retained as there is no target and mutation
+    if (garbageCollectorIsEager()) {
+      assertNotContains("foo/bar");
+    } else {
+      assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    }
+  }
+
+  @Test
   public void testHandlesAckThenRejectThenRemoteEvent() {
     // Start a query that requires acks to be held.
     Query query = Query.atPath(ResourcePath.fromSegments(asList("foo")));

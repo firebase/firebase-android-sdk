@@ -208,7 +208,7 @@ public final class LocalStore {
         () -> {
           MutationBatch batch = batchResult.getBatch();
           mutationQueue.acknowledgeBatch(batch, batchResult.getStreamToken());
-          applyBatchResult(batchResult);
+          applyWriteToRemoteDocuments(batchResult);
           mutationQueue.performConsistencyCheck();
           return localDocuments.getDocuments(batch.getKeys());
         });
@@ -503,7 +503,15 @@ public final class LocalStore {
             queryCache.updateQueryData(queryData);
           }
 
-          localViewReferences.removeReferencesForId(queryData.getTargetId());
+          // References for documents sent via Watch are automatically removed when we delete a
+          // query's target data from the reference delegate. Since this does not remove references
+          // for locally mutated documents, we have to remove the target associations for these
+          // documents manually.
+          ImmutableSortedSet<DocumentKey> removedReferences =
+              localViewReferences.removeReferencesForId(queryData.getTargetId());
+          for (DocumentKey key : removedReferences) {
+            persistence.getReferenceDelegate().removeReference(key);
+          }
           persistence.getReferenceDelegate().removeTarget(queryData);
           targetIds.remove(queryData.getTargetId());
         });
@@ -522,7 +530,7 @@ public final class LocalStore {
     return queryCache.getMatchingKeysForTargetId(targetId);
   }
 
-  private void applyBatchResult(MutationBatchResult batchResult) {
+  private void applyWriteToRemoteDocuments(MutationBatchResult batchResult) {
     MutationBatch batch = batchResult.getBatch();
     Set<DocumentKey> docKeys = batch.getKeys();
     for (DocumentKey docKey : docKeys) {
