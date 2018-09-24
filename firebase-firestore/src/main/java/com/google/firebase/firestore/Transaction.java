@@ -242,10 +242,10 @@ public class Transaction {
               MaybeDocument doc = docs.get(0);
               if (doc instanceof Document) {
                 return DocumentSnapshot.fromDocument(
-                    firestore, (Document) doc, /*fromCache=*/ false);
+                    firestore, (Document) doc, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
               } else if (doc instanceof NoDocument) {
                 return DocumentSnapshot.fromNoDocument(
-                    firestore, doc.getKey(), /*fromCache=*/ false);
+                    firestore, doc.getKey(), /*fromCache=*/ false, /*hasPendingWrites=*/ false);
               } else {
                 throw fail(
                     "BatchGetDocumentsRequest returned unexpected document type: "

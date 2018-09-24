@@ -249,14 +249,16 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
+    notifyLocalViewChanges(viewChanges(2, asList("foo/bar"), emptyList()));
+
     assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
     acknowledgeMutation(1);
-    notifyLocalViewChanges(viewChanges(2, asList("foo/bar"), emptyList()));
 
     assertChanged(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
-    assertContains(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    assertContains(
+        doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
 
     releaseQuery(query);
 
@@ -264,7 +266,8 @@ public abstract class LocalStoreTestCase {
     if (garbageCollectorIsEager()) {
       assertNotContains("foo/bar");
     } else {
-      assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+      assertContains(
+          doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
     }
   }
 
@@ -463,7 +466,7 @@ public abstract class LocalStoreTestCase {
     if (garbageCollectorIsEager()) {
       assertNotContains("foo/bar");
     } else {
-      assertContains(deletedDoc("foo/bar", 1));
+      assertContains(deletedDoc("foo/bar", 1, /*hasCommittedMutations=*/ true));
     }
   }
 
@@ -487,7 +490,7 @@ public abstract class LocalStoreTestCase {
       // Neither the target nor the mutation pin the document, it should be gone.
       assertNotContains("foo/bar");
     } else {
-      assertContains(deletedDoc("foo/bar", 2));
+      assertContains(deletedDoc("foo/bar", 2, /*hasCommittedMutations=*/ true));
     }
   }
 
@@ -512,7 +515,7 @@ public abstract class LocalStoreTestCase {
       // anymore.
       assertNotContains("foo/bar");
     } else {
-      assertContains(deletedDoc("foo/bar", 2));
+      assertContains(deletedDoc("foo/bar", 2, /*hasCommittedMutations=*/ true));
     }
   }
 
@@ -631,7 +634,7 @@ public abstract class LocalStoreTestCase {
 
     acknowledgeMutation(2); // delete mutation
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 2));
+    assertContains(deletedDoc("foo/bar", 2, true));
 
     acknowledgeMutation(3); // patch mutation
     assertChanged(unknownDoc("foo/bar", 3));

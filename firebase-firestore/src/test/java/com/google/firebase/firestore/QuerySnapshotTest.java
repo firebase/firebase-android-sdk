@@ -16,6 +16,7 @@ package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docSet;
+import static com.google.firebase.firestore.testutil.TestUtil.keySet;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
@@ -122,16 +123,18 @@ public class QuerySnapshotTest {
             oldDocuments,
             documentChanges,
             /*isFromCache=*/ false,
-            /*hasPendingWrites=*/ false,
+            /*mutatedKeys=*/ keySet(),
             /*didSyncStateChange=*/ true);
 
     QuerySnapshot snapshot =
         new QuerySnapshot(new Query(fooQuery, firestore), viewSnapshot, firestore);
 
     QueryDocumentSnapshot doc1Snap =
-        QueryDocumentSnapshot.fromDocument(firestore, doc1New, /*fromCache=*/ false);
+        QueryDocumentSnapshot.fromDocument(
+            firestore, doc1New, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
     QueryDocumentSnapshot doc2Snap =
-        QueryDocumentSnapshot.fromDocument(firestore, doc2New, /*fromCache=*/ false);
+        QueryDocumentSnapshot.fromDocument(
+            firestore, doc2New, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
 
     assertEquals(1, snapshot.getDocumentChanges().size());
     List<DocumentChange> changesWithoutMetadata =

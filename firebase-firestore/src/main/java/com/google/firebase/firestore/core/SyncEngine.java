@@ -364,7 +364,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       // Ideally, we would have a method in the local store to purge a document. However, it would
       // be tricky to keep all of the local store's invariants with another method.
       Map<DocumentKey, MaybeDocument> documentUpdates =
-          Collections.singletonMap(limboKey, new NoDocument(limboKey, SnapshotVersion.NONE));
+          Collections.singletonMap(
+              limboKey,
+              new NoDocument(limboKey, SnapshotVersion.NONE, /*hasCommittedMutations=*/ false));
       Set<DocumentKey> limboDocuments = Collections.singleton(limboKey);
       RemoteEvent event =
           new RemoteEvent(

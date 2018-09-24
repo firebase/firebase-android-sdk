@@ -106,7 +106,7 @@ public class QueryListenerTest {
             DocumentSet.emptySet(snap2.getQuery().comparator()),
             asList(change1, change4),
             snap2.isFromCache(),
-            snap2.hasPendingWrites(),
+            snap2.getMutatedKeys(),
             /* didSyncStateChange= */ true);
     assertEquals(asList(snap2Prime), otherAccum);
   }
@@ -253,7 +253,7 @@ public class QueryListenerTest {
             snap3.getDocuments(),
             asList(),
             snap4.isFromCache(),
-            snap4.hasPendingWrites(),
+            snap4.getMutatedKeys(),
             snap4.didSyncStateChange());
     assertEquals(asList(snap1, snap3, expectedSnapshot4), fullAccum);
   }
@@ -287,7 +287,7 @@ public class QueryListenerTest {
             snap1.getDocuments(),
             asList(change3),
             snap2.isFromCache(),
-            snap2.hasPendingWrites(),
+            snap2.getMutatedKeys(),
             snap2.didSyncStateChange());
     assertEquals(asList(snap1, expectedSnapshot2), filteredAccum);
   }
@@ -326,7 +326,7 @@ public class QueryListenerTest {
             DocumentSet.emptySet(snap3.getQuery().comparator()),
             asList(change1, change2),
             /* isFromCache= */ false,
-            /*hasPendingWrites=*/ false,
+            snap3.getMutatedKeys(),
             /* didSyncStateChange= */ true);
     assertEquals(asList(expectedSnapshot), events);
   }
@@ -363,7 +363,7 @@ public class QueryListenerTest {
             DocumentSet.emptySet(snap1.getQuery().comparator()),
             asList(change1),
             /* isFromCache= */ true,
-            /*hasPendingWrites=*/ false,
+            snap1.getMutatedKeys(),
             /* didSyncStateChange= */ true);
     ViewSnapshot expectedSnapshot2 =
         new ViewSnapshot(
@@ -372,7 +372,7 @@ public class QueryListenerTest {
             snap1.getDocuments(),
             asList(change2),
             /* isFromCache= */ true,
-            /*hasPendingWrites=*/ false,
+            snap2.getMutatedKeys(),
             /* didSyncStateChange= */ false);
     assertEquals(asList(expectedSnapshot1, expectedSnapshot2), events);
   }
@@ -398,7 +398,7 @@ public class QueryListenerTest {
             DocumentSet.emptySet(snap1.getQuery().comparator()),
             asList(),
             /* isFromCache= */ true,
-            /*hasPendingWrites=*/ false,
+            snap1.getMutatedKeys(),
             /* didSyncStateChange= */ true);
     assertEquals(asList(expectedSnapshot), events);
   }
@@ -423,7 +423,7 @@ public class QueryListenerTest {
             DocumentSet.emptySet(snap1.getQuery().comparator()),
             asList(),
             /* isFromCache= */ true,
-            /*hasPendingWrites=*/ false,
+            snap1.getMutatedKeys(),
             /* didSyncStateChange= */ true);
     assertEquals(asList(expectedSnapshot), events);
   }

@@ -435,7 +435,7 @@ public class MutationTest {
     Mutation transform = transformMutation("collection/key", map());
     Mutation delete = deleteMutation("collection/key");
 
-    NoDocument docV7Deleted = deletedDoc("collection/key", 7);
+    NoDocument docV7Deleted = deletedDoc("collection/key", 7, /*hasCommittedMutations=*/ true);
     Document docV7Committed =
         doc("collection/key", 7, map(), Document.DocumentState.COMMITTED_MUTATIONS);
     UnknownDocument docV7Unknown = unknownDoc("collection/key", 7);

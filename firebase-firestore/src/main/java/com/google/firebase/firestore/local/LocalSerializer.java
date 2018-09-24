@@ -73,7 +73,7 @@ public final class LocalSerializer {
         return decodeDocument(proto.getDocument(), proto.getHasCommittedMutations());
 
       case NO_DOCUMENT:
-        return decodeNoDocument(proto.getNoDocument());
+        return decodeNoDocument(proto.getNoDocument(), proto.getHasCommittedMutations());
 
       case UNKNOWN_DOCUMENT:
         return decodeUnknownDocument(proto.getUnknownDocument());
@@ -128,10 +128,11 @@ public final class LocalSerializer {
   }
 
   /** Decodes a NoDocument proto to the equivalent model. */
-  private NoDocument decodeNoDocument(com.google.firebase.firestore.proto.NoDocument proto) {
+  private NoDocument decodeNoDocument(
+      com.google.firebase.firestore.proto.NoDocument proto, boolean hasCommittedMutations) {
     DocumentKey key = rpcSerializer.decodeKey(proto.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(proto.getReadTime());
-    return new NoDocument(key, version);
+    return new NoDocument(key, version, hasCommittedMutations);
   }
 
   /** Encodes a UnknownDocument value to the equivalent proto. */
