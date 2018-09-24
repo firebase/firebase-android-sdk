@@ -165,11 +165,6 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   @Override
-  public int getHighestAcknowledgedBatchId() {
-    return lastAcknowledgedBatchId;
-  }
-
-  @Override
   public void acknowledgeBatch(MutationBatch batch, ByteString streamToken) {
     int batchId = batch.getBatchId();
     hardAssert(
@@ -263,17 +258,6 @@ final class SQLiteMutationQueue implements MutationQueue {
     List<MutationBatch> result = new ArrayList<>();
     db.query("SELECT mutations FROM mutations WHERE uid = ? ORDER BY batch_id ASC")
         .binding(uid)
-        .forEach(row -> result.add(decodeMutationBatch(row.getBlob(0))));
-    return result;
-  }
-
-  @Override
-  public List<MutationBatch> getAllMutationBatchesThroughBatchId(int batchId) {
-    List<MutationBatch> result = new ArrayList<>();
-    db.query(
-            "SELECT mutations FROM mutations "
-                + "WHERE uid = ? AND batch_id <= ? ORDER BY batch_id ASC")
-        .binding(uid, batchId)
         .forEach(row -> result.add(decodeMutationBatch(row.getBlob(0))));
     return result;
   }

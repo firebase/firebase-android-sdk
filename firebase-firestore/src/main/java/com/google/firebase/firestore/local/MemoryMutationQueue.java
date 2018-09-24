@@ -112,11 +112,6 @@ final class MemoryMutationQueue implements MutationQueue {
   }
 
   @Override
-  public int getHighestAcknowledgedBatchId() {
-    return highestAcknowledgedBatchId;
-  }
-
-  @Override
   public void acknowledgeBatch(MutationBatch batch, ByteString streamToken) {
     int batchId = batch.getBatchId();
     hardAssert(
@@ -214,23 +209,6 @@ final class MemoryMutationQueue implements MutationQueue {
   @Override
   public List<MutationBatch> getAllMutationBatches() {
     return getAllLiveMutationBatchesBeforeIndex(queue.size());
-  }
-
-  @Override
-  public List<MutationBatch> getAllMutationBatchesThroughBatchId(int batchId) {
-    int count = queue.size();
-
-    int endIndex = indexOfBatchId(batchId);
-    if (endIndex < 0) {
-      endIndex = 0;
-    } else if (endIndex >= count) {
-      endIndex = count;
-    } else {
-      // The endIndex is in the queue so increment to pull everything in the queue including it.
-      endIndex += 1;
-    }
-
-    return getAllLiveMutationBatchesBeforeIndex(endIndex);
   }
 
   @Override
