@@ -29,31 +29,20 @@ def gradle_command(task, gradle_opts):
     """Runs the specified gradle commands."""
     gradle.run(*task, gradle_opts=gradle_opts)
 
-
+@click.option(
+    '--appBuildVariant',
+    type=click.Choice(['debug', 'release']),
+    default='release',
+    help='App build variant to use while running the smoke Tests. One of release|debug')
 @ci_command()
-def smoke_tests_proguarded_app():
+def smoke_tests(appBuildVariant):
     """Builds all SDKs in release mode and then tests test-apps against them."""
     gradle.run('publishAllToBuildDir')
 
     cwd = os.getcwd()
     gradle.run(
         'connectedCheck',
-        '-PtestBuildType=release',
-        gradle_opts='-Dmaven.repo.local={}'.format(
-            os.path.join(cwd, 'build', 'm2repository')),
-        workdir=os.path.join(cwd, 'test-apps'),
-    )
-
-@ci_command()
-def smoke_tests_unproguarded_app():
-    """Builds all SDKs in release mode and then tests test-apps against them."""
-    gradle.run('publishAllToBuildDir')
-
-    cwd = os.getcwd()
-    gradle.run(
-        'connectedCheck',
-        '-PtestBuildType=debug',
-        gradle_opts='-Dmaven.repo.local={}'.format(
-            os.path.join(cwd, 'build', 'm2repository')),
+        '-PtestBuildType=%s' % (appBuildVariant),
+        gradle_opts='-Dmaven.repo.local={}'.format(os.path.join(cwd, 'build', 'm2repository')),
         workdir=os.path.join(cwd, 'test-apps'),
     )

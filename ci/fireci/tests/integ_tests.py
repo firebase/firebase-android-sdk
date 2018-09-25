@@ -63,32 +63,32 @@ class CliInvocationTests(unittest.TestCase):
             self.assertEqual(f.read(), 'content1')
 
     @in_tempdir
-    def test_smoke_test_proguarded_app_when_build_fails_should_fail(self):
+    def test_smoke_test_when_build_fails_should_fail(self):
         create_artifacts(
             Artifact('gradlew', content=scripts.with_exit(1), mode=0o744))
-        result = self.runner.invoke(cli, ['smoke_tests_proguarded_app'])
+        result = self.runner.invoke(cli, ['smoke_tests'])
         self.assertNotEqual(result.exit_code, 0)
 
     @in_tempdir
-    def test_smoke_test_proguarded_app_when_build_succeeds_and_tests_fails_should_fail(self):
+    def test_smoke_test_when_build_succeeds_and_tests_fails_should_fail(self):
         create_artifacts(
             Artifact('gradlew', content=scripts.with_exit(0), mode=0o744),
             Artifact('test-apps/gradlew', content=scripts.with_exit(1), mode=0o744),
         )
-        result = self.runner.invoke(cli, ['smoke_tests_proguarded_app'])
+        result = self.runner.invoke(cli, ['smoke_tests'])
         self.assertNotEqual(result.exit_code, 0)
 
     @in_tempdir
-    def test_smoke_test_proguarded_app_when_build_succeeds_and_tests_succeed_should_succeed(self):
+    def test_smoke_test_when_build_succeeds_and_tests_succeed_should_succeed(self):
         create_artifacts(
             Artifact('gradlew', content=scripts.with_exit(0), mode=0o744),
             Artifact('test-apps/gradlew', content=scripts.with_exit(0), mode=0o744),
         )
-        result = self.runner.invoke(cli, ['smoke_tests_proguarded_app'])
+        result = self.runner.invoke(cli, ['smoke_tests'])
         self.assertEqual(result.exit_code, 0)
 
     @in_tempdir
-    def test_smoke_test_proguarded_app_should_invoke_gradle_with_expected_arguments(self):
+    def test_smoke_test_no_buildType_should_invoke_gradle_with_release_build_type(self):
         create_artifacts(
             Artifact(
                 'gradlew',
@@ -105,36 +105,11 @@ class CliInvocationTests(unittest.TestCase):
                     }),
                 mode=0o744),
         )
-        result = self.runner.invoke(cli, ['smoke_tests_proguarded_app'])
+        result = self.runner.invoke(cli, ['smoke_tests'])
         self.assertEqual(result.exit_code, 0)
 
     @in_tempdir
-    def test_smoke_test_unproguarded_app_when_build_fails_should_fail(self):
-        create_artifacts(
-            Artifact('gradlew', content=scripts.with_exit(1), mode=0o744))
-        result = self.runner.invoke(cli, ['smoke_tests_unproguarded_app'])
-        self.assertNotEqual(result.exit_code, 0)
-
-    @in_tempdir
-    def test_smoke_test_unproguarded_app_when_build_succeeds_and_tests_fails_should_fail(self):
-        create_artifacts(
-            Artifact('gradlew', content=scripts.with_exit(0), mode=0o744),
-            Artifact('test-apps/gradlew', content=scripts.with_exit(1), mode=0o744),
-        )
-        result = self.runner.invoke(cli, ['smoke_tests_unproguarded_app'])
-        self.assertNotEqual(result.exit_code, 0)
-
-    @in_tempdir
-    def test_smoke_test_unproguarded_app_when_build_succeeds_and_tests_succeed_should_succeed(self):
-        create_artifacts(
-            Artifact('gradlew', content=scripts.with_exit(0), mode=0o744),
-            Artifact('test-apps/gradlew', content=scripts.with_exit(0), mode=0o744),
-        )
-        result = self.runner.invoke(cli, ['smoke_tests_unproguarded_app'])
-        self.assertEqual(result.exit_code, 0)
-
-    @in_tempdir
-    def test_smoke_test_unproguarded_app_should_invoke_gradle_with_expected_arguments(self):
+    def test_smoke_test_with_buildType_should_invoke_gradle_with_release_build_type(self):
         create_artifacts(
             Artifact(
                 'gradlew',
@@ -151,6 +126,5 @@ class CliInvocationTests(unittest.TestCase):
                     }),
                 mode=0o744),
         )
-        result = self.runner.invoke(cli, ['smoke_tests_unproguarded_app'])
+        result = self.runner.invoke(cli, ['smoke_tests --appBuildVariant=debug'])
         self.assertEqual(result.exit_code, 0)
-
