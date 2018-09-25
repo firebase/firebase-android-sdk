@@ -151,6 +151,6 @@ class CliInvocationTests(unittest.TestCase):
                     }),
                 mode=0o744),
         )
-        result = self.runner.invoke(cli, ['smoke_tests_proguarded_app'])
+        result = self.runner.invoke(cli, ['smoke_tests_unproguarded_app'])
         self.assertEqual(result.exit_code, 0)
 
