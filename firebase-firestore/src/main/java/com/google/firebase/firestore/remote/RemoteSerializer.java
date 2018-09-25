@@ -421,7 +421,7 @@ public final class RemoteSerializer {
     hardAssert(
         !version.equals(SnapshotVersion.NONE),
         "Got a no document response with no snapshot version");
-    return new NoDocument(key, version);
+    return new NoDocument(key, version, /*hasCommittedMutations=*/ false);
   }
 
   // Mutations
@@ -1023,7 +1023,7 @@ public final class RemoteSerializer {
         key = decodeKey(docDelete.getDocument());
         // Note that version might be unset in which case we use SnapshotVersion.NONE
         version = decodeVersion(docDelete.getReadTime());
-        NoDocument doc = new NoDocument(key, version);
+        NoDocument doc = new NoDocument(key, version, /*hasCommittedMutations=*/ false);
         watchChange =
             new WatchChange.DocumentChange(Collections.emptyList(), removed, doc.getKey(), doc);
         break;

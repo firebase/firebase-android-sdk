@@ -182,7 +182,11 @@ public class TestUtil {
   }
 
   public static NoDocument deletedDoc(String key, long version) {
-    return new NoDocument(key(key), version(version));
+    return deletedDoc(key, version, /*hasCommittedMutations=*/ false);
+  }
+
+  public static NoDocument deletedDoc(String key, long version, boolean hasCommittedMutations) {
+    return new NoDocument(key(key), version(version), hasCommittedMutations);
   }
 
   public static UnknownDocument unknownDoc(String key, long version) {
