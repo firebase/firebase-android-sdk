@@ -26,28 +26,34 @@ from .internal import ci_command
     help='GRADLE_OPTS passed to the gradle invocation.')
 @ci_command('gradle')
 def gradle_command(task, gradle_opts):
-  """Runs the specified gradle commands."""
-  gradle.run(*task, gradle_opts=gradle_opts)
+    """Runs the specified gradle commands."""
+    gradle.run(*task, gradle_opts=gradle_opts)
 
 
 @ci_command()
-def smoke_tests_experimental():
-  """Builds all SDKs in release mode and then tests test-apps against them."""
-  gradle.run('publishAllToBuildDir')
+def smoke_tests_proguarded_app():
+    """Builds all SDKs in release mode and then tests test-apps against them."""
+    gradle.run('publishAllToBuildDir')
 
-  cwd = os.getcwd()
-  gradle.run(
-      'connectedCheck',
-      '-PtestBuildType=release',
-      gradle_opts='-Dmaven.repo.local={}'.format(
-          os.path.join(cwd, 'build', 'm2repository')),
-      workdir=os.path.join(cwd, 'test-apps'),
-  )
-  gradle.run(
-      'connectedCheck',
-      '-PtestBuildType=debug',
-      gradle_opts='-Dmaven.repo.local={}'.format(
-          os.path.join(cwd, 'build', 'm2repository')),
-      workdir=os.path.join(cwd, 'test-apps'),
-  )
+    cwd = os.getcwd()
+    gradle.run(
+        'connectedCheck',
+        '-PtestBuildType=release',
+        gradle_opts='-Dmaven.repo.local={}'.format(
+            os.path.join(cwd, 'build', 'm2repository')),
+        workdir=os.path.join(cwd, 'test-apps'),
+    )
 
+@ci_command()
+def smoke_tests_unproguarded_app():
+    """Builds all SDKs in release mode and then tests test-apps against them."""
+    gradle.run('publishAllToBuildDir')
+
+    cwd = os.getcwd()
+    gradle.run(
+        'connectedCheck',
+        '-PtestBuildType=debug',
+        gradle_opts='-Dmaven.repo.local={}'.format(
+            os.path.join(cwd, 'build', 'm2repository')),
+        workdir=os.path.join(cwd, 'test-apps'),
+    )
