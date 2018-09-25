@@ -17,7 +17,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    testBuildType "release"
+    testBuildType = project.testBuildType
     compileSdkVersion 27
 
     defaultConfig {

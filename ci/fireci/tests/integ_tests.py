@@ -66,7 +66,7 @@ class CliInvocationTests(unittest.TestCase):
   def test_smoke_test_when_build_fails_should_fail(self):
     create_artifacts(
         Artifact('gradlew', content=scripts.with_exit(1), mode=0o744))
-    result = self.runner.invoke(cli, ['smoke_tests_experimental'])
+    result = self.runner.invoke(cli, ['smoke_tests'])
     self.assertNotEqual(result.exit_code, 0)
 
   @in_tempdir
@@ -75,7 +75,7 @@ class CliInvocationTests(unittest.TestCase):
         Artifact('gradlew', content=scripts.with_exit(0), mode=0o744),
         Artifact('test-apps/gradlew', content=scripts.with_exit(1), mode=0o744),
     )
-    result = self.runner.invoke(cli, ['smoke_tests_experimental'])
+    result = self.runner.invoke(cli, ['smoke_tests'])
     self.assertNotEqual(result.exit_code, 0)
 
   @in_tempdir
@@ -85,11 +85,12 @@ class CliInvocationTests(unittest.TestCase):
         Artifact('gradlew', content=scripts.with_exit(0), mode=0o744),
         Artifact('test-apps/gradlew', content=scripts.with_exit(0), mode=0o744),
     )
-    result = self.runner.invoke(cli, ['smoke_tests_experimental'])
+    result = self.runner.invoke(cli, ['smoke_tests'])
     self.assertEqual(result.exit_code, 0)
 
   @in_tempdir
-  def test_smoke_test_should_invoke_gradle_with_expected_arguments(self):
+  def test_smoke_test_no_buildType_should_invoke_gradle_with_release_build_type(
+      self):
     create_artifacts(
         Artifact(
             'gradlew',
@@ -99,12 +100,35 @@ class CliInvocationTests(unittest.TestCase):
         Artifact(
             'test-apps/gradlew',
             content=scripts.with_expected_arguments(
-                ['./gradlew', 'connectedReleaseAndroidTest'], {
+                ['./gradlew', 'connectedCheck', '-PtestBuildType=release'], {
                     'GRADLE_OPTS':
                         '-Dmaven.repo.local={}'.format(
                             os.path.join(os.getcwd(), 'build', 'm2repository'))
                 }),
             mode=0o744),
     )
-    result = self.runner.invoke(cli, ['smoke_tests_experimental'])
+    result = self.runner.invoke(cli, ['smoke_tests'])
+    self.assertEqual(result.exit_code, 0)
+
+  @in_tempdir
+  def test_smoke_test_with_buildType_should_invoke_gradle_with_release_build_type(
+      self):
+    create_artifacts(
+        Artifact(
+            'gradlew',
+            content=scripts.with_expected_arguments(
+                ['./gradlew', 'publishAllToBuildDir']),
+            mode=0o744),
+        Artifact(
+            'test-apps/gradlew',
+            content=scripts.with_expected_arguments(
+                ['./gradlew', 'connectedCheck', '-PtestBuildType=debug'], {
+                    'GRADLE_OPTS':
+                        '-Dmaven.repo.local={}'.format(
+                            os.path.join(os.getcwd(), 'build', 'm2repository'))
+                }),
+            mode=0o744),
+    )
+    result = self.runner.invoke(cli,
+                                ['smoke_tests', '--app-build-variant', 'debug'])
     self.assertEqual(result.exit_code, 0)

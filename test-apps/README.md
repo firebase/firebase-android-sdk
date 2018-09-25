@@ -29,5 +29,5 @@ This experimental directory contains apps that are used to smoke test Firebase A
 - From the /test-apps dir, run the tests
 
   ```
-  ./gradlew connectedReleaseAndroidTest -PfirebaseProjectId=<your_project_id> -PfirebaseToken=<your_firebase_token> -Pm2Repository=${PWD}/../build/m2repository/
+  ./gradlew connectedCheck -PtestBuildType=<release|debug> -PfirebaseProjectId=<your_project_id> -PfirebaseToken=<your_firebase_token> -Pm2Repository=${PWD}/../build/m2repository/
   ```
