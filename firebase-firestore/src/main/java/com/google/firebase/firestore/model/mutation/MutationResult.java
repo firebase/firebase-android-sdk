@@ -38,7 +38,18 @@ public final class MutationResult {
     this.transformResults = transformResults;
   }
 
-  /** The version at which the mutation was committed. */
+  /**
+   * The version at which the mutation was committed.
+   *
+   * <ul>
+   *   <li>For most operations, this is the updateTime in the WriteResult.
+   *   <li>For deletes, it is the commitTime of the WriteResponse (because deletes are not stored
+   *       and have no updateTime).
+   * </ul>
+   *
+   * <p>Note that these versions can be different: No-op writes will not change the updateTime even
+   * though the commitTime advances.
+   */
   public SnapshotVersion getVersion() {
     return version;
   }

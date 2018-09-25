@@ -15,11 +15,15 @@
 package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.key;
+import static com.google.firebase.firestore.testutil.TestUtil.keySet;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
 
+import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.Arrays;
@@ -40,19 +44,20 @@ public class ViewSnapshotTest {
     DocumentSet oldDocs = DocumentSet.emptySet(Document.keyComparator());
     List<DocumentViewChange> changes =
         Arrays.asList(DocumentViewChange.create(Type.ADDED, doc("c/foo", 1, map())));
+    ImmutableSortedSet<DocumentKey> mutatedKeys = keySet(key("c/foo"));
     boolean fromCache = true;
     boolean hasPendingWrites = true;
     boolean syncStateChanges = true;
 
     ViewSnapshot snapshot =
-        new ViewSnapshot(
-            query, docs, oldDocs, changes, fromCache, hasPendingWrites, syncStateChanges);
+        new ViewSnapshot(query, docs, oldDocs, changes, fromCache, mutatedKeys, syncStateChanges);
 
     assertEquals(query, snapshot.getQuery());
     assertEquals(docs, snapshot.getDocuments());
     assertEquals(oldDocs, snapshot.getOldDocuments());
     assertEquals(changes, snapshot.getChanges());
     assertEquals(fromCache, snapshot.isFromCache());
+    assertEquals(mutatedKeys, snapshot.getMutatedKeys());
     assertEquals(hasPendingWrites, snapshot.hasPendingWrites());
     assertEquals(syncStateChanges, snapshot.didSyncStateChange());
   }

@@ -75,6 +75,28 @@ public class FirestoreTest {
   }
 
   @Test
+  public void testCanUpdateAnUnknownDocument() {
+    DocumentReference writerRef = testFirestore().collection("collection").document();
+    DocumentReference readerRef =
+        testFirestore().collection("collection").document(writerRef.getId());
+    waitFor(writerRef.set(map("a", "a")));
+    waitFor(readerRef.update(map("b", "b")));
+    DocumentSnapshot writerSnap = waitFor(writerRef.get(Source.CACHE));
+    assertTrue(writerSnap.exists());
+    try {
+      waitFor(readerRef.get(Source.CACHE));
+      fail("Should have thrown exception");
+    } catch (RuntimeException e) {
+      assertEquals(
+          ((FirebaseFirestoreException) e.getCause().getCause()).getCode(), Code.UNAVAILABLE);
+    }
+    writerSnap = waitFor(writerRef.get());
+    assertEquals(map("a", "a", "b", "b"), writerSnap.getData());
+    DocumentSnapshot readerSnap = waitFor(readerRef.get());
+    assertEquals(map("a", "a", "b", "b"), readerSnap.getData());
+  }
+
+  @Test
   public void testCanMergeDataWithAnExistingDocumentUsingSet() {
     DocumentReference documentReference = testCollection("rooms").document("eros");
     Map<String, Object> initialValue =

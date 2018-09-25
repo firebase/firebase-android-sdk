@@ -41,4 +41,9 @@ public abstract class MaybeDocument {
   public SnapshotVersion getVersion() {
     return version;
   }
+
+  /**
+   * Whether this document has a local mutation applied that has not yet been acknowledged by Watch.
+   */
+  public abstract boolean hasPendingWrites();
 }

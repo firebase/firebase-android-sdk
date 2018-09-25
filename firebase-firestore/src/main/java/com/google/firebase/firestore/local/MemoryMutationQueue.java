@@ -112,11 +112,6 @@ final class MemoryMutationQueue implements MutationQueue {
   }
 
   @Override
-  public int getHighestAcknowledgedBatchId() {
-    return highestAcknowledgedBatchId;
-  }
-
-  @Override
   public void acknowledgeBatch(MutationBatch batch, ByteString streamToken) {
     int batchId = batch.getBatchId();
     hardAssert(
@@ -217,23 +212,6 @@ final class MemoryMutationQueue implements MutationQueue {
   }
 
   @Override
-  public List<MutationBatch> getAllMutationBatchesThroughBatchId(int batchId) {
-    int count = queue.size();
-
-    int endIndex = indexOfBatchId(batchId);
-    if (endIndex < 0) {
-      endIndex = 0;
-    } else if (endIndex >= count) {
-      endIndex = count;
-    } else {
-      // The endIndex is in the queue so increment to pull everything in the queue including it.
-      endIndex += 1;
-    }
-
-    return getAllLiveMutationBatchesBeforeIndex(endIndex);
-  }
-
-  @Override
   public List<MutationBatch> getAllMutationBatchesAffectingDocumentKey(DocumentKey documentKey) {
     DocumentReference start = new DocumentReference(documentKey, 0);
 
@@ -328,69 +306,40 @@ final class MemoryMutationQueue implements MutationQueue {
   }
 
   @Override
-  public void removeMutationBatches(List<MutationBatch> batches) {
-    int batchCount = batches.size();
-    hardAssert(batchCount > 0, "Should not remove mutations when none exist.");
-
-    int firstBatchId = batches.get(0).getBatchId();
-
-    int queueCount = queue.size();
-
+  public void removeMutationBatch(MutationBatch batch) {
     // Find the position of the first batch for removal. This need not be the first entry in the
     // queue.
-    int startIndex = indexOfExistingBatchId(firstBatchId, "removed");
+    int batchIndex = indexOfExistingBatchId(batch.getBatchId(), "removed");
     hardAssert(
-        queue.get(startIndex).getBatchId() == firstBatchId,
+        queue.get(batchIndex).getBatchId() == batch.getBatchId(),
         "Removed batches must exist in the queue");
-
-    // Check that removed batches are contiguous (while excluding tombstones).
-    int batchIndex = 1;
-    int queueIndex = startIndex + 1;
-    while (batchIndex < batchCount && queueIndex < queueCount) {
-      MutationBatch batch = queue.get(queueIndex);
-      if (batch.isTombstone()) {
-        queueIndex++;
-        continue;
-      }
-
-      hardAssert(
-          batch.getBatchId() == batches.get(batchIndex).getBatchId(),
-          "Removed batches must be contiguous in the queue");
-      batchIndex++;
-      queueIndex++;
-    }
 
     // Only actually remove batches if removing at the front of the queue. Previously rejected
     // batches may have left tombstones in the queue, so expand the removal range to include any
     // tombstones.
-    if (startIndex == 0) {
-      for (; queueIndex < queueCount; queueIndex++) {
-        MutationBatch batch = queue.get(queueIndex);
-        if (!batch.isTombstone()) {
+    if (batchIndex == 0) {
+      int endIndex = 1;
+      for (; endIndex < queue.size(); endIndex++) {
+        MutationBatch currentBatch = queue.get(endIndex);
+        if (!currentBatch.isTombstone()) {
           break;
         }
       }
 
-      queue.subList(startIndex, queueIndex).clear();
+      queue.subList(batchIndex, endIndex).clear();
 
     } else {
-      // Mark tombstones
-      for (int i = startIndex; i < queueIndex; i++) {
-        queue.set(i, queue.get(i).toTombstone());
-      }
+      queue.set(batchIndex, queue.get(batchIndex).toTombstone());
     }
 
     // Remove entries from the index too.
     ImmutableSortedSet<DocumentReference> references = batchesByDocumentKey;
-    for (MutationBatch batch : batches) {
-      int batchId = batch.getBatchId();
-      for (Mutation mutation : batch.getMutations()) {
-        DocumentKey key = mutation.getKey();
-        persistence.getReferenceDelegate().removeMutationReference(key);
+    for (Mutation mutation : batch.getMutations()) {
+      DocumentKey key = mutation.getKey();
+      persistence.getReferenceDelegate().removeMutationReference(key);
 
-        DocumentReference reference = new DocumentReference(key, batchId);
-        references = references.remove(reference);
-      }
+      DocumentReference reference = new DocumentReference(key, batch.getBatchId());
+      references = references.remove(reference);
     }
     batchesByDocumentKey = references;
   }

@@ -58,9 +58,11 @@ public class TestUtil {
   public static DocumentSnapshot documentSnapshot(
       String path, Map<String, Object> data, boolean isFromCache) {
     if (data == null) {
-      return DocumentSnapshot.fromNoDocument(FIRESTORE, key(path), isFromCache);
+      return DocumentSnapshot.fromNoDocument(
+          FIRESTORE, key(path), isFromCache, /*hasPendingWrites=*/ false);
     } else {
-      return DocumentSnapshot.fromDocument(FIRESTORE, doc(path, 1L, data), isFromCache);
+      return DocumentSnapshot.fromDocument(
+          FIRESTORE, doc(path, 1L, data), isFromCache, /*hasPendingWrites=*/ false);
     }
   }
 
@@ -87,16 +89,41 @@ public class TestUtil {
       boolean hasPendingWrites,
       boolean isFromCache) {
     DocumentSet oldDocuments = docSet(Document.keyComparator());
+    ImmutableSortedSet<DocumentKey> mutatedKeys = DocumentKey.emptyKeySet();
     for (Map.Entry<String, ObjectValue> pair : oldDocs.entrySet()) {
+      String docKey = path + "/" + pair.getKey();
       oldDocuments =
-          oldDocuments.add(doc(path + "/" + pair.getKey(), 1L, pair.getValue(), hasPendingWrites));
+          oldDocuments.add(
+              doc(
+                  docKey,
+                  1L,
+                  pair.getValue(),
+                  hasPendingWrites
+                      ? Document.DocumentState.SYNCED
+                      : Document.DocumentState.LOCAL_MUTATIONS));
+
+      if (hasPendingWrites) {
+        mutatedKeys = mutatedKeys.insert(key(docKey));
+      }
     }
     DocumentSet newDocuments = docSet(Document.keyComparator());
     List<DocumentViewChange> documentChanges = new ArrayList<>();
     for (Map.Entry<String, ObjectValue> pair : docsToAdd.entrySet()) {
-      Document docToAdd = doc(path + "/" + pair.getKey(), 1L, pair.getValue(), hasPendingWrites);
+      String docKey = path + "/" + pair.getKey();
+      Document docToAdd =
+          doc(
+              docKey,
+              1L,
+              pair.getValue(),
+              hasPendingWrites
+                  ? Document.DocumentState.SYNCED
+                  : Document.DocumentState.LOCAL_MUTATIONS);
       newDocuments = newDocuments.add(docToAdd);
       documentChanges.add(DocumentViewChange.create(Type.ADDED, docToAdd));
+
+      if (hasPendingWrites) {
+        mutatedKeys = mutatedKeys.insert(key(docKey));
+      }
     }
     ViewSnapshot viewSnapshot =
         new ViewSnapshot(
@@ -105,7 +132,7 @@ public class TestUtil {
             oldDocuments,
             documentChanges,
             isFromCache,
-            hasPendingWrites,
+            mutatedKeys,
             true);
     return new QuerySnapshot(query(path), viewSnapshot, FIRESTORE);
   }

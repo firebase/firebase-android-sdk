@@ -47,12 +47,6 @@ interface MutationQueue {
    */
   int getNextBatchId();
 
-  /**
-   * Returns the highest batchId that has been acknowledged. If no batches have been acknowledged or
-   * if there are no batches in the queue this can return {@link MutationBatch#UNKNOWN}.
-   */
-  int getHighestAcknowledgedBatchId();
-
   /** Acknowledges the given batch. */
   void acknowledgeBatch(MutationBatch batch, ByteString streamToken);
 
@@ -84,17 +78,6 @@ interface MutationQueue {
   // TODO: PERF: Current consumer only needs mutated keys; if we can provide that
   // cheaply, we should replace this.
   List<MutationBatch> getAllMutationBatches();
-
-  /**
-   * Finds all mutations with a batchId less than or equal to the given batchId.
-   *
-   * <p>Generally the caller should be asking for the next unacknowledged batchId and the number of
-   * acknowledged batches should be very small when things are functioning well.
-   *
-   * @param batchId The batch to search through.
-   * @return an List containing all batches with matching batchIds.
-   */
-  List<MutationBatch> getAllMutationBatchesThroughBatchId(int batchId);
 
   /**
    * Finds all mutation batches that could @em possibly affect the given document key. Not all
@@ -137,18 +120,14 @@ interface MutationQueue {
   List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query);
 
   /**
-   * Removes the given mutation batches from the queue. This is useful in two circumstances:
+   * Removes the given mutation batch from the queue. This is useful in two circumstances:
    *
    * <ul>
    *   <li>Removing applied mutations from the head of the queue
    *   <li>Removing rejected mutations from anywhere in the queue
    * </ul>
-   *
-   * <p>In both cases, the array of mutations to remove must be a contiguous range of batchIds. This
-   * is most easily accomplished by loading mutations with {@link
-   * #getAllMutationBatchesThroughBatchId}.
    */
-  void removeMutationBatches(List<MutationBatch> batches);
+  void removeMutationBatch(MutationBatch batch);
 
   /** Performs a consistency check, examining the mutation queue for any leaks, if possible. */
   void performConsistencyCheck();

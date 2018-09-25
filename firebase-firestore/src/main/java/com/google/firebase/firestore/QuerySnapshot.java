@@ -194,7 +194,11 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   }
 
   private QueryDocumentSnapshot convertDocument(Document document) {
-    return QueryDocumentSnapshot.fromDocument(firestore, document, snapshot.isFromCache());
+    return QueryDocumentSnapshot.fromDocument(
+        firestore,
+        document,
+        snapshot.isFromCache(),
+        snapshot.getMutatedKeys().contains(document.getKey()));
   }
 
   @Override

@@ -16,7 +16,6 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyMaybeDocumentMap;
-import static com.google.firebase.firestore.util.Assert.fail;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
@@ -86,7 +85,7 @@ final class LocalDocumentsView {
       MaybeDocument maybeDoc = getDocument(key, batches);
       // TODO: Don't conflate missing / deleted.
       if (maybeDoc == null) {
-        maybeDoc = new NoDocument(key, SnapshotVersion.NONE);
+        maybeDoc = new NoDocument(key, SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
       }
       results = results.insert(key, maybeDoc);
     }
@@ -138,12 +137,10 @@ final class LocalDocumentsView {
         MaybeDocument baseDoc = results.get(key);
         MaybeDocument mutatedDoc =
             mutation.applyToLocalView(baseDoc, baseDoc, batch.getLocalWriteTime());
-        if (mutatedDoc == null || mutatedDoc instanceof NoDocument) {
-          results = results.remove(key);
-        } else if (mutatedDoc instanceof Document) {
+        if (mutatedDoc instanceof Document) {
           results = results.insert(key, (Document) mutatedDoc);
         } else {
-          throw fail("Unknown document type: %s", mutatedDoc);
+          results = results.remove(key);
         }
       }
     }
