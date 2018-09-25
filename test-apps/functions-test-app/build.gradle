@@ -17,8 +17,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    // Changes the test build type for instrumented tests to "stage".
-    testBuildType "release"
+    testBuildType = project.testBuildType
     compileSdkVersion 27
 
     defaultConfig {
