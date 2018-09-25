@@ -16,6 +16,7 @@ import os
 import pathlib
 import subprocess
 import unittest
+import traceback
 
 from click.testing import CliRunner
 from fireci.main import cli
@@ -126,5 +127,9 @@ class CliInvocationTests(unittest.TestCase):
                     }),
                 mode=0o744),
         )
-        result = self.runner.invoke(cli, ['smoke_tests --appBuildVariant=debug'])
+        result = self.runner.invoke(cli, ['smoke_tests --appBuildVssariant=debug'])
+        print("*******************************")
+        print(result)
+        traceback.print_exception(*result.exc_info)
+        # traceback.print_exception(*result.exc_info)
         self.assertEqual(result.exit_code, 0)
