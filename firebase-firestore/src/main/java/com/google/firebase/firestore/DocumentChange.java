@@ -142,7 +142,11 @@ public class DocumentChange {
       for (DocumentViewChange change : snapshot.getChanges()) {
         Document document = change.getDocument();
         QueryDocumentSnapshot documentSnapshot =
-            QueryDocumentSnapshot.fromDocument(firestore, document, snapshot.isFromCache());
+            QueryDocumentSnapshot.fromDocument(
+                firestore,
+                document,
+                snapshot.isFromCache(),
+                snapshot.getMutatedKeys().contains(document.getKey()));
         hardAssert(
             change.getType() == DocumentViewChange.Type.ADDED,
             "Invalid added event for first snapshot");
@@ -163,7 +167,11 @@ public class DocumentChange {
         }
         Document document = change.getDocument();
         QueryDocumentSnapshot documentSnapshot =
-            QueryDocumentSnapshot.fromDocument(firestore, document, snapshot.isFromCache());
+            QueryDocumentSnapshot.fromDocument(
+                firestore,
+                document,
+                snapshot.isFromCache(),
+                snapshot.getMutatedKeys().contains(document.getKey()));
         int oldIndex, newIndex;
         Type type = getType(change);
         if (type != Type.ADDED) {

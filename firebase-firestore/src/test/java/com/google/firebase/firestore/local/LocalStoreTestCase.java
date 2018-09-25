@@ -25,6 +25,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.resumeToken;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
+import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.values;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
@@ -210,33 +211,36 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testHandlesSetMutation() {
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
     acknowledgeMutation(0);
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), false));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
     if (garbageCollectorIsEager()) {
       // Nothing is pinning this anymore, as it has been acknowledged and there are no targets
       // active.
       assertNotContains("foo/bar");
     } else {
-      assertContains(doc("foo/bar", 0, map("foo", "bar"), false));
+      assertContains(
+          doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
     }
   }
 
   @Test
   public void testHandlesSetMutationThenDocument() {
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 2, map("it", "changed"), true), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 2, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 2, map("foo", "bar"), true));
+            doc("foo/bar", 2, map("it", "changed"), Document.DocumentState.LOCAL_MUTATIONS),
+            asList(targetId),
+            emptyList()));
+    assertChanged(doc("foo/bar", 2, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 2, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
   }
 
   @Test
@@ -245,14 +249,16 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
-
-    acknowledgeMutation(1);
     notifyLocalViewChanges(viewChanges(2, asList("foo/bar"), emptyList()));
 
-    assertChanged();
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+
+    acknowledgeMutation(1);
+
+    assertChanged(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    assertContains(
+        doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
 
     releaseQuery(query);
 
@@ -260,7 +266,8 @@ public abstract class LocalStoreTestCase {
     if (garbageCollectorIsEager()) {
       assertNotContains("foo/bar");
     } else {
-      assertContains(doc("foo/bar", 0, map("foo", "bar"), false));
+      assertContains(
+          doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
     }
   }
 
@@ -271,27 +278,33 @@ public abstract class LocalStoreTestCase {
     int targetId = allocateQuery(query);
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
     // The last seen version is zero, so this ack must be held.
     acknowledgeMutation(1);
-    assertChanged();
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    if (garbageCollectorIsEager()) {
+      // Nothing is pinning this anymore, as it has been acknowledged and there are no targets
+      // active.
+      assertNotContains("foo/bar");
+    } else {
+      assertContains(
+          doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    }
 
     writeMutation(setMutation("bar/baz", map("bar", "baz")));
-    assertChanged(doc("bar/baz", 0, map("bar", "baz"), true));
-    assertContains(doc("bar/baz", 0, map("bar", "baz"), true));
+    assertChanged(doc("bar/baz", 0, map("bar", "baz"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("bar/baz", 0, map("bar", "baz"), Document.DocumentState.LOCAL_MUTATIONS));
 
     rejectMutation();
     assertRemoved("bar/baz");
     assertNotContains("bar/baz");
 
     applyRemoteEvent(
-        addedRemoteEvent(
-            doc("foo/bar", 2, map("it", "changed"), false), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 2, map("it", "changed"), false));
-    assertContains(doc("foo/bar", 2, map("it", "changed"), false));
+        addedRemoteEvent(doc("foo/bar", 2, map("it", "changed")), asList(targetId), emptyList()));
+    assertChanged(doc("foo/bar", 2, map("it", "changed")));
+    assertContains(doc("foo/bar", 2, map("it", "changed")));
     assertNotContains("bar/baz");
   }
 
@@ -310,12 +323,12 @@ public abstract class LocalStoreTestCase {
     }
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
     releaseQuery(query);
     acknowledgeMutation(3);
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), false));
+    assertChanged(doc("foo/bar", 3, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
     // It has been acknowledged, and should no longer be retained as there is no target and mutation
     if (garbageCollectorIsEager()) {
       assertNotContains("foo/bar");
@@ -327,11 +340,11 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
     applyRemoteEvent(updateRemoteEvent(deletedDoc("foo/bar", 2), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
   }
 
   @Test
@@ -339,25 +352,24 @@ public abstract class LocalStoreTestCase {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        addedRemoteEvent(
-            doc("foo/bar", 2, map("it", "base"), false), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 2, map("it", "base"), false));
-    assertContains(doc("foo/bar", 2, map("it", "base"), false));
+        addedRemoteEvent(doc("foo/bar", 2, map("it", "base")), asList(targetId), emptyList()));
+    assertChanged(doc("foo/bar", 2, map("it", "base")));
+    assertContains(doc("foo/bar", 2, map("it", "base")));
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 2, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 2, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 2, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 2, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
     acknowledgeMutation(3);
     // We haven't seen the remote event yet.
-    assertChanged();
-    assertContains(doc("foo/bar", 2, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 3, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    assertContains(
+        doc("foo/bar", 3, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
 
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 3, map("it", "changed"), false), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 3, map("it", "changed"), false));
-    assertContains(doc("foo/bar", 3, map("it", "changed"), false));
+        updateRemoteEvent(doc("foo/bar", 3, map("it", "changed")), asList(targetId), emptyList()));
+    assertChanged(doc("foo/bar", 3, map("it", "changed")));
+    assertContains(doc("foo/bar", 3, map("it", "changed")));
   }
 
   @Test
@@ -367,8 +379,15 @@ public abstract class LocalStoreTestCase {
     assertNotContains("foo/bar");
 
     acknowledgeMutation(1);
-    assertRemoved("foo/bar");
-    assertNotContains("foo/bar");
+    assertChanged(unknownDoc("foo/bar", 1));
+
+    if (garbageCollectorIsEager()) {
+      // Nothing is pinning this anymore, as it has been acknowledged and there are no targets
+      // active.
+      assertNotContains("foo/bar");
+    } else {
+      assertContains(unknownDoc("foo/bar", 1));
+    }
   }
 
   @Test
@@ -381,22 +400,34 @@ public abstract class LocalStoreTestCase {
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         addedRemoteEvent(
-            doc("foo/bar", 1, map("it", "base"), true), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 1, map("foo", "bar", "it", "base"), true));
-    assertContains(doc("foo/bar", 1, map("foo", "bar", "it", "base"), true));
+            doc("foo/bar", 1, map("it", "base"), Document.DocumentState.LOCAL_MUTATIONS),
+            asList(targetId),
+            emptyList()));
+    assertChanged(
+        doc("foo/bar", 1, map("foo", "bar", "it", "base"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(
+        doc("foo/bar", 1, map("foo", "bar", "it", "base"), Document.DocumentState.LOCAL_MUTATIONS));
 
     acknowledgeMutation(2);
 
-    assertChanged();
-    assertContains(doc("foo/bar", 1, map("foo", "bar", "it", "base"), true));
+    assertChanged(
+        doc(
+            "foo/bar",
+            2,
+            map("foo", "bar", "it", "base"),
+            Document.DocumentState.COMMITTED_MUTATIONS));
+    assertContains(
+        doc(
+            "foo/bar",
+            2,
+            map("foo", "bar", "it", "base"),
+            Document.DocumentState.COMMITTED_MUTATIONS));
 
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 2, map("foo", "bar", "it", "base"), false),
-            asList(targetId),
-            emptyList()));
-    assertChanged(doc("foo/bar", 2, map("foo", "bar", "it", "base"), false));
-    assertContains(doc("foo/bar", 2, map("foo", "bar", "it", "base"), false));
+            doc("foo/bar", 2, map("foo", "bar", "it", "base")), asList(targetId), emptyList()));
+    assertChanged(doc("foo/bar", 2, map("foo", "bar", "it", "base")));
+    assertContains(doc("foo/bar", 2, map("foo", "bar", "it", "base")));
   }
 
   @Test
@@ -406,16 +437,21 @@ public abstract class LocalStoreTestCase {
     assertNotContains("foo/bar");
 
     acknowledgeMutation(1);
-    assertRemoved("foo/bar");
-    assertNotContains("foo/bar");
+    assertChanged(unknownDoc("foo/bar", 1));
+
+    // There's no target pinning the doc, and we've ack'd the mutation.
+    if (garbageCollectorIsEager()) {
+      assertNotContains("foo/bar");
+    } else {
+      assertContains(unknownDoc("foo/bar", 1));
+    }
 
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 1, map("it", "base"), false), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 1, map("it", "base"), false));
-    assertContains(doc("foo/bar", 1, map("it", "base"), false));
+        updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
+    assertChanged(doc("foo/bar", 1, map("it", "base")));
+    assertContains(doc("foo/bar", 1, map("it", "base")));
   }
 
   @Test
@@ -430,7 +466,7 @@ public abstract class LocalStoreTestCase {
     if (garbageCollectorIsEager()) {
       assertNotContains("foo/bar");
     } else {
-      assertContains(deletedDoc("foo/bar", 0));
+      assertContains(deletedDoc("foo/bar", 1, /*hasCommittedMutations=*/ true));
     }
   }
 
@@ -439,10 +475,9 @@ public abstract class LocalStoreTestCase {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 1, map("it", "base"), false), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 1, map("it", "base"), false));
-    assertContains(doc("foo/bar", 1, map("it", "base"), false));
+        updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
+    assertChanged(doc("foo/bar", 1, map("it", "base")));
+    assertContains(doc("foo/bar", 1, map("it", "base")));
 
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
@@ -455,7 +490,7 @@ public abstract class LocalStoreTestCase {
       // Neither the target nor the mutation pin the document, it should be gone.
       assertNotContains("foo/bar");
     } else {
-      assertContains(deletedDoc("foo/bar", 0));
+      assertContains(deletedDoc("foo/bar", 2, /*hasCommittedMutations=*/ true));
     }
   }
 
@@ -468,8 +503,7 @@ public abstract class LocalStoreTestCase {
     assertContains(deletedDoc("foo/bar", 0));
 
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 1, map("it", "base"), false), asList(targetId), emptyList()));
+        updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
     assertRemoved("foo/bar");
     assertContains(deletedDoc("foo/bar", 0));
 
@@ -481,7 +515,7 @@ public abstract class LocalStoreTestCase {
       // anymore.
       assertNotContains("foo/bar");
     } else {
-      assertContains(deletedDoc("foo/bar", 0));
+      assertContains(deletedDoc("foo/bar", 2, /*hasCommittedMutations=*/ true));
     }
   }
 
@@ -490,10 +524,9 @@ public abstract class LocalStoreTestCase {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 1, map("it", "base"), false), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 1, map("it", "base"), false));
-    assertContains(doc("foo/bar", 1, map("it", "base"), false));
+        updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
+    assertChanged(doc("foo/bar", 1, map("it", "base")));
+    assertContains(doc("foo/bar", 1, map("it", "base")));
 
     applyRemoteEvent(updateRemoteEvent(deletedDoc("foo/bar", 2), asList(targetId), emptyList()));
     assertRemoved("foo/bar");
@@ -502,42 +535,44 @@ public abstract class LocalStoreTestCase {
     }
 
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 3, map("it", "changed"), false), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 3, map("it", "changed"), false));
-    assertContains(doc("foo/bar", 3, map("it", "changed"), false));
+        updateRemoteEvent(doc("foo/bar", 3, map("it", "changed")), asList(targetId), emptyList()));
+    assertChanged(doc("foo/bar", 3, map("it", "changed")));
+    assertContains(doc("foo/bar", 3, map("it", "changed")));
   }
 
   @Test
   public void testHandlesSetMutationThenPatchMutationThenDocumentThenAckThenAck() {
     writeMutation(setMutation("foo/bar", map("foo", "old")));
-    assertChanged(doc("foo/bar", 0, map("foo", "old"), true));
-    assertContains(doc("foo/bar", 0, map("foo", "old"), true));
+    assertChanged(doc("foo/bar", 0, map("foo", "old"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("foo", "old"), Document.DocumentState.LOCAL_MUTATIONS));
 
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 1, map("it", "base"), true), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 1, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 1, map("foo", "bar"), true));
+            doc("foo/bar", 1, map("it", "base"), Document.DocumentState.LOCAL_MUTATIONS),
+            asList(targetId),
+            emptyList()));
+    assertChanged(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
     releaseQuery(query);
     acknowledgeMutation(2); // delete mutation
-    assertChanged(doc("foo/bar", 1, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 1, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 2, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 2, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
     acknowledgeMutation(3); // patch mutation
-    assertChanged(doc("foo/bar", 1, map("foo", "bar"), false));
+    assertChanged(doc("foo/bar", 3, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
     if (garbageCollectorIsEager()) {
       // we've ack'd all of the mutations, nothing is keeping this pinned anymore
       assertNotContains("foo/bar");
     } else {
-      assertContains(doc("foo/bar", 1, map("foo", "bar"), false));
+      assertContains(
+          doc("foo/bar", 3, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
     }
   }
 
@@ -548,8 +583,8 @@ public abstract class LocalStoreTestCase {
             setMutation("foo/bar", map("foo", "old")),
             patchMutation("foo/bar", map("foo", "bar"))));
 
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
   }
 
   @Test
@@ -559,7 +594,7 @@ public abstract class LocalStoreTestCase {
     }
 
     writeMutation(setMutation("foo/bar", map("foo", "old")));
-    assertContains(doc("foo/bar", 0, map("foo", "old"), true));
+    assertContains(doc("foo/bar", 0, map("foo", "old"), Document.DocumentState.LOCAL_MUTATIONS));
     acknowledgeMutation(1);
     assertNotContains("foo/bar");
 
@@ -580,10 +615,11 @@ public abstract class LocalStoreTestCase {
             patchMutation("foo/bar", map("foo", "bar"))));
 
     assertChanged(
-        doc("bar/baz", 0, map("bar", "baz"), true), doc("foo/bar", 0, map("foo", "bar"), true));
+        doc("bar/baz", 0, map("bar", "baz"), Document.DocumentState.LOCAL_MUTATIONS),
+        doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("bar/baz", 0, map("bar", "baz"), true));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("bar/baz", 0, map("bar", "baz"), Document.DocumentState.LOCAL_MUTATIONS));
   }
 
   @Test
@@ -598,15 +634,15 @@ public abstract class LocalStoreTestCase {
 
     acknowledgeMutation(2); // delete mutation
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0));
+    assertContains(deletedDoc("foo/bar", 2, true));
 
     acknowledgeMutation(3); // patch mutation
-    assertRemoved("foo/bar");
+    assertChanged(unknownDoc("foo/bar", 3));
     if (garbageCollectorIsEager()) {
       // There are no more pending mutations, the doc has been dropped
       assertNotContains("foo/bar");
     } else {
-      assertContains(deletedDoc("foo/bar", 0));
+      assertContains(unknownDoc("foo/bar", 3));
     }
   }
 
@@ -623,10 +659,7 @@ public abstract class LocalStoreTestCase {
 
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 2, map("foo", "bar"), false),
-            emptyList(),
-            emptyList(),
-            asList(targetId)));
+            doc("foo/bar", 2, map("foo", "bar")), emptyList(), emptyList(), asList(targetId)));
     assertNotContains("foo/bar");
   }
 
@@ -642,10 +675,10 @@ public abstract class LocalStoreTestCase {
 
     List<Integer> none = asList();
     List<Integer> two = asList(2);
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 2, map("foo", "bar"), false), two, none));
-    assertContains(doc("foo/bar", 2, map("foo", "bar"), false));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 2, map("foo", "bar")), two, none));
+    assertContains(doc("foo/bar", 2, map("foo", "bar")));
 
-    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 2, map("foo", "baz"), false), none, two));
+    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 2, map("foo", "baz")), none, two));
 
     assertNotContains("foo/bar");
   }
@@ -659,19 +692,18 @@ public abstract class LocalStoreTestCase {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 0, map("foo", "old"), false), asList(targetId), emptyList()));
+        updateRemoteEvent(doc("foo/bar", 0, map("foo", "old")), asList(targetId), emptyList()));
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
     releaseQuery(query);
     writeMutation(setMutation("foo/bah", map("foo", "bah")));
     writeMutation(deleteMutation("foo/baz"));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("foo/bah", 0, map("foo", "bah"), true));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bah", 0, map("foo", "bah"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(deletedDoc("foo/baz", 0));
 
     acknowledgeMutation(3);
     assertNotContains("foo/bar");
-    assertContains(doc("foo/bah", 0, map("foo", "bah"), true));
+    assertContains(doc("foo/bah", 0, map("foo", "bah"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(deletedDoc("foo/baz", 0));
 
     acknowledgeMutation(4);
@@ -694,20 +726,19 @@ public abstract class LocalStoreTestCase {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 0, map("foo", "old"), false), asList(targetId), emptyList()));
+        updateRemoteEvent(doc("foo/bar", 0, map("foo", "old")), asList(targetId), emptyList()));
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
     // Release the query so that our target count goes back to 0 and we are considered up-to-date.
     releaseQuery(query);
     writeMutation(setMutation("foo/bah", map("foo", "bah")));
     writeMutation(deleteMutation("foo/baz"));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), true));
-    assertContains(doc("foo/bah", 0, map("foo", "bah"), true));
+    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bah", 0, map("foo", "bah"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(deletedDoc("foo/baz", 0));
 
     rejectMutation(); // patch mutation
     assertNotContains("foo/bar");
-    assertContains(doc("foo/bah", 0, map("foo", "bah"), true));
+    assertContains(doc("foo/bah", 0, map("foo", "bah"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(deletedDoc("foo/baz", 0));
 
     rejectMutation(); // set mutation
@@ -733,17 +764,17 @@ public abstract class LocalStoreTestCase {
 
     List<Integer> none = asList();
     List<Integer> two = asList(2);
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("foo", "bar"), false), two, none));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("foo", "bar")), two, none));
     writeMutation(setMutation("foo/baz", map("foo", "baz")));
-    assertContains(doc("foo/bar", 1, map("foo", "bar"), false));
-    assertContains(doc("foo/baz", 0, map("foo", "baz"), true));
+    assertContains(doc("foo/bar", 1, map("foo", "bar")));
+    assertContains(doc("foo/baz", 0, map("foo", "baz"), Document.DocumentState.LOCAL_MUTATIONS));
 
     notifyLocalViewChanges(viewChanges(2, asList("foo/bar", "foo/baz"), emptyList()));
-    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 1, map("foo", "bar"), false), none, two));
-    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 2, map("foo", "baz"), false), two, none));
+    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 1, map("foo", "bar")), none, two));
+    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 2, map("foo", "baz")), two, none));
     acknowledgeMutation(2);
-    assertContains(doc("foo/bar", 1, map("foo", "bar"), false));
-    assertContains(doc("foo/baz", 2, map("foo", "baz"), false));
+    assertContains(doc("foo/bar", 1, map("foo", "bar")));
+    assertContains(doc("foo/baz", 2, map("foo", "baz")));
 
     notifyLocalViewChanges(viewChanges(2, emptyList(), asList("foo/bar", "foo/baz")));
     releaseQuery(query);
@@ -760,8 +791,7 @@ public abstract class LocalStoreTestCase {
 
     int targetID = 321;
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 1, map(), false), emptyList(), emptyList(), asList(targetID)));
+        updateRemoteEvent(doc("foo/bar", 1, map()), emptyList(), emptyList(), asList(targetID)));
 
     assertNotContains("foo/bar");
   }
@@ -775,7 +805,9 @@ public abstract class LocalStoreTestCase {
             setMutation("foo/bar/Foo/Bar", map("Foo", "Bar"))));
     Query query = Query.atPath(ResourcePath.fromSegments(asList("foo", "bar")));
     ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
-    assertEquals(asList(doc("foo/bar", 0, map("foo", "bar"), true)), values(docs));
+    assertEquals(
+        asList(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS)),
+        values(docs));
   }
 
   @Test
@@ -791,7 +823,8 @@ public abstract class LocalStoreTestCase {
     ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
     assertEquals(
         asList(
-            doc("foo/bar", 0, map("foo", "bar"), true), doc("foo/baz", 0, map("foo", "baz"), true)),
+            doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS),
+            doc("foo/baz", 0, map("foo", "baz"), Document.DocumentState.LOCAL_MUTATIONS)),
         values(docs));
   }
 
@@ -801,18 +834,16 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
     assertTargetId(2);
 
-    applyRemoteEvent(
-        updateRemoteEvent(doc("foo/baz", 10, map("a", "b"), false), asList(2), emptyList()));
-    applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 20, map("a", "b"), false), asList(2), emptyList()));
+    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map("a", "b")), asList(2), emptyList()));
+    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map("a", "b")), asList(2), emptyList()));
     writeMutation(setMutation("foo/bonk", map("a", "b")));
 
     ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
     assertEquals(
         asList(
-            doc("foo/bar", 20, map("a", "b"), false),
-            doc("foo/baz", 10, map("a", "b"), false),
-            doc("foo/bonk", 0, map("a", "b"), true)),
+            doc("foo/bar", 20, map("a", "b")),
+            doc("foo/baz", 10, map("a", "b")),
+            doc("foo/bonk", 0, map("a", "b"), Document.DocumentState.LOCAL_MUTATIONS)),
         values(docs));
   }
 
@@ -893,10 +924,8 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
     assertTargetId(2);
 
-    applyRemoteEvent(
-        addedRemoteEvent(doc("foo/baz", 10, map("a", "b"), false), asList(2), emptyList()));
-    applyRemoteEvent(
-        addedRemoteEvent(doc("foo/bar", 20, map("a", "b"), false), asList(2), emptyList()));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/baz", 10, map("a", "b")), asList(2), emptyList()));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 20, map("a", "b")), asList(2), emptyList()));
     writeMutation(setMutation("foo/bonk", map("a", "b")));
 
     ImmutableSortedSet<DocumentKey> keys = localStore.getRemoteDocumentKeys(2);

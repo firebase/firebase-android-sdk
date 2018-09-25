@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import javax.annotation.Nullable;
 
@@ -78,11 +77,7 @@ public final class Precondition {
     if (this.updateTime != null) {
       return (maybeDoc instanceof Document) && maybeDoc.getVersion().equals(this.updateTime);
     } else if (this.exists != null) {
-      if (this.exists) {
-        return maybeDoc instanceof Document;
-      } else {
-        return maybeDoc == null || maybeDoc instanceof NoDocument;
-      }
+      return this.exists == (maybeDoc instanceof Document);
     } else {
       hardAssert(this.isNone(), "Precondition should be empty");
       return true;

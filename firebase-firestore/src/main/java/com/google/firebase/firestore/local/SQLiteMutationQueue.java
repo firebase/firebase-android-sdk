@@ -165,11 +165,6 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   @Override
-  public int getHighestAcknowledgedBatchId() {
-    return lastAcknowledgedBatchId;
-  }
-
-  @Override
   public void acknowledgeBatch(MutationBatch batch, ByteString streamToken) {
     int batchId = batch.getBatchId();
     hardAssert(
@@ -263,17 +258,6 @@ final class SQLiteMutationQueue implements MutationQueue {
     List<MutationBatch> result = new ArrayList<>();
     db.query("SELECT mutations FROM mutations WHERE uid = ? ORDER BY batch_id ASC")
         .binding(uid)
-        .forEach(row -> result.add(decodeMutationBatch(row.getBlob(0))));
-    return result;
-  }
-
-  @Override
-  public List<MutationBatch> getAllMutationBatchesThroughBatchId(int batchId) {
-    List<MutationBatch> result = new ArrayList<>();
-    db.query(
-            "SELECT mutations FROM mutations "
-                + "WHERE uid = ? AND batch_id <= ? ORDER BY batch_id ASC")
-        .binding(uid, batchId)
         .forEach(row -> result.add(decodeMutationBatch(row.getBlob(0))));
     return result;
   }
@@ -421,23 +405,21 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   @Override
-  public void removeMutationBatches(List<MutationBatch> batches) {
+  public void removeMutationBatch(MutationBatch batch) {
     SQLiteStatement mutationDeleter =
         db.prepare("DELETE FROM mutations WHERE uid = ? AND batch_id = ?");
 
     SQLiteStatement indexDeleter =
         db.prepare("DELETE FROM document_mutations WHERE uid = ? AND path = ? AND batch_id = ?");
 
-    for (MutationBatch batch : batches) {
-      int batchId = batch.getBatchId();
-      int deleted = db.execute(mutationDeleter, uid, batchId);
-      hardAssert(deleted != 0, "Mutation batch (%s, %d) did not exist", uid, batch.getBatchId());
+    int batchId = batch.getBatchId();
+    int deleted = db.execute(mutationDeleter, uid, batchId);
+    hardAssert(deleted != 0, "Mutation batch (%s, %d) did not exist", uid, batch.getBatchId());
 
-      for (Mutation mutation : batch.getMutations()) {
-        DocumentKey key = mutation.getKey();
-        String path = EncodedPath.encode(key.getPath());
-        db.execute(indexDeleter, uid, path, batchId);
-      }
+    for (Mutation mutation : batch.getMutations()) {
+      DocumentKey key = mutation.getKey();
+      String path = EncodedPath.encode(key.getPath());
+      db.execute(indexDeleter, uid, path, batchId);
     }
   }
 

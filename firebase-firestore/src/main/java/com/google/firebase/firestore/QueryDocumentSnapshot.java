@@ -41,13 +41,17 @@ import javax.annotation.Nullable;
 public class QueryDocumentSnapshot extends DocumentSnapshot {
 
   private QueryDocumentSnapshot(
-      FirebaseFirestore firestore, DocumentKey key, @Nullable Document doc, boolean isFromCache) {
-    super(firestore, key, doc, isFromCache);
+      FirebaseFirestore firestore,
+      DocumentKey key,
+      @Nullable Document doc,
+      boolean isFromCache,
+      boolean hasPendingWrites) {
+    super(firestore, key, doc, isFromCache, hasPendingWrites);
   }
 
   static QueryDocumentSnapshot fromDocument(
-      FirebaseFirestore firestore, Document doc, boolean fromCache) {
-    return new QueryDocumentSnapshot(firestore, doc.getKey(), doc, fromCache);
+      FirebaseFirestore firestore, Document doc, boolean fromCache, boolean hasPendingWrites) {
+    return new QueryDocumentSnapshot(firestore, doc.getKey(), doc, fromCache, hasPendingWrites);
   }
 
   /**

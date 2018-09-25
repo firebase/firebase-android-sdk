@@ -65,7 +65,9 @@ public final class DeleteMutation extends Mutation {
     // Unlike applyToLocalView, if we're applying a mutation to a remote document the server has
     // accepted the mutation so the precondition must have held.
 
-    return new NoDocument(getKey(), SnapshotVersion.NONE);
+    // We store the deleted document at the commit version of the delete. Any document version
+    // that the server sends us before the delete was applied is discarded
+    return new NoDocument(getKey(), mutationResult.getVersion(), /*hasCommittedMutations=*/ true);
   }
 
   @Nullable
@@ -78,6 +80,6 @@ public final class DeleteMutation extends Mutation {
       return maybeDoc;
     }
 
-    return new NoDocument(getKey(), SnapshotVersion.NONE);
+    return new NoDocument(getKey(), SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
   }
 }

@@ -47,9 +47,9 @@ public class DocumentSetTest {
         }
       };
 
-  private static final Document DOC1 = doc("docs/1", 0, map("sort", 2), false);
-  private static final Document DOC2 = doc("docs/2", 0, map("sort", 3), false);
-  private static final Document DOC3 = doc("docs/3", 0, map("sort", 1), false);
+  private static final Document DOC1 = doc("docs/1", 0, map("sort", 2));
+  private static final Document DOC2 = doc("docs/2", 0, map("sort", 3));
+  private static final Document DOC3 = doc("docs/3", 0, map("sort", 1));
 
   @Test
   public void testCount() {
@@ -121,7 +121,7 @@ public class DocumentSetTest {
   @Test
   public void testUpdates() {
     DocumentSet set = docSet(TEST_COMPARATOR, DOC1, DOC2, DOC3);
-    Document doc2Prime = doc("docs/2", 0, map("sort", 9), false);
+    Document doc2Prime = doc("docs/2", 0, map("sort", 9));
 
     set = set.add(doc2Prime);
     assertEquals(3, set.size());
@@ -131,8 +131,8 @@ public class DocumentSetTest {
 
   @Test
   public void testAddsDocsWithEqualComparisonValues() {
-    Document doc1 = doc("docs/1", 0, map("sort", 2), false);
-    Document doc2 = doc("docs/2", 0, map("sort", 2), false);
+    Document doc1 = doc("docs/1", 0, map("sort", 2));
+    Document doc2 = doc("docs/2", 0, map("sort", 2));
 
     DocumentSet set = docSet(TEST_COMPARATOR, doc1, doc2);
     assertEquals(Arrays.asList(doc1, doc2), set.toList());

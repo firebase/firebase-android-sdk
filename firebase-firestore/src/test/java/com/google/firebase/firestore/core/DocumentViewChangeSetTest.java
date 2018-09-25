@@ -33,7 +33,7 @@ public class DocumentViewChangeSetTest {
 
   @Test
   public void testDocumentViewChangeConstructor() {
-    Document doc1 = doc("a/b", 0, EMPTY_MAP, false);
+    Document doc1 = doc("a/b", 0, EMPTY_MAP);
     Type type = Type.MODIFIED;
     DocumentViewChange change = DocumentViewChange.create(type, doc1);
     assertEquals(change.getDocument(), doc1);
@@ -44,15 +44,15 @@ public class DocumentViewChangeSetTest {
   public void testTrack() {
     DocumentViewChangeSet set = new DocumentViewChangeSet();
 
-    Document added = doc("a/1", 0, EMPTY_MAP, false);
-    Document removed = doc("a/2", 0, EMPTY_MAP, false);
-    Document modified = doc("a/3", 0, EMPTY_MAP, false);
+    Document added = doc("a/1", 0, EMPTY_MAP);
+    Document removed = doc("a/2", 0, EMPTY_MAP);
+    Document modified = doc("a/3", 0, EMPTY_MAP);
 
-    Document addedThenModified = doc("b/1", 0, EMPTY_MAP, false);
-    Document addedThenRemoved = doc("b/2", 0, EMPTY_MAP, false);
-    Document removedThenAdded = doc("b/3", 0, EMPTY_MAP, false);
-    Document modifiedThenRemoved = doc("b/4", 0, EMPTY_MAP, false);
-    Document modifiedThenModified = doc("b/5", 0, EMPTY_MAP, false);
+    Document addedThenModified = doc("b/1", 0, EMPTY_MAP);
+    Document addedThenRemoved = doc("b/2", 0, EMPTY_MAP);
+    Document removedThenAdded = doc("b/3", 0, EMPTY_MAP);
+    Document modifiedThenRemoved = doc("b/4", 0, EMPTY_MAP);
+    Document modifiedThenModified = doc("b/5", 0, EMPTY_MAP);
 
     set.addChange(DocumentViewChange.create(Type.ADDED, added));
     set.addChange(DocumentViewChange.create(Type.REMOVED, removed));

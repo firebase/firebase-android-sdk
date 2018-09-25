@@ -14,14 +14,13 @@
 
 package com.google.firebase.firestore.model;
 
-/** Represents that no documents exists for the key at the given version. */
-public class NoDocument extends MaybeDocument {
-
-  private boolean hasCommittedMutations;
-
-  public NoDocument(DocumentKey key, SnapshotVersion version, boolean hasCommittedMutations) {
+/**
+ * A class representing an existing document whose data is unknown (e.g. a document that was updated
+ * without a known base document).
+ */
+public class UnknownDocument extends MaybeDocument {
+  public UnknownDocument(DocumentKey key, SnapshotVersion version) {
     super(key, version);
-    this.hasCommittedMutations = hasCommittedMutations;
   }
 
   @Override
@@ -33,38 +32,25 @@ public class NoDocument extends MaybeDocument {
       return false;
     }
 
-    NoDocument that = (NoDocument) o;
+    UnknownDocument that = (UnknownDocument) o;
 
-    return hasCommittedMutations == that.hasCommittedMutations
-        && getVersion().equals(that.getVersion())
-        && getKey().equals(that.getKey());
+    return getVersion().equals(that.getVersion()) && getKey().equals(that.getKey());
   }
 
   @Override
   public boolean hasPendingWrites() {
-    return hasCommittedMutations();
-  }
-
-  public boolean hasCommittedMutations() {
-    return hasCommittedMutations;
+    return true;
   }
 
   @Override
   public int hashCode() {
     int result = getKey().hashCode();
-    result = 31 * result + (hasCommittedMutations ? 1 : 0);
     result = 31 * result + getVersion().hashCode();
     return result;
   }
 
   @Override
   public String toString() {
-    return "NoDocument{key="
-        + getKey()
-        + ", version="
-        + getVersion()
-        + ", hasCommittedMutations="
-        + hasCommittedMutations()
-        + "}";
+    return "UnknownDocument{key=" + getKey() + ", version=" + getVersion() + '}';
   }
 }
