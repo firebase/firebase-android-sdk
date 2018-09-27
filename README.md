@@ -21,11 +21,11 @@ https://firebase.google.com.
    1. [Unit Testing](#unit-testing)
    1. [Integration Testing](#integration-testing)
 1. [Proguarding](#proguarding)
-   1. [APIs used via reflection](#apis-used-via-reflection)
+   1. [APIs used via reflection](#APIs-used-via-reflection)
    1. [APIs intended for developer
-   consumption](#apis-intended-for-developer-consumption)
+   consumption](#APIs-intended-for-developer-consumption)
    1. [APIs intended for other Firebase
-   SDKs](#apis-intended-for-other-firebase-sdks)
+   SDKs](#APIs-intended-for-other-firebase-sdks)
 1. [Publishing](#publishing)
    1. [Dependencies](#dependencies)
    1. [Commands](#commands)
@@ -87,11 +87,6 @@ If you don't have a suitable testing project already:
   * Download the resulting `google-services.json` file and put it in the root of
     your checkout.
 
-For now, you have to disable security rule enforcement for the Realtime
-Database, Cloud Firestore, and Cloud Storage in your test project (if running
-the integration tests for any of those). Re-enable your security rules after
-your test run.
-
 #### Running Integration Tests
 
 Integration tests can be executed on the command line by running
@@ -99,58 +94,40 @@ Integration tests can be executed on the command line by running
 ./gradlew :<firebase-project>:connectedCheck
 ```
 
-## Proguarding
+## Annotations
 
-Firebase Android SDKs operate under the assumption that a vast majority of
-developers do not proguard their apps. Artifacts published via the
-[Publishing](#publishing) section are pre-proguarded (preguarded?) to reduce the
-size impact on apps that consume them. There are three levels of retention that
-APIs have, depending on how they are used.
+Firebase SDKs use some special annotations for tooling purposes.
 
-### APIs used via reflection
+### @Keep
 
 APIs that need to be preserved up until the app's runtime can be annotated with
 [@Keep](https://developer.android.com/reference/android/support/annotation/Keep).
 The
 [@Keep](https://developer.android.com/reference/android/support/annotation/Keep)
 annotation is *blessed* to be honored by android's [default proguard
-configuration](https://developer.android.com/studio/write/annotations#keep).
-These APIs should be generally **discouraged**, because they can't be
-proguarded.
+configuration](https://developer.android.com/studio/write/annotations#keep).  A common use for
+this annotation is because of reflection. These APIs should be generally **discouraged**, because
+they can't be proguarded.
 
-#### Usage
+### @KeepForSdk
 
-- Annotate APIs with
-  [@Keep](https://developer.android.com/reference/android/support/annotation/Keep)
-
-### APIs intended for developer consumption
-
-The
-[@Keep](https://developer.android.com/reference/android/support/annotation/Keep)
-mechanism described above is too restrictive for APIs that are not used via
-reflection, which is the case for a vast majority of the Firebase public APIs.
-We annotate these APIs with
-[@PublicAPI](firebase-common/src/main/java/com/google/firebase/annotations/PublicApi.java).
-
-#### Usage
-
-- Annotate the necessary APIs with firebase-common's
-  [@PublicApi](firebase-common/src/main/java/com/google/firebase/annotations/PublicApi.java)
-
-### APIs intended for other Firebase SDKs
-
-APIs that are intended to be used by Firebase SDKs may be annotated with
-`@KeepForSdk`. Much like the custom annotation mechanism, the idea is to let
-these APIs pass through preguarding, but not restrict the developer's app from
-proguarding. The key benefit here is that the annotation is *blessed* to throw
+APIs that are intended to be used by Firebase SDKs should be annotated with
+`@KeepForSdk`. The key benefit here is that the annotation is *blessed* to throw
 linter errors on Android Studio if used by the developer from a non firebase
 package, thereby providing a valuable guard rail.
 
-#### Usage
 
-- Annotate the APIs with `@KeepForSdk`
-- This method may be used in conjunction with @Keep annotations to annotate APIs
-  consumed by Firebase SDKs through reflection.
+### @PublicApi
+
+We annotate APIs that meant to be used by developers with
+[@PublicAPI](firebase-common/src/main/java/com/google/firebase/annotations/PublicApi.java).   This
+annotation will be used by tooling to help inform the version bump (major, minor, patch) that is
+required for the next release.
+
+## Proguarding
+
+Firebase SDKs do not proguard themselves, but support proguarding.   Firebase SDKs themselves are
+proguard friendly, but the dependencies of Firebase SDKs may not be.
 
 ### Proguard config
 
@@ -208,9 +185,6 @@ projects may be published as follows.
 ./gradlew -PprojectsToPublish=":firebase-firestore,:firebase-functions" \
     publishProjectsToMavenLocal
 ```
-
-To generate the Maven dependency tree under `build/` instead, you can replace
-`publishProjectsToMavenLocal` in the above command with `firebasePublish`.
 
 ### Code Formatting
 
