@@ -38,9 +38,6 @@ import org.junit.runner.RunWith;
  */
 @RunWith(AndroidJUnit4.class)
 public class ArrayTransformsTest {
-  // TODO(b/114769487): These tests have been flaky in CI so temporarily retrying.
-  @Rule public RetryRule retryRule = new RetryRule(3);
-
   // A document reference to read and write to.
   private DocumentReference docRef;
 
