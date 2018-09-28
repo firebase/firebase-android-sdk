@@ -44,7 +44,7 @@ buildscript {
 }
 
 ext {
-    playServicesVersion = '15.0.1'
+    playServicesVersion = '16.0.1'
     supportAnnotationsVersion = '26.1.0'
 }
 
