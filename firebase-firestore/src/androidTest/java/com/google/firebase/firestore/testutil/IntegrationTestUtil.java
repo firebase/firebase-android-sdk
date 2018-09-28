@@ -16,7 +16,6 @@ package com.google.firebase.firestore.testutil;
 
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.util.Util.autoId;
-import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.fail;
 
@@ -64,7 +63,7 @@ public class IntegrationTestUtil {
   private static final Map<FirebaseFirestore, Boolean> firestoreStatus = new HashMap<>();
 
   /** Default amount of time to wait for a given operation to complete, used by waitFor() helper. */
-  static final long OPERATION_WAIT_TIMEOUT_MS = 30000;
+  private static final long OPERATION_WAIT_TIMEOUT_MS = 30000;
 
   /**
    * Firestore databases can be subject to a ~30s "cold start" delay if they have not been used
@@ -112,35 +111,43 @@ public class IntegrationTestUtil {
    */
   public static FirebaseFirestore testFirestore(FirebaseFirestoreSettings settings) {
     FirebaseFirestore firestore = testFirestore(provider.projectId(), Level.DEBUG, settings);
-    if (!backendPrimed) {
-      backendPrimed = true;
-      primeBackend();
-    }
+    primeBackend();
     return firestore;
   }
 
   private static void primeBackend() {
-    EventAccumulator<DocumentSnapshot> accumulator = new EventAccumulator<>();
-    DocumentReference docRef = testDocument();
-    ListenerRegistration listenerRegistration = docRef.addSnapshotListener(accumulator.listener());
+    if (!backendPrimed) {
+      backendPrimed = true;
+      TaskCompletionSource<Void> watchInitialized = new TaskCompletionSource<>();
+      TaskCompletionSource<Void> watchUpdateReceived = new TaskCompletionSource<>();
+      DocumentReference docRef = testDocument();
+      ListenerRegistration listenerRegistration =
+          docRef.addSnapshotListener(
+              (snapshot, error) -> {
+                if ("done".equals(snapshot.get("value"))) {
+                  watchUpdateReceived.setResult(null);
+                } else {
+                  watchInitialized.setResult(null);
+                }
+              });
 
-    // Wait for watch to initialize and deliver first event.
-    accumulator.awaitRemoteEvent();
+      // Wait for watch to initialize and deliver first event.
+      waitFor(watchInitialized.getTask());
 
-    // Use a transaction to perform a write without triggering any local events.
-    docRef
-        .getFirestore()
-        .runTransaction(
-            transaction -> {
-              transaction.set(docRef, map("value", "done"));
-              return null;
-            });
+      // Use a transaction to perform a write without triggering any local events.
+      docRef
+          .getFirestore()
+          .runTransaction(
+              transaction -> {
+                transaction.set(docRef, map("value", "done"));
+                return null;
+              });
 
-    // Wait to see the write on the watch stream.
-    DocumentSnapshot docSnap = accumulator.await(PRIMING_TIMEOUT_MS);
-    assertEquals("done", docSnap.get("value"));
+      // Wait to see the write on the watch stream.
+      waitFor(watchUpdateReceived.getTask(), PRIMING_TIMEOUT_MS);
 
-    listenerRegistration.remove();
+      listenerRegistration.remove();
+    }
   }
 
   /** Initializes a new Firestore instance that uses a non-existing default project. */
