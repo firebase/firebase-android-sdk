@@ -16,6 +16,7 @@ package com.google.firebase.firestore.testutil;
 
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.util.Util.autoId;
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.fail;
 
@@ -62,20 +63,18 @@ public class IntegrationTestUtil {
   /** Online status of all active Firestore clients. */
   private static final Map<FirebaseFirestore, Boolean> firestoreStatus = new HashMap<>();
 
-  private static final long SEMAPHORE_WAIT_TIMEOUT_MS = 30000;
-  private static final long SHUTDOWN_WAIT_TIMEOUT_MS = 10000;
-  private static final long BATCH_WAIT_TIMEOUT_MS = 120000;
+  /** Default amount of time to wait for a given operation to complete, used by waitFor() helper. */
+  static final long OPERATION_WAIT_TIMEOUT_MS = 10000;
+
+  /**
+   * Firestore databases can be subject to a ~30s "cold start" delay if they have not been used
+   * recently, so before any tests run we "prime" the backend.
+   */
+  private static final long PRIMING_TIMEOUT_MS = 45000;
 
   private static final FirestoreProvider provider = new FirestoreProvider();
 
-  /**
-   * TODO: There's some flakiness with hexa / emulator / whatever that causes the first write in a
-   * run to frequently time out. So for now we always send an initial write with an extra long
-   * timeout to improve test reliability.
-   */
-  private static final long FIRST_WRITE_TIMEOUT_MS = 60000;
-
-  private static boolean sentFirstWrite = false;
+  private static boolean backendPrimed = false;
 
   public static FirestoreProvider provider() {
     return provider;
@@ -113,13 +112,35 @@ public class IntegrationTestUtil {
    */
   public static FirebaseFirestore testFirestore(FirebaseFirestoreSettings settings) {
     FirebaseFirestore firestore = testFirestore(provider.projectId(), Level.DEBUG, settings);
-    if (!sentFirstWrite) {
-      sentFirstWrite = true;
-      waitFor(
-          firestore.document("test-collection/initial-write-doc").set(map("foo", 1)),
-          FIRST_WRITE_TIMEOUT_MS);
+    if (!backendPrimed) {
+      backendPrimed = true;
+      primeBackend();
     }
     return firestore;
+  }
+
+  private static void primeBackend() {
+    EventAccumulator<DocumentSnapshot> accumulator = new EventAccumulator<>();
+    DocumentReference docRef = testDocument();
+    ListenerRegistration listenerRegistration = docRef.addSnapshotListener(accumulator.listener());
+
+    // Wait for watch to initialize and deliver first event.
+    accumulator.awaitRemoteEvent();
+
+    // Use a transaction to perform a write without triggering any local events.
+    docRef
+        .getFirestore()
+        .runTransaction(
+            transaction -> {
+              transaction.set(docRef, map("value", "done"));
+              return null;
+            });
+
+    // Wait to see the write on the watch stream.
+    DocumentSnapshot docSnap = accumulator.await(PRIMING_TIMEOUT_MS);
+    assertEquals("done", docSnap.get("value"));
+
+    listenerRegistration.remove();
   }
 
   /** Initializes a new Firestore instance that uses a non-existing default project. */
@@ -181,11 +202,7 @@ public class IntegrationTestUtil {
     try {
       for (FirebaseFirestore firestore : firestoreStatus.keySet()) {
         Task<Void> result = AccessHelper.shutdown(firestore);
-        try {
-          Tasks.await(result, SHUTDOWN_WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException | ExecutionException | InterruptedException e) {
-          throw new RuntimeException(e);
-        }
+        waitFor(result);
       }
     } finally {
       firestoreStatus.clear();
@@ -246,7 +263,7 @@ public class IntegrationTestUtil {
   public static void waitFor(Semaphore semaphore, int count) {
     try {
       boolean acquired =
-          semaphore.tryAcquire(count, SEMAPHORE_WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+          semaphore.tryAcquire(count, OPERATION_WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
       if (!acquired) {
         throw new TimeoutException("Failed to acquire semaphore within test timeout");
       }
@@ -257,7 +274,7 @@ public class IntegrationTestUtil {
 
   public static void waitFor(CountDownLatch countDownLatch) {
     try {
-      boolean acquired = countDownLatch.await(SEMAPHORE_WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+      boolean acquired = countDownLatch.await(OPERATION_WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
       if (!acquired) {
         throw new TimeoutException("Failed to acquire countdown latch within test timeout");
       }
@@ -266,16 +283,8 @@ public class IntegrationTestUtil {
     }
   }
 
-  public static void waitFor(List<Task<?>> task) {
-    try {
-      Tasks.await(Tasks.whenAll(task), BATCH_WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-    } catch (TimeoutException | ExecutionException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   public static <T> T waitFor(Task<T> task) {
-    return waitFor(task, SEMAPHORE_WAIT_TIMEOUT_MS);
+    return waitFor(task, OPERATION_WAIT_TIMEOUT_MS);
   }
 
   public static <T> T waitFor(Task<T> task, long timeoutMS) {
@@ -288,7 +297,7 @@ public class IntegrationTestUtil {
 
   public static <T> Exception waitForException(Task<T> task) {
     try {
-      Tasks.await(task, SEMAPHORE_WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+      Tasks.await(task, OPERATION_WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
       throw new RuntimeException("Expected Exception but Task completed successfully.");
     } catch (ExecutionException e) {
       return (Exception) e.getCause();

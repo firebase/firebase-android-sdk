@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.testutil;
 
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.OPERATION_WAIT_TIMEOUT_MS;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
@@ -47,7 +48,7 @@ public class EventAccumulator<T> {
     };
   }
 
-  public List<T> await(int numEvents) {
+  public List<T> await(int numEvents, long timeoutMs) {
     synchronized (this) {
       hardAssert(completion == null, "calling await while another await is running");
       completion = new TaskCompletionSource<>();
@@ -55,14 +56,22 @@ public class EventAccumulator<T> {
       checkFulfilled();
     }
 
-    waitFor(completion.getTask());
+    waitFor(completion.getTask(), timeoutMs);
     completion = null;
     return events.subList(maxEvents - numEvents, maxEvents);
   }
 
+  public List<T> await(int numEvents) {
+    return await(numEvents, OPERATION_WAIT_TIMEOUT_MS);
+  }
+
   // Await 1 event.
+  public T await(long timeoutMs) {
+    return await(1, timeoutMs).get(0);
+  }
+
   public T await() {
-    return await(1).get(0);
+    return await(1, OPERATION_WAIT_TIMEOUT_MS).get(0);
   }
 
   /** Waits for a snapshot with pending writes. */
