@@ -18,11 +18,6 @@ import groovy.io.FileType
 buildscript {
 
     repositories {
-        if (System.getenv().containsKey("FIREBASE_CI")) {
-            maven {
-                url "http://maven-proxy/"
-            }
-        }
         google()
         jcenter()
         mavenCentral()
@@ -52,11 +47,6 @@ apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 
 configure(subprojects) {
     repositories {
-        if (System.getenv().containsKey("FIREBASE_CI")) {
-            maven {
-                url "http://maven-proxy/"
-            }
-        }
         google()
         jcenter()
         mavenLocal()
