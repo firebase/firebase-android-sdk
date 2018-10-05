@@ -14,7 +14,6 @@
 
 package com.google.firebase.storage;
 
-import static com.google.firebase.common.testutil.Assert.assertThrows;
 
 import android.os.Build;
 import com.google.android.gms.tasks.Task;
@@ -144,10 +143,10 @@ public class StorageReferenceTest {
         .getReference("gs://project-5516366556574091405.appspot.com/child");
   }
 
-  @Test
+  @Test(expected = IllegalStateException.class)
   public void badInitTest2() throws Exception {
     FirebaseApp.clearInstancesForTest();
-    assertThrows(IllegalStateException.class, () -> FirebaseStorage.getInstance().getReference());
+    FirebaseStorage.getInstance().getReference();
   }
 
   @Test

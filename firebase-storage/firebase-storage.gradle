@@ -51,18 +51,12 @@ android {
         androidTest {
             java {
                 srcDir 'src/testUtil'
-                //We need this since FirebaseApp rule is externalized
-                //TODO(ashwinraghav) b/113079738
-                srcDir '../firebase-common/src/testUtil'
             }
         }
 
         test {
             java {
                 srcDir 'src/testUtil'
-                //We need this since FirebaseApp rule is externalized
-                //TODO(ashwinraghav) b/113079738
-                srcDir '../firebase-common/src/testUtil'
             }
             resources {
                 srcDirs "src/test/resources"
@@ -86,8 +80,10 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.google.truth:truth:0.39'
     androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation project(':firebase-app-rule')
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.18.3'
     testImplementation 'org.robolectric:robolectric:4.0-alpha-3-SNAPSHOT'
+    testImplementation project(':firebase-app-rule')
 }

@@ -14,8 +14,6 @@
 
 package com.google.firebase.storage;
 
-import static com.google.firebase.common.testutil.Assert.assertThrows;
-
 import android.os.Build;
 import com.google.firebase.storage.StreamDownloadTask.StreamProgressWrapper;
 import com.google.firebase.storage.network.MockInputStreamHelper;
@@ -110,7 +108,7 @@ public class StreamProgressWrapperTest {
     }
   }
 
-  @Test
+  @Test(expected = IOException.class)
   public void exceptionOnStart() throws Exception {
     InputStream inputStream =
         new StreamProgressWrapper(
@@ -119,7 +117,7 @@ public class StreamProgressWrapperTest {
             },
             null);
 
-    assertThrows(IOException.class, inputStream::available);
+    inputStream.available();
   }
 
   @Test
