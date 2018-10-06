@@ -71,6 +71,7 @@ public abstract class MutationQueueTestCase {
   @Before
   public void setUp() {
     persistence = getPersistence();
+    persistence.getReferenceDelegate().setInMemoryPins(new ReferenceSet());
     mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
     mutationQueue.start();
   }
