@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import java.util.List;
 
@@ -31,7 +33,7 @@ public class ViewSnapshot {
   private final DocumentSet oldDocuments;
   private final List<DocumentViewChange> changes;
   private final boolean isFromCache;
-  private final boolean hasPendingWrites;
+  private final ImmutableSortedSet<DocumentKey> mutatedKeys;
   private final boolean didSyncStateChange;
 
   public ViewSnapshot(
@@ -40,14 +42,14 @@ public class ViewSnapshot {
       DocumentSet oldDocuments,
       List<DocumentViewChange> changes,
       boolean isFromCache,
-      boolean hasPendingWrites,
+      ImmutableSortedSet<DocumentKey> mutatedKeys,
       boolean didSyncStateChange) {
     this.query = query;
     this.documents = documents;
     this.oldDocuments = oldDocuments;
     this.changes = changes;
     this.isFromCache = isFromCache;
-    this.hasPendingWrites = hasPendingWrites;
+    this.mutatedKeys = mutatedKeys;
     this.didSyncStateChange = didSyncStateChange;
   }
 
@@ -72,7 +74,11 @@ public class ViewSnapshot {
   }
 
   public boolean hasPendingWrites() {
-    return hasPendingWrites;
+    return !mutatedKeys.isEmpty();
+  }
+
+  public ImmutableSortedSet<DocumentKey> getMutatedKeys() {
+    return mutatedKeys;
   }
 
   public boolean didSyncStateChange() {
@@ -93,13 +99,13 @@ public class ViewSnapshot {
     if (isFromCache != that.isFromCache) {
       return false;
     }
-    if (hasPendingWrites != that.hasPendingWrites) {
-      return false;
-    }
     if (didSyncStateChange != that.didSyncStateChange) {
       return false;
     }
     if (!query.equals(that.query)) {
+      return false;
+    }
+    if (!mutatedKeys.equals(that.mutatedKeys)) {
       return false;
     }
     if (!documents.equals(that.documents)) {
@@ -117,8 +123,8 @@ public class ViewSnapshot {
     result = 31 * result + documents.hashCode();
     result = 31 * result + oldDocuments.hashCode();
     result = 31 * result + changes.hashCode();
+    result = 31 * result + mutatedKeys.hashCode();
     result = 31 * result + (isFromCache ? 1 : 0);
-    result = 31 * result + (hasPendingWrites ? 1 : 0);
     result = 31 * result + (didSyncStateChange ? 1 : 0);
     return result;
   }
@@ -135,8 +141,8 @@ public class ViewSnapshot {
         + changes
         + ", isFromCache="
         + isFromCache
-        + ", hasPendingWrites="
-        + hasPendingWrites
+        + ", mutatedKeys="
+        + mutatedKeys.size()
         + ", didSyncStateChange="
         + didSyncStateChange
         + ")";

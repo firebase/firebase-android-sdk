@@ -1,6 +1,0 @@
--repackageclasses 'com.google.firebase.obfuscated'
-
--dontwarn com.google.firebase.components.Component$Instantiation
--dontwarn com.google.firebase.R
--dontwarn com.google.firebase.R$string
--dontwarn java.lang.invoke.LambdaMetafactory

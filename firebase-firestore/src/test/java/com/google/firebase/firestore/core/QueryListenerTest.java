@@ -75,9 +75,9 @@ public class QueryListenerTest {
     final List<ViewSnapshot> otherAccum = new ArrayList<>();
 
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"), false);
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"), false);
-    Document doc2prime = doc("rooms/hades", 3, map("name", "hades", "owner", "Jonny"), false);
+    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
+    Document doc2prime = doc("rooms/hades", 3, map("name", "hades", "owner", "Jonny"));
 
     QueryListener listener = queryListener(query, accum);
     QueryListener otherListener = queryListener(query, otherAccum);
@@ -106,7 +106,7 @@ public class QueryListenerTest {
             DocumentSet.emptySet(snap2.getQuery().comparator()),
             asList(change1, change4),
             snap2.isFromCache(),
-            snap2.hasPendingWrites(),
+            snap2.getMutatedKeys(),
             /* didSyncStateChange= */ true);
     assertEquals(asList(snap2Prime), otherAccum);
   }
@@ -156,8 +156,8 @@ public class QueryListenerTest {
     List<ViewSnapshot> filteredAccum = new ArrayList<>();
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"), false);
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"), false);
+    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
     ListenOptions options1 = new ListenOptions();
     ListenOptions options2 = new ListenOptions();
     options2.includeQueryMetadataChanges = true;
@@ -189,10 +189,11 @@ public class QueryListenerTest {
     List<ViewSnapshot> filteredAccum = new ArrayList<>();
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"), false);
-    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros"), true);
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"), false);
-    Document doc3 = doc("rooms/other", 3, map("name", "other"), false);
+    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    Document doc1Prime =
+        doc("rooms/eros", 1, map("name", "eros"), Document.DocumentState.LOCAL_MUTATIONS);
+    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
+    Document doc3 = doc("rooms/other", 3, map("name", "other"));
 
     ListenOptions options1 = new ListenOptions();
     ListenOptions options2 = new ListenOptions();
@@ -222,11 +223,13 @@ public class QueryListenerTest {
   public void testRaisesQueryMetadataEventsOnlyWhenHasPendingWritesOnTheQueryChanges() {
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"), true);
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"), true);
-    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros"), false);
-    Document doc2Prime = doc("rooms/hades", 2, map("name", "hades"), false);
-    Document doc3 = doc("rooms/other", 3, map("name", "other"), false);
+    Document doc1 =
+        doc("rooms/eros", 1, map("name", "eros"), Document.DocumentState.LOCAL_MUTATIONS);
+    Document doc2 =
+        doc("rooms/hades", 2, map("name", "hades"), Document.DocumentState.LOCAL_MUTATIONS);
+    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros"));
+    Document doc2Prime = doc("rooms/hades", 2, map("name", "hades"));
+    Document doc3 = doc("rooms/other", 3, map("name", "other"));
 
     ListenOptions options = new ListenOptions();
     options.includeQueryMetadataChanges = true;
@@ -250,7 +253,7 @@ public class QueryListenerTest {
             snap3.getDocuments(),
             asList(),
             snap4.isFromCache(),
-            snap4.hasPendingWrites(),
+            snap4.getMutatedKeys(),
             snap4.didSyncStateChange());
     assertEquals(asList(snap1, snap3, expectedSnapshot4), fullAccum);
   }
@@ -259,10 +262,11 @@ public class QueryListenerTest {
   public void testMetadataOnlyDocumentChangesAreFilteredOut() {
     List<ViewSnapshot> filteredAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"), false);
-    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros"), true);
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"), false);
-    Document doc3 = doc("rooms/other", 3, map("name", "other"), false);
+    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    Document doc1Prime =
+        doc("rooms/eros", 1, map("name", "eros"), Document.DocumentState.LOCAL_MUTATIONS);
+    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
+    Document doc3 = doc("rooms/other", 3, map("name", "other"));
 
     ListenOptions options = new ListenOptions();
     options.includeDocumentMetadataChanges = false;
@@ -283,7 +287,7 @@ public class QueryListenerTest {
             snap1.getDocuments(),
             asList(change3),
             snap2.isFromCache(),
-            snap2.hasPendingWrites(),
+            snap2.getMutatedKeys(),
             snap2.didSyncStateChange());
     assertEquals(asList(snap1, expectedSnapshot2), filteredAccum);
   }
@@ -293,8 +297,8 @@ public class QueryListenerTest {
     List<ViewSnapshot> events = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
 
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"), false);
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"), false);
+    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
 
     ListenOptions options = new ListenOptions();
     options.waitForSyncWhenOnline = true;
@@ -322,7 +326,7 @@ public class QueryListenerTest {
             DocumentSet.emptySet(snap3.getQuery().comparator()),
             asList(change1, change2),
             /* isFromCache= */ false,
-            /*hasPendingWrites=*/ false,
+            snap3.getMutatedKeys(),
             /* didSyncStateChange= */ true);
     assertEquals(asList(expectedSnapshot), events);
   }
@@ -332,8 +336,8 @@ public class QueryListenerTest {
     List<ViewSnapshot> events = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
 
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"), false);
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"), false);
+    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
 
     ListenOptions options = new ListenOptions();
     options.waitForSyncWhenOnline = true;
@@ -359,7 +363,7 @@ public class QueryListenerTest {
             DocumentSet.emptySet(snap1.getQuery().comparator()),
             asList(change1),
             /* isFromCache= */ true,
-            /*hasPendingWrites=*/ false,
+            snap1.getMutatedKeys(),
             /* didSyncStateChange= */ true);
     ViewSnapshot expectedSnapshot2 =
         new ViewSnapshot(
@@ -368,7 +372,7 @@ public class QueryListenerTest {
             snap1.getDocuments(),
             asList(change2),
             /* isFromCache= */ true,
-            /*hasPendingWrites=*/ false,
+            snap2.getMutatedKeys(),
             /* didSyncStateChange= */ false);
     assertEquals(asList(expectedSnapshot1, expectedSnapshot2), events);
   }
@@ -394,7 +398,7 @@ public class QueryListenerTest {
             DocumentSet.emptySet(snap1.getQuery().comparator()),
             asList(),
             /* isFromCache= */ true,
-            /*hasPendingWrites=*/ false,
+            snap1.getMutatedKeys(),
             /* didSyncStateChange= */ true);
     assertEquals(asList(expectedSnapshot), events);
   }
@@ -419,7 +423,7 @@ public class QueryListenerTest {
             DocumentSet.emptySet(snap1.getQuery().comparator()),
             asList(),
             /* isFromCache= */ true,
-            /*hasPendingWrites=*/ false,
+            snap1.getMutatedKeys(),
             /* didSyncStateChange= */ true);
     assertEquals(asList(expectedSnapshot), events);
   }

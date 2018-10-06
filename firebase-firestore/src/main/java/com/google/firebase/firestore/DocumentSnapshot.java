@@ -90,22 +90,25 @@ public class DocumentSnapshot {
   private final SnapshotMetadata metadata;
 
   DocumentSnapshot(
-      FirebaseFirestore firestore, DocumentKey key, @Nullable Document doc, boolean isFromCache) {
+      FirebaseFirestore firestore,
+      DocumentKey key,
+      @Nullable Document doc,
+      boolean isFromCache,
+      boolean hasPendingWrites) {
     this.firestore = checkNotNull(firestore);
     this.key = checkNotNull(key);
     this.doc = doc;
-    boolean hasPendingWrites = this.doc != null && this.doc.hasLocalMutations();
     this.metadata = new SnapshotMetadata(hasPendingWrites, isFromCache);
   }
 
   static DocumentSnapshot fromDocument(
-      FirebaseFirestore firestore, Document doc, boolean fromCache) {
-    return new DocumentSnapshot(firestore, doc.getKey(), doc, fromCache);
+      FirebaseFirestore firestore, Document doc, boolean fromCache, boolean hasPendingWrites) {
+    return new DocumentSnapshot(firestore, doc.getKey(), doc, fromCache, hasPendingWrites);
   }
 
   static DocumentSnapshot fromNoDocument(
-      FirebaseFirestore firestore, DocumentKey key, boolean fromCache) {
-    return new DocumentSnapshot(firestore, key, null, fromCache);
+      FirebaseFirestore firestore, DocumentKey key, boolean fromCache, boolean hasPendingWrites) {
+    return new DocumentSnapshot(firestore, key, null, fromCache, hasPendingWrites);
   }
 
   /** @return The id of the document. */

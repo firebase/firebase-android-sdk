@@ -17,8 +17,11 @@ package com.google.firebase.firestore.model;
 /** Represents that no documents exists for the key at the given version. */
 public class NoDocument extends MaybeDocument {
 
-  public NoDocument(DocumentKey key, SnapshotVersion version) {
+  private boolean hasCommittedMutations;
+
+  public NoDocument(DocumentKey key, SnapshotVersion version, boolean hasCommittedMutations) {
     super(key, version);
+    this.hasCommittedMutations = hasCommittedMutations;
   }
 
   @Override
@@ -32,18 +35,36 @@ public class NoDocument extends MaybeDocument {
 
     NoDocument that = (NoDocument) o;
 
-    return getVersion().equals(that.getVersion()) && getKey().equals(that.getKey());
+    return hasCommittedMutations == that.hasCommittedMutations
+        && getVersion().equals(that.getVersion())
+        && getKey().equals(that.getKey());
+  }
+
+  @Override
+  public boolean hasPendingWrites() {
+    return hasCommittedMutations();
+  }
+
+  public boolean hasCommittedMutations() {
+    return hasCommittedMutations;
   }
 
   @Override
   public int hashCode() {
     int result = getKey().hashCode();
+    result = 31 * result + (hasCommittedMutations ? 1 : 0);
     result = 31 * result + getVersion().hashCode();
     return result;
   }
 
   @Override
   public String toString() {
-    return "NoDocument{key=" + getKey() + ", version=" + getVersion() + '}';
+    return "NoDocument{key="
+        + getKey()
+        + ", version="
+        + getVersion()
+        + ", hasCommittedMutations="
+        + hasCommittedMutations()
+        + "}";
   }
 }

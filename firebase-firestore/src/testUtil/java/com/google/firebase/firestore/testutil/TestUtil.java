@@ -51,6 +51,7 @@ import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
@@ -162,25 +163,34 @@ public class TestUtil {
   }
 
   public static Document doc(String key, long version, Map<String, Object> data) {
-    return new Document(key(key), version(version), wrapObject(data), false);
+    return new Document(
+        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key, version(version), wrapObject(data), false);
+    return new Document(key, version(version), wrapObject(data), Document.DocumentState.SYNCED);
   }
 
   public static Document doc(
-      String key, long version, ObjectValue data, boolean hasLocalMutations) {
-    return new Document(key(key), version(version), data, hasLocalMutations);
+      String key, long version, ObjectValue data, Document.DocumentState documentState) {
+    return new Document(key(key), version(version), data, documentState);
   }
 
   public static Document doc(
-      String key, long version, Map<String, Object> data, boolean hasLocalMutations) {
-    return new Document(key(key), version(version), wrapObject(data), hasLocalMutations);
+      String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
+    return new Document(key(key), version(version), wrapObject(data), documentState);
   }
 
   public static NoDocument deletedDoc(String key, long version) {
-    return new NoDocument(key(key), version(version));
+    return deletedDoc(key, version, /*hasCommittedMutations=*/ false);
+  }
+
+  public static NoDocument deletedDoc(String key, long version, boolean hasCommittedMutations) {
+    return new NoDocument(key(key), version(version), hasCommittedMutations);
+  }
+
+  public static UnknownDocument unknownDoc(String key, long version) {
+    return new UnknownDocument(key(key), version(version));
   }
 
   public static DocumentSet docSet(Comparator<Document> comparator, Document... documents) {

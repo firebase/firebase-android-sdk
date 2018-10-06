@@ -81,7 +81,7 @@ public class QueryListener {
               newSnapshot.getOldDocuments(),
               documentChanges,
               newSnapshot.isFromCache(),
-              newSnapshot.hasPendingWrites(),
+              newSnapshot.getMutatedKeys(),
               newSnapshot.didSyncStateChange());
     }
 
@@ -160,7 +160,7 @@ public class QueryListener {
             DocumentSet.emptySet(snapshot.getQuery().comparator()),
             QueryListener.getInitialViewChanges(snapshot),
             snapshot.isFromCache(),
-            snapshot.hasPendingWrites(),
+            snapshot.getMutatedKeys(),
             /*didSyncStateChange=*/ true);
     raisedInitialEvent = true;
     listener.onEvent(snapshot, null);

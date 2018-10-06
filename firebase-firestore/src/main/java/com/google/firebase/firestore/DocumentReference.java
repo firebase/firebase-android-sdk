@@ -317,8 +317,12 @@ public class DocumentReference {
           .getDocumentFromLocalCache(key)
           .continueWith(
               Executors.DIRECT_EXECUTOR,
-              (Task<Document> doc) ->
-                  new DocumentSnapshot(firestore, key, doc.getResult(), /*isFromCache=*/ true));
+              (Task<Document> task) -> {
+                Document doc = task.getResult();
+                boolean hasPendingWrites = doc != null && doc.hasLocalMutations();
+                return new DocumentSnapshot(
+                    firestore, key, doc, /*isFromCache=*/ true, hasPendingWrites);
+              });
     } else {
       return getViaSnapshotListener(source);
     }
@@ -523,11 +527,16 @@ public class DocumentReference {
                 Document document = snapshot.getDocuments().getDocument(key);
                 DocumentSnapshot documentSnapshot;
                 if (document != null) {
+                  boolean hasPendingWrites = snapshot.getMutatedKeys().contains(document.getKey());
                   documentSnapshot =
-                      DocumentSnapshot.fromDocument(firestore, document, snapshot.isFromCache());
+                      DocumentSnapshot.fromDocument(
+                          firestore, document, snapshot.isFromCache(), hasPendingWrites);
                 } else {
+                  // We don't raise `hasPendingWrites` for deleted documents.
+                  boolean hasPendingWrites = false;
                   documentSnapshot =
-                      DocumentSnapshot.fromNoDocument(firestore, key, snapshot.isFromCache());
+                      DocumentSnapshot.fromNoDocument(
+                          firestore, key, snapshot.isFromCache(), hasPendingWrites);
                 }
                 listener.onEvent(documentSnapshot, null);
               } else {

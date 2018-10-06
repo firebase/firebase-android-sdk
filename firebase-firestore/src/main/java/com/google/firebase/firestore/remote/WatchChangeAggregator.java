@@ -184,7 +184,10 @@ public class WatchChangeAggregator {
           // deleted document there might be another query that will raise this document as part of
           // a snapshot  until it is resolved, essentially exposing inconsistency between queries.
           DocumentKey key = DocumentKey.fromPath(query.getPath());
-          removeDocumentFromTarget(targetId, key, new NoDocument(key, SnapshotVersion.NONE));
+          removeDocumentFromTarget(
+              targetId,
+              key,
+              new NoDocument(key, SnapshotVersion.NONE, /*hasCommittedMutations=*/ false));
         } else {
           hardAssert(
               expectedCount == 1, "Single document existence filter with count: %d", expectedCount);
@@ -221,7 +224,10 @@ public class WatchChangeAggregator {
           // limboDocumentRefs.
           DocumentKey key = DocumentKey.fromPath(queryData.getQuery().getPath());
           if (pendingDocumentUpdates.get(key) == null && !targetContainsDocument(targetId, key)) {
-            removeDocumentFromTarget(targetId, key, new NoDocument(key, snapshotVersion));
+            removeDocumentFromTarget(
+                targetId,
+                key,
+                new NoDocument(key, snapshotVersion, /*hasCommittedMutations=*/ false));
           }
         }
 

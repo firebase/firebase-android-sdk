@@ -80,10 +80,6 @@ dependencies {
 
     implementation "com.google.android.gms:play-services-base:$playServicesVersion"
     implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
-    implementation 'android.arch.lifecycle:runtime:1.1.1'
-    implementation "android.arch.lifecycle:common:1.1.1"
-    implementation "android.arch.core:runtime:1.1.1"
-    implementation "android.arch.core:common:1.1.1"
 
     androidTestImplementation "com.android.support:support-annotations:$supportAnnotationsVersion"
     androidTestImplementation 'com.android.support.test:rules:1.0.2'

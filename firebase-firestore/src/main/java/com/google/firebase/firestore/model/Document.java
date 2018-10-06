@@ -25,6 +25,16 @@ import javax.annotation.Nullable;
  */
 public class Document extends MaybeDocument {
 
+  /** Describes the `hasPendingWrites` state of a document. */
+  public enum DocumentState {
+    /** Local mutations applied via the mutation queue. Document is potentially inconsistent. */
+    LOCAL_MUTATIONS,
+    /** Mutations applied based on a write acknowledgment. Document is potentially inconsistent. */
+    COMMITTED_MUTATIONS,
+    /** No mutations applied. Document was sent to us by Watch. */
+    SYNCED
+  }
+
   private static final Comparator<Document> KEY_COMPARATOR =
       new Comparator<Document>() {
         @Override
@@ -40,13 +50,13 @@ public class Document extends MaybeDocument {
 
   private final ObjectValue data;
 
-  private final boolean hasLocalMutations;
+  private final DocumentState documentState;
 
   public Document(
-      DocumentKey key, SnapshotVersion version, ObjectValue data, boolean hasLocalMutations) {
+      DocumentKey key, SnapshotVersion version, ObjectValue data, DocumentState documentState) {
     super(key, version);
     this.data = data;
-    this.hasLocalMutations = hasLocalMutations;
+    this.documentState = documentState;
   }
 
   public ObjectValue getData() {
@@ -63,7 +73,16 @@ public class Document extends MaybeDocument {
   }
 
   public boolean hasLocalMutations() {
-    return hasLocalMutations;
+    return documentState.equals(DocumentState.LOCAL_MUTATIONS);
+  }
+
+  public boolean hasCommittedMutations() {
+    return documentState.equals(DocumentState.COMMITTED_MUTATIONS);
+  }
+
+  @Override
+  public boolean hasPendingWrites() {
+    return this.hasLocalMutations() || this.hasCommittedMutations();
   }
 
   @Override
@@ -79,7 +98,7 @@ public class Document extends MaybeDocument {
 
     return getVersion().equals(document.getVersion())
         && getKey().equals(document.getKey())
-        && hasLocalMutations == document.hasLocalMutations
+        && documentState.equals(document.documentState)
         && data.equals(document.data);
   }
 
@@ -88,7 +107,7 @@ public class Document extends MaybeDocument {
     int result = getKey().hashCode();
     result = 31 * result + data.hashCode();
     result = 31 * result + getVersion().hashCode();
-    result = 31 * result + (hasLocalMutations ? 1 : 0);
+    result = 31 * result + documentState.hashCode();
     return result;
   }
 
@@ -101,8 +120,8 @@ public class Document extends MaybeDocument {
         + data
         + ", version="
         + getVersion()
-        + ", hasLocalMutations="
-        + hasLocalMutations
+        + ", documentState="
+        + documentState.name()
         + '}';
   }
 }
