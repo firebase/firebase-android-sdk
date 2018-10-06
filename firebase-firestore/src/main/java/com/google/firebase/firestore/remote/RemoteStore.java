@@ -17,6 +17,7 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.support.annotation.Nullable;
+import android.util.SparseArray;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Transaction;
@@ -118,7 +119,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    * removed with unlistens are removed eagerly without waiting for confirmation from the listen
    * stream.
    */
-  private final Map<Integer, QueryData> listenTargets;
+  private final SparseArray<QueryData> listenTargets;
 
   private final OnlineStateTracker onlineStateTracker;
 
@@ -152,7 +153,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     this.localStore = localStore;
     this.datastore = datastore;
 
-    listenTargets = new HashMap<>();
+    listenTargets = new SparseArray<QueryData>();
     writePipeline = new ArrayDeque<>();
 
     onlineStateTracker =
@@ -292,8 +293,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   /** Listens to the target identified by the given QueryData. */
   public void listen(QueryData queryData) {
     Integer targetId = queryData.getTargetId();
-    hardAssert(
-        !listenTargets.containsKey(targetId),
+    hardAssert(listenTargets.get(targetId) == null,
         "listen called with duplicate target ID: %d",
         targetId);
 
@@ -318,7 +318,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    * be torn down after one minute of inactivity.
    */
   public void stopListening(int targetId) {
-    QueryData queryData = listenTargets.remove(targetId);
+    QueryData queryData = listenTargets.get(targetId);
+    listenTargets.remove(targetId);
     hardAssert(
         queryData != null, "stopListening called on target no currently watched: %d", targetId);
 
@@ -327,7 +328,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       sendUnwatchRequest(targetId);
     }
 
-    if (listenTargets.isEmpty()) {
+    if (listenTargets.size()==0) {
       if (watchStream.isOpen()) {
         watchStream.markIdle();
       } else if (this.canUseNetwork()) {
@@ -357,7 +358,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    * active watch targets.
    */
   private boolean shouldStartWatchStream() {
-    return canUseNetwork() && !watchStream.isStarted() && !listenTargets.isEmpty();
+    return canUseNetwork() && !watchStream.isStarted() && listenTargets.size() != 0;
   }
 
   private void cleanUpWatchStreamState() {
@@ -378,9 +379,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   private void handleWatchStreamOpen() {
+    final int nsize = listenTargets.size();
     // Restore any existing watches.
-    for (QueryData queryData : listenTargets.values()) {
-      sendWatchRequest(queryData);
+    for(int i = 0; i < nsize; i++) {
+      sendWatchRequest(listenTargets.get(i));
     }
   }
 
@@ -515,7 +517,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     hardAssert(targetChange.getCause() != null, "Processing target error without a cause");
     for (Integer targetId : targetChange.getTargetIds()) {
       // Ignore targets that have been removed already.
-      if (listenTargets.containsKey(targetId)) {
+      if (listenTargets.get(targetId) != null) {
         listenTargets.remove(targetId);
         watchChangeAggregator.removeTarget(targetId);
         remoteStoreCallback.handleRejectedListen(targetId, targetChange.getCause());
