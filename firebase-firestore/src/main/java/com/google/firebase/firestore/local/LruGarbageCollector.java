@@ -15,11 +15,9 @@
 package com.google.firebase.firestore.local;
 
 import android.util.SparseArray;
-
 import com.google.firebase.firestore.core.ListenSequence;
 import java.util.Comparator;
 import java.util.PriorityQueue;
-import java.util.Set;
 
 /** Implements the steps for LRU garbage collection. */
 class LruGarbageCollector {

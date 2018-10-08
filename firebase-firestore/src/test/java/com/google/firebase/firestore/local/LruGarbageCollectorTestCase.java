@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import android.util.SparseArray;
-
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.keySet;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -28,6 +26,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import android.util.SparseArray;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.ListenSequence;

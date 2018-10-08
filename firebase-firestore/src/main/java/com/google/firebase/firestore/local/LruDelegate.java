@@ -15,9 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import android.util.SparseArray;
-
 import com.google.firebase.firestore.util.Consumer;
-import java.util.Set;
 
 /**
  * Persistence layers intending to use LRU Garbage collection should implement this interface. This

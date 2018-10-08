@@ -14,15 +14,13 @@
 
 package com.google.firebase.firestore.local;
 
-import android.util.SparseArray;
-
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.util.SparseArray;
 import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.Consumer;
-import java.util.Set;
 
 /** Provides LRU functionality for SQLite persistence. */
 class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {

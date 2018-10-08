@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.local;
 
 import android.util.SparseArray;
-
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
