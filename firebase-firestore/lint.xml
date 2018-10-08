@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
+    <!--A linter bug prevents us from being able to analyze this file.-->
+    <!--See: https://storage.googleapis.com/android-ci/pr-logs/pull/firebase_firebase-android-sdk/63/check/1049425133258674177/artifacts/firebase-firestore_build_reports/lint-results.html -->
+    <issue id="all">
+        <ignore path="src/main/java/com/google/firebase/firestore/local/LruGarbageCollector.java"/>
+    </issue>
+
     <!--Although usage of assert is not expected to work in the Android Runtime, since this is shared with the firebase backend, it would require significant plumbing to remove the assertions while sharing the code effectively.-->
     <issue id="Assert">
         <ignore path="src/main/java/com/google/cloud/datastore/core/number/*.java"/>
