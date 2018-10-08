@@ -16,7 +16,6 @@ package com.google.cloud.datastore.core.number;
 
 import static com.google.cloud.datastore.core.number.NumberParts.SIGNIFICAND_BITS;
 
-import com.google.firebase.firestore.BuildConfig;
 import java.util.Arrays;
 
 /**
@@ -195,8 +194,7 @@ public class NumberIndexEncoder {
 
       // Store exponents [4, 19] biased as [0, 15]
       exponent -= EXP1_END;
-      if(BuildConfig.DEBUG && !(exponent <= 0xF))
-        throw new RuntimeException();
+      assert exponent <= 0xF;
 
       // Store exponent as low order 4 bits, no continuation bit
       lastByte |= exponent;
@@ -214,8 +212,7 @@ public class NumberIndexEncoder {
 
       // Store exponents [20, 147] biased as [0, 127]
       exponent -= EXP2_END;
-      if(BuildConfig.DEBUG && !(exponent <= 0x7F))
-        throw new RuntimeException();
+      assert exponent <= 0x7F;
 
       // Pack the top 3 bits of the 7 bit exponent as the low order bits
       lastByte |= exponent >>> 4;
@@ -243,8 +240,7 @@ public class NumberIndexEncoder {
 
       // Store exponents [148, 1171] biased as [0, 1023]
       exponent -= EXP3_END;
-      if(BuildConfig.DEBUG && !(exponent <= 0x3FF))
-        throw new RuntimeException();
+      assert exponent <= 0x3FF;
 
       // Pack the top 2 bits of the exponent as the low order bits
       lastByte |= exponent >>> 8;
