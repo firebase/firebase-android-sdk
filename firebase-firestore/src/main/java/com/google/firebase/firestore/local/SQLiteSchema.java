@@ -38,7 +38,9 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = (Persistence.INDEXING_SUPPORT_ENABLED) ? 7 : 6;
+  static final int VERSION = 7;
+  // Remove this constant and increment VERSION to enable indexing support
+  static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
   private final SQLiteDatabase db;
 
@@ -99,6 +101,10 @@ class SQLiteSchema {
     }
 
     if (fromVersion < 7 && toVersion >= 7) {
+      ensureSequenceNumbers();
+    }
+
+    if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
       createLocalDocumentsCollectionIndex();
     }
@@ -244,5 +250,35 @@ class SQLiteSchema {
 
   private void addSequenceNumber() {
     db.execSQL("ALTER TABLE target_documents ADD COLUMN sequence_number INTEGER");
+  }
+
+  /**
+   * Ensures that each entry in the remote document cache has a corresponding sentinel row. Any
+   * entries that lack a sentinel row are given one with the sequence number set to the highest
+   * recorded sequence number from the target metadata.
+   */
+  private void ensureSequenceNumbers() {
+    // Get the current highest sequence number
+    SQLitePersistence.Query sequenceNumberQuery =
+        new SQLitePersistence.Query(
+            db, "SELECT highest_listen_sequence_number FROM target_globals LIMIT 1");
+    Long boxedSequenceNumber = sequenceNumberQuery.firstValue(c -> c.getLong(0));
+    hardAssert(boxedSequenceNumber != null, "Missing highest sequence number");
+
+    long sequenceNumber = boxedSequenceNumber;
+    SQLiteStatement tagDocument =
+        db.compileStatement(
+            "INSERT INTO target_documents (target_id, path, sequence_number) VALUES (0, ?, ?)");
+    SQLitePersistence.Query untaggedDocumentsQuery =
+        new SQLitePersistence.Query(
+            db,
+            "SELECT RD.path FROM remote_documents AS RD WHERE NOT EXISTS (SELECT TD.path FROM target_documents AS TD WHERE RD.path = TD.path AND TD.target_id = 0)");
+    untaggedDocumentsQuery.forEach(
+        row -> {
+          tagDocument.clearBindings();
+          tagDocument.bindString(1, row.getString(0));
+          tagDocument.bindLong(2, sequenceNumber);
+          hardAssert(tagDocument.executeInsert() != -1, "Failed to insert a sentinel row");
+        });
   }
 }
