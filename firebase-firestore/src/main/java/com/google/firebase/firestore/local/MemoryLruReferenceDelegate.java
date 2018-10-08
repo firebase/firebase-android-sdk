@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import android.util.SparseArray;
+
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.core.ListenSequence;
@@ -94,7 +96,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public int removeTargets(long upperBound, Set<Integer> activeTargetIds) {
+  public int removeTargets(long upperBound, SparseArray<?> activeTargetIds) {
     return persistence.getQueryCache().removeQueries(upperBound, activeTargetIds);
   }
 

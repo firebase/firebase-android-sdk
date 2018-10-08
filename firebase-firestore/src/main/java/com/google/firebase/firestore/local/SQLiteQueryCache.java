@@ -18,6 +18,8 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.database.sqlite.SQLiteStatement;
+import android.util.SparseArray;
+
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -186,7 +188,7 @@ final class SQLiteQueryCache implements QueryCache {
    * present in `activeTargetIds`. Document associations for the removed targets are also removed.
    * Returns the number of targets removed.
    */
-  int removeQueries(long upperBound, Set<Integer> activeTargetIds) {
+  int removeQueries(long upperBound, SparseArray<?> activeTargetIds) {
     int[] count = new int[1];
     // SQLite has a max sql statement size, so there is technically a possibility that including a
     // an IN clause in this query to filter `activeTargetIds` could overflow. Rather than deal with
@@ -196,7 +198,7 @@ final class SQLiteQueryCache implements QueryCache {
         .forEach(
             row -> {
               int targetId = row.getInt(0);
-              if (!activeTargetIds.contains(targetId)) {
+              if (activeTargetIds.get(targetId) == null) {
                 removeTarget(targetId);
                 count[0]++;
               }

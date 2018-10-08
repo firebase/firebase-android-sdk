@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import android.util.SparseArray;
+
 import com.google.firebase.firestore.util.Consumer;
 import java.util.Set;
 
@@ -37,7 +39,7 @@ interface LruDelegate {
    *
    * @return the number of targets removed.
    */
-  int removeTargets(long upperBound, Set<Integer> activeTargetIds);
+  int removeTargets(long upperBound, SparseArray<?> activeTargetIds);
 
   /**
    * Removes all unreferenced documents from the cache that have a sequence number less than or

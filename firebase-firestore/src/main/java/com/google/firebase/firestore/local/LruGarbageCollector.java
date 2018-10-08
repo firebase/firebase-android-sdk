@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import android.util.SparseArray;
+
 import com.google.firebase.firestore.core.ListenSequence;
 import java.util.Comparator;
 import java.util.PriorityQueue;
@@ -80,7 +82,7 @@ class LruGarbageCollector {
    * Removes targets with a sequence number equal to or less than the given upper bound, and removes
    * document associations with those targets.
    */
-  int removeTargets(long upperBound, Set<Integer> activeTargetIds) {
+  int removeTargets(long upperBound, SparseArray<?> activeTargetIds) {
     return delegate.removeTargets(upperBound, activeTargetIds);
   }
 
