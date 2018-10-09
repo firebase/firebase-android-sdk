@@ -16,13 +16,13 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.util.SparseArray;
 import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.util.Consumer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /** Provides LRU garbage collection functionality for MemoryPersistence. */
 class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
@@ -94,7 +94,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public int removeTargets(long upperBound, Set<Integer> activeTargetIds) {
+  public int removeTargets(long upperBound, SparseArray<?> activeTargetIds) {
     return persistence.getQueryCache().removeQueries(upperBound, activeTargetIds);
   }
 
