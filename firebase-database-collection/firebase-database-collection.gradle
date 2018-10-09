@@ -17,9 +17,6 @@ apply plugin: 'com.android.library'
 def androidVersion = 26
 
 android {
-    lintOptions {
-        abortOnError false
-    }
     compileSdkVersion androidVersion
 }
 
