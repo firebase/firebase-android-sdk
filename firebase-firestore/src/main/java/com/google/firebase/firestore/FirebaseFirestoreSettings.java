@@ -26,6 +26,7 @@ import com.google.firebase.annotations.PublicApi;
 public final class FirebaseFirestoreSettings {
   public static final long CACHE_SIZE_UNLIMITED = -1;
 
+  private static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1mb
   private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100mb
   private static final String DEFAULT_HOST = "firestore.googleapis.com";
   private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = false;
@@ -140,6 +141,9 @@ public final class FirebaseFirestoreSettings {
     @NonNull
     @PublicApi
     public Builder setCacheSizeBytes(long value) {
+      if (value != CACHE_SIZE_UNLIMITED && value < MINIMUM_CACHE_BYTES) {
+        throw new IllegalArgumentException("Cache size must be set to at least " + MINIMUM_CACHE_BYTES + " bytes");
+      }
       this.cacheSizeBytes = value;
       return this;
     }
