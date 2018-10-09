@@ -21,7 +21,7 @@ import com.google.firebase.firestore.util.Consumer;
  * Persistence layers intending to use LRU Garbage collection should implement this interface. This
  * interface defines the operations that the LRU garbage collector needs from the persistence layer.
  */
-interface LruDelegate {
+public interface LruDelegate {
 
   /** Enumerates all the targets in the QueryCache. */
   void forEachTarget(Consumer<QueryData> consumer);
@@ -49,4 +49,7 @@ interface LruDelegate {
 
   /** Access to the underlying LRU Garbage collector instance. */
   LruGarbageCollector getGarbageCollector();
+
+  /** Return the size of the cache in bytes. */
+  long getByteSize();
 }

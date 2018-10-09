@@ -422,4 +422,12 @@ final class MemoryMutationQueue implements MutationQueue {
     hardAssert(index >= 0 && index < queue.size(), "Batches must exist to be %s", action);
     return index;
   }
+
+  long getByteSize(LocalSerializer serializer) {
+    long count = 0;
+    for (MutationBatch batch : queue) {
+      count += serializer.encodeMutationBatch(batch).getSerializedSize();
+    }
+    return count;
+  }
 }

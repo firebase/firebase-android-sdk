@@ -24,6 +24,9 @@ import com.google.firebase.annotations.PublicApi;
 /** Settings used to configure a FirebaseFirestore instance. */
 @PublicApi
 public final class FirebaseFirestoreSettings {
+  public static final long CACHE_SIZE_UNLIMITED = -1;
+
+  private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100mb
   private static final String DEFAULT_HOST = "firestore.googleapis.com";
   private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = false;
 
@@ -34,6 +37,7 @@ public final class FirebaseFirestoreSettings {
     private boolean sslEnabled;
     private boolean persistenceEnabled;
     private boolean timestampsInSnapshotsEnabled;
+    private long cacheSizeBytes;
 
     /** Constructs a new FirebaseFirestoreSettings Builder object. */
     @PublicApi
@@ -42,6 +46,7 @@ public final class FirebaseFirestoreSettings {
       sslEnabled = true;
       persistenceEnabled = true;
       timestampsInSnapshotsEnabled = DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED;
+      cacheSizeBytes = DEFAULT_CACHE_SIZE_BYTES;
     }
 
     /**
@@ -124,6 +129,21 @@ public final class FirebaseFirestoreSettings {
       return this;
     }
 
+    /**
+     * Sets the cache size threshold above which the SDK will attempt to collect least-recently-used
+     * documents. The size is not a guarantee that the cache will stay below that size, only that if
+     * the cache exceeds the given size, cleanup will be attempted.
+     *
+     * @return A settings object on which the cache size is configured as specified by the given
+     *     {@code value}.
+     */
+    @NonNull
+    @PublicApi
+    public Builder setCacheSizeBytes(long value) {
+      this.cacheSizeBytes = value;
+      return this;
+    }
+
     @NonNull
     @PublicApi
     public FirebaseFirestoreSettings build() {
@@ -139,6 +159,7 @@ public final class FirebaseFirestoreSettings {
   private final boolean sslEnabled;
   private final boolean persistenceEnabled;
   private final boolean timestampsInSnapshotsEnabled;
+  private final long cacheSizeBytes;
 
   /** Constructs a FirebaseFirestoreSettings object based on the values in the Builder. */
   private FirebaseFirestoreSettings(Builder builder) {
@@ -146,6 +167,7 @@ public final class FirebaseFirestoreSettings {
     sslEnabled = builder.sslEnabled;
     persistenceEnabled = builder.persistenceEnabled;
     timestampsInSnapshotsEnabled = builder.timestampsInSnapshotsEnabled;
+    cacheSizeBytes = builder.cacheSizeBytes;
   }
 
   @Override
@@ -161,7 +183,8 @@ public final class FirebaseFirestoreSettings {
     return host.equals(that.host)
         && sslEnabled == that.sslEnabled
         && persistenceEnabled == that.persistenceEnabled
-        && timestampsInSnapshotsEnabled == that.timestampsInSnapshotsEnabled;
+        && timestampsInSnapshotsEnabled == that.timestampsInSnapshotsEnabled
+        && cacheSizeBytes == that.cacheSizeBytes;
   }
 
   @Override
@@ -170,6 +193,7 @@ public final class FirebaseFirestoreSettings {
     result = 31 * result + (sslEnabled ? 1 : 0);
     result = 31 * result + (persistenceEnabled ? 1 : 0);
     result = 31 * result + (timestampsInSnapshotsEnabled ? 1 : 0);
+    result = 31 * result + (int) cacheSizeBytes;
     return result;
   }
 
@@ -210,5 +234,14 @@ public final class FirebaseFirestoreSettings {
   @PublicApi
   public boolean areTimestampsInSnapshotsEnabled() {
     return timestampsInSnapshotsEnabled;
+  }
+
+  /**
+   * Returns the threshold for the cache size above which the SDK will attempt to collect the least
+   * recently used documents.
+   */
+  @PublicApi
+  public long getCacheSizeBytes() {
+    return cacheSizeBytes;
   }
 }

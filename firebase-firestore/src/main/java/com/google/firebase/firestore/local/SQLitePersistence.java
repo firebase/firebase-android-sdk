@@ -33,6 +33,7 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import javax.annotation.Nullable;
@@ -71,19 +72,25 @@ public final class SQLitePersistence extends Persistence {
   private final OpenHelper opener;
   private final LocalSerializer serializer;
   private SQLiteDatabase db;
+  private File databasePath;
   private boolean started;
   private final SQLiteQueryCache queryCache;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
 
   public SQLitePersistence(
-      Context context, String persistenceKey, DatabaseId databaseId, LocalSerializer serializer) {
+      Context context,
+      String persistenceKey,
+      DatabaseId databaseId,
+      LocalSerializer serializer,
+      LruGarbageCollector.Params params) {
     String databaseName = databaseName(persistenceKey, databaseId);
     this.opener = new OpenHelper(context, databaseName);
+    this.databasePath = context.getDatabasePath(databaseName);
     this.serializer = serializer;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
-    this.referenceDelegate = new SQLiteLruReferenceDelegate(this);
+    this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
   }
 
   @Override
@@ -122,7 +129,7 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  public ReferenceDelegate getReferenceDelegate() {
+  public SQLiteLruReferenceDelegate getReferenceDelegate() {
     return referenceDelegate;
   }
 
@@ -143,6 +150,9 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   void runTransaction(String action, Runnable operation) {
+    hardAssert(
+        !db.inTransaction(),
+        "Trying to start a transaction while another transaction is still active");
     try {
       Logger.debug(TAG, "Starting transaction: %s", action);
       referenceDelegate.onTransactionStarted();
@@ -159,6 +169,9 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   <T> T runTransaction(String action, Supplier<T> operation) {
+    hardAssert(
+        !db.inTransaction(),
+        "Trying to start a transaction while another transaction is still active");
     try {
       Logger.debug(TAG, "Starting transaction: %s", action);
       referenceDelegate.onTransactionStarted();
@@ -172,6 +185,10 @@ public final class SQLitePersistence extends Persistence {
       db.endTransaction();
       referenceDelegate.onTransactionCommitted();
     }
+  }
+
+  long getByteSize() {
+    return databasePath.length();
   }
 
   /**

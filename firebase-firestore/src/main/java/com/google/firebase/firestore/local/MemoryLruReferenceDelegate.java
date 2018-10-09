@@ -27,19 +27,24 @@ import java.util.Map;
 /** Provides LRU garbage collection functionality for MemoryPersistence. */
 class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   private final MemoryPersistence persistence;
+  private final LocalSerializer serializer;
   private final Map<DocumentKey, Long> orphanedSequenceNumbers;
   private ReferenceSet inMemoryPins;
   private final LruGarbageCollector garbageCollector;
   private final ListenSequence listenSequence;
   private long currentSequenceNumber;
 
-  MemoryLruReferenceDelegate(MemoryPersistence persistence) {
+  MemoryLruReferenceDelegate(
+      MemoryPersistence persistence,
+      LruGarbageCollector.Params params,
+      LocalSerializer serializer) {
     this.persistence = persistence;
+    this.serializer = serializer;
     this.orphanedSequenceNumbers = new HashMap<>();
     this.listenSequence =
         new ListenSequence(persistence.getQueryCache().getHighestListenSequenceNumber());
     this.currentSequenceNumber = ListenSequence.INVALID;
-    this.garbageCollector = new LruGarbageCollector(this);
+    this.garbageCollector = new LruGarbageCollector(this, params);
   }
 
   @Override
@@ -83,8 +88,12 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
   @Override
   public void forEachOrphanedDocumentSequenceNumber(Consumer<Long> consumer) {
-    for (Long sequenceNumber : orphanedSequenceNumbers.values()) {
-      consumer.accept(sequenceNumber);
+    for (Map.Entry<DocumentKey, Long> entry : orphanedSequenceNumbers.entrySet()) {
+      // Pass in the exact sequence number as the upper bound so we know it won't be pinned by being
+      // too recent.
+      if (!isPinned(entry.getKey(), entry.getValue())) {
+        consumer.accept(entry.getValue());
+      }
     }
   }
 
@@ -169,5 +178,19 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
     Long sequenceNumber = orphanedSequenceNumbers.get(key);
     return sequenceNumber != null && sequenceNumber > upperBound;
+  }
+
+  @Override
+  public long getByteSize() {
+    // Note that this method is only used for testing because this delegate is only
+    // used for testing. The algorithm here (loop through everything, serialize it
+    // and count bytes) is inefficient and inexact, but won't run in production.
+    long count = 0;
+    count += persistence.getQueryCache().getByteSize(serializer);
+    count += persistence.getRemoteDocumentCache().getByteSize(serializer);
+    for (MemoryMutationQueue queue : persistence.getMutationQueues()) {
+      count += queue.getByteSize(serializer);
+    }
+    return count;
   }
 }

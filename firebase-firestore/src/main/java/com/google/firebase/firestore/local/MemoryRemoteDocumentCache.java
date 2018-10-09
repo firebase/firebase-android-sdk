@@ -86,4 +86,28 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments() {
     return docs;
   }
+
+  /**
+   * Returns an estimate of the number of bytes used to store the given document key in memory. This
+   * is only an estimate and includes the size of the segments of the path, but not any object
+   * overhead or path separators.
+   */
+  private static long getKeySize(DocumentKey key) {
+    ResourcePath path = key.getPath();
+    long count = 0;
+    for (int i = 0; i < path.length(); i++) {
+      // Strings in java are utf-16, each character is two bytes in memory
+      count += path.getSegment(i).length() * 2;
+    }
+    return count;
+  }
+
+  long getByteSize(LocalSerializer serializer) {
+    long count = 0;
+    for (Map.Entry<DocumentKey, MaybeDocument> entry : docs) {
+      count += getKeySize(entry.getKey());
+      count += serializer.encodeMaybeDocument(entry.getValue()).getSerializedSize();
+    }
+    return count;
+  }
 }

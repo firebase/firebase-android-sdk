@@ -68,6 +68,8 @@ public class AsyncQueue {
      * set timeout, rather than waiting indefinitely for success or failure.
      */
     ONLINE_STATE_TIMEOUT,
+    /** A timer used to periodically attempt LRU Garbage collection */
+    GARBAGE_COLLECTION_DELAY
   }
 
   /**

@@ -44,9 +44,11 @@ public final class MemoryPersistence extends Persistence {
     return persistence;
   }
 
-  public static MemoryPersistence createLruGcMemoryPersistence() {
+  public static MemoryPersistence createLruGcMemoryPersistence(
+      LruGarbageCollector.Params params, LocalSerializer serializer) {
     MemoryPersistence persistence = new MemoryPersistence();
-    persistence.setReferenceDelegate(new MemoryLruReferenceDelegate(persistence));
+    persistence.setReferenceDelegate(
+        new MemoryLruReferenceDelegate(persistence, params, serializer));
     return persistence;
   }
 

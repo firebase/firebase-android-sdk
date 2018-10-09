@@ -555,4 +555,8 @@ public final class LocalStore {
 
     mutationQueue.removeMutationBatch(batch);
   }
+
+  public LruGarbageCollector.Results collectGarbage(LruGarbageCollector garbageCollector) {
+    return persistence.runTransaction("Collect garbage", () -> garbageCollector.collect(targetIds));
+  }
 }

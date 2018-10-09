@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class MemoryLruGarbageCollectorTest extends LruGarbageCollectorTestCase {
   @Override
-  Persistence createPersistence() {
-    return PersistenceTestHelpers.createLRUMemoryPersistence();
+  Persistence createPersistence(LruGarbageCollector.Params params) {
+    return PersistenceTestHelpers.createLRUMemoryPersistence(params);
   }
 }
