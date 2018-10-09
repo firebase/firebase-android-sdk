@@ -142,7 +142,8 @@ public final class FirebaseFirestoreSettings {
     @PublicApi
     public Builder setCacheSizeBytes(long value) {
       if (value != CACHE_SIZE_UNLIMITED && value < MINIMUM_CACHE_BYTES) {
-        throw new IllegalArgumentException("Cache size must be set to at least " + MINIMUM_CACHE_BYTES + " bytes");
+        throw new IllegalArgumentException(
+            "Cache size must be set to at least " + MINIMUM_CACHE_BYTES + " bytes");
       }
       this.cacheSizeBytes = value;
       return this;
