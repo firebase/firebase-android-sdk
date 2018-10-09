@@ -26,6 +26,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import android.util.SparseArray;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.ListenSequence;
@@ -162,7 +163,7 @@ public abstract class LruGarbageCollectorTestCase {
     queryCache.removeMatchingKeys(keySet(key), targetId);
   }
 
-  private int removeTargets(long upperBound, Set<Integer> activeTargetIds) {
+  private int removeTargets(long upperBound, SparseArray<?> activeTargetIds) {
     return persistence.runTransaction(
         "Remove queries", () -> garbageCollector.removeTargets(upperBound, activeTargetIds));
   }
@@ -283,7 +284,7 @@ public abstract class LruGarbageCollectorTestCase {
 
   @Test
   public void testRemoveQueriesUpThroughSequenceNumber() {
-    Map<Integer, QueryData> activeTargetIds = new HashMap<>();
+    SparseArray<QueryData> activeTargetIds = new SparseArray<>();
     for (int i = 0; i < 100; i++) {
       QueryData queryData = addNextQuery();
       // Mark odd queries as live so we can test filtering out live queries.
@@ -295,7 +296,7 @@ public abstract class LruGarbageCollectorTestCase {
     // GC up through 20th query, which is 20%.
     // Expect to have GC'd 10 targets, since every other target is live
     long upperBound = 20 + initialSequenceNumber;
-    int removed = removeTargets(upperBound, activeTargetIds.keySet());
+    int removed = removeTargets(upperBound, activeTargetIds);
     assertEquals(10, removed);
     // Make sure we removed the even targets with targetID <= 20.
     persistence.runTransaction(
@@ -567,8 +568,8 @@ public abstract class LruGarbageCollectorTestCase {
         });
 
     // Finally, do the garbage collection, up to but not including the removal of middleTarget
-    Set<Integer> activeTargetIds = new HashSet<>();
-    activeTargetIds.add(oldestTarget.getTargetId());
+    SparseArray<QueryData> activeTargetIds = new SparseArray<>();
+    activeTargetIds.put(oldestTarget.getTargetId(), oldestTarget);
     int targetsRemoved = garbageCollector.removeTargets(upperBound, activeTargetIds);
     // Expect to remove newest target
     assertEquals(1, targetsRemoved);
