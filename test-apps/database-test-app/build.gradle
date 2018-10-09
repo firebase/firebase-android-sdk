@@ -30,9 +30,6 @@ android {
 
         vectorDrawables.useSupportLibrary true
 
-        lintOptions {
-            tasks.lint.enabled = false
-        }
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
