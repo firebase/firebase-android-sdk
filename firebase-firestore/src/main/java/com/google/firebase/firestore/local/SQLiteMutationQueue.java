@@ -420,6 +420,7 @@ final class SQLiteMutationQueue implements MutationQueue {
       DocumentKey key = mutation.getKey();
       String path = EncodedPath.encode(key.getPath());
       db.execute(indexDeleter, uid, path, batchId);
+      db.getReferenceDelegate().removeMutationReference(key);
     }
   }
 

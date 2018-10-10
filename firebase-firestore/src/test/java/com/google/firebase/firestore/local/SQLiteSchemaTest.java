@@ -189,6 +189,49 @@ public class SQLiteSchemaTest {
         new Object[] {uid, batchId, write.build().toByteArray()});
   }
 
+  @Test
+  public void addsSentinelRows() {
+    schema.runMigrations(0, 6);
+
+    long oldSequenceNumber = 1;
+    // Set the highest sequence number to this value so that untagged documents
+    // will pick up this value.
+    long newSequenceNumber = 2;
+    db.execSQL(
+        "UPDATE target_globals SET highest_listen_sequence_number = ?",
+        new Object[] {newSequenceNumber});
+
+    // Set up some documents (we only need the keys)
+    // For the odd ones, add sentinel rows.
+    for (int i = 0; i < 10; i++) {
+      String path = "docs/doc_" + i;
+      db.execSQL("INSERT INTO remote_documents (path) VALUES (?)", new String[] {path});
+      if (i % 2 == 1) {
+        db.execSQL(
+            "INSERT INTO target_documents (target_id, path, sequence_number) VALUES (0, ?, ?)",
+            new Object[] {path, oldSequenceNumber});
+      }
+    }
+
+    schema.runMigrations(6, 7);
+
+    // Verify.
+    new SQLitePersistence.Query(
+            db, "SELECT path, sequence_number FROM target_documents WHERE target_id = 0")
+        .forEach(
+            row -> {
+              String path = row.getString(0);
+              long sequenceNumber = row.getLong(1);
+
+              int docNum = Integer.parseInt(path.split("_")[1]);
+              // The even documents were missing sequence numbers, they should now be filled in
+              // to have the new sequence number. The odd documents should have their
+              // sequence number unchanged, and so be the old value.
+              long expected = docNum % 2 == 1 ? oldSequenceNumber : newSequenceNumber;
+              assertEquals(expected, sequenceNumber);
+            });
+  }
+
   private void assertNoResultsForQuery(String query, String[] args) {
     Cursor cursor = null;
     try {

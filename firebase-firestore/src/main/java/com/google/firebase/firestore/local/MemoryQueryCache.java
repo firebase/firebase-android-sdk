@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import android.util.SparseArray;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -22,7 +23,6 @@ import com.google.firebase.firestore.util.Consumer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -115,13 +115,13 @@ final class MemoryQueryCache implements QueryCache {
    *
    * @return the number of targets removed
    */
-  int removeQueries(long upperBound, Set<Integer> activeTargetIds) {
+  int removeQueries(long upperBound, SparseArray<?> activeTargetIds) {
     int removed = 0;
     for (Iterator<Map.Entry<Query, QueryData>> it = queries.entrySet().iterator(); it.hasNext(); ) {
       Map.Entry<Query, QueryData> entry = it.next();
       int targetId = entry.getValue().getTargetId();
       long sequenceNumber = entry.getValue().getSequenceNumber();
-      if (sequenceNumber <= upperBound && !activeTargetIds.contains(targetId)) {
+      if (sequenceNumber <= upperBound && activeTargetIds.get(targetId) == null) {
         it.remove();
         removeMatchingKeysForTargetId(targetId);
         removed++;
