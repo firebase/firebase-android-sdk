@@ -558,15 +558,8 @@ public class ValidationTest {
     DocumentReference ref = testDocument();
 
     if (includeSets) {
-      if (data instanceof Map) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> setMap = (Map<String, Object>) data;
-        expectError(() -> ref.set(setMap), reason);
-        expectError(() -> ref.getFirestore().batch().set(ref, setMap), reason);
-      } else {
-        expectError(() -> ref.set(data), reason);
-        expectError(() -> ref.getFirestore().batch().set(ref, data), reason);
-      }
+      expectError(() -> ref.set(data), reason);
+      expectError(() -> ref.getFirestore().batch().set(ref, data), reason);
     }
 
     if (includeUpdates) {
@@ -593,13 +586,7 @@ public class ValidationTest {
                 (Function<Void>)
                     transaction -> {
                       if (includeSets) {
-                        if (data instanceof Map) {
-                          @SuppressWarnings("unchecked")
-                          Map<String, Object> setMap = (Map<String, Object>) data;
-                          expectError(() -> transaction.set(ref, setMap), reason);
-                        } else {
-                          expectError(() -> transaction.set(ref, data), reason);
-                        }
+                        expectError(() -> transaction.set(ref, data), reason);
                       }
                       if (includeUpdates) {
                         assertTrue("update() only support Maps.", data instanceof Map);

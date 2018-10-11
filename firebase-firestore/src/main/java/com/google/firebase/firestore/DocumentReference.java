@@ -143,12 +143,13 @@ public class DocumentReference {
    * Overwrites the document referred to by this DocumentReference. If the document does not yet
    * exist, it will be created. If a document already exists, it will be overwritten.
    *
-   * @param data A map of the fields and values for the document.
+   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   *     document contents).
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
   @PublicApi
-  public Task<Void> set(@NonNull Map<String, Object> data) {
+  public Task<Void> set(@NonNull Object data) {
     return set(data, SetOptions.OVERWRITE);
   }
 
@@ -157,13 +158,14 @@ public class DocumentReference {
    * exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged into
    * an existing document.
    *
-   * @param data A map of the fields and values for the document.
+   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   *     document contents).
    * @param options An object to configure the set behavior.
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
   @PublicApi
-  public Task<Void> set(@NonNull Map<String, Object> data, @NonNull SetOptions options) {
+  public Task<Void> set(@NonNull Object data, @NonNull SetOptions options) {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
     ParsedSetData parsed =
@@ -174,34 +176,6 @@ public class DocumentReference {
         .getClient()
         .write(parsed.toMutationList(key, Precondition.NONE))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
-  }
-
-  /**
-   * Overwrites the document referred to by this DocumentReference. If the document does not yet
-   * exist, it will be created. If a document already exists, it will be overwritten.
-   *
-   * @param pojo The POJO that will be used to populate the document contents
-   * @return A Task that will be resolved when the write finishes.
-   */
-  @NonNull
-  @PublicApi
-  public Task<Void> set(@NonNull Object pojo) {
-    return set(firestore.getDataConverter().convertPOJO(pojo), SetOptions.OVERWRITE);
-  }
-
-  /**
-   * Writes to the document referred to by this DocumentReference. If the document does not yet
-   * exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged into
-   * an existing document.
-   *
-   * @param pojo The POJO that will be used to populate the document contents
-   * @param options An object to configure the set behavior.
-   * @return A Task that will be resolved when the write finishes.
-   */
-  @NonNull
-  @PublicApi
-  public Task<Void> set(@NonNull Object pojo, @NonNull SetOptions options) {
-    return set(firestore.getDataConverter().convertPOJO(pojo), options);
   }
 
   /**

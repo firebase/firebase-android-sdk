@@ -161,7 +161,8 @@ public class CustomClassMapper {
         || o instanceof Timestamp
         || o instanceof GeoPoint
         || o instanceof Blob
-        || o instanceof DocumentReference) {
+        || o instanceof DocumentReference
+        || o instanceof FieldValue) {
       return o;
     } else {
       Class<T> clazz = (Class<T>) o.getClass();
@@ -508,12 +509,12 @@ public class CustomClassMapper {
     }
   }
 
-  private static RuntimeException serializeError(ErrorPath path, String reason) {
+  private static IllegalArgumentException serializeError(ErrorPath path, String reason) {
     reason = "Could not serialize object. " + reason;
     if (path.getLength() > 0) {
       reason = reason + " (found in field '" + path.toString() + "')";
     }
-    return new RuntimeException(reason);
+    return new IllegalArgumentException(reason);
   }
 
   private static RuntimeException deserializeError(ErrorPath path, String reason) {
