@@ -63,7 +63,8 @@ public class CompoundHashingIntegrationTest {
     // client. Since this is parsed as empty node without priority on the client, the range merge
     // fails. For simplicity (and because priority has a whole bunch of other broken edge cases) we
     // will ignore it for now
-    if (false && addPriority) {
+    // if (addPriority) {
+    if (false) {
       path = path.child(ChildKey.getPriorityKey());
     }
     return path;
