@@ -14,7 +14,6 @@
 
 package com.google.firebase.storage;
 
-
 import android.os.Build;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
