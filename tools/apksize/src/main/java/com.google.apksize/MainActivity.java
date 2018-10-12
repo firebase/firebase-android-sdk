@@ -12,12 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.apksize;
 
-/** SampleCode interface allows to load sample code for the selected build variant */
-import android.content.Context;
+/**
+ * Every flavor contains SampleCodeLoader class that executes corresponding SampleCode instances
+ *
+ * <p>MainActivity will take SampleCodeLoader from every flavor and run the samples
+ *
+ * <p>We need to do this in order to prevent cutting out packages during pro-guarding
+ */
+import android.app.Activity;
+import android.os.Bundle;
 
-public interface SampleCode {
-  void runSample(Context context);
+public class MainActivity extends Activity {
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    new SampleCodeLoader().runSamples(this);
+  }
 }

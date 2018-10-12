@@ -20,16 +20,16 @@ import com.google.firebase.gradle.UploadMeasurementsTask
 // linting standards.
 tasks.whenTaskAdded { task ->
     if (task.name.equals("lint")) {
-        task.enabled = false
+        //task.enabled = false
     }
 }
 
 apply plugin: "com.android.application"
+apply from: "default.gradle"
 android {
     flavorDimensions "apkSize"
 }
 
-apply from: "default.gradle"
 apply from: "src/database/database.gradle"
 apply from: "src/storage/storage.gradle"
 apply from: "src/firestore/firestore.gradle"
