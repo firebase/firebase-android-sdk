@@ -140,7 +140,7 @@ public final class FirebaseFirestoreSettings {
      * guarantee that the cache will stay below that size, only that if the cache exceeds the given
      * size, cleanup will be attempted.
      *
-     * The default value is 100 MB.
+     * <p>The default value is 100 MB.
      *
      * @return A settings object on which the cache size is configured as specified by the given
      *     {@code value}.
