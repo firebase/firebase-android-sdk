@@ -20,10 +20,13 @@ import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.AnotherAp
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.Apache2LicenseFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.BSDLicenseFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.CreativeCommonsLicenseFetcher
+import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.EclipsePublicLicenseFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.GnuClasspathLicenseFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.MITLicenseFetcher
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+
+import static com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.*
 
 /**
  * Interprets the implementation config for the underlying project and generates license artifacts.
@@ -50,7 +53,8 @@ class LicenseResolverPlugin implements Plugin<Project> {
              new Apache2LicenseFetcher(),
              new BSDLicenseFetcher(),
              new AnotherApache2LicenseFetcher(),
-             new CreativeCommonsLicenseFetcher(), new MITLicenseFetcher(), new AnotherMITLicenseFetcher(), new GnuClasspathLicenseFetcher()]
+             new CreativeCommonsLicenseFetcher(), new MITLicenseFetcher(), new AnotherMITLicenseFetcher(),
+             new GnuClasspathLicenseFetcher(), new EclipsePublicLicenseFetcher()]
     final static ANDROID_PLUGINS = ["com.android.application", "com.android.library",
                                     "com.android.test"]
 
