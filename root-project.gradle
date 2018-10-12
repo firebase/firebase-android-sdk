@@ -27,8 +27,8 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.1'
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.3'
+        classpath 'com.android.tools.build:gradle:3.2.1'
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.6'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6'
         classpath 'org.jsoup:jsoup:1.11.2'
         classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.6'
@@ -40,7 +40,7 @@ buildscript {
 
 ext {
     playServicesVersion = '16.0.1'
-    supportAnnotationsVersion = '26.1.0'
+    supportAnnotationsVersion = '28.0.0'
     errorproneVersion = '2.3.2'
     errorproneJavacVersion = '9+181-r4173-1'
 }
@@ -121,7 +121,7 @@ configure(subprojects) {
         }
 
         // Apply the retrolambda plugin
-        sub.apply plugin: 'me.tatarka.retrolambda'
+        //sub.apply plugin: 'me.tatarka.retrolambda'
 
         boolean skipPreguard = sub.getProperties().getOrDefault('firebaseSkipPreguard', 'true').toBoolean()
         def defaultPreguard = rootProject.getProperties().getOrDefault('firebaseDefaultPreguardFile', 'default-preguard.txt')

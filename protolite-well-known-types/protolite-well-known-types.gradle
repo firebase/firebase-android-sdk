@@ -40,11 +40,11 @@ protobuf {
   }
 }
 android {
-  compileSdkVersion 26
+  compileSdkVersion 28
 
   defaultConfig {
     minSdkVersion 14
-    targetSdkVersion 26
+    targetSdkVersion 28
     versionCode 1
     versionName '1.0'
   }
@@ -62,6 +62,6 @@ android {
 
 dependencies {
   implementation 'com.google.protobuf:protobuf-lite:3.0.1'
-  protobuf 'com.google.protobuf:protobuf-java:3.1.0'
+  protobuf 'com.google.protobuf:protobuf-java:3.5.1'
   protobuf 'com.google.api.grpc:proto-google-common-protos:1.11.0'
 }

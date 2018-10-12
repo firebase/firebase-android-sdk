@@ -14,13 +14,39 @@
 
 apply plugin: 'com.android.library'
 
-def androidVersion = 26
+def androidVersion = 28
 
 android {
     compileSdkVersion androidVersion
+    defaultConfig {
+        minSdkVersion 14
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            useProguard true
+            consumerProguardFiles 'proguard.txt'
+        }
+        debug {
+        }
+    }
+    sourceSets {
+        main {
+            java {
+            }
+        }
+        test {
+            java {
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
-    testCompile 'junit:junit:4.11'
-    testCompile 'net.java:quickcheck:0.6'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'net.java:quickcheck:0.6'
 }
