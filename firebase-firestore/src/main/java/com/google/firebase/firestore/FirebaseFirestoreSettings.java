@@ -24,6 +24,12 @@ import com.google.firebase.annotations.PublicApi;
 /** Settings used to configure a FirebaseFirestore instance. */
 @PublicApi
 public final class FirebaseFirestoreSettings {
+  /**
+   * Set this constant as the value for
+   * {@link FirebaseFirestoreSettings.Builder#setCacheSizeBytes(long)} to disable
+   * garbage collection.
+   */
+  @PublicApi
   public static final long CACHE_SIZE_UNLIMITED = -1;
 
   private static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1mb
