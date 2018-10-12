@@ -29,7 +29,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:3.0.1'
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.3'
-        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.13'
+        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6'
         classpath 'org.jsoup:jsoup:1.11.2'
         classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.6'
         classpath 'com.google.gms:google-services:4.1.0'
@@ -41,6 +41,8 @@ buildscript {
 ext {
     playServicesVersion = '16.0.1'
     supportAnnotationsVersion = '26.1.0'
+    errorproneVersion = '2.3.2'
+    errorproneJavacVersion = '9+181-r4173-1'
 }
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
@@ -55,6 +57,11 @@ configure(subprojects) {
         }
     }
     apply plugin: 'net.ltgt.errorprone'
+    dependencies {
+        errorprone "com.google.errorprone:error_prone_core:$errorproneVersion"
+        errorproneJavac "com.google.errorprone:javac:$errorproneJavacVersion"
+
+    }
     apply plugin: 'com.github.sherter.google-java-format'
     googleJavaFormat {
         toolVersion = '1.6'
@@ -77,7 +84,7 @@ configure(subprojects) {
     }
 
     tasks.withType(JavaCompile) {
-        options.compilerArgs += ['-XepExcludedPaths:.*/build/generated/.*']
+        options.errorprone.excludedPaths = '.*/build/generated/.*'
     }
 
     // Adds firebase custom errorprone checks to the annotation processor classpath.
