@@ -1,0 +1,64 @@
+{
+  "project_info": {
+    "project_id": "apk-size-37f26",
+    "project_number": "67788261320",
+    "name": "APK Size",
+    "firebase_url": "https://apk-size-37f26.firebaseio.com",
+    "storage_bucket": "apk-size-37f26.storage.firebase.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:67788261320:android:1cc2356845f47658",
+        "client_id": "android:com.google.apksize.functions",
+        "client_type": 1,
+        "android_client_info": {
+          "package_name": "com.google.apksize.functions",
+          "certificate_hash": []
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "67788261320-e7bk6fui7odpm0evfbs6jbe4r8jjrdkg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.google.apksize.functions",
+            "certificate_hash": "5361BC4F9ABD061E84ED65E3429A15B724646060"
+          }
+        },
+        {
+          "client_id": "67788261320-27dccq9qlaearivhe5lee1bhc6lfdv48.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCU9WDZQp38XP4lyGoDmzBNpp5MxioqiWs"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "cloud_messaging_service": {
+          "status": 2,
+          "apns_config": []
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "google_signin_service": {
+          "status": 1
+        },
+        "ads_service": {
+          "status": 2,
+          "test_banner_ad_unit_id": "ca-app-pub-3940256099942544/6300978111",
+          "test_interstitial_ad_unit_id": "ca-app-pub-3940256099942544/1033173712"
+        }
+      }
+    }
+  ],
+  "client_info": [],
+  "ARTIFACT_VERSION": "1"
+}
