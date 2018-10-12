@@ -135,9 +135,12 @@ public final class FirebaseFirestoreSettings {
     }
 
     /**
-     * Sets the cache size threshold above which the SDK will attempt to collect least-recently-used
-     * documents. The size is not a guarantee that the cache will stay below that size, only that if
-     * the cache exceeds the given size, cleanup will be attempted.
+     * Sets a cache size threshold for the on-disk data. If the cache grows beyond this size,
+     * Firestore will start removing data that hasn't been recently used. The size is not a
+     * guarantee that the cache will stay below that size, only that if the cache exceeds the given
+     * size, cleanup will be attempted.
+     *
+     * The default value is 100 MB.
      *
      * @return A settings object on which the cache size is configured as specified by the given
      *     {@code value}.
