@@ -199,7 +199,7 @@ public abstract class LruGarbageCollectorTestCase {
 
   @Test
   public void testSequenceNumberNoQueries() {
-    assertEquals(ListenSequence.INVALID, garbageCollector.nthSequenceNumber(0));
+    assertEquals(ListenSequence.INVALID, garbageCollector.getNthSequenceNumber(0));
   }
 
   @Test
@@ -209,7 +209,7 @@ public abstract class LruGarbageCollectorTestCase {
     for (int i = 0; i < 50; i++) {
       addNextQuery();
     }
-    assertEquals(initialSequenceNumber + 10, garbageCollector.nthSequenceNumber(10));
+    assertEquals(initialSequenceNumber + 10, garbageCollector.getNthSequenceNumber(10));
   }
 
   @Test
@@ -226,7 +226,7 @@ public abstract class LruGarbageCollectorTestCase {
     for (int i = 9; i < 50; i++) {
       addNextQuery();
     }
-    assertEquals(2 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+    assertEquals(2 + initialSequenceNumber, garbageCollector.getNthSequenceNumber(10));
   }
 
   @Test
@@ -246,7 +246,7 @@ public abstract class LruGarbageCollectorTestCase {
     for (int i = 11; i < 50; i++) {
       addNextQuery();
     }
-    assertEquals(1 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+    assertEquals(1 + initialSequenceNumber, garbageCollector.getNthSequenceNumber(10));
   }
 
   @Test
@@ -257,7 +257,7 @@ public abstract class LruGarbageCollectorTestCase {
     for (int i = 0; i < 50; i++) {
       addNextQuery();
     }
-    assertEquals(10 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+    assertEquals(10 + initialSequenceNumber, garbageCollector.getNthSequenceNumber(10));
   }
 
   @Test
@@ -285,7 +285,7 @@ public abstract class LruGarbageCollectorTestCase {
           addDocumentToTarget(docInQuery, queryData.getTargetId());
         });
     // This should catch the remaining 8 documents, plus the first two queries we added.
-    assertEquals(3 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+    assertEquals(3 + initialSequenceNumber, garbageCollector.getNthSequenceNumber(10));
   }
 
   @Test
@@ -663,7 +663,7 @@ public abstract class LruGarbageCollectorTestCase {
   @Test
   public void testGCRan() {
     // Set a low byte threshold so we can guarantee that GC will run.
-    LruGarbageCollector.Params params = LruGarbageCollector.Params.WithCacheSize(100);
+    LruGarbageCollector.Params params = LruGarbageCollector.Params.WithCacheSizeBytes(100);
 
     // Switch to persistence using our new params.
     persistence.shutdown();

@@ -19,6 +19,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.util.Logger;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.PriorityQueue;
 
 /** Implements the steps for LRU garbage collection. */
@@ -26,16 +27,29 @@ public class LruGarbageCollector {
   public static class Params {
     private static final long COLLECTION_DISABLED = FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED;
     private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100mb
+    /**
+     * The following two constants are estimates for how we want to tune the garbage collector. If
+     * we encounter a large cache, we don't want to spend a large chunk of time GCing all of it, we
+     * would rather make some progress and then try again later. We also don't want to collect
+     * everything that we possibly could, as our thesis is that recently used items are more likely
+     * to be used again.
+     */
+    private static final int DEFAULT_COLLECTION_PERCENTILE = 10;
+
+    private static final int DEFAULT_MAX_SEQUENCE_NUMBERS_TO_COLLECT = 1000;
 
     public static Params Default() {
-      return new Params(DEFAULT_CACHE_SIZE_BYTES, 10, 1000);
+      return new Params(
+          DEFAULT_CACHE_SIZE_BYTES,
+          DEFAULT_COLLECTION_PERCENTILE,
+          DEFAULT_MAX_SEQUENCE_NUMBERS_TO_COLLECT);
     }
 
     public static Params Disabled() {
       return new Params(COLLECTION_DISABLED, 0, 0);
     }
 
-    public static Params WithCacheSize(long cacheSizeBytes) {
+    public static Params WithCacheSizeBytes(long cacheSizeBytes) {
       return new Params(cacheSizeBytes, 10, 1000);
     }
 
@@ -132,7 +146,7 @@ public class LruGarbageCollector {
   }
 
   /** Returns the nth sequence number, counting in order from the smallest. */
-  long nthSequenceNumber(int count) {
+  long getNthSequenceNumber(int count) {
     if (count == 0) {
       return ListenSequence.INVALID;
     }
@@ -179,7 +193,7 @@ public class LruGarbageCollector {
   }
 
   private Results runGarbageCollection(SparseArray<?> liveTargetIds) {
-    long start = System.currentTimeMillis();
+    long startTs = System.currentTimeMillis();
     int sequenceNumbers = calculateQueryCount(params.percentileToCollect);
     // Cap at the configured max
     if (sequenceNumbers > params.maximumSequenceNumbersToCollect) {
@@ -191,41 +205,43 @@ public class LruGarbageCollector {
               + sequenceNumbers);
       sequenceNumbers = params.maximumSequenceNumbersToCollect;
     }
-    long countedTargets = System.currentTimeMillis();
+    long countedTargetsTs = System.currentTimeMillis();
 
-    long upperBound = nthSequenceNumber(sequenceNumbers);
-    long foundUpperBound = System.currentTimeMillis();
+    long upperBound = getNthSequenceNumber(sequenceNumbers);
+    long foundUpperBoundTs = System.currentTimeMillis();
 
     int numTargetsRemoved = removeTargets(upperBound, liveTargetIds);
-    long removedTargets = System.currentTimeMillis();
+    long removedTargetsTs = System.currentTimeMillis();
 
     int numDocumentsRemoved = removeOrphanedDocuments(upperBound);
-    long removedDocuments = System.currentTimeMillis();
+    long removedDocumentsTs = System.currentTimeMillis();
 
     // TODO(gsoltis): post-compaction?
 
-    String desc = "LRU Garbage Collection:\n";
-    desc += "\tCounted targets in " + (countedTargets - start) + "ms\n";
-    desc +=
-        "\tDetermined least recently used "
-            + sequenceNumbers
-            + " sequence numbers in "
-            + (foundUpperBound - countedTargets)
-            + "ms\n";
-    desc +=
-        "\tRemoved "
-            + numTargetsRemoved
-            + " targets in "
-            + (removedTargets - foundUpperBound)
-            + "ms\n";
-    desc +=
-        "\tRemoved "
-            + numDocumentsRemoved
-            + " documents in "
-            + (removedDocuments - removedTargets)
-            + "ms\n";
-    desc += "Total Duration: " + (removedDocuments - start) + "ms";
-    Logger.debug("LruGarbageCollector", desc);
+    if (Logger.isDebugEnabled()) {
+      String desc = "LRU Garbage Collection:\n";
+      desc += "\tCounted targets in " + (countedTargetsTs - startTs) + "ms\n";
+      desc +=
+          String.format(
+              Locale.ROOT,
+              "\tDetermined least recently used %d sequence numbers in %dms",
+              sequenceNumbers,
+              (foundUpperBoundTs - countedTargetsTs));
+      desc +=
+          String.format(
+              Locale.ROOT,
+              "\tRemoved %d targets in %dms\n",
+              numTargetsRemoved,
+              (removedTargetsTs - foundUpperBoundTs));
+      desc +=
+          String.format(
+              Locale.ROOT,
+              "\tRemoved %d documents in %dms\n",
+              numDocumentsRemoved,
+              (removedDocumentsTs - removedTargetsTs));
+      desc += String.format(Locale.ROOT, "Total Duration: %dms", (removedDocumentsTs - startTs));
+      Logger.debug("LruGarbageCollector", desc);
+    }
     return new Results(/* hasRun= */ true, sequenceNumbers, numTargetsRemoved, numDocumentsRemoved);
   }
 

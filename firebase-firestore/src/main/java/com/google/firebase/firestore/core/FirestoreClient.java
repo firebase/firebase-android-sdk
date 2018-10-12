@@ -54,6 +54,7 @@ import io.grpc.Status;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -65,9 +66,9 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private static final String LOG_TAG = "FirestoreClient";
 
   /** How long we wait to try running LRU GC after SDK initialization. */
-  private static final long INITIAL_GC_DELAY_MS = 60 * 1000;
+  private static final long INITIAL_GC_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
   /** Minimum amount of time between GC checks, after the first one. */
-  private static final long REGULAR_GC_DELAY_MS = 5 * 60 * 1000;
+  private static final long REGULAR_GC_DELAY_MS = TimeUnit.MINUTES.toMillis(5);
 
   private final DatabaseInfo databaseInfo;
   private final CredentialsProvider credentialsProvider;
@@ -81,8 +82,6 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   // LRU-related
   private boolean gcHasRun = false;
-  private final long initialGcDelayMs = INITIAL_GC_DELAY_MS;
-  private final long regularGcDelayMs = REGULAR_GC_DELAY_MS;
   @Nullable private LruDelegate lruDelegate;
   @Nullable private AsyncQueue.DelayedTask gcTask;
 
@@ -225,7 +224,8 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     if (usePersistence) {
       LocalSerializer serializer =
           new LocalSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
-      LruGarbageCollector.Params params = LruGarbageCollector.Params.WithCacheSize(cacheSizeBytes);
+      LruGarbageCollector.Params params =
+          LruGarbageCollector.Params.WithCacheSizeBytes(cacheSizeBytes);
       SQLitePersistence sqlitePersistence =
           new SQLitePersistence(
               context,
@@ -256,10 +256,10 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   }
 
   private void scheduleLruGarbageCollection() {
-    long delay = gcHasRun ? regularGcDelayMs : initialGcDelayMs;
+    long delay = gcHasRun ? REGULAR_GC_DELAY_MS : INITIAL_GC_DELAY_MS;
     gcTask =
         asyncQueue.enqueueAfterDelay(
-            AsyncQueue.TimerId.GARBAGE_COLLECTION_DELAY,
+            AsyncQueue.TimerId.GARBAGE_COLLECTION,
             delay,
             () -> {
               localStore.collectGarbage(lruDelegate.getGarbageCollector());

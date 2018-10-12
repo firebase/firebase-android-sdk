@@ -25,15 +25,13 @@ import com.google.firebase.annotations.PublicApi;
 @PublicApi
 public final class FirebaseFirestoreSettings {
   /**
-   * Set this constant as the value for
-   * {@link FirebaseFirestoreSettings.Builder#setCacheSizeBytes(long)} to disable
-   * garbage collection.
+   * Set this constant as the value for {@link
+   * FirebaseFirestoreSettings.Builder#setCacheSizeBytes(long)} to disable garbage collection.
    */
-  @PublicApi
-  public static final long CACHE_SIZE_UNLIMITED = -1;
+  @PublicApi public static final long CACHE_SIZE_UNLIMITED = -1;
 
-  private static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1mb
-  private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100mb
+  private static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1 MB
+  private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
   private static final String DEFAULT_HOST = "firestore.googleapis.com";
   private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = false;
 
