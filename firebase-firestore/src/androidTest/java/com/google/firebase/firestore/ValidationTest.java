@@ -376,7 +376,8 @@ public class ValidationTest {
   @Test
   public void arrayTransformsRejectInvalidElements() {
     DocumentReference doc = testDocument();
-    String reason = "No properties to serialize found on class com.google.firebase.firestore.ValidationTest";
+    String reason =
+        "No properties to serialize found on class com.google.firebase.firestore.ValidationTest";
     // TODO: If we get more permissive with POJOs, perhaps we should make this work.
     expectError(() -> doc.set(map("x", FieldValue.arrayUnion(1, this))), reason);
     expectError(() -> doc.set(map("x", FieldValue.arrayRemove(1, this))), reason);
