@@ -1,4 +1,4 @@
-# Unreleased
+# 17.1.2
 - [changed] Changed the internal handling for locally updated documents that
   haven't yet been read back from Cloud Firestore. This can lead to slight
   behavior changes and may affect the `SnapshotMetadata.hasPendingWrites()`
