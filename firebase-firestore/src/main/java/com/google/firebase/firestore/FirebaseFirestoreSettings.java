@@ -140,7 +140,7 @@ public final class FirebaseFirestoreSettings {
      * guarantee that the cache will stay below that size, only that if the cache exceeds the given
      * size, cleanup will be attempted.
      *
-     * <p>The default value is 100 MB. The cache size must be set to at least 1 MB, and can be set
+     * <p>The default value is 100 MB. The threshold must be set to at least 1 MB, and can be set
      * to {@link FirebaseFirestoreSettings#CACHE_SIZE_UNLIMITED} to disable garbage collection.
      *
      * @return A settings object on which the cache size is configured as specified by the given
