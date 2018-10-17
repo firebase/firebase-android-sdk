@@ -72,15 +72,14 @@ public final class UserDataConverter {
   /** Parse document data from a non-merge set() call. */
   public ParsedSetData parseSetData(Object input) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Set);
-    FieldValue updateData = convertAndParseData(input, accumulator.rootContext());
-
-    return accumulator.toSetData((ObjectValue) updateData);
+    ObjectValue updateData = convertAndParseDocumentData(input, accumulator.rootContext());
+    return accumulator.toSetData(updateData);
   }
 
   /** Parse document data from a set() call with SetOptions.merge() set. */
   public ParsedSetData parseMergeData(Object input, @Nullable FieldMask fieldMask) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.MergeSet);
-    ObjectValue updateData = (ObjectValue) convertAndParseData(input, accumulator.rootContext());
+    ObjectValue updateData = convertAndParseDocumentData(input, accumulator.rootContext());
 
     if (fieldMask != null) {
       // Verify that all elements specified in the field mask are part of the parsed context.
@@ -94,7 +93,6 @@ public final class UserDataConverter {
       }
 
       return accumulator.toMergeData(updateData, fieldMask);
-
     } else {
       return accumulator.toMergeData(updateData);
     }
@@ -194,25 +192,30 @@ public final class UserDataConverter {
 
   /** Converts a POJO to native types and then parses it into model types. */
   private FieldValue convertAndParseData(Object input, ParseContext context) {
-    UserData.Source source = context.getDataSource();
+    Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
+    return parseData(converted, context);
+  }
+
+  /**
+   * Wrapper around convertAndParseData() that expects input to conform to document data (in
+   * particular, must decode into an ObjectValue).
+   */
+  private ObjectValue convertAndParseDocumentData(Object input, ParseContext context) {
     String badDocReason =
         "Invalid data. Data must be a Map<String, Object> or a suitable POJO object, but it was ";
 
     // Check Array before calling CustomClassMapper since it'll give you a confusing message
     // to use List instead, which also won't work in a set().
-    if (source == UserData.Source.Set && input.getClass().isArray()) {
+    if (input.getClass().isArray()) {
       throw new IllegalArgumentException(badDocReason + "an array");
     }
 
-    // Convert POJOs
-    Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
+    FieldValue value = convertAndParseData(input, context);
 
-    if (source == UserData.Source.Set && !(converted instanceof Map)) {
+    if (!(value instanceof ObjectValue)) {
       throw new IllegalArgumentException(badDocReason + "of type: " + Util.typeName(input));
     }
-
-    // Parse to Model types.
-    return parseData(converted, context);
+    return (ObjectValue) value;
   }
 
   /**
