@@ -290,6 +290,69 @@ public class DocumentSnapshot {
   }
 
   /**
+   * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+   * exist.
+   *
+   * @param field The path to the field
+   * @param valueType The Java class to convert the field value to.
+   * @return The value at the given field or null.
+   */
+  @Nullable
+  public <T> T get(@NonNull String field, @NonNull Class<T> valueType) {
+    return get(FieldPath.fromDotSeparatedPath(field), valueType, ServerTimestampBehavior.DEFAULT);
+  }
+
+  /**
+   * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+   * exist.
+   *
+   * @param field The path to the field
+   * @param valueType The Java class to convert the field value to.
+   * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+   *     been set to their final value.
+   * @return The value at the given field or null.
+   */
+  @Nullable
+  public <T> T get(
+      @NonNull String field,
+      @NonNull Class<T> valueType,
+      @NonNull ServerTimestampBehavior serverTimestampBehavior) {
+    return get(FieldPath.fromDotSeparatedPath(field), valueType, serverTimestampBehavior);
+  }
+
+  /**
+   * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+   * exist.
+   *
+   * @param fieldPath The path to the field
+   * @param valueType The Java class to convert the field value to.
+   * @return The value at the given field or null.
+   */
+  @Nullable
+  public <T> T get(@NonNull FieldPath fieldPath, @NonNull Class<T> valueType) {
+    return get(fieldPath, valueType, ServerTimestampBehavior.DEFAULT);
+  }
+
+  /**
+   * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+   * exist.
+   *
+   * @param fieldPath The path to the field
+   * @param valueType The Java class to convert the field value to.
+   * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+   *     been set to their final value.
+   * @return The value at the given field or null.
+   */
+  @Nullable
+  public <T> T get(
+      @NonNull FieldPath fieldPath,
+      @NonNull Class<T> valueType,
+      @NonNull ServerTimestampBehavior serverTimestampBehavior) {
+    Object data = get(fieldPath, serverTimestampBehavior);
+    return data == null ? null : CustomClassMapper.convertToCustomClass(data, valueType);
+  }
+
+  /**
    * Returns the value of the field as a boolean. If the value is not a boolean this will throw a
    * runtime exception.
    *
