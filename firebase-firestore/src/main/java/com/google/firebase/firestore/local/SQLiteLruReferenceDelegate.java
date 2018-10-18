@@ -70,8 +70,12 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public long getTargetCount() {
-    return persistence.getQueryCache().getTargetCount();
+  public long getSequenceNumberCount() {
+    long targetCount = persistence.getQueryCache().getTargetCount();
+    long orphanedDocumentCount = persistence.query(
+            "SELECT COUNT(*) FROM (SELECT sequence_number FROM target_documents GROUP BY path HAVING COUNT(*) = 1 AND target_id = 0)"
+    ).firstValue(row -> row.getLong(0));
+    return targetCount + orphanedDocumentCount;
   }
 
   @Override

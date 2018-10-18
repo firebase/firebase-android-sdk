@@ -26,7 +26,7 @@ public interface LruDelegate {
   /** Enumerates all the targets in the QueryCache. */
   void forEachTarget(Consumer<QueryData> consumer);
 
-  long getTargetCount();
+  long getSequenceNumberCount();
 
   /** Enumerates sequence numbers for documents not associated with a target. */
   void forEachOrphanedDocumentSequenceNumber(Consumer<Long> consumer);
