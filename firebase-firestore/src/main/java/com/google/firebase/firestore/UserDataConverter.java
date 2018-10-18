@@ -117,7 +117,8 @@ public final class UserDataConverter {
         context.addToFieldMask(fieldPath);
       } else {
         @Nullable
-        FieldValue parsedValue = convertAndParseData(fieldValue, context.childContext(fieldPath));
+        FieldValue parsedValue =
+            convertAndParseFieldData(fieldValue, context.childContext(fieldPath));
         if (parsedValue != null) {
           context.addToFieldMask(fieldPath);
           updateData = updateData.set(fieldPath, parsedValue);
@@ -167,7 +168,8 @@ public final class UserDataConverter {
         // Add it to the field mask, but don't add anything to updateData.
         context.addToFieldMask(parsedField);
       } else {
-        FieldValue parsedValue = convertAndParseData(fieldValue, context.childContext(parsedField));
+        FieldValue parsedValue =
+            convertAndParseFieldData(fieldValue, context.childContext(parsedField));
         if (parsedValue != null) {
           context.addToFieldMask(parsedField);
           updateData = updateData.set(parsedField, parsedValue);
@@ -182,7 +184,7 @@ public final class UserDataConverter {
   public FieldValue parseQueryValue(Object input) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Argument);
 
-    @Nullable FieldValue parsed = convertAndParseData(input, accumulator.rootContext());
+    @Nullable FieldValue parsed = convertAndParseFieldData(input, accumulator.rootContext());
     hardAssert(parsed != null, "Parsed data should not be null.");
     hardAssert(
         accumulator.getFieldTransforms().isEmpty(),
@@ -191,14 +193,15 @@ public final class UserDataConverter {
   }
 
   /** Converts a POJO to native types and then parses it into model types. */
-  private FieldValue convertAndParseData(Object input, ParseContext context) {
+  private FieldValue convertAndParseFieldData(Object input, ParseContext context) {
     Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
     return parseData(converted, context);
   }
 
   /**
-   * Wrapper around convertAndParseData() that expects input to conform to document data (in
-   * particular, must decode into an ObjectValue).
+   * Converts a POJO to native types and then parses it into model types. It expects the input to
+   * conform to document data (i.e. it must parse into an ObjectValue model type) and will throw an
+   * appropriate error otherwise.
    */
   private ObjectValue convertAndParseDocumentData(Object input, ParseContext context) {
     String badDocReason =
@@ -210,7 +213,8 @@ public final class UserDataConverter {
       throw new IllegalArgumentException(badDocReason + "an array");
     }
 
-    FieldValue value = convertAndParseData(input, context);
+    Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
+    FieldValue value = parseData(converted, context);
 
     if (!(value instanceof ObjectValue)) {
       throw new IllegalArgumentException(badDocReason + "of type: " + Util.typeName(input));
@@ -419,7 +423,7 @@ public final class UserDataConverter {
       // being unioned or removed are not considered writes since they cannot
       // contain any FieldValue sentinels, etc.
       ParseContext context = accumulator.rootContext();
-      result.add(convertAndParseData(element, context.childContext(i)));
+      result.add(convertAndParseFieldData(element, context.childContext(i)));
     }
     return result;
   }
