@@ -85,9 +85,10 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   public long getSequenceNumberCount() {
     long targetCount = persistence.getQueryCache().getTargetCount();
     long orphanedCount[] = new long[1];
-    forEachOrphanedDocumentSequenceNumber(sequenceNumber -> {
-      orphanedCount[0]++;
-    });
+    forEachOrphanedDocumentSequenceNumber(
+        sequenceNumber -> {
+          orphanedCount[0]++;
+        });
     return targetCount + orphanedCount[0];
   }
 

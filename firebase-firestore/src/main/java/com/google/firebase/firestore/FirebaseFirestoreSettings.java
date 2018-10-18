@@ -25,8 +25,8 @@ import com.google.firebase.annotations.PublicApi;
 @PublicApi
 public final class FirebaseFirestoreSettings {
   /**
-   * Constant to use with {@link
-   * FirebaseFirestoreSettings.Builder#setCacheSizeBytes(long)} to disable garbage collection.
+   * Constant to use with {@link FirebaseFirestoreSettings.Builder#setCacheSizeBytes(long)} to
+   * disable garbage collection.
    */
   @PublicApi public static final long CACHE_SIZE_UNLIMITED = -1;
 
@@ -140,8 +140,8 @@ public final class FirebaseFirestoreSettings {
      * guarantee that the cache will stay below that size, only that if the cache exceeds the given
      * size, cleanup will be attempted.
      *
-     * <p>The default value is 100 MB. The threshold must be set to at least 1 MB, and can be set
-     * to {@link FirebaseFirestoreSettings#CACHE_SIZE_UNLIMITED} to disable garbage collection.
+     * <p>The default value is 100 MB. The threshold must be set to at least 1 MB, and can be set to
+     * {@link FirebaseFirestoreSettings#CACHE_SIZE_UNLIMITED} to disable garbage collection.
      *
      * @return A settings object on which the cache size is configured as specified by the given
      *     {@code value}.
