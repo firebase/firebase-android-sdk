@@ -93,7 +93,10 @@ dependencies {
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-core:2.9.6'
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
     androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation 'net.java.quickcheck:quickcheck:0.6'
+    androidTestImplementation 'net.java:quickcheck:0.6'
+    androidTestAnnotationProcessor 'net.java:quickcheck-src-generator:0.6'
+    androidTestAnnotationProcessor 'net.java.quickcheck:quickcheck-src-generator:0.6'
+
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.21.0'
