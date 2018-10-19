@@ -50,4 +50,5 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation 'net.java:quickcheck:0.6'
     testAnnotationProcessor 'net.java:quickcheck-src-generator:0.6'
+    testAnnotationProcessor 'net.java.quickcheck:quickcheck-src-generator:0.6'
 }
