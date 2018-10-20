@@ -43,17 +43,11 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            useProguard true
-            consumerProguardFiles 'proguard.txt'
         }
         debug {
         }
     }
     sourceSets {
-        main {
-            java {
-            }
-        }
         androidTest {
             java {
                 srcDir 'src/testUtil/java'

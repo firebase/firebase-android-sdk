@@ -24,20 +24,8 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            useProguard true
-            consumerProguardFiles 'proguard.txt'
         }
         debug {
-        }
-    }
-    sourceSets {
-        main {
-            java {
-            }
-        }
-        test {
-            java {
-            }
         }
     }
     compileOptions {

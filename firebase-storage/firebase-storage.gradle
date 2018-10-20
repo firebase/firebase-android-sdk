@@ -47,11 +47,6 @@ android {
         }
     }
     sourceSets {
-        main {
-            java {
-
-            }
-        }
         androidTest {
             java {
                 srcDir 'src/testUtil'
