@@ -1,4 +1,7 @@
 # Unreleased
+- [feature] Custom objects (POJOs) can now be passed as a field value in
+  update(), within `Map<>` objects passed to set(), in array transform
+  operations, and in query filters.
 
 # 17.1.2
 - [changed] Changed the internal handling for locally updated documents that
@@ -8,9 +11,6 @@
 - [changed] Eliminated superfluous update events for locally cached documents
   that are known to lag behind the server version. Instead, we buffer these
   events until the client has caught up with the server.
-- [feature] Custom objects (POJOs) can now be passed as a field value in
-  update(), within `Map<>` objects passed to set(), in array transform
-  operations, and in query filters.
 
 # 17.1.1
 - [fixed] Fixed an issue where the first `get()` call made after being offline
