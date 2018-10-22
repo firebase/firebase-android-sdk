@@ -223,6 +223,28 @@ public class POJOTest {
   }
 
   @Test
+  public void testDocumentSnapshotGetWithPOJOs() {
+    DocumentReference ref = testDocument();
+
+    // Go offline so that we can verify server timestamp behavior overload.
+    ref.getFirestore().disableNetwork();
+
+    POJO pojo = new POJO(1.0, "a", ref);
+    ref.set(map("field", pojo));
+
+    DocumentSnapshot snap = waitFor(ref.get());
+
+    assertEquals(pojo, snap.get("field", POJO.class));
+    assertEquals(pojo, snap.get(FieldPath.of("field"), POJO.class));
+    assertEquals(
+        pojo, snap.get("field", POJO.class, DocumentSnapshot.ServerTimestampBehavior.DEFAULT));
+    assertEquals(
+        pojo,
+        snap.get(
+            FieldPath.of("field"), POJO.class, DocumentSnapshot.ServerTimestampBehavior.DEFAULT));
+  }
+
+  @Test
   public void setFieldMaskMustHaveCorrespondingValue() {
     CollectionReference collection = testCollection();
     DocumentReference reference = collection.document();
