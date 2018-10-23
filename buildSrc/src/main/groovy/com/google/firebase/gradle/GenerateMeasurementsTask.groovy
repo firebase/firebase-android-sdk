@@ -36,12 +36,20 @@ public class GenerateMeasurementsTask extends DefaultTask {
      * The file storing the SDK map.
      *
      * <p>This may be any type recognized by Gradle as a file. The format of the file's contents is
-     * headerless CSVwith a colon as a delimiter: projectName_buildVariant:sdkId. The first column
-     * contains both the project name and build variant separated by an hyphen, {@code
-     * firestore-aggressive}, for example.
+     * headerless CSV with a colon as a delimiter: projectName-buildVariant:sdkId. The first column
+     * contains both the project name and build variant separated by an hyphen. The SDK ID is the
+     * integer identifier used by the SQL database to represent this SDK and build variant pair.
+     *
+     * <p>A complete example follows:
+     * <pre>{@code
+     * database-debug:1
+     * database-release:2
+     * firestore-release:7
+     * firestore-debug:4
+     *}</pre>
      */
     @InputFile
-    File sdkMap
+    File sdkMapFile
 
     /**
      * The file for storing the report.
@@ -50,7 +58,7 @@ public class GenerateMeasurementsTask extends DefaultTask {
      * overwritten by the new report.
      */
     @OutputFile
-    File report
+    File reportFile
 
     @Override
     Task configure(Closure closure) {
@@ -71,7 +79,7 @@ public class GenerateMeasurementsTask extends DefaultTask {
         def sizes = calculateSizes(sdks, project.android.applicationVariants)
         def report = createReport(sizes)
 
-        project.file(this.report).withWriter {
+        reportFile.withWriter {
             it.write(report)
         }
     }
@@ -79,6 +87,9 @@ public class GenerateMeasurementsTask extends DefaultTask {
     private def calculateSizes(sdks, variants) {
       def sizes = [:]
 
+      // Each variant should have exactly one APK. If there are multiple APKs, then this file is out
+      // of sync with our Gradle configuration, and this task fails. If an APK is missing, it is
+      // silently ignored, and the APKs from the other variants will be used to build the report.
       variants.each { variant ->
         def name = "${variant.flavorName}-${variant.buildType.name}"
         def apks = variant.outputs.findAll { it.outputFile.name.endsWith(".apk") }
@@ -86,6 +97,7 @@ public class GenerateMeasurementsTask extends DefaultTask {
             throw new IllegalStateException("${name} produced more than one APK")
         }
 
+        // This runs at most once, as each variant at this point has zero or one APK.
         apks.each {
             def size = it.outputFile.size();
             def sdk = sdks[name];
@@ -168,9 +180,8 @@ public class GenerateMeasurementsTask extends DefaultTask {
 
     private def createSdkMap() {
         def map = [:]
-        def path = project.file(sdkMap)
 
-        path.eachLine {
+        sdkMapFile.eachLine {
             def delimiter = it.indexOf(":")
             def key = it.substring(0, delimiter).trim()
             def value = it.substring(delimiter + 1).trim()

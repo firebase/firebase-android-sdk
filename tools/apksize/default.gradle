@@ -36,15 +36,6 @@ android {
         versionName '1.0'
     }
 
-    signingConfigs {
-        debug {
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
-            storeFile file('debug.keystore')
-            storePassword 'android'
-        }
-    }
-
     packagingOptions {
         exclude 'META-INF/LICENSE'
         exclude 'META-INF/LICENSE-FIREBASE.txt'

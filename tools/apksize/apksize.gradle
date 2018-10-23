@@ -42,8 +42,8 @@ apply from: "src/functions/functions.gradle"
  * @param -Ppull_request the pull request number to be included in the report
  */
 task generateMeasurements(type: GenerateMeasurementsTask) {
-    sdkMap = file("sdks.csv")
-    report = file("$buildDir/size-report.textpb")
+    sdkMapFile = file("sdks.csv")
+    reportFile = file("$buildDir/size-report.textpb")
 }
 
 /**
@@ -55,7 +55,7 @@ task generateMeasurements(type: GenerateMeasurementsTask) {
 task uploadMeasurements(type: UploadMeasurementsTask) {
     dependsOn generateMeasurements
 
-    report = file("$buildDir/size-report.textpb")
+    reportFile = file("$buildDir/size-report.textpb")
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }
 

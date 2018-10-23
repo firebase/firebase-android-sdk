@@ -50,7 +50,7 @@ public class UploadMeasurementsTask extends DefaultTask {
      * provided they run first.
      */
     @InputFile
-    File report
+    File reportFile
 
     @TaskAction
     def upload() {
@@ -72,7 +72,7 @@ public class UploadMeasurementsTask extends DefaultTask {
                     "-jar",
                     jar,
                     "--config_path=${configuration}",
-                    "--proto_path=${report}",
+                    "--proto_path=${reportFile}",
                 )
             }.rethrowFailure()
         }
