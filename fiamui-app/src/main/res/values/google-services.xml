@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_api_key" translatable="false">AIzaSyC1bJWZMKECLxXhbZlVrejsoneuzsEKbF0</string>
+    <string name="google_app_id" translatable="false">1:923545385481:android:e631528aefd23b87</string>
+    <string name="project_id" translatable="false">fiamui-demo</string>
+</resources>
