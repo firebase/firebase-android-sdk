@@ -249,6 +249,28 @@ public class ServerTimestampTest {
   }
 
   @Test
+  public void testServerTimestampBehaviorOverloadsOfDocumentSnapshotGet() {
+    writeInitialData();
+    waitFor(docRef.update(updateData));
+    DocumentSnapshot snap = accumulator.awaitLocalEvent();
+
+    // Default behavior should return null timestamp (via any overload).
+    assertNull(snap.get("when"));
+    assertNull(snap.get(FieldPath.of("when")));
+    assertNull(snap.get("when", Timestamp.class));
+    assertNull(snap.get(FieldPath.of("when"), Timestamp.class));
+
+    // Estimate should return a Timestamp object (via any overload).
+    assertThat(snap.get("when", ServerTimestampBehavior.ESTIMATE)).isInstanceOf(Timestamp.class);
+    assertThat(snap.get(FieldPath.of("when"), ServerTimestampBehavior.ESTIMATE))
+        .isInstanceOf(Timestamp.class);
+    assertThat(snap.get("when", Timestamp.class, ServerTimestampBehavior.ESTIMATE))
+        .isInstanceOf(Timestamp.class);
+    assertThat(snap.get(FieldPath.of("when"), Timestamp.class, ServerTimestampBehavior.ESTIMATE))
+        .isInstanceOf(Timestamp.class);
+  }
+
+  @Test
   public void testServerTimestampsWorkViaTransactionSet() {
     waitFor(
         docRef
