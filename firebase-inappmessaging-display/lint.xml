@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+
+    <!-- Ignore the InconsistentLayout issue in the given files, this is because
+    we have the 'modal-inner' in the main layout that handles the ids for the modal -->
+    <issue id="InconsistentLayout">
+        <ignore path="src/main/res/layout-land/modal.xml" />
+        <ignore path="src/main/res/layout/modal.xml" />
+        <ignore path="src/main/res/layout-sw600dp/modal.xml" />
+    </issue>
+
+    <issue id="UnknownIdInLayout">
+        <ignore path="src/main/res/layout-sw600dp/modal.xml"/>
+        <ignore path="src/main/res/layout/modal.xml"/>
+    </issue>
+
+    <issue id="InflateParams">
+        <ignore path="src/main/java/com/google/firebase/display/internal/bindingwrappers/*"/>
+    </issue>
+
+    <issue id="IconMissingDensityFolder">
+        <ignore path="src/debug/**"/>
+    </issue>
+
+
+</lint>
