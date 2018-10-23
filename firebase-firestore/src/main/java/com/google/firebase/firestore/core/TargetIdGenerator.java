@@ -14,68 +14,77 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 /**
- * Generates monotonically increasing integer IDs. There are separate generators for different
- * scopes. While these generators will operate independently of each other, they are scoped, such
- * that no two generators will ever produce the same ID. This is useful, because sometimes the
- * backend may group IDs from separate parts of the client into the same ID space.
+ * Generates monotonically increasing target IDs for sending targets to the watch stream.
+ *
+ * <p>The client constructs two generators, one for the query cache (via forQueryCache()), and one
+ * for limbo documents (via forSyncEngine()). These two generators produce non-overlapping IDs (by
+ * using even and odd IDs respectively).
+ *
+ * <p>By separating the target ID space, the query cache can generate target IDs that persist across
+ * client restarts, while sync engine can independently generate in-memory target IDs that are
+ * transient and can be reused after a restart.
  */
+// TODO(mrschmidt): Explore removing this class in favor of generating these IDs directly in
+// SyncEngine and LocalStore.
 public class TargetIdGenerator {
 
   /**
    * Creates and returns the TargetIdGenerator for the local store.
    *
-   * @param after An ID to start at. Every call to nextID will return an id > after.
    * @return A shared instance of TargetIdGenerator.
    */
-  public static TargetIdGenerator getLocalStoreIdGenerator(int after) {
-    return new TargetIdGenerator(LOCAL_STATE_ID, after);
+  public static TargetIdGenerator forQueryCache(int after) {
+    TargetIdGenerator generator = new TargetIdGenerator(QUERY_CACHE_ID, after);
+    // Make sure that the next call to `nextId()` returns the first value after 'after'.
+    generator.nextId();
+    return generator;
   }
 
   /**
    * Creates and returns the TargetIdGenerator for the sync engine.
    *
-   * @param after An ID to start at. Every call to nextID will return an id > after.
    * @return A shared instance of TargetIdGenerator.
    */
-  public static TargetIdGenerator getSyncEngineGenerator(int after) {
-    return new TargetIdGenerator(SYNC_ENGINE_ID, after);
+  public static TargetIdGenerator forSyncEngine() {
+    // Sync engine assigns target IDs for limbo document detection.
+    return new TargetIdGenerator(SYNC_ENGINE_ID, 1);
   }
 
-  private static final int LOCAL_STATE_ID = 0;
+  private static final int QUERY_CACHE_ID = 0;
   private static final int SYNC_ENGINE_ID = 1;
 
   private static final int RESERVED_BITS = 1;
 
-  private int previousId;
+  private int nextId;
+  private int generatorId;
 
-  TargetIdGenerator(int generatorId, int after) {
-    int afterWithoutGenerator = (after >>> RESERVED_BITS) << RESERVED_BITS;
-    int afterGenerator = after - afterWithoutGenerator;
-    if (afterGenerator >= generatorId) {
-      // For example, if:
-      //   self.generatorID = 0b0000
-      //   after = 0b1011
-      //   afterGenerator = 0b0001
-      // Then:
-      //   previous = 0b1010
-      //   next = 0b1100
-      previousId = afterWithoutGenerator | generatorId;
-    } else {
-      // For example, if:
-      //   self.generatorID = 0b0001
-      //   after = 0b1010
-      //   afterGenerator = 0b0000
-      // Then:
-      //   previous = 0b1001
-      //   next = 0b1011
-      previousId = (afterWithoutGenerator | generatorId) - (1 << RESERVED_BITS);
-    }
+  /**
+   * Instantiates a new TargetIdGenerator, using the seed as the first target ID to return.
+   */
+  TargetIdGenerator(int generatorId, int seed) {
+    hardAssert(
+        (generatorId & RESERVED_BITS) == generatorId,
+        "Generator ID %d contains more than %d reserved bits",
+        generatorId,
+        RESERVED_BITS);
+    this.generatorId = generatorId;
+    seek(seed);
+  }
+
+  private void seek(int targetId) {
+    hardAssert(
+        (targetId & RESERVED_BITS) == this.generatorId,
+        "Cannot supply target ID from different generator ID");
+    this.nextId = targetId;
   }
 
   /** @return the next id in the sequence */
   public int nextId() {
-    previousId += 1 << RESERVED_BITS;
-    return previousId;
+    int nextId = this.nextId;
+    this.nextId += 1 << RESERVED_BITS;
+    return nextId;
   }
 }

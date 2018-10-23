@@ -15,8 +15,10 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import java.util.ArrayList;
 import java.util.List;
 
 /** A view snapshot is an immutable capture of the results of a query and the changes to them. */
@@ -51,6 +53,26 @@ public class ViewSnapshot {
     this.isFromCache = isFromCache;
     this.mutatedKeys = mutatedKeys;
     this.didSyncStateChange = didSyncStateChange;
+  }
+
+  /** Returns a view snapshot as if all documents in the snapshot were added. */
+  public static ViewSnapshot fromInitialDocuments(
+      Query query,
+      DocumentSet documents,
+      ImmutableSortedSet<DocumentKey> mutatedKeys,
+      boolean fromCache) {
+    List<DocumentViewChange> viewChanges = new ArrayList<>();
+    for (Document doc : documents) {
+      viewChanges.add(DocumentViewChange.create(DocumentViewChange.Type.ADDED, doc));
+    }
+    return new ViewSnapshot(
+        query,
+        documents,
+        DocumentSet.emptySet(query.comparator()),
+        viewChanges,
+        fromCache,
+        mutatedKeys,
+        true);
   }
 
   public Query getQuery() {
