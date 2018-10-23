@@ -59,4 +59,9 @@ task uploadMeasurements(type: UploadMeasurementsTask) {
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }
 
-apply plugin: "com.google.gms.google-services"
+// ==========================================================================
+// Copy from here down if you want to use the google-services plugin in your
+// androidTest integration tests.
+// ==========================================================================
+ext.packageName = "com.google.apksize"
+apply from: '../../gradle/googleServices.gradle'
