@@ -109,7 +109,7 @@ public class LruGarbageCollector {
 
   /** Given a percentile of target to collect, returns the number of targets to collect. */
   int calculateQueryCount(int percentile) {
-    long targetCount = delegate.getTargetCount();
+    long targetCount = delegate.getSequenceNumberCount();
     return (int) ((percentile / 100.0f) * targetCount);
   }
 
@@ -216,15 +216,13 @@ public class LruGarbageCollector {
     int numDocumentsRemoved = removeOrphanedDocuments(upperBound);
     long removedDocumentsTs = System.currentTimeMillis();
 
-    // TODO(gsoltis): post-compaction?
-
     if (Logger.isDebugEnabled()) {
       String desc = "LRU Garbage Collection:\n";
       desc += "\tCounted targets in " + (countedTargetsTs - startTs) + "ms\n";
       desc +=
           String.format(
               Locale.ROOT,
-              "\tDetermined least recently used %d sequence numbers in %dms",
+              "\tDetermined least recently used %d sequence numbers in %dms\n",
               sequenceNumbers,
               (foundUpperBoundTs - countedTargetsTs));
       desc +=
