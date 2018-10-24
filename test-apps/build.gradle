@@ -46,8 +46,8 @@ allprojects {
     repositories {
         //mavenLocal() can be overridden via GRADLE_OPTS="-Dmaven.repo.local=<path>"
         mavenLocal()
-        jcenter()
         google()
+        jcenter()
         maven { url 'https://maven.fabric.io/public' }
     }
 

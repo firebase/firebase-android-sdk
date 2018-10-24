@@ -411,7 +411,7 @@ public class FieldValueTest {
       wrap(array);
       fail("wrap should have failed");
     } catch (IllegalArgumentException e) {
-      assertNotEquals(-1, e.getMessage().indexOf("use a List instead"));
+      assertNotEquals(-1, e.getMessage().indexOf("use Lists instead"));
     }
   }
 

@@ -60,13 +60,13 @@ public class Transaction {
    * yet exist, it will be created. If a document already exists, it will be overwritten.
    *
    * @param documentRef The DocumentReference to overwrite.
-   * @param data A map of the fields and values for the document.
+   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   *     document contents).
    * @return This Transaction instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
-  public Transaction set(
-      @NonNull DocumentReference documentRef, @NonNull Map<String, Object> data) {
+  public Transaction set(@NonNull DocumentReference documentRef, @NonNull Object data) {
     return set(documentRef, data, SetOptions.OVERWRITE);
   }
 
@@ -76,16 +76,15 @@ public class Transaction {
    * into an existing document.
    *
    * @param documentRef The DocumentReference to overwrite.
-   * @param data A map of the fields and values for the document.
+   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   *     document contents).
    * @param options An object to configure the set behavior.
    * @return This Transaction instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
   public Transaction set(
-      @NonNull DocumentReference documentRef,
-      @NonNull Map<String, Object> data,
-      @NonNull SetOptions options) {
+      @NonNull DocumentReference documentRef, @NonNull Object data, @NonNull SetOptions options) {
     firestore.validateReference(documentRef);
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
@@ -95,37 +94,6 @@ public class Transaction {
             : firestore.getDataConverter().parseSetData(data);
     transaction.set(documentRef.getKey(), parsed);
     return this;
-  }
-
-  /**
-   * Overwrites the document referred to by the provided DocumentReference. If the document does not
-   * yet exist, it will be created. If a document already exists, it will be overwritten.
-   *
-   * @param documentRef The DocumentReference to overwrite.
-   * @param pojo The POJO that will be used to populate the document contents
-   * @return This Transaction instance. Used for chaining method calls.
-   */
-  @NonNull
-  @PublicApi
-  public Transaction set(@NonNull DocumentReference documentRef, @NonNull Object pojo) {
-    return set(documentRef, firestore.getDataConverter().convertPOJO(pojo), SetOptions.OVERWRITE);
-  }
-
-  /**
-   * Writes to the document referred to by the provided DocumentReference. If the document does not
-   * yet exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged
-   * into an existing document.
-   *
-   * @param documentRef The DocumentReference to overwrite.
-   * @param pojo The POJO that will be used to populate the document contents
-   * @param options An object to configure the set behavior.
-   * @return This Transaction instance. Used for chaining method calls.
-   */
-  @NonNull
-  @PublicApi
-  public Transaction set(
-      @NonNull DocumentReference documentRef, @NonNull Object pojo, @NonNull SetOptions options) {
-    return set(documentRef, firestore.getDataConverter().convertPOJO(pojo), options);
   }
 
   /**
