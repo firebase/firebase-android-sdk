@@ -28,7 +28,8 @@ import org.gradle.api.tasks.TaskAction
  * <p>This task requires two properties, an SDK map, as input, and the report, as output. The map is
  * used to convert project names and build variants into the SDK identifiers used by the database.
  * The report path is where the output should be stored. Additionally, a project property, {@code
- * pull_request} is also required. This value will be placed in the report.
+ * pull_request} is used in the report. Excluding this value will send a human-readable version
+ * to standard out.
  */
 public class GenerateMeasurementsTask extends DefaultTask {
 
@@ -75,52 +76,82 @@ public class GenerateMeasurementsTask extends DefaultTask {
 
     @TaskAction
     def generate() {
-        def sdks = createSdkMap()
-        def sizes = calculateSizes(sdks, project.android.applicationVariants)
-        def report = createReport(sizes)
+        // Check if we need to run human-readable or upload mode.
+	if (project.hasProperty("pull_request")) {
+            def pullRequestNumber = project.properties["pull_request"]
+	    def sdkMap = createSdkMap()
+	    def sizes = calculateSizesForUpload(sdkMap, project.android.applicationVariants)
+            def report = createReportForUpload(pullRequestNumber, sizes)
 
-        reportFile.withWriter {
-            it.write(report)
-        }
+            reportFile.withWriter {
+                it.write(report)
+            }
+	} else {
+	    def sizes = calculateSizesForHumanReadable(project.android.applicationVariants)
+	    printReportForHumanReadable(sizes)
+	}
     }
 
-    private def calculateSizes(sdks, variants) {
+    private def calculateSizesForHumanReadable(variants) {
       def sizes = [:]
+      def processor = {flavor, build, size ->
+          sizes[new Tuple2(flavor, build)] = size
+      }
 
+      calculateSizesFor(variants, processor)
+      return sizes
+    }
+
+    private def calculateSizesForUpload(sdkMap, variants) {
+      def sizes = [:]
+      def processor = { flavor, build, size ->
+          def name = "${flavor}-${build}"
+          def sdk = sdkMap[name];
+
+          if (sdk == null) {
+              throw new IllegalStateException("$name not included in SDK map")
+          }
+          sizes[sdk] = size
+        }
+
+      calculateSizesFor(variants, processor)
+      return sizes
+    }
+
+    private def calculateSizesFor(variants, processor) {
       // Each variant should have exactly one APK. If there are multiple APKs, then this file is out
       // of sync with our Gradle configuration, and this task fails. If an APK is missing, it is
       // silently ignored, and the APKs from the other variants will be used to build the report.
       variants.each { variant ->
-        def name = "${variant.flavorName}-${variant.buildType.name}"
+        def flavorName = variant.flavorName
+	def buildType = variant.buildType.name
         def apks = variant.outputs.findAll { it.outputFile.name.endsWith(".apk") }
         if (apks.size() > 1) {
-            throw new IllegalStateException("${name} produced more than one APK")
+          throw new IllegalStateException("${flavorName}-${buildType} produced more than one APK")
         }
 
         // This runs at most once, as each variant at this point has zero or one APK.
         apks.each {
-            def size = it.outputFile.size();
-            def sdk = sdks[name];
-
-            if (sdk == null) {
-                throw new IllegalStateException("$name not included in SDK map")
-            }
-            sizes[sdk] = size
+          def size = it.outputFile.size()
+	  processor.call(flavorName, buildType, size)
         }
       }
+    }
 
-      return sizes
+    private def printReportForHumanReadable(sizes) {
+        project.logger.quiet("|------------------        APK Sizes        ------------------|")
+	project.logger.quiet("|--    project    --|--  build type   --|--  size in bytes  --|")
+
+        sizes.each { key, value ->
+	    def line = sprintf("|%-19s|%-19s|%-21s|", key.first, key.second, value)
+	    project.logger.quiet(line)
+        }
     }
 
     // TODO(allisonbm): Remove hard-coding protocol buffers. This code manually generates the
     // text-format protocol buffer report. This eliminates requiring buildSrc to depend on the
     // uploader (or simply, the protocol buffer library), but this isn't the most scalable option.
-    private def createReport(sizes) {
-        def pullRequestNumber = project.properties["pull_request"]
-        if (pullRequestNumber == null) {
-            throw new IllegalStateException("`-Ppull_request` not defined")
-        }
-
+    private def createReportForUpload(pullRequestNumber, sizes) {
         def sdkId = 0
         def apkSize = 0
 
