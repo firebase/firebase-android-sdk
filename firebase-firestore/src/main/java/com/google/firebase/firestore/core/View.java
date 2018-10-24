@@ -189,11 +189,12 @@ public class View {
           if (!shouldWaitForSyncedDocument(oldDoc, newDoc)) {
             changeSet.addChange(DocumentViewChange.create(Type.MODIFIED, newDoc));
             changeApplied = true;
-          }
-          if (lastDocInLimit != null && query.comparator().compare(newDoc, lastDocInLimit) > 0) {
-            // This doc moved from inside the limit to after the limit. That means there may be some
-            // doc in the local cache that's actually less than this one.
-            needsRefill = true;
+
+            if (lastDocInLimit != null && query.comparator().compare(newDoc, lastDocInLimit) > 0) {
+              // This doc moved from inside the limit to after the limit. That means there may be
+              // some doc in the local cache that's actually less than this one.
+              needsRefill = true;
+            }
           }
         } else if (oldDocHadPendingMutations != newDocHasPendingMutations) {
           changeSet.addChange(DocumentViewChange.create(Type.METADATA, newDoc));
