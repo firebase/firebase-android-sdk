@@ -9,6 +9,8 @@ dependencies:
   * `firebase-functions`
   * `firebase-firestore`
   * `firebase-storage`
+  * `firebase-inappmessaging-display`
+  
 
 Firebase is an app development platform with tools to help you build, grow and
 monetize your app. More information about Firebase can be found at
