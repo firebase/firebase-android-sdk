@@ -151,4 +151,20 @@ interface RemoteLicenseFetcher extends Serializable {
       TEXT_FORMATTER.getPlainText(doc.select('body > table > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > en > blockquote'))
     }
   }
+
+  static final class EclipsePublicLicenseFetcher implements RemoteLicenseFetcher {
+    private URI ECLIPSE_PUBLIC_LICENSE_URI = URI.create("http://www.eclipse.org/legal/epl-v10.html")
+
+    @Override
+    URI getServiceUri() {
+      ECLIPSE_PUBLIC_LICENSE_URI
+    }
+
+    @Override
+    String get() {
+      def doc = Jsoup.connect(ECLIPSE_PUBLIC_LICENSE_URI.toString()).get()
+
+      TEXT_FORMATTER.getPlainText(doc.select('body'))
+    }
+  }
 }

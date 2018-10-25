@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <issue id="VisibleForTests">
+        <ignore path="src/main/java/com/google/firebase/testing/FirebaseAppRule.java"/>
+    </issue>
+
+
+    <!--See : This is a test only module -->
+    <issue id="InvalidPackage" severity="ignore"/>
+</lint>
