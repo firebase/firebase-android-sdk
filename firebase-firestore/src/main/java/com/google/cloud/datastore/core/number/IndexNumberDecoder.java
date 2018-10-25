@@ -1,17 +1,3 @@
-// Copyright 2018 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package com.google.cloud.datastore.core.number;
 
 /** Decoder for {@link IndexNumberEncoder}. Not thread-safe. */
@@ -163,7 +149,7 @@ public class IndexNumberDecoder {
     // Move significand bits down to their expected location.
     resultSignificand >>>=
         (IndexNumberEncoder.SIGNIFICAND_BITS - IndexNumberEncoder.DOUBLE_SIGNIFICAND_BITS);
-    // TODO: Handle too large and too small exponents.  Not possible with current encoder.
+    // TODO(mcg): Handle too large and too small exponents.  Not possible with current encoder.
     if (resultExponent >= Double.MIN_EXPONENT) {
       // Normal; re-add bias
       resultExponent += IndexNumberEncoder.DOUBLE_EXPONENT_BIAS;
@@ -173,7 +159,7 @@ public class IndexNumberDecoder {
       long unadjustedSignificand = resultSignificand;
       resultSignificand >>>= adjustment;
       if ((resultSignificand << adjustment) != unadjustedSignificand) {
-        // TODO: Test.  Not possible with current encoder.
+        // TODO(mcg): Test.  Not possible with current encoder.
         doubleResultRepProblemMessage =
             "Number has too many significant bits for a subnormal double.";
       }

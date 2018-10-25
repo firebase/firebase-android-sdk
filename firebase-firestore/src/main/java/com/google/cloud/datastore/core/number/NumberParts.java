@@ -1,24 +1,8 @@
-// Copyright 2018 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package com.google.cloud.datastore.core.number;
 
 /**
  * The representation of a number that can accommodate the range of doubles and longs without loss
  * of precision.
- *
- * @hide
  */
 public final class NumberParts {
 
@@ -319,38 +303,38 @@ public final class NumberParts {
 
   // @Nullable
   private static String doubleRepresentationError() {
-    // TODO: check for overflow
+    // TODO(mcg): check for overflow
     return null;
   }
 
-  // TODO: see go/objecttostring-lsc
+  // TODO(b/79994182): see go/objecttostring-lsc
   @SuppressWarnings("ObjectToString")
   private String longRepresentationError() {
     if (isZero()) {
       return null;
     } else if (isInfinite()) {
-      // TODO: NumberParts does not implement toString() in this
+      // TODO(b/79994182): NumberParts does not implement toString() in this
       return "Invalid encoded long " + this + ": Infinity is not a long";
     } else if (isNaN()) {
-      // TODO: NumberParts does not implement toString() in this
+      // TODO(b/79994182): NumberParts does not implement toString() in this
       return "Invalid encoded long " + this + ": NaN is not a long";
     } else if (exponent() == (SIGNIFICAND_BITS - 1)) {
       // The only legit value with an exponent of 63 is Long.MIN_VALUE
       if (significand() != 0 || !negative()) {
-        // TODO: NumberParts does not implement toString() in this
+        // TODO(b/79994182): NumberParts does not implement toString() in this
         return "Invalid encoded long " + this + ": overflow";
       }
       return null;
     } else if (exponent() < 0 || exponent() > (SIGNIFICAND_BITS - 1)) {
       // Exponent is negative, or too large
-      // TODO: NumberParts does not implement toString() in this
+      // TODO(b/79994182): NumberParts does not implement toString() in this
       return "Invalid encoded long " + this + ": exponent " + exponent() + " too large";
     }
 
     // Check if the number contains a fractional part.
     int trailingZeros = Long.numberOfTrailingZeros(significand());
     if (exponent() < (SIGNIFICAND_BITS - trailingZeros)) {
-      // TODO: NumberParts does not implement toString() in this
+      // TODO(b/79994182): NumberParts does not implement toString() in this
       return "Invalid encoded long " + this + ": contains fractional part";
     }
     return null;

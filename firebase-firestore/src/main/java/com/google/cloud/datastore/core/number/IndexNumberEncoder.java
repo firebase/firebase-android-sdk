@@ -1,17 +1,3 @@
-// Copyright 2018 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package com.google.cloud.datastore.core.number;
 
 /**
@@ -170,7 +156,7 @@ public class IndexNumberEncoder {
       int adjustment = leadingZeros - (SIGNIFICAND_BITS - DOUBLE_SIGNIFICAND_BITS);
       exponent -= adjustment;
     } else if (exponent > DOUBLE_EXPONENT_BIAS) {
-      // TODO: NaN is handled incorrectly.
+      // TODO(jbaum): NaN is handled incorrectly.
       // NaN always comes first, which is incorrect for descending.
       // The correct solution would use 4 different 2-byte encodings for +Infinity, -Infinity, and
       // 2 NaNs, one ascending and one descending.  The encodings would be ordered so:
