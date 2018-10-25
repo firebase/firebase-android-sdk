@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <declare-styleable name="ModalLayout">
+    <attr name="maxWidthPct" format="float" type="dimen" />
+    <attr name="maxHeightPct" format="float" type="dimen" />
+  </declare-styleable>
+</resources>

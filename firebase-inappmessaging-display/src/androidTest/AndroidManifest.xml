@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.google.firebase.inappmessaging.display.internal.bindingwrappers">
+
+  <application>
+    <uses-library android:name="android.test.runner"/>
+    <activity android:name=".TestActivity">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+    </activity>
+  </application>
+
+  <instrumentation
+      android:name="android.support.test.runner.AndroidJUnitRunner"
+      android:targetPackage="com.google.firebase.inappmessaging.display.internal.bindingwrappers">
+  </instrumentation>
+</manifest>
