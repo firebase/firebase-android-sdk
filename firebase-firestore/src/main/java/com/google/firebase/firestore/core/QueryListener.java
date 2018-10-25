@@ -80,7 +80,8 @@ public class QueryListener {
               documentChanges,
               newSnapshot.isFromCache(),
               newSnapshot.getMutatedKeys(),
-              newSnapshot.didSyncStateChange());
+              newSnapshot.didSyncStateChange(),
+              /* excludesMetadataChanges= */ true);
     }
 
     if (!raisedInitialEvent) {

@@ -61,9 +61,7 @@ public class TargetIdGenerator {
   private int nextId;
   private int generatorId;
 
-  /**
-   * Instantiates a new TargetIdGenerator, using the seed as the first target ID to return.
-   */
+  /** Instantiates a new TargetIdGenerator, using the seed as the first target ID to return. */
   TargetIdGenerator(int generatorId, int seed) {
     hardAssert(
         (generatorId & RESERVED_BITS) == generatorId,

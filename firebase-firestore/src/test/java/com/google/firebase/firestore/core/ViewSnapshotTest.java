@@ -48,9 +48,18 @@ public class ViewSnapshotTest {
     boolean fromCache = true;
     boolean hasPendingWrites = true;
     boolean syncStateChanges = true;
+    boolean excludesMetadataChanges = true;
 
     ViewSnapshot snapshot =
-        new ViewSnapshot(query, docs, oldDocs, changes, fromCache, mutatedKeys, syncStateChanges);
+        new ViewSnapshot(
+            query,
+            docs,
+            oldDocs,
+            changes,
+            fromCache,
+            mutatedKeys,
+            syncStateChanges,
+            excludesMetadataChanges);
 
     assertEquals(query, snapshot.getQuery());
     assertEquals(docs, snapshot.getDocuments());
@@ -60,5 +69,6 @@ public class ViewSnapshotTest {
     assertEquals(mutatedKeys, snapshot.getMutatedKeys());
     assertEquals(hasPendingWrites, snapshot.hasPendingWrites());
     assertEquals(syncStateChanges, snapshot.didSyncStateChange());
+    assertEquals(excludesMetadataChanges, snapshot.excludesMetadataChanges());
   }
 }
