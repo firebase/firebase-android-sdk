@@ -1,24 +1,6 @@
-// Copyright 2018 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package com.google.cloud.datastore.core.number;
 
-/**
- * A utility class for comparing numbers.
- *
- * @hide
- */
+/** A utility class for comparing numbers. */
 public final class NumberComparisonHelper {
 
   // Long.MIN_VALUE has an exact representation as double, so the long lower bound is inclusive.
@@ -33,10 +15,10 @@ public final class NumberComparisonHelper {
   public static final long MIN_SAFE_LONG = -MAX_SAFE_LONG;
 
   /**
-   * Compares a double and a long. Firestore ordering: NaN precedes all other numbers and equals
-   * itself, all zeroes are equal.
+   * Compares a double and a with Firestore query semantics: NaN precedes all other numbers and
+   * equals itself, all zeroes are equal.
    */
-  public static int compareDoubleWithLong(double doubleValue, long longValue) {
+  public static int firestoreCompareDoubleWithLong(double doubleValue, long longValue) {
     // In Firestore NaN is defined to compare before all other numbers.
     if (Double.isNaN(doubleValue)) {
       return -1;
@@ -60,7 +42,7 @@ public final class NumberComparisonHelper {
 
     // At this point the long representations are equal but this could be due to rounding.
     double longAsDouble = (double) longValue;
-    return compareDoubles(doubleValue, longAsDouble);
+    return firestoreCompareDoubles(doubleValue, longAsDouble);
   }
 
   /**
@@ -77,25 +59,14 @@ public final class NumberComparisonHelper {
     }
   }
 
-  /** Compares ints. See the comment to {@link #compareLongs} for rationale. */
-  public static int compareInts(int leftInt, int rightInt) {
-    if (leftInt < rightInt) {
-      return -1;
-    } else if (leftInt > rightInt) {
-      return 1;
-    } else {
-      return 0;
-    }
-  }
-
   /**
-   * Compares doubles. Firestore ordering: NaN precedes all other numbers and equals itself, all
-   * zeroes are equal.
+   * Compares doubles with Firestore query semantics: NaN precedes all other numbers and equals
+   * itself, all zeroes are equal.
    *
    * @return a negative integer, zero, or a positive integer as the first argument is less than,
    *     equal to, or greater than the second.
    */
-  public static int compareDoubles(double leftDouble, double rightDouble) {
+  public static int firestoreCompareDoubles(double leftDouble, double rightDouble) {
     // NaN sorts equal to itself and before any other number.
     if (leftDouble < rightDouble) {
       return -1;
