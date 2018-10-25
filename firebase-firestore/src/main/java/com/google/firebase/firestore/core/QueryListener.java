@@ -157,7 +157,8 @@ public class QueryListener {
             snapshot.getQuery(),
             snapshot.getDocuments(),
             snapshot.getMutatedKeys(),
-            snapshot.isFromCache());
+            snapshot.isFromCache(),
+            snapshot.excludesMetadataChanges());
     raisedInitialEvent = true;
     listener.onEvent(snapshot, null);
   }

@@ -64,7 +64,8 @@ public class ViewSnapshot {
       Query query,
       DocumentSet documents,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
-      boolean fromCache) {
+      boolean fromCache,
+      boolean excludesMetadataChanges) {
     List<DocumentViewChange> viewChanges = new ArrayList<>();
     for (Document doc : documents) {
       viewChanges.add(DocumentViewChange.create(DocumentViewChange.Type.ADDED, doc));
@@ -77,7 +78,7 @@ public class ViewSnapshot {
         fromCache,
         mutatedKeys,
         /* didSyncStateChange= */ true,
-        /* excludesMetadataChanges= */ false);
+        excludesMetadataChanges);
   }
 
   public Query getQuery() {
@@ -180,6 +181,8 @@ public class ViewSnapshot {
         + mutatedKeys.size()
         + ", didSyncStateChange="
         + didSyncStateChange
+        + ", excludesMetadataChanges="
+        + excludesMetadataChanges
         + ")";
   }
 }
