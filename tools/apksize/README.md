@@ -14,8 +14,22 @@ file in the build directory. The latter is invoked by CI and uploads the report
 to an SQL database.
 
 The generateMeasurements task may be manually run with `./gradlew -q
-generateMeasurements -Ppull_request=999`. A pull request number is required to
-generate the report.
+generateMeasurements`. This will output a human readable report to standard out.
+Appending `-Ppull_request=999` will instead generate the report to upload, where
+`999` is the pull request number to place in the report.
+
+The uploadMeasurements task is not intended to be invoked manually. However, it
+may be invoked with the above pull request flag and `-Pdatabase_config=path`
+where `path` is the path to the config file. The config file must have the
+following structure where the values in all-caps are placeholders for the
+relevant pieces of configuration:
+
+```
+host:HOST
+database:DATABASE
+user:USER
+password:PASSWORD
+```
 
 ## Current Support
 
