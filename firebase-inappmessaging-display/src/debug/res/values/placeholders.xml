@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  NOTE: strings in this file will not be included in release builds. They should only be used
+        as tools:getText attributes for layout previews
+-->
+<resources>
+    <string name="placeholder_very_short">
+        Hello, world!
+    </string>
+    <string name="placeholder_lorem_ipsum_short">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas pellentesque.
+    </string>
+</resources>

@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.firebase.fiamui.MainActivity"
+    >
+
+  <ScrollView
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
+        android:paddingBottom="32dp"
+        >
+
+      <TextView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center_horizontal"
+          android:text="@string/fiam_ui_demo"
+          style="@style/Base.TextAppearance.AppCompat.Headline"
+          />
+
+      <Button
+          android:id="@+id/start"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:layout_margin="16dp"
+          android:text="@string/start"
+          style="@style/Widget.AppCompat.Button.Colored"
+          />
+
+      <TextView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginBottom="8dp"
+          android:text="@string/fiam_type"
+          style="@style/Base.TextAppearance.AppCompat.Subhead"
+          />
+
+      <RadioGroup
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:orientation="vertical"
+          >
+
+        <RadioButton
+            android:id="@+id/modal_fiam"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/modal"
+            />
+
+        <RadioButton
+            android:id="@+id/banner_fiam"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/banner"
+            />
+
+        <RadioButton
+            android:id="@+id/image_fiam"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/image"
+            />
+      </RadioGroup>
+
+      <android.support.design.widget.TextInputLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="16dp"
+          >
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/message_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/message_title"
+            android:text="@string/default_message_title"
+            />
+
+      </android.support.design.widget.TextInputLayout>
+
+      <TextView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginBottom="8dp"
+          android:layout_marginTop="16dp"
+          android:text="Use body text"
+          style="@style/Base.TextAppearance.AppCompat.Subhead"
+          />
+
+      <RadioGroup
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:orientation="vertical"
+          >
+
+        <RadioButton
+            android:id="@+id/normal_body_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/regular_length"
+            />
+
+        <RadioButton
+            android:id="@+id/long_body_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/long_length"
+            />
+
+        <RadioButton
+            android:id="@+id/no_body_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/no_length"
+            />
+      </RadioGroup>
+
+      <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:orientation="horizontal"
+          android:layout_marginTop="16dp"
+          android:weightSum="2.0">
+
+        <android.support.design.widget.TextInputLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0">
+
+          <android.support.design.widget.TextInputEditText
+              android:id="@+id/image_width"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:inputType="number"
+              android:hint="Image Width"
+              android:text="800" />
+
+        </android.support.design.widget.TextInputLayout>
+
+        <android.support.design.widget.TextInputLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0">
+
+          <android.support.design.widget.TextInputEditText
+              android:id="@+id/image_height"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:inputType="number"
+              android:hint="Image Height"
+              android:text="800" />
+
+        </android.support.design.widget.TextInputLayout>
+
+      </LinearLayout>
+
+      <android.support.design.widget.TextInputLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="16dp"
+          >
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/action_button_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/action_button_text"
+            android:text="@string/view_wishlist"
+            />
+
+      </android.support.design.widget.TextInputLayout>
+
+      <android.support.design.widget.TextInputLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="16dp"
+          >
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/action_button_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/action_button_url"
+            android:text="https://www.google.com"
+            />
+      </android.support.design.widget.TextInputLayout>
+
+      <android.support.design.widget.TextInputLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="16dp"
+          >
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/fiam_ttl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Time in seconds to show fiam"
+            android:inputType="number"
+            android:text="30"
+            />
+
+      </android.support.design.widget.TextInputLayout>
+
+      <TextView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:text="Colors"
+          android:textSize="16sp"
+          android:textStyle="bold"
+          android:layout_marginBottom="16dp"
+          android:layout_marginTop="16dp" />
+
+      <FrameLayout
+          android:id="@+id/color_body_bg_container"
+          style="@style/AppTheme.ColorContainer">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Body Background" />
+
+        <View
+            android:id="@+id/color_body_bg_preview"
+            android:background="#FAFAFA"
+            style="@style/AppTheme.ColorPreview" />
+
+      </FrameLayout>
+
+      <FrameLayout
+          android:id="@+id/color_body_text_container"
+          style="@style/AppTheme.ColorContainer">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Body Text" />
+
+        <View
+            android:id="@+id/color_body_text_preview"
+            android:background="#000000"
+            style="@style/AppTheme.ColorPreview" />
+
+      </FrameLayout>
+
+      <FrameLayout
+          android:id="@+id/color_button_bg_container"
+          style="@style/AppTheme.ColorContainer">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Button Background" />
+
+        <View
+            android:id="@+id/color_button_bg_preview"
+            android:background="@color/colorAccent"
+            style="@style/AppTheme.ColorPreview" />
+
+      </FrameLayout>
+
+      <FrameLayout
+          android:id="@+id/color_button_text_container"
+          style="@style/AppTheme.ColorContainer">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Button Text" />
+
+        <View
+            android:id="@+id/color_button_text_preview"
+            android:background="#FFFFFF"
+            style="@style/AppTheme.ColorPreview" />
+
+      </FrameLayout>
+
+    </LinearLayout>
+
+  </ScrollView>
+
+</android.support.design.widget.CoordinatorLayout>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This file should be text identical to layout-sw600dp/modal.xml.
+     See comment there for reasoning. -->
+
+<com.google.firebase.inappmessaging.display.internal.layout.FiamRelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/modal_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:padding="24dp">
+
+    <include layout="@layout/modal_portrait_inner" />
+
+    <Button
+        android:id="@+id/collapse_button"
+        style="@style/FiamUI.CollapseButton"
+        android:layout_alignEnd="@+id/modal_content_root"
+        android:layout_alignRight="@+id/modal_content_root"
+        android:layout_alignTop="@+id/modal_content_root" />
+
+</com.google.firebase.inappmessaging.display.internal.layout.FiamRelativeLayout>
