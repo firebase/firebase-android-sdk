@@ -124,7 +124,7 @@ public final class LocalStore {
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
     queryCache = persistence.getQueryCache();
-    targetIdGenerator = TargetIdGenerator.getLocalStoreIdGenerator(queryCache.getHighestTargetId());
+    targetIdGenerator = TargetIdGenerator.forQueryCache(queryCache.getHighestTargetId());
     mutationQueue = persistence.getMutationQueue(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
     localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue);

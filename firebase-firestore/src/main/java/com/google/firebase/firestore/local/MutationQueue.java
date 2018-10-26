@@ -38,15 +38,6 @@ interface MutationQueue {
   /** Returns true if this queue contains no mutation batches. */
   boolean isEmpty();
 
-  /**
-   * Returns the next batch ID that will be assigned to a new mutation batch.
-   *
-   * <p>Callers generally don't care about this value except to test that the mutation queue is
-   * properly maintaining the invariant that getHighestAcknowledgedBatchId is less than
-   * getNextBatchId.
-   */
-  int getNextBatchId();
-
   /** Acknowledges the given batch. */
   void acknowledgeBatch(MutationBatch batch, ByteString streamToken);
 

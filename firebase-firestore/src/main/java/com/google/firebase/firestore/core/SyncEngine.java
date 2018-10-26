@@ -91,11 +91,16 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
   private static final String TAG = SyncEngine.class.getSimpleName();
 
-  /** A callback used to handle events from the SyncEngine */
+  /** Interface implemented by EventManager to handle notifications from SyncEngine. */
   interface SyncEngineCallback {
+    /** Handles new view snapshots. */
     void onViewSnapshots(List<ViewSnapshot> snapshotList);
 
+    /** Handles the failure of a query. */
     void onError(Query query, Status error);
+
+    /** Handles a change in online state. */
+    void handleOnlineStateChange(OnlineState onlineState);
   }
 
   /** The local store, used to persist mutations and cached documents. */
@@ -133,7 +138,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
   private User currentUser;
 
-  private SyncEngineCallback callback;
+  private SyncEngineCallback syncEngineListener;
 
   public SyncEngine(LocalStore localStore, RemoteStore remoteStore, User initialUser) {
     this.localStore = localStore;
@@ -147,16 +152,16 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     limboDocumentRefs = new ReferenceSet();
 
     mutationUserCallbacks = new HashMap<>();
-    targetIdGenerator = TargetIdGenerator.getSyncEngineGenerator(0);
+    targetIdGenerator = TargetIdGenerator.forSyncEngine();
     currentUser = initialUser;
   }
 
   public void setCallback(SyncEngineCallback callback) {
-    this.callback = callback;
+    this.syncEngineListener = callback;
   }
 
   private void assertCallback(String method) {
-    hardAssert(callback != null, "Trying to call %s before setting callback", method);
+    hardAssert(syncEngineListener != null, "Trying to call %s before setting callback", method);
   }
 
   /**
@@ -171,6 +176,16 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     hardAssert(!queryViewsByQuery.containsKey(query), "We already listen to query: %s", query);
 
     QueryData queryData = localStore.allocateQuery(query);
+    ViewSnapshot viewSnapshot = initializeViewAndComputeSnapshot(queryData);
+    syncEngineListener.onViewSnapshots(Collections.singletonList(viewSnapshot));
+
+    remoteStore.listen(queryData);
+    return queryData.getTargetId();
+  }
+
+  private ViewSnapshot initializeViewAndComputeSnapshot(QueryData queryData) {
+    Query query = queryData.getQuery();
+
     ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
     ImmutableSortedSet<DocumentKey> remoteKeys =
         localStore.getRemoteDocumentKeys(queryData.getTargetId());
@@ -185,10 +200,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     QueryView queryView = new QueryView(query, queryData.getTargetId(), view);
     queryViewsByQuery.put(query, queryView);
     queryViewsByTarget.put(queryData.getTargetId(), queryView);
-    callback.onViewSnapshots(Collections.singletonList(viewChange.getSnapshot()));
-
-    remoteStore.listen(queryData);
-    return queryData.getTargetId();
+    return viewChange.getSnapshot();
   }
 
   /** Stops listening to a query previously listened to via listen. */
@@ -200,7 +212,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     localStore.releaseQuery(query);
     remoteStore.stopListening(queryView.getTargetId());
-    removeAndCleanup(queryView);
+    removeAndCleanupQuery(queryView);
   }
 
   /**
@@ -215,7 +227,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     LocalWriteResult result = localStore.writeLocally(mutations);
     addUserCallback(result.getBatchId(), userTask);
 
-    emitNewSnapshot(result.getChanges(), /*remoteEvent=*/ null);
+    emitNewSnapsAndNotifyLocalStore(result.getChanges(), /*remoteEvent=*/ null);
     remoteStore.fillWritePipeline();
   }
 
@@ -313,7 +325,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     }
 
     ImmutableSortedMap<DocumentKey, MaybeDocument> changes = localStore.applyRemoteEvent(event);
-    emitNewSnapshot(changes, event);
+    emitNewSnapsAndNotifyLocalStore(changes, event);
   }
 
   /** Applies an OnlineState change to the sync engine and notifies any views of the change. */
@@ -329,7 +341,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
         newViewSnapshots.add(viewChange.getSnapshot());
       }
     }
-    callback.onViewSnapshots(newViewSnapshots);
+    syncEngineListener.onViewSnapshots(newViewSnapshots);
+    syncEngineListener.handleOnlineStateChange(onlineState);
   }
 
   @Override
@@ -381,9 +394,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       hardAssert(queryView != null, "Unknown target: %s", targetId);
       Query query = queryView.getQuery();
       localStore.releaseQuery(query);
-      removeAndCleanup(queryView);
+      removeAndCleanupQuery(queryView);
       logErrorIfInteresting(error, "Listen for %s failed", query);
-      callback.onError(query, error);
+      syncEngineListener.onError(query, error);
     }
   }
 
@@ -399,7 +412,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     ImmutableSortedMap<DocumentKey, MaybeDocument> changes =
         localStore.acknowledgeBatch(mutationBatchResult);
 
-    emitNewSnapshot(changes, /*remoteEvent=*/ null);
+    emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
   }
 
   @Override
@@ -416,7 +429,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     // they consistently happen before listen events.
     notifyUser(batchId, status);
 
-    emitNewSnapshot(changes, /*remoteEvent=*/ null);
+    emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
   }
 
   /** Resolves the task corresponding to this write result. */
@@ -439,7 +452,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     }
   }
 
-  private void removeAndCleanup(QueryView view) {
+  private void removeAndCleanupQuery(QueryView view) {
     queryViewsByQuery.remove(view.getQuery());
     queryViewsByTarget.remove(view.getTargetId());
 
@@ -469,7 +482,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * Computes a new snapshot from the changes and calls the registered callback with the new
    * snapshot.
    */
-  private void emitNewSnapshot(
+  private void emitNewSnapsAndNotifyLocalStore(
       ImmutableSortedMap<DocumentKey, MaybeDocument> changes, @Nullable RemoteEvent remoteEvent) {
     List<ViewSnapshot> newSnapshots = new ArrayList<>();
     List<LocalViewChanges> documentChangesInAllViews = new ArrayList<>();
@@ -498,7 +511,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
         documentChangesInAllViews.add(docChanges);
       }
     }
-    callback.onViewSnapshots(newSnapshots);
+    syncEngineListener.onViewSnapshots(newSnapshots);
     localStore.notifyLocalViewChanges(documentChangesInAllViews);
   }
 
@@ -553,7 +566,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     if (userChanged) {
       // Notify local store and emit any resulting events from swapping out the mutation queue.
       ImmutableSortedMap<DocumentKey, MaybeDocument> changes = localStore.handleUserChange(user);
-      emitNewSnapshot(changes, /*remoteEvent=*/ null);
+      emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
     }
 
     // Notify remote store so it can restart its streams.
