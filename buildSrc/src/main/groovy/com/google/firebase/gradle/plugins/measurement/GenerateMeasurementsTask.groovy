@@ -22,14 +22,18 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 /**
- * Generates size measurements after building the test apps and outputs them as a text-format
- * protocol buffer report.
+ * Generates size measurements after building the test apps.
+ *
+ * <p>This task can run in two modes. The first mode, is a dependency for {@link
+ * UploadMeasurementsTask} and generates a JSON file with measurement information. This file
+ * references database IDs, and is not considered to be human-friendly. The second mode outputs a
+ * table to standard out with more useful information. These modes can be toggled by adding the
+ * {@code pull_request} flag to the task. See the README for more details.
  *
  * <p>This task requires two properties, an SDK map, as input, and the report, as output. The map is
  * used to convert project names and build variants into the SDK identifiers used by the database.
- * The report path is where the output should be stored. Additionally, a project property, {@code
- * pull_request} is used in the report. Excluding this value will send a human-readable version
- * to standard out.
+ * The report path is where the output should be stored. These properties are not used when the task
+ * is run in the second, humna-friendly mode. However, they are still required to be specified.
  */
 public class GenerateMeasurementsTask extends DefaultTask {
 
@@ -76,59 +80,58 @@ public class GenerateMeasurementsTask extends DefaultTask {
 
     @TaskAction
     def generate() {
-        // Check if we need to run human-readable or upload mode.
+        def variants = project.android.applicationVariants
+
+        // Check if we need to run human-readable table or JSON upload mode.
         if (project.hasProperty("pull_request")) {
             def pullRequestNumber = project.properties["pull_request"]
-            def sdkMap = createSdkMap()
-            def sizes = calculateSizesForUpload(sdkMap, project.android.applicationVariants)
-            def report = createReportForUpload(pullRequestNumber, sizes)
-
-            reportFile.withWriter {
-                it.write(report)
-            }
+            generateJson(pullRequestNumber, variants)
         } else {
-            def sizes = calculateHumanReadableSizes(project.android.applicationVariants)
-            printHumanReadableReport(sizes)
+            generateTable(variants)
         }
     }
 
-    private def calculateHumanReadableSizes(variants) {
-        def sizes = [:]
-        def processor = {flavor, build, size ->
-            sizes[new Tuple2(flavor, build)] = size
-        }
+    private def generateJson(pullRequestNumber, variants) {
+        def sdkMap = createSdkMap()
+        def builder = new ApkSizeJsonBuilder(pullRequestNumber)
+        def variantProcessor = {projectName, buildType, apkSize ->
+            def name = "$projectName-$buildType"
+            def sdkId = sdkMap[name]
 
-        calculateSizesFor(variants, processor)
-        return sizes
-    }
-
-    private def calculateSizesForUpload(sdkMap, variants) {
-        def sizes = [:]
-        def processor = { flavor, build, size ->
-            def name = "${flavor}-${build}"
-            def sdk = sdkMap[name];
-
-            if (sdk == null) {
+            if (sdkId == null) {
                 throw new IllegalStateException("$name not included in SDK map")
             }
-            sizes[sdk] = size
+
+            builder.addApkSize(sdkId, apkSize)
         }
 
-        calculateSizesFor(variants, processor)
-        return sizes
+        calculateSizes(variants, variantProcessor)
+        reportFile.withWriter {
+            it.write(builder.toJsonString())
+        }
     }
 
-    private def calculateSizesFor(variants, processor) {
+    private def generateTable(variants) {
+        def builder = new ApkSizeTableBuilder()
+        def variantProcessor = {projectName, buildType, apkSize ->
+            builder.addApkSize(projectName, buildType, apkSize)
+        }
+
+        calculateSizes(variants, variantProcessor)
+        project.logger.quiet(builder.toTableString())
+    }
+
+    private def calculateSizes(variants, processor) {
         // Each variant should have exactly one APK. If there are multiple APKs, then this file is
-	// out of sync with our Gradle configuration, and this task fails. If an APK is missing, it
-	// is silently ignored, and the APKs from the other variants will be used to build the
-	// report.
+        // out of sync with our Gradle configuration, and this task fails. If an APK is missing, it
+        // is silently ignored, and the APKs from the other variants will be used to build the
+        // report.
         variants.each { variant ->
             def flavorName = variant.flavorName
             def buildType = variant.buildType.name
             def apks = variant.outputs.findAll { it.outputFile.name.endsWith(".apk") }
             if (apks.size() > 1) {
-	        def msg = "${flavorName}-${buildType} produced more than one APK"
+                def msg = "${flavorName}-${buildType} produced more than one APK"
                 throw new IllegalStateException(msg)
             }
 
@@ -138,77 +141,6 @@ public class GenerateMeasurementsTask extends DefaultTask {
                 processor.call(flavorName, buildType, size)
             }
         }
-    }
-
-    private def printHumanReadableReport(sizes) {
-        project.logger.quiet("|------------------        APK Sizes        ------------------|")
-        project.logger.quiet("|--    project    --|--  build type   --|--  size in bytes  --|")
-
-        sizes.each { key, value ->
-            def line = sprintf("|%-19s|%-19s|%-21s|", key.first, key.second, value)
-            project.logger.quiet(line)
-        }
-    }
-
-    // TODO(allisonbm): Remove hard-coding protocol buffers. This code manually generates the
-    // text-format protocol buffer report. This eliminates requiring buildSrc to depend on the
-    // uploader (or simply, the protocol buffer library), but this isn't the most scalable option.
-    private def createReportForUpload(pullRequestNumber, sizes) {
-        def sdkId = 0
-        def apkSize = 0
-
-        def pullRequestGroup = """
-            groups {
-                table_name: "PullRequests"
-                column_names: "pull_request_id"
-                measurements {
-                    values {
-                        int_value: ${pullRequestNumber}
-                    }
-                }
-            }
-        """
-
-        def sizeGroupHeader = """
-            groups {
-                table_name: "ApkSizes"
-                column_names: "sdk_id"
-                column_names: "pull_request_id"
-                column_names: "apk_size"
-        """
-
-        def sizeGroupEntry = """
-                measurements {
-                    values {
-                        int_value: ${->sdkId}
-                    }
-                    values {
-                        int_value: ${pullRequestNumber}
-                    }
-                    values {
-                        int_value: ${->apkSize}
-                    }
-                }
-        """
-
-        def sizeGroupFooter = """
-            }
-        """
-
-
-        def builder = new StringBuilder()
-        builder.append(pullRequestGroup)
-        builder.append(sizeGroupHeader)
-
-        sizes.each { key, value ->
-            // sdkId and apkSize are lazily interpolated into sizeGroupEntry.
-            sdkId = key
-            apkSize = value
-            builder.append(sizeGroupEntry)
-        }
-
-        builder.append(sizeGroupFooter)
-        return builder.toString()
     }
 
     private def createSdkMap() {
