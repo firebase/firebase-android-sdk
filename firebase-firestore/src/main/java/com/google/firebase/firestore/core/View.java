@@ -311,7 +311,8 @@ public class View {
               viewChanges,
               fromCache,
               docChanges.mutatedKeys,
-              syncStatedChanged);
+              syncStatedChanged,
+              /* excludesMetadataChanges= */ false);
     }
     return new ViewChange(snapshot, limboDocumentChanges);
   }

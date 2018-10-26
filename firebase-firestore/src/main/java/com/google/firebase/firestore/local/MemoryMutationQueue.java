@@ -107,11 +107,6 @@ final class MemoryMutationQueue implements MutationQueue {
   }
 
   @Override
-  public int getNextBatchId() {
-    return nextBatchId;
-  }
-
-  @Override
   public void acknowledgeBatch(MutationBatch batch, ByteString streamToken) {
     int batchId = batch.getBatchId();
     hardAssert(
