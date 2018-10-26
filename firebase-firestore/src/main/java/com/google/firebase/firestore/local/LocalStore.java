@@ -138,7 +138,15 @@ public final class LocalStore {
   }
 
   public void start() {
-    mutationQueue.start();
+    startMutationQueue();
+  }
+
+  private void startMutationQueue() {
+    persistence.runTransaction(
+        "Start MutationQueue",
+        () -> {
+          mutationQueue.start();
+        });
   }
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.
@@ -148,7 +156,7 @@ public final class LocalStore {
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
     mutationQueue = persistence.getMutationQueue(user);
-    mutationQueue.start();
+    startMutationQueue();
 
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
 
