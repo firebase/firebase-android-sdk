@@ -19,18 +19,7 @@ def androidVersion = 28
 android {
     compileSdkVersion androidVersion
     defaultConfig {
-        minSdkVersion 14
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-        }
-        debug {
-        }
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        minSdkVersion 9
     }
 }
 

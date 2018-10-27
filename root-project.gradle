@@ -121,7 +121,7 @@ configure(subprojects) {
         }
 
         // Apply the retrolambda plugin
-        //sub.apply plugin: 'me.tatarka.retrolambda'
+        sub.apply plugin: 'me.tatarka.retrolambda'
 
         boolean skipPreguard = sub.getProperties().getOrDefault('firebaseSkipPreguard', 'true').toBoolean()
         def defaultPreguard = rootProject.getProperties().getOrDefault('firebaseDefaultPreguardFile', 'default-preguard.txt')
