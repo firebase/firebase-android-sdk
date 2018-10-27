@@ -617,7 +617,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     if (Status.OK.equals(status)) {
       // Graceful stop (due to stop() or idle timeout). Make sure that's desirable.
       hardAssert(
-          !shouldStartWatchStream(), "Write stream was stopped gracefully while still needed.");
+          !shouldStartWriteStream(), "Write stream was stopped gracefully while still needed.");
     }
 
     // If the write stream closed due to an error, invoke the error callbacks if there are pending

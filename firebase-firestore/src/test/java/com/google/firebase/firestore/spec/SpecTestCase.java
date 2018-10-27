@@ -275,7 +275,6 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   @Override
   public void handleOnlineStateChange(OnlineState onlineState) {
     syncEngine.handleOnlineStateChange(onlineState);
-    eventManager.handleOnlineStateChange(onlineState);
   }
 
   private List<Pair<Mutation, Task<Void>>> getCurrentOutstandingWrites() {

@@ -19,8 +19,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
-import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentSet;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -82,7 +80,8 @@ public class QueryListener {
               documentChanges,
               newSnapshot.isFromCache(),
               newSnapshot.getMutatedKeys(),
-              newSnapshot.didSyncStateChange());
+              newSnapshot.didSyncStateChange(),
+              /* excludesMetadataChanges= */ true);
     }
 
     if (!raisedInitialEvent) {
@@ -154,23 +153,13 @@ public class QueryListener {
   private void raiseInitialEvent(ViewSnapshot snapshot) {
     hardAssert(!raisedInitialEvent, "Trying to raise initial event for second time");
     snapshot =
-        new ViewSnapshot(
+        ViewSnapshot.fromInitialDocuments(
             snapshot.getQuery(),
             snapshot.getDocuments(),
-            DocumentSet.emptySet(snapshot.getQuery().comparator()),
-            QueryListener.getInitialViewChanges(snapshot),
-            snapshot.isFromCache(),
             snapshot.getMutatedKeys(),
-            /*didSyncStateChange=*/ true);
+            snapshot.isFromCache(),
+            snapshot.excludesMetadataChanges());
     raisedInitialEvent = true;
     listener.onEvent(snapshot, null);
-  }
-
-  private static List<DocumentViewChange> getInitialViewChanges(ViewSnapshot snapshot) {
-    List<DocumentViewChange> res = new ArrayList<>();
-    for (Document doc : snapshot.getDocuments()) {
-      res.add(DocumentViewChange.create(Type.ADDED, doc));
-    }
-    return res;
   }
 }

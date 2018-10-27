@@ -15,12 +15,15 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import java.util.ArrayList;
 import java.util.List;
 
 /** A view snapshot is an immutable capture of the results of a query and the changes to them. */
 public class ViewSnapshot {
+
   /** The possibly states a document can be in w.r.t syncing from local storage to the backend. */
   public enum SyncState {
     NONE,
@@ -35,6 +38,7 @@ public class ViewSnapshot {
   private final boolean isFromCache;
   private final ImmutableSortedSet<DocumentKey> mutatedKeys;
   private final boolean didSyncStateChange;
+  private boolean excludesMetadataChanges;
 
   public ViewSnapshot(
       Query query,
@@ -43,7 +47,8 @@ public class ViewSnapshot {
       List<DocumentViewChange> changes,
       boolean isFromCache,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
-      boolean didSyncStateChange) {
+      boolean didSyncStateChange,
+      boolean excludesMetadataChanges) {
     this.query = query;
     this.documents = documents;
     this.oldDocuments = oldDocuments;
@@ -51,6 +56,29 @@ public class ViewSnapshot {
     this.isFromCache = isFromCache;
     this.mutatedKeys = mutatedKeys;
     this.didSyncStateChange = didSyncStateChange;
+    this.excludesMetadataChanges = excludesMetadataChanges;
+  }
+
+  /** Returns a view snapshot as if all documents in the snapshot were added. */
+  public static ViewSnapshot fromInitialDocuments(
+      Query query,
+      DocumentSet documents,
+      ImmutableSortedSet<DocumentKey> mutatedKeys,
+      boolean fromCache,
+      boolean excludesMetadataChanges) {
+    List<DocumentViewChange> viewChanges = new ArrayList<>();
+    for (Document doc : documents) {
+      viewChanges.add(DocumentViewChange.create(DocumentViewChange.Type.ADDED, doc));
+    }
+    return new ViewSnapshot(
+        query,
+        documents,
+        DocumentSet.emptySet(query.comparator()),
+        viewChanges,
+        fromCache,
+        mutatedKeys,
+        /* didSyncStateChange= */ true,
+        excludesMetadataChanges);
   }
 
   public Query getQuery() {
@@ -85,6 +113,10 @@ public class ViewSnapshot {
     return didSyncStateChange;
   }
 
+  public boolean excludesMetadataChanges() {
+    return excludesMetadataChanges;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -100,6 +132,9 @@ public class ViewSnapshot {
       return false;
     }
     if (didSyncStateChange != that.didSyncStateChange) {
+      return false;
+    }
+    if (excludesMetadataChanges != that.excludesMetadataChanges) {
       return false;
     }
     if (!query.equals(that.query)) {
@@ -126,6 +161,7 @@ public class ViewSnapshot {
     result = 31 * result + mutatedKeys.hashCode();
     result = 31 * result + (isFromCache ? 1 : 0);
     result = 31 * result + (didSyncStateChange ? 1 : 0);
+    result = 31 * result + (excludesMetadataChanges ? 1 : 0);
     return result;
   }
 
@@ -145,6 +181,8 @@ public class ViewSnapshot {
         + mutatedKeys.size()
         + ", didSyncStateChange="
         + didSyncStateChange
+        + ", excludesMetadataChanges="
+        + excludesMetadataChanges
         + ")";
   }
 }

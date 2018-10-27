@@ -1,0 +1,5 @@
+<resources>
+  <!-- String resources go here -->
+  <string name="modal_content_descriptor">modal</string>
+  <string name="modal_inner_content_descriptor">modal inner</string>
+</resources>

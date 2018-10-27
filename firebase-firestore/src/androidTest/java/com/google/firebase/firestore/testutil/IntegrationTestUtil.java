@@ -124,6 +124,7 @@ public class IntegrationTestUtil {
       ListenerRegistration listenerRegistration =
           docRef.addSnapshotListener(
               (snapshot, error) -> {
+                assertNull(error);
                 if ("done".equals(snapshot.get("value"))) {
                   watchUpdateReceived.setResult(null);
                 } else {
