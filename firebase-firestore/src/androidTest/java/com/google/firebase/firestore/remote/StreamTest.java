@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
@@ -105,7 +106,10 @@ public class StreamTest {
       AsyncQueue testQueue, StreamStatusCallback callback) {
     Datastore datastore =
         new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(), testQueue, new EmptyCredentialsProvider());
+            IntegrationTestUtil.testEnvDatabaseInfo(),
+            testQueue,
+            new EmptyCredentialsProvider(),
+            InstrumentationRegistry.getContext());
     final WriteStream writeStream = datastore.createWriteStream(callback);
     waitForWriteStreamOpen(testQueue, writeStream, callback);
     return writeStream;
@@ -125,7 +129,10 @@ public class StreamTest {
     AsyncQueue testQueue = new AsyncQueue();
     Datastore datastore =
         new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(), testQueue, new EmptyCredentialsProvider());
+            IntegrationTestUtil.testEnvDatabaseInfo(),
+            testQueue,
+            new EmptyCredentialsProvider(),
+            InstrumentationRegistry.getContext());
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
     final WatchStream watchStream = datastore.createWatchStream(streamCallback);
 
@@ -142,7 +149,10 @@ public class StreamTest {
     AsyncQueue testQueue = new AsyncQueue();
     Datastore datastore =
         new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(), testQueue, new EmptyCredentialsProvider());
+            IntegrationTestUtil.testEnvDatabaseInfo(),
+            testQueue,
+            new EmptyCredentialsProvider(),
+            InstrumentationRegistry.getContext());
     final WriteStream[] writeStreamWrapper = new WriteStream[1];
     StreamStatusCallback streamCallback =
         new StreamStatusCallback() {
@@ -185,7 +195,10 @@ public class StreamTest {
     AsyncQueue testQueue = new AsyncQueue();
     Datastore datastore =
         new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(), testQueue, new EmptyCredentialsProvider());
+            IntegrationTestUtil.testEnvDatabaseInfo(),
+            testQueue,
+            new EmptyCredentialsProvider(),
+            InstrumentationRegistry.getContext());
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
     final WriteStream writeStream = datastore.createWriteStream(streamCallback);
 
@@ -261,7 +274,10 @@ public class StreamTest {
     MockCredentialsProvider mockCredentialsProvider = new MockCredentialsProvider();
     Datastore datastore =
         new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(), testQueue, mockCredentialsProvider);
+            IntegrationTestUtil.testEnvDatabaseInfo(),
+            testQueue,
+            mockCredentialsProvider,
+            InstrumentationRegistry.getContext());
     StreamStatusCallback callback = new StreamStatusCallback();
     WriteStream writeStream = datastore.createWriteStream(callback);
     waitForWriteStreamOpen(testQueue, writeStream, callback);

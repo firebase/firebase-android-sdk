@@ -16,6 +16,7 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.content.Context;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.QueryData;
@@ -214,12 +215,13 @@ public class MockDatastore extends Datastore {
   private int writeStreamRequestCount;
   private int watchStreamRequestCount;
 
-  public MockDatastore(AsyncQueue workerQueue) {
+  public MockDatastore(AsyncQueue workerQueue, Context context) {
     super(
         new DatabaseInfo(
             DatabaseId.forDatabase("project", "database"), "persistenceKey", "host", false),
         workerQueue,
-        new EmptyCredentialsProvider());
+        new EmptyCredentialsProvider(),
+        context);
     this.serializer = new RemoteSerializer(getDatabaseInfo().getDatabaseId());
   }
 
