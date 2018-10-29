@@ -20,10 +20,11 @@ import static android.support.test.espresso.assertion.ViewAssertions.*;
 import static android.support.test.espresso.matcher.ViewMatchers.*;
 
 import android.support.test.espresso.Espresso;
+import android.support.test.espresso.IdlingRegistry;
 import android.support.test.espresso.IdlingResource;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.test.suitebuilder.annotation.LargeTest;
+import android.support.test.filters.LargeTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -43,13 +44,13 @@ public class TestActivityTest {
   public void before() {
     mIdlingResource = mActivityTestRule.getActivity().getIdlingResource();
     // To prove that the test fails, omit this call:
-    Espresso.registerIdlingResources(mIdlingResource);
+    IdlingRegistry.getInstance().register(mIdlingResource);
   }
 
   @After
   public void unregisterIdlingResource() {
     if (mIdlingResource != null) {
-      Espresso.unregisterIdlingResources(mIdlingResource);
+      IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
   }
 
