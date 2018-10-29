@@ -15,14 +15,6 @@
 import com.google.firebase.gradle.plugins.measurement.GenerateMeasurementsTask
 import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
 
-// Linting needs to be disabled as none of these apps are real or intended to conform to
-// linting standards.
-tasks.whenTaskAdded { task ->
-    if (task.name.equals("lint")) {
-        //task.enabled = false
-    }
-}
-
 apply plugin: "com.android.application"
 apply from: "default.gradle"
 android {
