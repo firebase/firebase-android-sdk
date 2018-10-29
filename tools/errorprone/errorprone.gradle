@@ -16,10 +16,10 @@ apply plugin: 'java-library'
 
 
 dependencies {
-    implementation 'com.google.errorprone:error_prone_check_api:2.3.1'
+    implementation 'com.google.errorprone:error_prone_check_api:2.3.2'
     implementation 'com.google.auto.service:auto-service:1.0-rc4'
 
-    testImplementation 'junit:junit:4.11'
+    testImplementation 'junit:junit:4.12'
     testImplementation 'com.google.errorprone:error_prone_test_helpers:2.3.1'
     testCompile 'com.google.errorprone:javac:9+181-r4173-1'
 }
