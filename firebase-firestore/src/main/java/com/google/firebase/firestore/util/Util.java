@@ -86,17 +86,17 @@ public class Util {
 
   /** Utility function to compare ints. See {@link #compareLongs} for rationale. */
   public static int compareInts(int i1, int i2) {
-    return NumberComparisonHelper.compareInts(i1, i2);
+    return NumberComparisonHelper.compareLongs(i1, i2);
   }
 
   /** Utility function to compare doubles (using Firestore semantics for NaN). */
   public static int compareDoubles(double i1, double i2) {
-    return NumberComparisonHelper.compareDoubles(i1, i2);
+    return NumberComparisonHelper.firestoreCompareDoubles(i1, i2);
   }
 
   /** Compares a double and a long (using Firestore semantics for NaN). */
   public static int compareMixed(double doubleValue, long longValue) {
-    return NumberComparisonHelper.compareDoubleWithLong(doubleValue, longValue);
+    return NumberComparisonHelper.firestoreCompareDoubleWithLong(doubleValue, longValue);
   }
 
   @SuppressWarnings("unchecked")
