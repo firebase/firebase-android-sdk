@@ -22,14 +22,12 @@ android {
                 srcDir "${projectDir}/third_party/okhttp/main/java"
             }
         }
-//        test { java { srcDir "${projectDir}/third_party/okhttp/test/java" } }
     }
 }
 
 
 dependencies {
     implementation group: 'io.grpc', name: 'grpc-core', version: '1.16.1'
-//    implementation group: 'com.squareup.okhttp', name: 'okhttp', version: '2.7.5'
     implementation group: 'com.squareup.okio', name: 'okio', version: '1.14.0'
 
 //    signature "org.codehaus.mojo.signature:java17:1.0@signature"

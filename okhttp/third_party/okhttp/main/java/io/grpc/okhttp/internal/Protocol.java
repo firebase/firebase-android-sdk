@@ -19,6 +19,8 @@
 
 package io.grpc.okhttp.internal;
 
+import io.grpc.okhttp.CipherSuite;
+
 import java.io.IOException;
 
 /**

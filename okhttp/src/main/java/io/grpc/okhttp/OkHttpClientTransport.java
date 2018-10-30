@@ -16,9 +16,6 @@
 
 package io.grpc.okhttp;
 
-import static com.google.common.base.Preconditions.checkState;
-import static io.grpc.internal.GrpcUtil.TIMER_SERVICE;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
@@ -26,75 +23,35 @@ import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import com.squareup.okhttp.Credentials;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.internal.http.StatusLine;
-import io.grpc.Attributes;
-import io.grpc.CallOptions;
-import io.grpc.Grpc;
-import io.grpc.InternalChannelz;
+import io.grpc.*;
 import io.grpc.InternalChannelz.SocketStats;
-import io.grpc.InternalLogId;
-import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.MethodType;
-import io.grpc.SecurityLevel;
-import io.grpc.Status;
 import io.grpc.Status.Code;
-import io.grpc.StatusException;
 import io.grpc.internal.ClientStreamListener.RpcProgress;
-import io.grpc.internal.ConnectionClientTransport;
-import io.grpc.internal.GrpcAttributes;
-import io.grpc.internal.GrpcUtil;
-import io.grpc.internal.Http2Ping;
-import io.grpc.internal.KeepAliveManager;
+import io.grpc.internal.*;
 import io.grpc.internal.KeepAliveManager.ClientKeepAlivePinger;
-import io.grpc.internal.ProxyParameters;
-import io.grpc.internal.SerializingExecutor;
-import io.grpc.internal.SharedResourceHolder;
-import io.grpc.internal.StatsTraceContext;
-import io.grpc.internal.TransportTracer;
 import io.grpc.okhttp.AsyncFrameWriter.TransportExceptionHandler;
-import io.grpc.okhttp.internal.ConnectionSpec;
-import io.grpc.okhttp.internal.framed.ErrorCode;
-import io.grpc.okhttp.internal.framed.FrameReader;
-import io.grpc.okhttp.internal.framed.FrameWriter;
-import io.grpc.okhttp.internal.framed.Header;
-import io.grpc.okhttp.internal.framed.HeadersMode;
-import io.grpc.okhttp.internal.framed.Http2;
-import io.grpc.okhttp.internal.framed.Settings;
-import io.grpc.okhttp.internal.framed.Variant;
-import java.io.EOFException;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.URI;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import io.grpc.okhttp.internal.framed.*;
+import okio.*;
+
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.BufferedSource;
-import okio.ByteString;
-import okio.Okio;
-import okio.Source;
-import okio.Timeout;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static com.google.common.base.Preconditions.checkState;
+import static io.grpc.internal.GrpcUtil.TIMER_SERVICE;
 
 /**
  * A okhttp-based {@link ConnectionClientTransport} implementation.
@@ -978,8 +935,8 @@ class OkHttpClientTransport implements ConnectionClientTransport, TransportExcep
       } catch (Throwable t) {
         // TODO(madongfly): Send the exception message to the server.
         startGoAway(
-            0, 
-            ErrorCode.PROTOCOL_ERROR, 
+            0,
+            ErrorCode.PROTOCOL_ERROR,
             Status.UNAVAILABLE.withDescription("error in frame handler").withCause(t));
       } finally {
         try {
@@ -1204,6 +1161,22 @@ class OkHttpClientTransport implements ConnectionClientTransport, TransportExcep
     public void alternateService(int streamId, String origin, ByteString protocol, String host,
         int port, long maxAge) {
       // TODO(madongfly): Deal with alternateService propagation
+    }
+  }
+
+  public static final class Credentials {
+    private Credentials() {}
+
+    /** Returns an auth credential for the Basic scheme. */
+    public static String basic(String userName, String password) {
+      try {
+        String usernameAndPassword = userName + ":" + password;
+        byte[] bytes = usernameAndPassword.getBytes("ISO-8859-1");
+        String encoded = ByteString.of(bytes).base64();
+        return "Basic " + encoded;
+      } catch (UnsupportedEncodingException e) {
+        throw new AssertionError();
+      }
     }
   }
 }

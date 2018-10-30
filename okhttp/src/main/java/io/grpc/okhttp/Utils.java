@@ -21,8 +21,6 @@ import io.grpc.InternalChannelz;
 import io.grpc.InternalMetadata;
 import io.grpc.Metadata;
 import io.grpc.internal.TransportFrameUtil;
-import io.grpc.okhttp.internal.CipherSuite;
-import io.grpc.okhttp.internal.ConnectionSpec;
 import io.grpc.okhttp.internal.framed.Header;
 import java.net.Socket;
 import java.net.SocketException;
@@ -57,23 +55,16 @@ class Utils {
     return TransportFrameUtil.toRawSerializedHeaders(headerValues);
   }
 
-  /**
-   * Converts an instance of {@link com.squareup.okhttp.ConnectionSpec} for a secure connection into
-   * that of {@link ConnectionSpec} in the current package.
-   *
-   * @throws IllegalArgumentException
-   *         If {@code spec} is not with TLS
-   */
-  static ConnectionSpec convertSpec(com.squareup.okhttp.ConnectionSpec spec) {
+  static ConnectionSpec convertSpec(ConnectionSpec spec) {
     Preconditions.checkArgument(spec.isTls(), "plaintext ConnectionSpec is not accepted");
 
-    List<com.squareup.okhttp.TlsVersion> tlsVersionList = spec.tlsVersions();
+    List<TlsVersion> tlsVersionList = spec.tlsVersions();
     String[] tlsVersions = new String[tlsVersionList.size()];
     for (int i = 0; i < tlsVersions.length; i++) {
       tlsVersions[i] = tlsVersionList.get(i).javaName();
     }
 
-    List<com.squareup.okhttp.CipherSuite> cipherSuiteList = spec.cipherSuites();
+    List<CipherSuite> cipherSuiteList = spec.cipherSuites();
     CipherSuite[] cipherSuites = new CipherSuite[cipherSuiteList.size()];
     for (int i = 0; i < cipherSuites.length; i++) {
       cipherSuites[i] = CipherSuite.valueOf(cipherSuiteList.get(i).name());
