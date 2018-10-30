@@ -38,6 +38,10 @@ class ApkSizeJsonBuilder {
     }
 
     def toJsonString() {
+        if (sdkSizes.isEmpty()) {
+            throw new IllegalStateException("No sizes were added")
+        }
+
         def sizeArray = { sdkId, size -> "[$pullRequestNumber, $sdkId, $size]" }
         def sizeArrayJoiner = new StringJoiner(",")
 
@@ -51,7 +55,7 @@ class ApkSizeJsonBuilder {
                     {
                         table_name: "$PULL_REQUEST_TABLE",
                         column_names: ["$PULL_REQUEST_COLUMN"],
-                        replace_measurements: [$pullRequestNumber],
+                        replace_measurements: [[$pullRequestNumber]],
                     },
                     {
                         table_name: "$APK_SIZE_TABLE",

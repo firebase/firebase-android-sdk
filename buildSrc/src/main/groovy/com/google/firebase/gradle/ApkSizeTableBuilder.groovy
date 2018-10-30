@@ -25,6 +25,10 @@ class ApkSizeTableBuilder {
     }
 
     def toTableString() {
+        if (sdkSizes.isEmpty()) {
+          throw new IllegalStateException("No sizes added")
+        }
+
         def table = "|------------------        APK Sizes        ------------------|\n"
         table +=    "|--    project    --|--  build type   --|--  size in bytes  --|\n"
 
