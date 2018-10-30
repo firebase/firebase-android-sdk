@@ -81,10 +81,12 @@ configure(subprojects) {
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
         exclude '**/package-info.java'
+        exclude '**/okhttp/**'
     }
 
     tasks.withType(JavaCompile) {
-        options.errorprone.excludedPaths = '.*/build/generated/.*'
+        options.errorprone.excludedPaths =  '.*/build/generated/.*'
+        options.errorprone.excludedPaths = '.*/okhttp/.*'
     }
 
     // Adds firebase custom errorprone checks to the annotation processor classpath.
