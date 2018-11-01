@@ -121,6 +121,25 @@ public final class TransformMutation extends Mutation {
         getKey(), doc.getVersion(), newData, Document.DocumentState.LOCAL_MUTATIONS);
   }
 
+  @Override
+  public FieldMask getFieldMask() {
+    List<FieldPath> fieldMask = new ArrayList<>();
+    for (FieldTransform transform : fieldTransforms) {
+      fieldMask.add(transform.getFieldPath());
+    }
+    return FieldMask.fromCollection(fieldMask);
+  }
+
+  @Override
+  public boolean isIdempotent() {
+    for (FieldTransform transform : fieldTransforms) {
+      if (!transform.isIdempotent()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /**
    * Asserts that the given MaybeDocument is actually a Document and verifies that it matches the
    * key for this mutation. Since we only support transformations with precondition exists this

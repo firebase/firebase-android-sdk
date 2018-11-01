@@ -40,12 +40,14 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
+import com.google.firebase.firestore.model.value.IntegerValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.model.value.StringValue;
 import com.google.firebase.firestore.model.value.TimestampValue;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -164,6 +166,69 @@ public class MutationTest {
             expectedData,
             Document.DocumentState.LOCAL_MUTATIONS);
     assertEquals(expectedDoc, transformedDoc);
+  }
+
+  @Test
+  public void testAppliesNumericAddTransformToDocument() {
+    Map<String, Object> baseDoc =
+        map("longPlusLong", 1, "longPlusDouble", 2, "doublePlusLong", 3.3, "doublePlusDouble", 4.0);
+    Map<String, Object> transform =
+        map(
+            "longPlusLong",
+            FieldValue.numericAdd(1),
+            "longPlusDouble",
+            FieldValue.numericAdd(2.2),
+            "doublePlusLong",
+            FieldValue.numericAdd(3),
+            "doublePlusDouble",
+            FieldValue.numericAdd(4.4));
+    Map<String, Object> expected =
+        map(
+            "longPlusLong",
+            2L,
+            "longPlusDouble",
+            4.2D,
+            "doublePlusLong",
+            6.3D,
+            "doublePlusDouble",
+            8.4D);
+
+    verifyTransform(baseDoc, transform, expected);
+  }
+
+  @Test
+  public void testAppliesNumericAddTransformToUnexpectedType() {
+    Map<String, Object> baseDoc = map("string", "zero");
+    Map<String, Object> transform = map("string", FieldValue.numericAdd(1));
+    Map<String, Object> expected = map("string", 1);
+    verifyTransform(baseDoc, transform, expected);
+  }
+
+  @Test
+  public void testAppliesNumericAddTransformToMissingField() {
+    Map<String, Object> baseDoc = map();
+    Map<String, Object> transform = map("missing", FieldValue.numericAdd(1));
+    Map<String, Object> expected = map("missing", 1);
+    verifyTransform(baseDoc, transform, expected);
+  }
+
+  @Test
+  public void testAppliesNumericAddTransformsConsecutively() {
+    Map<String, Object> baseDoc = map("number", 1);
+    Map<String, Object> transform1 = map("number", FieldValue.numericAdd(2));
+    Map<String, Object> transform2 = map("number", FieldValue.numericAdd(3));
+    Map<String, Object> transform3 = map("number", FieldValue.numericAdd(4));
+    Map<String, Object> expected = map("number", 10);
+    verifyTransform(baseDoc, Arrays.asList(transform1, transform2, transform3), expected);
+  }
+
+  @Test
+  public void testAppliesNumericAddWithoutOverflow() {
+    Map<String, Object> baseDoc = map("max", Long.MAX_VALUE - 1, "min", Long.MIN_VALUE + 1);
+    Map<String, Object> transform =
+        map("max", FieldValue.numericAdd(2), "min", FieldValue.numericAdd(-2));
+    Map<String, Object> expected = map("max", Long.MAX_VALUE, "min", Long.MIN_VALUE);
+    verifyTransform(baseDoc, transform, expected);
   }
 
   // NOTE: This is more a test of UserDataConverter code than Mutation code but we don't have unit
@@ -324,15 +389,42 @@ public class MutationTest {
 
   private void verifyTransform(
       Map<String, Object> baseData,
-      Map<String, Object> transformData,
+      List<Map<String, Object>> transforms,
       Map<String, Object> expectedData) {
-    Document baseDoc = doc("collection/key", 0, baseData);
-    TransformMutation transform = transformMutation("collection/key", transformData);
-    MaybeDocument transformedDoc = transform.applyToLocalView(baseDoc, baseDoc, Timestamp.now());
+    MaybeDocument currentDoc = doc("collection/key", 0, baseData);
+
+    for (Map<String, Object> transformData : transforms) {
+      TransformMutation transform = transformMutation("collection/key", transformData);
+      currentDoc = transform.applyToLocalView(currentDoc, currentDoc, Timestamp.now());
+    }
 
     Document expectedDoc =
         doc("collection/key", 0, expectedData, Document.DocumentState.LOCAL_MUTATIONS);
-    assertEquals(expectedDoc, transformedDoc);
+    assertEquals(expectedDoc, currentDoc);
+  }
+
+  private void verifyTransform(
+      Map<String, Object> baseData,
+      Map<String, Object> transformData,
+      Map<String, Object> expectedData) {
+    verifyTransform(baseData, Collections.singletonList(transformData), expectedData);
+  }
+
+  @Test
+  public void testAppliesServerAckedNumericAddTransformToDocuments() {
+    Map<String, Object> data = map("sum", 1);
+    Document baseDoc = doc("collection/key", 0, data);
+
+    Mutation transform = transformMutation("collection/key", map("sum", FieldValue.numericAdd(2)));
+    MutationResult mutationResult =
+        new MutationResult(version(1), Collections.singletonList(IntegerValue.valueOf(3L)));
+
+    MaybeDocument transformedDoc = transform.applyToRemoteDocument(baseDoc, mutationResult);
+
+    Map<String, Object> expectedData = map("sum", 3L);
+    assertEquals(
+        doc("collection/key", 1, expectedData, Document.DocumentState.COMMITTED_MUTATIONS),
+        transformedDoc);
   }
 
   @Test

@@ -82,4 +82,15 @@ public final class DeleteMutation extends Mutation {
 
     return new NoDocument(getKey(), SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
   }
+
+  @Nullable
+  @Override
+  public FieldMask getFieldMask() {
+    return null;
+  }
+
+  @Override
+  public boolean isIdempotent() {
+    return true;
+  }
 }

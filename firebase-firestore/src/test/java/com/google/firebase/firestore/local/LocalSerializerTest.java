@@ -44,6 +44,7 @@ import com.google.firestore.v1beta1.Precondition;
 import com.google.firestore.v1beta1.Value;
 import com.google.firestore.v1beta1.Write;
 import com.google.protobuf.ByteString;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -66,6 +67,12 @@ public final class LocalSerializerTest {
 
   @Test
   public void testEncodesMutationBatch() {
+    Mutation baseWrite =
+        new PatchMutation(
+            key("foo/bar"),
+            TestUtil.wrapObject(map("a", "b")),
+            FieldMask.fromCollection(asList(field("a"))),
+            com.google.firebase.firestore.model.mutation.Precondition.NONE);
     Mutation set = setMutation("foo/bar", map("a", "b", "num", 1));
     Mutation patch =
         new PatchMutation(
@@ -75,7 +82,18 @@ public final class LocalSerializerTest {
             com.google.firebase.firestore.model.mutation.Precondition.exists(true));
     Mutation del = deleteMutation("baz/quux");
     Timestamp writeTime = Timestamp.now();
-    MutationBatch model = new MutationBatch(42, writeTime, asList(set, patch, del));
+    MutationBatch model =
+        new MutationBatch(
+            42, writeTime, Collections.singletonList(baseWrite), asList(set, patch, del));
+
+    Write baseWriteProto =
+        Write.newBuilder()
+            .setUpdate(
+                com.google.firestore.v1beta1.Document.newBuilder()
+                    .setName("projects/p/databases/d/documents/foo/bar")
+                    .putFields("a", Value.newBuilder().setStringValue("b").build()))
+            .setUpdateMask(DocumentMask.newBuilder().addFieldPaths("a"))
+            .build();
 
     Write setProto =
         Write.newBuilder()
@@ -109,6 +127,7 @@ public final class LocalSerializerTest {
     com.google.firebase.firestore.proto.WriteBatch batchProto =
         com.google.firebase.firestore.proto.WriteBatch.newBuilder()
             .setBatchId(42)
+            .addBaseWrites(baseWriteProto)
             .addAllWrites(asList(setProto, patchProto, delProto))
             .setLocalWriteTime(writeTimeProto)
             .build();
@@ -118,6 +137,7 @@ public final class LocalSerializerTest {
     assertEquals(model.getBatchId(), decoded.getBatchId());
     assertEquals(model.getLocalWriteTime(), decoded.getLocalWriteTime());
     assertEquals(model.getMutations(), decoded.getMutations());
+    assertEquals(model.getBaseMutations(), decoded.getBaseMutations());
     assertEquals(model.getKeys(), decoded.getKeys());
   }
 

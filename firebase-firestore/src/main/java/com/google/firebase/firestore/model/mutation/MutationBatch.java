@@ -17,6 +17,7 @@ package com.google.firebase.firestore.model.mutation;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import java.util.Collections;
@@ -40,13 +41,33 @@ public final class MutationBatch {
    */
   public static final int UNKNOWN = -1;
 
+  /** The unique ID of this mutation batch. */
   private final int batchId;
+
+  /** The original write time of this mutation. */
   private final Timestamp localWriteTime;
+
+  /**
+   * Mutations that are used to populate the base values when this mutation is applied locally. This
+   * can be used to locally overwrite values that are persisted in the remote document cache. Base
+   * mutations are never sent to the backend.
+   */
+  private final List<Mutation> baseMutations;
+
+  /**
+   * The user-provided mutations in this mutation batch. User-provided mutations are applied both
+   * locally and remotely on the backend.
+   */
   private final List<Mutation> mutations;
 
-  public MutationBatch(int batchId, Timestamp localWriteTime, List<Mutation> mutations) {
+  public MutationBatch(
+      int batchId,
+      Timestamp localWriteTime,
+      List<Mutation> baseMutations,
+      List<Mutation> mutations) {
     this.batchId = batchId;
     this.localWriteTime = localWriteTime;
+    this.baseMutations = baseMutations;
     this.mutations = mutations;
   }
 
@@ -98,8 +119,18 @@ public final class MutationBatch {
           maybeDoc.getKey());
     }
 
+    // First, apply the base state. This allows us to apply certain non-idempotent transform against
+    // a consistent set of values.
+    for (int i = 0; i < baseMutations.size(); i++) {
+      Mutation mutation = baseMutations.get(i);
+      if (mutation.getKey().equals(documentKey)) {
+        maybeDoc = mutation.applyToLocalView(maybeDoc, maybeDoc, localWriteTime);
+      }
+    }
+
     MaybeDocument baseDoc = maybeDoc;
 
+    // Second, apply all user-provided mutations.
     for (int i = 0; i < mutations.size(); i++) {
       Mutation mutation = mutations.get(i);
       if (mutation.getKey().equals(documentKey)) {
@@ -107,6 +138,19 @@ public final class MutationBatch {
       }
     }
     return maybeDoc;
+  }
+
+  /** Computes the local view for all provided documents given the mutations in this batch. */
+  public ImmutableSortedMap<DocumentKey, MaybeDocument> applyToLocalView(
+      ImmutableSortedMap<DocumentKey, MaybeDocument> maybeDocumentMap) {
+    ImmutableSortedMap<DocumentKey, MaybeDocument> changedDocuments = maybeDocumentMap;
+    for (DocumentKey key : getKeys()) {
+      MaybeDocument maybeDocument = applyToLocalView(key, changedDocuments.get(key));
+      if (maybeDocument != null) {
+        changedDocuments = changedDocuments.insert(maybeDocument.getKey(), maybeDocument);
+      }
+    }
+    return changedDocuments;
   }
 
   @Override
@@ -121,6 +165,7 @@ public final class MutationBatch {
     MutationBatch that = (MutationBatch) o;
     return batchId == that.batchId
         && localWriteTime.equals(that.localWriteTime)
+        && baseMutations.equals(that.baseMutations)
         && mutations.equals(that.mutations);
   }
 
@@ -128,6 +173,7 @@ public final class MutationBatch {
   public int hashCode() {
     int result = batchId;
     result = 31 * result + localWriteTime.hashCode();
+    result = 31 * result + baseMutations.hashCode();
     result = 31 * result + mutations.hashCode();
     return result;
   }
@@ -138,6 +184,8 @@ public final class MutationBatch {
         + batchId
         + ", localWriteTime="
         + localWriteTime
+        + ", baseMutations="
+        + baseMutations
         + ", mutations="
         + mutations
         + ')';
@@ -177,10 +225,19 @@ public final class MutationBatch {
 
   /** Converts this batch to a tombstone. */
   public MutationBatch toTombstone() {
-    return new MutationBatch(batchId, localWriteTime, Collections.emptyList());
+    return new MutationBatch(batchId, localWriteTime, baseMutations, Collections.emptyList());
   }
 
+  /** @return The user-provided mutations in this mutation batch. */
   public List<Mutation> getMutations() {
     return mutations;
+  }
+
+  /**
+   * @return The mutations that are used to populate the base values when this mutation batch is
+   *     applied locally.
+   */
+  public List<Mutation> getBaseMutations() {
+    return baseMutations;
   }
 }

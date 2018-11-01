@@ -28,13 +28,18 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
+import com.google.firebase.firestore.model.mutation.PatchMutation;
+import com.google.firebase.firestore.model.mutation.Precondition;
+import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -182,16 +187,46 @@ public final class LocalStore {
   /** Accepts locally generated Mutations and commits them to storage. */
   public LocalWriteResult writeLocally(List<Mutation> mutations) {
     Timestamp localWriteTime = Timestamp.now();
-    // TODO: Call queryEngine.handleDocumentChange() appropriately.
-    MutationBatch batch =
-        persistence.runTransaction(
-            "Locally write mutations",
-            () -> mutationQueue.addMutationBatch(localWriteTime, mutations));
 
-    Set<DocumentKey> keys = batch.getKeys();
-    ImmutableSortedMap<DocumentKey, MaybeDocument> changedDocuments =
+    // TODO: Call queryEngine.handleDocumentChange() appropriately.
+
+    Set<DocumentKey> keys = new HashSet<>();
+    for (Mutation mutation : mutations) {
+      keys.add(mutation.getKey());
+    }
+
+    // Load and apply all existing mutations. This lets us compute the current base state for all
+    // non-idempotent transforms before applying any additional user-provided writes.
+    ImmutableSortedMap<DocumentKey, MaybeDocument> existingDocuments =
         localDocuments.getDocuments(keys);
-    return new LocalWriteResult(batch.getBatchId(), changedDocuments);
+
+    return persistence.runTransaction(
+        "Locally write mutations",
+        () -> {
+
+          // For non-idempotent mutations (such as `FieldValue.numericAdd()`), we record the base
+          // state in a separate patch mutation. This is later used to guarantee consistent values
+          // and prevents flicker even if the backend sends us an update that already includes our
+          // transform.
+          List<Mutation> baseMutations = new ArrayList<>();
+          for (Mutation mutation : mutations) {
+            MaybeDocument maybeDocument = existingDocuments.get(mutation.getKey());
+            if (maybeDocument instanceof Document && !mutation.isIdempotent()) {
+              FieldMask fieldMask = mutation.getFieldMask();
+              if (fieldMask != null) {
+                ObjectValue baseValues = fieldMask.applyTo(((Document) maybeDocument).getData());
+                baseMutations.add(
+                    new PatchMutation(mutation.getKey(), baseValues, fieldMask, Precondition.NONE));
+              }
+            }
+          }
+
+          MutationBatch batch =
+              mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
+          ImmutableSortedMap<DocumentKey, MaybeDocument> changedDocuments =
+              batch.applyToLocalView(existingDocuments);
+          return new LocalWriteResult(batch.getBatchId(), changedDocuments);
+        });
   }
 
   /**

@@ -148,4 +148,15 @@ public abstract class Mutation {
       return SnapshotVersion.NONE;
     }
   }
+
+  /**
+   * If applicable, returns the field mask for this mutation. Fields that are not included in this
+   * field mask are not modified when this mutation is applied. Mutations that replace all document
+   * values return 'null'.
+   */
+  @Nullable
+  public abstract FieldMask getFieldMask();
+
+  /** Returns whether all operations in the mutation are idempotent. */
+  public abstract boolean isIdempotent();
 }
