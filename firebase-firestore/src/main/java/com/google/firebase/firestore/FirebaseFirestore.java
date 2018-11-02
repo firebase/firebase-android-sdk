@@ -52,6 +52,8 @@ import java.util.concurrent.Executor;
 public class FirebaseFirestore {
   private static final String TAG = "FirebaseFirestore";
   private final Context context;
+  // This is also used as private lock object for this instance. There is nothing inherent about
+  // databaseId itself that needs locking; it just saves us creating a separate lock object.
   private final DatabaseId databaseId;
   private final String persistenceKey;
   private final CredentialsProvider credentialsProvider;
@@ -60,6 +62,7 @@ public class FirebaseFirestore {
 
   private FirebaseFirestoreSettings settings;
   private FirestoreClient client;
+  private boolean isConfigured; // Instead of making client volatile, we add another boolean here.
   private final UserDataConverter dataConverter;
 
   @NonNull
@@ -146,6 +149,7 @@ public class FirebaseFirestore {
     this.firebaseApp = firebaseApp;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
+    this.isConfigured = false;
   }
 
   /** Returns the settings used by this FirebaseFirestore object. */
@@ -161,20 +165,34 @@ public class FirebaseFirestore {
    */
   @PublicApi
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
-    checkNotNull(settings, "Provided settings must not be null.");
-    // As a special exception, don't throw if the same settings are passed repeatedly. This
-    // should make it simpler to get a Firestore instance in an activity.
-    if (client != null && !this.settings.equals(settings)) {
-      throw new IllegalStateException(
-          "FirebaseFirestore has already been started and its settings can no longer be changed. "
-              + "You can only call setFirestoreSettings() before calling any other methods on a "
-              + "FirebaseFirestore object.");
+    synchronized (databaseId) {
+      checkNotNull(settings, "Provided settings must not be null.");
+      // As a special exception, don't throw if the same settings are passed repeatedly. This
+      // should make it simpler to get a Firestore instance in an activity.
+      if (client != null && !this.settings.equals(settings)) {
+        throw new IllegalStateException(
+            "FirebaseFirestore has already been started and its settings can no longer be changed. "
+                + "You can only call setFirestoreSettings() before calling any other methods on a "
+                + "FirebaseFirestore object.");
+      }
+      this.settings = settings;
     }
-    this.settings = settings;
+  }
+
+  /**
+   * If this returns true, then Firestore is configured. This is not synchronized. So it may return
+   * false when either Firestore is not configured or is being configured.
+   */
+  private boolean isConfigured() {
+    return isConfigured;
   }
 
   private void ensureClientConfigured() {
-    if (client == null) {
+    synchronized (databaseId) {
+      if (isConfigured()) {
+        return;
+      }
+
       if (!settings.areTimestampsInSnapshotsEnabled()) {
         Logger.warn(
             "Firestore",
@@ -215,6 +233,8 @@ public class FirebaseFirestore {
               settings.isPersistenceEnabled(),
               credentialsProvider,
               asyncQueue);
+
+      isConfigured = true;
     }
   }
 
@@ -240,7 +260,7 @@ public class FirebaseFirestore {
   @PublicApi
   public CollectionReference collection(@NonNull String collectionPath) {
     checkNotNull(collectionPath, "Provided collection path must not be null.");
-    ensureClientConfigured();
+    if (!isConfigured()) ensureClientConfigured();
     return new CollectionReference(ResourcePath.fromString(collectionPath), this);
   }
 
@@ -255,7 +275,7 @@ public class FirebaseFirestore {
   @PublicApi
   public DocumentReference document(@NonNull String documentPath) {
     checkNotNull(documentPath, "Provided document path must not be null.");
-    ensureClientConfigured();
+    if (!isConfigured()) ensureClientConfigured();
     return DocumentReference.forPath(ResourcePath.fromString(documentPath), this);
   }
 
@@ -270,7 +290,7 @@ public class FirebaseFirestore {
    */
   private <TResult> Task<TResult> runTransaction(
       Transaction.Function<TResult> updateFunction, Executor executor) {
-    ensureClientConfigured();
+    if (!isConfigured()) ensureClientConfigured();
 
     // We wrap the function they provide in order to
     // 1. Use internal implementation classes for Transaction,
@@ -312,7 +332,7 @@ public class FirebaseFirestore {
   @NonNull
   @PublicApi
   public WriteBatch batch() {
-    ensureClientConfigured();
+    if (!isConfigured()) ensureClientConfigured();
 
     return new WriteBatch(this);
   }
@@ -338,7 +358,7 @@ public class FirebaseFirestore {
    */
   @PublicApi
   public Task<Void> enableNetwork() {
-    ensureClientConfigured();
+    if (!isConfigured()) ensureClientConfigured();
     return client.enableNetwork();
   }
 
@@ -351,7 +371,7 @@ public class FirebaseFirestore {
    */
   @PublicApi
   public Task<Void> disableNetwork() {
-    ensureClientConfigured();
+    if (!isConfigured()) ensureClientConfigured();
     return client.disableNetwork();
   }
 
