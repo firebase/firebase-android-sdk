@@ -171,7 +171,23 @@ public class MutationTest {
   @Test
   public void testAppliesNumericAddTransformToDocument() {
     Map<String, Object> baseDoc =
-        map("longPlusLong", 1, "longPlusDouble", 2, "doublePlusLong", 3.3, "doublePlusDouble", 4.0);
+        map(
+            "longPlusLong",
+            1,
+            "longPlusDouble",
+            2,
+            "doublePlusLong",
+            3.3,
+            "doublePlusDouble",
+            4.0,
+            "longPlusNan",
+            5,
+            "doublePlusNan",
+            6.6,
+            "longPlusInfinity",
+            7,
+            "doublePlusInfinity",
+            8.8);
     Map<String, Object> transform =
         map(
             "longPlusLong",
@@ -181,7 +197,15 @@ public class MutationTest {
             "doublePlusLong",
             FieldValue.numericAdd(3),
             "doublePlusDouble",
-            FieldValue.numericAdd(4.4));
+            FieldValue.numericAdd(4.4),
+            "longPlusNan",
+            FieldValue.numericAdd(Double.NaN),
+            "doublePlusNan",
+            FieldValue.numericAdd(Double.NaN),
+            "longPlusInfinity",
+            FieldValue.numericAdd(Double.POSITIVE_INFINITY),
+            "doublePlusInfinity",
+            FieldValue.numericAdd(Double.POSITIVE_INFINITY));
     Map<String, Object> expected =
         map(
             "longPlusLong",
@@ -191,7 +215,15 @@ public class MutationTest {
             "doublePlusLong",
             6.3D,
             "doublePlusDouble",
-            8.4D);
+            8.4D,
+            "longPlusNan",
+            Double.NaN,
+            "doublePlusNan",
+            Double.NaN,
+            "longPlusInfinity",
+            Double.POSITIVE_INFINITY,
+            "doublePlusInfinity",
+            Double.POSITIVE_INFINITY);
 
     verifyTransform(baseDoc, transform, expected);
   }
