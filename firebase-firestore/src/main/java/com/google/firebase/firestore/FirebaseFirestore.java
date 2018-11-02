@@ -178,7 +178,7 @@ public class FirebaseFirestore {
     if (client != null) {
       return;
     }
-    synchronized(settings) {
+    synchronized (settings) {
       // Check this again under synchronization.
       if (client != null) {
         return;
