@@ -174,7 +174,16 @@ public class FirebaseFirestore {
   }
 
   private void ensureClientConfigured() {
-    if (client == null) {
+    // We do not bother to synchronized on client as we do not touch it if it is already set.
+    if (client != null) {
+      return;
+    }
+    synchronized(settings) {
+      // Check this again under synchronization.
+      if (client != null) {
+        return;
+      }
+
       if (!settings.areTimestampsInSnapshotsEnabled()) {
         Logger.warn(
             "Firestore",
