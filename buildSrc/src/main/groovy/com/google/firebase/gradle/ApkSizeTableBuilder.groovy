@@ -32,10 +32,9 @@ class ApkSizeTableBuilder {
         def table = "|------------------        APK Sizes        ------------------|\n"
         table +=    "|--    project    --|--  build type   --|--  size in bytes  --|\n"
 
-        sdkSizes.each {
-            def line = sprintf("|%-19s|%-19s|%-21s|\n", it.get(0), it.get(1), it.get(2))
-            table += line
-        }
+        table += sdkSizes.collect {
+            sprintf("|%-19s|%-19s|%-21s|\n", it.get(0), it.get(1), it.get(2))
+        }.join("\n")
 
         return table
     }
