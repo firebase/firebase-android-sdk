@@ -83,7 +83,7 @@ dependencies {
     androidTestImplementation "com.android.support:support-annotations:$supportAnnotationsVersion"
     androidTestImplementation 'com.android.support.test:rules:1.0.2'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.google.truth:truth:0.42'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-core:2.9.6'
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
     androidTestImplementation 'junit:junit:4.12'
@@ -99,7 +99,7 @@ dependencies {
     testImplementation 'com.fasterxml.jackson.core:jackson-core:2.9.6'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
     testImplementation 'net.java.quickcheck:quickcheck:0.6'
-    testImplementation 'com.google.truth:truth:0.42'
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.android.support.test:rules:1.0.2'
 
 }
