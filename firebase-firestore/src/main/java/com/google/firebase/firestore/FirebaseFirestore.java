@@ -52,6 +52,8 @@ import java.util.concurrent.Executor;
 public class FirebaseFirestore {
   private static final String TAG = "FirebaseFirestore";
   private final Context context;
+  // This is also used as private lock object for this instance. There is nothing inherent about
+  // databaseId itself that needs locking; it just saves us creating a separate lock object.
   private final DatabaseId databaseId;
   private final String persistenceKey;
   private final CredentialsProvider credentialsProvider;
@@ -60,6 +62,7 @@ public class FirebaseFirestore {
 
   private FirebaseFirestoreSettings settings;
   private FirestoreClient client;
+  private boolean isConfigured; // Instead of making client volatile, we add another boolean here.
   private final UserDataConverter dataConverter;
 
   @NonNull
@@ -146,6 +149,7 @@ public class FirebaseFirestore {
     this.firebaseApp = firebaseApp;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
+    this.isConfigured = false;
   }
 
   /** Returns the settings used by this FirebaseFirestore object. */
@@ -180,7 +184,7 @@ public class FirebaseFirestore {
    * false when either Firestore is not configured or is being configured.
    */
   private boolean isConfigured() {
-    return client != null;
+    return isConfigured;
   }
 
   private void ensureClientConfigured() {
@@ -229,6 +233,8 @@ public class FirebaseFirestore {
               settings.isPersistenceEnabled(),
               credentialsProvider,
               asyncQueue);
+
+      isConfigured = true;
     }
   }
 
