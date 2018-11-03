@@ -133,14 +133,14 @@ public class LruGarbageCollector {
     private void scheduleGC() {
       long delay = hasRun ? REGULAR_GC_DELAY_MS : INITIAL_GC_DELAY_MS;
       gcTask =
-              asyncQueue.enqueueAfterDelay(
-                      AsyncQueue.TimerId.GARBAGE_COLLECTION,
-                      delay,
-                      () -> {
-                        localStore.collectGarbage(LruGarbageCollector.this);
-                        hasRun = true;
-                        scheduleGC();
-                      });
+          asyncQueue.enqueueAfterDelay(
+              AsyncQueue.TimerId.GARBAGE_COLLECTION,
+              delay,
+              () -> {
+                localStore.collectGarbage(LruGarbageCollector.this);
+                hasRun = true;
+                scheduleGC();
+              });
     }
   }
 

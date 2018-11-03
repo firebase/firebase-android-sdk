@@ -54,7 +54,6 @@ import io.grpc.Status;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -139,7 +138,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
           remoteStore.shutdown();
           persistence.shutdown();
           if (lruScheduler != null) {
-              lruScheduler.stop();
+            lruScheduler.stop();
           }
         });
   }
