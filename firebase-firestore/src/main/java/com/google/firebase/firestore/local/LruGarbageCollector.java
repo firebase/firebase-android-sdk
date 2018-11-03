@@ -14,16 +14,24 @@
 
 package com.google.firebase.firestore.local;
 
+import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.core.ListenSequence;
+import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.PriorityQueue;
+import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for LRU garbage collection. */
 public class LruGarbageCollector {
+  /** How long we wait to try running LRU GC after SDK initialization. */
+  private static final long INITIAL_GC_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
+  /** Minimum amount of time between GC checks, after the first one. */
+  private static final long REGULAR_GC_DELAY_MS = TimeUnit.MINUTES.toMillis(5);
+
   public static class Params {
     private static final long COLLECTION_DISABLED = FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED;
     private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100mb
@@ -96,6 +104,43 @@ public class LruGarbageCollector {
 
     public int getDocumentsRemoved() {
       return documentsRemoved;
+    }
+  }
+
+  public class Scheduler {
+    private final AsyncQueue asyncQueue;
+    private final LocalStore localStore;
+    private boolean hasRun = false;
+    @Nullable private AsyncQueue.DelayedTask gcTask;
+
+    public Scheduler(AsyncQueue asyncQueue, LocalStore localStore) {
+      this.asyncQueue = asyncQueue;
+      this.localStore = localStore;
+    }
+
+    public void start() {
+      if (params.minBytesThreshold != Params.COLLECTION_DISABLED) {
+        scheduleGC();
+      }
+    }
+
+    public void stop() {
+      if (gcTask != null) {
+        gcTask.cancel();
+      }
+    }
+
+    private void scheduleGC() {
+      long delay = hasRun ? REGULAR_GC_DELAY_MS : INITIAL_GC_DELAY_MS;
+      gcTask =
+              asyncQueue.enqueueAfterDelay(
+                      AsyncQueue.TimerId.GARBAGE_COLLECTION,
+                      delay,
+                      () -> {
+                        localStore.collectGarbage(LruGarbageCollector.this);
+                        hasRun = true;
+                        scheduleGC();
+                      });
     }
   }
 
