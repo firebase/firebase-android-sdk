@@ -52,8 +52,8 @@ public class NumericAddTransformOperation implements TransformOperation {
   }
 
   /**
-   * Implementation of Java 8's `safeAdd()` that resolves positive and negative numeric overflows to
-   * Long.MAX_VALUE or Long.MIN_VALUE respectively (instead of throwing an ArithmeticException).
+   * Implementation of Java 8's `addExact()` that resolves positive and negative numeric overflows
+   * to Long.MAX_VALUE or Long.MIN_VALUE respectively (instead of throwing an ArithmeticException).
    */
   private long safeAdd(long x, long y) {
     long r = x + y;
