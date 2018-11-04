@@ -256,10 +256,47 @@ public class MutationTest {
 
   @Test
   public void testAppliesNumericAddWithoutOverflow() {
-    Map<String, Object> baseDoc = map("max", Long.MAX_VALUE - 1, "min", Long.MIN_VALUE + 1);
+    Map<String, Object> baseDoc =
+        map(
+            "a",
+            Long.MAX_VALUE - 1,
+            "b",
+            Long.MAX_VALUE - 1,
+            "c",
+            Long.MAX_VALUE,
+            "d",
+            Long.MAX_VALUE);
     Map<String, Object> transform =
-        map("max", FieldValue.numericAdd(2), "min", FieldValue.numericAdd(-2));
-    Map<String, Object> expected = map("max", Long.MAX_VALUE, "min", Long.MIN_VALUE);
+        map(
+            "a", FieldValue.numericAdd(1),
+            "b", FieldValue.numericAdd(Long.MAX_VALUE),
+            "c", FieldValue.numericAdd(1),
+            "d", FieldValue.numericAdd(Long.MAX_VALUE));
+    Map<String, Object> expected =
+        map("a", Long.MAX_VALUE, "b", Long.MAX_VALUE, "c", Long.MAX_VALUE, "d", Long.MAX_VALUE);
+    verifyTransform(baseDoc, transform, expected);
+  }
+
+  @Test
+  public void testAppliesNumericAddWithoutUnderflow() {
+    Map<String, Object> baseDoc =
+        map(
+            "a",
+            Long.MIN_VALUE + 1,
+            "b",
+            Long.MIN_VALUE + 1,
+            "c",
+            Long.MIN_VALUE,
+            "d",
+            Long.MIN_VALUE);
+    Map<String, Object> transform =
+        map(
+            "a", FieldValue.numericAdd(-1),
+            "b", FieldValue.numericAdd(Long.MIN_VALUE),
+            "c", FieldValue.numericAdd(-1),
+            "d", FieldValue.numericAdd(Long.MIN_VALUE));
+    Map<String, Object> expected =
+        map("a", Long.MIN_VALUE, "b", Long.MIN_VALUE, "c", Long.MIN_VALUE, "d", Long.MIN_VALUE);
     verifyTransform(baseDoc, transform, expected);
   }
 

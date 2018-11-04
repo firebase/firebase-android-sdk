@@ -62,7 +62,7 @@ public class NumericAddTransformOperation implements TransformOperation {
       return r;
     }
 
-    if (r > 0L) {
+    if (r >= 0L) {
       return Long.MIN_VALUE;
     } else {
       return Long.MAX_VALUE;
