@@ -61,8 +61,7 @@ public class FirebaseFirestore {
   private final FirebaseApp firebaseApp;
 
   private FirebaseFirestoreSettings settings;
-  private FirestoreClient client;
-  private boolean isConfigured; // Instead of making client volatile, we add another boolean here.
+  private volatile FirestoreClient client;
   private final UserDataConverter dataConverter;
 
   @NonNull
@@ -149,7 +148,6 @@ public class FirebaseFirestore {
     this.firebaseApp = firebaseApp;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
-    this.isConfigured = false;
   }
 
   /** Returns the settings used by this FirebaseFirestore object. */
@@ -179,20 +177,15 @@ public class FirebaseFirestore {
     }
   }
 
-  /**
-   * If this returns true, then Firestore is configured. This is not synchronized. So it may return
-   * false when either Firestore is not configured or is being configured.
-   */
-  private boolean isConfigured() {
-    return isConfigured;
-  }
-
   private void ensureClientConfigured() {
+    if (client != null) {
+      return;
+    }
+
     synchronized (databaseId) {
-      if (isConfigured()) {
+      if (client != null) {
         return;
       }
-
       if (!settings.areTimestampsInSnapshotsEnabled()) {
         Logger.warn(
             "Firestore",
@@ -233,8 +226,6 @@ public class FirebaseFirestore {
               settings.isPersistenceEnabled(),
               credentialsProvider,
               asyncQueue);
-
-      isConfigured = true;
     }
   }
 
@@ -260,7 +251,7 @@ public class FirebaseFirestore {
   @PublicApi
   public CollectionReference collection(@NonNull String collectionPath) {
     checkNotNull(collectionPath, "Provided collection path must not be null.");
-    if (!isConfigured()) ensureClientConfigured();
+    ensureClientConfigured();
     return new CollectionReference(ResourcePath.fromString(collectionPath), this);
   }
 
@@ -275,7 +266,7 @@ public class FirebaseFirestore {
   @PublicApi
   public DocumentReference document(@NonNull String documentPath) {
     checkNotNull(documentPath, "Provided document path must not be null.");
-    if (!isConfigured()) ensureClientConfigured();
+    ensureClientConfigured();
     return DocumentReference.forPath(ResourcePath.fromString(documentPath), this);
   }
 
@@ -290,7 +281,7 @@ public class FirebaseFirestore {
    */
   private <TResult> Task<TResult> runTransaction(
       Transaction.Function<TResult> updateFunction, Executor executor) {
-    if (!isConfigured()) ensureClientConfigured();
+    ensureClientConfigured();
 
     // We wrap the function they provide in order to
     // 1. Use internal implementation classes for Transaction,
@@ -332,7 +323,7 @@ public class FirebaseFirestore {
   @NonNull
   @PublicApi
   public WriteBatch batch() {
-    if (!isConfigured()) ensureClientConfigured();
+    ensureClientConfigured();
 
     return new WriteBatch(this);
   }
@@ -358,7 +349,7 @@ public class FirebaseFirestore {
    */
   @PublicApi
   public Task<Void> enableNetwork() {
-    if (!isConfigured()) ensureClientConfigured();
+    ensureClientConfigured();
     return client.enableNetwork();
   }
 
@@ -371,7 +362,7 @@ public class FirebaseFirestore {
    */
   @PublicApi
   public Task<Void> disableNetwork() {
-    if (!isConfigured()) ensureClientConfigured();
+    ensureClientConfigured();
     return client.disableNetwork();
   }
 
