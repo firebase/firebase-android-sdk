@@ -119,8 +119,8 @@ public final class MutationBatch {
           maybeDoc.getKey());
     }
 
-    // First, apply the base state. This allows us to apply certain non-idempotent transform against
-    // a consistent set of values.
+    // First, apply the base state. This allows us to apply non-idempotent transform against a
+    // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {
       Mutation mutation = baseMutations.get(i);
       if (mutation.getKey().equals(documentKey)) {
@@ -143,14 +143,18 @@ public final class MutationBatch {
   /** Computes the local view for all provided documents given the mutations in this batch. */
   public ImmutableSortedMap<DocumentKey, MaybeDocument> applyToLocalView(
       ImmutableSortedMap<DocumentKey, MaybeDocument> maybeDocumentMap) {
-    ImmutableSortedMap<DocumentKey, MaybeDocument> changedDocuments = maybeDocumentMap;
+    // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
+    // (as done in `applyToLocalView(DocumentKey k, MaybeDoc d)`), we can reduce the complexity to
+    // O(n).
+
+    ImmutableSortedMap<DocumentKey, MaybeDocument> mutatedDocuments = maybeDocumentMap;
     for (DocumentKey key : getKeys()) {
-      MaybeDocument maybeDocument = applyToLocalView(key, changedDocuments.get(key));
-      if (maybeDocument != null) {
-        changedDocuments = changedDocuments.insert(maybeDocument.getKey(), maybeDocument);
+      MaybeDocument mutatedDocument = applyToLocalView(key, mutatedDocuments.get(key));
+      if (mutatedDocument != null) {
+        mutatedDocuments = mutatedDocuments.insert(mutatedDocument.getKey(), mutatedDocument);
       }
     }
-    return changedDocuments;
+    return mutatedDocuments;
   }
 
   @Override
@@ -225,7 +229,8 @@ public final class MutationBatch {
 
   /** Converts this batch to a tombstone. */
   public MutationBatch toTombstone() {
-    return new MutationBatch(batchId, localWriteTime, baseMutations, Collections.emptyList());
+    return new MutationBatch(
+        batchId, localWriteTime, Collections.emptyList(), Collections.emptyList());
   }
 
   /** @return The user-provided mutations in this mutation batch. */

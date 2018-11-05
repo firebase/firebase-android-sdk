@@ -58,6 +58,7 @@ public class NumericAddTransformOperation implements TransformOperation {
   private long safeAdd(long x, long y) {
     long r = x + y;
 
+    // See "Hacker's Delight" 2-12: Overflow if both arguments have the opposite sign of the result
     if (((x ^ r) & (y ^ r)) >= 0) {
       return r;
     }

@@ -158,8 +158,8 @@ public abstract class FieldValue {
    * the given value to the field's current value.
    *
    * <p>If the current field value is an integer, possible integer overflows are resolved to
-   * Long.MAX_VALUE or Long.MIN_VALUE respectively. If the current field value is a double, both
-   * values will be interpreted as doubles and the arithmetic will follow IEEE 754 semantics.
+   * Long.MAX_VALUE or Long.MIN_VALUE. If the current field value is a double, both values will be
+   * interpreted as doubles and the arithmetic will follow IEEE 754 semantics.
    *
    * <p>If field is not an integer or double, or if the field does not yet exist, the transformation
    * will set the field to the given value.

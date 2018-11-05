@@ -968,6 +968,9 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testHandlesSetMutationThenAckThenTransformMutationThenAckThenTransformMutation() {
     if (garbageCollectorIsEager()) {
+      // Since this test doesn't open a Query, Eager GC removes the documents from the cache as soon
+      // as the mutation is applied. This creates a lot of special casing in this unit test but does
+      // not expand its test coverage.
       return;
     }
 
@@ -1087,5 +1090,23 @@ public abstract class LocalStoreTestCase {
     acknowledgeMutation(4, 1339);
     assertChanged(doc("foo/bar", 4, map("sum", 1339), Document.DocumentState.COMMITTED_MUTATIONS));
     assertContains(doc("foo/bar", 4, map("sum", 1339), Document.DocumentState.COMMITTED_MUTATIONS));
+  }
+
+  @Test
+  public void testHandlesMergeMutationThenRemoteEvent() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+    assertTargetId(2);
+
+    writeMutations(
+        asList(
+            patchMutation("foo/bar", map(), Collections.emptyList()),
+            transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1)))));
+    assertChanged(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
+
+    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 1337)), asList(2), emptyList()));
+    assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
   }
 }

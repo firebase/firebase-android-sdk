@@ -211,12 +211,22 @@ public final class LocalStore {
           List<Mutation> baseMutations = new ArrayList<>();
           for (Mutation mutation : mutations) {
             MaybeDocument maybeDocument = existingDocuments.get(mutation.getKey());
-            if (maybeDocument instanceof Document && !mutation.isIdempotent()) {
+            if (!mutation.isIdempotent()) {
               FieldMask fieldMask = mutation.getFieldMask();
               if (fieldMask != null) {
-                ObjectValue baseValues = fieldMask.applyTo(((Document) maybeDocument).getData());
-                baseMutations.add(
-                    new PatchMutation(mutation.getKey(), baseValues, fieldMask, Precondition.NONE));
+                if (maybeDocument instanceof Document) {
+                  ObjectValue baseValues = fieldMask.applyTo(((Document) maybeDocument).getData());
+                  baseMutations.add(
+                      new PatchMutation(
+                          mutation.getKey(), baseValues, fieldMask, Precondition.NONE));
+                } else {
+                  baseMutations.add(
+                      new PatchMutation(
+                          mutation.getKey(),
+                          ObjectValue.emptyObject(),
+                          fieldMask,
+                          Precondition.NONE));
+                }
               }
             }
           }

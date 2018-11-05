@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+// TODO(b/119035894): Enable these tests once available in Production
 @Ignore("Not yet available in production")
 public class NumericTransformsTest {
   private static final double DOUBLE_EPSILON = 0.000001;
@@ -88,7 +89,13 @@ public class NumericTransformsTest {
   }
 
   @Test
-  public void integerIncrementExistingInteger() {
+  public void mergeOnNonExistingDocumentWithIncrement() {
+    waitFor(docRef.set(map("sum", FieldValue.numericAdd(1337)), SetOptions.merge()));
+    expectLocalAndRemoteValue(1337L);
+  }
+
+  @Test
+  public void integerIncrementWithExistingInteger() {
     writeInitialData(map("sum", 1337L));
     waitFor(docRef.update("sum", FieldValue.numericAdd(1)));
     expectLocalAndRemoteValue(1338L);
@@ -102,28 +109,28 @@ public class NumericTransformsTest {
   }
 
   @Test
-  public void integerIncrementExistingDouble() {
+  public void integerIncrementWithExistingDouble() {
     writeInitialData(map("sum", 13.37D));
     waitFor(docRef.update("sum", FieldValue.numericAdd(1)));
     expectLocalAndRemoteValue(14.37D);
   }
 
   @Test
-  public void doubleIncrementExistingInteger() {
+  public void doubleIncrementWithExistingInteger() {
     writeInitialData(map("sum", 1337L));
     waitFor(docRef.update("sum", FieldValue.numericAdd(0.1)));
     expectLocalAndRemoteValue(1337.1D);
   }
 
   @Test
-  public void integerIncrementExistingString() {
+  public void integerIncrementWithExistingString() {
     writeInitialData(map("sum", "overwrite"));
     waitFor(docRef.update("sum", FieldValue.numericAdd(1337)));
     expectLocalAndRemoteValue(1337L);
   }
 
   @Test
-  public void doubleIncrementExistingString() {
+  public void doubleIncrementWithExistingString() {
     writeInitialData(map("sum", "overwrite"));
     waitFor(docRef.update("sum", FieldValue.numericAdd(13.37)));
     expectLocalAndRemoteValue(13.37D);
