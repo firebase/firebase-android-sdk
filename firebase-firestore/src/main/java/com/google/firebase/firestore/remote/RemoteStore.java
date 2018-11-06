@@ -258,10 +258,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    */
   public void shutdown() {
     Logger.debug(LOG_TAG, "Shutting down");
-    // For now, all shutdown logic is handled by disableNetworkInternal(). We might expand on this
-    // in the future.
     networkEnabled = false;
     this.disableNetworkInternal();
+    datastore.shutdown();
+
     // Set the OnlineState to UNKNOWN (rather than OFFLINE) to avoid potentially triggering
     // spurious listener events with cached data, etc.
     onlineStateTracker.updateState(OnlineState.UNKNOWN);

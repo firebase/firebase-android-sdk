@@ -123,11 +123,19 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   /** Shuts down this client, cancels all writes / listeners, and releases all resources. */
   public Task<Void> shutdown() {
     credentialsProvider.removeChangeListener();
-    return asyncQueue.enqueue(
-        () -> {
-          remoteStore.shutdown();
-          persistence.shutdown();
-        });
+    return asyncQueue
+        .enqueue(
+            () -> {
+              remoteStore.shutdown();
+              persistence.shutdown();
+            })
+        .continueWithTask(
+            (Task<Void> v) -> {
+              // Once everything else is shutdown, also (unconditionally) shutdown the async queue
+              // itself. Note that unlike other tasks, this one doesn't run on the async queue
+              // (obviously). Instead, the callbacks hit the main thread.
+              return asyncQueue.shutdown();
+            });
   }
 
   /** Starts listening to a query. */

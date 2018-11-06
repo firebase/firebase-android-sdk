@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.remote;
 
-import android.support.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -26,7 +25,6 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.FirestoreChannel;
-import com.google.firebase.firestore.util.Supplier;
 import com.google.firestore.v1beta1.BatchGetDocumentsRequest;
 import com.google.firestore.v1beta1.BatchGetDocumentsResponse;
 import com.google.firestore.v1beta1.CommitRequest;
@@ -79,7 +77,8 @@ public class Datastore {
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
 
-    ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forTarget(databaseInfo.getHost());
+    ManagedChannelBuilder<?> channelBuilder =
+        ManagedChannelBuilder.forTarget(databaseInfo.getHost());
     if (!databaseInfo.isSslEnabled()) {
       // Note that the boolean flag does *NOT* indicate whether or not plaintext should be used
       channelBuilder.usePlaintext();
@@ -92,6 +91,14 @@ public class Datastore {
     channel =
         new FirestoreChannel(
             workerQueue, credentialsProvider, channelBuilder.build(), databaseInfo.getDatabaseId());
+  }
+
+  /**
+   * Shuts down the Datastore, closing the grpc channel and otherwise cleaning up. This is not
+   * reversible and renders the Datastore unusable.
+   */
+  void shutdown() {
+    channel.shutdown();
   }
 
   AsyncQueue getWorkerQueue() {

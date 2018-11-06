@@ -24,6 +24,7 @@ import android.support.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.Version;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -446,11 +447,30 @@ public class AsyncQueue {
 
   /**
    * Shuts down the AsyncQueue and releases resources after which no progress will ever be made
-   * again.
+   * again. Since we can't use the AsyncQueue for the callbacks, we'll instead use the main thread.
    */
-  public void shutdown() {
-    // Will cause the executor to de-reference all threads, the best we can do
-    executor.setCorePoolSize(0);
+  public Task<Void> shutdown() {
+    executor.shutdown();
+    return Tasks.call(
+        () -> {
+          if (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+            Logger.debug(
+                AsyncQueue.class.getSimpleName(),
+                "Unable to gracefully shutdown the executor. Will attempt an immediate shutdown.");
+            executor.shutdownNow();
+
+            // shutdownNow() uses Thread.interrupt() to cancel running tasks. There's no guarantee
+            // that these will stop immediately (or ever.)
+            if (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+              // Something bad has happened. We could assert, but this is just resource cleanup for
+              // a resource that is likely only released at the end of the execution. So instead,
+              // we'll just log the error.
+              Logger.warn(
+                  AsyncQueue.class.getSimpleName(), "Unable to forcefully shutdown the executor.");
+            }
+          }
+          return null;
+        });
   }
 
   /**
