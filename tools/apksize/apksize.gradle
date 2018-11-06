@@ -15,14 +15,6 @@
 import com.google.firebase.gradle.plugins.measurement.GenerateMeasurementsTask
 import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
 
-// Linting needs to be disabled as none of these apps are real or intended to conform to
-// linting standards.
-tasks.whenTaskAdded { task ->
-    if (task.name.equals("lint")) {
-        //task.enabled = false
-    }
-}
-
 apply plugin: "com.android.application"
 apply from: "default.gradle"
 android {
@@ -42,7 +34,7 @@ apply from: "src/functions/functions.gradle"
  */
 task generateMeasurements(type: GenerateMeasurementsTask) {
     sdkMapFile = file("sdks.csv")
-    reportFile = file("$buildDir/size-report.textpb")
+    reportFile = file("$buildDir/size-report.json")
 }
 
 /**
@@ -54,7 +46,7 @@ task generateMeasurements(type: GenerateMeasurementsTask) {
 task uploadMeasurements(type: UploadMeasurementsTask) {
     dependsOn generateMeasurements
 
-    reportFile = file("$buildDir/size-report.textpb")
+    reportFile = file("$buildDir/size-report.json")
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }
 
