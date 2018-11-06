@@ -72,7 +72,7 @@ public class UploadMeasurementsTask extends DefaultTask {
                     "-jar",
                     jar,
                     "--config_path=${configuration}",
-                    "--proto_path=${reportFile}",
+                    "--json_path=${reportFile}",
                 )
             }.rethrowFailure()
         }

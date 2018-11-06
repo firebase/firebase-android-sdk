@@ -15,7 +15,7 @@
 
 package com.google.firebase.gradle
 
-/** A helper class that generates the APK size measurement table for direct human use. */
+/** A helper class that generates the human-readable, APK size measurement table. */
 class ApkSizeTableBuilder {
 
     private final List<Tuple> sdkSizes = []
@@ -33,7 +33,7 @@ class ApkSizeTableBuilder {
         table +=    "|--    project    --|--  build type   --|--  size in bytes  --|\n"
 
         table += sdkSizes.collect {
-            sprintf("|%-19s|%-19s|%-21s|\n", it.get(0), it.get(1), it.get(2))
+            sprintf("|%-19s|%-19s|%-21s|", it.get(0), it.get(1), it.get(2))
         }.join("\n")
 
         return table

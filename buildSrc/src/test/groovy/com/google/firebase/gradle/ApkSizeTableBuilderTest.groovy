@@ -15,7 +15,7 @@
 
 package com.google.firebase.gradle
 
-import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertEquals
 
 import org.junit.Assert
 import org.junit.Test
@@ -25,25 +25,39 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4.class)
 public class ApkSizeTableBuilderTest {
 
-  @Test
+  private static final String HEADER =
+      "|------------------        APK Sizes        ------------------|\n" +
+      "|--    project    --|--  build type   --|--  size in bytes  --|\n"
+
+  @Test(expected = IllegalStateException.class)
   public void toTableString_throwsWhenZeroAdded() {
     def builder = new ApkSizeTableBuilder()
-
-    try {
-      builder.toTableString()
-    } catch (IllegalStateException x) {
-      // Thrown and caught; as expected.
-      return
-    }
-
-    throw new AssertionError("IllegalStateException not thrown")
+    builder.toTableString()
   }
 
   @Test
-  public void toTableString_returnsNonNull() {
+  public void toTableString_withOneMeasurement() {
+    def expected = HEADER +
+        "|firebase foo       |debug              |255000               |"
+
     def builder = new ApkSizeTableBuilder()
     builder.addApkSize("firebase foo", "debug", 255000)
 
-    assertNotNull(builder.toTableString())
+    assertEquals(expected, builder.toTableString())
+  }
+
+  @Test
+  public void toTableString_withThreeMeasurements() {
+    def expected = HEADER +
+        "|firebase foo       |debug              |255000               |\n" +
+        "|google loo         |release            |4000                 |\n" +
+        "|Appy Snap App      |Snappy             |781000               |"
+
+    def builder = new ApkSizeTableBuilder()
+    builder.addApkSize("firebase foo", "debug", 255000)
+    builder.addApkSize("google loo", "release", 4000)
+    builder.addApkSize("Appy Snap App", "Snappy", 781000)
+
+    assertEquals(expected, builder.toTableString())
   }
 }

@@ -14,6 +14,10 @@
 
 package com.google.firebase.gradle
 
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertTrue
+
+import java.nio.file.Files
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.Rule
@@ -34,6 +38,8 @@ public class GenerateMeasurementsTaskTest {
         if (!result.tasks(TaskOutcome.FAILED).isEmpty()) {
             throw new AssertionError("Smoke test for generate failed", result.getFailure())
         }
+
+	assertTrue(Files.exists(testProject.getApkSizeReportPath()))
     }
 
     @Test
@@ -43,5 +49,8 @@ public class GenerateMeasurementsTaskTest {
         if (!result.tasks(TaskOutcome.FAILED).isEmpty()) {
             throw new AssertionError("Smoke test for generate failed", result.getFailure())
         }
+
+	assertFalse(Files.exists(testProject.getApkSizeReportPath()))
+        assertTrue("Output missing `APK Sizes`", result.getOutput().contains("APK Sizes"))
     }
 }

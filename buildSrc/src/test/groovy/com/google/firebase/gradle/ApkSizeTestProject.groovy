@@ -15,6 +15,7 @@
 package com.google.firebase.gradle
 
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
@@ -124,6 +125,10 @@ class ApkSizeTestProject extends ExternalResource {
 
     private final TemporaryFolder projectDirectory = new TemporaryFolder()
 
+    public Path getApkSizeReportPath() {
+        return projectDirectory.getRoot().toPath().resolve("test-report-file.json")
+    }
+
     @Override
     protected void before() {
         projectDirectory.create()
@@ -131,6 +136,7 @@ class ApkSizeTestProject extends ExternalResource {
         copyBuildSrcFiles()
     }
 
+    /** Builds the test project in the temporary directory. */
     BuildResult build(String... args) {
         def projectDir = projectDirectory.getRoot()
         return GradleRunner.create().withProjectDir(projectDir).withArguments(args).build()
@@ -141,6 +147,7 @@ class ApkSizeTestProject extends ExternalResource {
         projectDirectory.delete()
     }
 
+    /** Copies the buildSrc files for the APK size tooling into the temporary project. */
     private void copyBuildSrcFiles() {
         def src = Paths.get("src/main/groovy/com/google/firebase/gradle")
         def buildSrc = projectDirectory.getRoot().toPath().resolve("buildSrc")
@@ -153,6 +160,7 @@ class ApkSizeTestProject extends ExternalResource {
             .forEach { name -> Files.copy(src.resolve(name), dest.resolve(name)) }
     }
 
+    /** Creates the fake project files for the temporary project. */
     private void createProjectFiles() {
         def root = projectDirectory.getRoot().toPath()
 

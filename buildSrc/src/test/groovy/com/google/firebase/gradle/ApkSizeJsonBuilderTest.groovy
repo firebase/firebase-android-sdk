@@ -26,18 +26,10 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4.class)
 public class ApkSizeJsonBuilderTest {
 
-  @Test
+  @Test(expected = IllegalStateException.class)
   public void toJsonString_ThrowsWhenZeroAdded() {
     def builder = new ApkSizeJsonBuilder(13)
-
-    try {
-      builder.toJsonString()
-    } catch (IllegalStateException x) {
-      // Thrown and caught; as expected.
-      return
-    }
-
-    throw new AssertionError("IllegalStateException not thrown")
+    builder.toJsonString()
   }
 
   @Test
