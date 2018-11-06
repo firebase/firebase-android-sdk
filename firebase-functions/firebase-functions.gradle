@@ -55,7 +55,7 @@ dependencies {
     }
     implementation 'com.google.firebase:firebase-iid-interop:16.0.1'
 
-    implementation 'com.squareup.okhttp:okhttp:2.7.2'
+    implementation 'com.squareup.okhttp:okhttp:2.7.5'
 
     annotationProcessor 'com.google.auto.value:auto-value:1.6'
 
