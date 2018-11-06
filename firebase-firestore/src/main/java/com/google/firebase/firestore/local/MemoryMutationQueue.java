@@ -180,8 +180,6 @@ final class MemoryMutationQueue implements MutationQueue {
   @Nullable
   @Override
   public MutationBatch getNextMutationBatchAfterBatchId(int batchId) {
-    int size = queue.size();
-
     // All batches with batchId <= highestAcknowledgedBatchId have been acknowledged so the
     // first unacknowledged batch after batchId will have a batchId larger than both of these
     // values.
