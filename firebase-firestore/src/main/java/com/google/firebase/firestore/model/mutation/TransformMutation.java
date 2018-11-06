@@ -123,10 +123,6 @@ public final class TransformMutation extends Mutation {
 
   @Override
   public FieldMask getFieldMask() {
-    // Note: Theoretically, we should only include non-idempotent fields in this field mask as this
-    // mask is used to populate the base state for all DocumentTransforms.  By including  all
-    // fields, we incorrectly prevent rebasing of idempotent transforms (such as `arrayUnion()`)
-    // when any non-idempotent transforms are present.
     List<FieldPath> fieldMask = new ArrayList<>();
     for (FieldTransform transform : fieldTransforms) {
       fieldMask.add(transform.getFieldPath());

@@ -33,7 +33,6 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
-import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
@@ -208,31 +207,35 @@ public final class LocalStore {
           // state in a separate patch mutation. This is later used to guarantee consistent values
           // and prevents flicker even if the backend sends us an update that already includes our
           // transform.
-          List<Mutation> baseMutations = new ArrayList<>();
+          List<Mutation> baseStateMutations = new ArrayList<>();
           for (Mutation mutation : mutations) {
             MaybeDocument maybeDocument = existingDocuments.get(mutation.getKey());
             if (!mutation.isIdempotent()) {
+              // Theoretically, we should only include non-idempotent fields in this field mask as
+              // this mask is used to populate the base state for all DocumentTransforms.  By
+              // including all fields, we incorrectly prevent rebasing of idempotent transforms
+              // (such as `arrayUnion()`) when any non-idempotent transforms are present.
               FieldMask fieldMask = mutation.getFieldMask();
               if (fieldMask != null) {
                 if (maybeDocument instanceof Document) {
                   ObjectValue baseValues = fieldMask.applyTo(((Document) maybeDocument).getData());
-                  baseMutations.add(
+                  baseStateMutations.add(
                       new PatchMutation(
-                          mutation.getKey(), baseValues, fieldMask, Precondition.NONE));
+                          mutation.getKey(), baseValues, fieldMask, mutation.getPrecondition()));
                 } else {
-                  baseMutations.add(
+                  baseStateMutations.add(
                       new PatchMutation(
                           mutation.getKey(),
                           ObjectValue.emptyObject(),
                           fieldMask,
-                          Precondition.NONE));
+                          mutation.getPrecondition()));
                 }
               }
             }
           }
 
           MutationBatch batch =
-              mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
+              mutationQueue.addMutationBatch(localWriteTime, baseStateMutations, mutations);
           ImmutableSortedMap<DocumentKey, MaybeDocument> changedDocuments =
               batch.applyToLocalView(existingDocuments);
           return new LocalWriteResult(batch.getBatchId(), changedDocuments);

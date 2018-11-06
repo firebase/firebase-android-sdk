@@ -117,7 +117,11 @@ public class IntegrationTestUtil {
     if (CONNECT_TO_EMULATOR) {
       settings.setHost(String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT));
 
-      // Disable SSL and hostname verification
+      // The `sslEnabled` flag in DatabaseInfo currently does not in fact disable all SSL checks.
+      // Instead, we manually disable the SSL certificate check and the hostname verification for
+      // connections to the emulator.
+      // TODO(mrschmidt): Update the client to respect the `sslEnabled` flag and remove these
+      // channel overrides.
       OkHttpChannelBuilder channelBuilder =
           new OkHttpChannelBuilder(EMULATOR_HOST, EMULATOR_PORT) {
             @Override

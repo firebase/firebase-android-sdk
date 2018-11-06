@@ -950,6 +950,9 @@ public abstract class LocalStoreTestCase {
     assertSetEquals(asList(key("foo/bar"), key("foo/baz")), keys);
   }
 
+  // TODO(mrschmidt): The FieldValue.numericAdd() field transform tests below would probably be
+  // better implemented as spec tests but currently they don't support transforms.
+
   @Test
   public void testHandlesSetMutationThenTransformMutationThenTransformMutation() {
     writeMutation(setMutation("foo/bar", map("sum", 0)));
@@ -968,9 +971,9 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testHandlesSetMutationThenAckThenTransformMutationThenAckThenTransformMutation() {
     if (garbageCollectorIsEager()) {
-      // Since this test doesn't open a Query, Eager GC removes the documents from the cache as soon
-      // as the mutation is applied. This creates a lot of special casing in this unit test but does
-      // not expand its test coverage.
+      // Since this test doesn't start a listen, Eager GC removes the documents from the cache as
+      // soon as the mutation is applied. This creates a lot of special casing in this unit test but
+      // does not expand its test coverage.
       return;
     }
 
@@ -1093,7 +1096,7 @@ public abstract class LocalStoreTestCase {
   }
 
   @Test
-  public void testHandlesMergeMutationThenRemoteEvent() {
+  public void testHandlesMergeMutationWithTransformThenRemoteEvent() {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     allocateQuery(query);
     assertTargetId(2);
@@ -1104,6 +1107,24 @@ public abstract class LocalStoreTestCase {
             transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1)))));
     assertChanged(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
+
+    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 1337)), asList(2), emptyList()));
+    assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
+  }
+
+  @Test
+  public void testHandlesPatchMutationWithTransformThenRemoteEvent() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+    assertTargetId(2);
+
+    writeMutations(
+        asList(
+            patchMutation("foo/bar", map()),
+            transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1)))));
+    assertChanged(deletedDoc("foo/bar", 0));
+    assertNotContains("foo/bar");
 
     applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 1337)), asList(2), emptyList()));
     assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
