@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.gradle
+package com.google.firebase.gradle.plugins.measurement
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -26,8 +26,8 @@ import org.junit.rules.TemporaryFolder
 class ApkSizeTestProject extends ExternalResource {
 
     private static final String BUILD_GRADLE = """
-        import com.google.firebase.gradle.GenerateMeasurementsTask
-        import com.google.firebase.gradle.UploadMeasurementsTask
+        import com.google.firebase.gradle.plugins.measurement.GenerateMeasurementsTask
+        import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
 
         buildscript {
             repositories {
@@ -149,7 +149,7 @@ class ApkSizeTestProject extends ExternalResource {
 
     /** Copies the buildSrc files for the APK size tooling into the temporary project. */
     private void copyBuildSrcFiles() {
-        def src = Paths.get("src/main/groovy/com/google/firebase/gradle")
+        def src = Paths.get("src/main/groovy/com/google/firebase/gradle/plugins/measurement")
         def buildSrc = projectDirectory.getRoot().toPath().resolve("buildSrc")
         def dest = buildSrc.resolve(src)
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-package com.google.firebase.gradle
+package com.google.firebase.gradle.plugins.measurement
 
 import static org.junit.Assert.assertEquals
 
