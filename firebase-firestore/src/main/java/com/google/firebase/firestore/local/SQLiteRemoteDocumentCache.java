@@ -24,7 +24,11 @@ import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -64,6 +68,62 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     return db.query("SELECT contents FROM remote_documents WHERE path = ?")
         .binding(path)
         .firstValue(row -> decodeMaybeDocument(row.getBlob(0)));
+  }
+
+  @Nullable
+  @Override
+  public List<MaybeDocument> getAll(Iterable<DocumentKey> documentKeys) {
+    List<MaybeDocument> result = new ArrayList<>();
+    if (!documentKeys.iterator().hasNext()) {
+      return result;
+    }
+
+    // SQLite limits maximum number of host parameters to 999 (see
+    // https://www.sqlite.org/limits.html). To work around this, split the given keys into several
+    // smaller sets and issue a separate query for each.
+    int limit = 900;
+    Iterator<DocumentKey> keyIter = documentKeys.iterator();
+    int queriesPerformed = 0;
+    while (keyIter.hasNext()) {
+      ++queriesPerformed;
+      StringBuilder placeholdersBuilder = new StringBuilder();
+      List<String> args = new ArrayList<>();
+
+      for (int i = 0; keyIter.hasNext() && i < limit; i++) {
+        DocumentKey key = keyIter.next();
+
+        if (i > 0) {
+          placeholdersBuilder.append(", ");
+        }
+        placeholdersBuilder.append("?");
+
+        args.add(EncodedPath.encode(key.getPath()));
+      }
+      String placeholders = placeholdersBuilder.toString();
+
+      db.query(
+              "SELECT contents FROM remote_documents "
+                  + "WHERE path IN ("
+                  + placeholders
+                  + ") "
+                  + "ORDER BY path")
+          .binding(args.toArray())
+          .forEach(
+              row -> {
+                result.add(decodeMaybeDocument(row.getBlob(0)));
+              });
+    }
+
+    // If more than one query was issued, batches might be in an unsorted order (batches are ordered
+    // within one query's results, but not across queries). It's likely to be rare, so don't impose
+    // performance penalty on the normal case.
+    if (queriesPerformed > 1) {
+      Collections.sort(
+          result,
+          (MaybeDocument lhs, MaybeDocument rhs) ->
+              lhs.getKey().compareTo(rhs.getKey()));
+    }
+    return result;
   }
 
   @Override

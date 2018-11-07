@@ -413,8 +413,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       }
 
       if (!snapshotVersion.equals(SnapshotVersion.NONE)) {
+
         SnapshotVersion lastRemoteSnapshotVersion = this.localStore.getLastRemoteSnapshotVersion();
         if (snapshotVersion.compareTo(lastRemoteSnapshotVersion) >= 0) {
+              Logger.debug(
+                  "RemoteStore", "OBC raising snapshot, old version %s new version %s", lastRemoteSnapshotVersion,
+                  snapshotVersion);
+
           // We have received a target change with a global snapshot if the snapshot
           // version is not equal to SnapshotVersion.MIN.
           raiseWatchSnapshot(snapshotVersion);

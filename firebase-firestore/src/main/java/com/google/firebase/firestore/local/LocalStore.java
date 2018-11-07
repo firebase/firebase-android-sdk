@@ -332,11 +332,24 @@ public final class LocalStore {
           Set<DocumentKey> changedDocKeys = new HashSet<>();
           Map<DocumentKey, MaybeDocument> documentUpdates = remoteEvent.getDocumentUpdates();
           Set<DocumentKey> limboDocuments = remoteEvent.getResolvedLimboDocuments();
+
+          Set<DocumentKey> keys = new HashSet<>();
+          for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
+            keys.add(entry.getKey());
+          }
+          List<MaybeDocument> existingDocs = remoteDocuments.getAll(keys);
+
           for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
             DocumentKey key = entry.getKey();
             MaybeDocument doc = entry.getValue();
             changedDocKeys.add(key);
-            MaybeDocument existingDoc = remoteDocuments.get(key);
+            MaybeDocument existingDoc = null;
+            for (MaybeDocument aDoc : existingDocs) {
+              if (aDoc.getKey().equals(key)) {
+                existingDoc = aDoc;
+                break;
+              }
+            }
             // If a document update isn't authoritative, make sure we don't
             // apply an old document version to the remote cache. We make an
             // exception for SnapshotVersion.MIN which can happen for
@@ -367,6 +380,9 @@ public final class LocalStore {
           // state of a locally cached document that is in limbo.
           SnapshotVersion lastRemoteVersion = queryCache.getLastRemoteSnapshotVersion();
           SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
+              Logger.debug(
+                  "LocalStore", "OBC Old version %s new version %s", lastRemoteVersion,
+                  remoteVersion);
           if (!remoteVersion.equals(SnapshotVersion.NONE)) {
             hardAssert(
                 remoteVersion.compareTo(lastRemoteVersion) >= 0,

@@ -19,6 +19,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
+import java.util.List;
 import javax.annotation.Nullable;
 
 /**
@@ -50,6 +51,8 @@ interface RemoteDocumentCache {
    */
   @Nullable
   MaybeDocument get(DocumentKey documentKey);
+
+  List<MaybeDocument> getAll(Iterable<DocumentKey> documentKeys);
 
   /**
    * Executes a query against the cached Document entries

@@ -69,6 +69,16 @@ final class LocalDocumentsView {
     return document;
   }
 
+  @Nullable
+  private List<MaybeDocument> getDocumentsInternal(Iterable<DocumentKey> keys, List<MutationBatch> batches) {
+    List<MaybeDocument> documents = remoteDocumentCache.getAll(keys);
+    // for (MutationBatch batch : batches) {
+    //   document = batch.applyToLocalView(key, document);
+    // }
+
+    return documents;
+  }
+
   /**
    * Gets the local view of the documents identified by {@code keys}.
    *
@@ -79,15 +89,13 @@ final class LocalDocumentsView {
     ImmutableSortedMap<DocumentKey, MaybeDocument> results = emptyMaybeDocumentMap();
 
     List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKeys(keys);
-    for (DocumentKey key : keys) {
-      // TODO: PERF: Consider fetching all remote documents at once rather than
-      // one-by-one.
-      MaybeDocument maybeDoc = getDocument(key, batches);
+    List<MaybeDocument> docs = getDocumentsInternal(keys, batches);
+    for (MaybeDocument maybeDoc : docs) {
       // TODO: Don't conflate missing / deleted.
       if (maybeDoc == null) {
-        maybeDoc = new NoDocument(key, SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
+        maybeDoc = new NoDocument(maybeDoc.getKey(), SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
       }
-      results = results.insert(key, maybeDoc);
+      results = results.insert(maybeDoc.getKey(), maybeDoc);
     }
     return results;
   }
