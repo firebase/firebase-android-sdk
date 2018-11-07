@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.remote;
 
+import android.support.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -25,6 +26,7 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.FirestoreChannel;
+import com.google.firebase.firestore.util.Supplier;
 import com.google.firestore.v1beta1.BatchGetDocumentsRequest;
 import com.google.firestore.v1beta1.BatchGetDocumentsResponse;
 import com.google.firestore.v1beta1.CommitRequest;
@@ -71,17 +73,36 @@ public class Datastore {
 
   private final FirestoreChannel channel;
 
+  private static Supplier<ManagedChannelBuilder<?>> overrideChannelBuilderSupplier;
+
+  /**
+   * Helper function to globally override the channel that RPCs use. Useful for testing when you
+   * want to bypass SSL certificate checking.
+   *
+   * @param channelBuilderSupplier The supplier for a channel builder that is used to create gRPC
+   *     channels.
+   */
+  @VisibleForTesting
+  public static void overrideChannelBuilder(
+      Supplier<ManagedChannelBuilder<?>> channelBuilderSupplier) {
+    Datastore.overrideChannelBuilderSupplier = channelBuilderSupplier;
+  }
+
   public Datastore(
       DatabaseInfo databaseInfo, AsyncQueue workerQueue, CredentialsProvider credentialsProvider) {
     this.databaseInfo = databaseInfo;
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
 
-    ManagedChannelBuilder<?> channelBuilder =
-        ManagedChannelBuilder.forTarget(databaseInfo.getHost());
-    if (!databaseInfo.isSslEnabled()) {
-      // Note that the boolean flag does *NOT* indicate whether or not plaintext should be used
-      channelBuilder.usePlaintext();
+    ManagedChannelBuilder<?> channelBuilder;
+    if (overrideChannelBuilderSupplier != null) {
+      channelBuilder = overrideChannelBuilderSupplier.get();
+    } else {
+      channelBuilder = ManagedChannelBuilder.forTarget(databaseInfo.getHost());
+      if (!databaseInfo.isSslEnabled()) {
+        // Note that the boolean flag does *NOT* indicate whether or not plaintext should be used
+        channelBuilder.usePlaintext();
+      }
     }
 
     // This ensures all callbacks are issued on the worker queue. If this call is removed,
