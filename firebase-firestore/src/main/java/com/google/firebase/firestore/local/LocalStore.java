@@ -35,6 +35,7 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -329,7 +330,7 @@ public final class LocalStore {
             }
           }
 
-          Set<DocumentKey> changedDocKeys = new HashSet<>();
+          Map<DocumentKey, MaybeDocument> changedDocs = new HashMap<>();
           Map<DocumentKey, MaybeDocument> documentUpdates = remoteEvent.getDocumentUpdates();
           Set<DocumentKey> limboDocuments = remoteEvent.getResolvedLimboDocuments();
 
@@ -342,7 +343,6 @@ public final class LocalStore {
           for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
             DocumentKey key = entry.getKey();
             MaybeDocument doc = entry.getValue();
-            changedDocKeys.add(key);
             MaybeDocument existingDoc = null;
             for (MaybeDocument aDoc : existingDocs) {
               if (aDoc.getKey().equals(key)) {
@@ -360,6 +360,7 @@ public final class LocalStore {
                 || (authoritativeUpdates.contains(doc.getKey()) && !existingDoc.hasPendingWrites())
                 || doc.getVersion().compareTo(existingDoc.getVersion()) >= 0) {
               remoteDocuments.add(doc);
+              changedDocs.put(key, doc);
             } else {
               Logger.debug(
                   "LocalStore",
@@ -368,6 +369,7 @@ public final class LocalStore {
                   key,
                   existingDoc.getVersion(),
                   doc.getVersion());
+              changedDocs.put(key, existingDoc);
             }
 
             if (limboDocuments.contains(key)) {
@@ -392,7 +394,7 @@ public final class LocalStore {
             queryCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
-          return localDocuments.getDocuments(changedDocKeys);
+          return localDocuments.getDocuments(changedDocs);
         });
   }
 

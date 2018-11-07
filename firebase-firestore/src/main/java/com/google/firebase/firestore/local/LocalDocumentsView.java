@@ -27,6 +27,8 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -79,6 +81,16 @@ final class LocalDocumentsView {
     return documents;
   }
 
+  @Nullable
+  private List<MaybeDocument> getDocumentsInternal(Collection<MaybeDocument> docs, List<MutationBatch> batches) {
+    List<MaybeDocument> result = new ArrayList<>(docs);
+    // for (MutationBatch batch : batches) {
+    //   document = batch.applyToLocalView(key, document);
+    // }
+
+    return result;
+  }
+
   /**
    * Gets the local view of the documents identified by {@code keys}.
    *
@@ -90,6 +102,21 @@ final class LocalDocumentsView {
 
     List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKeys(keys);
     List<MaybeDocument> docs = getDocumentsInternal(keys, batches);
+    for (MaybeDocument maybeDoc : docs) {
+      // TODO: Don't conflate missing / deleted.
+      if (maybeDoc == null) {
+        maybeDoc = new NoDocument(maybeDoc.getKey(), SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
+      }
+      results = results.insert(maybeDoc.getKey(), maybeDoc);
+    }
+    return results;
+  }
+
+  ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments(Map<DocumentKey, MaybeDocument> docsByKey) {
+    ImmutableSortedMap<DocumentKey, MaybeDocument> results = emptyMaybeDocumentMap();
+
+    List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docsByKey.keySet());
+    List<MaybeDocument> docs = getDocumentsInternal(docsByKey.values(), batches);
     for (MaybeDocument maybeDoc : docs) {
       // TODO: Don't conflate missing / deleted.
       if (maybeDoc == null) {
