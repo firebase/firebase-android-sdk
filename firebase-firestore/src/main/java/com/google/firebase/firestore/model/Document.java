@@ -52,6 +52,16 @@ public class Document extends MaybeDocument {
 
   private final DocumentState documentState;
 
+  private com.google.firestore.v1beta1.Document proto;
+
+  public void setProto(com.google.firestore.v1beta1.Document protoDoc) {
+    proto = protoDoc;
+  }
+
+  public com.google.firestore.v1beta1.Document getProto() {
+    return proto;
+  }
+
   public Document(
       DocumentKey key, SnapshotVersion version, ObjectValue data, DocumentState documentState) {
     super(key, version);

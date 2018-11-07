@@ -1015,6 +1015,7 @@ public final class RemoteSerializer {
             !version.equals(SnapshotVersion.NONE), "Got a document change without an update time");
         ObjectValue data = decodeFields(docChange.getDocument().getFieldsMap());
         Document document = new Document(key, version, data, Document.DocumentState.SYNCED);
+        document.setProto(docChange.getDocument());
         watchChange = new WatchChange.DocumentChange(added, removed, document.getKey(), document);
         break;
       case DOCUMENT_DELETE:
