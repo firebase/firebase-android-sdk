@@ -29,6 +29,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -410,12 +411,13 @@ public class WebSocket {
       handshake.verifyServerStatusLine(handshakeLines.get(0));
       handshakeLines.remove(0);
 
-      HashMap<String, String> headers = new HashMap<String, String>();
+      HashMap<String, String> lowercaseHeaders = new HashMap<String, String>();
       for (String line : handshakeLines) {
         String[] keyValue = line.split(": ", 2);
-        headers.put(keyValue[0], keyValue[1]);
+        lowercaseHeaders.put(
+            keyValue[0].toLowerCase(Locale.US), keyValue[1].toLowerCase(Locale.US));
       }
-      handshake.verifyServerHandshakeHeaders(headers);
+      handshake.verifyServerHandshakeHeaders(lowercaseHeaders);
 
       writer.setOutput(output);
       receiver.setInput(input);
