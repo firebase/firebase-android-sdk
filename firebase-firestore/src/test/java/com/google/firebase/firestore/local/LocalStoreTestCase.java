@@ -999,7 +999,45 @@ public abstract class LocalStoreTestCase {
   }
 
   @Test
-  public void testHoldsBackNonIdempotentTransforms() {
+  public void testHandlesSetMutationThenTransformMutationThenRemoteEventThenTransformMutation() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+    assertTargetId(2);
+
+    writeMutation(setMutation("foo/bar", map("sum", 0)));
+    assertChanged(doc("foo/bar", 0, map("sum", 0), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 0, map("sum", 0), Document.DocumentState.LOCAL_MUTATIONS));
+
+    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 0)), asList(2), emptyList()));
+    acknowledgeMutation(1);
+    assertChanged(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.SYNCED));
+    assertContains(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.SYNCED));
+
+    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1))));
+    assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
+
+    // The value in this remote event gets ignored since we still have a pending transform mutation.
+    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 2, map("sum", 1337)), asList(2), emptyList()));
+    assertChanged(doc("foo/bar", 2, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 2, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
+
+    // Add another increment. Note that we still compute the increment based on the local value.
+    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.numericAdd(2))));
+    assertChanged(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
+
+    acknowledgeMutation(3, 1);
+    assertChanged(doc("foo/bar", 3, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 3, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
+
+    acknowledgeMutation(4, 1339);
+    assertChanged(doc("foo/bar", 4, map("sum", 1339), Document.DocumentState.COMMITTED_MUTATIONS));
+    assertContains(doc("foo/bar", 4, map("sum", 1339), Document.DocumentState.COMMITTED_MUTATIONS));
+  }
+
+  @Test
+  public void testHoldsBackOnlyNonIdempotentTransforms() {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     allocateQuery(query);
     assertTargetId(2);
@@ -1047,52 +1085,15 @@ public abstract class LocalStoreTestCase {
     // ArrayUnion transform is recomputed and includes the backend value.
     applyRemoteEvent(
         addedRemoteEvent(
-            doc("foo/bar", 1, map("sum", 2, "array_union", Collections.singletonList("bar"))),
+            doc("foo/bar", 2, map("sum", 1337, "array_union", Collections.singletonList("bar"))),
             asList(2),
             emptyList()));
     assertChanged(
         doc(
             "foo/bar",
-            1,
+            2,
             map("sum", 1, "array_union", Arrays.asList("bar", "foo")),
             Document.DocumentState.LOCAL_MUTATIONS));
-  }
-
-  @Test
-  public void testHandlesSetMutationThenTransformMutationThenRemoteEventThenTransformMutation() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
-    allocateQuery(query);
-    assertTargetId(2);
-
-    writeMutation(setMutation("foo/bar", map("sum", 0)));
-    assertChanged(doc("foo/bar", 0, map("sum", 0), Document.DocumentState.LOCAL_MUTATIONS));
-    assertContains(doc("foo/bar", 0, map("sum", 0), Document.DocumentState.LOCAL_MUTATIONS));
-
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 0)), asList(2), emptyList()));
-    acknowledgeMutation(1);
-    assertChanged(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.SYNCED));
-    assertContains(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.SYNCED));
-
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1))));
-    assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
-    assertContains(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
-
-    // The value in this remote event gets ignored since we still have a pending transform mutation.
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 2, map("sum", 1337)), asList(2), emptyList()));
-    assertChanged(doc("foo/bar", 2, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
-    assertContains(doc("foo/bar", 2, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
-
-    // Add another increment. Note that we still compute the increment based on the local value.
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.numericAdd(2))));
-    assertChanged(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
-    assertContains(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
-
-    acknowledgeMutation(3, 1);
-    assertChanged(doc("foo/bar", 3, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
-
-    acknowledgeMutation(4, 1339);
-    assertChanged(doc("foo/bar", 4, map("sum", 1339), Document.DocumentState.COMMITTED_MUTATIONS));
-    assertContains(doc("foo/bar", 4, map("sum", 1339), Document.DocumentState.COMMITTED_MUTATIONS));
   }
 
   @Test

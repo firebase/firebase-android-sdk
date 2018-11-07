@@ -194,14 +194,13 @@ public final class LocalStore {
       keys.add(mutation.getKey());
     }
 
-    // Load and apply all existing mutations. This lets us compute the current base state for all
-    // non-idempotent transforms before applying any additional user-provided writes.
-    ImmutableSortedMap<DocumentKey, MaybeDocument> existingDocuments =
-        localDocuments.getDocuments(keys);
-
     return persistence.runTransaction(
         "Locally write mutations",
         () -> {
+          // Load and apply all existing mutations. This lets us compute the current base state for
+          // all non-idempotent transforms before applying any additional user-provided writes.
+          ImmutableSortedMap<DocumentKey, MaybeDocument> existingDocuments =
+              localDocuments.getDocuments(keys);
 
           // For non-idempotent mutations (such as `FieldValue.numericAdd()`), we record the base
           // state in a separate patch mutation. This is later used to guarantee consistent values
@@ -237,7 +236,7 @@ public final class LocalStore {
           MutationBatch batch =
               mutationQueue.addMutationBatch(localWriteTime, baseStateMutations, mutations);
           ImmutableSortedMap<DocumentKey, MaybeDocument> changedDocuments =
-              batch.applyToLocalView(existingDocuments);
+              batch.applyToLocalDocumentSet(existingDocuments);
           return new LocalWriteResult(batch.getBatchId(), changedDocuments);
         });
   }

@@ -141,7 +141,7 @@ public final class MutationBatch {
   }
 
   /** Computes the local view for all provided documents given the mutations in this batch. */
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> applyToLocalView(
+  public ImmutableSortedMap<DocumentKey, MaybeDocument> applyToLocalDocumentSet(
       ImmutableSortedMap<DocumentKey, MaybeDocument> maybeDocumentMap) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
     // (as done in `applyToLocalView(DocumentKey k, MaybeDoc d)`), we can reduce the complexity to
