@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-package com.google.firebase.gradle
+package com.google.firebase.gradle.plugins.measurement
 
 import java.net.URL
 import java.nio.file.Files
@@ -72,7 +72,7 @@ public class UploadMeasurementsTask extends DefaultTask {
                     "-jar",
                     jar,
                     "--config_path=${configuration}",
-                    "--proto_path=${reportFile}",
+                    "--json_path=${reportFile}",
                 )
             }.rethrowFailure()
         }

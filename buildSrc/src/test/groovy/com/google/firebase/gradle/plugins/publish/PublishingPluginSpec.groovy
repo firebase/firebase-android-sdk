@@ -33,7 +33,10 @@ class PublishingPluginSpec extends Specification {
         group = '${group}'
         version = '${version}'
         <% if (latestReleasedVersion) println "ext.latestReleasedVersion = $latestReleasedVersion" %>
-        
+        repositories {
+            google()
+            jcenter()
+	}
         dependencies {
             <%dependencies.each { println "implementation project(':$it.name')" } %>
         }

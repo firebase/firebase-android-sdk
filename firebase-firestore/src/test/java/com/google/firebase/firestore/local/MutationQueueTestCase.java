@@ -95,10 +95,10 @@ public abstract class MutationQueueTestCase {
     assertEquals(2, batchCount());
     assertFalse(mutationQueue.isEmpty());
 
-    removeMutationBatches(batch2);
+    removeMutationBatches(batch1);
     assertEquals(1, batchCount());
 
-    removeMutationBatches(batch1);
+    removeMutationBatches(batch2);
     assertEquals(0, batchCount());
     assertTrue(mutationQueue.isEmpty());
   }
@@ -124,7 +124,7 @@ public abstract class MutationQueueTestCase {
     assertNull(notFound);
 
     List<MutationBatch> batches = createBatches(10);
-    List<MutationBatch> removed = makeHoles(asList(2, 6, 7), batches);
+    List<MutationBatch> removed = removeFirstBatches(3, batches);
 
     // After removing, a batch should not be found
     for (MutationBatch batch : removed) {
@@ -147,10 +147,7 @@ public abstract class MutationQueueTestCase {
   @Test
   public void testNextMutationBatchAfterBatchId() {
     List<MutationBatch> batches = createBatches(10);
-
-    // This is an array of successors assuming the removals below will happen:
-    List<MutationBatch> afters = asList(batches.get(3), batches.get(8), batches.get(8));
-    List<MutationBatch> removed = makeHoles(asList(2, 6, 7), batches);
+    List<MutationBatch> removed = removeFirstBatches(3, batches);
 
     for (int i = 0; i < batches.size() - 1; i++) {
       MutationBatch current = batches.get(i);
@@ -162,7 +159,7 @@ public abstract class MutationQueueTestCase {
 
     for (int i = 0; i < removed.size(); i++) {
       MutationBatch current = removed.get(i);
-      MutationBatch next = afters.get(i);
+      MutationBatch next = batches.get(0);
       MutationBatch found = mutationQueue.getNextMutationBatchAfterBatchId(current.getBatchId());
       assertNotNull(found);
       assertEquals(next.getBatchId(), found.getBatchId());
@@ -378,17 +375,17 @@ public abstract class MutationQueueTestCase {
     assertEquals(batches, found);
     assertEquals(6, found.size());
 
-    removeMutationBatches(batches.remove(batches.size() - 1));
+    removeMutationBatches(batches.remove(0));
     assertEquals(5, batchCount());
 
     found = mutationQueue.getAllMutationBatches();
     assertEquals(batches, found);
     assertEquals(5, found.size());
 
-    removeMutationBatches(batches.remove(3));
+    removeMutationBatches(batches.remove(0));
     assertEquals(4, batchCount());
 
-    removeMutationBatches(batches.remove(1));
+    removeMutationBatches(batches.remove(0));
     assertEquals(3, batchCount());
 
     found = mutationQueue.getAllMutationBatches();
@@ -473,21 +470,18 @@ public abstract class MutationQueueTestCase {
   }
 
   /**
-   * Removes entries from from the given <tt>batches</tt> and returns them.
+   * Removes the first n entries from the given <tt>batches</tt> and returns them.
    *
-   * @param holes An list of indexes in the batches list; in increasing order. Indexes are relative
-   *     to the original state of the batches list, not any intermediate state that might occur.
+   * @param n The number of batches to remove..
    * @param batches The list to mutate, removing entries from it.
    * @return A new list containing all the entries that were removed from @a batches.
    */
-  private List<MutationBatch> makeHoles(List<Integer> holes, List<MutationBatch> batches) {
+  private List<MutationBatch> removeFirstBatches(int n, List<MutationBatch> batches) {
     List<MutationBatch> removed = new ArrayList<>();
-    for (int i = 0; i < holes.size(); i++) {
-      int index = holes.get(i) - i;
-      MutationBatch batch = batches.get(index);
+    for (int i = 0; i < n; i++) {
+      MutationBatch batch = batches.get(0);
       removeMutationBatches(batch);
-
-      batches.remove(index);
+      batches.remove(0);
       removed.add(batch);
     }
     return removed;

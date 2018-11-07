@@ -18,15 +18,13 @@ import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
-import io.grpc.Attributes;
-import io.grpc.CallCredentials;
+import io.grpc.CallCredentials2;
 import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import java.util.concurrent.Executor;
 
 /** CallCredentials that applies any authorization headers. */
-public final class FirestoreCallCredentials implements CallCredentials {
+public final class FirestoreCallCredentials extends CallCredentials2 {
 
   private static final String LOG_TAG = "FirestoreCallCredentials";
 
@@ -45,10 +43,7 @@ public final class FirestoreCallCredentials implements CallCredentials {
 
   @Override
   public void applyRequestMetadata(
-      MethodDescriptor<?, ?> methodDescriptor,
-      Attributes attributes,
-      Executor executor,
-      final MetadataApplier metadataApplier) {
+      RequestInfo requestInfo, Executor executor, final MetadataApplier metadataApplier) {
     credentialsProvider
         .getToken()
         .addOnSuccessListener(

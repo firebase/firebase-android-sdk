@@ -55,15 +55,14 @@ dependencies {
     }
     implementation 'com.google.firebase:firebase-iid-interop:16.0.1'
 
-    implementation 'com.squareup.okhttp:okhttp:2.7.2'
+    implementation 'com.squareup.okhttp:okhttp:2.7.5'
 
     annotationProcessor 'com.google.auto.value:auto-value:1.6'
 
     androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.google.truth:truth:0.42'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'org.mockito:mockito-core:2.21.0'
-    androidTestImplementation 'com.google.truth:truth:0.42'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.16.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.16.0'
 

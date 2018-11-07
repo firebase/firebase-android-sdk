@@ -20,7 +20,6 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -65,6 +64,7 @@ public final class MutationBatch {
       Timestamp localWriteTime,
       List<Mutation> baseMutations,
       List<Mutation> mutations) {
+    hardAssert(!mutations.isEmpty(), "Cannot create an empty mutation batch");
     this.batchId = batchId;
     this.localWriteTime = localWriteTime;
     this.baseMutations = baseMutations;
@@ -214,23 +214,6 @@ public final class MutationBatch {
    */
   public Timestamp getLocalWriteTime() {
     return localWriteTime;
-  }
-
-  /**
-   * Returns true if this mutation batch has already been removed from the mutation queue.
-   *
-   * <p>Note that not all implementations of the MutationQueue necessarily use tombstones as a part
-   * of their implementation and generally speaking no code outside the mutation queues should
-   * really care about this.
-   */
-  public boolean isTombstone() {
-    return mutations.isEmpty();
-  }
-
-  /** Converts this batch to a tombstone. */
-  public MutationBatch toTombstone() {
-    return new MutationBatch(
-        batchId, localWriteTime, Collections.emptyList(), Collections.emptyList());
   }
 
   /** @return The user-provided mutations in this mutation batch. */

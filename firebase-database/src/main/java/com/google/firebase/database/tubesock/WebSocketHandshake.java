@@ -19,7 +19,6 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 
 class WebSocketHandshake {
@@ -107,11 +106,11 @@ class WebSocketHandshake {
     }
   }
 
-  public void verifyServerHandshakeHeaders(HashMap<String, String> headers) {
-    if (!headers.get("Upgrade").toLowerCase(Locale.US).equals("websocket")) {
+  public void verifyServerHandshakeHeaders(HashMap<String, String> lowercaseHeaders) {
+    if (!"websocket".equals(lowercaseHeaders.get("upgrade"))) {
       throw new WebSocketException(
           "connection failed: missing header field in server handshake: Upgrade");
-    } else if (!headers.get("Connection").toLowerCase(Locale.US).equals("upgrade")) {
+    } else if (!"upgrade".equals(lowercaseHeaders.get("connection"))) {
       throw new WebSocketException(
           "connection failed: missing header field in server handshake: Connection");
     }
