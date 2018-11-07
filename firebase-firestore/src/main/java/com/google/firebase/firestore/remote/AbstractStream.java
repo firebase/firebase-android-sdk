@@ -109,11 +109,11 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     public void onNext(RespT response) {
       dispatcher.run(
           () -> {
-            Logger.debug(
-                AbstractStream.this.getClass().getSimpleName(),
-                "(%x) Stream received: %s",
-                System.identityHashCode(AbstractStream.this),
-                response);
+            // Logger.debug(
+            //     AbstractStream.this.getClass().getSimpleName(),
+            //     "(%x) Stream received: %s",
+            //     System.identityHashCode(AbstractStream.this),
+            //     response);
             AbstractStream.this.onNext(response);
           });
     }
@@ -203,6 +203,11 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     this.idleTimerId = idleTimerId;
     this.listener = listener;
     this.idleTimeoutRunnable = new IdleTimeoutRunnable();
+
+    Logger.debug(
+        AbstractStream.this.getClass().getSimpleName(),
+        "OBCD Hello");
+
     backoff =
         new ExponentialBackoff(
             workerQueue,
