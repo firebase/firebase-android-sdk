@@ -139,7 +139,7 @@ final class MemoryMutationQueue implements MutationQueue {
 
   @Override
   public MutationBatch addMutationBatch(
-      Timestamp localWriteTime, List<Mutation> baseStateMutations, List<Mutation> mutations) {
+      Timestamp localWriteTime, List<Mutation> baseMutations, List<Mutation> mutations) {
     hardAssert(!mutations.isEmpty(), "Mutation batches should not be empty");
 
     int batchId = nextBatchId;
@@ -152,7 +152,7 @@ final class MemoryMutationQueue implements MutationQueue {
           prior.getBatchId() < batchId, "Mutation batchIds must be monotonically increasing order");
     }
 
-    MutationBatch batch = new MutationBatch(batchId, localWriteTime, baseStateMutations, mutations);
+    MutationBatch batch = new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
     queue.add(batch);
 
     // Track references by document key.

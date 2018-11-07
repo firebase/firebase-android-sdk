@@ -160,7 +160,7 @@ public final class LocalSerializer {
 
     result.setBatchId(batch.getBatchId());
     result.setLocalWriteTime(rpcSerializer.encodeTimestamp(batch.getLocalWriteTime()));
-    for (Mutation mutation : batch.getBaseStateMutations()) {
+    for (Mutation mutation : batch.getBaseMutations()) {
       result.addBaseWrites(rpcSerializer.encodeMutation(mutation));
     }
     for (Mutation mutation : batch.getMutations()) {
@@ -174,17 +174,17 @@ public final class LocalSerializer {
     int batchId = batch.getBatchId();
     Timestamp localWriteTime = rpcSerializer.decodeTimestamp(batch.getLocalWriteTime());
 
-    int baseStateMutationsCount = batch.getBaseWritesCount();
-    List<Mutation> baseStateMutations = new ArrayList<>(baseStateMutationsCount);
-    for (int i = 0; i < baseStateMutationsCount; i++) {
-      baseStateMutations.add(rpcSerializer.decodeMutation(batch.getBaseWrites(i)));
+    int baseMutationsCount = batch.getBaseWritesCount();
+    List<Mutation> baseMutations = new ArrayList<>(baseMutationsCount);
+    for (int i = 0; i < baseMutationsCount; i++) {
+      baseMutations.add(rpcSerializer.decodeMutation(batch.getBaseWrites(i)));
     }
     int mutationsCount = batch.getWritesCount();
     List<Mutation> mutations = new ArrayList<>(mutationsCount);
     for (int i = 0; i < mutationsCount; i++) {
       mutations.add(rpcSerializer.decodeMutation(batch.getWrites(i)));
     }
-    return new MutationBatch(batchId, localWriteTime, baseStateMutations, mutations);
+    return new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
   }
 
   com.google.firebase.firestore.proto.Target encodeQueryData(QueryData queryData) {

@@ -52,7 +52,7 @@ public final class MutationBatch {
    * can be used to locally overwrite values that are persisted in the remote document cache. Base
    * mutations are never sent to the backend.
    */
-  private final List<Mutation> baseStateMutations;
+  private final List<Mutation> baseMutations;
 
   /**
    * The user-provided mutations in this mutation batch. User-provided mutations are applied both
@@ -63,11 +63,11 @@ public final class MutationBatch {
   public MutationBatch(
       int batchId,
       Timestamp localWriteTime,
-      List<Mutation> baseStateMutations,
+      List<Mutation> baseMutations,
       List<Mutation> mutations) {
     this.batchId = batchId;
     this.localWriteTime = localWriteTime;
-    this.baseStateMutations = baseStateMutations;
+    this.baseMutations = baseMutations;
     this.mutations = mutations;
   }
 
@@ -121,8 +121,8 @@ public final class MutationBatch {
 
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
-    for (int i = 0; i < baseStateMutations.size(); i++) {
-      Mutation mutation = baseStateMutations.get(i);
+    for (int i = 0; i < baseMutations.size(); i++) {
+      Mutation mutation = baseMutations.get(i);
       if (mutation.getKey().equals(documentKey)) {
         maybeDoc = mutation.applyToLocalView(maybeDoc, maybeDoc, localWriteTime);
       }
@@ -169,7 +169,7 @@ public final class MutationBatch {
     MutationBatch that = (MutationBatch) o;
     return batchId == that.batchId
         && localWriteTime.equals(that.localWriteTime)
-        && baseStateMutations.equals(that.baseStateMutations)
+        && baseMutations.equals(that.baseMutations)
         && mutations.equals(that.mutations);
   }
 
@@ -177,7 +177,7 @@ public final class MutationBatch {
   public int hashCode() {
     int result = batchId;
     result = 31 * result + localWriteTime.hashCode();
-    result = 31 * result + baseStateMutations.hashCode();
+    result = 31 * result + baseMutations.hashCode();
     result = 31 * result + mutations.hashCode();
     return result;
   }
@@ -188,8 +188,8 @@ public final class MutationBatch {
         + batchId
         + ", localWriteTime="
         + localWriteTime
-        + ", baseStateMutations="
-        + baseStateMutations
+        + ", baseMutations="
+        + baseMutations
         + ", mutations="
         + mutations
         + ')';
@@ -242,7 +242,7 @@ public final class MutationBatch {
    * @return The mutations that are used to populate the base values when this mutation batch is
    *     applied locally.
    */
-  public List<Mutation> getBaseStateMutations() {
-    return baseStateMutations;
+  public List<Mutation> getBaseMutations() {
+    return baseMutations;
   }
 }

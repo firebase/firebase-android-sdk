@@ -137,7 +137,7 @@ public final class LocalSerializerTest {
     assertEquals(model.getBatchId(), decoded.getBatchId());
     assertEquals(model.getLocalWriteTime(), decoded.getLocalWriteTime());
     assertEquals(model.getMutations(), decoded.getMutations());
-    assertEquals(model.getBaseStateMutations(), decoded.getBaseStateMutations());
+    assertEquals(model.getBaseMutations(), decoded.getBaseMutations());
     assertEquals(model.getKeys(), decoded.getKeys());
   }
 
