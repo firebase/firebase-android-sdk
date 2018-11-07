@@ -453,7 +453,7 @@ public class AsyncQueue {
     executor.shutdown();
     return Tasks.call(
         () -> {
-          if (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+          if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
             Logger.debug(
                 AsyncQueue.class.getSimpleName(),
                 "Unable to gracefully shutdown the executor. Will attempt an immediate shutdown.");
@@ -461,7 +461,7 @@ public class AsyncQueue {
 
             // shutdownNow() uses Thread.interrupt() to cancel running tasks. There's no guarantee
             // that these will stop immediately (or ever.)
-            if (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
               // Something bad has happened. We could assert, but this is just resource cleanup for
               // a resource that is likely only released at the end of the execution. So instead,
               // we'll just log the error.

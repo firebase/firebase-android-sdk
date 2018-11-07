@@ -91,7 +91,7 @@ public class FirestoreChannel {
   public void shutdown() {
     channel.shutdown();
     try {
-      if (!channel.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+      if (!channel.awaitTermination(60, TimeUnit.SECONDS)) {
         Logger.debug(
             FirestoreChannel.class.getSimpleName(),
             "Unable to gracefully shutdown the gRPC ManagedChannel. Will attempt an immediate shutdown.");
@@ -100,7 +100,7 @@ public class FirestoreChannel {
         // gRPC docs claim "Although forceful, the shutdown process is still not
         // instantaneous; isTerminated() will likely return false immediately after this method
         // returns." Therefore, we still need to awaitTermination() again.
-        if (!channel.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+        if (!channel.awaitTermination(60, TimeUnit.SECONDS)) {
           // Something bad has happened. We could assert, but this is just resource cleanup for a
           // resource that is likely only released at the end of the execution. So instead, we'll
           // just log the error.
@@ -110,10 +110,14 @@ public class FirestoreChannel {
         }
       }
     } catch (InterruptedException e) {
+      // (Re-)Cancel if current thread also interrupted
+      channel.shutdownNow();
       // Similar to above, something bad happened, but it's not worth asserting. Just log it.
       Logger.warn(
           FirestoreChannel.class.getSimpleName(),
           "Interrupted while shutting down the gRPC Managed Channel");
+      // Preserve interrupt status
+      Thread.currentThread().interrupt();
     }
   }
 
