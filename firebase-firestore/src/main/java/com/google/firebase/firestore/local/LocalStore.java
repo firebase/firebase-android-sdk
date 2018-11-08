@@ -338,17 +338,25 @@ public final class LocalStore {
           for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
             keys.add(entry.getKey());
           }
-          List<MaybeDocument> existingDocs = remoteDocuments.getAll(keys);
+          boolean OPTIMIZE_NO_GET_BY_ONE = false;
+          List<MaybeDocument> existingDocs = null;
+          if (OPTIMIZE_NO_GET_BY_ONE) {
+            existingDocs = remoteDocuments.getAll(keys);
+          }
 
           for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
             DocumentKey key = entry.getKey();
             MaybeDocument doc = entry.getValue();
             MaybeDocument existingDoc = null;
-            for (MaybeDocument aDoc : existingDocs) {
-              if (aDoc.getKey().equals(key)) {
-                existingDoc = aDoc;
-                break;
+            if (OPTIMIZE_NO_GET_BY_ONE) {
+              for (MaybeDocument aDoc : existingDocs) {
+                if (aDoc.getKey().equals(key)) {
+                  existingDoc = aDoc;
+                  break;
+                }
               }
+            } else {
+              existingDoc = remoteDocuments.get(key);
             }
             // If a document update isn't authoritative, make sure we don't
             // apply an old document version to the remote cache. We make an
@@ -394,7 +402,13 @@ public final class LocalStore {
             queryCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
-          return localDocuments.getDocuments(changedDocs);
+          boolean OPTIMIZE_NO_DOUBLE_GET = false;
+          if (OPTIMIZE_NO_DOUBLE_GET) {
+            return localDocuments.getDocuments(changedDocs);
+          } else {
+            Logger.debug("LocalStore", "OBC No double get optimization");
+            return localDocuments.getDocuments(changedDocs.keySet());
+          }
         });
   }
 
