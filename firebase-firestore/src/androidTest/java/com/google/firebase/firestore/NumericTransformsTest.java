@@ -30,8 +30,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-// TODO(b/119035894): Enable these tests once available in Production
-@Ignore("Not yet available in production")
 public class NumericTransformsTest {
   private static final double DOUBLE_EPSILON = 0.000001;
 
