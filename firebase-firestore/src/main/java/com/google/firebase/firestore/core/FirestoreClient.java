@@ -236,7 +236,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     persistence.start();
     localStore = new LocalStore(persistence, user);
     if (gc != null) {
-      lruScheduler = gc.new Scheduler(asyncQueue, localStore);
+      lruScheduler = gc.newScheduler(asyncQueue, localStore);
       lruScheduler.start();
     }
 

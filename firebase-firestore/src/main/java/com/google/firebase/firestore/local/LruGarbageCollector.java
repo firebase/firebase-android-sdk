@@ -107,6 +107,11 @@ public class LruGarbageCollector {
     }
   }
 
+  /**
+   * This class is responsible for the scheduling of LRU garbage collection. It
+   * handles checking whether or not GC is enabled, as well as which delay to use before
+   * the next run.
+   */
   public class Scheduler {
     private final AsyncQueue asyncQueue;
     private final LocalStore localStore;
@@ -150,6 +155,13 @@ public class LruGarbageCollector {
   LruGarbageCollector(LruDelegate delegate, Params params) {
     this.delegate = delegate;
     this.params = params;
+  }
+
+  /**
+   * A helper method to create a new scheduler.
+   */
+  public Scheduler newScheduler(AsyncQueue asyncQueue, LocalStore localStore) {
+    return new Scheduler(asyncQueue, localStore);
   }
 
   /** Given a percentile of target to collect, returns the number of targets to collect. */
