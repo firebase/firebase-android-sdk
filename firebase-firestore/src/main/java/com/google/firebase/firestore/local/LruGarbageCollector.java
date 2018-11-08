@@ -108,9 +108,8 @@ public class LruGarbageCollector {
   }
 
   /**
-   * This class is responsible for the scheduling of LRU garbage collection. It
-   * handles checking whether or not GC is enabled, as well as which delay to use before
-   * the next run.
+   * This class is responsible for the scheduling of LRU garbage collection. It handles checking
+   * whether or not GC is enabled, as well as which delay to use before the next run.
    */
   public class Scheduler {
     private final AsyncQueue asyncQueue;
@@ -157,9 +156,7 @@ public class LruGarbageCollector {
     this.params = params;
   }
 
-  /**
-   * A helper method to create a new scheduler.
-   */
+  /** A helper method to create a new scheduler. */
   public Scheduler newScheduler(AsyncQueue asyncQueue, LocalStore localStore) {
     return new Scheduler(asyncQueue, localStore);
   }
