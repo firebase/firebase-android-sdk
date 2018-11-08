@@ -1129,7 +1129,7 @@ public abstract class LocalStoreTestCase {
 
     // Note: This test reflects the current behavior, but it may be preferable to replay the
     // mutation once we receive the first value from the remote event.
-    
+
     applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 1337)), asList(2), emptyList()));
     assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
