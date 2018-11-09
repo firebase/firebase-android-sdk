@@ -74,6 +74,7 @@ final class LocalDocumentsView {
   @Nullable
   private List<MaybeDocument> getDocumentsInternal(Iterable<DocumentKey> keys, List<MutationBatch> batches) {
     List<MaybeDocument> documents = remoteDocumentCache.getAll(keys);
+    // TODO(varconst): uncomment and fix.
     // for (MutationBatch batch : batches) {
     //   document = batch.applyToLocalView(key, document);
     // }
@@ -84,6 +85,7 @@ final class LocalDocumentsView {
   @Nullable
   private List<MaybeDocument> getDocumentsInternal(Collection<MaybeDocument> docs, List<MutationBatch> batches) {
     List<MaybeDocument> result = new ArrayList<>(docs);
+    // TODO(varconst): uncomment and fix.
     // for (MutationBatch batch : batches) {
     //   document = batch.applyToLocalView(key, document);
     // }

@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
@@ -283,14 +282,6 @@ public final class LocalStore {
     return persistence.runTransaction(
         "Apply remote event",
         () -> {
-          {
-            Calendar now = Calendar.getInstance();
-            int minute = now.get(Calendar.MINUTE);
-            int second = now.get(Calendar.SECOND);
-            int millis = now.get(Calendar.MILLISECOND);
-            Logger.debug("WatchStream", String.format("OBCD applyRemoteEvent %02d:%02d.%03d", minute, second, millis));
-          }
-
           long sequenceNumber = persistence.getReferenceDelegate().getCurrentSequenceNumber();
           Set<DocumentKey> authoritativeUpdates = new HashSet<>();
 
@@ -347,28 +338,18 @@ public final class LocalStore {
           for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
             keys.add(entry.getKey());
           }
-          boolean OPTIMIZE_NO_GET_BY_ONE = true;
-          List<MaybeDocument> existingDocs = null;
-          if (OPTIMIZE_NO_GET_BY_ONE) {
-            existingDocs = remoteDocuments.getAll(keys);
-          }
+          List<MaybeDocument> existingDocs = remoteDocuments.getAll(keys);
 
           for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
             DocumentKey key = entry.getKey();
             MaybeDocument doc = entry.getValue();
             MaybeDocument existingDoc = null;
-            if (OPTIMIZE_NO_GET_BY_ONE) {
-              for (MaybeDocument aDoc : existingDocs) {
-                if (aDoc.getKey().equals(key)) {
-                  existingDoc = aDoc;
-                  break;
-                }
+            for (MaybeDocument aDoc : existingDocs) {
+              if (aDoc.getKey().equals(key)) {
+                existingDoc = aDoc;
+                break;
               }
-            } else {
-              existingDoc = remoteDocuments.get(key);
             }
-
-            // Logger.debug("WatchStream", "OBCDE %s", doc);
 
             // If a document update isn't authoritative, make sure we don't
             // apply an old document version to the remote cache. We make an
@@ -402,9 +383,6 @@ public final class LocalStore {
           // state of a locally cached document that is in limbo.
           SnapshotVersion lastRemoteVersion = queryCache.getLastRemoteSnapshotVersion();
           SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
-              Logger.debug(
-                  "LocalStore", "OBC Old version %s new version %s", lastRemoteVersion,
-                  remoteVersion);
           if (!remoteVersion.equals(SnapshotVersion.NONE)) {
             hardAssert(
                 remoteVersion.compareTo(lastRemoteVersion) >= 0,
@@ -414,32 +392,7 @@ public final class LocalStore {
             queryCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
-          {
-            Calendar now = Calendar.getInstance();
-            int minute = now.get(Calendar.MINUTE);
-            int second = now.get(Calendar.SECOND);
-            int millis = now.get(Calendar.MILLISECOND);
-            Logger.debug("WatchStream", String.format("OBCD before final get %02d:%02d.%03d", minute, second, millis));
-          }
-
-          boolean OPTIMIZE_NO_DOUBLE_GET = true;
-          ImmutableSortedMap<DocumentKey, MaybeDocument> result = null;
-          if (OPTIMIZE_NO_DOUBLE_GET) {
-            result = localDocuments.getDocuments(changedDocs);
-          } else {
-            Logger.debug("LocalStore", "OBC No double get optimization");
-            result = localDocuments.getDocuments(changedDocs.keySet());
-          }
-
-          {
-            Calendar now = Calendar.getInstance();
-            int minute = now.get(Calendar.MINUTE);
-            int second = now.get(Calendar.SECOND);
-            int millis = now.get(Calendar.MILLISECOND);
-            Logger.debug("WatchStream", String.format("OBCD after final get %02d:%02d.%03d", minute, second, millis));
-          }
-
-          return result;
+          return localDocuments.getDocuments(changedDocs);
         });
   }
 

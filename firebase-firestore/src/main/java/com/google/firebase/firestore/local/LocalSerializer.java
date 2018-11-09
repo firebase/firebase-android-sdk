@@ -48,7 +48,6 @@ public final class LocalSerializer {
   com.google.firebase.firestore.proto.MaybeDocument encodeMaybeDocument(MaybeDocument document) {
     com.google.firebase.firestore.proto.MaybeDocument.Builder builder =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder();
-    boolean OPTIMIZE_ENCODE = true;
 
     if (document instanceof NoDocument) {
       NoDocument noDocument = (NoDocument) document;
@@ -56,7 +55,7 @@ public final class LocalSerializer {
       builder.setHasCommittedMutations(noDocument.hasCommittedMutations());
     } else if (document instanceof Document) {
       Document existingDocument = (Document) document;
-      if (OPTIMIZE_ENCODE && existingDocument.getProto() != null) {
+      if (existingDocument.getProto() != null) {
         builder.setDocument(existingDocument.getProto());
       } else {
         builder.setDocument(encodeDocument(existingDocument));
