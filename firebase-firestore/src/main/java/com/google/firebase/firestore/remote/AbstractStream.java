@@ -114,6 +114,10 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
             //     "(%x) Stream received: %s",
             //     System.identityHashCode(AbstractStream.this),
             //     response);
+            // Logger.debug(
+            //     AbstractStream.this.getClass().getSimpleName(),
+            //     "OBCD (%x) Stream received: # com.google.firebase.firestore.obfuscated.zzic@19495faf",
+            //     System.identityHashCode(AbstractStream.this));
             AbstractStream.this.onNext(response);
           });
     }

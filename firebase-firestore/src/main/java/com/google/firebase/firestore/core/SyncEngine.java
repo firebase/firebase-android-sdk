@@ -48,6 +48,7 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -484,6 +485,14 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    */
   private void emitNewSnapsAndNotifyLocalStore(
       ImmutableSortedMap<DocumentKey, MaybeDocument> changes, @Nullable RemoteEvent remoteEvent) {
+          {
+            Calendar now = Calendar.getInstance();
+            int minute = now.get(Calendar.MINUTE);
+            int second = now.get(Calendar.SECOND);
+            int millis = now.get(Calendar.MILLISECOND);
+            Logger.debug("WatchStream", String.format("OBCD before emitnewsnaps %02d:%02d.%03d", minute, second, millis));
+          }
+
     List<ViewSnapshot> newSnapshots = new ArrayList<>();
     List<LocalViewChanges> documentChangesInAllViews = new ArrayList<>();
 
@@ -513,6 +522,15 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     }
     syncEngineListener.onViewSnapshots(newSnapshots);
     localStore.notifyLocalViewChanges(documentChangesInAllViews);
+
+          {
+            Calendar now = Calendar.getInstance();
+            int minute = now.get(Calendar.MINUTE);
+            int second = now.get(Calendar.SECOND);
+            int millis = now.get(Calendar.MILLISECOND);
+            Logger.debug("WatchStream", String.format("OBCD after emitnewsnaps %02d:%02d.%03d", minute, second, millis));
+          }
+
   }
 
   /** Updates the limbo document state for the given targetId. */

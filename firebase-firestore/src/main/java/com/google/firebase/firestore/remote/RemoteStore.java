@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Calendar;
 
 /**
  * RemoteStore handles all interaction with the backend through a simple, clean interface. This
@@ -307,6 +308,14 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   private void sendWatchRequest(QueryData queryData) {
+          {
+            Calendar now = Calendar.getInstance();
+            int minute = now.get(Calendar.MINUTE);
+            int second = now.get(Calendar.SECOND);
+            int millis = now.get(Calendar.MILLISECOND);
+            Logger.debug("WatchStream", String.format("OBCD send watch request %02d:%02d.%03d", minute, second, millis));
+          }
+
     watchChangeAggregator.recordPendingTargetRequest(queryData.getTargetId());
     watchStream.watchQuery(queryData);
   }

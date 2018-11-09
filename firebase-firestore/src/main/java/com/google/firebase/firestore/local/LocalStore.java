@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
@@ -282,6 +283,14 @@ public final class LocalStore {
     return persistence.runTransaction(
         "Apply remote event",
         () -> {
+          {
+            Calendar now = Calendar.getInstance();
+            int minute = now.get(Calendar.MINUTE);
+            int second = now.get(Calendar.SECOND);
+            int millis = now.get(Calendar.MILLISECOND);
+            Logger.debug("WatchStream", String.format("OBCD applyRemoteEvent %02d:%02d.%03d", minute, second, millis));
+          }
+
           long sequenceNumber = persistence.getReferenceDelegate().getCurrentSequenceNumber();
           Set<DocumentKey> authoritativeUpdates = new HashSet<>();
 
@@ -338,7 +347,7 @@ public final class LocalStore {
           for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
             keys.add(entry.getKey());
           }
-          boolean OPTIMIZE_NO_GET_BY_ONE = false;
+          boolean OPTIMIZE_NO_GET_BY_ONE = true;
           List<MaybeDocument> existingDocs = null;
           if (OPTIMIZE_NO_GET_BY_ONE) {
             existingDocs = remoteDocuments.getAll(keys);
@@ -358,6 +367,9 @@ public final class LocalStore {
             } else {
               existingDoc = remoteDocuments.get(key);
             }
+
+            // Logger.debug("WatchStream", "OBCDE %s", doc);
+
             // If a document update isn't authoritative, make sure we don't
             // apply an old document version to the remote cache. We make an
             // exception for SnapshotVersion.MIN which can happen for
@@ -402,13 +414,32 @@ public final class LocalStore {
             queryCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
-          boolean OPTIMIZE_NO_DOUBLE_GET = false;
+          {
+            Calendar now = Calendar.getInstance();
+            int minute = now.get(Calendar.MINUTE);
+            int second = now.get(Calendar.SECOND);
+            int millis = now.get(Calendar.MILLISECOND);
+            Logger.debug("WatchStream", String.format("OBCD before final get %02d:%02d.%03d", minute, second, millis));
+          }
+
+          boolean OPTIMIZE_NO_DOUBLE_GET = true;
+          ImmutableSortedMap<DocumentKey, MaybeDocument> result = null;
           if (OPTIMIZE_NO_DOUBLE_GET) {
-            return localDocuments.getDocuments(changedDocs);
+            result = localDocuments.getDocuments(changedDocs);
           } else {
             Logger.debug("LocalStore", "OBC No double get optimization");
-            return localDocuments.getDocuments(changedDocs.keySet());
+            result = localDocuments.getDocuments(changedDocs.keySet());
           }
+
+          {
+            Calendar now = Calendar.getInstance();
+            int minute = now.get(Calendar.MINUTE);
+            int second = now.get(Calendar.SECOND);
+            int millis = now.get(Calendar.MILLISECOND);
+            Logger.debug("WatchStream", String.format("OBCD after final get %02d:%02d.%03d", minute, second, millis));
+          }
+
+          return result;
         });
   }
 
