@@ -57,6 +57,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public List<MaybeDocument> getAll(Iterable<DocumentKey> keys) {
+    // FIXME(varconst) placeholder
     return new ArrayList<>();
   }
 

@@ -25,8 +25,6 @@ import com.google.firestore.v1beta1.FirestoreGrpc;
 import com.google.firestore.v1beta1.ListenRequest;
 import com.google.firestore.v1beta1.ListenResponse;
 import com.google.protobuf.ByteString;
-import com.google.firebase.firestore.util.Logger;
-import java.util.Calendar;
 import java.util.Map;
 
 /**
@@ -53,8 +51,6 @@ public class WatchStream
   }
 
   private final RemoteSerializer serializer;
-
-  private int ctr = 0;
 
   WatchStream(
       FirestoreChannel channel,
@@ -111,15 +107,5 @@ public class WatchStream
     WatchChange watchChange = serializer.decodeWatchChange(listenResponse);
     SnapshotVersion snapshotVersion = serializer.decodeVersionFromListenResponse(listenResponse);
     listener.onWatchChange(snapshotVersion, watchChange);
-
-    ++ctr;
-    //Logger.debug("WatchStream", String.format("OBCD ctr: %d", ctr));
-    if (ctr == 1 || ctr == 500 || ctr >= 1000) {
-      Calendar now = Calendar.getInstance();
-      int minute = now.get(Calendar.MINUTE);
-      int second = now.get(Calendar.SECOND);
-      int millis = now.get(Calendar.MILLISECOND);
-      Logger.debug("WatchStream", String.format("OBCD %02d:%02d.%03d", minute, second, millis));
-    }
   }
 }
