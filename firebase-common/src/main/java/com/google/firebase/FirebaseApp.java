@@ -44,6 +44,7 @@ import com.google.android.gms.common.util.PlatformVersion;
 import com.google.android.gms.common.util.ProcessUtils;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.NonNullGeneric;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.components.Component;
@@ -217,7 +218,9 @@ public class FirebaseApp {
 
   /** Returns a mutable list of all FirebaseApps. */
   @PublicApi
-  public static List<FirebaseApp> getApps(Context context) {
+  @NonNull
+  @NonNullGeneric
+  public static List<FirebaseApp> getApps(@Nullable Context context) {
     synchronized (LOCK) {
       return new ArrayList<>(INSTANCES.values());
     }
@@ -395,6 +398,8 @@ public class FirebaseApp {
    */
   @Deprecated
   @KeepForSdk
+  @NonNull
+  @NonNullGeneric
   public Task<GetTokenResult> getToken(boolean forceRefresh) {
     checkNotDeleted();
 
