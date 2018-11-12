@@ -106,7 +106,6 @@ public final class FirebaseOptions {
       return projectId;
     }
 
-
     @PublicApi
     public Builder setApiKey(@NonNull String apiKey) {
       this.apiKey = checkNotEmpty(apiKey, "ApiKey must be set.");

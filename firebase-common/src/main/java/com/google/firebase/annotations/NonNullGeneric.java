@@ -15,7 +15,6 @@
 package com.google.firebase.annotations;
 
 import android.os.Build;
-
 import java.lang.annotation.ElementType;
 
 /**
