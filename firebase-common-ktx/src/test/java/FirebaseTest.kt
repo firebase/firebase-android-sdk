@@ -41,7 +41,6 @@ class FirebaseOptionsTest {
     fun `options builder should only set appId and apiKey`() {
         val options = Firebase.options(applicationId = APP_ID, apiKey = API_KEY)
         assertThat(options).isEqualTo(FirebaseOptions.Builder().setApplicationId(APP_ID).setApiKey(API_KEY).build())
-        fail("hello")
     }
 
     @Test
