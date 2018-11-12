@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import android.support.annotation.NonNull;
+import com.google.firebase.annotations.NonNullGeneric;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
@@ -101,6 +102,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
    * @return The list of document changes since the last snapshot.
    */
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public List<DocumentChange> getDocumentChanges() {
     return getDocumentChanges(MetadataChanges.EXCLUDE);
@@ -115,6 +117,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
    * @return The list of document changes since the last snapshot.
    */
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public List<DocumentChange> getDocumentChanges(MetadataChanges metadataChanges) {
     if (MetadataChanges.INCLUDE.equals(metadataChanges) && snapshot.excludesMetadataChanges()) {
@@ -137,6 +140,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
    * @return The list of documents.
    */
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public List<DocumentSnapshot> getDocuments() {
     List<DocumentSnapshot> res = new ArrayList<>(snapshot.getDocuments().size());
@@ -160,6 +164,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
 
   @Override
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public Iterator<QueryDocumentSnapshot> iterator() {
     return new QuerySnapshotIterator(snapshot.getDocuments().iterator());
@@ -172,6 +177,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
    * @param clazz The POJO type used to convert the documents in the list.
    */
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public <T> List<T> toObjects(@NonNull Class<T> clazz) {
     return toObjects(clazz, DocumentSnapshot.ServerTimestampBehavior.DEFAULT);
@@ -186,6 +192,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
    *     been set to their final value.
    */
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public <T> List<T> toObjects(
       @NonNull Class<T> clazz,

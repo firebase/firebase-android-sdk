@@ -20,6 +20,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.NonNullGeneric;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
@@ -195,6 +196,7 @@ public class WriteBatch {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public Task<Void> commit() {
     verifyNotCommitted();

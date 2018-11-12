@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.google.firebase.annotations.NonNullGeneric;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import java.util.ArrayList;
@@ -77,7 +78,7 @@ public final class SetOptions {
    */
   @NonNull
   @PublicApi
-  public static SetOptions mergeFields(List<String> fields) {
+  public static SetOptions mergeFields(@NonNull @NonNullGeneric List<String> fields) {
     List<com.google.firebase.firestore.model.FieldPath> fieldPaths = new ArrayList<>();
 
     for (String field : fields) {
@@ -120,7 +121,7 @@ public final class SetOptions {
    */
   @NonNull
   @PublicApi
-  public static SetOptions mergeFieldPaths(List<FieldPath> fields) {
+  public static SetOptions mergeFieldPaths(@NonNull @NonNullGeneric List<FieldPath> fields) {
     List<com.google.firebase.firestore.model.FieldPath> fieldPaths = new ArrayList<>();
 
     for (FieldPath field : fields) {

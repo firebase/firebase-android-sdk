@@ -27,6 +27,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.NonNullGeneric;
+import com.google.firebase.annotations.NullableGeneric;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -307,9 +309,10 @@ public class FirebaseFirestore {
    * @return The task returned from the updateFunction.
    */
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public <TResult> Task<TResult> runTransaction(
-      @NonNull Transaction.Function<TResult> updateFunction) {
+      @NonNull @NullableGeneric Transaction.Function<TResult> updateFunction) {
     checkNotNull(updateFunction, "Provided transaction update function must not be null.");
     return runTransaction(
         updateFunction, com.google.firebase.firestore.core.Transaction.getDefaultExecutor());
@@ -347,6 +350,8 @@ public class FirebaseFirestore {
    *
    * @return A Task that will be completed once networking is enabled.
    */
+  @NonNull
+  @NonNullGeneric
   @PublicApi
   public Task<Void> enableNetwork() {
     ensureClientConfigured();
@@ -360,6 +365,8 @@ public class FirebaseFirestore {
    *
    * @return A Task that will be completed once networking is disabled.
    */
+  @NonNull
+  @NonNullGeneric
   @PublicApi
   public Task<Void> disableNetwork() {
     ensureClientConfigured();

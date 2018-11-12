@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import android.support.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.annotations.NonNullGeneric;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -121,6 +122,7 @@ public class CollectionReference extends Query {
    * @return A Task that will be resolved with the DocumentReference of the newly created document.
    */
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public Task<DocumentReference> add(@NonNull Object data) {
     checkNotNull(data, "Provided data must not be null.");

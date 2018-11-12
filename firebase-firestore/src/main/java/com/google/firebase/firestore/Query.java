@@ -24,6 +24,7 @@ import android.support.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.NonNullGeneric;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.Bound;
@@ -671,6 +672,7 @@ public class Query {
    * @return A Task that will be resolved with the results of the Query.
    */
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public Task<QuerySnapshot> get() {
     return get(Source.DEFAULT);
@@ -687,6 +689,7 @@ public class Query {
    * @return A Task that will be resolved with the results of the Query.
    */
   @NonNull
+  @NonNullGeneric
   @PublicApi
   public Task<QuerySnapshot> get(Source source) {
     if (source == Source.CACHE) {
