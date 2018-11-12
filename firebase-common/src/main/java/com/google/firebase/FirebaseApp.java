@@ -228,7 +228,7 @@ public class FirebaseApp {
    *
    * @throws IllegalStateException if the default app was not initialized.
    */
-  @Nullable
+  @NonNull
   @PublicApi
   public static FirebaseApp getInstance() {
     synchronized (LOCK) {
@@ -293,7 +293,7 @@ public class FirebaseApp {
    */
   @Nullable
   @PublicApi
-  public static FirebaseApp initializeApp(Context context) {
+  public static FirebaseApp initializeApp(@NonNull Context context) {
     synchronized (LOCK) {
       if (INSTANCES.containsKey(DEFAULT_APP_NAME)) {
         return getInstance();
@@ -319,8 +319,10 @@ public class FirebaseApp {
    * to do so automatically in {@link com.google.firebase.provider.FirebaseInitProvider}. Automatic
    * initialization that way is the expected situation.
    */
+  @NonNull
   @PublicApi
-  public static FirebaseApp initializeApp(Context context, FirebaseOptions options) {
+  public static FirebaseApp initializeApp(
+      @NonNull Context context, @NonNull FirebaseOptions options) {
     return initializeApp(context, options, DEFAULT_APP_NAME);
   }
 
@@ -334,8 +336,10 @@ public class FirebaseApp {
    * @throws IllegalStateException if an app with the same name has already been initialized.
    * @return an instance of {@link FirebaseApp}
    */
+  @NonNull
   @PublicApi
-  public static FirebaseApp initializeApp(Context context, FirebaseOptions options, String name) {
+  public static FirebaseApp initializeApp(
+      @NonNull Context context, @NonNull FirebaseOptions options, @NonNull String name) {
     GlobalBackgroundStateListener.ensureBackgroundStateListenerRegistered(context);
     String normalizedName = normalize(name);
     final FirebaseApp firebaseApp;
