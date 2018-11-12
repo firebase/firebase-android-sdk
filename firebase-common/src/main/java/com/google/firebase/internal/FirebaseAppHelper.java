@@ -14,11 +14,13 @@
 
 package com.google.firebase.internal;
 
+import android.support.annotation.NonNull;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseApp.IdTokenListener;
+import com.google.firebase.annotations.NonNullGeneric;
 import com.google.firebase.auth.GetTokenResult;
 
 /**
@@ -38,6 +40,8 @@ public class FirebaseAppHelper {
    * @hide
    */
   @KeepForSdk
+  @NonNull
+  @NonNullGeneric
   public static Task<GetTokenResult> getToken(FirebaseApp app, boolean forceRefresh) {
     return app.getToken(forceRefresh);
   }

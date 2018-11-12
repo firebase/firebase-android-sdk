@@ -82,6 +82,31 @@ public final class FirebaseOptions {
     }
 
     @PublicApi
+    public String getDatabaseUrl() {
+      return databaseUrl;
+    }
+
+    @PublicApi
+    public String getGaTrackingId() {
+      return gaTrackingId;
+    }
+
+    @PublicApi
+    public String getGcmSenderId() {
+      return gcmSenderId;
+    }
+
+    @PublicApi
+    public String getStorageBucket() {
+      return storageBucket;
+    }
+
+    @PublicApi
+    public String getProjectId() {
+      return projectId;
+    }
+
+    @PublicApi
     public Builder setApiKey(@NonNull String apiKey) {
       this.apiKey = checkNotEmpty(apiKey, "ApiKey must be set.");
       return this;
