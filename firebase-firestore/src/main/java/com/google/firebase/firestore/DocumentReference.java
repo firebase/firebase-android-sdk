@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.NonNullGeneric;
+import com.google.firebase.annotations.NullableGeneric;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
@@ -149,7 +150,7 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @NonNullGeneric
+  @NullableGeneric
   @PublicApi
   public Task<Void> set(@NonNull Object data) {
     return set(data, SetOptions.OVERWRITE);
@@ -166,7 +167,7 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @NonNullGeneric
+  @NullableGeneric
   @PublicApi
   public Task<Void> set(@NonNull Object data, @NonNull SetOptions options) {
     checkNotNull(data, "Provided data must not be null.");
@@ -191,7 +192,7 @@ public class DocumentReference {
    */
   @NonNull
   @PublicApi
-  public Task<Void> update(@NonNull Map<String, Object> data) {
+  public @NullableGeneric Task<Void> update(@NonNull Map<String, Object> data) {
     ParsedUpdateData parsedData = firestore.getDataConverter().parseUpdateData(data);
     return update(parsedData);
   }
@@ -207,7 +208,7 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @NonNullGeneric
+  @NullableGeneric
   @PublicApi
   public Task<Void> update(
       @NonNull String field, @Nullable Object value, Object... moreFieldsAndValues) {
@@ -230,7 +231,7 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @NonNullGeneric
+  @NullableGeneric
   @PublicApi
   public Task<Void> update(
       @NonNull FieldPath fieldPath, @Nullable Object value, Object... moreFieldsAndValues) {
@@ -256,7 +257,7 @@ public class DocumentReference {
    * @return A Task that will be resolved when the delete completes.
    */
   @NonNull
-  @NonNullGeneric
+  @NullableGeneric
   @PublicApi
   public Task<Void> delete() {
     return firestore

@@ -351,7 +351,7 @@ public class FirebaseFirestore {
    * @return A Task that will be completed once networking is enabled.
    */
   @NonNull
-  @NonNullGeneric
+  @NullableGeneric
   @PublicApi
   public Task<Void> enableNetwork() {
     ensureClientConfigured();
@@ -366,7 +366,7 @@ public class FirebaseFirestore {
    * @return A Task that will be completed once networking is disabled.
    */
   @NonNull
-  @NonNullGeneric
+  @NullableGeneric
   @PublicApi
   public Task<Void> disableNetwork() {
     ensureClientConfigured();
