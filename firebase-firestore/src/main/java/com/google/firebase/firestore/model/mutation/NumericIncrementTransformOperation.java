@@ -23,13 +23,14 @@ import com.google.firebase.firestore.model.value.IntegerValue;
 import com.google.firebase.firestore.model.value.NumberValue;
 
 /**
- * Implements the backend semantics for locally computed NUMERIC_ADD transforms. Converts all field
- * values to longs or doubles and resolves overflows to Long.MAX_VALUE/Long.MIN_VALUE.
+ * Implements the backend semantics for locally computed NUMERIC_ADD (increment) transforms.
+ * Converts all field values to longs or doubles and resolves overflows to
+ * Long.MAX_VALUE/Long.MIN_VALUE.
  */
-public class NumericAddTransformOperation implements TransformOperation {
+public class NumericIncrementTransformOperation implements TransformOperation {
   private NumberValue operand;
 
-  public NumericAddTransformOperation(NumberValue operand) {
+  public NumericIncrementTransformOperation(NumberValue operand) {
     this.operand = operand;
   }
 
@@ -37,7 +38,7 @@ public class NumericAddTransformOperation implements TransformOperation {
   public FieldValue applyToLocalView(FieldValue previousValue, Timestamp localWriteTime) {
     // Return an integer value only if the previous value and the operand is an integer.
     if (previousValue instanceof IntegerValue && operand instanceof IntegerValue) {
-      long sum = safeAdd(((IntegerValue) previousValue).getInternalValue(), operandAsLong());
+      long sum = safeIncrement(((IntegerValue) previousValue).getInternalValue(), operandAsLong());
       return IntegerValue.valueOf(sum);
     } else if (previousValue instanceof IntegerValue) {
       double sum = ((IntegerValue) previousValue).getInternalValue() + operandAsDouble();
@@ -55,7 +56,7 @@ public class NumericAddTransformOperation implements TransformOperation {
    * Implementation of Java 8's `addExact()` that resolves positive and negative numeric overflows
    * to Long.MAX_VALUE or Long.MIN_VALUE respectively (instead of throwing an ArithmeticException).
    */
-  private long safeAdd(long x, long y) {
+  private long safeIncrement(long x, long y) {
     long r = x + y;
 
     // See "Hacker's Delight" 2-12: Overflow if both arguments have the opposite sign of the result

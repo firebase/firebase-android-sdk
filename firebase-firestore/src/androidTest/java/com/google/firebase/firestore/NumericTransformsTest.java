@@ -81,55 +81,55 @@ public class NumericTransformsTest {
 
   @Test
   public void createDocumentWithIncrement() {
-    waitFor(docRef.set(map("sum", FieldValue.numericAdd(1337))));
+    waitFor(docRef.set(map("sum", FieldValue.increment(1337))));
     expectLocalAndRemoteValue(1337L);
   }
 
   @Test
   public void mergeOnNonExistingDocumentWithIncrement() {
-    waitFor(docRef.set(map("sum", FieldValue.numericAdd(1337)), SetOptions.merge()));
+    waitFor(docRef.set(map("sum", FieldValue.increment(1337)), SetOptions.merge()));
     expectLocalAndRemoteValue(1337L);
   }
 
   @Test
   public void integerIncrementWithExistingInteger() {
     writeInitialData(map("sum", 1337L));
-    waitFor(docRef.update("sum", FieldValue.numericAdd(1)));
+    waitFor(docRef.update("sum", FieldValue.increment(1)));
     expectLocalAndRemoteValue(1338L);
   }
 
   @Test
   public void doubleIncrementWithExistingDouble() {
     writeInitialData(map("sum", 13.37D));
-    waitFor(docRef.update("sum", FieldValue.numericAdd(0.1)));
+    waitFor(docRef.update("sum", FieldValue.increment(0.1)));
     expectLocalAndRemoteValue(13.47D);
   }
 
   @Test
   public void integerIncrementWithExistingDouble() {
     writeInitialData(map("sum", 13.37D));
-    waitFor(docRef.update("sum", FieldValue.numericAdd(1)));
+    waitFor(docRef.update("sum", FieldValue.increment(1)));
     expectLocalAndRemoteValue(14.37D);
   }
 
   @Test
   public void doubleIncrementWithExistingInteger() {
     writeInitialData(map("sum", 1337L));
-    waitFor(docRef.update("sum", FieldValue.numericAdd(0.1)));
+    waitFor(docRef.update("sum", FieldValue.increment(0.1)));
     expectLocalAndRemoteValue(1337.1D);
   }
 
   @Test
   public void integerIncrementWithExistingString() {
     writeInitialData(map("sum", "overwrite"));
-    waitFor(docRef.update("sum", FieldValue.numericAdd(1337)));
+    waitFor(docRef.update("sum", FieldValue.increment(1337)));
     expectLocalAndRemoteValue(1337L);
   }
 
   @Test
   public void doubleIncrementWithExistingString() {
     writeInitialData(map("sum", "overwrite"));
-    waitFor(docRef.update("sum", FieldValue.numericAdd(13.37)));
+    waitFor(docRef.update("sum", FieldValue.increment(13.37)));
     expectLocalAndRemoteValue(13.37D);
   }
 
@@ -139,9 +139,9 @@ public class NumericTransformsTest {
 
     Tasks.await(docRef.getFirestore().disableNetwork());
 
-    docRef.update("sum", FieldValue.numericAdd(0.1D));
-    docRef.update("sum", FieldValue.numericAdd(0.01D));
-    docRef.update("sum", FieldValue.numericAdd(0.001D));
+    docRef.update("sum", FieldValue.increment(0.1D));
+    docRef.update("sum", FieldValue.increment(0.01D));
+    docRef.update("sum", FieldValue.increment(0.001D));
 
     DocumentSnapshot snap = accumulator.awaitLocalEvent();
     assertEquals(0.1D, snap.getDouble("sum"), DOUBLE_EPSILON);

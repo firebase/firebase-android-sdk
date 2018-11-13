@@ -45,7 +45,7 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.model.mutation.NumericAddTransformOperation;
+import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
@@ -560,8 +560,9 @@ public final class RemoteSerializer {
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
           .setRemoveAllFromArray(encodeArrayTransformElements(remove.getElements()))
           .build();
-    } else if (transform instanceof NumericAddTransformOperation) {
-      NumericAddTransformOperation numericAdd = (NumericAddTransformOperation) transform;
+    } else if (transform instanceof NumericIncrementTransformOperation) {
+      NumericIncrementTransformOperation numericAdd =
+          (NumericIncrementTransformOperation) transform;
       return DocumentTransform.FieldTransform.newBuilder()
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
           .setNumericAdd(encodeValue(numericAdd.getOperand()))
@@ -611,7 +612,7 @@ public final class RemoteSerializer {
               operand.getClass().getCanonicalName());
           return new FieldTransform(
               FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
-              new NumericAddTransformOperation(
+              new NumericIncrementTransformOperation(
                   (NumberValue) decodeValue(fieldTransform.getNumericAdd())));
         }
       default:

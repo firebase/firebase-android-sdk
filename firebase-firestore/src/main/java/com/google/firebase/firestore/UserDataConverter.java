@@ -31,7 +31,7 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
-import com.google.firebase.firestore.model.mutation.NumericAddTransformOperation;
+import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.BlobValue;
@@ -351,11 +351,14 @@ public final class UserDataConverter {
       ArrayTransformOperation arrayRemove = new ArrayTransformOperation.Remove(parsedElements);
       context.addToFieldTransforms(context.getPath(), arrayRemove);
 
-    } else if (value instanceof com.google.firebase.firestore.FieldValue.NumericAddFieldValue) {
-      com.google.firebase.firestore.FieldValue.NumericAddFieldValue numericAddFieldValue =
-          (com.google.firebase.firestore.FieldValue.NumericAddFieldValue) value;
-      NumberValue operand = (NumberValue) parseQueryValue(numericAddFieldValue.getOperand());
-      NumericAddTransformOperation numericAdd = new NumericAddTransformOperation(operand);
+    } else if (value
+        instanceof com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue) {
+      com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue
+          numericIncrementFieldValue =
+              (com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue) value;
+      NumberValue operand = (NumberValue) parseQueryValue(numericIncrementFieldValue.getOperand());
+      NumericIncrementTransformOperation numericAdd =
+          new NumericIncrementTransformOperation(operand);
       context.addToFieldTransforms(context.getPath(), numericAdd);
 
     } else {

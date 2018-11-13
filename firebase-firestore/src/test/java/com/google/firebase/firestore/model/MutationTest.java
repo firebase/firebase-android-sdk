@@ -169,7 +169,7 @@ public class MutationTest {
   }
 
   @Test
-  public void testAppliesNumericAddTransformToDocument() {
+  public void testAppliesIncrementTransformToDocument() {
     Map<String, Object> baseDoc =
         map(
             "longPlusLong",
@@ -191,21 +191,21 @@ public class MutationTest {
     Map<String, Object> transform =
         map(
             "longPlusLong",
-            FieldValue.numericAdd(1),
+            FieldValue.increment(1),
             "longPlusDouble",
-            FieldValue.numericAdd(2.2),
+            FieldValue.increment(2.2),
             "doublePlusLong",
-            FieldValue.numericAdd(3),
+            FieldValue.increment(3),
             "doublePlusDouble",
-            FieldValue.numericAdd(4.4),
+            FieldValue.increment(4.4),
             "longPlusNan",
-            FieldValue.numericAdd(Double.NaN),
+            FieldValue.increment(Double.NaN),
             "doublePlusNan",
-            FieldValue.numericAdd(Double.NaN),
+            FieldValue.increment(Double.NaN),
             "longPlusInfinity",
-            FieldValue.numericAdd(Double.POSITIVE_INFINITY),
+            FieldValue.increment(Double.POSITIVE_INFINITY),
             "doublePlusInfinity",
-            FieldValue.numericAdd(Double.POSITIVE_INFINITY));
+            FieldValue.increment(Double.POSITIVE_INFINITY));
     Map<String, Object> expected =
         map(
             "longPlusLong",
@@ -229,33 +229,33 @@ public class MutationTest {
   }
 
   @Test
-  public void testAppliesNumericAddTransformToUnexpectedType() {
+  public void testAppliesIncrementTransformToUnexpectedType() {
     Map<String, Object> baseDoc = map("string", "zero");
-    Map<String, Object> transform = map("string", FieldValue.numericAdd(1));
+    Map<String, Object> transform = map("string", FieldValue.increment(1));
     Map<String, Object> expected = map("string", 1);
     verifyTransform(baseDoc, transform, expected);
   }
 
   @Test
-  public void testAppliesNumericAddTransformToMissingField() {
+  public void testAppliesIncrementTransformToMissingField() {
     Map<String, Object> baseDoc = map();
-    Map<String, Object> transform = map("missing", FieldValue.numericAdd(1));
+    Map<String, Object> transform = map("missing", FieldValue.increment(1));
     Map<String, Object> expected = map("missing", 1);
     verifyTransform(baseDoc, transform, expected);
   }
 
   @Test
-  public void testAppliesNumericAddTransformsConsecutively() {
+  public void testAppliesIncrementTransformsConsecutively() {
     Map<String, Object> baseDoc = map("number", 1);
-    Map<String, Object> transform1 = map("number", FieldValue.numericAdd(2));
-    Map<String, Object> transform2 = map("number", FieldValue.numericAdd(3));
-    Map<String, Object> transform3 = map("number", FieldValue.numericAdd(4));
+    Map<String, Object> transform1 = map("number", FieldValue.increment(2));
+    Map<String, Object> transform2 = map("number", FieldValue.increment(3));
+    Map<String, Object> transform3 = map("number", FieldValue.increment(4));
     Map<String, Object> expected = map("number", 10);
     verifyTransform(baseDoc, Arrays.asList(transform1, transform2, transform3), expected);
   }
 
   @Test
-  public void testAppliesNumericAddWithoutOverflow() {
+  public void testAppliesIncrementWithoutOverflow() {
     Map<String, Object> baseDoc =
         map(
             "a",
@@ -268,17 +268,17 @@ public class MutationTest {
             Long.MAX_VALUE);
     Map<String, Object> transform =
         map(
-            "a", FieldValue.numericAdd(1),
-            "b", FieldValue.numericAdd(Long.MAX_VALUE),
-            "c", FieldValue.numericAdd(1),
-            "d", FieldValue.numericAdd(Long.MAX_VALUE));
+            "a", FieldValue.increment(1),
+            "b", FieldValue.increment(Long.MAX_VALUE),
+            "c", FieldValue.increment(1),
+            "d", FieldValue.increment(Long.MAX_VALUE));
     Map<String, Object> expected =
         map("a", Long.MAX_VALUE, "b", Long.MAX_VALUE, "c", Long.MAX_VALUE, "d", Long.MAX_VALUE);
     verifyTransform(baseDoc, transform, expected);
   }
 
   @Test
-  public void testAppliesNumericAddWithoutUnderflow() {
+  public void testAppliesIncrementWithoutUnderflow() {
     Map<String, Object> baseDoc =
         map(
             "a",
@@ -291,10 +291,10 @@ public class MutationTest {
             Long.MIN_VALUE);
     Map<String, Object> transform =
         map(
-            "a", FieldValue.numericAdd(-1),
-            "b", FieldValue.numericAdd(Long.MIN_VALUE),
-            "c", FieldValue.numericAdd(-1),
-            "d", FieldValue.numericAdd(Long.MIN_VALUE));
+            "a", FieldValue.increment(-1),
+            "b", FieldValue.increment(Long.MIN_VALUE),
+            "c", FieldValue.increment(-1),
+            "d", FieldValue.increment(Long.MIN_VALUE));
     Map<String, Object> expected =
         map("a", Long.MIN_VALUE, "b", Long.MIN_VALUE, "c", Long.MIN_VALUE, "d", Long.MIN_VALUE);
     verifyTransform(baseDoc, transform, expected);
@@ -480,11 +480,11 @@ public class MutationTest {
   }
 
   @Test
-  public void testAppliesServerAckedNumericAddTransformToDocuments() {
+  public void testAppliesServerAckedIncrementTransformToDocuments() {
     Map<String, Object> data = map("sum", 1);
     Document baseDoc = doc("collection/key", 0, data);
 
-    Mutation transform = transformMutation("collection/key", map("sum", FieldValue.numericAdd(2)));
+    Mutation transform = transformMutation("collection/key", map("sum", FieldValue.increment(2)));
     MutationResult mutationResult =
         new MutationResult(version(1), Collections.singletonList(IntegerValue.valueOf(3L)));
 

@@ -83,17 +83,17 @@ public abstract class FieldValue {
     }
   }
 
-  /* FieldValue class for numericAdd() transforms. */
-  static class NumericAddFieldValue extends FieldValue {
+  /* FieldValue class for increment() transforms. */
+  static class NumericIncrementFieldValue extends FieldValue {
     private final Number operand;
 
-    NumericAddFieldValue(Number operand) {
+    NumericIncrementFieldValue(Number operand) {
       this.operand = operand;
     }
 
     @Override
     String getMethodName() {
-      return "FieldValue.numericAdd";
+      return "FieldValue.increment";
     }
 
     Number getOperand() {
@@ -154,8 +154,8 @@ public abstract class FieldValue {
   }
 
   /**
-   * Returns a special value that can be used with set() or update() that tells the server to add
-   * the given value to the field's current value.
+   * Returns a special value that can be used with set() or update() that tells the server to
+   * increment the field's current value by the given value.
    *
    * <p>If the current field value is an integer, possible integer overflows are resolved to
    * Long.MAX_VALUE or Long.MIN_VALUE. If the current field value is a double, both values will be
@@ -168,13 +168,13 @@ public abstract class FieldValue {
    */
   @NonNull
   @PublicApi
-  public static FieldValue numericAdd(long l) {
-    return new NumericAddFieldValue(l);
+  public static FieldValue increment(long l) {
+    return new NumericIncrementFieldValue(l);
   }
 
   /**
-   * Returns a special value that can be used with set() or update() that tells the server to add
-   * the given value to the field's current value.
+   * Returns a special value that can be used with set() or update() that tells the server to
+   * increment the field's current value by the given value.
    *
    * <p>If the current value is an integer or a double, both the current and the given value will be
    * interpreted as doubles and all arithmetic will follow IEEE 754 semantics. Otherwise, the
@@ -184,7 +184,7 @@ public abstract class FieldValue {
    */
   @NonNull
   @PublicApi
-  public static FieldValue numericAdd(double l) {
-    return new NumericAddFieldValue(l);
+  public static FieldValue increment(double l) {
+    return new NumericIncrementFieldValue(l);
   }
 }

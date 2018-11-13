@@ -203,7 +203,7 @@ public final class LocalStore {
           ImmutableSortedMap<DocumentKey, MaybeDocument> existingDocuments =
               localDocuments.getDocuments(keys);
 
-          // For non-idempotent mutations (such as `FieldValue.numericAdd()`), we record the base
+          // For non-idempotent mutations (such as `FieldValue.increment()`), we record the base
           // state in a separate patch mutation. This is later used to guarantee consistent values
           // and prevents flicker even if the backend sends us an update that already includes our
           // transform.

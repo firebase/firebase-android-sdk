@@ -950,7 +950,7 @@ public abstract class LocalStoreTestCase {
     assertSetEquals(asList(key("foo/bar"), key("foo/baz")), keys);
   }
 
-  // TODO(mrschmidt): The FieldValue.numericAdd() field transform tests below would probably be
+  // TODO(mrschmidt): The FieldValue.increment() field transform tests below would probably be
   // better implemented as spec tests but currently they don't support transforms.
 
   @Test
@@ -959,11 +959,11 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 0, map("sum", 0), Document.DocumentState.LOCAL_MUTATIONS));
     assertChanged(doc("foo/bar", 0, map("sum", 0), Document.DocumentState.LOCAL_MUTATIONS));
 
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1))));
+    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(1))));
     assertContains(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertChanged(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.numericAdd(2))));
+    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(2))));
     assertContains(doc("foo/bar", 0, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
     assertChanged(doc("foo/bar", 0, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
   }
@@ -985,7 +985,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.COMMITTED_MUTATIONS));
     assertContains(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.COMMITTED_MUTATIONS));
 
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1))));
+    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(1))));
     assertContains(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 
@@ -993,7 +993,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 2, map("sum", 1), Document.DocumentState.COMMITTED_MUTATIONS));
     assertContains(doc("foo/bar", 2, map("sum", 1), Document.DocumentState.COMMITTED_MUTATIONS));
 
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.numericAdd(2))));
+    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(2))));
     assertContains(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
     assertChanged(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
   }
@@ -1013,7 +1013,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.SYNCED));
     assertContains(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.SYNCED));
 
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1))));
+    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(1))));
     assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 
@@ -1023,7 +1023,7 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 2, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 
     // Add another increment. Note that we still compute the increment based on the local value.
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.numericAdd(2))));
+    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(2))));
     assertChanged(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
 
@@ -1072,7 +1072,7 @@ public abstract class LocalStoreTestCase {
 
     writeMutations(
         Arrays.asList(
-            transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1))),
+            transformMutation("foo/bar", map("sum", FieldValue.increment(1))),
             transformMutation("foo/bar", map("array_union", FieldValue.arrayUnion("foo")))));
     assertChanged(
         doc(
@@ -1105,7 +1105,7 @@ public abstract class LocalStoreTestCase {
     writeMutations(
         asList(
             patchMutation("foo/bar", map(), Collections.emptyList()),
-            transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1)))));
+            transformMutation("foo/bar", map("sum", FieldValue.increment(1)))));
     assertChanged(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 
@@ -1123,7 +1123,7 @@ public abstract class LocalStoreTestCase {
     writeMutations(
         asList(
             patchMutation("foo/bar", map()),
-            transformMutation("foo/bar", map("sum", FieldValue.numericAdd(1)))));
+            transformMutation("foo/bar", map("sum", FieldValue.increment(1)))));
     assertChanged(deletedDoc("foo/bar", 0));
     assertNotContains("foo/bar");
 
