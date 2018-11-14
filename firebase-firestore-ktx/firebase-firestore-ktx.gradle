@@ -19,6 +19,7 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 28
     defaultConfig {
+        multiDexEnabled true
         minSdkVersion 14
     }
     testOptions {
