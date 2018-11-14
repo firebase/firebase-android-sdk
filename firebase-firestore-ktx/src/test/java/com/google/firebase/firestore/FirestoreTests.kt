@@ -34,7 +34,7 @@ const val EXISTING_APP = "existing"
 @RunWith(RobolectricTestRunner::class)
 class FirestoreTests {
     @Before
-    fun setup() {
+    fun setUp() {
         FirebaseApp.initializeApp(
             RuntimeEnvironment.application,
             Firebase.options(applicationId = APP_ID, apiKey = API_KEY) {
@@ -52,7 +52,7 @@ class FirestoreTests {
     }
 
     @After
-    fun cleanup() {
+    fun cleanUp() {
         FirebaseApp.clearInstancesForTest()
     }
 
