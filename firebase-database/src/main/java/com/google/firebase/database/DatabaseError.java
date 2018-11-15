@@ -16,6 +16,7 @@ package com.google.firebase.database;
 
 import android.support.annotation.NonNull;
 import com.google.firebase.annotations.PublicApi;
+import com.google.firebase.database.annotations.NotNull;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -171,6 +172,7 @@ public class DatabaseError {
   }
 
   @PublicApi
+  @NonNull
   public static DatabaseError fromException(Throwable e) {
     StringWriter stringWriter = new StringWriter();
     PrintWriter printWriter = new PrintWriter(stringWriter);
@@ -195,6 +197,7 @@ public class DatabaseError {
 
   /** @return One of the defined status codes, depending on the error */
   @PublicApi
+  @NonNull
   public int getCode() {
     return code;
   }
@@ -225,6 +228,7 @@ public class DatabaseError {
    * @return An exception wrapping this error, with an appropriate message and no stack trace.
    */
   @PublicApi
+  @NonNull
   public DatabaseException toException() {
     return new DatabaseException("Firebase Database error: " + message);
   }

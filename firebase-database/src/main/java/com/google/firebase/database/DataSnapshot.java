@@ -16,6 +16,8 @@ package com.google.firebase.database;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.google.firebase.annotations.NonNullGeneric;
+import com.google.firebase.annotations.NullableGeneric;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.utilities.Validation;
@@ -76,6 +78,7 @@ public class DataSnapshot {
    * @param path A relative path to the location of child data
    * @return Whether or not the specified child location has data
    */
+  @NonNull
   @PublicApi
   public boolean hasChild(@NonNull String path) {
     if (query.getParent() == null) {
@@ -92,6 +95,7 @@ public class DataSnapshot {
    * @return True if the snapshot has any children, otherwise false
    */
   @PublicApi
+  @NonNull
   public boolean hasChildren() {
     return node.getNode().getChildCount() > 0;
   }
@@ -102,6 +106,7 @@ public class DataSnapshot {
    * @return True if the snapshot contains a non-null value, otherwise false
    */
   @PublicApi
+  @NonNull
   public boolean exists() {
     return !node.getNode().isEmpty();
   }
@@ -206,6 +211,7 @@ public class DataSnapshot {
    *     if there is no data at this location.
    */
   @Nullable
+  @NullableGeneric
   @PublicApi
   public <T> T getValue(@NonNull Class<T> valueType) {
     Object value = node.getNode().getValue();
@@ -234,6 +240,7 @@ public class DataSnapshot {
    */
   @Nullable
   @PublicApi
+  @NullableGeneric
   public <T> T getValue(@NonNull GenericTypeIndicator<T> t) {
     Object value = node.getNode().getValue();
     return CustomClassMapper.convertToCustomClass(value, t);
@@ -241,6 +248,7 @@ public class DataSnapshot {
 
   /** @return The number of immediate children in the this snapshot */
   @PublicApi
+  @NonNull
   public long getChildrenCount() {
     return node.getNode().getChildCount();
   }
@@ -278,6 +286,7 @@ public class DataSnapshot {
    */
   @NonNull
   @PublicApi
+  @NonNullGeneric
   public Iterable<DataSnapshot> getChildren() {
     final Iterator<NamedNode> iter = node.iterator();
     return new Iterable<DataSnapshot>() {

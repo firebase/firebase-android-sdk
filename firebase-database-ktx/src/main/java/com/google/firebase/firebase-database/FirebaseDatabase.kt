@@ -18,17 +18,17 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 
 /** Returns the [FirebaseDatabase] instance of the default [FirebaseApp]. */
-inline val Firebase.database: FirebaseFirestore
+inline val Firebase.database: FirebaseDatabase
   get() = FirebaseDatabase.getInstance()
 
 /** Returns the [FirebaseDatabase] instance of a given [FirebaseApp]. */
-inline val FirebaseApp.database: FirebaseFirestore
+inline val FirebaseApp.database: FirebaseDatabase
   get() = FirebaseDatabase.getInstance(this)
 
 
 /** Used to marshall the data contained in this instance into a class of your choosing */
-inline fun <reified T> MutableData.getValue(): T? = toObject(T:class.java)
+inline fun <reified T> MutableData.getData(): T? = getValue(T::class.java)
 
 
 /** Returns the data contained in this snapshot as native types. */
-inline fun <reified T> DataSnapshot.getValue(): T? = toObject(T:class.java)
+inline fun <reified T> DataSnapshot.getData(): T? = getValue(T::class.java)
