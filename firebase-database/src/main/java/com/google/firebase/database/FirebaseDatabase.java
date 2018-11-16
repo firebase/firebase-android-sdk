@@ -253,6 +253,7 @@ public class FirebaseDatabase {
    * listeners, and the client will not (re-)send them to the Firebase backend.
    */
   @PublicApi
+  @NonNull
   public void purgeOutstandingWrites() {
     ensureRepo();
     this.repo.scheduleNow(
@@ -269,6 +270,7 @@ public class FirebaseDatabase {
    * call.
    */
   @PublicApi
+  @NonNull
   public void goOnline() {
     ensureRepo();
     RepoManager.resume(this.repo);
@@ -278,6 +280,7 @@ public class FirebaseDatabase {
    * Shuts down our connection to the Firebase Database backend until {@link #goOnline()} is called.
    */
   @PublicApi
+  @NonNull
   public void goOffline() {
     ensureRepo();
     RepoManager.interrupt(this.repo);
@@ -292,6 +295,7 @@ public class FirebaseDatabase {
    * @param logLevel The desired minimum log level
    */
   @PublicApi
+  @NonNull
   public synchronized void setLogLevel(@NonNull Logger.Level logLevel) {
     assertUnfrozen("setLogLevel");
     this.config.setLogLevel(logLevel);
@@ -311,6 +315,7 @@ public class FirebaseDatabase {
    * @param isEnabled Set to true to enable disk persistence, set to false to disable it.
    */
   @PublicApi
+  @NonNull
   public synchronized void setPersistenceEnabled(boolean isEnabled) {
     assertUnfrozen("setPersistenceEnabled");
     this.config.setPersistenceEnabled(isEnabled);
@@ -330,6 +335,7 @@ public class FirebaseDatabase {
    * @param cacheSizeInBytes The new size of the cache in bytes.
    */
   @PublicApi
+  @NonNull
   public synchronized void setPersistenceCacheSizeBytes(long cacheSizeInBytes) {
     assertUnfrozen("setPersistenceCacheSizeBytes");
     this.config.setPersistenceCacheSizeBytes(cacheSizeInBytes);

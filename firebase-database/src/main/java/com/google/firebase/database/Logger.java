@@ -14,6 +14,7 @@
 
 package com.google.firebase.database;
 
+import android.support.annotation.NonNull;
 import com.google.firebase.annotations.PublicApi;
 
 /** This interface is used to setup logging for Firebase Database. */

@@ -30,45 +30,45 @@ import java.util.Map;
 public class DatabaseError {
 
   /** <strong>Internal use</strong> */
-  @PublicApi public static final int DATA_STALE = -1;
+  @PublicApi @NonNull public static final int DATA_STALE = -1;
   /** The server indicated that this operation failed */
-  @PublicApi public static final int OPERATION_FAILED = -2;
+  @PublicApi @NonNull public static final int OPERATION_FAILED = -2;
   /** This client does not have permission to perform this operation */
-  @PublicApi public static final int PERMISSION_DENIED = -3;
+  @PublicApi @NonNull public static final int PERMISSION_DENIED = -3;
   /** The operation had to be aborted due to a network disconnect */
-  @PublicApi public static final int DISCONNECTED = -4;
+  @PublicApi @NonNull public static final int DISCONNECTED = -4;
 
   // Preempted was removed, this is for here for completeness and history
   // public static final int PREEMPTED = -5;
 
   /** The supplied auth token has expired */
-  @PublicApi public static final int EXPIRED_TOKEN = -6;
+  @PublicApi @NonNull public static final int EXPIRED_TOKEN = -6;
   /**
    * The specified authentication token is invalid. This can occur when the token is malformed,
    * expired, or the secret that was used to generate it has been revoked.
    */
-  @PublicApi public static final int INVALID_TOKEN = -7;
+  @PublicApi @NonNull  public static final int INVALID_TOKEN = -7;
   /** The transaction had too many retries */
-  @PublicApi public static final int MAX_RETRIES = -8;
+  @PublicApi @NonNull public static final int MAX_RETRIES = -8;
   /** The transaction was overridden by a subsequent set */
-  @PublicApi public static final int OVERRIDDEN_BY_SET = -9;
+  @PublicApi @NonNull public static final int OVERRIDDEN_BY_SET = -9;
   /** The service is unavailable */
-  @PublicApi public static final int UNAVAILABLE = -10;
+  @PublicApi @NonNull public static final int UNAVAILABLE = -10;
   /** An exception occurred in user code */
-  @PublicApi public static final int USER_CODE_EXCEPTION = -11;
+  @PublicApi @NonNull public static final int USER_CODE_EXCEPTION = -11;
 
   // client codes
   /** The operation could not be performed due to a network error. */
-  @PublicApi public static final int NETWORK_ERROR = -24;
+  @PublicApi @NonNull public static final int NETWORK_ERROR = -24;
 
   /** The write was canceled locally */
-  @PublicApi public static final int WRITE_CANCELED = -25;
+  @PublicApi @NonNull public static final int WRITE_CANCELED = -25;
 
   /**
    * An unknown error occurred. Please refer to the error message and error details for more
    * information.
    */
-  @PublicApi public static final int UNKNOWN_ERROR = -999;
+  @PublicApi @NonNull public static final int UNKNOWN_ERROR = -999;
 
   private static final Map<Integer, String> errorReasons = new HashMap<Integer, String>();
 

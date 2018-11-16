@@ -36,6 +36,7 @@ public interface ChildEventListener {
    *     will be null for the first child node of a location.
    */
   @PublicApi
+  @NonNull
   public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName);
 
   /**
@@ -46,6 +47,7 @@ public interface ChildEventListener {
    *     be null for the first child node of a location.
    */
   @PublicApi
+  @NonNull
   public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName);
 
   /**
@@ -55,6 +57,7 @@ public interface ChildEventListener {
    * @param snapshot An immutable snapshot of the data at the child that was removed.
    */
   @PublicApi
+  @NonNull
   public void onChildRemoved(@NonNull DataSnapshot snapshot);
 
   /**
@@ -68,6 +71,7 @@ public interface ChildEventListener {
    *     location. This will be null if this location is ordered first.
    */
   @PublicApi
+  @NonNull
   public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName);
 
   /**

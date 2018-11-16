@@ -14,6 +14,7 @@
 
 package com.google.firebase.database;
 
+import android.support.annotation.NonNull;
 import com.google.firebase.annotations.PublicApi;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -26,5 +27,6 @@ import java.lang.annotation.Target;
 @PublicApi
 public @interface PropertyName {
   @PublicApi
+  @NonNull
   String value();
 }

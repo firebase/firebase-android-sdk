@@ -67,6 +67,7 @@ public class DatabaseReference extends Query {
      * @param ref A reference to the specified Firebase Database location
      */
     @PublicApi
+    @NonNull
     public void onComplete(
         @Nullable final DatabaseError error, @NonNull final DatabaseReference ref);
   }
@@ -242,6 +243,7 @@ public class DatabaseReference extends Query {
    * @param listener A listener that will be triggered with the results of the operation
    */
   @PublicApi
+  @NonNull
   public void setValue(@Nullable Object value, @Nullable CompletionListener listener) {
     setValueInternal(value, PriorityUtilities.parsePriority(this.path, null), listener);
   }
@@ -281,6 +283,7 @@ public class DatabaseReference extends Query {
    * @param listener A listener that will be triggered with the results of the operation
    */
   @PublicApi
+  @NonNull
   public void setValue(
       @Nullable Object value, @Nullable Object priority, @Nullable CompletionListener listener) {
     setValueInternal(value, PriorityUtilities.parsePriority(this.path, priority), listener);
