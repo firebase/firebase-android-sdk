@@ -32,7 +32,6 @@ public interface ValueEventListener {
    * @param snapshot The current data at the location
    */
   @PublicApi
-  @NonNull
   public void onDataChange(@NonNull DataSnapshot snapshot);
 
   /**
@@ -45,6 +44,5 @@ public interface ValueEventListener {
    * @param error A description of the error that occurred
    */
   @PublicApi
-  @NonNull
   public void onCancelled(@NonNull DatabaseError error);
 }

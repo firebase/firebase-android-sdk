@@ -64,7 +64,6 @@ public class MutableData {
 
   /** @return True if the data at this location has children, false otherwise */
   @PublicApi
-  @NonNull
   public boolean hasChildren() {
     Node node = getNode();
     return !node.isLeafNode() && !node.isEmpty();
@@ -75,7 +74,6 @@ public class MutableData {
    * @return True if data exists at the given path, otherwise false
    */
   @PublicApi
-  @NonNull
   public boolean hasChild(String path) {
     return !getNode().getChild(new Path(path)).isEmpty();
   }
@@ -96,7 +94,6 @@ public class MutableData {
 
   /** @return The number of immediate children at this location */
   @PublicApi
-  @NonNull
   public long getChildrenCount() {
     return getNode().getChildCount();
   }
@@ -313,7 +310,6 @@ public class MutableData {
    * @param value The value to set at this location or null to delete the existing data
    */
   @PublicApi
-  @Nullable
   public void setValue(@Nullable Object value) throws DatabaseException {
     ValidationPath.validateWithObject(prefixPath, value);
     Object bouncedValue = CustomClassMapper.convertToPlainJavaTypes(value);
@@ -327,7 +323,6 @@ public class MutableData {
    * @param priority The desired priority or null to clear the existing priority
    */
   @PublicApi
-  @Nullable
   public void setPriority(@Nullable Object priority) {
     holder.update(
         prefixPath,
