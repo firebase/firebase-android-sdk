@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.CheckReturnValue;
 
@@ -450,7 +451,23 @@ public class AsyncQueue {
    * again. Since we can't use the AsyncQueue for the callbacks, we'll instead use the main thread.
    */
   public Task<Void> shutdown() {
+    // Once the executor is shutdown, it will prevent new tasks from running by throwing an
+    // exception. But once we're shutting down, we don't care about those tasks, so just drop them
+    // instead.
+    executor.setRejectedExecutionHandler(
+        (Runnable r, ThreadPoolExecutor executor) -> {
+          Logger.debug(
+              AsyncQueue.class.getSimpleName(), "Rejecting new runnable due to imminent shutdown.");
+        });
+
     executor.shutdown();
+
+    // Cancel any delayed tasks. Delayed tasks are otherwise allowed to run even after the executor
+    // has been shutdown (though new ones are not permitted.)
+    for (DelayedTask t : delayedTasks) {
+      t.cancel();
+    }
+
     return Tasks.call(
         () -> {
           if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
