@@ -16,7 +16,6 @@ package com.google.firebase.database;
 
 import android.support.annotation.NonNull;
 import com.google.firebase.annotations.PublicApi;
-import com.google.firebase.database.annotations.NotNull;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -47,7 +46,7 @@ public class DatabaseError {
    * The specified authentication token is invalid. This can occur when the token is malformed,
    * expired, or the secret that was used to generate it has been revoked.
    */
-  @PublicApi @NonNull  public static final int INVALID_TOKEN = -7;
+  @PublicApi @NonNull public static final int INVALID_TOKEN = -7;
   /** The transaction had too many retries */
   @PublicApi @NonNull public static final int MAX_RETRIES = -8;
   /** The transaction was overridden by a subsequent set */
