@@ -1,0 +1,10 @@
+<component name="CopyrightManager">
+  <settings>
+    <module2copyright>
+      <element module="All" copyright="Apache 2 - Google" />
+    </module2copyright>
+    <LanguageOptions name="__TEMPLATE__">
+      <option name="block" value="false" />
+    </LanguageOptions>
+  </settings>
+</component>
