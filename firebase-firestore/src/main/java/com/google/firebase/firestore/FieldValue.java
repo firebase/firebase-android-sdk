@@ -161,8 +161,8 @@ public abstract class FieldValue {
    * Long.MAX_VALUE or Long.MIN_VALUE. If the current field value is a double, both values will be
    * interpreted as doubles and the arithmetic will follow IEEE 754 semantics.
    *
-   * <p>If field is not an integer or double, or if the field does not yet exist, the transformation
-   * will set the field to the given value.
+   * <p>If the current field is not an integer or double, or if the field does not yet exist, the
+   * transformation will set the field to the given value.
    *
    * @return The FieldValue sentinel for use in a call to set() or update().
    */
