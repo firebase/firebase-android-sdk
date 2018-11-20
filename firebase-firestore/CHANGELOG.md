@@ -1,13 +1,19 @@
 # Unreleased
+- [feature] Custom objects (POJOs) can now be passed as a field value in
+  update(), within `Map<>` objects passed to set(), in array transform
+  operations, and in query filters.
+- [feature] DocumentSnapshot.get() now supports retrieving fields as
+  custom objects (POJOs) by passing a Class<T> instance, e.g.
+  `snapshot.get("field", CustomType.class)`.
 
 # 17.1.2
-- [changed] Changed the internal handling for locally updated documents that
-  haven't yet been read back from Cloud Firestore. This can lead to slight
-  behavior changes and may affect the `SnapshotMetadata.hasPendingWrites()`
-  metadata flag.
+- [changed] Changed how the SDK handles locally-updated documents while syncing
+  those updates with Cloud Firestore servers. This can lead to slight behavior
+  changes and may affect the `SnapshotMetadata.hasPendingWrites()` metadata
+  flag.
 - [changed] Eliminated superfluous update events for locally cached documents
-  that are known to lag behind the server version. Instead, we buffer these
-  events until the client has caught up with the server.
+  that are known to lag behind the server version. Instead, the SDK buffers
+  these events until the client has caught up with the server.
 
 # 17.1.1
 - [fixed] Fixed an issue where the first `get()` call made after being offline

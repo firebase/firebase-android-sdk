@@ -117,6 +117,11 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   @NonNull
   @PublicApi
   public List<DocumentChange> getDocumentChanges(MetadataChanges metadataChanges) {
+    if (MetadataChanges.INCLUDE.equals(metadataChanges) && snapshot.excludesMetadataChanges()) {
+      throw new IllegalArgumentException(
+          "To include metadata changes with your document changes, you must also pass MetadataChanges.INCLUDE to addSnapshotListener().");
+    }
+
     if (cachedChanges == null || cachedChangesMetadataState != metadataChanges) {
       cachedChanges =
           Collections.unmodifiableList(

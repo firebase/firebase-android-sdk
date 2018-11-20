@@ -124,7 +124,7 @@ public final class LocalStore {
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
     queryCache = persistence.getQueryCache();
-    targetIdGenerator = TargetIdGenerator.getLocalStoreIdGenerator(queryCache.getHighestTargetId());
+    targetIdGenerator = TargetIdGenerator.forQueryCache(queryCache.getHighestTargetId());
     mutationQueue = persistence.getMutationQueue(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
     localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue);
@@ -138,7 +138,15 @@ public final class LocalStore {
   }
 
   public void start() {
-    mutationQueue.start();
+    startMutationQueue();
+  }
+
+  private void startMutationQueue() {
+    persistence.runTransaction(
+        "Start MutationQueue",
+        () -> {
+          mutationQueue.start();
+        });
   }
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.
@@ -148,7 +156,7 @@ public final class LocalStore {
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
     mutationQueue = persistence.getMutationQueue(user);
-    mutationQueue.start();
+    startMutationQueue();
 
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
 

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.firebase.inappmessaging.display.internal.layout.FiamRelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:fiam="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/modal_root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:clipToPadding="false"
+    android:padding="24dp">
+
+    <com.google.firebase.inappmessaging.display.internal.layout.ModalLayoutLandscape
+        android:id="@+id/modal_content_root"
+        style="@style/FiamUI.Modal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_layout"
+        android:padding="24dp"
+        android:layout_centerInParent="true"
+        fiam:maxWidthPct="0.85"
+        fiam:maxHeightPct="0.80">
+
+        <ImageView
+            android:contentDescription="@string/modal_content_descriptor"
+            android:id="@+id/image_view"
+            style="@style/FiamUI.ResizableImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="true"
+            tools:src="@drawable/placeholder_850_850" />
+
+        <TextView
+            android:id="@+id/message_title"
+            style="@style/FiamUI.Text.Title"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            tools:text="Your wishlist items are on sale!" />
+
+        <ScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/body_scroll"
+            android:padding="0dp">
+
+            <TextView
+                android:id="@+id/message_body"
+                style="@style/FiamUI.ModalBody"
+                android:layout_width="match_parent"
+                android:layout_margin="0dp"
+                tools:text="@string/placeholder_lorem_ipsum_short" />
+
+        </ScrollView>
+
+        <Button
+            android:id="@+id/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="Wishlist"
+            tools:textColor="#000000" />
+
+    </com.google.firebase.inappmessaging.display.internal.layout.ModalLayoutLandscape>
+
+    <Button
+        android:id="@+id/collapse_button"
+        style="@style/FiamUI.CollapseButton"
+        android:layout_alignEnd="@+id/modal_content_root"
+        android:layout_alignRight="@+id/modal_content_root"
+        android:layout_alignTop="@+id/modal_content_root" />
+
+</com.google.firebase.inappmessaging.display.internal.layout.FiamRelativeLayout>

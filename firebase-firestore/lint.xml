@@ -2,7 +2,7 @@
 <lint>
     <!--A linter bug prevents us from being able to analyze this file.-->
     <!--See: https://storage.googleapis.com/android-ci/pr-logs/pull/firebase_firebase-android-sdk/63/check/1049425133258674177/artifacts/firebase-firestore_build_reports/lint-results.html -->
-    <issue id="all">
+    <issue id="LintError">
         <ignore path="src/test/java/com/google/firebase/firestore/local/LruGarbageCollectorTestCase.java"/>
     </issue>
 

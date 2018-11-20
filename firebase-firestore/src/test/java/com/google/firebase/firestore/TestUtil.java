@@ -133,7 +133,8 @@ public class TestUtil {
             documentChanges,
             isFromCache,
             mutatedKeys,
-            true);
+            true,
+            /* excludesMetadataChanges= */ false);
     return new QuerySnapshot(query(path), viewSnapshot, FIRESTORE);
   }
 

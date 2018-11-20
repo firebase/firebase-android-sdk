@@ -98,7 +98,7 @@ class LicenseResolverPlugin implements Plugin<Project> {
 
                 // must run before preBuild, otherwise it produces an empty license report.
                 project.tasks.getByName('preBuild').mustRunAfter licensesTask
-                project.tasks.getByName("bundle${variantName}") {
+                project.tasks.getByName("bundle${variantName}Aar") {
                     dependsOn licensesTask
                     from licensesTask.outputDir
                 }

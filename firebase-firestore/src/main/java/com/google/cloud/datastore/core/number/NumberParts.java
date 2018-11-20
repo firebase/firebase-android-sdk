@@ -17,8 +17,6 @@ package com.google.cloud.datastore.core.number;
 /**
  * The representation of a number that can accommodate the range of doubles and longs without loss
  * of precision.
- *
- * @hide
  */
 public final class NumberParts {
 

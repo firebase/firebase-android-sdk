@@ -21,7 +21,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.4'
+        classpath 'com.android.tools.build:gradle:3.2.1'
         classpath 'com.google.gms:google-services:4.1.0'
         classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.7.1'
     }
@@ -46,8 +46,8 @@ allprojects {
     repositories {
         //mavenLocal() can be overridden via GRADLE_OPTS="-Dmaven.repo.local=<path>"
         mavenLocal()
-        jcenter()
         google()
+        jcenter()
         maven { url 'https://maven.fabric.io/public' }
     }
 

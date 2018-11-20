@@ -1,0 +1,77 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+apply plugin: "com.android.application"
+
+android {
+  compileSdkVersion 27
+
+  defaultConfig {
+    applicationId "com.example.firebase.fiamui"
+    minSdkVersion 16
+    targetSdkVersion 27
+    versionCode 1
+    versionName "1.0"
+    testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    multiDexEnabled true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+    }
+  }
+
+  testOptions {
+    animationsDisabled = true
+  }
+
+  lintOptions {
+    warning 'InvalidPackage'
+    warning 'GradleCompatible'
+  }
+
+  // TODO: Would be nice if we could test on 1_7
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+}
+
+dependencies {
+  implementation project(path: ":firebase-inappmessaging-display")
+  implementation "com.google.firebase:firebase-measurement-connector:17.0.1"
+  implementation('com.google.firebase:firebase-inappmessaging:17.0.3') {
+    exclude group: 'com.google.firebase', module: 'firebase-common'
+  }
+  implementation('com.google.firebase:firebase-analytics:16.0.4') {
+    exclude group: 'com.google.firebase', module: 'firebase-common'
+  }
+
+  implementation "com.android.installreferrer:installreferrer:1.0"
+  implementation "com.android.support:design:27.1.1"
+  implementation "com.android.support:appcompat-v7:27.1.1"
+
+  // The following dependencies are not required to use the FIAM UI library.
+  // They are used to make some aspects of the demo app implementation simpler for
+  // demonstrative purposes, and you may find them useful in your own apps; YMMV.
+  implementation 'me.priyesh:chroma:1.0.2'
+  implementation "com.jakewharton:butterknife:8.8.1"
+  implementation "com.jakewharton:butterknife-compiler:8.8.1"
+  annotationProcessor "com.jakewharton:butterknife-compiler:8.8.1"
+
+  androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+  androidTestImplementation 'com.android.support.test:rules:1.0.2'
+}

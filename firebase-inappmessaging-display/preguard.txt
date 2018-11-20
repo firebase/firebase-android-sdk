@@ -1,0 +1,18 @@
+-repackageclasses 'com.google.firebase.inappmessaging.display.obfuscated'
+-dontwarn okio.**
+-dontwarn com.google.j2objc.annotations.**
+-dontwarn java.lang.invoke.LambdaMetafactory
+-keepparameternames
+-renamesourcefileattribute SourceFile
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,
+                SourceFile,LineNumberTable,*Annotation*,EnclosingMethod
+
+# Generated classes are explicitly kept
+-keep public class com.google.firebase.inappmessaging.display.R** {
+      public protected *;
+}
+
+
+# Using names starting with "zz"
+-classobfuscationdictionary ../obfuscate_dict.txt
+-obfuscationdictionary ../obfuscate_dict.txt
