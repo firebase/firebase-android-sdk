@@ -49,6 +49,11 @@ public final class FieldMask {
     return mask.equals(fieldMask.mask);
   }
 
+  @Override
+  public String toString() {
+    return "FieldMask{mask=" + mask.toString() + "}";
+  }
+
   /**
    * Verifies that 'fieldPath' is included by at least one field in this field mask.
    *
