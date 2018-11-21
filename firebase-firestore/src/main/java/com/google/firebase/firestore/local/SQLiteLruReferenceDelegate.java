@@ -16,7 +16,6 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.database.sqlite.SQLiteTransactionListener;
 import android.util.SparseArray;
 import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -24,8 +23,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.Consumer;
 
 /** Provides LRU functionality for SQLite persistence. */
-class SQLiteLruReferenceDelegate
-    implements ReferenceDelegate, LruDelegate, SQLiteTransactionListener {
+class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   private final SQLitePersistence persistence;
   private ListenSequence listenSequence;
   private long currentSequenceNumber;
@@ -41,19 +39,6 @@ class SQLiteLruReferenceDelegate
   void start(long highestSequenceNumber) {
     listenSequence = new ListenSequence(highestSequenceNumber);
   }
-
-  @Override
-  public void onBegin() {
-    onTransactionStarted();
-  }
-
-  @Override
-  public void onCommit() {
-    onTransactionCommitted();
-  }
-
-  @Override
-  public void onRollback() {}
 
   @Override
   public void onTransactionStarted() {

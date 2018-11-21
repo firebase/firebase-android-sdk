@@ -26,6 +26,7 @@ import android.database.sqlite.SQLiteDatabaseLockedException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteProgram;
 import android.database.sqlite.SQLiteStatement;
+import android.database.sqlite.SQLiteTransactionListener;
 import android.support.annotation.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.firebase.firestore.auth.User;
@@ -144,7 +145,21 @@ public final class SQLitePersistence extends Persistence {
   @Override
   void runTransaction(String action, Runnable operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
-    db.beginTransactionWithListener(referenceDelegate);
+    db.beginTransactionWithListener(
+        new SQLiteTransactionListener() {
+          @Override
+          public void onBegin() {
+            referenceDelegate.onTransactionStarted();
+          }
+
+          @Override
+          public void onCommit() {
+            referenceDelegate.onTransactionCommitted();
+          }
+
+          @Override
+          public void onRollback() {}
+        });
     try {
       operation.run();
 
@@ -159,7 +174,21 @@ public final class SQLitePersistence extends Persistence {
   <T> T runTransaction(String action, Supplier<T> operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
     T value = null;
-    db.beginTransactionWithListener(referenceDelegate);
+    db.beginTransactionWithListener(
+        new SQLiteTransactionListener() {
+          @Override
+          public void onBegin() {
+            referenceDelegate.onTransactionStarted();
+          }
+
+          @Override
+          public void onCommit() {
+            referenceDelegate.onTransactionCommitted();
+          }
+
+          @Override
+          public void onRollback() {}
+        });
     try {
       value = operation.get();
 
