@@ -892,6 +892,7 @@ public class Query {
   }
 
   @Override
+  @SuppressWarnings("EqualsGetClass") // This class is effectively final.
   public boolean equals(Object o) {
     if (this == o) {
       return true;
