@@ -51,11 +51,11 @@ public abstract class ArrayTransformOperation implements TransformOperation {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public final boolean equals(Object o) {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof ArrayTransformOperation)) {
       return false;
     }
 

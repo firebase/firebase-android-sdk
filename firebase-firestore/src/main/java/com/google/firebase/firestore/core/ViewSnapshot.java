@@ -118,11 +118,11 @@ public class ViewSnapshot {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public final boolean equals(Object o) {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof ViewSnapshot)) {
       return false;
     }
 
