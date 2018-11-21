@@ -14,7 +14,7 @@
 
 apply plugin: 'com.android.library'
 
-def androidVersion = 26
+def androidVersion = 28
 
 android {
     adbOptions {
@@ -23,16 +23,13 @@ android {
 
     compileSdkVersion androidVersion
     defaultConfig {
+      minSdkVersion 14
       targetSdkVersion androidVersion
 
       multiDexEnabled true
       testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     sourceSets {
-        main {
-            java {
-            }
-        }
         androidTest {
             java {
                 srcDir 'src/testUtil'
@@ -58,18 +55,19 @@ android {
 dependencies {
     implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
     implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
-    compileOnly 'com.google.code.findbugs:jsr305:1.3.9'
+
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     testImplementation 'com.android.support.test:runner:1.0.2'
     testImplementation 'org.robolectric:robolectric:4.0-alpha-3'
-    testImplementation 'junit:junit:4.11'
-    testImplementation 'com.google.truth:truth:0.36'
-    testImplementation 'org.mockito:mockito-core:1.10.19'
+    testImplementation 'junit:junit:4.12'
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'org.mockito:mockito-core:2.21.0'
 
-    androidTestImplementation 'junit:junit:4.11'
+    androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.google.truth:truth:0.36'
-    androidTestImplementation 'org.mockito:mockito-core:1.10.19'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'org.mockito:mockito-core:2.21.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.16.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.16.0'
     androidTestImplementation ('com.google.firebase:firebase-auth:16.0.2') {

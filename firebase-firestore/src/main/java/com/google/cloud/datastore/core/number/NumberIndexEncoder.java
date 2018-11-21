@@ -24,7 +24,6 @@ import java.util.Arrays;
  * <p>Implementation conforms to the UTF Style Encoding section of "Number Index Entry Encoding".
  *
  * @see "https://docs.google.com/document/d/1QX32BCTFWFS_4BneQHFRDnPb2ts04fYrm4Vgy0HLSBg/edit#"
- * @hide
  */
 public class NumberIndexEncoder {
 

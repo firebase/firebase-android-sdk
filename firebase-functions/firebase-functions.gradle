@@ -14,7 +14,7 @@
 
 apply plugin: 'com.android.library'
 
-def androidVersion = 26
+def androidVersion = 28
 
 android {
     adbOptions {
@@ -24,15 +24,12 @@ android {
     compileSdkVersion androidVersion
     defaultConfig {
         targetSdkVersion androidVersion
+        minSdkVersion 14
 
         multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     sourceSets {
-        main {
-            java {
-            }
-        }
         androidTest {
             java {
                 srcDir 'src/testUtil'
@@ -58,17 +55,16 @@ dependencies {
     }
     implementation 'com.google.firebase:firebase-iid-interop:16.0.1'
 
-    implementation 'com.squareup.okhttp:okhttp:2.7.2'
+    implementation 'com.squareup.okhttp:okhttp:2.7.5'
 
     annotationProcessor 'com.google.auto.value:auto-value:1.6'
 
-    androidTestCompile 'junit:junit:4.11'
-    androidTestCompile 'com.google.truth:truth:0.36'
-    androidTestCompile 'com.android.support.test:runner:1.0.2'
-    androidTestCompile 'org.mockito:mockito-core:1.10.19'
-    androidTestCompile 'com.google.truth:truth:0.36'
-    androidTestCompile 'com.linkedin.dexmaker:dexmaker:2.16.0'
-    androidTestCompile 'com.linkedin.dexmaker:dexmaker-mockito:2.16.0'
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'org.mockito:mockito-core:2.21.0'
+    androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.16.0'
+    androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.16.0'
 
 
 }

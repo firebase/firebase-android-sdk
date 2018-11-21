@@ -52,6 +52,8 @@ import java.util.concurrent.Executor;
 public class FirebaseFirestore {
   private static final String TAG = "FirebaseFirestore";
   private final Context context;
+  // This is also used as private lock object for this instance. There is nothing inherent about
+  // databaseId itself that needs locking; it just saves us creating a separate lock object.
   private final DatabaseId databaseId;
   private final String persistenceKey;
   private final CredentialsProvider credentialsProvider;
@@ -59,7 +61,7 @@ public class FirebaseFirestore {
   private final FirebaseApp firebaseApp;
 
   private FirebaseFirestoreSettings settings;
-  private FirestoreClient client;
+  private volatile FirestoreClient client;
   private final UserDataConverter dataConverter;
 
   @NonNull
@@ -161,20 +163,29 @@ public class FirebaseFirestore {
    */
   @PublicApi
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
-    checkNotNull(settings, "Provided settings must not be null.");
-    // As a special exception, don't throw if the same settings are passed repeatedly. This
-    // should make it simpler to get a Firestore instance in an activity.
-    if (client != null && !this.settings.equals(settings)) {
-      throw new IllegalStateException(
-          "FirebaseFirestore has already been started and its settings can no longer be changed. "
-              + "You can only call setFirestoreSettings() before calling any other methods on a "
-              + "FirebaseFirestore object.");
+    synchronized (databaseId) {
+      checkNotNull(settings, "Provided settings must not be null.");
+      // As a special exception, don't throw if the same settings are passed repeatedly. This
+      // should make it simpler to get a Firestore instance in an activity.
+      if (client != null && !this.settings.equals(settings)) {
+        throw new IllegalStateException(
+            "FirebaseFirestore has already been started and its settings can no longer be changed. "
+                + "You can only call setFirestoreSettings() before calling any other methods on a "
+                + "FirebaseFirestore object.");
+      }
+      this.settings = settings;
     }
-    this.settings = settings;
   }
 
   private void ensureClientConfigured() {
-    if (client == null) {
+    if (client != null) {
+      return;
+    }
+
+    synchronized (databaseId) {
+      if (client != null) {
+        return;
+      }
       if (!settings.areTimestampsInSnapshotsEnabled()) {
         Logger.warn(
             "Firestore",

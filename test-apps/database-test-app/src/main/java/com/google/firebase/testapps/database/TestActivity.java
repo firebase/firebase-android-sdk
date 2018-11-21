@@ -24,6 +24,7 @@ import android.support.test.espresso.IdlingResource;
 import android.support.test.espresso.idling.CountingIdlingResource;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -31,12 +32,14 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
 import java.util.Map;
 
 public class TestActivity extends Activity {
+  private final CountingIdlingResource idlingResource =
+      new CountingIdlingResource("Firebase database listener");
   private FirebaseDatabase db;
   private FirebaseAuth auth;
-  private final CountingIdlingResource idlingResource = new CountingIdlingResource("Firebase database listener");
   private TextView restaurantTextView;
 
   @Override
@@ -80,16 +83,15 @@ public class TestActivity extends Activity {
     //// Signout of any existing sessions and sign in with email and password
     auth.signOut();
     auth.signInWithEmailAndPassword("test@mailinator.com", "password")
-        .addOnSuccessListener(
-            new OnSuccessListener<AuthResult>() {
-              @Override
-              public void onSuccess(AuthResult authResult) {
-                db.getReference("restaurants")
+        .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+          @Override
+          public void onSuccess(AuthResult authResult) {
+            db.getReference("restaurants")
                     .child("Baadal")
                     .child("location")
                     .setValue("Google MTV");
-              }
-            });
+          }
+        });
   }
 
   @VisibleForTesting

@@ -15,7 +15,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.google.protobuf'
 
-def androidVersion = 26
+def androidVersion = 28
 
 protobuf {
     // Configure the protoc executable
@@ -25,7 +25,7 @@ protobuf {
     }
     plugins {
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.12.0'
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.16.1'
         }
         javalite {
             // The codegen for lite comes as a separate artifact
@@ -56,6 +56,7 @@ android {
     compileSdkVersion androidVersion
     defaultConfig {
         targetSdkVersion androidVersion
+        minSdkVersion 14
         multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -90,33 +91,36 @@ dependencies {
     implementation project(':protolite-well-known-types')
     implementation project(':firebase-database-collection')
 
-    implementation 'io.grpc:grpc-stub:1.12.0'
-    implementation 'io.grpc:grpc-protobuf-lite:1.12.0'
-    implementation 'io.grpc:grpc-okhttp:1.12.0'
+    //To provide @Generated annotations
+    compileOnly 'javax.annotation:jsr250-api:1.0'
+
+    implementation 'io.grpc:grpc-stub:1.16.1'
+    implementation 'io.grpc:grpc-protobuf-lite:1.16.1'
+    implementation 'io.grpc:grpc-okhttp:1.16.1'
     implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
     implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
     implementation "com.google.android.gms:play-services-base:$playServicesVersion"
 
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
 
-    implementation 'com.squareup.okhttp:okhttp:2.7.2'
+    implementation 'com.squareup.okhttp:okhttp:2.7.5'
     implementation ('com.google.firebase:firebase-auth-interop:16.0.1') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
-    testCompile 'junit:junit:4.11'
-    testCompile 'org.mockito:mockito-core:1.10.19'
-    testCompile 'org.robolectric:robolectric:4.0-alpha-3'
-    testCompile 'com.google.truth:truth:0.36'
-    testCompile 'com.fasterxml.jackson.core:jackson-databind:2.0.1'
-    testCompile 'com.google.guava:guava-testlib:12.0-rc2'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.mockito:mockito-core:2.21.0'
+    testImplementation 'org.robolectric:robolectric:4.0-alpha-3'
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
+    testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
 
-    androidTestCompile 'junit:junit:4.11'
-    androidTestCompile 'com.google.truth:truth:0.36'
-    androidTestCompile 'com.fasterxml.jackson.core:jackson-databind:2.0.1'
-    androidTestCompile "com.android.support:support-annotations:$supportAnnotationsVersion"
-    androidTestCompile 'com.android.support.test:runner:1.0.2'
-    androidTestCompile 'com.android.support.test:rules:1.0.2'
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
+    androidTestImplementation "com.android.support:support-annotations:$supportAnnotationsVersion"
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test:rules:1.0.2'
 }
 
 // ==========================================================================
