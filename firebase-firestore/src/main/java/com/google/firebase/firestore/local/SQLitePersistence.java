@@ -142,24 +142,33 @@ public final class SQLitePersistence extends Persistence {
     return remoteDocumentCache;
   }
 
+  private static class ReferenceDelegateToSQLiteTransactionListenerAdapter
+      implements SQLiteTransactionListener {
+    private ReferenceDelegate instance;
+
+    ReferenceDelegateToSQLiteTransactionListenerAdapter(ReferenceDelegate instance) {
+      this.instance = instance;
+    }
+
+    @Override
+    public void onBegin() {
+      instance.onTransactionStarted();
+    }
+
+    @Override
+    public void onCommit() {
+      instance.onTransactionCommitted();
+    }
+
+    @Override
+    public void onRollback() {}
+  }
+
   @Override
   void runTransaction(String action, Runnable operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
     db.beginTransactionWithListener(
-        new SQLiteTransactionListener() {
-          @Override
-          public void onBegin() {
-            referenceDelegate.onTransactionStarted();
-          }
-
-          @Override
-          public void onCommit() {
-            referenceDelegate.onTransactionCommitted();
-          }
-
-          @Override
-          public void onRollback() {}
-        });
+        new ReferenceDelegateToSQLiteTransactionListenerAdapter(referenceDelegate));
     try {
       operation.run();
 
@@ -175,20 +184,7 @@ public final class SQLitePersistence extends Persistence {
     Logger.debug(TAG, "Starting transaction: %s", action);
     T value = null;
     db.beginTransactionWithListener(
-        new SQLiteTransactionListener() {
-          @Override
-          public void onBegin() {
-            referenceDelegate.onTransactionStarted();
-          }
-
-          @Override
-          public void onCommit() {
-            referenceDelegate.onTransactionCommitted();
-          }
-
-          @Override
-          public void onRollback() {}
-        });
+        new ReferenceDelegateToSQLiteTransactionListenerAdapter(referenceDelegate));
     try {
       value = operation.get();
 
