@@ -144,8 +144,7 @@ public final class SQLitePersistence extends Persistence {
   @Override
   void runTransaction(String action, Runnable operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
-    referenceDelegate.onTransactionStarted();
-    db.beginTransaction();
+    db.beginTransactionWithListener(referenceDelegate);
     try {
       operation.run();
 
@@ -154,15 +153,13 @@ public final class SQLitePersistence extends Persistence {
     } finally {
       db.endTransaction();
     }
-    referenceDelegate.onTransactionCommitted();
   }
 
   @Override
   <T> T runTransaction(String action, Supplier<T> operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
     T value = null;
-    referenceDelegate.onTransactionStarted();
-    db.beginTransaction();
+    db.beginTransactionWithListener(referenceDelegate);
     try {
       value = operation.get();
 
@@ -171,7 +168,6 @@ public final class SQLitePersistence extends Persistence {
     } finally {
       db.endTransaction();
     }
-    referenceDelegate.onTransactionCommitted();
     return value;
   }
 
