@@ -27,8 +27,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -71,26 +69,19 @@ final class LocalDocumentsView {
     return document;
   }
 
-  @Nullable
-  private List<MaybeDocument> getDocumentsInternal(Iterable<DocumentKey> keys, List<MutationBatch> batches) {
-    List<MaybeDocument> documents = remoteDocumentCache.getAll(keys);
-    // TODO(varconst): uncomment and fix.
-    // for (MutationBatch batch : batches) {
-    //   document = batch.applyToLocalView(key, document);
-    // }
+  // Returns the view of the given {@code docs} as they would appear after applying all mutations in
+  // the given {@code batches}.
+  private Map<DocumentKey, MaybeDocument> applyLocalMutationsToDocuments(
+      Map<DocumentKey, MaybeDocument> docs, List<MutationBatch> batches) {
+    for (Map.Entry<DocumentKey, MaybeDocument> base : docs.entrySet()) {
+      MaybeDocument localView = base.getValue();
+      for (MutationBatch batch : batches) {
+        localView = batch.applyToLocalView(base.getKey(), localView);
+      }
+      base.setValue(localView);
+    }
 
-    return documents;
-  }
-
-  @Nullable
-  private List<MaybeDocument> getDocumentsInternal(Collection<MaybeDocument> docs, List<MutationBatch> batches) {
-    List<MaybeDocument> result = new ArrayList<>(docs);
-    // TODO(varconst): uncomment and fix.
-    // for (MutationBatch batch : batches) {
-    //   document = batch.applyToLocalView(key, document);
-    // }
-
-    return result;
+    return docs;
   }
 
   /**
@@ -100,31 +91,29 @@ final class LocalDocumentsView {
    * for that key in the resulting set.
    */
   ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments(Iterable<DocumentKey> keys) {
-    ImmutableSortedMap<DocumentKey, MaybeDocument> results = emptyMaybeDocumentMap();
-
-    List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKeys(keys);
-    List<MaybeDocument> docs = getDocumentsInternal(keys, batches);
-    for (MaybeDocument maybeDoc : docs) {
-      // TODO: Don't conflate missing / deleted.
-      if (maybeDoc == null) {
-        maybeDoc = new NoDocument(maybeDoc.getKey(), SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
-      }
-      results = results.insert(maybeDoc.getKey(), maybeDoc);
-    }
-    return results;
+    Map<DocumentKey, MaybeDocument> docs = remoteDocumentCache.getAll(keys);
+    return getDocuments(docs);
   }
 
-  ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments(Map<DocumentKey, MaybeDocument> docsByKey) {
+  /**
+   * Similar to {@code #getDocuments}, but creates the local view from the given {@code baseDocs}
+   * without retrieving documents from the local store.
+   */
+  ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments(
+      Map<DocumentKey, MaybeDocument> baseDocs) {
     ImmutableSortedMap<DocumentKey, MaybeDocument> results = emptyMaybeDocumentMap();
 
-    List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docsByKey.keySet());
-    List<MaybeDocument> docs = getDocumentsInternal(docsByKey.values(), batches);
-    for (MaybeDocument maybeDoc : docs) {
+    List<MutationBatch> batches =
+        mutationQueue.getAllMutationBatchesAffectingDocumentKeys(baseDocs.keySet());
+    Map<DocumentKey, MaybeDocument> docs = applyLocalMutationsToDocuments(baseDocs, batches);
+    for (Map.Entry<DocumentKey, MaybeDocument> entry : docs.entrySet()) {
+      DocumentKey key = entry.getKey();
+      MaybeDocument maybeDoc = entry.getValue();
       // TODO: Don't conflate missing / deleted.
       if (maybeDoc == null) {
-        maybeDoc = new NoDocument(maybeDoc.getKey(), SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
+        maybeDoc = new NoDocument(key, SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
       }
-      results = results.insert(maybeDoc.getKey(), maybeDoc);
+      results = results.insert(key, maybeDoc);
     }
     return results;
   }

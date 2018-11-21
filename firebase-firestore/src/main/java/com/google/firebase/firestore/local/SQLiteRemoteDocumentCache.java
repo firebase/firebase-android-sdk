@@ -25,7 +25,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -70,60 +69,39 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         .firstValue(row -> decodeMaybeDocument(row.getBlob(0)));
   }
 
-  @Nullable
   @Override
-  public List<MaybeDocument> getAll(Iterable<DocumentKey> documentKeys) {
-    List<MaybeDocument> result = new ArrayList<>();
-    if (!documentKeys.iterator().hasNext()) {
-      return result;
+  public Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> documentKeys) {
+    List<Object> args = new ArrayList<>();
+    for (DocumentKey key : documentKeys) {
+      args.add(EncodedPath.encode(key.getPath()));
     }
 
-    // SQLite limits maximum number of host parameters to 999 (see
-    // https://www.sqlite.org/limits.html). To work around this, split the given keys into several
-    // smaller sets and issue a separate query for each.
-    int limit = 900;
+    Map<DocumentKey, MaybeDocument> results = new HashMap<>();
     Iterator<DocumentKey> keyIter = documentKeys.iterator();
-    int queriesPerformed = 0;
     while (keyIter.hasNext()) {
-      ++queriesPerformed;
-      StringBuilder placeholdersBuilder = new StringBuilder();
-      List<String> args = new ArrayList<>();
+      // Make sure each key has a corresponding entry, which is null in case the document is not
+      // found.
+      results.put(keyIter.next(), null);
+    }
 
-      for (int i = 0; keyIter.hasNext() && i < limit; i++) {
-        DocumentKey key = keyIter.next();
+    SQLitePersistence.LongQuery longQuery =
+        new SQLitePersistence.LongQuery(
+            db,
+            "SELECT contents FROM remote_documents " + "WHERE path IN (",
+            args,
+            ") ORDER BY path");
 
-        if (i > 0) {
-          placeholdersBuilder.append(", ");
-        }
-        placeholdersBuilder.append("?");
-
-        args.add(EncodedPath.encode(key.getPath()));
-      }
-      String placeholders = placeholdersBuilder.toString();
-
-      db.query(
-              "SELECT contents FROM remote_documents "
-                  + "WHERE path IN ("
-                  + placeholders
-                  + ") "
-                  + "ORDER BY path")
-          .binding(args.toArray())
+    while (longQuery.hasMore()) {
+      longQuery
+          .performNextPart()
           .forEach(
               row -> {
-                result.add(decodeMaybeDocument(row.getBlob(0)));
+                MaybeDocument decoded = decodeMaybeDocument(row.getBlob(0));
+                results.put(decoded.getKey(), decoded);
               });
     }
 
-    // If more than one query was issued, batches might be in an unsorted order (batches are ordered
-    // within one query's results, but not across queries). It's likely to be rare, so don't impose
-    // performance penalty on the normal case.
-    if (queriesPerformed > 1) {
-      Collections.sort(
-          result,
-          (MaybeDocument lhs, MaybeDocument rhs) ->
-              lhs.getKey().compareTo(rhs.getKey()));
-    }
-    return result;
+    return results;
   }
 
   @Override

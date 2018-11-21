@@ -32,6 +32,10 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -80,6 +84,51 @@ abstract class RemoteDocumentCacheTestCase {
       MaybeDocument read = get(path);
       assertEquals(written, read);
     }
+  }
+
+  @Test
+  public void testSetAndReadSeveralDocuments() {
+    String[] paths = {"a/b", "a/b/c/d/e/f"};
+    Map<DocumentKey, MaybeDocument> written = new HashMap<>();
+    for (String path : paths) {
+      written.put(DocumentKey.fromPathString(path), addTestDocumentAtPath(path));
+    }
+
+    Map<DocumentKey, MaybeDocument> read = getAll(Arrays.asList(paths));
+    assertEquals(written, read);
+  }
+
+  @Test
+  public void testReadSeveralDocumentsIncludingMissingDocument() {
+    String[] paths = {"foo/1", "foo/2"};
+    Map<DocumentKey, MaybeDocument> written = new HashMap<>();
+    for (String path : paths) {
+      written.put(DocumentKey.fromPathString(path), addTestDocumentAtPath(path));
+    }
+    written.put(DocumentKey.fromPathString("foo/nonexistent"), null);
+
+    List<String> keys = new ArrayList(Arrays.asList(paths));
+    keys.add("foo/nonexistent");
+    Map<DocumentKey, MaybeDocument> read = getAll(keys);
+    assertEquals(written, read);
+  }
+
+  // PORTING NOTE: this test only applies to Android, because it's the only platform where the
+  // implementation of getAll might split the input into several queries.
+  @Test
+  public void testSetAndReadLotsOfDocuments() {
+    // Make sure to force SQLite implementation to split the large query into several smaller ones.
+    int lotsOfDocuments = 2000;
+    List<String> paths = new ArrayList<>();
+    Map<DocumentKey, MaybeDocument> expected = new HashMap<>();
+    for (int i = 0; i < lotsOfDocuments; i++) {
+      String path = "foo/" + String.valueOf(i);
+      paths.add(path);
+      expected.put(DocumentKey.fromPathString(path), addTestDocumentAtPath(path));
+    }
+
+    Map<DocumentKey, MaybeDocument> read = getAll(paths);
+    assertEquals(expected, read);
   }
 
   @Test
@@ -145,6 +194,17 @@ abstract class RemoteDocumentCacheTestCase {
   @Nullable
   private MaybeDocument get(String path) {
     return remoteDocumentCache.get(key(path));
+  }
+
+  private Map<DocumentKey, MaybeDocument> getAll(Iterable<String> paths) {
+    List<DocumentKey> keys = new ArrayList<>();
+
+    Iterator<String> iter = paths.iterator();
+    while (iter.hasNext()) {
+      keys.add(key(iter.next()));
+    }
+
+    return remoteDocumentCache.getAll(keys);
   }
 
   private void remove(String path) {

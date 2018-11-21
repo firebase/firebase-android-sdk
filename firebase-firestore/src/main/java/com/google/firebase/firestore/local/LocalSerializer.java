@@ -55,6 +55,7 @@ public final class LocalSerializer {
       builder.setHasCommittedMutations(noDocument.hasCommittedMutations());
     } else if (document instanceof Document) {
       Document existingDocument = (Document) document;
+      // Use the memoized encoded form if it exists.
       if (existingDocument.getProto() != null) {
         builder.setDocument(existingDocument.getProto());
       } else {

@@ -19,7 +19,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
-import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
@@ -52,7 +52,14 @@ interface RemoteDocumentCache {
   @Nullable
   MaybeDocument get(DocumentKey documentKey);
 
-  List<MaybeDocument> getAll(Iterable<DocumentKey> documentKeys);
+  /**
+   * Looks up a set of entries in the cache.
+   *
+   * @param documentKeys The keys of the entries to look up.
+   * @return The cached Document or NoDocument entries indexed by key. If an entry is not cached,
+   *     the corresponding key will be mapped to a null value.
+   */
+  Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> documentKeys);
 
   /**
    * Executes a query against the cached Document entries

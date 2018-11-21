@@ -35,6 +35,10 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import javax.annotation.Nullable;
 
 /**
@@ -452,6 +456,122 @@ public final class SQLitePersistence extends Persistence {
       } else {
         return db.rawQuery(sql, null);
       }
+    }
+  }
+
+  /**
+   * Encapsulates a query whose parameter list is so long that it might exceed SQLite limit.
+   *
+   * <p>SQLite limits maximum number of host parameters to 999 (see
+   * https://www.sqlite.org/limits.html). This class wraps most of the messy details of splitting a
+   * large query into several smaller ones.
+   */
+  static class LongQuery {
+    private final SQLitePersistence db;
+    private final String head;
+    private final String tail;
+    private final List<Object> argsHead;
+    private final List<Object> allArgs;
+
+    private int queriesPerformed = 0;
+    private Iterator<Object> argsIter;
+
+    private static final int LIMIT = 900;
+
+    /**
+     * Creates a new {@code LongQuery} with parameters that describe a template for creating each
+     * subquery.
+     *
+     * <p>Each subquery will have the following form:
+     *
+     * <p>[head][an auto-generated comma-separated list of '?' placeholders][tail]
+     *
+     * <p>For example, imagine for demonstration purposes that the limit were 2, and the {@code
+     * LongQuery} was created like this:
+     *
+     * <pre class="code">
+     *     String[] args = {"foo", "bar", "baz", "spam", "eggs"};
+     *     LongQuery longQuery = new LongQuery(
+     *         db,
+     *         "SELECT name WHERE id in (",
+     *         Arrays.asList(args),
+     *         ")"
+     *     );
+     * </pre>
+     *
+     * <p>Assuming limit of 2, this query will issue three subqueries:
+     *
+     * <pre class="code">
+     *     query.performNextPart(); // "SELECT name WHERE id in (?, ?)", binding "foo" and "bar"
+     *     query.performNextPart(); // "SELECT name WHERE id in (?, ?)", binding "baz" and "spam"
+     *     query.performNextPart(); // "SELECT name WHERE id in (?)", binding "eggs"
+     * </pre>
+     *
+     * @param db The database on which to execute the query.
+     * @param head The non-changing beginning of the query; each subquery will begin with this.
+     * @param allArgs The list of host parameters to bind. If the list size exceeds the limit,
+     *     several subqueries will be issued, and the correct number of placeholders will be
+     *     generated for each subquery.
+     * @param tail The non-changing end of the query; each subquery will end with this.
+     */
+    LongQuery(SQLitePersistence db, String head, List<Object> allArgs, String tail) {
+      this.db = db;
+      this.head = head;
+      this.argsHead = Collections.emptyList();
+      this.allArgs = allArgs;
+      this.tail = tail;
+
+      argsIter = allArgs.iterator();
+    }
+
+    /**
+     * The longer version of the constructor additionally takes {@code argsHead} parameter that
+     * contains parameters that will be reissued in each subquery, i.e. subqueries take the form:
+     *
+     * <p>[head][argsHead][an auto-generated comma-separated list of '?' placeholders][tail]
+     */
+    LongQuery(
+        SQLitePersistence db,
+        String head,
+        List<Object> argsHead,
+        List<Object> allArgs,
+        String tail) {
+      this.db = db;
+      this.head = head;
+      this.argsHead = argsHead;
+      this.allArgs = allArgs;
+      this.tail = tail;
+
+      argsIter = allArgs.iterator();
+    }
+
+    /** Whether {@link performNextPart} can be called. */
+    boolean hasMore() {
+      return argsIter.hasNext();
+    }
+
+    /** Performs the next subquery and returns a {@link Query} object for method chaining. */
+    Query performNextPart() {
+      ++queriesPerformed;
+
+      List<Object> partArgs = new ArrayList<>(argsHead);
+      StringBuilder placeholdersBuilder = new StringBuilder();
+      for (int i = 0; argsIter.hasNext() && i < LIMIT - argsHead.size(); i++) {
+        if (i > 0) {
+          placeholdersBuilder.append(", ");
+        }
+        placeholdersBuilder.append("?");
+
+        partArgs.add(argsIter.next());
+      }
+      String placeholders = placeholdersBuilder.toString();
+
+      return db.query(head + placeholders + tail).binding(partArgs.toArray());
+    }
+
+    /** How many subqueries were performed. */
+    int getQueriesPerformed() {
+      return queriesPerformed;
     }
   }
 

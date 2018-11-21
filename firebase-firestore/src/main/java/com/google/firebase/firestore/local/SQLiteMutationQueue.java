@@ -32,9 +32,9 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -277,46 +277,29 @@ final class SQLiteMutationQueue implements MutationQueue {
   @Override
   public List<MutationBatch> getAllMutationBatchesAffectingDocumentKeys(
       Iterable<DocumentKey> documentKeys) {
-    List<MutationBatch> result = new ArrayList<>();
-    if (!documentKeys.iterator().hasNext()) {
-      return result;
+    List<Object> args = new ArrayList<>();
+    for (DocumentKey key : documentKeys) {
+      args.add(EncodedPath.encode(key.getPath()));
     }
 
-    // SQLite limits maximum number of host parameters to 999 (see
-    // https://www.sqlite.org/limits.html). To work around this, split the given keys into several
-    // smaller sets and issue a separate query for each.
-    int limit = 900;
-    Iterator<DocumentKey> keyIter = documentKeys.iterator();
+    SQLitePersistence.LongQuery longQuery =
+        new SQLitePersistence.LongQuery(
+            db,
+            "SELECT DISTINCT dm.batch_id, m.mutations FROM document_mutations dm, mutations m "
+                + "WHERE dm.uid = ? "
+                + "AND dm.path IN (",
+            Arrays.asList(uid),
+            args,
+            ") "
+                + "AND dm.uid = m.uid "
+                + "AND dm.batch_id = m.batch_id "
+                + "ORDER BY dm.batch_id");
+
+    List<MutationBatch> result = new ArrayList<>();
     Set<Integer> uniqueBatchIds = new HashSet<>();
-    int queriesPerformed = 0;
-    while (keyIter.hasNext()) {
-      ++queriesPerformed;
-      StringBuilder placeholdersBuilder = new StringBuilder();
-      List<String> args = new ArrayList<>();
-      args.add(uid);
-
-      for (int i = 0; keyIter.hasNext() && i < limit; i++) {
-        DocumentKey key = keyIter.next();
-
-        if (i > 0) {
-          placeholdersBuilder.append(", ");
-        }
-        placeholdersBuilder.append("?");
-
-        args.add(EncodedPath.encode(key.getPath()));
-      }
-      String placeholders = placeholdersBuilder.toString();
-
-      db.query(
-              "SELECT DISTINCT dm.batch_id, m.mutations FROM document_mutations dm, mutations m "
-                  + "WHERE dm.uid = ? "
-                  + "AND dm.path IN ("
-                  + placeholders
-                  + ") "
-                  + "AND dm.uid = m.uid "
-                  + "AND dm.batch_id = m.batch_id "
-                  + "ORDER BY dm.batch_id")
-          .binding(args.toArray())
+    while (longQuery.hasMore()) {
+      longQuery
+          .performNextPart()
           .forEach(
               row -> {
                 int batchId = row.getInt(0);
@@ -330,7 +313,7 @@ final class SQLiteMutationQueue implements MutationQueue {
     // If more than one query was issued, batches might be in an unsorted order (batches are ordered
     // within one query's results, but not across queries). It's likely to be rare, so don't impose
     // performance penalty on the normal case.
-    if (queriesPerformed > 1) {
+    if (longQuery.getQueriesPerformed() > 1) {
       Collections.sort(
           result,
           (MutationBatch lhs, MutationBatch rhs) ->

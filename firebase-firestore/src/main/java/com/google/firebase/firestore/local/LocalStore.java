@@ -333,23 +333,15 @@ public final class LocalStore {
           Map<DocumentKey, MaybeDocument> changedDocs = new HashMap<>();
           Map<DocumentKey, MaybeDocument> documentUpdates = remoteEvent.getDocumentUpdates();
           Set<DocumentKey> limboDocuments = remoteEvent.getResolvedLimboDocuments();
-
-          Set<DocumentKey> keys = new HashSet<>();
-          for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
-            keys.add(entry.getKey());
-          }
-          List<MaybeDocument> existingDocs = remoteDocuments.getAll(keys);
+          // Each loop iteration only affects its "own" doc, so it's safe to get all the remote
+          // documents in advance in a single call.
+          Map<DocumentKey, MaybeDocument> existingDocs =
+              remoteDocuments.getAll(documentUpdates.keySet());
 
           for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
             DocumentKey key = entry.getKey();
             MaybeDocument doc = entry.getValue();
-            MaybeDocument existingDoc = null;
-            for (MaybeDocument aDoc : existingDocs) {
-              if (aDoc.getKey().equals(key)) {
-                existingDoc = aDoc;
-                break;
-              }
-            }
+            MaybeDocument existingDoc = existingDocs.get(key);
 
             // If a document update isn't authoritative, make sure we don't
             // apply an old document version to the remote cache. We make an
