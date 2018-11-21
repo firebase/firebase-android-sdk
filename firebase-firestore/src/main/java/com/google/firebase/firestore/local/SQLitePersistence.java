@@ -76,6 +76,21 @@ public final class SQLitePersistence extends Persistence {
   private final SQLiteQueryCache queryCache;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
+  private final SQLiteTransactionListener transactionListener =
+      new SQLiteTransactionListener() {
+        @Override
+        public void onBegin() {
+          referenceDelegate.onTransactionStarted();
+        }
+
+        @Override
+        public void onCommit() {
+          referenceDelegate.onTransactionCommitted();
+        }
+
+        @Override
+        public void onRollback() {}
+      };
 
   public SQLitePersistence(
       Context context, String persistenceKey, DatabaseId databaseId, LocalSerializer serializer) {
@@ -142,33 +157,10 @@ public final class SQLitePersistence extends Persistence {
     return remoteDocumentCache;
   }
 
-  private static class ReferenceDelegateToSQLiteTransactionListenerAdapter
-      implements SQLiteTransactionListener {
-    private ReferenceDelegate instance;
-
-    ReferenceDelegateToSQLiteTransactionListenerAdapter(ReferenceDelegate instance) {
-      this.instance = instance;
-    }
-
-    @Override
-    public void onBegin() {
-      instance.onTransactionStarted();
-    }
-
-    @Override
-    public void onCommit() {
-      instance.onTransactionCommitted();
-    }
-
-    @Override
-    public void onRollback() {}
-  }
-
   @Override
   void runTransaction(String action, Runnable operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
-    db.beginTransactionWithListener(
-        new ReferenceDelegateToSQLiteTransactionListenerAdapter(referenceDelegate));
+    db.beginTransactionWithListener(transactionListener);
     try {
       operation.run();
 
@@ -183,8 +175,7 @@ public final class SQLitePersistence extends Persistence {
   <T> T runTransaction(String action, Supplier<T> operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
     T value = null;
-    db.beginTransactionWithListener(
-        new ReferenceDelegateToSQLiteTransactionListenerAdapter(referenceDelegate));
+    db.beginTransactionWithListener(transactionListener);
     try {
       value = operation.get();
 
