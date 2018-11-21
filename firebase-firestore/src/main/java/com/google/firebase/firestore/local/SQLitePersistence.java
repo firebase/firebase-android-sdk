@@ -143,35 +143,36 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   void runTransaction(String action, Runnable operation) {
+    Logger.debug(TAG, "Starting transaction: %s", action);
+    referenceDelegate.onTransactionStarted();
+    db.beginTransaction();
     try {
-      Logger.debug(TAG, "Starting transaction: %s", action);
-      referenceDelegate.onTransactionStarted();
-      db.beginTransaction();
       operation.run();
 
       // Note that an exception in operation.run() will prevent this code from running.
       db.setTransactionSuccessful();
     } finally {
       db.endTransaction();
-      referenceDelegate.onTransactionCommitted();
     }
+    referenceDelegate.onTransactionCommitted();
   }
 
   @Override
   <T> T runTransaction(String action, Supplier<T> operation) {
+    Logger.debug(TAG, "Starting transaction: %s", action);
+    T value = null;
+    referenceDelegate.onTransactionStarted();
+    db.beginTransaction();
     try {
-      Logger.debug(TAG, "Starting transaction: %s", action);
-      referenceDelegate.onTransactionStarted();
-      db.beginTransaction();
-      T value = operation.get();
+      value = operation.get();
 
       // Note that an exception in operation.run() will prevent this code from running.
       db.setTransactionSuccessful();
-      return value;
     } finally {
       db.endTransaction();
-      referenceDelegate.onTransactionCommitted();
     }
+    referenceDelegate.onTransactionCommitted();
+    return value;
   }
 
   /**
