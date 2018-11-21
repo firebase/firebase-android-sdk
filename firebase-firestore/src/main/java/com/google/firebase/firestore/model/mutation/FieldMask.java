@@ -25,7 +25,7 @@ import java.util.Collection;
  * companion ObjectValue, the field is deleted. foo.bar - Overwrites only the field bar of the
  * object foo. If foo is not an object, foo is replaced with an object containing foo.
  */
-public class FieldMask {
+public final class FieldMask {
   public static FieldMask fromCollection(Collection<FieldPath> mask) {
     return new FieldMask(mask);
   }

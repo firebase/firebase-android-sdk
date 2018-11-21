@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  * An immutable set of documents (unique by key) ordered by the given comparator or ordered by key
  * by default if no document is present.
  */
-public class DocumentSet implements Iterable<Document> {
+public final class DocumentSet implements Iterable<Document> {
 
   /** Returns an empty DocumentSet sorted by the given comparator, then by keys. */
   public static DocumentSet emptySet(final Comparator<Document> comparator) {

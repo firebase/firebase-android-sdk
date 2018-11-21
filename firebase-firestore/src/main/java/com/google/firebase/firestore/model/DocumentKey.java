@@ -23,7 +23,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /** DocumentKey represents the location of a document in the Firestore database. */
-public class DocumentKey implements Comparable<DocumentKey> {
+public final class DocumentKey implements Comparable<DocumentKey> {
 
   public static final String KEY_FIELD_NAME = "__name__";
 

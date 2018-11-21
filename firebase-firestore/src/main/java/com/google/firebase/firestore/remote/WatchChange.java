@@ -38,7 +38,7 @@ public abstract class WatchChange {
    * A document change represents a change document and a list of target ids to which this change
    * applies. If the document has been deleted, the deleted document will be provided.
    */
-  public static class DocumentChange extends WatchChange {
+  public static final class DocumentChange extends WatchChange {
     // TODO: figure out if we can actually use arrays here for efficiency
     /** The new document applies to all of these targets. */
     private final List<Integer> updatedTargetIds;
@@ -137,7 +137,7 @@ public abstract class WatchChange {
    * An ExistenceFilterWatchChange applies to the targets and is required to verify the current
    * client state against expected state sent from the server.
    */
-  public static class ExistenceFilterWatchChange extends WatchChange {
+  public static final class ExistenceFilterWatchChange extends WatchChange {
     private final int targetId;
 
     private final ExistenceFilter existenceFilter;
@@ -177,7 +177,7 @@ public abstract class WatchChange {
   }
 
   /** The state of a target has changed. This can mean removal, addition, current or reset. */
-  public static class WatchTargetChange extends WatchChange {
+  public static final class WatchTargetChange extends WatchChange {
     private final WatchTargetChangeType changeType;
     private final List<Integer> targetIds;
     private final ByteString resumeToken;

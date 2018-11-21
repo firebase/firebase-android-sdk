@@ -23,7 +23,7 @@ import javax.annotation.Nullable;
  * Represents a document in Firestore with a key, version, data and whether the data has local
  * mutations applied to it.
  */
-public class Document extends MaybeDocument {
+public final class Document extends MaybeDocument {
 
   /** Describes the `hasPendingWrites` state of a document. */
   public enum DocumentState {
