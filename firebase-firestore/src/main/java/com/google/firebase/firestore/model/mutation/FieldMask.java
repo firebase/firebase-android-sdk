@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.model.mutation;
 
 import com.google.firebase.firestore.model.FieldPath;
-import java.util.Collection;
+import java.util.Set;
 
 /**
  * Provides a set of fields that can be used to partially patch a document. The FieldMask is used in
@@ -26,13 +26,13 @@ import java.util.Collection;
  * object foo. If foo is not an object, foo is replaced with an object containing foo.
  */
 public final class FieldMask {
-  public static FieldMask fromCollection(Collection<FieldPath> mask) {
+  public static FieldMask fromSet(Set<FieldPath> mask) {
     return new FieldMask(mask);
   }
 
-  private final Collection<FieldPath> mask;
+  private final Set<FieldPath> mask;
 
-  private FieldMask(Collection<FieldPath> mask) {
+  private FieldMask(Set<FieldPath> mask) {
     this.mask = mask;
   }
 
@@ -74,7 +74,7 @@ public final class FieldMask {
     return mask.hashCode();
   }
 
-  public Collection<FieldPath> getMask() {
+  public Set<FieldPath> getMask() {
     return mask;
   }
 }

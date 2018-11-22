@@ -78,6 +78,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import javax.annotation.Nullable;
 
 /** A set of utilities for tests */
@@ -431,12 +433,12 @@ public class TestUtil {
     boolean merge = updateMask != null;
 
     // We sort the fieldMaskPaths to make the order deterministic in tests.
-    Collections.sort(objectMask);
+    SortedSet<FieldPath> fieldMaskPaths = new TreeSet<>(merge ? updateMask : objectMask);
 
     return new PatchMutation(
         key(path),
         objectValue,
-        FieldMask.fromCollection(merge ? updateMask : objectMask),
+        FieldMask.fromSet(fieldMaskPaths),
         merge ? Precondition.NONE : Precondition.exists(true));
   }
 

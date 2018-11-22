@@ -44,6 +44,7 @@ import com.google.firestore.v1beta1.Precondition;
 import com.google.firestore.v1beta1.Value;
 import com.google.firestore.v1beta1.Write;
 import com.google.protobuf.ByteString;
+import java.util.HashSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,7 +72,7 @@ public final class LocalSerializerTest {
         new PatchMutation(
             key("bar/baz"),
             TestUtil.wrapObject(map("a", "b", "num", 1)),
-            FieldMask.fromCollection(asList(field("a"))),
+            FieldMask.fromSet(new HashSet<>(asList(field("a")))),
             com.google.firebase.firestore.model.mutation.Precondition.exists(true));
     Mutation del = deleteMutation("baz/quux");
     Timestamp writeTime = Timestamp.now();

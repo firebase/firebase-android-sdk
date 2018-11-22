@@ -46,6 +46,7 @@ import com.google.firebase.firestore.model.value.StringValue;
 import com.google.firebase.firestore.model.value.TimestampValue;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -110,7 +111,7 @@ public class MutationTest {
     Document baseDoc = doc("collection/key", 0, data);
 
     DocumentKey key = key("collection/key");
-    FieldMask mask = FieldMask.fromCollection(Arrays.asList(field("foo.bar")));
+    FieldMask mask = FieldMask.fromSet(new HashSet<>(Arrays.asList(field("foo.bar"))));
     Mutation patch = new PatchMutation(key, ObjectValue.emptyObject(), mask, Precondition.NONE);
 
     MaybeDocument patchDoc = patch.applyToLocalView(baseDoc, baseDoc, Timestamp.now());
