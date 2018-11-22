@@ -384,7 +384,7 @@ public final class LocalStore {
             queryCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
-          return localDocuments.getDocuments(changedDocs);
+          return localDocuments.getLocalViewOfDocuments(changedDocs);
         });
   }
 

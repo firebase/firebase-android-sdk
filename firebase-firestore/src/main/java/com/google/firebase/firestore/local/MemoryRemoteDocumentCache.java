@@ -58,9 +58,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   public Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> keys) {
     Map<DocumentKey, MaybeDocument> result = new HashMap<>();
 
-    Iterator<DocumentKey> iter = keys.iterator();
-    while (iter.hasNext()) {
-      DocumentKey key = iter.next();
+    for (DocumentKey key : keys) {
       // Make sure each key has a corresponding entry, which is null in case the document is not
       // found.
       result.put(key, get(key));

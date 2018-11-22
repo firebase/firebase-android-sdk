@@ -465,47 +465,68 @@ public final class SQLitePersistence extends Persistence {
    * <p>SQLite limits maximum number of host parameters to 999 (see
    * https://www.sqlite.org/limits.html). This class wraps most of the messy details of splitting a
    * large query into several smaller ones.
+   *
+   * <p>The class is configured to contain a "template" for each subquery:
+   *
+   * <ol>
+   *   <li> head -- the beginning of the query, will be the same for each subquery
+   *   <li> tail -- the end of the query, also the same for each subquery
+   * </ol>
+   *
+   * <p>Then the host parameters will be inserted in-between head and tail; if there are too many
+   * arguments for a single query, several subqueries will be issued. Each subquery which will have
+   * the following form:
+   *
+   * <p>[head][an auto-generated comma-separated list of '?' placeholders][tail]
+   *
+   * <p>To use this class, keep calling {@link #performNextSubquery}, which will issue the next
+   * subquery, as long as {@link #hasMoreSubqueries} returns true. Note that if the parameter list
+   * is empty, not even a single query will be issued.
+   *
+   * <p>For example, imagine for demonstration purposes that the limit were 2, and the {@code
+   * LongQuery} was created like this:
+   *
+   * <pre class="code">
+   *     String[] args = {"foo", "bar", "baz", "spam", "eggs"};
+   *     LongQuery longQuery = new LongQuery(
+   *         db,
+   *         "SELECT name WHERE id in (",
+   *         Arrays.asList(args),
+   *         ")" // omitting FROM for brevity
+   *     );
+   * </pre>
+   *
+   * <p>Assuming limit of 2, this query will issue three subqueries:
+   *
+   * <pre class="code">
+   *     query.performNextSubquery(); // "SELECT name WHERE id in (?, ?)", binding "foo" and "bar"
+   *     query.performNextSubquery(); // "SELECT name WHERE id in (?, ?)", binding "baz" and "spam"
+   *     query.performNextSubquery(); // "SELECT name WHERE id in (?)", binding "eggs"
+   * </pre>
+   *
    */
   static class LongQuery {
     private final SQLitePersistence db;
+    // The non-changing beginning of each subquery.
     private final String head;
+    // The non-changing end of each subquery.
     private final String tail;
+    // Arguments that will be prepended in each subquery before the main argument list.
     private final List<Object> argsHead;
-    private final List<Object> allArgs;
 
-    private int queriesPerformed = 0;
-    private Iterator<Object> argsIter;
+    private int subqueriesPerformed = 0;
+    private final Iterator<Object> argsIter;
 
+    // Limit for the number of host parameters beyond which a query will be split into several
+    // subqueries. Deliberately set way below 999 as a safety measure because this class doesn't
+    // attempt to check for placeholders in the query {@link head}; if it only relied on the number
+    // of placeholders it itself generates, in that situation it would still exceed the SQLite
+    // limit.
     private static final int LIMIT = 900;
 
     /**
      * Creates a new {@code LongQuery} with parameters that describe a template for creating each
      * subquery.
-     *
-     * <p>Each subquery will have the following form:
-     *
-     * <p>[head][an auto-generated comma-separated list of '?' placeholders][tail]
-     *
-     * <p>For example, imagine for demonstration purposes that the limit were 2, and the {@code
-     * LongQuery} was created like this:
-     *
-     * <pre class="code">
-     *     String[] args = {"foo", "bar", "baz", "spam", "eggs"};
-     *     LongQuery longQuery = new LongQuery(
-     *         db,
-     *         "SELECT name WHERE id in (",
-     *         Arrays.asList(args),
-     *         ")"
-     *     );
-     * </pre>
-     *
-     * <p>Assuming limit of 2, this query will issue three subqueries:
-     *
-     * <pre class="code">
-     *     query.performNextPart(); // "SELECT name WHERE id in (?, ?)", binding "foo" and "bar"
-     *     query.performNextPart(); // "SELECT name WHERE id in (?, ?)", binding "baz" and "spam"
-     *     query.performNextPart(); // "SELECT name WHERE id in (?)", binding "eggs"
-     * </pre>
      *
      * @param db The database on which to execute the query.
      * @param head The non-changing beginning of the query; each subquery will begin with this.
@@ -518,7 +539,6 @@ public final class SQLitePersistence extends Persistence {
       this.db = db;
       this.head = head;
       this.argsHead = Collections.emptyList();
-      this.allArgs = allArgs;
       this.tail = tail;
 
       argsIter = allArgs.iterator();
@@ -539,22 +559,21 @@ public final class SQLitePersistence extends Persistence {
       this.db = db;
       this.head = head;
       this.argsHead = argsHead;
-      this.allArgs = allArgs;
       this.tail = tail;
 
       argsIter = allArgs.iterator();
     }
 
-    /** Whether {@link performNextPart} can be called. */
-    boolean hasMore() {
+    /** Whether {@link #performNextSubquery} can be called. */
+    boolean hasMoreSubqueries() {
       return argsIter.hasNext();
     }
 
     /** Performs the next subquery and returns a {@link Query} object for method chaining. */
-    Query performNextPart() {
-      ++queriesPerformed;
+    Query performNextSubquery() {
+      ++subqueriesPerformed;
 
-      List<Object> partArgs = new ArrayList<>(argsHead);
+      List<Object> subqueryArgs = new ArrayList<>(argsHead);
       StringBuilder placeholdersBuilder = new StringBuilder();
       for (int i = 0; argsIter.hasNext() && i < LIMIT - argsHead.size(); i++) {
         if (i > 0) {
@@ -562,16 +581,16 @@ public final class SQLitePersistence extends Persistence {
         }
         placeholdersBuilder.append("?");
 
-        partArgs.add(argsIter.next());
+        subqueryArgs.add(argsIter.next());
       }
       String placeholders = placeholdersBuilder.toString();
 
-      return db.query(head + placeholders + tail).binding(partArgs.toArray());
+      return db.query(head + placeholders + tail).binding(subqueryArgs.toArray());
     }
 
     /** How many subqueries were performed. */
-    int getQueriesPerformed() {
-      return queriesPerformed;
+    int getSubqueriesPerformed() {
+      return subqueriesPerformed;
     }
   }
 

@@ -92,14 +92,14 @@ final class LocalDocumentsView {
    */
   ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments(Iterable<DocumentKey> keys) {
     Map<DocumentKey, MaybeDocument> docs = remoteDocumentCache.getAll(keys);
-    return getDocuments(docs);
+    return getLocalViewOfDocuments(docs);
   }
 
   /**
    * Similar to {@code #getDocuments}, but creates the local view from the given {@code baseDocs}
    * without retrieving documents from the local store.
    */
-  ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments(
+  ImmutableSortedMap<DocumentKey, MaybeDocument> getLocalViewOfDocuments(
       Map<DocumentKey, MaybeDocument> baseDocs) {
     ImmutableSortedMap<DocumentKey, MaybeDocument> results = emptyMaybeDocumentMap();
 

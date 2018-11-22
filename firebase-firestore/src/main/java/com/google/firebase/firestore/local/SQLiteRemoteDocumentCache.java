@@ -26,7 +26,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -77,11 +76,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
 
     Map<DocumentKey, MaybeDocument> results = new HashMap<>();
-    Iterator<DocumentKey> keyIter = documentKeys.iterator();
-    while (keyIter.hasNext()) {
+    for (DocumentKey key : documentKeys) {
       // Make sure each key has a corresponding entry, which is null in case the document is not
       // found.
-      results.put(keyIter.next(), null);
+      results.put(key, null);
     }
 
     SQLitePersistence.LongQuery longQuery =
@@ -91,9 +89,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             args,
             ") ORDER BY path");
 
-    while (longQuery.hasMore()) {
+    while (longQuery.hasMoreSubqueries()) {
       longQuery
-          .performNextPart()
+          .performNextSubquery()
           .forEach(
               row -> {
                 MaybeDocument decoded = decodeMaybeDocument(row.getBlob(0));

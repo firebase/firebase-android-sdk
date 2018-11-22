@@ -1014,8 +1014,8 @@ public final class RemoteSerializer {
         hardAssert(
             !version.equals(SnapshotVersion.NONE), "Got a document change without an update time");
         ObjectValue data = decodeFields(docChange.getDocument().getFieldsMap());
-        // The document will be serialized again before being written to local storage, memoize the
-        // encoded form to avoid encoding it again.
+        // The document may soon be re-serialized back to protos in order to store it in local
+        // persistence. Memoize the encoded form to avoid encoding it again.
         Document document =
             new Document(
                 key, version, data, Document.DocumentState.SYNCED, docChange.getDocument());

@@ -297,9 +297,9 @@ final class SQLiteMutationQueue implements MutationQueue {
 
     List<MutationBatch> result = new ArrayList<>();
     Set<Integer> uniqueBatchIds = new HashSet<>();
-    while (longQuery.hasMore()) {
+    while (longQuery.hasMoreSubqueries()) {
       longQuery
-          .performNextPart()
+          .performNextSubquery()
           .forEach(
               row -> {
                 int batchId = row.getInt(0);
@@ -313,7 +313,7 @@ final class SQLiteMutationQueue implements MutationQueue {
     // If more than one query was issued, batches might be in an unsorted order (batches are ordered
     // within one query's results, but not across queries). It's likely to be rare, so don't impose
     // performance penalty on the normal case.
-    if (longQuery.getQueriesPerformed() > 1) {
+    if (longQuery.getSubqueriesPerformed() > 1) {
       Collections.sort(
           result,
           (MutationBatch lhs, MutationBatch rhs) ->

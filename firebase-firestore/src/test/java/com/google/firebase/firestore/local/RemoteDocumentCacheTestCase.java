@@ -35,7 +35,6 @@ import com.google.firebase.firestore.model.NoDocument;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -199,9 +198,8 @@ abstract class RemoteDocumentCacheTestCase {
   private Map<DocumentKey, MaybeDocument> getAll(Iterable<String> paths) {
     List<DocumentKey> keys = new ArrayList<>();
 
-    Iterator<String> iter = paths.iterator();
-    while (iter.hasNext()) {
-      keys.add(key(iter.next()));
+    for (String path : paths) {
+      keys.add(key(path));
     }
 
     return remoteDocumentCache.getAll(keys);
