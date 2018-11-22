@@ -26,6 +26,7 @@ import android.database.sqlite.SQLiteDatabaseLockedException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteProgram;
 import android.database.sqlite.SQLiteStatement;
+import android.database.sqlite.SQLiteTransactionListener;
 import android.support.annotation.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.firebase.firestore.auth.User;
@@ -75,6 +76,21 @@ public final class SQLitePersistence extends Persistence {
   private final SQLiteQueryCache queryCache;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
+  private final SQLiteTransactionListener transactionListener =
+      new SQLiteTransactionListener() {
+        @Override
+        public void onBegin() {
+          referenceDelegate.onTransactionStarted();
+        }
+
+        @Override
+        public void onCommit() {
+          referenceDelegate.onTransactionCommitted();
+        }
+
+        @Override
+        public void onRollback() {}
+      };
 
   public SQLitePersistence(
       Context context, String persistenceKey, DatabaseId databaseId, LocalSerializer serializer) {
@@ -143,35 +159,32 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   void runTransaction(String action, Runnable operation) {
+    Logger.debug(TAG, "Starting transaction: %s", action);
+    db.beginTransactionWithListener(transactionListener);
     try {
-      Logger.debug(TAG, "Starting transaction: %s", action);
-      referenceDelegate.onTransactionStarted();
-      db.beginTransaction();
       operation.run();
 
       // Note that an exception in operation.run() will prevent this code from running.
       db.setTransactionSuccessful();
     } finally {
       db.endTransaction();
-      referenceDelegate.onTransactionCommitted();
     }
   }
 
   @Override
   <T> T runTransaction(String action, Supplier<T> operation) {
+    Logger.debug(TAG, "Starting transaction: %s", action);
+    T value = null;
+    db.beginTransactionWithListener(transactionListener);
     try {
-      Logger.debug(TAG, "Starting transaction: %s", action);
-      referenceDelegate.onTransactionStarted();
-      db.beginTransaction();
-      T value = operation.get();
+      value = operation.get();
 
       // Note that an exception in operation.run() will prevent this code from running.
       db.setTransactionSuccessful();
-      return value;
     } finally {
       db.endTransaction();
-      referenceDelegate.onTransactionCommitted();
     }
+    return value;
   }
 
   /**
