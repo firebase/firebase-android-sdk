@@ -56,6 +56,10 @@ gradlePlugin {
             id = 'PublishingPlugin'
             implementationClass = 'com.google.firebase.gradle.plugins.publish.PublishingPlugin'
         }
+        javadocsPlugin {
+            id = "DoclavaPlugin"
+            implementationClass = "com.google.firebase.gradle.plugins.javadocs.DoclavaPlugin"
+        }
     }
 }
 

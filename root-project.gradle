@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
+import com.google.firebase.gradle.plugins.javadocs.DoclavaPlugin
 import groovy.io.FileType
 
 buildscript {
@@ -148,6 +149,7 @@ configure(subprojects) {
         }
 
         sub.apply plugin: LicenseResolverPlugin
+        sub.apply plugin: DoclavaPlugin
         sub.thirdPartyLicenses {
             def root = "file://$rootDir/third_party/licenses"
 
