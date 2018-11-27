@@ -469,8 +469,8 @@ public final class SQLitePersistence extends Persistence {
    * <p>The class is configured to contain a "template" for each subquery:
    *
    * <ol>
-   *   <li> head -- the beginning of the query, will be the same for each subquery
-   *   <li> tail -- the end of the query, also the same for each subquery
+   *   <li>head -- the beginning of the query, will be the same for each subquery
+   *   <li>tail -- the end of the query, also the same for each subquery
    * </ol>
    *
    * <p>Then the host parameters will be inserted in-between head and tail; if there are too many
@@ -503,7 +503,6 @@ public final class SQLitePersistence extends Persistence {
    *     query.performNextSubquery(); // "SELECT name WHERE id in (?, ?)", binding "baz" and "spam"
    *     query.performNextSubquery(); // "SELECT name WHERE id in (?)", binding "eggs"
    * </pre>
-   *
    */
   static class LongQuery {
     private final SQLitePersistence db;
