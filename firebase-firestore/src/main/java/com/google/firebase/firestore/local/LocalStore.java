@@ -362,7 +362,6 @@ public final class LocalStore {
                   key,
                   existingDoc.getVersion(),
                   doc.getVersion());
-              changedDocs.put(key, existingDoc);
             }
 
             if (limboDocuments.contains(key)) {
