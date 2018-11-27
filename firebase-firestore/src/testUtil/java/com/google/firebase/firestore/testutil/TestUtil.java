@@ -432,7 +432,9 @@ public class TestUtil {
 
     boolean merge = updateMask != null;
 
-    // We sort the fieldMaskPaths to make the order deterministic in tests.
+    // We sort the fieldMaskPaths to make the order deterministic in tests. (Otherwise, when we
+    // flatten a Set to a proto repeated field, we'll end up comparing in iterator order and
+    // possibly consider {foo,bar} != {bar,foo}.)
     SortedSet<FieldPath> fieldMaskPaths = new TreeSet<>(merge ? updateMask : objectMask);
 
     return new PatchMutation(

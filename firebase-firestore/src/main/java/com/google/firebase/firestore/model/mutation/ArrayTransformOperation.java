@@ -51,11 +51,12 @@ public abstract class ArrayTransformOperation implements TransformOperation {
   }
 
   @Override
-  public final boolean equals(Object o) {
+  @SuppressWarnings("EqualsGetClass")  // subtype-sensitive equality is intended.
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof ArrayTransformOperation)) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
 
