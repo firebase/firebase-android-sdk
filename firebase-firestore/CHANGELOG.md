@@ -6,6 +6,13 @@
   custom objects (POJOs) by passing a Class<T> instance, e.g.
   `snapshot.get("field", CustomType.class)`.
 
+# 17.1.4
+- [fixed] Fixed a SQLite transaction handling issue that occasionally masked
+  exceptions when Firestore closed a transaction that was never started. For
+  more information, see the issue report in GitHub (https://github.com/firebase/firebase-android-sdk/issues/115).
+- [fixed] Fixed a race condition that caused a `SQLiteDatabaseLockedException`
+  when an app attempted to access the SQLite database from multiple threads.
+
 # 17.1.2
 - [changed] Changed how the SDK handles locally-updated documents while syncing
   those updates with Cloud Firestore servers. This can lead to slight behavior
