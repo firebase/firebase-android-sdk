@@ -86,6 +86,8 @@ configure(subprojects) {
 
     tasks.withType(JavaCompile) {
         options.errorprone.excludedPaths = '.*/build/generated/.*'
+        options.compilerArgs << '-Xlint:deprecation'
+        options.compilerArgs << '-Xlint:unchecked'
     }
 
     // Adds firebase custom errorprone checks to the annotation processor classpath.
