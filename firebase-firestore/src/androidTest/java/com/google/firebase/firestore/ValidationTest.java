@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testAlternateFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
@@ -30,6 +32,7 @@ import static org.junit.Assert.fail;
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.Transaction.Function;
@@ -436,6 +439,56 @@ public class ValidationTest {
     expectError(() -> query.startAfter(snapshot), reason);
     expectError(() -> query.endBefore(snapshot), reason);
     expectError(() -> query.endAt(snapshot), reason);
+  }
+
+  @Test
+  public void queriesCannotBeSortedByAnUncommittedServerTimestamp() {
+    CollectionReference collection = testCollection();
+
+    // Ensure the server timestamp stays uncommitted for the first half of the test
+    waitFor(collection.firestore.getClient().disableNetwork());
+
+    TaskCompletionSource<Void> offlineCallbackDone = new TaskCompletionSource<>();
+    TaskCompletionSource<Void> onlineCallbackDone = new TaskCompletionSource<>();
+
+    collection.addSnapshotListener(
+        (snapshot, error) -> {
+          assertNotNull(snapshot);
+
+          // Skip the initial empty snapshot.
+          if (snapshot.isEmpty()) return;
+
+          assertThat(snapshot.getDocuments()).hasSize(1);
+          DocumentSnapshot docSnap = snapshot.getDocuments().get(0);
+
+          if (snapshot.getMetadata().hasPendingWrites()) {
+            // Offline snapshot. Since the server timestamp is uncommitted, we shouldn't be able to
+            // query by it.
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    collection
+                        .orderBy("timestamp")
+                        .endAt(docSnap)
+                        .addSnapshotListener((snapshot2, error2) -> {}));
+            offlineCallbackDone.setResult(null);
+          } else {
+            // Online snapshot. Since the server timestamp is committed, we should be able to query
+            // by it.
+            collection
+                .orderBy("timestamp")
+                .endAt(docSnap)
+                .addSnapshotListener((snapshot2, error2) -> {});
+            onlineCallbackDone.setResult(null);
+          }
+        });
+
+    DocumentReference document = collection.document();
+    document.set(map("timestamp", FieldValue.serverTimestamp()));
+    waitFor(offlineCallbackDone.getTask());
+
+    waitFor(collection.firestore.getClient().enableNetwork());
+    waitFor(onlineCallbackDone.getTask());
   }
 
   @Test
