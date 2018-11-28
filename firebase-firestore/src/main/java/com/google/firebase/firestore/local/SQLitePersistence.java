@@ -492,7 +492,7 @@ public final class SQLitePersistence extends Persistence {
    *         db,
    *         "SELECT name WHERE id in (",
    *         Arrays.asList(args),
-   *         ")" // omitting FROM for brevity
+   *         ")"
    *     );
    * </pre>
    *
