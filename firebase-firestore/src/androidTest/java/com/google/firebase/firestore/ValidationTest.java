@@ -257,16 +257,22 @@ public class ValidationTest {
 
   @Test
   public void setsMustNotContainFieldValueDelete() {
-    expectSetError(
-        map("foo", FieldValue.delete()),
+    // PORTING NOTE: We avoid using expectSetError(), since it hits the POJO overload which
+    // can't handle FieldValue.delete().
+    DocumentReference ref = testDocument();
+    expectError(
+        () -> ref.set(map("foo", FieldValue.delete())),
         "Invalid data. FieldValue.delete() can only be used with update() and set() with "
             + "SetOptions.merge() (found in field foo)");
   }
 
   @Test
   public void updatesMustNotContainNestedFieldValueDeletes() {
-    expectUpdateError(
-        map("foo", map("bar", FieldValue.delete())),
+    // PORTING NOTE: We avoid using expectSetError(), since it hits the POJO overload which
+    // can't handle FieldValue.delete().
+    DocumentReference ref = testDocument();
+    expectError(
+        () -> ref.update(map("foo", map("bar", FieldValue.delete()))),
         "Invalid data. FieldValue.delete() can only appear at the top level of your update data "
             + "(found in field foo.bar)");
   }
@@ -370,8 +376,8 @@ public class ValidationTest {
   @Test
   public void arrayTransformsRejectInvalidElements() {
     DocumentReference doc = testDocument();
-    String reason =
-        "No properties to serialize found on class com.google.firebase.firestore.ValidationTest";
+    String reason = "Invalid data. Unsupported type: com.google.firebase.firestore.ValidationTest";
+    // TODO: If we get more permissive with POJOs, perhaps we should make this work.
     expectError(() -> doc.set(map("x", FieldValue.arrayUnion(1, this))), reason);
     expectError(() -> doc.set(map("x", FieldValue.arrayRemove(1, this))), reason);
   }
@@ -552,8 +558,15 @@ public class ValidationTest {
     DocumentReference ref = testDocument();
 
     if (includeSets) {
-      expectError(() -> ref.set(data), reason);
-      expectError(() -> ref.getFirestore().batch().set(ref, data), reason);
+      if (data instanceof Map) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> setMap = (Map<String, Object>) data;
+        expectError(() -> ref.set(setMap), reason);
+        expectError(() -> ref.getFirestore().batch().set(ref, setMap), reason);
+      } else {
+        expectError(() -> ref.set(data), reason);
+        expectError(() -> ref.getFirestore().batch().set(ref, data), reason);
+      }
     }
 
     if (includeUpdates) {
@@ -580,7 +593,13 @@ public class ValidationTest {
                 (Function<Void>)
                     transaction -> {
                       if (includeSets) {
-                        expectError(() -> transaction.set(ref, data), reason);
+                        if (data instanceof Map) {
+                          @SuppressWarnings("unchecked")
+                          Map<String, Object> setMap = (Map<String, Object>) data;
+                          expectError(() -> transaction.set(ref, setMap), reason);
+                        } else {
+                          expectError(() -> transaction.set(ref, data), reason);
+                        }
                       }
                       if (includeUpdates) {
                         assertTrue("update() only support Maps.", data instanceof Map);

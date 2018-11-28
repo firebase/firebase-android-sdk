@@ -1,10 +1,4 @@
 # Unreleased
-- [feature] Custom objects (POJOs) can now be passed as a field value in
-  update(), within `Map<>` objects passed to set(), in array transform
-  operations, and in query filters.
-- [feature] DocumentSnapshot.get() now supports retrieving fields as
-  custom objects (POJOs) by passing a Class<T> instance, e.g.
-  `snapshot.get("field", CustomType.class)`.
 
 # 17.1.4
 - [fixed] Fixed a SQLite transaction handling issue that occasionally masked
