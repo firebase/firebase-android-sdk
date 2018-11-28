@@ -47,7 +47,6 @@ import com.google.firebase.firestore.model.value.StringValue;
 import com.google.firebase.firestore.model.value.TimestampValue;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
