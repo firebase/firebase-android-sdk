@@ -23,6 +23,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -51,6 +52,19 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public MaybeDocument get(DocumentKey key) {
     return docs.get(key);
+  }
+
+  @Override
+  public Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> keys) {
+    Map<DocumentKey, MaybeDocument> result = new HashMap<>();
+
+    for (DocumentKey key : keys) {
+      // Make sure each key has a corresponding entry, which is null in case the document is not
+      // found.
+      result.put(key, get(key));
+    }
+
+    return result;
   }
 
   @Override
