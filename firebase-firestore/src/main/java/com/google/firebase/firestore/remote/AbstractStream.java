@@ -109,7 +109,6 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     public void onNext(RespT response) {
       dispatcher.run(
           () -> {
-            // For large queries, logging imposes a non-negligible performance penalty.
             if (Logger.isDebugEnabled()) {
               Logger.debug(
                   AbstractStream.this.getClass().getSimpleName(),
