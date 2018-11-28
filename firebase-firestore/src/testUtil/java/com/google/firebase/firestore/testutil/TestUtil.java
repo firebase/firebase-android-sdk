@@ -74,6 +74,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -109,6 +110,14 @@ public class TestUtil {
       primitive[i] = (byte) bytes[i];
     }
     return ByteString.copyFrom(primitive);
+  }
+
+  public static FieldMask fieldMask(String... fields) {
+    FieldPath[] mask = new FieldPath[fields.length];
+    for (int i = 0; i < fields.length; i++) {
+      mask[i] = field(fields[i]);
+    }
+    return FieldMask.fromSet(new HashSet<>(Arrays.asList(mask)));
   }
 
   public static final Map<String, Object> EMPTY_MAP = new HashMap<>();

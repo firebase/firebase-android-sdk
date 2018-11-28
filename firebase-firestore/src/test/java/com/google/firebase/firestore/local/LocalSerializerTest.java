@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
@@ -44,7 +45,6 @@ import com.google.firestore.v1beta1.Precondition;
 import com.google.firestore.v1beta1.Value;
 import com.google.firestore.v1beta1.Write;
 import com.google.protobuf.ByteString;
-import java.util.HashSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,7 +72,7 @@ public final class LocalSerializerTest {
         new PatchMutation(
             key("bar/baz"),
             TestUtil.wrapObject(map("a", "b", "num", 1)),
-            FieldMask.fromSet(new HashSet<>(asList(field("a")))),
+            fieldMask("a"),
             com.google.firebase.firestore.model.mutation.Precondition.exists(true));
     Mutation del = deleteMutation("baz/quux");
     Timestamp writeTime = Timestamp.now();

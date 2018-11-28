@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.mutationResult;
@@ -111,7 +112,7 @@ public class MutationTest {
     Document baseDoc = doc("collection/key", 0, data);
 
     DocumentKey key = key("collection/key");
-    FieldMask mask = FieldMask.fromSet(new HashSet<>(Arrays.asList(field("foo.bar"))));
+    FieldMask mask = fieldMask("foo.bar");
     Mutation patch = new PatchMutation(key, ObjectValue.emptyObject(), mask, Precondition.NONE);
 
     MaybeDocument patchDoc = patch.applyToLocalView(baseDoc, baseDoc, Timestamp.now());
