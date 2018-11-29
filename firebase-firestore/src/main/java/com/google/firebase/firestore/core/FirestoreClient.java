@@ -213,7 +213,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     persistence.start();
     localStore = new LocalStore(persistence, user);
 
-    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider);
+    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context);
     remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue);
 
     syncEngine = new SyncEngine(localStore, remoteStore, user);
