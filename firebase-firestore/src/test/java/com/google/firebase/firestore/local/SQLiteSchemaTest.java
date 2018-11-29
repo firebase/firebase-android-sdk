@@ -66,6 +66,15 @@ public class SQLiteSchemaTest {
   }
 
   @Test
+  public void canRerunMigrations() {
+    schema.runMigrations();
+    // Run the whole thing again
+    schema.runMigrations();
+    // Run just a piece. Adds a column, make sure it doesn't throw
+    schema.runMigrations(4, 6);
+  }
+
+  @Test
   public void createsMutationsTable() {
     schema.runMigrations();
 
