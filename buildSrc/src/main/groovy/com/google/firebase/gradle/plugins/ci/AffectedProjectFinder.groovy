@@ -61,7 +61,7 @@ class AffectedProjectFinder {
         Set<Project> projects = immediateChildProjects.collectMany {
             changedSubProjects(it, changedPaths)
         }
-        def relativePath = project.projectDir.absolutePath - project.rootDir.absolutePath - ~/^\//
+        def relativePath = project.rootDir.toURI().relativize(project.projectDir.toURI()).toString()
 
         Iterator itr = changedPaths.iterator()
         while (itr.hasNext()) {
