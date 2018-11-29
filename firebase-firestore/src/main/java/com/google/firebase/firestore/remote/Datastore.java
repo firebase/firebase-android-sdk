@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.remote;
 
+import android.content.Context;
 import android.support.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -34,6 +35,7 @@ import com.google.firestore.v1beta1.CommitResponse;
 import com.google.firestore.v1beta1.FirestoreGrpc;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
+import io.grpc.android.AndroidChannelBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -89,7 +91,10 @@ public class Datastore {
   }
 
   public Datastore(
-      DatabaseInfo databaseInfo, AsyncQueue workerQueue, CredentialsProvider credentialsProvider) {
+      DatabaseInfo databaseInfo,
+      AsyncQueue workerQueue,
+      CredentialsProvider credentialsProvider,
+      Context context) {
     this.databaseInfo = databaseInfo;
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
@@ -109,9 +114,17 @@ public class Datastore {
     // all calls need to be audited to make sure they are executed on the right thread.
     channelBuilder.executor(workerQueue.getExecutor());
 
+    // Wrap the ManagedChannelBuilder in an AndroidChannelBuilder. This allows the channel to
+    // respond more gracefully to network change events (such as switching from cell to wifi).
+    AndroidChannelBuilder androidChannelBuilder =
+        AndroidChannelBuilder.fromBuilder(channelBuilder).context(context);
+
     channel =
         new FirestoreChannel(
-            workerQueue, credentialsProvider, channelBuilder.build(), databaseInfo.getDatabaseId());
+            workerQueue,
+            credentialsProvider,
+            androidChannelBuilder.build(),
+            databaseInfo.getDatabaseId());
   }
 
   void shutdown() {
