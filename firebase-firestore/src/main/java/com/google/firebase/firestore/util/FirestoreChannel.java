@@ -91,9 +91,11 @@ public class FirestoreChannel {
   public void shutdown() {
     channel.shutdown();
     try {
-      // TODO(rsgowman): While running the integration tests, channel.shutdown() will occasionally
-      // timeout. (Typically on ~4-5 different tests, differing from one run to the next.) We should
-      // figure this out. But in the meantime, just use an exceptionally short timeout here and skip
+      // TODO(rsgowman): Investigate occasional hangs in channel.shutdown().
+      //
+      // While running the integration tests, channel.shutdown() will occasionally timeout.
+      // (Typically on ~4-5 different tests, differing from one run to the next.) We should figure
+      // this out. But in the meantime, just use an exceptionally short timeout here and skip
       // straight to shutdownNow() which works every time. (We don't support shutting down
       // firestore, so this should only be triggered from the test suite.)
       if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {

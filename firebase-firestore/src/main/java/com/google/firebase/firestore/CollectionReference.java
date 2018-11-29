@@ -23,6 +23,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
@@ -116,13 +117,12 @@ public class CollectionReference extends Query {
    * Adds a new document to this collection with the specified data, assigning it a document ID
    * automatically.
    *
-   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
-   *     document contents).
+   * @param data A Map containing the data for the new document.
    * @return A Task that will be resolved with the DocumentReference of the newly created document.
    */
   @NonNull
   @PublicApi
-  public Task<DocumentReference> add(@NonNull Object data) {
+  public Task<DocumentReference> add(@NonNull Map<String, Object> data) {
     checkNotNull(data, "Provided data must not be null.");
     final DocumentReference ref = document();
     return ref.set(data)
@@ -133,5 +133,18 @@ public class CollectionReference extends Query {
               task.getResult();
               return ref;
             });
+  }
+
+  /**
+   * Adds a new document to this collection with the specified POJO as contents, assigning it a
+   * document ID automatically.
+   *
+   * @param pojo The POJO that will be used to populate the contents of the document
+   * @return A Task that will be resolved with the DocumentReference of the newly created document.
+   */
+  @NonNull
+  @PublicApi
+  public Task<DocumentReference> add(@NonNull Object pojo) {
+    return add(firestore.getDataConverter().convertPOJO(pojo));
   }
 }

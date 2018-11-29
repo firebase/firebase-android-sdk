@@ -52,11 +52,34 @@ public class Document extends MaybeDocument {
 
   private final DocumentState documentState;
 
+  /**
+   * Memoized serialized form of the document for optimization purposes (avoids repeated
+   * serialization). Might be null.
+   */
+  private final com.google.firestore.v1beta1.Document proto;
+
+  public @Nullable com.google.firestore.v1beta1.Document getProto() {
+    return proto;
+  }
+
   public Document(
       DocumentKey key, SnapshotVersion version, ObjectValue data, DocumentState documentState) {
     super(key, version);
     this.data = data;
     this.documentState = documentState;
+    this.proto = null;
+  }
+
+  public Document(
+      DocumentKey key,
+      SnapshotVersion version,
+      ObjectValue data,
+      DocumentState documentState,
+      com.google.firestore.v1beta1.Document proto) {
+    super(key, version);
+    this.data = data;
+    this.documentState = documentState;
+    this.proto = proto;
   }
 
   public ObjectValue getData() {
