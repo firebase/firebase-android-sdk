@@ -114,6 +114,10 @@ public class Datastore {
             workerQueue, credentialsProvider, channelBuilder.build(), databaseInfo.getDatabaseId());
   }
 
+  void shutdown() {
+    channel.shutdown();
+  }
+
   AsyncQueue getWorkerQueue() {
     return workerQueue;
   }
