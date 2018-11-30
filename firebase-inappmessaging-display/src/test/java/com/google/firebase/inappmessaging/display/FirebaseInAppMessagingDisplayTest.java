@@ -450,7 +450,7 @@ public class FirebaseInAppMessagingDisplayTest {
     listener.displayMessage(IMAGE_ONLY_MESSAGE, callbacks);
     verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
 
-    callbackArgCaptor.getValue().onError();
+    callbackArgCaptor.getValue().onError(new Exception());
 
     verify(impressionTimer).cancel();
   }
@@ -462,7 +462,7 @@ public class FirebaseInAppMessagingDisplayTest {
     listener.displayMessage(BANNER_MESSAGE, callbacks);
     verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
 
-    callbackArgCaptor.getValue().onError();
+    callbackArgCaptor.getValue().onError(new Exception());
 
     verify(autoDismissTimer).cancel();
   }
@@ -478,7 +478,7 @@ public class FirebaseInAppMessagingDisplayTest {
         mock(ViewTreeObserver.OnGlobalLayoutListener.class);
 
     modalBindingWrapper.setLayoutListener(mockListener);
-    callbackArgCaptor.getValue().onError();
+    callbackArgCaptor.getValue().onError(new Exception());
 
     // Verify that the listener is no longer called
     modalBindingWrapper.getImageView().getViewTreeObserver().dispatchOnGlobalLayout();

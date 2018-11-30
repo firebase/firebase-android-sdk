@@ -90,8 +90,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   private FiamListener fiamListener;
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks callbacks;
-  private com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay
-      firebaseInAppMessagingDisplay;
 
   @Inject
   FirebaseInAppMessagingDisplay(
@@ -177,7 +175,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   @Override
   public void onActivityStarted(final Activity activity) {
     // Register FIAM listener with the headless sdk.
-    firebaseInAppMessagingDisplay =
+    com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay firebaseInAppMessagingDisplay =
         new com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay() {
           @Override
           public void displayMessage(InAppMessage iam, FirebaseInAppMessagingDisplayCallbacks cb) {
@@ -391,7 +389,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
           }
 
           @Override
-          public void onError() {
+          public void onError(Exception e) {
             Logging.loge("Image download failure ");
             if (layoutListener != null) {
               bindingWrapper

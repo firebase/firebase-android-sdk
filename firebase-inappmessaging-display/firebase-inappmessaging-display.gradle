@@ -58,8 +58,8 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.1.2'
     implementation 'com.google.auto.value:auto-value-annotations:1.6'
 
-    implementation "com.squareup.picasso:picasso:2.5.2"
-    implementation "com.squareup.okhttp:okhttp:2.7.5"
+    implementation "com.squareup.picasso:picasso:2.71828"
+    implementation "com.squareup.okhttp3:okhttp:3.12.0"
 
     implementation "com.google.dagger:dagger:2.13"
     implementation "com.google.dagger:dagger-android-support:2.13"
