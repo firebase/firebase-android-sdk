@@ -22,6 +22,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 
 import android.support.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -456,10 +457,8 @@ public class TransactionTest {
               waitFor(doc.set(map("count", 1234.0)));
               // Get the doc again in the transaction with the new version.
               DocumentSnapshot snapshot2 = transaction.get(doc);
-              assertEquals(1234, snapshot2.getDouble("count").intValue());
-              // Now try to update the doc from within the transaction.
-              // This should fail, because we read 15 earlier.
-              transaction.set(doc, map("count", 16.0));
+              // The get itself will fail, because we already read an earlier version of this document.
+              fail("Should have thrown exception");
               return null;
             }));
     DocumentSnapshot snapshot = waitFor(doc.get());
