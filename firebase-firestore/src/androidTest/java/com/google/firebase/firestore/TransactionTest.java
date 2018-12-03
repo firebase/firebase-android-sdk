@@ -457,7 +457,8 @@ public class TransactionTest {
               waitFor(doc.set(map("count", 1234.0)));
               // Get the doc again in the transaction with the new version.
               DocumentSnapshot snapshot2 = transaction.get(doc);
-              // The get itself will fail, because we already read an earlier version of this document.
+              // The get itself will fail, because we already read an earlier version of this
+              // document.
               fail("Should have thrown exception");
               return null;
             }));
