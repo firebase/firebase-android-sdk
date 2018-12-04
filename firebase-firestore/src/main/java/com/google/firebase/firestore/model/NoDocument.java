@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.model;
 
 /** Represents that no documents exists for the key at the given version. */
-public class NoDocument extends MaybeDocument {
+public final class NoDocument extends MaybeDocument {
 
   private boolean hasCommittedMutations;
 

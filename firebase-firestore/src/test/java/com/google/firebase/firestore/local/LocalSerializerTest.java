@@ -17,7 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
-import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
@@ -33,7 +33,6 @@ import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.UnknownDocument;
-import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
@@ -71,7 +70,7 @@ public final class LocalSerializerTest {
         new PatchMutation(
             key("bar/baz"),
             TestUtil.wrapObject(map("a", "b", "num", 1)),
-            FieldMask.fromCollection(asList(field("a"))),
+            fieldMask("a"),
             com.google.firebase.firestore.model.mutation.Precondition.exists(true));
     Mutation del = deleteMutation("baz/quux");
     Timestamp writeTime = Timestamp.now();
