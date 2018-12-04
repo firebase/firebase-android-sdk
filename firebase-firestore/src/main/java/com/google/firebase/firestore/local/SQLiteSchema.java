@@ -311,7 +311,7 @@ class SQLiteSchema {
     return columns.indexOf(column) != -1;
   }
 
-  private List<String> getTableColumns(String table) {
+  List<String> getTableColumns(String table) {
     // NOTE: SQLitePersistence.Query helper binding doesn't work with PRAGMA queries. So, just use
     // `rawQuery`.
     Cursor c = null;

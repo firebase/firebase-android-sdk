@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.database.Cursor;
@@ -26,6 +27,10 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firestore.v1beta1.Document;
 import com.google.firestore.v1beta1.Write;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,6 +77,57 @@ public class SQLiteSchemaTest {
     schema.runMigrations();
     // Run just a piece. Adds a column, make sure it doesn't throw
     schema.runMigrations(4, 6);
+  }
+
+  private Map<String, Set<String>> getCurrentSchema() {
+    Map<String, Set<String>> tables = new HashMap<>();
+    new SQLitePersistence.Query(db, "SELECT tbl_name FROM sqlite_master WHERE type = \"table\"")
+        .forEach(
+            c -> {
+              String table = c.getString(0);
+              Set<String> columns = new HashSet<>(schema.getTableColumns(table));
+              tables.put(table, columns);
+            });
+    return tables;
+  }
+
+  private void assertNoRemovals(
+      Map<String, Set<String>> oldSchema, Map<String, Set<String>> newSchema, int newVersion) {
+    for (Map.Entry<String, Set<String>> entry : oldSchema.entrySet()) {
+      String table = entry.getKey();
+      Set<String> newColumns = newSchema.get(table);
+      assertNotNull("Table " + table + " was deleted at version " + newVersion, newColumns);
+      Set<String> oldColumns = entry.getValue();
+      // We could use `Set.containsAll()`, but if we iterate we can point out the column that was
+      // deleted.
+      for (String column : oldColumns) {
+        assertTrue(
+            "Column " + column + " was deleted from table " + table + " at version " + newVersion,
+            newColumns.contains(column));
+      }
+    }
+  }
+
+  @Test
+  public void migrationsDontDeleteTablesOrColumns() {
+    // We would like to enforce that migrations don't remove tables or columns, as that will cause
+    // trouble for SDK version downgrades.
+    Map<String, Set<String>> tables = new HashMap<>();
+    for (int toVersion = 1; toVersion <= SQLiteSchema.VERSION; toVersion++) {
+      schema.runMigrations(toVersion - 1, toVersion);
+      Map<String, Set<String>> newTables = getCurrentSchema();
+      assertNoRemovals(tables, newTables, toVersion);
+      tables = newTables;
+    }
+  }
+
+  @Test
+  public void canRecoverFromDowngrades() {
+    for (int downgradeVersion = 0; downgradeVersion < SQLiteSchema.VERSION; downgradeVersion++) {
+      // Upgrade schema to current, then upgrade from `downgradeVersion` to current
+      schema.runMigrations();
+      schema.runMigrations(downgradeVersion, SQLiteSchema.VERSION);
+    }
   }
 
   @Test
