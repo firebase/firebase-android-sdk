@@ -161,13 +161,11 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public boolean equals(Object o) {
-    if (o == null) {
-      return false;
+  public final boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-    // The cast is not unchecked because of the class equality check.
-    return getClass() == o.getClass() && compareTo((B) o) == 0;
+    return (o instanceof BasePath) && compareTo((B) o) == 0;
   }
 
   @Override
