@@ -22,7 +22,6 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.IndexRange;
-import com.google.firebase.firestore.core.IndexRange.Builder;
 import com.google.firebase.firestore.core.NaNFilter;
 import com.google.firebase.firestore.core.NullFilter;
 import com.google.firebase.firestore.core.Query;
@@ -216,7 +215,7 @@ public class IndexedQueryEngine implements QueryEngine {
    * filter. The determined {@code IndexRange} is likely overselective and requires post-filtering.
    */
   private static IndexRange convertFilterToIndexRange(Filter filter) {
-    Builder indexRange = IndexRange.builder().setFieldPath(filter.getField());
+    IndexRange.Builder indexRange = IndexRange.builder().setFieldPath(filter.getField());
     if (filter instanceof RelationFilter) {
       RelationFilter relationFilter = (RelationFilter) filter;
       FieldValue filterValue = relationFilter.getValue();

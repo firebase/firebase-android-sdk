@@ -47,6 +47,14 @@ ext {
 }
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
+apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
+
+firebaseContinuousIntegration {
+    ignorePaths = [
+            /.*\.gitignore$/,
+            /.*.md$/,
+    ]
+}
 
 configure(subprojects) {
     repositories {

@@ -92,6 +92,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.util.concurrent.RoboExecutorService;
 
 /**
@@ -263,7 +264,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     queue = new AsyncQueue();
 
     // Set up the sync engine and various stores.
-    datastore = new MockDatastore(queue);
+    datastore = new MockDatastore(queue, RuntimeEnvironment.application);
 
     remoteStore = new RemoteStore(this, localStore, datastore, queue);
     syncEngine = new SyncEngine(localStore, remoteStore, currentUser);

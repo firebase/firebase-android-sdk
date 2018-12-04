@@ -240,7 +240,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       lruScheduler.start();
     }
 
-    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider);
+    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context);
     remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue);
 
     syncEngine = new SyncEngine(localStore, remoteStore, user);

@@ -18,7 +18,7 @@ package com.google.firebase.firestore.model;
  * A class representing an existing document whose data is unknown (e.g. a document that was updated
  * without a known base document).
  */
-public class UnknownDocument extends MaybeDocument {
+public final class UnknownDocument extends MaybeDocument {
   public UnknownDocument(DocumentKey key, SnapshotVersion version) {
     super(key, version);
   }

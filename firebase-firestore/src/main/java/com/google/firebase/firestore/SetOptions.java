@@ -20,8 +20,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.model.mutation.FieldMask;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * An options object that configures the behavior of set() calls. By providing one of the SetOptions
@@ -78,13 +79,13 @@ public final class SetOptions {
   @NonNull
   @PublicApi
   public static SetOptions mergeFields(List<String> fields) {
-    List<com.google.firebase.firestore.model.FieldPath> fieldPaths = new ArrayList<>();
+    Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
     for (String field : fields) {
       fieldPaths.add(FieldPath.fromDotSeparatedPath(field).getInternalPath());
     }
 
-    return new SetOptions(true, FieldMask.fromCollection(fieldPaths));
+    return new SetOptions(true, FieldMask.fromSet(fieldPaths));
   }
 
   /**
@@ -100,13 +101,13 @@ public final class SetOptions {
   @NonNull
   @PublicApi
   public static SetOptions mergeFields(String... fields) {
-    List<com.google.firebase.firestore.model.FieldPath> fieldPaths = new ArrayList<>();
+    Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
     for (String field : fields) {
       fieldPaths.add(FieldPath.fromDotSeparatedPath(field).getInternalPath());
     }
 
-    return new SetOptions(true, FieldMask.fromCollection(fieldPaths));
+    return new SetOptions(true, FieldMask.fromSet(fieldPaths));
   }
 
   /**
@@ -121,13 +122,13 @@ public final class SetOptions {
   @NonNull
   @PublicApi
   public static SetOptions mergeFieldPaths(List<FieldPath> fields) {
-    List<com.google.firebase.firestore.model.FieldPath> fieldPaths = new ArrayList<>();
+    Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
     for (FieldPath field : fields) {
       fieldPaths.add(field.getInternalPath());
     }
 
-    return new SetOptions(true, FieldMask.fromCollection(fieldPaths));
+    return new SetOptions(true, FieldMask.fromSet(fieldPaths));
   }
 
   @Override
