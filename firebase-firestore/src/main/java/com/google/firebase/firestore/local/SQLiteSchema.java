@@ -24,9 +24,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.Log;
-
 import com.google.common.base.Preconditions;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -134,10 +132,10 @@ class SQLiteSchema {
   }
 
   /**
-   * Used to assert that a set of tables either all exist or not. The supplied function is
-   * run if none of the tables exist. Use this method to create a set of tables at once.
+   * Used to assert that a set of tables either all exist or not. The supplied function is run if
+   * none of the tables exist. Use this method to create a set of tables at once.
    *
-   * If some but not all of the tables exist, an exception will be thrown.
+   * <p>If some but not all of the tables exist, an exception will be thrown.
    */
   private void ifTablesDontExist(String[] tables, Runnable fn) {
     boolean tablesFound = false;
@@ -165,31 +163,34 @@ class SQLiteSchema {
   }
 
   private void createV1MutationQueue() {
-    ifTablesDontExist(new String[] {"mutation_queues", "mutations", "document_mutations"}, () -> {
-      // A table naming all the mutation queues in the system.
-      db.execSQL(
-          "CREATE TABLE mutation_queues ("
-              + "uid TEXT PRIMARY KEY, "
-              + "last_acknowledged_batch_id INTEGER, "
-              + "last_stream_token BLOB)");
+    ifTablesDontExist(
+        new String[] {"mutation_queues", "mutations", "document_mutations"},
+        () -> {
+          // A table naming all the mutation queues in the system.
+          db.execSQL(
+              "CREATE TABLE mutation_queues ("
+                  + "uid TEXT PRIMARY KEY, "
+                  + "last_acknowledged_batch_id INTEGER, "
+                  + "last_stream_token BLOB)");
 
-      // All the mutation batches in the system, partitioned by user.
-      db.execSQL(
-          "CREATE TABLE mutations ("
-              + "uid TEXT, "
-              + "batch_id INTEGER, "
-              + "mutations BLOB, "
-              + "PRIMARY KEY (uid, batch_id))");
+          // All the mutation batches in the system, partitioned by user.
+          db.execSQL(
+              "CREATE TABLE mutations ("
+                  + "uid TEXT, "
+                  + "batch_id INTEGER, "
+                  + "mutations BLOB, "
+                  + "PRIMARY KEY (uid, batch_id))");
 
-      // A manually maintained index of all the mutation batches that affect a given document key.
-      // the rows in this table are references based on the contents of mutations.mutations.
-      db.execSQL(
-          "CREATE TABLE document_mutations ("
-              + "uid TEXT, "
-              + "path TEXT, "
-              + "batch_id INTEGER, "
-              + "PRIMARY KEY (uid, path, batch_id))");
-    });
+          // A manually maintained index of all the mutation batches that affect a given document
+          // key.
+          // the rows in this table are references based on the contents of mutations.mutations.
+          db.execSQL(
+              "CREATE TABLE document_mutations ("
+                  + "uid TEXT, "
+                  + "path TEXT, "
+                  + "batch_id INTEGER, "
+                  + "PRIMARY KEY (uid, path, batch_id))");
+        });
   }
 
   private void removeAcknowledgedMutations() {
@@ -225,38 +226,40 @@ class SQLiteSchema {
   }
 
   private void createV1QueryCache() {
-    ifTablesDontExist(new String[] {"targets", "target_globals", "target_documents"}, () -> {
-      // A cache of targets and associated metadata
-      db.execSQL(
-          "CREATE TABLE targets ("
-              + "target_id INTEGER PRIMARY KEY, "
-              + "canonical_id TEXT, "
-              + "snapshot_version_seconds INTEGER, "
-              + "snapshot_version_nanos INTEGER, "
-              + "resume_token BLOB, "
-              + "last_listen_sequence_number INTEGER,"
-              + "target_proto BLOB)");
+    ifTablesDontExist(
+        new String[] {"targets", "target_globals", "target_documents"},
+        () -> {
+          // A cache of targets and associated metadata
+          db.execSQL(
+              "CREATE TABLE targets ("
+                  + "target_id INTEGER PRIMARY KEY, "
+                  + "canonical_id TEXT, "
+                  + "snapshot_version_seconds INTEGER, "
+                  + "snapshot_version_nanos INTEGER, "
+                  + "resume_token BLOB, "
+                  + "last_listen_sequence_number INTEGER,"
+                  + "target_proto BLOB)");
 
-      db.execSQL("CREATE INDEX query_targets ON targets (canonical_id, target_id)");
+          db.execSQL("CREATE INDEX query_targets ON targets (canonical_id, target_id)");
 
-      // Global state tracked across all queries, tracked separately
-      db.execSQL(
-          "CREATE TABLE target_globals ("
-              + "highest_target_id INTEGER, "
-              + "highest_listen_sequence_number INTEGER, "
-              + "last_remote_snapshot_version_seconds INTEGER, "
-              + "last_remote_snapshot_version_nanos INTEGER)");
+          // Global state tracked across all queries, tracked separately
+          db.execSQL(
+              "CREATE TABLE target_globals ("
+                  + "highest_target_id INTEGER, "
+                  + "highest_listen_sequence_number INTEGER, "
+                  + "last_remote_snapshot_version_seconds INTEGER, "
+                  + "last_remote_snapshot_version_nanos INTEGER)");
 
-      // A Mapping table between targets and document paths
-      db.execSQL(
-          "CREATE TABLE target_documents ("
-              + "target_id INTEGER, "
-              + "path TEXT, "
-              + "PRIMARY KEY (target_id, path))");
+          // A Mapping table between targets and document paths
+          db.execSQL(
+              "CREATE TABLE target_documents ("
+                  + "target_id INTEGER, "
+                  + "path TEXT, "
+                  + "PRIMARY KEY (target_id, path))");
 
-      // The document_targets reverse mapping table is just an index on target_documents.
-      db.execSQL("CREATE INDEX document_targets ON target_documents (path, target_id)");
-    });
+          // The document_targets reverse mapping table is just an index on target_documents.
+          db.execSQL("CREATE INDEX document_targets ON target_documents (path, target_id)");
+        });
   }
 
   private void dropV1QueryCache() {
@@ -274,29 +277,34 @@ class SQLiteSchema {
   }
 
   private void createV1RemoteDocumentCache() {
-    ifTablesDontExist(new String[] {"remote_documents"}, () -> {
-      // A cache of documents obtained from the server.
-      db.execSQL("CREATE TABLE remote_documents (path TEXT PRIMARY KEY, contents BLOB)");
-    });
+    ifTablesDontExist(
+        new String[] {"remote_documents"},
+        () -> {
+          // A cache of documents obtained from the server.
+          db.execSQL("CREATE TABLE remote_documents (path TEXT PRIMARY KEY, contents BLOB)");
+        });
   }
 
   // TODO(indexing): Put the schema version in this method name.
   private void createLocalDocumentsCollectionIndex() {
-    ifTablesDontExist(new String[] {"collection_index"}, () -> {
-      // A per-user, per-collection index for cached documents indexed by a single field's name and
-      // value.
-      db.execSQL(
-          "CREATE TABLE collection_index ("
-              + "uid TEXT, "
-              + "collection_path TEXT, "
-              + "field_path TEXT, "
-              + "field_value_type INTEGER, " // determines type of field_value fields.
-              + "field_value_1, " // first component
-              + "field_value_2, " // second component; required for timestamps, GeoPoints
-              + "document_id TEXT, "
-              + "PRIMARY KEY (uid, collection_path, field_path, field_value_type, field_value_1, "
-              + "field_value_2, document_id))");
-    });
+    ifTablesDontExist(
+        new String[] {"collection_index"},
+        () -> {
+          // A per-user, per-collection index for cached documents indexed by a single field's name
+          // and
+          // value.
+          db.execSQL(
+              "CREATE TABLE collection_index ("
+                  + "uid TEXT, "
+                  + "collection_path TEXT, "
+                  + "field_path TEXT, "
+                  + "field_value_type INTEGER, " // determines type of field_value fields.
+                  + "field_value_1, " // first component
+                  + "field_value_2, " // second component; required for timestamps, GeoPoints
+                  + "document_id TEXT, "
+                  + "PRIMARY KEY (uid, collection_path, field_path, field_value_type, field_value_1, "
+                  + "field_value_2, document_id))");
+        });
   }
 
   // Note that this runs before we add the target count column, so we don't populate it yet.
