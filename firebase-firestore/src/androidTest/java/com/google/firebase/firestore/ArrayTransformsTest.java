@@ -114,7 +114,7 @@ public class ArrayTransformsTest {
   @Test
   public void removeFromArrayViaSetMerge() {
     writeInitialData(map("array", asList(1L, 3L, 1L, 3L)));
-    waitFor(docRef.update(map("array", FieldValue.arrayRemove(1L, 4L))));
+    waitFor(docRef.set(map("array", FieldValue.arrayRemove(1L, 4L)), SetOptions.merge()));
     expectLocalAndRemoteEvent(map("array", asList(3L, 3L)));
   }
 
