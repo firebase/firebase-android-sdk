@@ -110,8 +110,11 @@ public class SQLiteSchemaTest {
 
   @Test
   public void migrationsDontDeleteTablesOrColumns() {
-    // We would like to enforce that migrations don't remove tables or columns, as that will cause
-    // trouble for SDK version downgrades.
+    // In order to support users downgrading the SDK we need to make sure that every prior-released
+    // version of the SDK can gracefully handle running against an upgraded schema. We can't
+    // guarantee this in the general case, but this test at least ensures that no schema upgrade
+    // deletes an existing table or column, which would be very likely to break old versions of the
+    // SDK relying on that table or column.
     Map<String, Set<String>> tables = new HashMap<>();
     for (int toVersion = 1; toVersion <= SQLiteSchema.VERSION; toVersion++) {
       schema.runMigrations(toVersion - 1, toVersion);

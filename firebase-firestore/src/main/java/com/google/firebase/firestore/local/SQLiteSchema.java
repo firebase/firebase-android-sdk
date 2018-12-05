@@ -21,7 +21,12 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
+import android.support.annotation.VisibleForTesting;
+import android.text.TextUtils;
+import android.util.Log;
+
 import com.google.common.base.Preconditions;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,14 +73,16 @@ class SQLiteSchema {
    *     otherwise for testing.
    */
   void runMigrations(int fromVersion, int toVersion) {
-    // Each case in this switch statement intentionally falls through to the one below it, making
-    // it possible to start at the version that's installed and then run through any that haven't
-    // been applied yet.
+    /*
+     * New migrations should be added at the end of the series of `if` statements and should follow
+     * the pattern. Make sure to increment `VERSION` and to read the comment below about
+     * requirements for new migrations.
+     */
 
     if (fromVersion < 1 && toVersion >= 1) {
-      createMutationQueue();
-      createQueryCache();
-      createRemoteDocumentCache();
+      createV1MutationQueue();
+      createV1QueryCache();
+      createV1RemoteDocumentCache();
     }
 
     // Migration 2 to populate the target_globals table no longer needed since migration 3
@@ -85,8 +92,8 @@ class SQLiteSchema {
       // Brand new clients don't need to drop and recreate--only clients that have potentially
       // corrupt data.
       if (fromVersion != 0) {
-        dropQueryCache();
-        createQueryCache();
+        dropV1QueryCache();
+        createV1QueryCache();
       }
     }
 
@@ -107,14 +114,58 @@ class SQLiteSchema {
       ensureSequenceNumbers();
     }
 
+    /*
+     * Adding a new migration? READ THIS FIRST!
+     *
+     * Be aware that the SDK version may be downgraded then re-upgraded. This means that running
+     * your new migration must not prevent older versions of the SDK from functioning. Additionally,
+     * your migration must be able to run multiple times. In practice, this means a few things:
+     *  * Do not delete tables or columns. Older versions may be reading and writing them.
+     *  * Guard schema additions. Check if tables or columns exist before adding them.
+     *  * Data migrations should *probably* always run. Older versions of the SDK will not have
+     *    maintained invariants from later versions, so migrations that update values cannot assume
+     *    that existing values have been properly maintained. Calculate them again, if applicable.
+     */
+
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
       createLocalDocumentsCollectionIndex();
     }
   }
 
-  private void createMutationQueue() {
-    if (!tableExists("mutation_queues")) {
+  /**
+   * Used to assert that a set of tables either all exist or not. The supplied function is
+   * run if none of the tables exist. Use this method to create a set of tables at once.
+   *
+   * If some but not all of the tables exist, an exception will be thrown.
+   */
+  private void ifTablesDontExist(String[] tables, Runnable fn) {
+    boolean tablesFound = false;
+    String allTables = "[" + TextUtils.join(", ", tables) + "]";
+    for (int i = 0; i < tables.length; i++) {
+      String table = tables[i];
+      boolean tableFound = tableExists(table);
+      if (i == 0) {
+        tablesFound = tableFound;
+      } else if (tableFound != tablesFound) {
+        String msg = "Expected all of " + allTables + " to either exist or not, but ";
+        if (tablesFound) {
+          msg += tables[0] + " exists and " + table + " does not";
+        } else {
+          msg += tables[0] + " does not exist and " + table + " does";
+        }
+        throw new IllegalStateException(msg);
+      }
+    }
+    if (!tablesFound) {
+      fn.run();
+    } else {
+      Log.d("SQLiteSchema", "Skipping migration because all of " + allTables + " already exist");
+    }
+  }
+
+  private void createV1MutationQueue() {
+    ifTablesDontExist(new String[] {"mutation_queues", "mutations", "document_mutations"}, () -> {
       // A table naming all the mutation queues in the system.
       db.execSQL(
           "CREATE TABLE mutation_queues ("
@@ -138,7 +189,7 @@ class SQLiteSchema {
               + "path TEXT, "
               + "batch_id INTEGER, "
               + "PRIMARY KEY (uid, path, batch_id))");
-    }
+    });
   }
 
   private void removeAcknowledgedMutations() {
@@ -173,8 +224,8 @@ class SQLiteSchema {
         new Object[] {uid, batchId});
   }
 
-  private void createQueryCache() {
-    if (!tableExists("targets")) {
+  private void createV1QueryCache() {
+    ifTablesDontExist(new String[] {"targets", "target_globals", "target_documents"}, () -> {
       // A cache of targets and associated metadata
       db.execSQL(
           "CREATE TABLE targets ("
@@ -205,10 +256,10 @@ class SQLiteSchema {
 
       // The document_targets reverse mapping table is just an index on target_documents.
       db.execSQL("CREATE INDEX document_targets ON target_documents (path, target_id)");
-    }
+    });
   }
 
-  private void dropQueryCache() {
+  private void dropV1QueryCache() {
     // This might be overkill, but if any future migration drops these, it's possible we could try
     // dropping tables that don't exist.
     if (tableExists("targets")) {
@@ -222,15 +273,16 @@ class SQLiteSchema {
     }
   }
 
-  private void createRemoteDocumentCache() {
-    if (!tableExists("remote_documents")) {
+  private void createV1RemoteDocumentCache() {
+    ifTablesDontExist(new String[] {"remote_documents"}, () -> {
       // A cache of documents obtained from the server.
       db.execSQL("CREATE TABLE remote_documents (path TEXT PRIMARY KEY, contents BLOB)");
-    }
+    });
   }
 
+  // TODO(indexing): Put the schema version in this method name.
   private void createLocalDocumentsCollectionIndex() {
-    if (!tableExists("collection_index")) {
+    ifTablesDontExist(new String[] {"collection_index"}, () -> {
       // A per-user, per-collection index for cached documents indexed by a single field's name and
       // value.
       db.execSQL(
@@ -244,7 +296,7 @@ class SQLiteSchema {
               + "document_id TEXT, "
               + "PRIMARY KEY (uid, collection_path, field_path, field_value_type, field_value_1, "
               + "field_value_2, document_id))");
-    }
+    });
   }
 
   // Note that this runs before we add the target count column, so we don't populate it yet.
@@ -311,6 +363,7 @@ class SQLiteSchema {
     return columns.indexOf(column) != -1;
   }
 
+  @VisibleForTesting
   List<String> getTableColumns(String table) {
     // NOTE: SQLitePersistence.Query helper binding doesn't work with PRAGMA queries. So, just use
     // `rawQuery`.
