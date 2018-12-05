@@ -69,6 +69,21 @@ final class LocalDocumentsView {
     return document;
   }
 
+  // Returns the view of the given {@code docs} as they would appear after applying all mutations in
+  // the given {@code batches}.
+  private Map<DocumentKey, MaybeDocument> applyLocalMutationsToDocuments(
+      Map<DocumentKey, MaybeDocument> docs, List<MutationBatch> batches) {
+    for (Map.Entry<DocumentKey, MaybeDocument> base : docs.entrySet()) {
+      MaybeDocument localView = base.getValue();
+      for (MutationBatch batch : batches) {
+        localView = batch.applyToLocalView(base.getKey(), localView);
+      }
+      base.setValue(localView);
+    }
+
+    return docs;
+  }
+
   /**
    * Gets the local view of the documents identified by {@code keys}.
    *
@@ -76,13 +91,24 @@ final class LocalDocumentsView {
    * for that key in the resulting set.
    */
   ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments(Iterable<DocumentKey> keys) {
+    Map<DocumentKey, MaybeDocument> docs = remoteDocumentCache.getAll(keys);
+    return getLocalViewOfDocuments(docs);
+  }
+
+  /**
+   * Similar to {@code #getDocuments}, but creates the local view from the given {@code baseDocs}
+   * without retrieving documents from the local store.
+   */
+  ImmutableSortedMap<DocumentKey, MaybeDocument> getLocalViewOfDocuments(
+      Map<DocumentKey, MaybeDocument> baseDocs) {
     ImmutableSortedMap<DocumentKey, MaybeDocument> results = emptyMaybeDocumentMap();
 
-    List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKeys(keys);
-    for (DocumentKey key : keys) {
-      // TODO: PERF: Consider fetching all remote documents at once rather than
-      // one-by-one.
-      MaybeDocument maybeDoc = getDocument(key, batches);
+    List<MutationBatch> batches =
+        mutationQueue.getAllMutationBatchesAffectingDocumentKeys(baseDocs.keySet());
+    Map<DocumentKey, MaybeDocument> docs = applyLocalMutationsToDocuments(baseDocs, batches);
+    for (Map.Entry<DocumentKey, MaybeDocument> entry : docs.entrySet()) {
+      DocumentKey key = entry.getKey();
+      MaybeDocument maybeDoc = entry.getValue();
       // TODO: Don't conflate missing / deleted.
       if (maybeDoc == null) {
         maybeDoc = new NoDocument(key, SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);

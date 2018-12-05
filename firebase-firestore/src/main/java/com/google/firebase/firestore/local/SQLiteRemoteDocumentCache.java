@@ -24,7 +24,9 @@ import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -64,6 +66,40 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     return db.query("SELECT contents FROM remote_documents WHERE path = ?")
         .binding(path)
         .firstValue(row -> decodeMaybeDocument(row.getBlob(0)));
+  }
+
+  @Override
+  public Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> documentKeys) {
+    List<Object> args = new ArrayList<>();
+    for (DocumentKey key : documentKeys) {
+      args.add(EncodedPath.encode(key.getPath()));
+    }
+
+    Map<DocumentKey, MaybeDocument> results = new HashMap<>();
+    for (DocumentKey key : documentKeys) {
+      // Make sure each key has a corresponding entry, which is null in case the document is not
+      // found.
+      results.put(key, null);
+    }
+
+    SQLitePersistence.LongQuery longQuery =
+        new SQLitePersistence.LongQuery(
+            db,
+            "SELECT contents FROM remote_documents " + "WHERE path IN (",
+            args,
+            ") ORDER BY path");
+
+    while (longQuery.hasMoreSubqueries()) {
+      longQuery
+          .performNextSubquery()
+          .forEach(
+              row -> {
+                MaybeDocument decoded = decodeMaybeDocument(row.getBlob(0));
+                results.put(decoded.getKey(), decoded);
+              });
+    }
+
+    return results;
   }
 
   @Override

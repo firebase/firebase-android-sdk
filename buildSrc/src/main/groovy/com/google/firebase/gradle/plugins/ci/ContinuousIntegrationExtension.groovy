@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply plugin: 'java-library'
+package com.google.firebase.gradle.plugins.ci
 
+import java.util.regex.Pattern
 
-dependencies {
-    implementation 'com.google.errorprone:error_prone_check_api:2.3.2'
-    implementation 'com.google.auto.service:auto-service:1.0-rc4'
-    annotationProcessor 'com.google.auto.service:auto-service:1.0-rc4'
-
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'com.google.errorprone:error_prone_test_helpers:2.3.1'
-    testCompile 'com.google.errorprone:javac:9+181-r4173-1'
-}
-
-
-test {
-    jvmArgs "-Xbootclasspath/p:${-> project.configurations.testCompile.find { it.name.startsWith("javac-") }}"
+/** Contains plugin configuration properties. */
+class ContinuousIntegrationExtension {
+    /** List of paths that the plugin should ignore when querying the Git commit. */
+    List<Pattern> ignorePaths = []
 }

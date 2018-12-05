@@ -23,7 +23,7 @@ import javax.annotation.Nullable;
  * Represents a document in Firestore with a key, version, data and whether the data has local
  * mutations applied to it.
  */
-public class Document extends MaybeDocument {
+public final class Document extends MaybeDocument {
 
   /** Describes the `hasPendingWrites` state of a document. */
   public enum DocumentState {
@@ -52,11 +52,34 @@ public class Document extends MaybeDocument {
 
   private final DocumentState documentState;
 
+  /**
+   * Memoized serialized form of the document for optimization purposes (avoids repeated
+   * serialization). Might be null.
+   */
+  private final com.google.firestore.v1beta1.Document proto;
+
+  public @Nullable com.google.firestore.v1beta1.Document getProto() {
+    return proto;
+  }
+
   public Document(
       DocumentKey key, SnapshotVersion version, ObjectValue data, DocumentState documentState) {
     super(key, version);
     this.data = data;
     this.documentState = documentState;
+    this.proto = null;
+  }
+
+  public Document(
+      DocumentKey key,
+      SnapshotVersion version,
+      ObjectValue data,
+      DocumentState documentState,
+      com.google.firestore.v1beta1.Document proto) {
+    super(key, version);
+    this.data = data;
+    this.documentState = documentState;
+    this.proto = proto;
   }
 
   public ObjectValue getData() {

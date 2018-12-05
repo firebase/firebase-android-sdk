@@ -50,7 +50,7 @@ class LicenseResolverPluginSpec extends Specification {
         }
         dependencies {
             implementation 'com.squareup.picasso:picasso:2.71828'
-            implementation 'com.squareup.okhttp:okhttp:2.7.2'
+            implementation 'com.squareup.okhttp:okhttp:2.7.5'
         }
 
         thirdPartyLicenses {

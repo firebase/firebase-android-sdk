@@ -25,7 +25,7 @@ protobuf {
     }
     plugins {
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.12.0'
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.16.1'
         }
         javalite {
             // The codegen for lite comes as a separate artifact
@@ -94,16 +94,17 @@ dependencies {
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
 
-    implementation 'io.grpc:grpc-stub:1.12.0'
-    implementation 'io.grpc:grpc-protobuf-lite:1.12.0'
-    implementation 'io.grpc:grpc-okhttp:1.12.0'
+    implementation 'io.grpc:grpc-stub:1.16.1'
+    implementation 'io.grpc:grpc-protobuf-lite:1.16.1'
+    implementation 'io.grpc:grpc-okhttp:1.16.1'
+    implementation 'io.grpc:grpc-android:1.16.1'
     implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
     implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
     implementation "com.google.android.gms:play-services-base:$playServicesVersion"
 
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
 
-    implementation 'com.squareup.okhttp:okhttp:2.7.2'
+    implementation 'com.squareup.okhttp:okhttp:2.7.5'
     implementation ('com.google.firebase:firebase-auth-interop:16.0.1') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
