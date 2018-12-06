@@ -540,8 +540,7 @@ public class FirebaseApp {
     publisher = componentRuntime.get(Publisher.class);
   }
 
-  @VisibleForTesting
-  static String getSharedPrefsName(String appName) {
+  private static String getSharedPrefsName(String appName) {
     return FIREBASE_APP_PREFS + appName;
   }
 

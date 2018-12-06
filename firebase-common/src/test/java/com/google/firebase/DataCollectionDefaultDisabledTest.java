@@ -15,21 +15,19 @@
 package com.google.firebase;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.DataCollectionTestUtil.getSharedPreferences;
+import static com.google.firebase.DataCollectionTestUtil.setSharedPreferencesTo;
+import static com.google.firebase.DataCollectionTestUtil.withApp;
 
-import android.content.Context;
 import android.content.SharedPreferences;
-import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = "NoAutoDataCollectionAndroidManifest.xml")
 public class DataCollectionDefaultDisabledTest {
-
-  private static final String APP_NAME = "someApp";
 
   @Test
   public void isDataCollectionDefaultEnabled_whenMetadataFalse_shouldReturnFalse() {
@@ -77,30 +75,5 @@ public class DataCollectionDefaultDisabledTest {
           app.setDataCollectionDefaultEnabled(false);
           assertThat(changeListener.changes).containsExactly(true, false).inOrder();
         });
-  }
-
-  private static void withApp(Consumer<FirebaseApp> callable) {
-    FirebaseApp app =
-        FirebaseApp.initializeApp(
-            RuntimeEnvironment.application.getApplicationContext(),
-            new FirebaseOptions.Builder().setApplicationId("appId").build(),
-            APP_NAME);
-    try {
-      callable.accept(app);
-    } finally {
-      app.delete();
-    }
-  }
-
-  private static SharedPreferences getSharedPreferences() {
-    return RuntimeEnvironment.application.getSharedPreferences(
-        FirebaseApp.getSharedPrefsName(APP_NAME), Context.MODE_PRIVATE);
-  }
-
-  private static void setSharedPreferencesTo(boolean enabled) {
-    getSharedPreferences()
-        .edit()
-        .putBoolean(FirebaseApp.DATA_COLLECTION_DEFAULT_ENABLED, enabled)
-        .commit();
   }
 }
