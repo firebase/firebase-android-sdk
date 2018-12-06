@@ -104,7 +104,7 @@ public class FirebaseApp {
 
   public static final String DEFAULT_APP_NAME = "[DEFAULT]";
 
-  @VisibleForTesting static final String FIREBASE_APP_PREFS = "com.google.firebase.common.prefs";
+  private static final String FIREBASE_APP_PREFS = "com.google.firebase.common.prefs:";
 
   @VisibleForTesting
   static final String DATA_COLLECTION_DEFAULT_ENABLED = "firebase_data_collection_default_enabled";
@@ -525,7 +525,7 @@ public class FirebaseApp {
     idTokenListenersCountChangedListener = new DefaultIdTokenListenersCountChangedListener();
 
     sharedPreferences =
-        applicationContext.getSharedPreferences(FIREBASE_APP_PREFS, Context.MODE_PRIVATE);
+        applicationContext.getSharedPreferences(getSharedPrefsName(name), Context.MODE_PRIVATE);
     dataCollectionDefaultEnabled = new AtomicBoolean(readAutoDataCollectionEnabled());
 
     List<ComponentRegistrar> registrars =
@@ -538,6 +538,11 @@ public class FirebaseApp {
             Component.of(this, FirebaseApp.class),
             Component.of(options, FirebaseOptions.class));
     publisher = componentRuntime.get(Publisher.class);
+  }
+
+  @VisibleForTesting
+  static String getSharedPrefsName(String appName) {
+    return FIREBASE_APP_PREFS + appName;
   }
 
   private boolean readAutoDataCollectionEnabled() {

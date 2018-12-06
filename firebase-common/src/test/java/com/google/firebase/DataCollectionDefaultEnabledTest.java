@@ -26,9 +26,7 @@ import org.robolectric.RuntimeEnvironment;
 
 @RunWith(RobolectricTestRunner.class)
 public class DataCollectionDefaultEnabledTest {
-
-  private static final String NO_AUTO_DATA_COLLECTION_MANIFEST =
-      "NoAutoDataCollectionAndroidManifest.xml";
+  private static final String APP_NAME = "someApp";
 
   @Test
   public void isDataCollectionDefaultEnabled_shouldDefaultToTrue() {
@@ -61,12 +59,38 @@ public class DataCollectionDefaultEnabledTest {
         });
   }
 
+  @Test
+  public void setDataCollectionDefaultEnabled_shouldNotAffectOtherFirebaseAppInstances() {
+    withApp(
+        "app1",
+        app1 -> {
+          withApp(
+              "app2",
+              app2 -> {
+                assertThat(app1.isDataCollectionDefaultEnabled()).isTrue();
+                assertThat(app2.isDataCollectionDefaultEnabled()).isTrue();
+              });
+
+          app1.setDataCollectionDefaultEnabled(false);
+          withApp(
+              "app2",
+              app2 -> {
+                assertThat(app1.isDataCollectionDefaultEnabled()).isFalse();
+                assertThat(app2.isDataCollectionDefaultEnabled()).isTrue();
+              });
+        });
+  }
+
   private static void withApp(Consumer<FirebaseApp> callable) {
+    withApp(APP_NAME, callable);
+  }
+
+  private static void withApp(String name, Consumer<FirebaseApp> callable) {
     FirebaseApp app =
         FirebaseApp.initializeApp(
             RuntimeEnvironment.application.getApplicationContext(),
             new FirebaseOptions.Builder().setApplicationId("appId").build(),
-            "someApp");
+            name);
     try {
       callable.accept(app);
     } finally {
@@ -76,7 +100,7 @@ public class DataCollectionDefaultEnabledTest {
 
   private static SharedPreferences getSharedPreferences() {
     return RuntimeEnvironment.application.getSharedPreferences(
-        FirebaseApp.FIREBASE_APP_PREFS, Context.MODE_PRIVATE);
+        FirebaseApp.getSharedPrefsName(APP_NAME), Context.MODE_PRIVATE);
   }
 
   private static void setSharedPreferencesTo(boolean enabled) {

@@ -29,6 +29,8 @@ import org.robolectric.annotation.Config;
 @Config(manifest = "NoAutoDataCollectionAndroidManifest.xml")
 public class DataCollectionDefaultDisabledTest {
 
+  private static final String APP_NAME = "someApp";
+
   @Test
   public void isDataCollectionDefaultEnabled_whenMetadataFalse_shouldReturnFalse() {
     withApp(app -> assertThat(app.isDataCollectionDefaultEnabled()).isFalse());
@@ -82,7 +84,7 @@ public class DataCollectionDefaultDisabledTest {
         FirebaseApp.initializeApp(
             RuntimeEnvironment.application.getApplicationContext(),
             new FirebaseOptions.Builder().setApplicationId("appId").build(),
-            "someApp");
+            APP_NAME);
     try {
       callable.accept(app);
     } finally {
@@ -92,7 +94,7 @@ public class DataCollectionDefaultDisabledTest {
 
   private static SharedPreferences getSharedPreferences() {
     return RuntimeEnvironment.application.getSharedPreferences(
-        FirebaseApp.FIREBASE_APP_PREFS, Context.MODE_PRIVATE);
+        FirebaseApp.getSharedPrefsName(APP_NAME), Context.MODE_PRIVATE);
   }
 
   private static void setSharedPreferencesTo(boolean enabled) {
