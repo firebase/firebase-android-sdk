@@ -291,8 +291,7 @@ class SQLiteSchema {
         new String[] {"collection_index"},
         () -> {
           // A per-user, per-collection index for cached documents indexed by a single field's name
-          // and
-          // value.
+          // and value.
           db.execSQL(
               "CREATE TABLE collection_index ("
                   + "uid TEXT, "
