@@ -17,10 +17,16 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
+import android.support.annotation.VisibleForTesting;
+import android.text.TextUtils;
+import android.util.Log;
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Migrates schemas from version 0 (empty) to whatever the current version is.
@@ -65,14 +71,16 @@ class SQLiteSchema {
    *     otherwise for testing.
    */
   void runMigrations(int fromVersion, int toVersion) {
-    // Each case in this switch statement intentionally falls through to the one below it, making
-    // it possible to start at the version that's installed and then run through any that haven't
-    // been applied yet.
+    /*
+     * New migrations should be added at the end of the series of `if` statements and should follow
+     * the pattern. Make sure to increment `VERSION` and to read the comment below about
+     * requirements for new migrations.
+     */
 
     if (fromVersion < 1 && toVersion >= 1) {
-      createMutationQueue();
-      createQueryCache();
-      createRemoteDocumentCache();
+      createV1MutationQueue();
+      createV1QueryCache();
+      createV1RemoteDocumentCache();
     }
 
     // Migration 2 to populate the target_globals table no longer needed since migration 3
@@ -82,8 +90,8 @@ class SQLiteSchema {
       // Brand new clients don't need to drop and recreate--only clients that have potentially
       // corrupt data.
       if (fromVersion != 0) {
-        dropQueryCache();
-        createQueryCache();
+        dropV1QueryCache();
+        createV1QueryCache();
       }
     }
 
@@ -104,36 +112,85 @@ class SQLiteSchema {
       ensureSequenceNumbers();
     }
 
+    /*
+     * Adding a new migration? READ THIS FIRST!
+     *
+     * Be aware that the SDK version may be downgraded then re-upgraded. This means that running
+     * your new migration must not prevent older versions of the SDK from functioning. Additionally,
+     * your migration must be able to run multiple times. In practice, this means a few things:
+     *  * Do not delete tables or columns. Older versions may be reading and writing them.
+     *  * Guard schema additions. Check if tables or columns exist before adding them.
+     *  * Data migrations should *probably* always run. Older versions of the SDK will not have
+     *    maintained invariants from later versions, so migrations that update values cannot assume
+     *    that existing values have been properly maintained. Calculate them again, if applicable.
+     */
+
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
       createLocalDocumentsCollectionIndex();
     }
   }
 
-  private void createMutationQueue() {
-    // A table naming all the mutation queues in the system.
-    db.execSQL(
-        "CREATE TABLE mutation_queues ("
-            + "uid TEXT PRIMARY KEY, "
-            + "last_acknowledged_batch_id INTEGER, "
-            + "last_stream_token BLOB)");
+  /**
+   * Used to assert that a set of tables either all exist or not. The supplied function is run if
+   * none of the tables exist. Use this method to create a set of tables at once.
+   *
+   * <p>If some but not all of the tables exist, an exception will be thrown.
+   */
+  private void ifTablesDontExist(String[] tables, Runnable fn) {
+    boolean tablesFound = false;
+    String allTables = "[" + TextUtils.join(", ", tables) + "]";
+    for (int i = 0; i < tables.length; i++) {
+      String table = tables[i];
+      boolean tableFound = tableExists(table);
+      if (i == 0) {
+        tablesFound = tableFound;
+      } else if (tableFound != tablesFound) {
+        String msg = "Expected all of " + allTables + " to either exist or not, but ";
+        if (tablesFound) {
+          msg += tables[0] + " exists and " + table + " does not";
+        } else {
+          msg += tables[0] + " does not exist and " + table + " does";
+        }
+        throw new IllegalStateException(msg);
+      }
+    }
+    if (!tablesFound) {
+      fn.run();
+    } else {
+      Log.d("SQLiteSchema", "Skipping migration because all of " + allTables + " already exist");
+    }
+  }
 
-    // All the mutation batches in the system, partitioned by user.
-    db.execSQL(
-        "CREATE TABLE mutations ("
-            + "uid TEXT, "
-            + "batch_id INTEGER, "
-            + "mutations BLOB, "
-            + "PRIMARY KEY (uid, batch_id))");
+  private void createV1MutationQueue() {
+    ifTablesDontExist(
+        new String[] {"mutation_queues", "mutations", "document_mutations"},
+        () -> {
+          // A table naming all the mutation queues in the system.
+          db.execSQL(
+              "CREATE TABLE mutation_queues ("
+                  + "uid TEXT PRIMARY KEY, "
+                  + "last_acknowledged_batch_id INTEGER, "
+                  + "last_stream_token BLOB)");
 
-    // A manually maintained index of all the mutation batches that affect a given document key.
-    // the rows in this table are references based on the contents of mutations.mutations.
-    db.execSQL(
-        "CREATE TABLE document_mutations ("
-            + "uid TEXT, "
-            + "path TEXT, "
-            + "batch_id INTEGER, "
-            + "PRIMARY KEY (uid, path, batch_id))");
+          // All the mutation batches in the system, partitioned by user.
+          db.execSQL(
+              "CREATE TABLE mutations ("
+                  + "uid TEXT, "
+                  + "batch_id INTEGER, "
+                  + "mutations BLOB, "
+                  + "PRIMARY KEY (uid, batch_id))");
+
+          // A manually maintained index of all the mutation batches that affect a given document
+          // key.
+          // the rows in this table are references based on the contents of mutations.mutations.
+          db.execSQL(
+              "CREATE TABLE document_mutations ("
+                  + "uid TEXT, "
+                  + "path TEXT, "
+                  + "batch_id INTEGER, "
+                  + "PRIMARY KEY (uid, path, batch_id))");
+        });
   }
 
   private void removeAcknowledgedMutations() {
@@ -168,64 +225,85 @@ class SQLiteSchema {
         new Object[] {uid, batchId});
   }
 
-  private void createQueryCache() {
-    // A cache of targets and associated metadata
-    db.execSQL(
-        "CREATE TABLE targets ("
-            + "target_id INTEGER PRIMARY KEY, "
-            + "canonical_id TEXT, "
-            + "snapshot_version_seconds INTEGER, "
-            + "snapshot_version_nanos INTEGER, "
-            + "resume_token BLOB, "
-            + "last_listen_sequence_number INTEGER,"
-            + "target_proto BLOB)");
+  private void createV1QueryCache() {
+    ifTablesDontExist(
+        new String[] {"targets", "target_globals", "target_documents"},
+        () -> {
+          // A cache of targets and associated metadata
+          db.execSQL(
+              "CREATE TABLE targets ("
+                  + "target_id INTEGER PRIMARY KEY, "
+                  + "canonical_id TEXT, "
+                  + "snapshot_version_seconds INTEGER, "
+                  + "snapshot_version_nanos INTEGER, "
+                  + "resume_token BLOB, "
+                  + "last_listen_sequence_number INTEGER,"
+                  + "target_proto BLOB)");
 
-    db.execSQL("CREATE INDEX query_targets ON targets (canonical_id, target_id)");
+          db.execSQL("CREATE INDEX query_targets ON targets (canonical_id, target_id)");
 
-    // Global state tracked across all queries, tracked separately
-    db.execSQL(
-        "CREATE TABLE target_globals ("
-            + "highest_target_id INTEGER, "
-            + "highest_listen_sequence_number INTEGER, "
-            + "last_remote_snapshot_version_seconds INTEGER, "
-            + "last_remote_snapshot_version_nanos INTEGER)");
+          // Global state tracked across all queries, tracked separately
+          db.execSQL(
+              "CREATE TABLE target_globals ("
+                  + "highest_target_id INTEGER, "
+                  + "highest_listen_sequence_number INTEGER, "
+                  + "last_remote_snapshot_version_seconds INTEGER, "
+                  + "last_remote_snapshot_version_nanos INTEGER)");
 
-    // A Mapping table between targets and document paths
-    db.execSQL(
-        "CREATE TABLE target_documents ("
-            + "target_id INTEGER, "
-            + "path TEXT, "
-            + "PRIMARY KEY (target_id, path))");
+          // A Mapping table between targets and document paths
+          db.execSQL(
+              "CREATE TABLE target_documents ("
+                  + "target_id INTEGER, "
+                  + "path TEXT, "
+                  + "PRIMARY KEY (target_id, path))");
 
-    // The document_targets reverse mapping table is just an index on target_documents.
-    db.execSQL("CREATE INDEX document_targets ON target_documents (path, target_id)");
+          // The document_targets reverse mapping table is just an index on target_documents.
+          db.execSQL("CREATE INDEX document_targets ON target_documents (path, target_id)");
+        });
   }
 
-  private void dropQueryCache() {
-    db.execSQL("DROP TABLE targets");
-    db.execSQL("DROP TABLE target_globals");
-    db.execSQL("DROP TABLE target_documents");
+  private void dropV1QueryCache() {
+    // This might be overkill, but if any future migration drops these, it's possible we could try
+    // dropping tables that don't exist.
+    if (tableExists("targets")) {
+      db.execSQL("DROP TABLE targets");
+    }
+    if (tableExists("target_globals")) {
+      db.execSQL("DROP TABLE target_globals");
+    }
+    if (tableExists("target_documents")) {
+      db.execSQL("DROP TABLE target_documents");
+    }
   }
 
-  private void createRemoteDocumentCache() {
-    // A cache of documents obtained from the server.
-    db.execSQL("CREATE TABLE remote_documents (path TEXT PRIMARY KEY, contents BLOB)");
+  private void createV1RemoteDocumentCache() {
+    ifTablesDontExist(
+        new String[] {"remote_documents"},
+        () -> {
+          // A cache of documents obtained from the server.
+          db.execSQL("CREATE TABLE remote_documents (path TEXT PRIMARY KEY, contents BLOB)");
+        });
   }
 
+  // TODO(indexing): Put the schema version in this method name.
   private void createLocalDocumentsCollectionIndex() {
-    // A per-user, per-collection index for cached documents indexed by a single field's name and
-    // value.
-    db.execSQL(
-        "CREATE TABLE collection_index ("
-            + "uid TEXT, "
-            + "collection_path TEXT, "
-            + "field_path TEXT, "
-            + "field_value_type INTEGER, " // determines type of field_value fields.
-            + "field_value_1, " // first component
-            + "field_value_2, " // second component; required for timestamps, GeoPoints
-            + "document_id TEXT, "
-            + "PRIMARY KEY (uid, collection_path, field_path, field_value_type, field_value_1, "
-            + "field_value_2, document_id))");
+    ifTablesDontExist(
+        new String[] {"collection_index"},
+        () -> {
+          // A per-user, per-collection index for cached documents indexed by a single field's name
+          // and value.
+          db.execSQL(
+              "CREATE TABLE collection_index ("
+                  + "uid TEXT, "
+                  + "collection_path TEXT, "
+                  + "field_path TEXT, "
+                  + "field_value_type INTEGER, " // determines type of field_value fields.
+                  + "field_value_1, " // first component
+                  + "field_value_2, " // second component; required for timestamps, GeoPoints
+                  + "document_id TEXT, "
+                  + "PRIMARY KEY (uid, collection_path, field_path, field_value_type, field_value_1, "
+                  + "field_value_2, document_id))");
+        });
   }
 
   // Note that this runs before we add the target count column, so we don't populate it yet.
@@ -241,15 +319,20 @@ class SQLiteSchema {
   }
 
   private void addTargetCount() {
+    if (!tableContainsColumn("target_globals", "target_count")) {
+      db.execSQL("ALTER TABLE target_globals ADD COLUMN target_count INTEGER");
+    }
+    // Even if the column already existed, rerun the data migration to make sure it's correct.
     long count = DatabaseUtils.queryNumEntries(db, "targets");
-    db.execSQL("ALTER TABLE target_globals ADD COLUMN target_count INTEGER");
     ContentValues cv = new ContentValues();
     cv.put("target_count", count);
     db.update("target_globals", cv, null, null);
   }
 
   private void addSequenceNumber() {
-    db.execSQL("ALTER TABLE target_documents ADD COLUMN sequence_number INTEGER");
+    if (!tableContainsColumn("target_documents", "sequence_number")) {
+      db.execSQL("ALTER TABLE target_documents ADD COLUMN sequence_number INTEGER");
+    }
   }
 
   /**
@@ -280,5 +363,36 @@ class SQLiteSchema {
           tagDocument.bindLong(2, sequenceNumber);
           hardAssert(tagDocument.executeInsert() != -1, "Failed to insert a sentinel row");
         });
+  }
+
+  private boolean tableContainsColumn(String table, String column) {
+    List<String> columns = getTableColumns(table);
+    return columns.indexOf(column) != -1;
+  }
+
+  @VisibleForTesting
+  List<String> getTableColumns(String table) {
+    // NOTE: SQLitePersistence.Query helper binding doesn't work with PRAGMA queries. So, just use
+    // `rawQuery`.
+    Cursor c = null;
+    List<String> columns = new ArrayList<>();
+    try {
+      c = db.rawQuery("PRAGMA table_info(" + table + ")", null);
+      int nameIndex = c.getColumnIndex("name");
+      while (c.moveToNext()) {
+        columns.add(c.getString(nameIndex));
+      }
+    } finally {
+      if (c != null) {
+        c.close();
+      }
+    }
+    return columns;
+  }
+
+  private boolean tableExists(String table) {
+    return !new SQLitePersistence.Query(db, "SELECT 1=1 FROM sqlite_master WHERE tbl_name = ?")
+        .binding(table)
+        .isEmpty();
   }
 }
