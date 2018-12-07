@@ -55,6 +55,8 @@ import com.google.firebase.events.Publisher;
 import com.google.firebase.internal.DefaultIdTokenListenersCountChangedListener;
 import com.google.firebase.internal.InternalTokenProvider;
 import com.google.firebase.internal.InternalTokenResult;
+import com.google.firebase.platforminfo.DefaultPlatformInfoSupplier;
+import com.google.firebase.platforminfo.PlatformInfo;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -536,7 +538,9 @@ public class FirebaseApp {
             registrars,
             Component.of(applicationContext, Context.class),
             Component.of(this, FirebaseApp.class),
-            Component.of(options, FirebaseOptions.class));
+            Component.of(options, FirebaseOptions.class),
+            PlatformInfo.component("firebase-common", BuildConfig.VERSION_NAME),
+            DefaultPlatformInfoSupplier.component());
     publisher = componentRuntime.get(Publisher.class);
   }
 
