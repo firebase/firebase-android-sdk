@@ -1,5 +1,16 @@
 # Unreleased
 
+# 17.1.5
+- [changed] Firestore now recovers more quickly from bad network states.
+- [changed] Performance optimizations to speed up reading large collections.
+- [fixed] Offline persistence now properly records schema downgrades. This is a
+  forward-looking change that allows versions past this one to safely downgrade
+  to this version. Downgrading to versions prior to this one can be safe
+  depending on the source version. For example, downgrading from 17.1.4 to
+  17.1.2 is safe because there have been no schema changes between these
+  releases.  Related:
+  https://github.com/firebase/firebase-android-sdk/issues/134
+
 # 17.1.4
 - [fixed] Fixed a SQLite transaction handling issue that occasionally masked
   exceptions when Firestore closed a transaction that was never started. For
