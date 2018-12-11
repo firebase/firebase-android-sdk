@@ -37,16 +37,26 @@ def gradle_command(task, gradle_opts):
     help=
     'App build variant to use while running the smoke Tests. One of release|debug'
 )
+@click.option(
+    '--test-apps-dir',
+    '-d',
+    multiple=True,
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    default=['test-apps'],
+    help=
+    'Directory that contains gradle build with apps to test against. Multiple values are allowed.'
+)
 @ci_command()
-def smoke_tests(app_build_variant):
+def smoke_tests(app_build_variant, test_apps_dir):
   """Builds all SDKs in release mode and then tests test-apps against them."""
   gradle.run('publishAllToBuildDir')
 
   cwd = os.getcwd()
-  gradle.run(
-      'connectedCheck',
-      '-PtestBuildType=%s' % (app_build_variant),
-      gradle_opts='-Dmaven.repo.local={}'.format(
-          os.path.join(cwd, 'build', 'm2repository')),
-      workdir=os.path.join(cwd, 'test-apps'),
-  )
+  for location in test_apps_dir:
+    gradle.run(
+        'connectedCheck',
+        '-PtestBuildType=%s' % (app_build_variant),
+        gradle_opts='-Dmaven.repo.local={}'.format(
+            os.path.join(cwd, 'build', 'm2repository')),
+        workdir=location,
+    )
