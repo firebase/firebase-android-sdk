@@ -8,8 +8,7 @@
   to this version. Downgrading to versions prior to this one can be safe
   depending on the source version. For example, downgrading from 17.1.4 to
   17.1.2 is safe because there have been no schema changes between these
-  releases.  Related:
-  https://github.com/firebase/firebase-android-sdk/issues/134
+  releases. (#134)
 
 # 17.1.4
 - [fixed] Fixed a SQLite transaction handling issue that occasionally masked
