@@ -132,3 +132,65 @@ class CliInvocationTests(unittest.TestCase):
     result = self.runner.invoke(cli,
                                 ['smoke_tests', '--app-build-variant', 'debug'])
     self.assertEqual(result.exit_code, 0)
+
+  @in_tempdir
+  def test_copyright_check_when_no_violating_files_should_succeed(self):
+    create_artifacts(
+        Artifact('dir/file.py', content='# Copyright 2018 Google LLC'))
+
+    result = self.runner.invoke(cli, ['copyright_check', '-e', 'py'])
+    self.assertEqual(result.exit_code, 0)
+
+  @in_tempdir
+  def test_copyright_check_when_violating_files_exist_should_fail(self):
+    create_artifacts(
+        Artifact('dir/file.py', content='# Copyright 2018 Google LLC'),
+        Artifact('dir/file2.py', content='# hello'),
+        Artifact('dir2/file3.xml', content='# hello'),
+    )
+
+    result = self.runner.invoke(cli,
+                                ['copyright_check', '-e', 'py', '-e'
+                                 'xml'])
+    self.assertEqual(result.exit_code, 1)
+    self.assertFalse('dir/file.py' in result.output)
+    self.assertTrue('dir/file2.py' in result.output)
+    self.assertTrue('dir2/file3.xml' in result.output)
+
+  @in_tempdir
+  def test_copyright_check_when_violating_files_exist_should_fail2(self):
+    create_artifacts(
+        Artifact('dir/file.py', content='# Copyright 2018 Google LLC'),
+        Artifact('dir/file2.py', content='# hello'),
+        Artifact('dir2/file3.xml', content='# hello'),
+        Artifact('dir2/subdir/file4.xml', content='# hello'),
+    )
+
+    result = self.runner.invoke(
+        cli, ['copyright_check', '-e', 'py', '-e'
+              'xml', '-i', 'dir2/**'])
+
+    self.assertEqual(result.exit_code, 1)
+    self.assertFalse('dir/file.py' in result.output)
+    self.assertTrue('dir/file2.py' in result.output)
+    self.assertFalse('dir2/file3.xml' in result.output)
+    self.assertFalse('dir2/subdir/file4.xml' in result.output)
+
+  @in_tempdir
+  def test_copyright_check_when_violating_files_exist_should_fail3(self):
+    create_artifacts(
+        Artifact('dir/subdir/file.py', content='# Copyright 2018 Google LLC'),
+        Artifact('dir/subdir/file2.py', content='# hello'),
+        Artifact('dir/subdir2/file3.xml', content='# hello'),
+        Artifact('dir/subdir4/file4.xml', content='# hello'),
+    )
+
+    result = self.runner.invoke(
+        cli,
+        ['copyright_check', '-e', 'py', '-e'
+         'xml', '-i', 'subdir2/**', 'dir'])
+
+    self.assertEqual(result.exit_code, 1)
+    self.assertFalse('subdir/file.py' in result.output)
+    self.assertTrue('subdir/file2.py' in result.output)
+    self.assertTrue('subdir4/file4.xml' in result.output)
