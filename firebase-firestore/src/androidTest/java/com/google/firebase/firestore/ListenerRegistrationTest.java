@@ -20,10 +20,14 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 
+import android.app.Activity;
+import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
+import android.support.v4.app.FragmentActivity;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -126,5 +130,97 @@ public class ListenerRegistrationTest {
 
     // No more events should occur
     two.remove();
+  }
+
+  public static class TestActivity extends Activity {
+    private Semaphore stopped = new Semaphore(0);
+
+    @Override
+    protected void onStop() {
+      super.onStop();
+      stopped.release();
+    }
+
+    public void waitForStop() {
+      waitFor(stopped, 1);
+    }
+  }
+
+  public static class TestFragmentActivity extends FragmentActivity {
+    private Semaphore stopped = new Semaphore(0);
+
+    @Override
+    protected void onStop() {
+      super.onStop();
+      stopped.release();
+    }
+
+    public void waitForStop() {
+      waitFor(stopped, 1);
+    }
+  }
+
+  private void activityScopedListenerStopsListeningWhenActivityStops(Activity activity) {
+    CollectionReference collectionReference = testCollection();
+    DocumentReference documentReference = collectionReference.document();
+
+    Semaphore events = new Semaphore(0);
+    collectionReference.addSnapshotListener(
+        activity,
+        (value, error) -> {
+          assertNull(error);
+          events.release();
+        });
+
+    // Initial events
+    waitFor(events, 1);
+
+    // We have a listener, so this should generate events.
+    waitFor(documentReference.set(map("foo", "bar")));
+    assertEquals(1, events.availablePermits());
+    waitFor(events, 1);
+
+    // Since we created an activity-scoped listener, finishing the activity should cause the
+    // listener to be automatically unregistered.
+    activity.finish();
+    waitForActivityToStop(activity);
+
+    // No listeners, therefore, there should be no events.
+    waitFor(documentReference.set(map("foo", "new-bar")));
+    assertEquals(0, events.availablePermits());
+  }
+
+  /** @param activity Must be a TestActivity or a TestFragmentActivity */
+  private void waitForActivityToStop(Activity activity) {
+    if (activity instanceof TestActivity) {
+      ((TestActivity) activity).waitForStop();
+    } else if (activity instanceof TestFragmentActivity) {
+      ((TestFragmentActivity) activity).waitForStop();
+    } else {
+      throw new IllegalArgumentException(
+          "activity must be a TestActivity or a TestFragmentActivity");
+    }
+  }
+
+  @Rule
+  public ActivityTestRule<TestActivity> activityTestRule =
+      new ActivityTestRule<>(
+          TestActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
+
+  @Test
+  public void activityScopedListenerStopsListeningWhenRawActivityStops() {
+    TestActivity activity = activityTestRule.launchActivity(/*intent=*/ null);
+    activityScopedListenerStopsListeningWhenActivityStops(activity);
+  }
+
+  @Rule
+  public ActivityTestRule<TestFragmentActivity> activityTestFragmentRule =
+      new ActivityTestRule<>(
+          TestFragmentActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
+
+  @Test
+  public void activityScopedListenerStopsListeningWhenFragmentActivityStops() {
+    TestFragmentActivity activity = activityTestFragmentRule.launchActivity(/*intent=*/ null);
+    activityScopedListenerStopsListeningWhenActivityStops(activity);
   }
 }
