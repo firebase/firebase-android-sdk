@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
-import groovy.io.FileType
 
 buildscript {
 
@@ -178,24 +177,4 @@ configure(subprojects) {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
-}
-
-task copyrightCheck {
-    doLast {
-        def nonConformingFiles = []
-        projectDir.traverse(type: FileType.FILES,
-                nameFilter: ~/.+\.(java|groovy|sh|proto|gradle|py)$/,
-                excludeFilter: ~/(^\.git|.*\/build\/.*)/) { File currentFile ->
-
-            if (!currentFile.any { it.matches(/.*Copyright [0-9]{4} Google LLC/) }) {
-                nonConformingFiles.add(currentFile.path - projectDir.path - '/')
-            }
-
-        }
-
-        if (nonConformingFiles) {
-            throw new GradleException(
-                "Add copyright and license header to the following files:\n${nonConformingFiles.join('\n')}.")
-        }
-    }
 }
