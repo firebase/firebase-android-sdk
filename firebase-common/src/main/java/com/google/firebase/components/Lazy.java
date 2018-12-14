@@ -38,9 +38,8 @@ class Lazy<T> implements Provider<T> {
     this.instance = instance;
   }
 
-  /** Creates a lazy backed by a {@link ComponentFactory} and {@link ComponentContainer}. */
-  Lazy(ComponentFactory<T> factory, ComponentContainer container) {
-    provider = () -> factory.create(container);
+  Lazy(Provider<T> provider) {
+    this.provider = provider;
   }
 
   /** Returns the initialized value. */
@@ -59,7 +58,10 @@ class Lazy<T> implements Provider<T> {
         }
       }
     }
-    return (T) result;
+
+    @SuppressWarnings("unchecked")
+    T tResult = (T) result;
+    return tResult;
   }
 
   @VisibleForTesting

@@ -28,17 +28,29 @@ import java.util.Set;
 final class RestrictedComponentContainer extends AbstractComponentContainer {
   private final Set<Class<?>> allowedDirectInterfaces;
   private final Set<Class<?>> allowedProviderInterfaces;
+  private final Set<Class<?>> allowedSetDirectInterfaces;
+  private final Set<Class<?>> allowedSetProviderInterfaces;
   private final Set<Class<?>> allowedPublishedEvents;
   private final ComponentContainer delegateContainer;
 
   RestrictedComponentContainer(Component<?> component, ComponentContainer container) {
     Set<Class<?>> directInterfaces = new HashSet<>();
     Set<Class<?>> providerInterfaces = new HashSet<>();
+    Set<Class<?>> setDirectInterfaces = new HashSet<>();
+    Set<Class<?>> setProviderInterfaces = new HashSet<>();
     for (Dependency dependency : component.getDependencies()) {
       if (dependency.isDirectInjection()) {
-        directInterfaces.add(dependency.getInterface());
+        if (dependency.isSet()) {
+          setDirectInterfaces.add(dependency.getInterface());
+        } else {
+          directInterfaces.add(dependency.getInterface());
+        }
       } else {
-        providerInterfaces.add(dependency.getInterface());
+        if (dependency.isSet()) {
+          setProviderInterfaces.add(dependency.getInterface());
+        } else {
+          providerInterfaces.add(dependency.getInterface());
+        }
       }
     }
     if (!component.getPublishedEvents().isEmpty()) {
@@ -46,6 +58,8 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
     }
     allowedDirectInterfaces = Collections.unmodifiableSet(directInterfaces);
     allowedProviderInterfaces = Collections.unmodifiableSet(providerInterfaces);
+    allowedSetDirectInterfaces = Collections.unmodifiableSet(setDirectInterfaces);
+    allowedSetProviderInterfaces = Collections.unmodifiableSet(setProviderInterfaces);
     allowedPublishedEvents = component.getPublishedEvents();
     delegateContainer = container;
   }
@@ -54,7 +68,7 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
   public <T> T get(Class<T> anInterface) {
     if (!allowedDirectInterfaces.contains(anInterface)) {
       throw new IllegalArgumentException(
-          String.format("Requesting %s is not allowed.", anInterface));
+          String.format("Attempting to request an undeclared dependency %s.", anInterface));
     }
 
     // The container is guaranteed to contain a class keyed with Publisher.class. This is what we
@@ -75,9 +89,29 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
   public <T> Provider<T> getProvider(Class<T> anInterface) {
     if (!allowedProviderInterfaces.contains(anInterface)) {
       throw new IllegalArgumentException(
-          String.format("Requesting Provider<%s> is not allowed.", anInterface));
+          String.format(
+              "Attempting to request an undeclared dependency Provider<%s>.", anInterface));
     }
     return delegateContainer.getProvider(anInterface);
+  }
+
+  @Override
+  public <T> Provider<Set<T>> setOfProvider(Class<T> anInterface) {
+    if (!allowedSetProviderInterfaces.contains(anInterface)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Attempting to request an undeclared dependency Provider<Set<%s>>.", anInterface));
+    }
+    return delegateContainer.setOfProvider(anInterface);
+  }
+
+  @Override
+  public <T> Set<T> setOf(Class<T> anInterface) {
+    if (!allowedSetDirectInterfaces.contains(anInterface)) {
+      throw new IllegalArgumentException(
+          String.format("Attempting to request an undeclared dependency Set<%s>.", anInterface));
+    }
+    return delegateContainer.setOf(anInterface);
   }
 
   /**

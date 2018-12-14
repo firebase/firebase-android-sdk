@@ -21,8 +21,10 @@ import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -32,8 +34,10 @@ import java.util.concurrent.Executor;
  * Component}s via {@link #get(Class)} method.
  */
 public class ComponentRuntime extends AbstractComponentContainer {
-  private final List<Component<?>> components;
+  private static final Provider<Set<Object>> EMPTY_PROVIDER = Collections::emptySet;
+  private final Map<Component<?>, Lazy<?>> components = new HashMap<>();
   private final Map<Class<?>, Lazy<?>> lazyInstanceMap = new HashMap<>();
+  private final Map<Class<?>, Lazy<Set<?>>> lazySetMap = new HashMap<>();
   private final EventBus eventBus;
 
   /**
@@ -54,12 +58,49 @@ public class ComponentRuntime extends AbstractComponentContainer {
     Collections.addAll(componentsToAdd, additionalComponents);
 
     CycleDetector.detect(componentsToAdd);
-    components = Collections.unmodifiableList(componentsToAdd);
 
-    for (Component<?> component : components) {
+    for (Component<?> component : componentsToAdd) {
       register(component);
     }
     validateDependencies();
+
+    processSetComponents();
+  }
+
+  /** Populates lazySetMap to make set components available for consumption via set dependencies. */
+  private void processSetComponents() {
+    Map<Class<?>, Set<Lazy<?>>> setIndex = new HashMap<>();
+    for (Map.Entry<Component<?>, Lazy<?>> entry : components.entrySet()) {
+      Component<?> component = entry.getKey();
+
+      // only process set components.
+      if (component.isValue()) {
+        continue;
+      }
+
+      Lazy<?> lazy = entry.getValue();
+
+      for (Class<?> anInterface : component.getProvidedInterfaces()) {
+        if (!setIndex.containsKey(anInterface)) {
+          setIndex.put(anInterface, new HashSet<>());
+        }
+        setIndex.get(anInterface).add(lazy);
+      }
+    }
+
+    for (Map.Entry<Class<?>, Set<Lazy<?>>> entry : setIndex.entrySet()) {
+      Set<Lazy<?>> lazies = entry.getValue();
+      lazySetMap.put(
+          entry.getKey(),
+          new Lazy<>(
+              () -> {
+                Set<Object> set = new HashSet<>();
+                for (Lazy<?> lazy : lazies) {
+                  set.add(lazy.get());
+                }
+                return Collections.unmodifiableSet(set);
+              }));
+    }
   }
 
   @Override
@@ -67,6 +108,16 @@ public class ComponentRuntime extends AbstractComponentContainer {
   public <T> Provider<T> getProvider(Class<T> anInterface) {
     Preconditions.checkNotNull(anInterface, "Null interface requested.");
     return (Provider<T>) lazyInstanceMap.get(anInterface);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> Provider<Set<T>> setOfProvider(Class<T> anInterface) {
+    Lazy<Set<?>> lazy = lazySetMap.get(anInterface);
+    if (lazy != null) {
+      return (Provider<Set<T>>) (Provider<?>) lazy;
+    }
+    return (Provider<Set<T>>) (Provider<?>) EMPTY_PROVIDER;
   }
 
   /**
@@ -77,10 +128,12 @@ public class ComponentRuntime extends AbstractComponentContainer {
    * <p>Note: the method is idempotent.
    */
   public void initializeEagerComponents(boolean isDefaultApp) {
-    for (Component<?> component : components) {
+    for (Map.Entry<Component<?>, Lazy<?>> entry : components.entrySet()) {
+      Component<?> component = entry.getKey();
+      Lazy<?> lazy = entry.getValue();
+
       if (component.isAlwaysEager() || (component.isEagerInDefaultApp() && isDefaultApp)) {
-        // at least one interface is guarenteed to be provided by a component.
-        get(component.getProvidedInterfaces().iterator().next());
+        lazy.get();
       }
     }
 
@@ -89,15 +142,20 @@ public class ComponentRuntime extends AbstractComponentContainer {
 
   private <T> void register(Component<T> component) {
     Lazy<T> lazy =
-        new Lazy<>(component.getFactory(), new RestrictedComponentContainer(component, this));
+        new Lazy<>(
+            () -> component.getFactory().create(new RestrictedComponentContainer(component, this)));
 
+    components.put(component, lazy);
+    if (!component.isValue()) {
+      return;
+    }
     for (Class<? super T> anInterface : component.getProvidedInterfaces()) {
       lazyInstanceMap.put(anInterface, lazy);
     }
   }
 
   private void validateDependencies() {
-    for (Component<?> component : components) {
+    for (Component<?> component : components.keySet()) {
       for (Dependency dependency : component.getDependencies()) {
         if (dependency.isRequired() && !lazyInstanceMap.containsKey(dependency.getInterface())) {
           throw new MissingDependencyException(
