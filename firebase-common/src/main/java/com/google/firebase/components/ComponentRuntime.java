@@ -53,7 +53,8 @@ public class ComponentRuntime extends AbstractComponentContainer {
     }
     Collections.addAll(componentsToAdd, additionalComponents);
 
-    components = Collections.unmodifiableList(ComponentSorter.sorted(componentsToAdd));
+    CycleDetector.detect(componentsToAdd);
+    components = Collections.unmodifiableList(componentsToAdd);
 
     for (Component<?> component : components) {
       register(component);

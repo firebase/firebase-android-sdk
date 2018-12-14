@@ -15,15 +15,42 @@
 package com.google.firebase.components;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Implementation of topological sort. */
-class ComponentSorter {
+/** Cycle detector for the {@link Component} dependency graph. */
+class CycleDetector {
+  private static class Dep {
+    private final Class<?> anInterface;
+    private final boolean set;
+
+    private Dep(Class<?> anInterface, boolean set) {
+      this.anInterface = anInterface;
+      this.set = set;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj instanceof Dep) {
+        Dep dep = (Dep) obj;
+        return dep.anInterface.equals(anInterface) && dep.set == set;
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      int h = 1000003;
+      h ^= anInterface.hashCode();
+      h *= 1000003;
+      h ^= Boolean.valueOf(set).hashCode();
+      return h;
+    }
+  }
+
   private static class ComponentNode {
     private final Component<?> component;
     private final Set<ComponentNode> dependencies = new HashSet<>();
@@ -63,22 +90,21 @@ class ComponentSorter {
   }
 
   /**
-   * Given a list of components, returns a sorted permutation of it.
+   * Detect a dependency cycle among provided {@link Component}s.
    *
-   * @param components Components to sort.
-   * @return Sorted list of components.
+   * @param components Components to detect cycle between.
    * @throws IllegalArgumentException thrown if multiple components implement the same interface.
    * @throws DependencyCycleException thrown if a dependency cycle between components is detected.
    */
-  static List<Component<?>> sorted(List<Component<?>> components) {
+  static void detect(List<Component<?>> components) {
     Set<ComponentNode> graph = toGraph(components);
     Set<ComponentNode> roots = getRoots(graph);
 
-    List<Component<?>> result = new ArrayList<>();
+    int numVisited = 0;
     while (!roots.isEmpty()) {
       ComponentNode node = roots.iterator().next();
       roots.remove(node);
-      result.add(node.getComponent());
+      numVisited++;
 
       for (ComponentNode dependent : node.getDependencies()) {
         dependent.removeDependent(node);
@@ -88,11 +114,10 @@ class ComponentSorter {
       }
     }
 
-    // If there is no dependency cycle in the graph, the size of the resulting component list will
-    // be equal to the original list, meaning that we were able to sort all components.
-    if (result.size() == components.size()) {
-      Collections.reverse(result);
-      return result;
+    // If there is no dependency cycle in the graph, the number of visited nodes will be equal to
+    // the original list.
+    if (numVisited == components.size()) {
+      return;
     }
 
     // Otherwise there is a cycle.
@@ -107,34 +132,49 @@ class ComponentSorter {
   }
 
   private static Set<ComponentNode> toGraph(List<Component<?>> components) {
-    Map<Class<?>, ComponentNode> componentIndex = new HashMap<>(components.size());
+    Map<Dep, Set<ComponentNode>> componentIndex = new HashMap<>(components.size());
     for (Component<?> component : components) {
       ComponentNode node = new ComponentNode(component);
       for (Class<?> anInterface : component.getProvidedInterfaces()) {
-        if (componentIndex.put(anInterface, node) != null) {
+        Dep cmp = new Dep(anInterface, !component.isValue());
+        if (!componentIndex.containsKey(cmp)) {
+          componentIndex.put(cmp, new HashSet<>());
+        }
+        Set<ComponentNode> nodes = componentIndex.get(cmp);
+        if (!nodes.isEmpty() && !cmp.set) {
           throw new IllegalArgumentException(
               String.format("Multiple components provide %s.", anInterface));
         }
+        nodes.add(node);
       }
     }
 
-    for (ComponentNode component : componentIndex.values()) {
-      for (Dependency dependency : component.getComponent().getDependencies()) {
-        if (!dependency.isDirectInjection()) {
-          continue;
-        }
+    for (Set<ComponentNode> componentNodes : componentIndex.values()) {
+      for (ComponentNode node : componentNodes) {
+        for (Dependency dependency : node.getComponent().getDependencies()) {
+          if (!dependency.isDirectInjection()) {
+            continue;
+          }
 
-        ComponentNode depComponent = componentIndex.get(dependency.getInterface());
-        // Missing dependencies are skipped for the purposes of the sort as there is no component to
-        // sort.
-        if (depComponent != null) {
-          component.addDependency(depComponent);
-          depComponent.addDependent(component);
+          Set<ComponentNode> depComponents =
+              componentIndex.get(new Dep(dependency.getInterface(), dependency.isSet()));
+          if (depComponents == null) {
+            continue;
+          }
+          for (ComponentNode depComponent : depComponents) {
+            node.addDependency(depComponent);
+            depComponent.addDependent(node);
+          }
         }
       }
     }
 
-    return new HashSet<>(componentIndex.values());
+    HashSet<ComponentNode> result = new HashSet<>();
+    for (Set<ComponentNode> componentNodes : componentIndex.values()) {
+      result.addAll(componentNodes);
+    }
+
+    return result;
   }
 
   private static Set<ComponentNode> getRoots(Set<ComponentNode> components) {
