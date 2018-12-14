@@ -76,8 +76,8 @@ public class DownloadTest {
         TestDownloadHelper.streamDownload(
             bitmap -> {
               assertNotNull(bitmap);
-              assertEquals(100, bitmap.getWidth());
-              assertEquals(100, bitmap.getHeight());
+              assertEquals(2560, bitmap.getWidth());
+              assertEquals(1710, bitmap.getHeight());
               completeHandlerInvoked[0] = true;
             },
             null,
@@ -162,8 +162,8 @@ public class DownloadTest {
         TestDownloadHelper.streamDownload(
             bitmap -> {
               assertNotNull(bitmap);
-              assertEquals(100, bitmap.getWidth());
-              assertEquals(100, bitmap.getHeight());
+              assertEquals(2560, bitmap.getWidth());
+              assertEquals(1710, bitmap.getHeight());
               completeHandlerInvoked[0] = true;
             },
             null,
