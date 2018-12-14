@@ -36,17 +36,53 @@ import java.util.Set;
 @KeepForSdk
 public final class Component<T> {
 
+  /** Specifies instantiation behavior of a {@link Component}. */
   @IntDef({Instantiation.LAZY, Instantiation.ALWAYS_EAGER, Instantiation.EAGER_IN_DEFAULT_APP})
   @Retention(RetentionPolicy.SOURCE)
   private @interface Instantiation {
+    /** Component is not instantiated until requested by developer or a dependent component. */
     int LAZY = 0;
+
+    /**
+     * Component is unconditionally instantiated upon startup of the {@link ComponentRuntime}.
+     *
+     * <p>Namely when {@link ComponentRuntime#initializeEagerComponents(boolean)} is called.
+     */
     int ALWAYS_EAGER = 1;
+
+    /**
+     * Component is instantiated upon startup of the {@link ComponentRuntime} if the runtime is
+     * initialized for the default app.
+     */
     int EAGER_IN_DEFAULT_APP = 2;
+  }
+
+  /** Specifies the type of a {@link Component}. */
+  @IntDef({ComponentType.VALUE, ComponentType.SET})
+  @Retention(RetentionPolicy.SOURCE)
+  private @interface ComponentType {
+    /**
+     * Value components provide scalar values to the {@link ComponentRuntime}.
+     *
+     * <p>Such components can be requested by dependents via {@link ComponentContainer#get(Class)}
+     * or {@link ComponentContainer#getProvider(Class)}. e.g. {@code FirebaseInstanceId}.
+     */
+    int VALUE = 0;
+
+    /**
+     * Set components collectively contribute values of type {@code T} to a {@link Set
+     * Set&lt;T&gt;}.
+     *
+     * <p>Such components can be requested by dependents via {@link ComponentContainer#setOf(Class)}
+     * or {@link ComponentContainer#setOfProvider(Class)}.
+     */
+    int SET = 1;
   }
 
   private final Set<Class<? super T>> providedInterfaces;
   private final Set<Dependency> dependencies;
   private final @Instantiation int instantiation;
+  private final @ComponentType int type;
   private final ComponentFactory<T> factory;
   private final Set<Class<?>> publishedEvents;
 
@@ -54,11 +90,13 @@ public final class Component<T> {
       Set<Class<? super T>> providedInterfaces,
       Set<Dependency> dependencies,
       @Instantiation int instantiation,
+      @ComponentType int type,
       ComponentFactory<T> factory,
       Set<Class<?>> publishedEvents) {
     this.providedInterfaces = Collections.unmodifiableSet(providedInterfaces);
     this.dependencies = Collections.unmodifiableSet(dependencies);
     this.instantiation = instantiation;
+    this.type = type;
     this.factory = factory;
     this.publishedEvents = Collections.unmodifiableSet(publishedEvents);
   }
@@ -113,6 +151,11 @@ public final class Component<T> {
     return instantiation == Instantiation.EAGER_IN_DEFAULT_APP;
   }
 
+  /** Returns whether a component is a Value Component or a Set Component. */
+  public boolean isValue() {
+    return type == ComponentType.VALUE;
+  }
+
   @Override
   public String toString() {
     StringBuilder sb =
@@ -120,23 +163,26 @@ public final class Component<T> {
             .append(Arrays.toString(providedInterfaces.toArray()))
             .append(">{")
             .append(instantiation)
+            .append(", type=")
+            .append(type)
             .append(", deps=")
             .append(Arrays.toString(dependencies.toArray()))
             .append("}");
     return sb.toString();
   }
 
-  @KeepForSdk
   /** Returns a Component<T> builder. */
+  @KeepForSdk
   public static <T> Component.Builder<T> builder(Class<T> anInterface) {
-    return new Builder<T>(anInterface);
+    return new Builder<>(anInterface);
   }
 
-  @KeepForSdk
   /** Returns a Component<T> builder. */
+  @KeepForSdk
+  @SafeVarargs
   public static <T> Component.Builder<T> builder(
       Class<T> anInterface, Class<? super T>... additionalInterfaces) {
-    return new Builder<T>(anInterface, additionalInterfaces);
+    return new Builder<>(anInterface, additionalInterfaces);
   }
 
   /**
@@ -151,11 +197,33 @@ public final class Component<T> {
   }
 
   /** Wraps a value in a {@link Component} with no dependencies. */
-  @SafeVarargs
   @KeepForSdk
+  @SafeVarargs
   public static <T> Component<T> of(
       T value, Class<T> anInterface, Class<? super T>... additionalInterfaces) {
     return builder(anInterface, additionalInterfaces).factory((args) -> value).build();
+  }
+
+  /**
+   * Provides a builder for a {@link Set}-multibinding {@link Component}.
+   *
+   * <p>Such components can be requested by dependents via {@link ComponentContainer#setOf(Class)} *
+   * or {@link ComponentContainer#setOfProvider(Class)}.
+   */
+  @KeepForSdk
+  public static <T> Component.Builder<T> intoSetBuilder(Class<T> anInterface) {
+    return builder(anInterface).intoSet();
+  }
+
+  /**
+   * Wraps a value in a {@link Set}-multibinding {@link Component} with no dependencies. *
+   *
+   * <p>Such components can be requested by dependents via {@link ComponentContainer#setOf(Class)} *
+   * or {@link ComponentContainer#setOfProvider(Class)}.
+   */
+  @KeepForSdk
+  public static <T> Component<T> intoSet(T value, Class<T> anInterface) {
+    return intoSetBuilder(anInterface).factory(c -> value).build();
   }
 
   /** FirebaseComponent builder. */
@@ -164,9 +232,11 @@ public final class Component<T> {
     private final Set<Class<? super T>> providedInterfaces = new HashSet<>();
     private final Set<Dependency> dependencies = new HashSet<>();
     private @Instantiation int instantiation = Instantiation.LAZY;
+    private @ComponentType int type = ComponentType.VALUE;
     private ComponentFactory<T> factory;
     private Set<Class<?>> publishedEvents = new HashSet<>();
 
+    @SafeVarargs
     private Builder(Class<T> anInterface, Class<? super T>... additionalInterfaces) {
       Preconditions.checkNotNull(anInterface, "Null interface");
       providedInterfaces.add(anInterface);
@@ -176,6 +246,7 @@ public final class Component<T> {
       Collections.addAll(providedInterfaces, additionalInterfaces);
     }
 
+    /** Add a {@link Dependency} to the {@link Component} being built. */
     @KeepForSdk
     public Builder<T> add(Dependency dependency) {
       Preconditions.checkNotNull(dependency, "Null dependency");
@@ -184,16 +255,19 @@ public final class Component<T> {
       return this;
     }
 
+    /** Make the {@link Component} initialize upon startup. */
     @KeepForSdk
     public Builder<T> alwaysEager() {
       return setInstantiation(Instantiation.ALWAYS_EAGER);
     }
 
+    /** Make the component initialize upon startup in default app. */
     @KeepForSdk
     public Builder<T> eagerInDefaultApp() {
       return setInstantiation(Instantiation.EAGER_IN_DEFAULT_APP);
     }
 
+    /** Make the {@link Component} eligible to publish events of provided eventType. */
     @KeepForSdk
     public Builder<T> publishes(Class<?> eventType) {
       publishedEvents.add(eventType);
@@ -213,12 +287,19 @@ public final class Component<T> {
           "Components are not allowed to depend on interfaces they themselves provide.");
     }
 
+    /** Set the factory that will be used to initialize the {@link Component}. */
     @KeepForSdk
     public Builder<T> factory(ComponentFactory<T> value) {
       factory = Preconditions.checkNotNull(value, "Null factory");
       return this;
     }
 
+    private Builder<T> intoSet() {
+      type = ComponentType.SET;
+      return this;
+    }
+
+    /** Return the built {@link Component} definition. */
     @KeepForSdk
     public Component<T> build() {
       Preconditions.checkState(factory != null, "Missing required property: factory.");
@@ -226,6 +307,7 @@ public final class Component<T> {
           new HashSet<>(providedInterfaces),
           new HashSet<>(dependencies),
           instantiation,
+          type,
           factory,
           publishedEvents);
     }
