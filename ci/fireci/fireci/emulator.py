@@ -74,7 +74,7 @@ class EmulatorHandler:
         stdout=self._stdout,
         stderr=self._stderr)
     try:
-      self._wait_for_boot(datetime.timedelta(minutes=5))
+      self._wait_for_boot(datetime.timedelta(minutes=10))
     except:
       self._kill(self._process)
       self._close_files()

@@ -15,20 +15,17 @@
 package com.google.firebase;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.DataCollectionTestUtil.getSharedPreferences;
+import static com.google.firebase.DataCollectionTestUtil.setSharedPreferencesTo;
+import static com.google.firebase.DataCollectionTestUtil.withApp;
 
-import android.content.Context;
 import android.content.SharedPreferences;
-import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 @RunWith(RobolectricTestRunner.class)
 public class DataCollectionDefaultEnabledTest {
-
-  private static final String NO_AUTO_DATA_COLLECTION_MANIFEST =
-      "NoAutoDataCollectionAndroidManifest.xml";
 
   @Test
   public void isDataCollectionDefaultEnabled_shouldDefaultToTrue() {
@@ -61,28 +58,25 @@ public class DataCollectionDefaultEnabledTest {
         });
   }
 
-  private static void withApp(Consumer<FirebaseApp> callable) {
-    FirebaseApp app =
-        FirebaseApp.initializeApp(
-            RuntimeEnvironment.application.getApplicationContext(),
-            new FirebaseOptions.Builder().setApplicationId("appId").build(),
-            "someApp");
-    try {
-      callable.accept(app);
-    } finally {
-      app.delete();
-    }
-  }
+  @Test
+  public void setDataCollectionDefaultEnabled_shouldNotAffectOtherFirebaseAppInstances() {
+    withApp(
+        "app1",
+        app1 -> {
+          withApp(
+              "app2",
+              app2 -> {
+                assertThat(app1.isDataCollectionDefaultEnabled()).isTrue();
+                assertThat(app2.isDataCollectionDefaultEnabled()).isTrue();
+              });
 
-  private static SharedPreferences getSharedPreferences() {
-    return RuntimeEnvironment.application.getSharedPreferences(
-        FirebaseApp.FIREBASE_APP_PREFS, Context.MODE_PRIVATE);
-  }
-
-  private static void setSharedPreferencesTo(boolean enabled) {
-    getSharedPreferences()
-        .edit()
-        .putBoolean(FirebaseApp.DATA_COLLECTION_DEFAULT_ENABLED, enabled)
-        .commit();
+          app1.setDataCollectionDefaultEnabled(false);
+          withApp(
+              "app2",
+              app2 -> {
+                assertThat(app1.isDataCollectionDefaultEnabled()).isFalse();
+                assertThat(app2.isDataCollectionDefaultEnabled()).isTrue();
+              });
+        });
   }
 }

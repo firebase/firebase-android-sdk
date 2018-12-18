@@ -38,7 +38,7 @@ def create_artifacts(*artifacts):
     else:
       dirname = os.path.dirname(artifact.path)
       if dirname:
-        os.makedirs(os.path.dirname(artifact.path))
+        os.makedirs(os.path.dirname(artifact.path), exist_ok=True)
       with open(artifact.path, 'w') as opened_file:
         opened_file.write(artifact.content)
     os.chmod(artifact.path, artifact.mode)
