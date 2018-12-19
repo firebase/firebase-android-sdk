@@ -25,10 +25,16 @@ public final class PersistenceTestHelpers {
   private static int databaseNameCounter = 0;
 
   public static SQLitePersistence openSQLitePersistence(String name) {
+    return openSQLitePersistence(name, LruGarbageCollector.Params.Default());
+  }
+
+  public static SQLitePersistence openSQLitePersistence(
+      String name, LruGarbageCollector.Params params) {
     DatabaseId databaseId = DatabaseId.forProject("projectId");
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     Context context = RuntimeEnvironment.application;
-    SQLitePersistence persistence = new SQLitePersistence(context, name, databaseId, serializer);
+    SQLitePersistence persistence =
+        new SQLitePersistence(context, name, databaseId, serializer, params);
     persistence.start();
     return persistence;
   }
@@ -43,10 +49,14 @@ public final class PersistenceTestHelpers {
    * @return a new SQLitePersistence with an empty database and an up-to-date schema.
    */
   public static SQLitePersistence createSQLitePersistence() {
+    return createSQLitePersistence(LruGarbageCollector.Params.Default());
+  }
+
+  public static SQLitePersistence createSQLitePersistence(LruGarbageCollector.Params params) {
     // Robolectric's test runner will clear out the application database directory in between test
     // cases, but sometimes (particularly the spec tests) we create multiple databases per test
     // case and each should be fresh. A unique name is sufficient to keep these separate.
-    return openSQLitePersistence(nextSQLiteDatabaseName());
+    return openSQLitePersistence(nextSQLiteDatabaseName(), params);
   }
 
   /** Creates and starts a new MemoryPersistence instance for testing. */
@@ -57,7 +67,14 @@ public final class PersistenceTestHelpers {
   }
 
   public static MemoryPersistence createLRUMemoryPersistence() {
-    MemoryPersistence persistence = MemoryPersistence.createLruGcMemoryPersistence();
+    return createLRUMemoryPersistence(LruGarbageCollector.Params.Default());
+  }
+
+  public static MemoryPersistence createLRUMemoryPersistence(LruGarbageCollector.Params params) {
+    DatabaseId databaseId = DatabaseId.forProject("projectId");
+    LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
+    MemoryPersistence persistence =
+        MemoryPersistence.createLruGcMemoryPersistence(params, serializer);
     persistence.start();
     return persistence;
   }

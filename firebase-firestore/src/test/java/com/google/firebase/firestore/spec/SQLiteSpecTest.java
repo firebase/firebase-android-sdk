@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.spec;
 
+import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.PersistenceTestHelpers;
 import java.util.Set;
@@ -43,7 +44,8 @@ public class SQLiteSpecTest extends SpecTestCase {
 
   @Override
   Persistence getPersistence(boolean garbageCollectionEnabled) {
-    return PersistenceTestHelpers.openSQLitePersistence(databaseName);
+    return PersistenceTestHelpers.openSQLitePersistence(
+        databaseName, LruGarbageCollector.Params.Default());
   }
 
   @Override
