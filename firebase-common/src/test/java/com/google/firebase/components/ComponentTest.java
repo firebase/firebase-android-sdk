@@ -17,6 +17,7 @@ package com.google.firebase.components;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
+import java.math.BigDecimal;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,9 +27,23 @@ import org.junit.runners.JUnit4;
 public class ComponentTest {
   interface TestInterface {}
 
-  static class TestClass implements TestInterface {}
+  private static class TestClass implements TestInterface {}
 
   private final ComponentFactory<TestClass> nullFactory = container -> null;
+
+  @Test
+  public void of_withMultipleInterfaces_shouldSetCorrectDefaults() {
+    TestClass testClass = new TestClass();
+    Component<TestClass> component = Component.of(testClass, TestClass.class, TestInterface.class);
+    assertThat(component.getProvidedInterfaces())
+        .containsExactly(TestClass.class, TestInterface.class);
+    assertThat(component.isLazy()).isTrue();
+    assertThat(component.isValue()).isTrue();
+    assertThat(component.isAlwaysEager()).isFalse();
+    assertThat(component.isEagerInDefaultApp()).isFalse();
+    assertThat(component.getDependencies()).isEmpty();
+    assertThat(component.getFactory().create(null)).isSameAs(testClass);
+  }
 
   @Test
   public void builder_shouldSetCorrectDefaults() {
@@ -36,6 +51,31 @@ public class ComponentTest {
         Component.builder(TestClass.class).factory(nullFactory).build();
     assertThat(component.getProvidedInterfaces()).containsExactly(TestClass.class);
     assertThat(component.isLazy()).isTrue();
+    assertThat(component.isValue()).isTrue();
+    assertThat(component.isAlwaysEager()).isFalse();
+    assertThat(component.isEagerInDefaultApp()).isFalse();
+    assertThat(component.getDependencies()).isEmpty();
+  }
+
+  @Test
+  public void intoSetBuilder_shouldSetCorrectDefaults() {
+    Component<TestClass> component =
+        Component.intoSetBuilder(TestClass.class).factory(nullFactory).build();
+    assertThat(component.getProvidedInterfaces()).containsExactly(TestClass.class);
+    assertThat(component.isLazy()).isTrue();
+    assertThat(component.isValue()).isFalse();
+    assertThat(component.isAlwaysEager()).isFalse();
+    assertThat(component.isEagerInDefaultApp()).isFalse();
+    assertThat(component.getDependencies()).isEmpty();
+  }
+
+  @Test
+  public void intoSet_shouldSetCorrectDefaults() {
+    TestClass testClass = new TestClass();
+    Component<TestClass> component = Component.intoSet(testClass, TestClass.class);
+    assertThat(component.getProvidedInterfaces()).containsExactly(TestClass.class);
+    assertThat(component.isLazy()).isTrue();
+    assertThat(component.isValue()).isFalse();
     assertThat(component.isAlwaysEager()).isFalse();
     assertThat(component.isEagerInDefaultApp()).isFalse();
     assertThat(component.getDependencies()).isEmpty();
@@ -62,7 +102,7 @@ public class ComponentTest {
   }
 
   @Test
-  public void uptatingInstantiationMultipleTimes_shouldThrow() {
+  public void updatingInstantiationMultipleTimes_shouldThrow() {
     Component.Builder<TestClass> builder = Component.builder(TestClass.class).eagerInDefaultApp();
 
     try {
@@ -79,18 +119,22 @@ public class ComponentTest {
         Component.builder(TestClass.class)
             .add(Dependency.required(List.class))
             .add(Dependency.optional(Integer.class))
+            .add(Dependency.setOf(Long.class))
             .add(Dependency.requiredProvider(Float.class))
             .add(Dependency.optionalProvider(Double.class))
+            .add(Dependency.setOfProvider(BigDecimal.class))
             .factory(nullFactory)
             .build();
 
-    assertThat(component.getDependencies()).hasSize(4);
+    assertThat(component.getDependencies()).hasSize(6);
     assertThat(component.getDependencies())
         .containsExactly(
             Dependency.required(List.class),
             Dependency.optional(Integer.class),
+            Dependency.setOf(Long.class),
             Dependency.requiredProvider(Float.class),
-            Dependency.optionalProvider(Double.class));
+            Dependency.optionalProvider(Double.class),
+            Dependency.setOfProvider(BigDecimal.class));
   }
 
   @Test
@@ -111,6 +155,18 @@ public class ComponentTest {
     } catch (IllegalArgumentException ex) {
       // success.
     }
+  }
+
+  @Test
+  public void publishes_shouldProperlyAddToPublishedEvents() {
+    Component<TestClass> component =
+        Component.builder(TestClass.class)
+            .factory(nullFactory)
+            .publishes(Integer.class)
+            .publishes(Float.class)
+            .build();
+
+    assertThat(component.getPublishedEvents()).containsExactly(Integer.class, Float.class);
   }
 
   @Test
