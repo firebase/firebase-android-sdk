@@ -35,10 +35,8 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   /** The event listener for the query that raises events asynchronously. */
   private final ExecutorEventListener<ViewSnapshot> asyncEventListener;
 
-  public static class StopListenerSupportFragment extends android.support.v4.app.Fragment {
-    @Override
-    public void onStop() {
-      super.onStop();
+  static class CallbackList {
+    void run() {
       for (Runnable callback : callbacks) {
         if (callback != null) {
           callback.run();
@@ -46,29 +44,31 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
       }
     }
 
-    void addCallback(Runnable callback) {
+    void add(Runnable callback) {
       callbacks.add(callback);
     }
 
-    private List<Runnable> callbacks = new ArrayList();
+    private final List<Runnable> callbacks = new ArrayList<>();
+  }
+
+  public static class StopListenerSupportFragment extends android.support.v4.app.Fragment {
+    @Override
+    public void onStop() {
+      super.onStop();
+      callbacks.run();
+    }
+
+    CallbackList callbacks = new CallbackList();
   }
 
   public static class StopListenerFragment extends android.app.Fragment {
     @Override
     public void onStop() {
       super.onStop();
-      for (Runnable callback : callbacks) {
-        if (callback != null) {
-          callback.run();
-        }
-      }
+      callbacks.run();
     }
 
-    void addCallback(Runnable callback) {
-      callbacks.add(callback);
-    }
-
-    private List<Runnable> callbacks = new ArrayList();
+    CallbackList callbacks = new CallbackList();
   }
 
   private static final String SUPPORT_FRAGMENT_TAG = "FirestoreOnStopObserverSupportFragment";
@@ -115,7 +115,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
             .commitAllowingStateLoss();
       }
 
-      fragment.addCallback(callback);
+      fragment.callbacks.add(callback);
 
     } else {
       // If we get here, then we have a non-FragmentActivity Activity. Unfortunately, all Fragment
@@ -140,7 +140,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
             .commitAllowingStateLoss();
       }
 
-      fragment.addCallback(callback);
+      fragment.callbacks.add(callback);
     }
   }
 
