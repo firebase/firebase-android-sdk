@@ -220,12 +220,7 @@ public class FirebaseFirestore {
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
       client =
-          new FirestoreClient(
-              context,
-              databaseInfo,
-              settings.isPersistenceEnabled(),
-              credentialsProvider,
-              asyncQueue);
+          new FirestoreClient(context, databaseInfo, settings, credentialsProvider, asyncQueue);
     }
   }
 

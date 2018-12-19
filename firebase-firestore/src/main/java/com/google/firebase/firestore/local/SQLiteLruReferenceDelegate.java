@@ -30,10 +30,10 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   private final LruGarbageCollector garbageCollector;
   private ReferenceSet inMemoryPins;
 
-  SQLiteLruReferenceDelegate(SQLitePersistence persistence) {
+  SQLiteLruReferenceDelegate(SQLitePersistence persistence, LruGarbageCollector.Params params) {
     this.currentSequenceNumber = ListenSequence.INVALID;
     this.persistence = persistence;
-    this.garbageCollector = new LruGarbageCollector(this);
+    this.garbageCollector = new LruGarbageCollector(this, params);
   }
 
   void start(long highestSequenceNumber) {
@@ -70,8 +70,14 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public long getTargetCount() {
-    return persistence.getQueryCache().getTargetCount();
+  public long getSequenceNumberCount() {
+    long targetCount = persistence.getQueryCache().getTargetCount();
+    long orphanedDocumentCount =
+        persistence
+            .query(
+                "SELECT COUNT(*) FROM (SELECT sequence_number FROM target_documents GROUP BY path HAVING COUNT(*) = 1 AND target_id = 0)")
+            .firstValue(row -> row.getLong(0));
+    return targetCount + orphanedDocumentCount;
   }
 
   @Override
@@ -178,5 +184,10 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
         "INSERT OR REPLACE INTO target_documents (target_id, path, sequence_number) VALUES (0, ?, ?)",
         path,
         getCurrentSequenceNumber());
+  }
+
+  @Override
+  public long getByteSize() {
+    return persistence.getByteSize();
   }
 }

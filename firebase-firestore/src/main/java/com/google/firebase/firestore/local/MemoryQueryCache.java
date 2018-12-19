@@ -169,4 +169,12 @@ final class MemoryQueryCache implements QueryCache {
   public boolean containsKey(DocumentKey key) {
     return references.containsKey(key);
   }
+
+  long getByteSize(LocalSerializer serializer) {
+    long count = 0;
+    for (Map.Entry<Query, QueryData> entry : queries.entrySet()) {
+      count += serializer.encodeQueryData(entry.getValue()).getSerializedSize();
+    }
+    return count;
+  }
 }
