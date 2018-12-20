@@ -19,6 +19,8 @@ import signal
 import subprocess
 import time
 
+from . import tracing
+
 _logger = logging.getLogger('fireci.emulator')
 
 EMULATOR_BINARY = 'emulator'
@@ -66,25 +68,26 @@ class EmulatorHandler:
     self._logcat_stdin = logcat_stdin
 
   def __enter__(self):
-    _logger.info('Starting avd "{}..."'.format(self._name))
-    self._process = subprocess.Popen(
-        [self._emulator_binary, '-avd', self._name] + EMULATOR_FLAGS,
-        env=os.environ,
-        stdin=self._emulator_stdin,
-        stdout=self._stdout,
-        stderr=self._stderr)
-    try:
-      self._wait_for_boot(datetime.timedelta(minutes=10))
-    except:
-      self._kill(self._process)
-      self._close_files()
-      raise
+    with tracing.tracer().span('start_emulator'):
+      _logger.info('Starting avd "{}..."'.format(self._name))
+      self._process = subprocess.Popen(
+          [self._emulator_binary, '-avd', self._name] + EMULATOR_FLAGS,
+          env=os.environ,
+          stdin=self._emulator_stdin,
+          stdout=self._stdout,
+          stderr=self._stderr)
+      try:
+        self._wait_for_boot(datetime.timedelta(minutes=10))
+      except:
+        self._kill(self._process)
+        self._close_files()
+        raise
 
-    self._logcat = subprocess.Popen(
-        [self._adb_binary, 'logcat'],
-        stdin=self._logcat_stdin,
-        stdout=self._adb_log,
-    )
+      self._logcat = subprocess.Popen(
+          [self._adb_binary, 'logcat'],
+          stdin=self._logcat_stdin,
+          stdout=self._adb_log,
+      )
 
   def __exit__(self, exception_type, exception_value, traceback):
     _logger.info('Shutting down avd "{}"...'.format(self._name))

@@ -21,6 +21,7 @@ import logging
 import os
 import shutil
 
+from . import tracing
 from . import emulator
 
 _logger = logging.getLogger('fireci')
@@ -104,6 +105,11 @@ _pass_options = click.make_pass_decorator(_CommonOptions, ensure=True)
     default='adb',
     help='Specifies the name/full path to the adb binary.',
 )
+@click.option(
+    '--stackdriver',
+    default=True,
+    is_flag=True,
+)
 @_pass_options
 def main(options, **kwargs):
   """Main command group.
@@ -127,20 +133,41 @@ def ci_command(name=None):
     """
 
   def ci_command(f):
+    command_name = f.__name__ if name is None else name
 
-    @main.command(name=f.__name__ if name is None else name, help=f.__doc__)
+    @main.command(name=command_name, help=f.__doc__)
     @_pass_options
     @click.pass_context
     def new_func(ctx, options, *args, **kwargs):
-      with _artifact_handler(options.artifact_target_dir,
-                             options.artifact_patterns), _emulator_handler(
-                                 options.with_emulator,
-                                 options.artifact_target_dir,
-                                 name=options.emulator_name,
-                                 emulator_binary=options.emulator_binary,
-                                 adb_binary=options.adb_binary):
+      tracing.initialize(options.stackdriver)
+      with tracing.tracer().span(command_name) as span, _artifact_handler(
+          options.artifact_target_dir,
+          options.artifact_patterns), _emulator_handler(
+              options.with_emulator,
+              options.artifact_target_dir,
+              name=options.emulator_name,
+              emulator_binary=options.emulator_binary,
+              adb_binary=options.adb_binary):
+        span.add_attribute('with_emulator', options.with_emulator)
+        span.add_attribute('emulator_name', options.emulator_name)
+        _populate_span(span)
         return ctx.invoke(f, *args, **kwargs)
 
     return functools.update_wrapper(new_func, f)
 
   return ci_command
+
+
+def _populate_span(span):
+  for key in [
+      'repo_owner',
+      'repo_name',
+      'pull_base_ref',
+      'pull_base_sha',
+      'pull_number',
+      'pull_pull_sha',
+      'job_name',
+  ]:
+    env_key = key.upper()
+    if os.environ.get(env_key):
+      span.add_attribute(key, os.environ[env_key])

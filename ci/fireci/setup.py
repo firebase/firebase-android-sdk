@@ -26,6 +26,8 @@ setup(
     version='0.1',
     install_requires=[
         'click==7.0',
+        'opencensus==0.1.10',
+        'google-cloud-trace==0.20.2',
     ],
     packages=find_packages(exclude=['tests']),
     entry_points={
