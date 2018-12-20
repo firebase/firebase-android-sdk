@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.util;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.app.Activity;
 import android.support.v4.app.FragmentActivity;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -24,7 +26,28 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
 
-/** Implements the ListenerRegistration interface by removing a query from the listener. */
+/**
+ * Implements the ListenerRegistration interface by removing a query from the listener.
+ *
+ * <p>Regarding activity-scoped listeners, Android provides lifecycle callbacks (eg onStop()) that
+ * custom `Activity`s can implement via subclassing. But we can't take advantage of that, since we
+ * need to be usable with a generic Activity. So instead, we create a custom Fragment, and add that
+ * Fragment to the given Activity. When the Activity stops, it will automatically stop the attached
+ * Fragments too.
+ *
+ * <p>One difficulty with this approach is that how you get a Fragment and attach it to an Activity
+ * differs based on the type of Activity. If the Activity is actually a FragmentActivity, then you
+ * must use the android.support.v4.app.FragmentManager to do so. Otherwise, you need to use the
+ * deprecated android.app.FragmentManager.
+ *
+ * <p>Possible improvements:
+ *
+ * <ol>
+ *   <li>Allow other lifecycle callbacks other than just 'onStop'.
+ *   <li>Use LifecycleOwner (which FragmentActivity implements, but Activity does not) to register
+ *       for lifecycle callbacks instead of creating/attaching a Fragment.
+ * </ol>
+ */
 public class ListenerRegistrationImpl implements ListenerRegistration {
 
   private final FirestoreClient client;
@@ -74,74 +97,59 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   private static final String SUPPORT_FRAGMENT_TAG = "FirestoreOnStopObserverSupportFragment";
   private static final String FRAGMENT_TAG = "FirestoreOnStopObserverFragment";
 
+  /**
+   * Implementation for non-FragmentActivity Activity's. Unfortunatly, all Fragment related
+   * classes/methods with nonFragmentActivityActivity's are deprecated, imply that almost everything
+   * in this function is deprecated.
+   */
   private void onActivityStopCallOnce(Activity activity, Runnable callback) {
-    // Android provides lifecycle callbacks (eg onStop()) that custom `Activity`s can extend. But we
-    // can't take advantage of that, since we need to be usable with a generic Activity. So instead,
-    // we create a custom Fragment, and add that Fragment to the given Activity. When the Activity
-    // stops, it will automatically stop the attached Fragments too.
-    //
-    // One difficulty with this approach is that how you get a Fragment and attach it to an Activity
-    // differs based on the type of Activity. If the Activity is actually a FragmentActivity, then
-    // you must use the android.support.v4.app.FragmentManager to do so. Otherwise, you need to use
-    // the deprecated android.app.FragmentManager.
-    //
-    // Possible improvements:
-    // 1) Allow other lifecycle callbacks other than just 'onStop'.
-    // 2) Use LifecycleOwner (which FragmentActivity implements, but Activity does not) to register
-    //    for lifecycle callbacks instead of creating/attaching a Fragment.
+    hardAssert(
+        !(activity instanceof FragmentActivity),
+        "onActivityStopCallOnce must be called with a *non*-FragmentActivity Activity.");
 
-    if (activity instanceof FragmentActivity) {
-      FragmentActivity fragmentActivity = (FragmentActivity) activity;
-
-      StopListenerSupportFragment fragment = null;
-      try {
-        fragment =
-            (StopListenerSupportFragment)
-                fragmentActivity
-                    .getSupportFragmentManager()
-                    .findFragmentByTag(SUPPORT_FRAGMENT_TAG);
-      } catch (ClassCastException e) {
-        throw new IllegalStateException(
-            "Fragment with tag '" + SUPPORT_FRAGMENT_TAG + "' is not a StopListenerSupportFragment",
-            e);
-      }
-
-      if (fragment == null || fragment.isRemoving()) {
-        fragment = new StopListenerSupportFragment();
-        fragmentActivity
-            .getSupportFragmentManager()
-            .beginTransaction()
-            .add(fragment, SUPPORT_FRAGMENT_TAG)
-            .commitAllowingStateLoss();
-      }
-
-      fragment.callbacks.add(callback);
-
-    } else {
-      // If we get here, then we have a non-FragmentActivity Activity. Unfortunately, all Fragment
-      // related classes/methods with non-FragmentActivity Activity's are deprecated, implying that
-      // almost everything in this block is deprecated.
-
-      StopListenerFragment fragment = null;
-      try {
-        fragment =
-            (StopListenerFragment) activity.getFragmentManager().findFragmentByTag(FRAGMENT_TAG);
-      } catch (ClassCastException e) {
-        throw new IllegalStateException(
-            "Fragment with tag '" + FRAGMENT_TAG + "' is not a StopListenerFragment", e);
-      }
-
-      if (fragment == null || fragment.isRemoving()) {
-        fragment = new StopListenerFragment();
-        activity
-            .getFragmentManager()
-            .beginTransaction()
-            .add(fragment, FRAGMENT_TAG)
-            .commitAllowingStateLoss();
-      }
-
-      fragment.callbacks.add(callback);
+    StopListenerFragment fragment = null;
+    try {
+      fragment =
+          (StopListenerFragment) activity.getFragmentManager().findFragmentByTag(FRAGMENT_TAG);
+    } catch (ClassCastException e) {
+      throw new IllegalStateException(
+          "Fragment with tag '" + FRAGMENT_TAG + "' is not a StopListenerFragment", e);
     }
+
+    if (fragment == null || fragment.isRemoving()) {
+      fragment = new StopListenerFragment();
+      activity
+          .getFragmentManager()
+          .beginTransaction()
+          .add(fragment, FRAGMENT_TAG)
+          .commitAllowingStateLoss();
+    }
+
+    fragment.callbacks.add(callback);
+  }
+
+  private void onFragmentActivityStopCallOnce(FragmentActivity activity, Runnable callback) {
+    StopListenerSupportFragment fragment = null;
+    try {
+      fragment =
+          (StopListenerSupportFragment)
+              activity.getSupportFragmentManager().findFragmentByTag(SUPPORT_FRAGMENT_TAG);
+    } catch (ClassCastException e) {
+      throw new IllegalStateException(
+          "Fragment with tag '" + SUPPORT_FRAGMENT_TAG + "' is not a StopListenerSupportFragment",
+          e);
+    }
+
+    if (fragment == null || fragment.isRemoving()) {
+      fragment = new StopListenerSupportFragment();
+      activity
+          .getSupportFragmentManager()
+          .beginTransaction()
+          .add(fragment, SUPPORT_FRAGMENT_TAG)
+          .commitAllowingStateLoss();
+    }
+
+    fragment.callbacks.add(callback);
   }
 
   /** Creates a new ListenerRegistration. Is activity-scoped if and only if activity is non-null. */
@@ -155,7 +163,11 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
     this.asyncEventListener = asyncEventListener;
 
     if (activity != null) {
-      onActivityStopCallOnce(activity, this::remove);
+      if (activity instanceof FragmentActivity) {
+        onFragmentActivityStopCallOnce((FragmentActivity) activity, this::remove);
+      } else {
+        onActivityStopCallOnce(activity, this::remove);
+      }
     }
   }
 
