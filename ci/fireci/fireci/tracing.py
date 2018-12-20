@@ -22,9 +22,8 @@ from opencensus.trace.propagation import text_format
 def initialize(stackdriver=False):
   exporter = None
   if stackdriver:
-    exporter = stackdriver_exporter.StackdriverExporter(
-        transport=background_thread.BackgroundThreadTransport)
-  tracer = tracer_module.Tracer(exporter=exporter)
+    tracer = tracer_module.Tracer(
+        exporter=stackdriver_exporter.StackdriverExporter())
   tracer.store_tracer()
 
 
