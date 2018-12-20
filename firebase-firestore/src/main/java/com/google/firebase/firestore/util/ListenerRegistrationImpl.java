@@ -94,6 +94,21 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
     CallbackList callbacks = new CallbackList();
   }
 
+  @Nullable
+  private static <T> T castFragment(Class<T> fragmentClass, @Nullable Object fragment, String tag) {
+    try {
+      return fragmentClass.cast(fragment);
+    } catch (ClassCastException e) {
+      throw new IllegalStateException(
+          "Fragment with tag '"
+              + tag
+              + "' is a "
+              + fragment.getClass().getName()
+              + " but should be a "
+              + fragmentClass.getName());
+    }
+  }
+
   private static final String SUPPORT_FRAGMENT_TAG = "FirestoreOnStopObserverSupportFragment";
   private static final String FRAGMENT_TAG = "FirestoreOnStopObserverFragment";
 
@@ -107,14 +122,11 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
         !(activity instanceof FragmentActivity),
         "onActivityStopCallOnce must be called with a *non*-FragmentActivity Activity.");
 
-    StopListenerFragment fragment = null;
-    try {
-      fragment =
-          (StopListenerFragment) activity.getFragmentManager().findFragmentByTag(FRAGMENT_TAG);
-    } catch (ClassCastException e) {
-      throw new IllegalStateException(
-          "Fragment with tag '" + FRAGMENT_TAG + "' is not a StopListenerFragment", e);
-    }
+    StopListenerFragment fragment =
+        castFragment(
+            StopListenerFragment.class,
+            activity.getFragmentManager().findFragmentByTag(FRAGMENT_TAG),
+            FRAGMENT_TAG);
 
     if (fragment == null || fragment.isRemoving()) {
       fragment = new StopListenerFragment();
@@ -129,16 +141,11 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   }
 
   private void onFragmentActivityStopCallOnce(FragmentActivity activity, Runnable callback) {
-    StopListenerSupportFragment fragment = null;
-    try {
-      fragment =
-          (StopListenerSupportFragment)
-              activity.getSupportFragmentManager().findFragmentByTag(SUPPORT_FRAGMENT_TAG);
-    } catch (ClassCastException e) {
-      throw new IllegalStateException(
-          "Fragment with tag '" + SUPPORT_FRAGMENT_TAG + "' is not a StopListenerSupportFragment",
-          e);
-    }
+    StopListenerSupportFragment fragment =
+        castFragment(
+            StopListenerSupportFragment.class,
+            activity.getSupportFragmentManager().findFragmentByTag(SUPPORT_FRAGMENT_TAG),
+            SUPPORT_FRAGMENT_TAG);
 
     if (fragment == null || fragment.isRemoving()) {
       fragment = new StopListenerSupportFragment();
