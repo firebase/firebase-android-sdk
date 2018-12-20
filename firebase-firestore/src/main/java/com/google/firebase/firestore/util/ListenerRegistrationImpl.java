@@ -84,6 +84,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
     CallbackList callbacks = new CallbackList();
   }
 
+  @SuppressWarnings("deprecation")
   public static class StopListenerFragment extends android.app.Fragment {
     @Override
     public void onStop() {
@@ -117,6 +118,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
    * classes/methods with nonFragmentActivityActivity's are deprecated, imply that almost everything
    * in this function is deprecated.
    */
+  @SuppressWarnings("deprecation")
   private void onActivityStopCallOnce(Activity activity, Runnable callback) {
     hardAssert(
         !(activity instanceof FragmentActivity),

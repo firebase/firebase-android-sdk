@@ -124,6 +124,14 @@ dependencies {
     androidTestImplementation 'com.android.support.test:rules:1.0.2'
 }
 
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        // TODO(rsgowman): Also add "-Xlint:unchecked". But currently that
+        // enables 100+ warnings due to our generated source code.
+        options.compilerArgs << "-Xlint:deprecation"
+    }
+}
+
 // ==========================================================================
 // Copy from here down if you want to use the google-services plugin in your
 // androidTest integration tests.
