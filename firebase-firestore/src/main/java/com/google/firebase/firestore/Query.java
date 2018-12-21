@@ -900,6 +900,41 @@ public class Query {
         firestore.getClient(), queryListener, activity, wrappedListener);
   }
 
+  @PublicApi
+  public String getPath() {
+    return query.getPath().canonicalString();
+  }
+
+  @PublicApi
+  public List<Filter> getFilters() {
+    return query.getFilters();
+  }
+
+  @PublicApi
+  public List<OrderBy> getExplicitOrderBy() {
+    return query.getExplicitOrderBy();
+  }
+
+  @PublicApi
+  public boolean hasLimit() {
+    return query.hasLimit();
+  }
+
+  @PublicApi
+  public long getLimit() {
+    return query.getLimit();
+  }
+
+  @PublicApi
+  public @Nullable Bound getStartAt() {
+    return query.getStartAt();
+  }
+
+  @PublicApi
+  public @Nullable Bound getEndAt() {
+    return query.getEndAt();
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
