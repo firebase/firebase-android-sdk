@@ -926,13 +926,13 @@ public class Query {
   }
 
   @PublicApi
-  public @Nullable Bound getStartAt() {
-    return query.getStartAt();
+  public @Nullable String getStartAt() {
+    return query.getStartAt().getFieldValue();
   }
 
   @PublicApi
-  public @Nullable Bound getEndAt() {
-    return query.getEndAt();
+  public @Nullable String getEndAt() {
+    return query.getEndAt().getFieldValue();
   }
 
   @Override
