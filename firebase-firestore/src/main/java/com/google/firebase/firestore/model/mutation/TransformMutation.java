@@ -25,7 +25,9 @@ import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -123,11 +125,11 @@ public final class TransformMutation extends Mutation {
 
   @Override
   public FieldMask getFieldMask() {
-    List<FieldPath> fieldMask = new ArrayList<>();
+    Set<FieldPath> fieldMask = new HashSet<>();
     for (FieldTransform transform : fieldTransforms) {
       fieldMask.add(transform.getFieldPath());
     }
-    return FieldMask.fromCollection(fieldMask);
+    return FieldMask.fromSet(fieldMask);
   }
 
   @Override

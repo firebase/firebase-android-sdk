@@ -563,11 +563,11 @@ public final class RemoteSerializer {
           .setRemoveAllFromArray(encodeArrayTransformElements(remove.getElements()))
           .build();
     } else if (transform instanceof NumericIncrementTransformOperation) {
-      NumericIncrementTransformOperation numericAdd =
+      NumericIncrementTransformOperation incrementOperation =
           (NumericIncrementTransformOperation) transform;
       return DocumentTransform.FieldTransform.newBuilder()
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
-          .setNumericAdd(encodeValue(numericAdd.getOperand()))
+          .setIncrement(encodeValue(incrementOperation.getOperand()))
           .build();
     } else {
       throw fail("Unknown transform: %s", transform);
@@ -605,9 +605,9 @@ public final class RemoteSerializer {
             FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
             new ArrayTransformOperation.Remove(
                 decodeArrayTransformElements(fieldTransform.getRemoveAllFromArray())));
-      case NUMERIC_ADD:
+      case INCREMENT:
         {
-          FieldValue operand = decodeValue(fieldTransform.getNumericAdd());
+          FieldValue operand = decodeValue(fieldTransform.getIncrement());
           hardAssert(
               operand instanceof NumberValue,
               "Expected NUMERIC_ADD transform to be of number type, but was %s",
@@ -615,7 +615,7 @@ public final class RemoteSerializer {
           return new FieldTransform(
               FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
               new NumericIncrementTransformOperation(
-                  (NumberValue) decodeValue(fieldTransform.getNumericAdd())));
+                  (NumberValue) decodeValue(fieldTransform.getIncrement())));
         }
       default:
         throw fail("Unknown FieldTransform proto: %s", fieldTransform);

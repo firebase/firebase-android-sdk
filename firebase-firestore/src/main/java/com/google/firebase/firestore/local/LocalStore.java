@@ -39,7 +39,6 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;

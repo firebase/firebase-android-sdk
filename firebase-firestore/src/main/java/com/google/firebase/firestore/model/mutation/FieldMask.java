@@ -17,7 +17,6 @@ package com.google.firebase.firestore.model.mutation;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
-
 import java.util.Set;
 
 /**

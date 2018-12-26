@@ -350,9 +350,9 @@ public final class UserDataConverter {
           numericIncrementFieldValue =
               (com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue) value;
       NumberValue operand = (NumberValue) parseQueryValue(numericIncrementFieldValue.getOperand());
-      NumericIncrementTransformOperation numericAdd =
+      NumericIncrementTransformOperation incrementOperation =
           new NumericIncrementTransformOperation(operand);
-      context.addToFieldTransforms(context.getPath(), numericAdd);
+      context.addToFieldTransforms(context.getPath(), incrementOperation);
 
     } else {
       throw Assert.fail("Unknown FieldValue type: %s", Util.typeName(value));
