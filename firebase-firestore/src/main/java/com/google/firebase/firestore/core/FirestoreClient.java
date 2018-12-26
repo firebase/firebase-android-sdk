@@ -27,11 +27,14 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LocalStore;
+import com.google.firebase.firestore.local.LruDelegate;
+import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.SQLitePersistence;
@@ -71,10 +74,13 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private SyncEngine syncEngine;
   private EventManager eventManager;
 
+  // LRU-related
+  @Nullable private LruGarbageCollector.Scheduler lruScheduler;
+
   public FirestoreClient(
       final Context context,
       DatabaseInfo databaseInfo,
-      final boolean usePersistence,
+      FirebaseFirestoreSettings settings,
       CredentialsProvider credentialsProvider,
       final AsyncQueue asyncQueue) {
     this.databaseInfo = databaseInfo;
@@ -105,7 +111,11 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
           try {
             // Block on initial user being available
             User initialUser = Tasks.await(firstUser.getTask());
-            initialize(context, initialUser, usePersistence);
+            initialize(
+                context,
+                initialUser,
+                settings.isPersistenceEnabled(),
+                settings.getCacheSizeBytes());
           } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
           }
@@ -127,6 +137,9 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
         () -> {
           remoteStore.shutdown();
           persistence.shutdown();
+          if (lruScheduler != null) {
+            lruScheduler.stop();
+          }
         });
   }
 
@@ -194,26 +207,40 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
         () -> syncEngine.transaction(asyncQueue, updateFunction, retries));
   }
 
-  private void initialize(Context context, User user, boolean usePersistence) {
+  private void initialize(Context context, User user, boolean usePersistence, long cacheSizeBytes) {
     // Note: The initialization work must all be synchronous (we can't dispatch more work) since
     // external write/listen operations could get queued to run before that subsequent work
     // completes.
     Logger.debug(LOG_TAG, "Initializing. user=%s", user.getUid());
 
+    LruGarbageCollector gc = null;
     if (usePersistence) {
       LocalSerializer serializer =
           new LocalSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
-      persistence =
+      LruGarbageCollector.Params params =
+          LruGarbageCollector.Params.WithCacheSizeBytes(cacheSizeBytes);
+      SQLitePersistence sqlitePersistence =
           new SQLitePersistence(
-              context, databaseInfo.getPersistenceKey(), databaseInfo.getDatabaseId(), serializer);
+              context,
+              databaseInfo.getPersistenceKey(),
+              databaseInfo.getDatabaseId(),
+              serializer,
+              params);
+      LruDelegate lruDelegate = sqlitePersistence.getReferenceDelegate();
+      gc = lruDelegate.getGarbageCollector();
+      persistence = sqlitePersistence;
     } else {
       persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     }
 
     persistence.start();
     localStore = new LocalStore(persistence, user);
+    if (gc != null) {
+      lruScheduler = gc.newScheduler(asyncQueue, localStore);
+      lruScheduler.start();
+    }
 
-    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider);
+    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context);
     remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue);
 
     syncEngine = new SyncEngine(localStore, remoteStore, user);

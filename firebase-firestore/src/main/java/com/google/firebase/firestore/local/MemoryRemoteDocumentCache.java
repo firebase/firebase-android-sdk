@@ -23,6 +23,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -51,6 +52,19 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public MaybeDocument get(DocumentKey key) {
     return docs.get(key);
+  }
+
+  @Override
+  public Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> keys) {
+    Map<DocumentKey, MaybeDocument> result = new HashMap<>();
+
+    for (DocumentKey key : keys) {
+      // Make sure each key has a corresponding entry, which is null in case the document is not
+      // found.
+      result.put(key, get(key));
+    }
+
+    return result;
   }
 
   @Override
@@ -85,5 +99,29 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments() {
     return docs;
+  }
+
+  /**
+   * Returns an estimate of the number of bytes used to store the given document key in memory. This
+   * is only an estimate and includes the size of the segments of the path, but not any object
+   * overhead or path separators.
+   */
+  private static long getKeySize(DocumentKey key) {
+    ResourcePath path = key.getPath();
+    long count = 0;
+    for (int i = 0; i < path.length(); i++) {
+      // Strings in java are utf-16, each character is two bytes in memory
+      count += path.getSegment(i).length() * 2;
+    }
+    return count;
+  }
+
+  long getByteSize(LocalSerializer serializer) {
+    long count = 0;
+    for (Map.Entry<DocumentKey, MaybeDocument> entry : docs) {
+      count += getKeySize(entry.getKey());
+      count += serializer.encodeMaybeDocument(entry.getValue()).getSerializedSize();
+    }
+    return count;
   }
 }

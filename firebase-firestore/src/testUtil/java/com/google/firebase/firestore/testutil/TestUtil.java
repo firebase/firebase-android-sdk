@@ -74,10 +74,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import javax.annotation.Nullable;
 
 /** A set of utilities for tests */
@@ -107,6 +110,14 @@ public class TestUtil {
       primitive[i] = (byte) bytes[i];
     }
     return ByteString.copyFrom(primitive);
+  }
+
+  public static FieldMask fieldMask(String... fields) {
+    FieldPath[] mask = new FieldPath[fields.length];
+    for (int i = 0; i < fields.length; i++) {
+      mask[i] = field(fields[i]);
+    }
+    return FieldMask.fromSet(new HashSet<>(Arrays.asList(mask)));
   }
 
   public static final Map<String, Object> EMPTY_MAP = new HashMap<>();
@@ -430,13 +441,15 @@ public class TestUtil {
 
     boolean merge = updateMask != null;
 
-    // We sort the fieldMaskPaths to make the order deterministic in tests.
-    Collections.sort(objectMask);
+    // We sort the fieldMaskPaths to make the order deterministic in tests. (Otherwise, when we
+    // flatten a Set to a proto repeated field, we'll end up comparing in iterator order and
+    // possibly consider {foo,bar} != {bar,foo}.)
+    SortedSet<FieldPath> fieldMaskPaths = new TreeSet<>(merge ? updateMask : objectMask);
 
     return new PatchMutation(
         key(path),
         objectValue,
-        FieldMask.fromCollection(merge ? updateMask : objectMask),
+        FieldMask.fromSet(fieldMaskPaths),
         merge ? Precondition.NONE : Precondition.exists(true));
   }
 

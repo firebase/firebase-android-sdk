@@ -137,6 +137,7 @@ public final class EventManager implements SyncEngineCallback {
     queries.remove(query);
   }
 
+  @Override
   public void handleOnlineStateChange(OnlineState onlineState) {
     this.onlineState = onlineState;
     for (QueryListenersInfo info : queries.values()) {

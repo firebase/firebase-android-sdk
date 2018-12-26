@@ -25,7 +25,7 @@ setup(
     name='fireci',
     version='0.1',
     install_requires=[
-        'click==6.7',
+        'click==7.0',
     ],
     packages=find_packages(exclude=['tests']),
     entry_points={

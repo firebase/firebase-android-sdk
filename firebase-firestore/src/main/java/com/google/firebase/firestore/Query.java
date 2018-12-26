@@ -39,6 +39,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ReferenceValue;
+import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.util.ExecutorEventListener;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.ListenerRegistrationImpl;
@@ -582,7 +583,8 @@ public class Query {
    * <p>Note that the Bound will always include the key of the document and so only the provided
    * document will compare equal to the returned position.
    *
-   * <p>Will throw if the document does not contain all fields of the order by of the query.
+   * <p>Will throw if the document does not contain all fields of the order by of the query or if
+   * any of the fields in the order by are an uncommitted server timestamp.
    */
   private Bound boundFromDocumentSnapshot(
       String methodName, DocumentSnapshot snapshot, boolean before) {
@@ -606,7 +608,14 @@ public class Query {
         components.add(ReferenceValue.valueOf(firestore.getDatabaseId(), document.getKey()));
       } else {
         FieldValue value = document.getField(orderBy.getField());
-        if (value != null) {
+        if (value instanceof ServerTimestampValue) {
+          throw new IllegalArgumentException(
+              "Invalid query. You are trying to start or end a query using a document for which "
+                  + "the field '"
+                  + orderBy.getField()
+                  + "' is an uncommitted server timestamp. (Since the value of this field is "
+                  + "unknown, you cannot start/end a query with it.)");
+        } else if (value != null) {
           components.add(value);
         } else {
           throw new IllegalArgumentException(
@@ -896,7 +905,7 @@ public class Query {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof Query)) {
       return false;
     }
 

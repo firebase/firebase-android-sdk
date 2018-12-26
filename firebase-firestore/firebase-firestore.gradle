@@ -97,6 +97,7 @@ dependencies {
     implementation 'io.grpc:grpc-stub:1.16.1'
     implementation 'io.grpc:grpc-protobuf-lite:1.16.1'
     implementation 'io.grpc:grpc-okhttp:1.16.1'
+    implementation 'io.grpc:grpc-android:1.16.1'
     implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
     implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
     implementation "com.google.android.gms:play-services-base:$playServicesVersion"
@@ -110,7 +111,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.21.0'
-    testImplementation 'org.robolectric:robolectric:4.0-alpha-3'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'

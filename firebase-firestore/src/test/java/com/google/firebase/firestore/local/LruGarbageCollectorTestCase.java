@@ -56,12 +56,13 @@ public abstract class LruGarbageCollectorTestCase {
   private MutationQueue mutationQueue;
   private RemoteDocumentCache documentCache;
   private LruGarbageCollector garbageCollector;
+  private LruGarbageCollector.Params lruParams;
   private int previousTargetId;
   private int previousDocNum;
   private long initialSequenceNumber;
   private ObjectValue testValue;
 
-  abstract Persistence createPersistence();
+  abstract Persistence createPersistence(LruGarbageCollector.Params params);
 
   @Before
   public void setUp() {
@@ -82,7 +83,11 @@ public abstract class LruGarbageCollectorTestCase {
   }
 
   private void newTestResources() {
-    persistence = createPersistence();
+    newTestResources(LruGarbageCollector.Params.Default());
+  }
+
+  private void newTestResources(LruGarbageCollector.Params params) {
+    persistence = createPersistence(params);
     persistence.getReferenceDelegate().setInMemoryPins(new ReferenceSet());
     queryCache = persistence.getQueryCache();
     documentCache = persistence.getRemoteDocumentCache();
@@ -90,6 +95,7 @@ public abstract class LruGarbageCollectorTestCase {
     mutationQueue = persistence.getMutationQueue(user);
     initialSequenceNumber = queryCache.getHighestListenSequenceNumber();
     garbageCollector = ((LruDelegate) persistence.getReferenceDelegate()).getGarbageCollector();
+    lruParams = params;
   }
 
   private QueryData nextQueryData() {
@@ -194,7 +200,7 @@ public abstract class LruGarbageCollectorTestCase {
 
   @Test
   public void testSequenceNumberNoQueries() {
-    assertEquals(ListenSequence.INVALID, garbageCollector.nthSequenceNumber(0));
+    assertEquals(ListenSequence.INVALID, garbageCollector.getNthSequenceNumber(0));
   }
 
   @Test
@@ -204,7 +210,7 @@ public abstract class LruGarbageCollectorTestCase {
     for (int i = 0; i < 50; i++) {
       addNextQuery();
     }
-    assertEquals(initialSequenceNumber + 10, garbageCollector.nthSequenceNumber(10));
+    assertEquals(initialSequenceNumber + 10, garbageCollector.getNthSequenceNumber(10));
   }
 
   @Test
@@ -221,7 +227,7 @@ public abstract class LruGarbageCollectorTestCase {
     for (int i = 9; i < 50; i++) {
       addNextQuery();
     }
-    assertEquals(2 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+    assertEquals(2 + initialSequenceNumber, garbageCollector.getNthSequenceNumber(10));
   }
 
   @Test
@@ -241,7 +247,7 @@ public abstract class LruGarbageCollectorTestCase {
     for (int i = 11; i < 50; i++) {
       addNextQuery();
     }
-    assertEquals(1 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+    assertEquals(1 + initialSequenceNumber, garbageCollector.getNthSequenceNumber(10));
   }
 
   @Test
@@ -252,7 +258,7 @@ public abstract class LruGarbageCollectorTestCase {
     for (int i = 0; i < 50; i++) {
       addNextQuery();
     }
-    assertEquals(10 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+    assertEquals(10 + initialSequenceNumber, garbageCollector.getNthSequenceNumber(10));
   }
 
   @Test
@@ -280,7 +286,7 @@ public abstract class LruGarbageCollectorTestCase {
           addDocumentToTarget(docInQuery, queryData.getTargetId());
         });
     // This should catch the remaining 8 documents, plus the first two queries we added.
-    assertEquals(3 + initialSequenceNumber, garbageCollector.nthSequenceNumber(10));
+    assertEquals(3 + initialSequenceNumber, garbageCollector.getNthSequenceNumber(10));
   }
 
   @Test
@@ -587,5 +593,106 @@ public abstract class LruGarbageCollectorTestCase {
             assertNotNull(documentCache.get(key));
           }
         });
+  }
+
+  @Test
+  public void testGetsSize() {
+    long initialSize = garbageCollector.getByteSize();
+
+    persistence.runTransaction(
+        "fill cache",
+        () -> {
+          // Simulate a bunch of ack'd mutations
+          for (int i = 0; i < 50; i++) {
+            Document doc = cacheADocumentInTransaction();
+            markDocumentEligibleForGcInTransaction(doc.getKey());
+          }
+        });
+
+    long finalSize = garbageCollector.getByteSize();
+    assertTrue(finalSize > initialSize);
+  }
+
+  @Test
+  public void testDisabled() {
+    LruGarbageCollector.Params params = LruGarbageCollector.Params.Disabled();
+
+    // Switch out the test resources for ones with a disabled GC.
+    persistence.shutdown();
+    newTestResources(params);
+
+    persistence.runTransaction(
+        "Fill cache",
+        () -> {
+          // Simulate a bunch of ack'd mutations
+          for (int i = 0; i < 500; i++) {
+            Document doc = cacheADocumentInTransaction();
+            markDocumentEligibleForGcInTransaction(doc.getKey());
+          }
+        });
+
+    LruGarbageCollector.Results results =
+        persistence.runTransaction("GC", () -> garbageCollector.collect(new SparseArray<>()));
+
+    assertFalse(results.hasRun());
+  }
+
+  @Test
+  public void testCacheTooSmall() {
+    // Default LRU Params are ok for this test.
+
+    persistence.runTransaction(
+        "Fill cache",
+        () -> {
+          // Simulate a bunch of ack'd mutations
+          for (int i = 0; i < 50; i++) {
+            Document doc = cacheADocumentInTransaction();
+            markDocumentEligibleForGcInTransaction(doc.getKey());
+          }
+        });
+
+    // Make sure we're under the target size
+    long cacheSize = garbageCollector.getByteSize();
+    assertTrue(cacheSize < lruParams.minBytesThreshold);
+
+    LruGarbageCollector.Results results =
+        persistence.runTransaction("GC", () -> garbageCollector.collect(new SparseArray<>()));
+
+    assertFalse(results.hasRun());
+  }
+
+  @Test
+  public void testGCRan() {
+    // Set a low byte threshold so we can guarantee that GC will run.
+    LruGarbageCollector.Params params = LruGarbageCollector.Params.WithCacheSizeBytes(100);
+
+    // Switch to persistence using our new params.
+    persistence.shutdown();
+    newTestResources(params);
+
+    // Add 100 targets and 10 documents to each
+    for (int i = 0; i < 100; i++) {
+      // Use separate transactions so that each target and associated documents get their own
+      // sequence number.
+      persistence.runTransaction(
+          "Add a target and some documents",
+          () -> {
+            QueryData queryData = addNextQueryInTransaction();
+            for (int j = 0; j < 10; j++) {
+              Document doc = cacheADocumentInTransaction();
+              addDocumentToTarget(doc.getKey(), queryData.getTargetId());
+            }
+          });
+    }
+
+    // Mark nothing as live, so everything is eligible.
+    LruGarbageCollector.Results results =
+        persistence.runTransaction("GC", () -> garbageCollector.collect(new SparseArray<>()));
+
+    // By default, we collect 10% of the sequence numbers. Since we added 100 targets,
+    // that should be 10 targets with 10 documents each, for a total of 100 documents.
+    assertTrue(results.hasRun());
+    assertEquals(10, results.getTargetsRemoved());
+    assertEquals(100, results.getDocumentsRemoved());
   }
 }

@@ -24,11 +24,12 @@ import java.lang.annotation.RetentionPolicy;
 @KeepForSdk
 public final class Dependency {
   /** Enumerates dependency types. */
-  @IntDef({Type.OPTIONAL, Type.REQUIRED})
+  @IntDef({Type.OPTIONAL, Type.REQUIRED, Type.SET})
   @Retention(RetentionPolicy.SOURCE)
   private @interface Type {
     int OPTIONAL = 0;
     int REQUIRED = 1;
+    int SET = 2;
   }
 
   @IntDef({Injection.DIRECT, Injection.PROVIDER})
@@ -59,6 +60,11 @@ public final class Dependency {
   }
 
   @KeepForSdk
+  public static Dependency setOf(Class<?> anInterface) {
+    return new Dependency(anInterface, Type.SET, Injection.DIRECT);
+  }
+
+  @KeepForSdk
   public static Dependency optionalProvider(Class<?> anInterface) {
     return new Dependency(anInterface, Type.OPTIONAL, Injection.PROVIDER);
   }
@@ -68,12 +74,21 @@ public final class Dependency {
     return new Dependency(anInterface, Type.REQUIRED, Injection.PROVIDER);
   }
 
+  @KeepForSdk
+  public static Dependency setOfProvider(Class<?> anInterface) {
+    return new Dependency(anInterface, Type.SET, Injection.PROVIDER);
+  }
+
   public Class<?> getInterface() {
     return anInterface;
   }
 
   public boolean isRequired() {
     return type == Type.REQUIRED;
+  }
+
+  public boolean isSet() {
+    return type == Type.SET;
   }
 
   public boolean isDirectInjection() {
@@ -105,8 +120,8 @@ public final class Dependency {
     StringBuilder sb =
         new StringBuilder("Dependency{anInterface=")
             .append(anInterface)
-            .append(", required=")
-            .append(type == Type.REQUIRED)
+            .append(", type=")
+            .append(type == Type.REQUIRED ? "required" : type == Type.OPTIONAL ? "optional" : "set")
             .append(", direct=")
             .append(injection == Injection.DIRECT)
             .append("}");

@@ -29,9 +29,9 @@ import com.google.firebase.firestore.model.mutation.TransformOperation;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.util.Assert;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
@@ -72,8 +72,8 @@ public class UserData {
      */
     private final Source dataSource;
 
-    /** Accumulates a list of the field paths found while parsing the data. */
-    private final SortedSet<FieldPath> fieldMask;
+    /** Accumulates a set of the field paths found while parsing the data. */
+    private final Set<FieldPath> fieldMask;
 
     /** Accumulates a list of field transforms found while parsing the data. */
     private final ArrayList<FieldTransform> fieldTransforms;
@@ -81,7 +81,7 @@ public class UserData {
     /** @param dataSource Indicates what kind of API method this data came from. */
     public ParseAccumulator(Source dataSource) {
       this.dataSource = dataSource;
-      this.fieldMask = new TreeSet<>();
+      this.fieldMask = new HashSet<>();
       this.fieldTransforms = new ArrayList<>();
     }
 
@@ -135,7 +135,7 @@ public class UserData {
      */
     public ParsedSetData toMergeData(ObjectValue data) {
       return new ParsedSetData(
-          data, FieldMask.fromCollection(fieldMask), unmodifiableList(fieldTransforms));
+          data, FieldMask.fromSet(fieldMask), unmodifiableList(fieldTransforms));
     }
 
     /**
@@ -181,7 +181,7 @@ public class UserData {
      */
     public ParsedUpdateData toUpdateData(ObjectValue data) {
       return new ParsedUpdateData(
-          data, FieldMask.fromCollection(fieldMask), unmodifiableList(fieldTransforms));
+          data, FieldMask.fromSet(fieldMask), unmodifiableList(fieldTransforms));
     }
   }
 

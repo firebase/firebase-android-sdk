@@ -39,7 +39,9 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -373,14 +375,19 @@ public final class LocalStore {
             }
           }
 
-          Set<DocumentKey> changedDocKeys = new HashSet<>();
+          Map<DocumentKey, MaybeDocument> changedDocs = new HashMap<>();
           Map<DocumentKey, MaybeDocument> documentUpdates = remoteEvent.getDocumentUpdates();
           Set<DocumentKey> limboDocuments = remoteEvent.getResolvedLimboDocuments();
+          // Each loop iteration only affects its "own" doc, so it's safe to get all the remote
+          // documents in advance in a single call.
+          Map<DocumentKey, MaybeDocument> existingDocs =
+              remoteDocuments.getAll(documentUpdates.keySet());
+
           for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
             DocumentKey key = entry.getKey();
             MaybeDocument doc = entry.getValue();
-            changedDocKeys.add(key);
-            MaybeDocument existingDoc = remoteDocuments.get(key);
+            MaybeDocument existingDoc = existingDocs.get(key);
+
             // If a document update isn't authoritative, make sure we don't
             // apply an old document version to the remote cache. We make an
             // exception for SnapshotVersion.MIN which can happen for
@@ -391,6 +398,7 @@ public final class LocalStore {
                 || (authoritativeUpdates.contains(doc.getKey()) && !existingDoc.hasPendingWrites())
                 || doc.getVersion().compareTo(existingDoc.getVersion()) >= 0) {
               remoteDocuments.add(doc);
+              changedDocs.put(key, doc);
             } else {
               Logger.debug(
                   "LocalStore",
@@ -420,7 +428,7 @@ public final class LocalStore {
             queryCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
-          return localDocuments.getDocuments(changedDocKeys);
+          return localDocuments.getLocalViewOfDocuments(changedDocs);
         });
   }
 
@@ -606,5 +614,9 @@ public final class LocalStore {
     }
 
     mutationQueue.removeMutationBatch(batch);
+  }
+
+  public LruGarbageCollector.Results collectGarbage(LruGarbageCollector garbageCollector) {
+    return persistence.runTransaction("Collect garbage", () -> garbageCollector.collect(targetIds));
   }
 }

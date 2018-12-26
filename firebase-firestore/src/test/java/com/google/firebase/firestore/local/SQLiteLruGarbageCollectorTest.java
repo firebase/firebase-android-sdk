@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class SQLiteLruGarbageCollectorTest extends LruGarbageCollectorTestCase {
   @Override
-  Persistence createPersistence() {
-    return PersistenceTestHelpers.createSQLitePersistence();
+  Persistence createPersistence(LruGarbageCollector.Params params) {
+    return PersistenceTestHelpers.createSQLitePersistence(params);
   }
 }
