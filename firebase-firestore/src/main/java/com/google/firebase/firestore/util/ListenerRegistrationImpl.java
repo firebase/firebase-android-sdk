@@ -81,7 +81,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
       callbacks.run();
     }
 
-    CallbackList callbacks = new CallbackList();
+    final CallbackList callbacks = new CallbackList();
   }
 
   @SuppressWarnings("deprecation")
@@ -92,7 +92,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
       callbacks.run();
     }
 
-    CallbackList callbacks = new CallbackList();
+    final CallbackList callbacks = new CallbackList();
   }
 
   @Nullable
