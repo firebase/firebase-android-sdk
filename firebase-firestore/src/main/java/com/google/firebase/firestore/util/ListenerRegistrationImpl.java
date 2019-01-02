@@ -22,10 +22,8 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.ViewSnapshot;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.WeakHashMap;
 import javax.annotation.Nullable;
 
 /**
@@ -115,15 +113,10 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   private static final String SUPPORT_FRAGMENT_TAG = "FirestoreOnStopObserverSupportFragment";
   private static final String FRAGMENT_TAG = "FirestoreOnStopObserverFragment";
 
-  private static WeakHashMap<Activity, WeakReference<StopListenerSupportFragment>>
-      supportFragmentByActivity = new WeakHashMap<>();
-  private static WeakHashMap<Activity, WeakReference<StopListenerFragment>> fragmentByActivity =
-      new WeakHashMap<>();
-
   /**
    * Implementation for non-FragmentActivity Activity's. Unfortunatly, all Fragment related
-   * classes/methods with nonFragmentActivityActivity's are deprecated, imply that almost everything
-   * in this function is deprecated.
+   * classes/methods with nonFragmentActivityActivity's are deprecated, implying that almost
+   * everything in this function is deprecated.
    */
   @SuppressWarnings("deprecation")
   private void onActivityStopCallOnce(Activity activity, Runnable callback) {
@@ -131,69 +124,47 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
         !(activity instanceof FragmentActivity),
         "onActivityStopCallOnce must be called with a *non*-FragmentActivity Activity.");
 
-    synchronized (activity) {
-      StopListenerFragment fragment;
+    activity.runOnUiThread(
+        () -> {
+          StopListenerFragment fragment =
+              castFragment(
+                  StopListenerFragment.class,
+                  activity.getFragmentManager().findFragmentByTag(FRAGMENT_TAG),
+                  FRAGMENT_TAG);
 
-      WeakReference<StopListenerFragment> ref = fragmentByActivity.get(activity);
-      if (ref != null) {
-        fragment = ref.get();
-        if (fragment != null) {
+          if (fragment == null || fragment.isRemoving()) {
+            fragment = new StopListenerFragment();
+            activity
+                .getFragmentManager()
+                .beginTransaction()
+                .add(fragment, FRAGMENT_TAG)
+                .commitNowAllowingStateLoss();
+          }
+
           fragment.callbacks.add(callback);
-          return;
-        }
-      }
-
-      fragment =
-          castFragment(
-              StopListenerFragment.class,
-              activity.getFragmentManager().findFragmentByTag(FRAGMENT_TAG),
-              FRAGMENT_TAG);
-
-      if (fragment == null || fragment.isRemoving()) {
-        fragment = new StopListenerFragment();
-        activity
-            .getFragmentManager()
-            .beginTransaction()
-            .add(fragment, FRAGMENT_TAG)
-            .commitAllowingStateLoss();
-      }
-      fragmentByActivity.put(activity, new WeakReference<>(fragment));
-
-      fragment.callbacks.add(callback);
-    }
+        });
   }
 
   private void onFragmentActivityStopCallOnce(FragmentActivity activity, Runnable callback) {
-    synchronized (activity) {
-      StopListenerSupportFragment fragment;
+    activity.runOnUiThread(
+        () -> {
+          StopListenerSupportFragment fragment =
+              castFragment(
+                  StopListenerSupportFragment.class,
+                  activity.getSupportFragmentManager().findFragmentByTag(SUPPORT_FRAGMENT_TAG),
+                  SUPPORT_FRAGMENT_TAG);
 
-      WeakReference<StopListenerSupportFragment> ref = supportFragmentByActivity.get(activity);
-      if (ref != null) {
-        fragment = ref.get();
-        if (fragment != null) {
+          if (fragment == null || fragment.isRemoving()) {
+            fragment = new StopListenerSupportFragment();
+            activity
+                .getSupportFragmentManager()
+                .beginTransaction()
+                .add(fragment, SUPPORT_FRAGMENT_TAG)
+                .commitNowAllowingStateLoss();
+          }
+
           fragment.callbacks.add(callback);
-          return;
-        }
-      }
-
-      fragment =
-          castFragment(
-              StopListenerSupportFragment.class,
-              activity.getSupportFragmentManager().findFragmentByTag(SUPPORT_FRAGMENT_TAG),
-              SUPPORT_FRAGMENT_TAG);
-
-      if (fragment == null || fragment.isRemoving()) {
-        fragment = new StopListenerSupportFragment();
-        activity
-            .getSupportFragmentManager()
-            .beginTransaction()
-            .add(fragment, SUPPORT_FRAGMENT_TAG)
-            .commitAllowingStateLoss();
-      }
-      supportFragmentByActivity.put(activity, new WeakReference<>(fragment));
-
-      fragment.callbacks.add(callback);
-    }
+        });
   }
 
   /** Creates a new ListenerRegistration. Is activity-scoped if and only if activity is non-null. */
