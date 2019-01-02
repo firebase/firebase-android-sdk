@@ -138,7 +138,9 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
                 .getFragmentManager()
                 .beginTransaction()
                 .add(fragment, FRAGMENT_TAG)
-                .commitNowAllowingStateLoss();
+                .commitAllowingStateLoss();
+
+            activity.getFragmentManager().executePendingTransactions();
           }
 
           fragment.callbacks.add(callback);
@@ -160,7 +162,9 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
                 .getSupportFragmentManager()
                 .beginTransaction()
                 .add(fragment, SUPPORT_FRAGMENT_TAG)
-                .commitNowAllowingStateLoss();
+                .commitAllowingStateLoss();
+
+            activity.getSupportFragmentManager().executePendingTransactions();
           }
 
           fragment.callbacks.add(callback);
