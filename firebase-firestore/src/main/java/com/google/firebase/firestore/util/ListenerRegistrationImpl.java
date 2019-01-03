@@ -67,7 +67,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
       }
     }
 
-    void add(Runnable callback) {
+    synchronized void add(Runnable callback) {
       callbacks.add(callback);
     }
 
@@ -75,24 +75,36 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   }
 
   public static class StopListenerSupportFragment extends android.support.v4.app.Fragment {
+    CallbackList callbacks = new CallbackList();
+
     @Override
     public void onStop() {
       super.onStop();
-      callbacks.run();
-    }
 
-    final CallbackList callbacks = new CallbackList();
+      CallbackList callbacksCopy;
+      synchronized (callbacks) {
+        callbacksCopy = callbacks;
+        callbacks = new CallbackList();
+      }
+      callbacksCopy.run();
+    }
   }
 
   @SuppressWarnings("deprecation")
   public static class StopListenerFragment extends android.app.Fragment {
+    CallbackList callbacks = new CallbackList();
+
     @Override
     public void onStop() {
       super.onStop();
-      callbacks.run();
-    }
 
-    final CallbackList callbacks = new CallbackList();
+      CallbackList callbacksCopy;
+      synchronized (callbacks) {
+        callbacksCopy = callbacks;
+        callbacks = new CallbackList();
+      }
+      callbacksCopy.run();
+    }
   }
 
   @Nullable
