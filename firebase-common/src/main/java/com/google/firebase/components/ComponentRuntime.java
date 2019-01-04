@@ -60,11 +60,30 @@ public class ComponentRuntime extends AbstractComponentContainer {
     CycleDetector.detect(componentsToAdd);
 
     for (Component<?> component : componentsToAdd) {
-      register(component);
+      Lazy<?> lazy =
+          new Lazy<>(
+              () ->
+                  component.getFactory().create(new RestrictedComponentContainer(component, this)));
+
+      components.put(component, lazy);
+    }
+    processInstanceComponents();
+    processSetComponents();
+  }
+
+  private void processInstanceComponents() {
+    for (Map.Entry<Component<?>, Lazy<?>> entry : components.entrySet()) {
+      Component<?> component = entry.getKey();
+      if (!component.isValue()) {
+        return;
+      }
+
+      Lazy<?> lazy = entry.getValue();
+      for (Class<?> anInterface : component.getProvidedInterfaces()) {
+        lazyInstanceMap.put(anInterface, lazy);
+      }
     }
     validateDependencies();
-
-    processSetComponents();
   }
 
   /** Populates lazySetMap to make set components available for consumption via set dependencies. */
@@ -138,20 +157,6 @@ public class ComponentRuntime extends AbstractComponentContainer {
     }
 
     eventBus.enablePublishingAndFlushPending();
-  }
-
-  private <T> void register(Component<T> component) {
-    Lazy<T> lazy =
-        new Lazy<>(
-            () -> component.getFactory().create(new RestrictedComponentContainer(component, this)));
-
-    components.put(component, lazy);
-    if (!component.isValue()) {
-      return;
-    }
-    for (Class<? super T> anInterface : component.getProvidedInterfaces()) {
-      lazyInstanceMap.put(anInterface, lazy);
-    }
   }
 
   private void validateDependencies() {
