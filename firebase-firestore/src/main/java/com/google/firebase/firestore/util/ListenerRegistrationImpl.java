@@ -82,6 +82,11 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
       super.onStop();
 
       CallbackList callbacksCopy;
+      // Synchronize to ensure we don't drop callbacks if the user registers another onStop callback
+      // at the same time as the callbacks are executing. (See the synchronized
+      // CallbackList#add(Runnable) method.) Once the callbacks instance has been reassigned, we can
+      // allow the user to add more callbacks again (which would only be invoked if the Fragment was
+      // restarted and stopped).
       synchronized (callbacks) {
         callbacksCopy = callbacks;
         callbacks = new CallbackList();
@@ -99,6 +104,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
       super.onStop();
 
       CallbackList callbacksCopy;
+      // See sync comments in the StopListenerSupportFragment implementation.
       synchronized (callbacks) {
         callbacksCopy = callbacks;
         callbacks = new CallbackList();
