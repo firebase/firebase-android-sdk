@@ -15,6 +15,7 @@
 package com.google.firebase.components;
 
 import com.google.firebase.inject.Provider;
+import java.util.Set;
 
 abstract class AbstractComponentContainer implements ComponentContainer {
   @Override
@@ -24,5 +25,10 @@ abstract class AbstractComponentContainer implements ComponentContainer {
       return null;
     }
     return provider.get();
+  }
+
+  @Override
+  public <T> Set<T> setOf(Class<T> anInterface) {
+    return setOfProvider(anInterface).get();
   }
 }

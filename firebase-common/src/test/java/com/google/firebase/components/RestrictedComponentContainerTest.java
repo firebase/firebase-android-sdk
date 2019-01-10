@@ -23,7 +23,9 @@ import static org.mockito.Mockito.when;
 
 import com.google.firebase.events.Event;
 import com.google.firebase.events.Publisher;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -35,26 +37,28 @@ public final class RestrictedComponentContainerTest {
   private final ComponentContainer container =
       new RestrictedComponentContainer(
           Component.builder(String.class)
-              .add(Dependency.required(StringBuilder.class))
-              .add(Dependency.requiredProvider(StringBuffer.class))
+              .add(Dependency.required(Float.class))
+              .add(Dependency.requiredProvider(Double.class))
+              .add(Dependency.setOf(Long.class))
+              .add(Dependency.setOfProvider(Boolean.class))
               .factory(c -> null)
               .build(),
           delegate);
 
   private final ComponentContainer publishingContainer =
       new RestrictedComponentContainer(
-          Component.builder(String.class).publishes(StringBuilder.class).factory(c -> null).build(),
+          Component.builder(String.class).publishes(Float.class).factory(c -> null).build(),
           delegate);
 
   private final Publisher mockPublisher = mock(Publisher.class);
 
   @Test
   public void get_withAllowedClass_shouldReturnAnInstanceOfThatClass() {
-    StringBuilder sb = new StringBuilder();
-    when(delegate.get(StringBuilder.class)).thenReturn(sb);
+    Float value = 1.0f;
+    when(delegate.get(Float.class)).thenReturn(value);
 
-    assertThat(container.get(StringBuilder.class)).isSameAs(sb);
-    verify(delegate).get(StringBuilder.class);
+    assertThat(container.get(Float.class)).isSameAs(value);
+    verify(delegate).get(Float.class);
   }
 
   @Test
@@ -70,10 +74,10 @@ public final class RestrictedComponentContainerTest {
   @Test
   public void get_withProviderClass_shouldThrow() {
     try {
-      container.get(StringBuffer.class);
+      container.get(Double.class);
       fail("Expected exception not thrown.");
     } catch (IllegalArgumentException ex) {
-      assertThat(ex.getMessage()).contains("java.lang.StringBuffer");
+      assertThat(ex.getMessage()).contains("java.lang.Double");
     }
   }
 
@@ -89,11 +93,11 @@ public final class RestrictedComponentContainerTest {
 
   @Test
   public void getProvider_withAllowedClass_shouldReturnAnInstanceOfThatClass() {
-    StringBuffer sb = new StringBuffer();
-    when(delegate.getProvider(StringBuffer.class)).thenReturn(new Lazy<>(sb));
+    Double value = 3.0d;
+    when(delegate.getProvider(Double.class)).thenReturn(new Lazy<>(value));
 
-    assertThat(container.getProvider(StringBuffer.class).get()).isSameAs(sb);
-    verify(delegate).getProvider(StringBuffer.class);
+    assertThat(container.getProvider(Double.class).get()).isSameAs(value);
+    verify(delegate).getProvider(Double.class);
   }
 
   @Test
@@ -109,10 +113,48 @@ public final class RestrictedComponentContainerTest {
   @Test
   public void getProvider_withDirectClass_shouldThrow() {
     try {
-      container.getProvider(StringBuilder.class);
+      container.getProvider(Float.class);
       fail("Expected exception not thrown.");
     } catch (IllegalArgumentException ex) {
-      assertThat(ex.getMessage()).contains("java.lang.StringBuilder");
+      assertThat(ex.getMessage()).contains("java.lang.Float");
+    }
+  }
+
+  @Test
+  public void setOf_withAllowedClass_shouldReturnExpectedSet() {
+    Set<Long> set = Collections.emptySet();
+    when(delegate.setOf(Long.class)).thenReturn(set);
+
+    assertThat(container.setOf(Long.class)).isSameAs(set);
+    verify(delegate).setOf(Long.class);
+  }
+
+  @Test
+  public void setOf_withNotAllowedClass_shouldThrow() {
+    try {
+      container.setOf(List.class);
+      fail("Expected exception not thrown.");
+    } catch (IllegalArgumentException ex) {
+      assertThat(ex.getMessage()).contains("java.util.List");
+    }
+  }
+
+  @Test
+  public void setOfProvider_withAllowedClass_shouldReturnExpectedSet() {
+    Set<Boolean> set = Collections.emptySet();
+    when(delegate.setOfProvider(Boolean.class)).thenReturn(new Lazy<>(set));
+
+    assertThat(container.setOfProvider(Boolean.class).get()).isSameAs(set);
+    verify(delegate).setOfProvider(Boolean.class);
+  }
+
+  @Test
+  public void setOfProvider_withNotAllowedClass_shouldThrow() {
+    try {
+      container.setOf(List.class);
+      fail("Expected exception not thrown.");
+    } catch (IllegalArgumentException ex) {
+      assertThat(ex.getMessage()).contains("java.util.List");
     }
   }
 
@@ -121,7 +163,7 @@ public final class RestrictedComponentContainerTest {
     when(delegate.get(Publisher.class)).thenReturn(mockPublisher);
     Publisher publisher = publishingContainer.get(Publisher.class);
 
-    Event<StringBuilder> event = new Event<>(StringBuilder.class, new StringBuilder());
+    Event<Float> event = new Event<>(Float.class, 1f);
     publisher.publish(event);
 
     verify(mockPublisher).publish(event);
@@ -132,13 +174,13 @@ public final class RestrictedComponentContainerTest {
     when(delegate.get(Publisher.class)).thenReturn(mockPublisher);
     Publisher publisher = publishingContainer.get(Publisher.class);
 
-    Event<StringBuffer> event = new Event<>(StringBuffer.class, new StringBuffer());
+    Event<Double> event = new Event<>(Double.class, 1d);
 
     try {
       publisher.publish(event);
       fail("Expected exception not thrown.");
     } catch (IllegalArgumentException ex) {
-      assertThat(ex.getMessage()).contains("java.lang.StringBuffer");
+      assertThat(ex.getMessage()).contains("java.lang.Double");
     }
 
     verify(mockPublisher, never()).publish(event);
