@@ -19,15 +19,13 @@ import static junit.framework.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class ComponentSorterTest {
+public class CycleDetectorTest {
   private static final ComponentFactory<Object> NULL_FACTORY = container -> null;
 
   @SuppressWarnings("unchecked")
@@ -58,7 +56,7 @@ public class ComponentSorterTest {
    *    ----> 2 <----
    */
   @Test
-  public void sort_shouldTopologicallySortComponents1() {
+  public void detect_shouldNotDetectACycle1() {
     List<Component<?>> components =
         Arrays.asList(
             Component.builder(TestInterface4.class)
@@ -75,7 +73,7 @@ public class ComponentSorterTest {
                 .factory(nullFactory())
                 .build());
 
-    twice(() -> testSort(components));
+    twice(() -> detect(components));
   }
 
   /*
@@ -86,7 +84,7 @@ public class ComponentSorterTest {
    * 6 -> 7
    */
   @Test
-  public void sort_shouldTopologicallySortComponents2() {
+  public void detect_shouldNotDetectACycle2() {
     List<Component<?>> components =
         Arrays.asList(
             Component.builder(TestInterface1.class)
@@ -112,7 +110,7 @@ public class ComponentSorterTest {
                 .build(),
             Component.builder(TestInterface7.class).factory(nullFactory()).build());
 
-    twice(() -> testSort(components));
+    twice(() -> detect(components));
   }
 
   /*
@@ -127,7 +125,7 @@ public class ComponentSorterTest {
    *   5   6   7
    */
   @Test
-  public void sort_shouldTopologicallySortComponents3() {
+  public void detect_shouldNotDetectACycle3() {
     List<Component<?>> components =
         Arrays.asList(
             Component.builder(TestInterface1.class)
@@ -152,7 +150,7 @@ public class ComponentSorterTest {
             Component.builder(TestInterface6.class).factory(nullFactory()).build(),
             Component.builder(TestInterface7.class).factory(nullFactory()).build());
 
-    twice(() -> testSort(components));
+    twice(() -> detect(components));
   }
 
   /*
@@ -164,7 +162,7 @@ public class ComponentSorterTest {
    *   3   4   5   6
    */
   @Test
-  public void sort_shouldTopologicallySortComponents4() {
+  public void detect_shouldNotDetectACycle4() {
     List<Component<?>> components =
         Arrays.asList(
             Component.builder(TestInterface1.class)
@@ -183,7 +181,7 @@ public class ComponentSorterTest {
             Component.builder(TestInterface6.class).factory(nullFactory()).build(),
             Component.builder(TestInterface7.class).factory(nullFactory()).build());
 
-    twice(() -> testSort(components));
+    twice(() -> detect(components));
   }
 
   /*
@@ -194,7 +192,7 @@ public class ComponentSorterTest {
    *     |_________|
    */
   @Test
-  public void sort_withDependencyCycle_shouldThrow() {
+  public void detect_withDependencyCycle_shouldThrow() {
     List<Component<?>> components =
         Arrays.asList(
             Component.builder(TestInterface1.class)
@@ -211,7 +209,7 @@ public class ComponentSorterTest {
                 .build());
 
     try {
-      ComponentSorter.sorted(components);
+      CycleDetector.detect(components);
       fail("Not thrown");
     } catch (DependencyCycleException ex) {
       assertThat(ex.getComponentsInCycle()).containsExactlyElementsIn(components);
@@ -227,7 +225,7 @@ public class ComponentSorterTest {
         |_Provider_|
   */
   @Test
-  public void sort_withProviderDependencyCycle_shouldSortCorrectly() {
+  public void detect_withProviderDependencyCycle_shouldNotThrow() {
     List<Component<?>> components =
         Arrays.asList(
             Component.builder(TestInterface1.class)
@@ -243,60 +241,37 @@ public class ComponentSorterTest {
                 .factory(nullFactory())
                 .build());
 
-    ComponentSorter.sorted(components);
-    twice(() -> testSort(components));
+    CycleDetector.detect(components);
+    twice(() -> detect(components));
   }
 
   @Test
-  public void sort_withMultipleComponentsImplementingSameIface_shouldThrow() {
+  public void detect_withMultipleComponentsImplementingSameIface_shouldThrow() {
     List<Component<?>> components =
         Arrays.asList(
             Component.builder(TestInterface1.class).factory(nullFactory()).build(),
             Component.builder(TestInterface1.class).factory(nullFactory()).build());
 
     try {
-      ComponentSorter.sorted(components);
+      CycleDetector.detect(components);
       fail();
     } catch (IllegalArgumentException ex) {
       // success.
     }
   }
 
-  private static void testSort(List<Component<?>> components) {
+  private static void detect(List<Component<?>> components) {
     Collections.shuffle(components);
-    List<Component<?>> sorted = ComponentSorter.sorted(components);
-
-    assertThat(sorted).hasSize(components.size());
-    assertAscendingOrder(sorted);
+    try {
+      CycleDetector.detect(components);
+    } catch (DependencyException ex) {
+      fail(String.format("Unexpected exception thrown: %s", ex));
+    }
   }
 
   private static void twice(Runnable runnable) {
     for (int i = 0; i < 2; i++) {
       runnable.run();
-    }
-  }
-
-  private static void assertAscendingOrder(List<Component<?>> components) {
-    Set<Class<?>> seenInterfaces = new HashSet<>();
-    Set<Class<?>> allInterfaces = new HashSet<>();
-    for (Component<?> component : components) {
-      allInterfaces.addAll(component.getProvidedInterfaces());
-    }
-
-    for (Component<?> component : components) {
-      for (Dependency dependency : component.getDependencies()) {
-        if (!dependency.isDirectInjection()) {
-          continue;
-        }
-        Class<?> iface = dependency.getInterface();
-        if (allInterfaces.contains(iface) && !seenInterfaces.contains(iface)) {
-          fail(
-              String.format(
-                  "Encountered component before its dependency. Component: %s, Dependency: %s",
-                  component, iface));
-        }
-      }
-      seenInterfaces.addAll(component.getProvidedInterfaces());
     }
   }
 }

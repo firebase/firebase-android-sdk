@@ -233,4 +233,37 @@ public final class ComponentRuntimeTest {
     assertThat(child).isSameAs(parent);
     assertThat(child.get()).isSameAs(parent.get());
   }
+
+  @Test
+  public void container_shouldExposeAllRegisteredSetValues() {
+    ComponentRuntime runtime =
+        new ComponentRuntime(
+            EXECUTOR,
+            Collections.emptyList(),
+            Component.intoSet(1, Integer.class),
+            Component.intoSet(2, Integer.class));
+
+    assertThat(runtime.setOf(Integer.class)).containsExactly(1, 2);
+  }
+
+  @Test
+  public void setComponents_shouldParticipateInCycleDetection() {
+    try {
+      new ComponentRuntime(
+          EXECUTOR,
+          Collections.emptyList(),
+          Component.builder(ComponentOne.class)
+              .add(Dependency.setOf(Integer.class))
+              .factory(c -> null)
+              .build(),
+          Component.intoSet(1, Integer.class),
+          Component.intoSetBuilder(Integer.class)
+              .add(Dependency.required(ComponentOne.class))
+              .factory(c -> 2)
+              .build());
+      fail("Expected exception not thrown.");
+    } catch (DependencyCycleException ex) {
+      // success.
+    }
+  }
 }
