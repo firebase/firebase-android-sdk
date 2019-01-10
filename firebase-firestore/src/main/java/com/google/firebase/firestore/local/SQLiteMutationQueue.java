@@ -58,13 +58,6 @@ final class SQLiteMutationQueue implements MutationQueue {
   private int nextBatchId;
 
   /**
-   * An identifier for the highest numbered batch that has been acknowledged by the server. All
-   * MutationBatches in this queue with batch_ids less than or equal to this value are considered to
-   * have been acknowledged by the server.
-   */
-  private int lastAcknowledgedBatchId;
-
-  /**
    * A stream token that was previously sent by the server.
    *
    * <p>See StreamingWriteRequest in datastore.proto for more details about usage.
@@ -94,29 +87,18 @@ final class SQLiteMutationQueue implements MutationQueue {
   public void start() {
     loadNextBatchIdAcrossAllUsers();
 
-    // On restart, nextBatchId may end up lower than lastAcknowledgedBatchId since it's computed
-    // from the queue contents, and there may be no mutations in the queue. In this case, we need
-    // to reset lastAcknowledgedBatchId (which is safe since the queue must be empty).
-    lastAcknowledgedBatchId = MutationBatch.UNKNOWN;
     int rows =
         db.query(
-                "SELECT last_acknowledged_batch_id, last_stream_token "
-                    + "FROM mutation_queues WHERE uid = ?")
+                "SELECT last_stream_token FROM mutation_queues WHERE uid = ?")
             .binding(uid)
             .first(
                 row -> {
-                  lastAcknowledgedBatchId = row.getInt(0);
                   lastStreamToken = ByteString.copyFrom(row.getBlob(1));
                 });
 
     if (rows == 0) {
       // Ensure we write a default entry in mutation_queues since loadNextBatchIdAcrossAllUsers()
       // depends upon every queue having an entry.
-      writeMutationQueueMetadata();
-
-    } else if (lastAcknowledgedBatchId >= nextBatchId) {
-      hardAssert(isEmpty(), "Reset nextBatchId is only possible when the queue is empty");
-      lastAcknowledgedBatchId = MutationBatch.UNKNOWN;
       writeMutationQueueMetadata();
     }
   }
@@ -161,11 +143,6 @@ final class SQLiteMutationQueue implements MutationQueue {
 
   @Override
   public void acknowledgeBatch(MutationBatch batch, ByteString streamToken) {
-    int batchId = batch.getBatchId();
-    hardAssert(
-        batchId > lastAcknowledgedBatchId, "Mutation batchIds must be acknowledged in order");
-
-    lastAcknowledgedBatchId = batchId;
     lastStreamToken = checkNotNull(streamToken);
     writeMutationQueueMetadata();
   }
@@ -187,7 +164,7 @@ final class SQLiteMutationQueue implements MutationQueue {
             + "(uid, last_acknowledged_batch_id, last_stream_token) "
             + "VALUES (?, ?, ?)",
         uid,
-        lastAcknowledgedBatchId,
+        -1,
         lastStreamToken.toByteArray());
   }
 
@@ -236,9 +213,7 @@ final class SQLiteMutationQueue implements MutationQueue {
   @Nullable
   @Override
   public MutationBatch getNextMutationBatchAfterBatchId(int batchId) {
-    // All batches with batchId <= lastAcknowledgedBatchId have been acknowledged so the first
-    // unacknowledged batch after batchID will have a batchID larger than both of these values.
-    int nextBatchId = Math.max(batchId, lastAcknowledgedBatchId) + 1;
+    int nextBatchId = batchId + 1;
 
     return db.query(
             "SELECT mutations FROM mutations "
