@@ -64,6 +64,11 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
     delegateContainer = container;
   }
 
+  /**
+   * Returns an instance of the requested class if it is allowed.
+   *
+   * @throws IllegalArgumentException otherwise.
+   */
   @Override
   public <T> T get(Class<T> anInterface) {
     if (!allowedDirectInterfaces.contains(anInterface)) {
@@ -85,6 +90,11 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
     return publisher;
   }
 
+  /**
+   * Returns an instance of the provider for the requested class if it is allowed.
+   *
+   * @throws IllegalArgumentException otherwise.
+   */
   @Override
   public <T> Provider<T> getProvider(Class<T> anInterface) {
     if (!allowedProviderInterfaces.contains(anInterface)) {
@@ -95,6 +105,11 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
     return delegateContainer.getProvider(anInterface);
   }
 
+  /**
+   * Returns an instance of the provider for the set of requested classes if it is allowed.
+   *
+   * @throws IllegalArgumentException otherwise.
+   */
   @Override
   public <T> Provider<Set<T>> setOfProvider(Class<T> anInterface) {
     if (!allowedSetProviderInterfaces.contains(anInterface)) {
@@ -105,6 +120,11 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
     return delegateContainer.setOfProvider(anInterface);
   }
 
+  /**
+   * Returns a set of requested classes if it is allowed.
+   *
+   * @throws IllegalArgumentException otherwise.
+   */
   @Override
   public <T> Set<T> setOf(Class<T> anInterface) {
     if (!allowedSetDirectInterfaces.contains(anInterface)) {
