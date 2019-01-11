@@ -110,28 +110,6 @@ public final class FirebaseFirestoreSettings {
     }
 
     /**
-     * Enables the use of {@link com.google.firebase.Timestamp Timestamps} for timestamp fields in
-     * {@link DocumentSnapshot DocumentSnapshots}.
-     *
-     * <p>Currently, Firestore returns timestamp fields as {@link java.util.Date} but {@link
-     * java.util.Date Date} only supports millisecond precision, which leads to truncation and
-     * causes unexpected behavior when using a timestamp from a snapshot as a part of a subsequent
-     * query.
-     *
-     * <p>Setting {@code setTimestampsInSnapshotsEnabled(true)} will cause Firestore to return
-     * {@link com.google.firebase.Timestamp Timestamp} values instead of {@link java.util.Date
-     * Date}, avoiding this kind of problem. To make this work you must also change any code that
-     * uses {@link java.util.Date Date} to use {@link com.google.firebase.Timestamp Timestamp}
-     * instead.
-     *
-     * <p>NOTE: in the future {@link FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled} will
-     * default to true and this option will be removed so you should change your code to use
-     * Timestamp now and opt-in to this new behavior as soon as you can.
-     *
-     * @return A settings object on which the return type for timestamp fields is configured as
-     *     specified by the given {@code value}.
-     */
-    /**
      * Specifies whether to use {@link com.google.firebase.Timestamp Timestamps} for timestamp
      * fields in {@link DocumentSnapshot DocumentSnapshots}. This is now enabled by default and
      * should not be disabled.
