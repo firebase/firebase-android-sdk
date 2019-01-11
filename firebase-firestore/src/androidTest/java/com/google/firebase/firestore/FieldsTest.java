@@ -217,8 +217,6 @@ public class FieldsTest {
     return map("timestamp", timestamp, "nested", map("timestamp2", timestamp));
   }
 
-  // Note: because timestampsInSnapshotsEnabled is set to true in default test settings, this test
-  // is unaffected by the current default value in FirebaseFirestoreSettings.
   @Test
   public void testTimestampsInSnapshots() {
     Timestamp originalTimestamp = new Timestamp(100, 123456789);

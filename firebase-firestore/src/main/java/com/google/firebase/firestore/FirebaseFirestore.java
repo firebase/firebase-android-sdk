@@ -186,36 +186,6 @@ public class FirebaseFirestore {
       if (client != null) {
         return;
       }
-      if (!settings.areTimestampsInSnapshotsEnabled()) {
-        Logger.warn(
-            "Firestore",
-            "The behavior for java.util.Date objects stored in Firestore is going to change "
-                + "AND YOUR APP MAY BREAK.\n"
-                + "To hide this warning and ensure your app does not break, you need to add "
-                + "the following code to your app before calling any other Cloud Firestore "
-                + "methods:\n"
-                + "\n"
-                + "FirebaseFirestore firestore = FirebaseFirestore.getInstance();\n"
-                + "FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()\n"
-                + "    .setTimestampsInSnapshotsEnabled(true)\n"
-                + "    .build();\n"
-                + "firestore.setFirestoreSettings(settings);\n"
-                + "\n"
-                + "With this change, timestamps stored in Cloud Firestore will be read back as "
-                + "com.google.firebase.Timestamp objects instead of as system java.util.Date "
-                + "objects. So you will also need to update code expecting a java.util.Date to "
-                + "instead expect a Timestamp. For example:\n"
-                + "\n"
-                + "// Old:\n"
-                + "java.util.Date date = snapshot.getDate(\"created_at\");\n"
-                + "// New:\n"
-                + "Timestamp timestamp = snapshot.getTimestamp(\"created_at\");\n"
-                + "java.util.Date date = timestamp.toDate();\n"
-                + "\n"
-                + "Please audit all existing usages of java.util.Date when you enable the new "
-                + "behavior. In a future release, the behavior will be changed to the new "
-                + "behavior, so if you do not follow these steps, YOUR APP MAY BREAK.");
-      }
       DatabaseInfo databaseInfo =
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
