@@ -193,6 +193,7 @@ class SQLiteSchema {
         });
   }
 
+  /** Note: as of this migration, `last_acknowledged_batch_id` is no longer used by the code. */
   private void removeAcknowledgedMutations() {
     SQLitePersistence.Query mutationQueuesQuery =
         new SQLitePersistence.Query(
