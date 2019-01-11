@@ -93,7 +93,7 @@ final class SQLiteMutationQueue implements MutationQueue {
             .binding(uid)
             .first(
                 row -> {
-                  lastStreamToken = ByteString.copyFrom(row.getBlob(1));
+                  lastStreamToken = ByteString.copyFrom(row.getBlob(0));
                 });
 
     if (rows == 0) {
