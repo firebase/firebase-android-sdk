@@ -70,17 +70,16 @@ public final class UserDataConverter {
   }
 
   /** Parse document data from a non-merge set() call. */
-  public ParsedSetData parseSetData(Map<String, Object> input) {
+  public ParsedSetData parseSetData(Object input) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Set);
-    FieldValue updateData = parseData(input, accumulator.rootContext());
-
-    return accumulator.toSetData((ObjectValue) updateData);
+    ObjectValue updateData = convertAndParseDocumentData(input, accumulator.rootContext());
+    return accumulator.toSetData(updateData);
   }
 
   /** Parse document data from a set() call with SetOptions.merge() set. */
-  public ParsedSetData parseMergeData(Map<String, Object> input, @Nullable FieldMask fieldMask) {
+  public ParsedSetData parseMergeData(Object input, @Nullable FieldMask fieldMask) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.MergeSet);
-    ObjectValue updateData = (ObjectValue) parseData(input, accumulator.rootContext());
+    ObjectValue updateData = convertAndParseDocumentData(input, accumulator.rootContext());
 
     if (fieldMask != null) {
       // Verify that all elements specified in the field mask are part of the parsed context.
@@ -94,7 +93,6 @@ public final class UserDataConverter {
       }
 
       return accumulator.toMergeData(updateData, fieldMask);
-
     } else {
       return accumulator.toMergeData(updateData);
     }
@@ -118,7 +116,9 @@ public final class UserDataConverter {
         // Add it to the field mask, but don't add anything to updateData.
         context.addToFieldMask(fieldPath);
       } else {
-        @Nullable FieldValue parsedValue = parseData(fieldValue, context.childContext(fieldPath));
+        @Nullable
+        FieldValue parsedValue =
+            convertAndParseFieldData(fieldValue, context.childContext(fieldPath));
         if (parsedValue != null) {
           context.addToFieldMask(fieldPath);
           updateData = updateData.set(fieldPath, parsedValue);
@@ -168,7 +168,8 @@ public final class UserDataConverter {
         // Add it to the field mask, but don't add anything to updateData.
         context.addToFieldMask(parsedField);
       } else {
-        FieldValue parsedValue = parseData(fieldValue, context.childContext(parsedField));
+        FieldValue parsedValue =
+            convertAndParseFieldData(fieldValue, context.childContext(parsedField));
         if (parsedValue != null) {
           context.addToFieldMask(parsedField);
           updateData = updateData.set(parsedField, parsedValue);
@@ -183,7 +184,7 @@ public final class UserDataConverter {
   public FieldValue parseQueryValue(Object input) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Argument);
 
-    @Nullable FieldValue parsed = parseData(input, accumulator.rootContext());
+    @Nullable FieldValue parsed = convertAndParseFieldData(input, accumulator.rootContext());
     hardAssert(parsed != null, "Parsed data should not be null.");
     hardAssert(
         accumulator.getFieldTransforms().isEmpty(),
@@ -191,32 +192,38 @@ public final class UserDataConverter {
     return parsed;
   }
 
-  /**
-   * Converts a POJO into a Map, throwing appropriate errors if it wasn't actually a proper POJO.
-   */
-  public Map<String, Object> convertPOJO(Object pojo) {
-    checkNotNull(pojo, "Provided data must not be null.");
-    String reason =
-        "Invalid data. Data must be a Map<String, Object> or a suitable POJO object, but it was ";
-
-    // Check Array before calling CustomClassMapper since it'll give you a confusing message
-    // to use List instead, which also won't work.
-    if (pojo.getClass().isArray()) {
-      throw new IllegalArgumentException(reason + "an array");
-    }
-
-    Object converted = CustomClassMapper.convertToPlainJavaTypes(pojo);
-    if (!(converted instanceof Map)) {
-      throw new IllegalArgumentException(reason + "of type: " + Util.typeName(pojo));
-    }
-
-    @SuppressWarnings("unchecked") // CustomClassMapper promises to map keys to Strings.
-    Map<String, Object> map = (Map<String, Object>) converted;
-    return map;
+  /** Converts a POJO to native types and then parses it into model types. */
+  private FieldValue convertAndParseFieldData(Object input, ParseContext context) {
+    Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
+    return parseData(converted, context);
   }
 
   /**
-   * Internal helper for parsing user data.
+   * Converts a POJO to native types and then parses it into model types. It expects the input to
+   * conform to document data (i.e. it must parse into an ObjectValue model type) and will throw an
+   * appropriate error otherwise.
+   */
+  private ObjectValue convertAndParseDocumentData(Object input, ParseContext context) {
+    String badDocReason =
+        "Invalid data. Data must be a Map<String, Object> or a suitable POJO object, but it was ";
+
+    // Check Array before calling CustomClassMapper since it'll give you a confusing message
+    // to use List instead, which also won't work in a set().
+    if (input.getClass().isArray()) {
+      throw new IllegalArgumentException(badDocReason + "an array");
+    }
+
+    Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
+    FieldValue value = parseData(converted, context);
+
+    if (!(value instanceof ObjectValue)) {
+      throw new IllegalArgumentException(badDocReason + "of type: " + Util.typeName(input));
+    }
+    return (ObjectValue) value;
+  }
+
+  /**
+   * Recursive helper for parsing user data.
    *
    * @param input Data to be parsed.
    * @param context A context object representing the current path being parsed, the source of the
@@ -416,7 +423,7 @@ public final class UserDataConverter {
       // being unioned or removed are not considered writes since they cannot
       // contain any FieldValue sentinels, etc.
       ParseContext context = accumulator.rootContext();
-      result.add(parseData(element, context.childContext(i)));
+      result.add(convertAndParseFieldData(element, context.childContext(i)));
     }
     return result;
   }
