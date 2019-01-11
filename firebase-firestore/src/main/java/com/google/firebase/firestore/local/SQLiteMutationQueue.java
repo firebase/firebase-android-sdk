@@ -88,8 +88,7 @@ final class SQLiteMutationQueue implements MutationQueue {
     loadNextBatchIdAcrossAllUsers();
 
     int rows =
-        db.query(
-                "SELECT last_stream_token FROM mutation_queues WHERE uid = ?")
+        db.query("SELECT last_stream_token FROM mutation_queues WHERE uid = ?")
             .binding(uid)
             .first(
                 row -> {
