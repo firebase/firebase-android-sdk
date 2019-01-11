@@ -219,7 +219,13 @@ public class Datastore {
             });
   }
 
-  public static boolean isPermanentWriteError(Status status) {
+  /**
+   * Determines whether the given status has an error code that represents a permanent error when
+   * received in response to a non-write operation.
+   *
+   * @see #isPermanentWriteError for classifying write errors.
+   */
+  public static boolean isPermanentError(Status status) {
     // See go/firestore-client-errors
     switch (status.getCode()) {
       case OK:
@@ -250,5 +256,20 @@ public class Datastore {
       default:
         throw new IllegalArgumentException("Unknown gRPC status code: " + status.getCode());
     }
+  }
+
+  /**
+   * Determines whether the given status has an error code represents a permanent error when
+   * received in response to a write operation.
+   *
+   * <p>Write operations must be handled specially because as of b/119437764, ABORTED errors on the
+   * write stream should be retried too (even though ABORTED errors are not generally retryable).
+   *
+   * <p>Note that during the initial handshake on the write stream an ABORTED error signals that we
+   * should discard our stream token (i.e. it is permanent). This means a handshake error should be
+   * classified with isPermanentError, above.
+   */
+  public static boolean isPermanentWriteError(Status status) {
+    return isPermanentError(status) && !status.getCode().equals(Status.Code.ABORTED);
   }
 }

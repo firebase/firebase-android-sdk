@@ -37,7 +37,6 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
-import io.grpc.Status.Code;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -642,9 +641,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void handleWriteHandshakeError(Status status) {
     hardAssert(!status.isOk(), "Handling write error with status OK.");
-    // Reset the token if it's a permanent error or the error code is ABORTED, signaling the write
-    // stream is no longer valid.
-    if (Datastore.isPermanentWriteError(status) || status.getCode().equals(Code.ABORTED)) {
+    // Reset the token if it's a permanent error, signaling the write stream is no longer valid.
+    // Note that the handshake does not count as a write: see comments on isPermanentWriteError for
+    // details.
+    if (Datastore.isPermanentError(status)) {
       String token = Util.toDebugString(writeStream.getLastStreamToken());
       Logger.debug(
           LOG_TAG,
@@ -658,7 +658,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void handleWriteError(Status status) {
     hardAssert(!status.isOk(), "Handling write error with status OK.");
-    // Only handle permanent error, if it's transient just let the retry logic kick in.
+    // Only handle permanent errors here. If it's transient, just let the retry logic kick in.
     if (Datastore.isPermanentWriteError(status)) {
       // If this was a permanent error, the request itself was the problem so it's not going
       // to succeed if we resend it.
