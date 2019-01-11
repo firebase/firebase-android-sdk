@@ -37,7 +37,7 @@ public final class FirebaseFirestoreSettings {
   // we will switch the default to the above value, 100 MB.
   private static final long DEFAULT_CACHE_SIZE_BYTES = CACHE_SIZE_UNLIMITED;
   private static final String DEFAULT_HOST = "firestore.googleapis.com";
-  private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = false;
+  private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = true;
 
   /** A Builder for creating {@link FirebaseFirestoreSettings}. */
   @PublicApi
@@ -131,7 +131,28 @@ public final class FirebaseFirestoreSettings {
      * @return A settings object on which the return type for timestamp fields is configured as
      *     specified by the given {@code value}.
      */
+    /**
+     * Specifies whether to use {@link com.google.firebase.Timestamp Timestamps} for timestamp
+     * fields in {@link DocumentSnapshot DocumentSnapshots}. This is now enabled by default and
+     * should not be disabled.
+     *
+     * <p>Previously, Firestore returned timestamp fields as {@link java.util.Date} but {@link
+     * java.util.Date} only supports millisecond precision, which leads to truncation and causes
+     * unexpected behavior when using a timestamp from a snapshot as a part of a subsequent query.
+     *
+     * <p>So now Firestore returns {@link com.google.firebase.Timestamp Timestamp} values instead of
+     * {@link java.util.Date}, avoiding this kind of problem.
+     *
+     * <p>To opt into the old behavior of returning {@link java.util.Date Dates}, you can
+     * temporarily set {@link FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled} to false.
+     *
+     * @deprecated This setting now defaults to true and will be removed in a future release. If you
+     *     are already setting it to true, just remove the setting. If you are setting it to false,
+     *     you should update your code to expect {@link com.google.firebase.Timestamp Timestamps}
+     *     instead of {@link java.util.Date Dates} and then remove the setting.
+     */
     @NonNull
+    @Deprecated
     @PublicApi
     public Builder setTimestampsInSnapshotsEnabled(boolean value) {
       this.timestampsInSnapshotsEnabled = value;
