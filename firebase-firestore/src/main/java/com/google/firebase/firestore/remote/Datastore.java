@@ -259,7 +259,7 @@ public class Datastore {
   }
 
   /**
-   * Determines whether the given status has an error code represents a permanent error when
+   * Determines whether the given status has an error code that represents a permanent error when
    * received in response to a write operation.
    *
    * <p>Write operations must be handled specially because as of b/119437764, ABORTED errors on the
