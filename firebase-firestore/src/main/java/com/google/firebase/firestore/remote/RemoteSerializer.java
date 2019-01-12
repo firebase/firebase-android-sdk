@@ -174,17 +174,15 @@ public final class RemoteSerializer {
   }
 
   private String encodeQueryPath(ResourcePath path) {
-    if (path.length() == 0) {
-      // If the path is empty, the backend requires we leave off the /documents at the end.
-      return databaseName;
-    }
     return encodeResourceName(databaseId, path);
   }
 
   private ResourcePath decodeQueryPath(String name) {
     ResourcePath resource = decodeResourceName(name);
     if (resource.length() == 4) {
-      // Path missing the trailing documents path segment, indicating an empty path.
+      // In v1beta1 queries for collections at the root did not have a trailing "/documents". In v1
+      // all resource paths contain "/documents". Preserve the ability to read the v1beta1 form for
+      // compatibility with queries persisted in the local query cache.
       return ResourcePath.EMPTY;
     } else {
       return extractLocalPathFromResourceName(resource);
