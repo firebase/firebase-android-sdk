@@ -49,35 +49,35 @@ import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.testutil.TestUtil;
-import com.google.firestore.v1beta1.ArrayValue;
-import com.google.firestore.v1beta1.Cursor;
-import com.google.firestore.v1beta1.Document;
-import com.google.firestore.v1beta1.DocumentChange;
-import com.google.firestore.v1beta1.DocumentDelete;
-import com.google.firestore.v1beta1.DocumentMask;
-import com.google.firestore.v1beta1.DocumentRemove;
-import com.google.firestore.v1beta1.DocumentTransform;
-import com.google.firestore.v1beta1.ListenResponse;
-import com.google.firestore.v1beta1.MapValue;
-import com.google.firestore.v1beta1.Precondition;
-import com.google.firestore.v1beta1.StructuredQuery;
-import com.google.firestore.v1beta1.StructuredQuery.CollectionSelector;
-import com.google.firestore.v1beta1.StructuredQuery.CompositeFilter;
-import com.google.firestore.v1beta1.StructuredQuery.Direction;
-import com.google.firestore.v1beta1.StructuredQuery.FieldFilter;
-import com.google.firestore.v1beta1.StructuredQuery.FieldFilter.Operator;
-import com.google.firestore.v1beta1.StructuredQuery.FieldReference;
-import com.google.firestore.v1beta1.StructuredQuery.Filter;
-import com.google.firestore.v1beta1.StructuredQuery.Order;
-import com.google.firestore.v1beta1.StructuredQuery.UnaryFilter;
-import com.google.firestore.v1beta1.Target;
-import com.google.firestore.v1beta1.Target.DocumentsTarget;
-import com.google.firestore.v1beta1.Target.QueryTarget;
-import com.google.firestore.v1beta1.TargetChange;
-import com.google.firestore.v1beta1.TargetChange.TargetChangeType;
-import com.google.firestore.v1beta1.Value;
-import com.google.firestore.v1beta1.Value.ValueTypeCase;
-import com.google.firestore.v1beta1.Write;
+import com.google.firestore.v1.ArrayValue;
+import com.google.firestore.v1.Cursor;
+import com.google.firestore.v1.Document;
+import com.google.firestore.v1.DocumentChange;
+import com.google.firestore.v1.DocumentDelete;
+import com.google.firestore.v1.DocumentMask;
+import com.google.firestore.v1.DocumentRemove;
+import com.google.firestore.v1.DocumentTransform;
+import com.google.firestore.v1.ListenResponse;
+import com.google.firestore.v1.MapValue;
+import com.google.firestore.v1.Precondition;
+import com.google.firestore.v1.StructuredQuery;
+import com.google.firestore.v1.StructuredQuery.CollectionSelector;
+import com.google.firestore.v1.StructuredQuery.CompositeFilter;
+import com.google.firestore.v1.StructuredQuery.Direction;
+import com.google.firestore.v1.StructuredQuery.FieldFilter;
+import com.google.firestore.v1.StructuredQuery.FieldFilter.Operator;
+import com.google.firestore.v1.StructuredQuery.FieldReference;
+import com.google.firestore.v1.StructuredQuery.Filter;
+import com.google.firestore.v1.StructuredQuery.Order;
+import com.google.firestore.v1.StructuredQuery.UnaryFilter;
+import com.google.firestore.v1.Target;
+import com.google.firestore.v1.Target.DocumentsTarget;
+import com.google.firestore.v1.Target.QueryTarget;
+import com.google.firestore.v1.TargetChange;
+import com.google.firestore.v1.TargetChange.TargetChangeType;
+import com.google.firestore.v1.Value;
+import com.google.firestore.v1.Value.ValueTypeCase;
+import com.google.firestore.v1.Write;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Int32Value;
 import com.google.protobuf.Timestamp;
@@ -107,13 +107,13 @@ public final class RemoteSerializerTest {
     serializer = new RemoteSerializer(databaseId);
   }
 
-  public static com.google.firestore.v1beta1.Value.Builder valueBuilder() {
-    return com.google.firestore.v1beta1.Value.newBuilder();
+  public static com.google.firestore.v1.Value.Builder valueBuilder() {
+    return com.google.firestore.v1.Value.newBuilder();
   }
 
   private void assertRoundTrip(
-      FieldValue value, com.google.firestore.v1beta1.Value proto, ValueTypeCase typeCase) {
-    com.google.firestore.v1beta1.Value actual = serializer.encodeValue(value);
+      FieldValue value, com.google.firestore.v1.Value proto, ValueTypeCase typeCase) {
+    com.google.firestore.v1.Value actual = serializer.encodeValue(value);
     assertEquals(typeCase, actual.getValueTypeCase());
     assertEquals(proto, actual);
     assertEquals(value, serializer.decodeValue(proto));
@@ -122,7 +122,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesNull() {
     FieldValue value = NullValue.nullValue();
-    com.google.firestore.v1beta1.Value proto = valueBuilder().setNullValueValue(0).build();
+    com.google.firestore.v1.Value proto = valueBuilder().setNullValueValue(0).build();
     assertRoundTrip(value, proto, ValueTypeCase.NULL_VALUE);
   }
 
@@ -131,7 +131,7 @@ public final class RemoteSerializerTest {
     List<Boolean> tests = asList(true, false);
     for (Boolean test : tests) {
       FieldValue value = wrap(test);
-      com.google.firestore.v1beta1.Value proto = valueBuilder().setBooleanValue(test).build();
+      com.google.firestore.v1.Value proto = valueBuilder().setBooleanValue(test).build();
       assertRoundTrip(value, proto, ValueTypeCase.BOOLEAN_VALUE);
     }
   }
@@ -141,7 +141,7 @@ public final class RemoteSerializerTest {
     List<Long> tests = asList(Long.MIN_VALUE, -100L, -1L, 0L, 1L, 100L, Long.MAX_VALUE);
     for (Long test : tests) {
       FieldValue value = wrap(test);
-      com.google.firestore.v1beta1.Value proto = valueBuilder().setIntegerValue(test).build();
+      com.google.firestore.v1.Value proto = valueBuilder().setIntegerValue(test).build();
       assertRoundTrip(value, proto, ValueTypeCase.INTEGER_VALUE);
     }
   }
@@ -169,7 +169,7 @@ public final class RemoteSerializerTest {
             Double.POSITIVE_INFINITY);
     for (Double test : tests) {
       FieldValue value = wrap(test);
-      com.google.firestore.v1beta1.Value proto = valueBuilder().setDoubleValue(test).build();
+      com.google.firestore.v1.Value proto = valueBuilder().setDoubleValue(test).build();
       assertRoundTrip(value, proto, ValueTypeCase.DOUBLE_VALUE);
     }
   }
@@ -179,7 +179,7 @@ public final class RemoteSerializerTest {
     List<String> tests = asList("", "a", "abc def", "æ", "\0\ud7ff\ue000\uffff", "(╯°□°）╯︵ ┻━┻");
     for (String test : tests) {
       FieldValue value = wrap(test);
-      com.google.firestore.v1beta1.Value proto = valueBuilder().setStringValue(test).build();
+      com.google.firestore.v1.Value proto = valueBuilder().setStringValue(test).build();
       assertRoundTrip(value, proto, ValueTypeCase.STRING_VALUE);
     }
   }
@@ -199,7 +199,7 @@ public final class RemoteSerializerTest {
     Timestamp ts1 = Timestamp.newBuilder().setNanos(500000000).setSeconds(1451730050).build();
 
     Timestamp ts2 = Timestamp.newBuilder().setNanos(0).setSeconds(1466160615).build();
-    List<com.google.firestore.v1beta1.Value> expected =
+    List<com.google.firestore.v1.Value> expected =
         asList(
             valueBuilder().setTimestampValue(ts1).build(),
             valueBuilder().setTimestampValue(ts2).build());
@@ -213,7 +213,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesGeoPoints() {
     FieldValue geoPoint = wrap(new GeoPoint(1.23, 4.56));
-    com.google.firestore.v1beta1.Value.Builder proto = valueBuilder();
+    com.google.firestore.v1.Value.Builder proto = valueBuilder();
     proto.setGeoPointValue(LatLng.newBuilder().setLatitude(1.23).setLongitude(4.56));
 
     assertRoundTrip(geoPoint, proto.build(), ValueTypeCase.GEO_POINT_VALUE);
@@ -222,7 +222,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesBlobs() {
     FieldValue blob = wrap(TestUtil.blob(0, 1, 2, 3));
-    com.google.firestore.v1beta1.Value.Builder proto = valueBuilder();
+    com.google.firestore.v1.Value.Builder proto = valueBuilder();
     proto.setBytesValue(TestUtil.byteString(0, 1, 2, 3));
 
     assertRoundTrip(blob, proto.build(), ValueTypeCase.BYTES_VALUE);
@@ -232,7 +232,7 @@ public final class RemoteSerializerTest {
   public void testEncodesReferences() {
     DocumentReference value = ref("foo/bar");
     FieldValue ref = wrap(value);
-    com.google.firestore.v1beta1.Value.Builder proto = valueBuilder();
+    com.google.firestore.v1.Value.Builder proto = valueBuilder();
     proto.setReferenceValue("projects/project/databases/(default)/documents/foo/bar");
 
     assertRoundTrip(ref, proto.build(), ValueTypeCase.REFERENCE_VALUE);
@@ -246,7 +246,7 @@ public final class RemoteSerializerTest {
         .addValues(valueBuilder().setBooleanValue(true))
         .addValues(valueBuilder().setStringValue("foo"));
 
-    com.google.firestore.v1beta1.Value.Builder proto = valueBuilder();
+    com.google.firestore.v1.Value.Builder proto = valueBuilder();
     proto.setArrayValue(builder);
     assertRoundTrip(model, proto.build(), ValueTypeCase.ARRAY_VALUE);
   }
@@ -298,7 +298,7 @@ public final class RemoteSerializerTest {
             .putFields("a", valueBuilder().setArrayValue(array).build())
             .putFields("o", valueBuilder().setMapValue(middle).build());
 
-    com.google.firestore.v1beta1.Value proto = valueBuilder().setMapValue(obj).build();
+    com.google.firestore.v1.Value proto = valueBuilder().setMapValue(obj).build();
     assertRoundTrip(model, proto, ValueTypeCase.MAP_VALUE);
   }
 
@@ -306,8 +306,8 @@ public final class RemoteSerializerTest {
   public void testEncodeDeleteMutation() {
     Mutation mutation = deleteMutation("docs/1");
 
-    com.google.firestore.v1beta1.Write expected =
-        com.google.firestore.v1beta1.Write.newBuilder()
+    com.google.firestore.v1.Write expected =
+        com.google.firestore.v1.Write.newBuilder()
             .setDelete("projects/p/databases/d/documents/docs/1")
             .build();
     assertRoundTripForMutation(mutation, expected);
@@ -317,8 +317,8 @@ public final class RemoteSerializerTest {
   public void testEncodeSetMutation() {
     Mutation mutation = setMutation("docs/1", map("key", "value"));
 
-    com.google.firestore.v1beta1.Write expected =
-        com.google.firestore.v1beta1.Write.newBuilder()
+    com.google.firestore.v1.Write expected =
+        com.google.firestore.v1.Write.newBuilder()
             .setUpdate(
                 Document.newBuilder()
                     .setName("projects/p/databases/d/documents/docs/1")
@@ -332,8 +332,8 @@ public final class RemoteSerializerTest {
   public void testEncodesPatchMutation() {
     Mutation mutation = patchMutation("docs/1", map("key", "value", "key2", true));
 
-    com.google.firestore.v1beta1.Write expected =
-        com.google.firestore.v1beta1.Write.newBuilder()
+    com.google.firestore.v1.Write expected =
+        com.google.firestore.v1.Write.newBuilder()
             .setUpdate(
                 Document.newBuilder()
                     .setName("projects/p/databases/d/documents/docs/1")
@@ -351,8 +351,8 @@ public final class RemoteSerializerTest {
     Mutation mutation =
         patchMutation("docs/1", map("key", "value", "key2", true), asList(field("key")));
 
-    com.google.firestore.v1beta1.Write expected =
-        com.google.firestore.v1beta1.Write.newBuilder()
+    com.google.firestore.v1.Write expected =
+        com.google.firestore.v1.Write.newBuilder()
             .setUpdate(
                 Document.newBuilder()
                     .setName("projects/p/databases/d/documents/docs/1")
@@ -375,8 +375,8 @@ public final class RemoteSerializerTest {
                 "bar.baz",
                 com.google.firebase.firestore.FieldValue.serverTimestamp()));
 
-    com.google.firestore.v1beta1.Write expected =
-        com.google.firestore.v1beta1.Write.newBuilder()
+    com.google.firestore.v1.Write expected =
+        com.google.firestore.v1.Write.newBuilder()
             .setTransform(
                 DocumentTransform.newBuilder()
                     .setDocument("projects/p/databases/d/documents/docs/1")
@@ -405,8 +405,8 @@ public final class RemoteSerializerTest {
                 "a", com.google.firebase.firestore.FieldValue.arrayUnion("a", 2),
                 "bar.baz", com.google.firebase.firestore.FieldValue.arrayRemove(map("x", 1))));
 
-    com.google.firestore.v1beta1.Write expected =
-        com.google.firestore.v1beta1.Write.newBuilder()
+    com.google.firestore.v1.Write expected =
+        com.google.firestore.v1.Write.newBuilder()
             .setTransform(
                 DocumentTransform.newBuilder()
                     .setDocument("projects/p/databases/d/documents/docs/1")
