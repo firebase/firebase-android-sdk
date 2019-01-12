@@ -15,13 +15,18 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static junit.framework.Assert.assertEquals;
 
 import android.support.test.runner.AndroidJUnit4;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import java.util.ArrayList;
 import java.util.Date;
 import org.junit.After;
 import org.junit.Test;
@@ -175,7 +180,7 @@ public class POJOTest {
   }
 
   @Test
-  public void testUpdate() {
+  public void testSetMerge() {
     CollectionReference collection = testCollection();
     POJO data = new POJO(1.0, "a", collection.document());
     DocumentReference reference = waitFor(collection.add(data));
@@ -188,6 +193,55 @@ public class POJOTest {
     POJO expected = new POJO(2.0, "a", data.getDocumentReference());
     doc = waitFor(reference.get());
     assertEquals(expected, doc.toObject(POJO.class));
+  }
+
+  // General smoke test that makes sure APIs accept POJOs.
+  @Test
+  public void testAPIsAcceptPOJOsForFields() {
+    DocumentReference ref = testDocument();
+    ArrayList<Task<?>> tasks = new ArrayList<>();
+
+    // as Map<> entries in a set() call.
+    POJO data = new POJO(1.0, "a", ref);
+    tasks.add(ref.set(map("a", data, "b", map("c", data))));
+
+    // as Map<> entries in an update() call.
+    tasks.add(ref.update(map("a", data)));
+
+    // as field values in an update() call.
+    tasks.add(ref.update("c", data));
+
+    // as values in arrayUnion() / arrayRemove().
+    tasks.add(ref.update("c", FieldValue.arrayUnion(data)));
+    tasks.add(ref.update("c", FieldValue.arrayRemove(data)));
+
+    // as Query parameters.
+    data.setBlob(null); // blobs are broken, see b/117680212
+    tasks.add(testCollection().whereEqualTo("field", data).get());
+
+    waitFor(Tasks.whenAll(tasks));
+  }
+
+  @Test
+  public void testDocumentSnapshotGetWithPOJOs() {
+    DocumentReference ref = testDocument();
+
+    // Go offline so that we can verify server timestamp behavior overload.
+    ref.getFirestore().disableNetwork();
+
+    POJO pojo = new POJO(1.0, "a", ref);
+    ref.set(map("field", pojo));
+
+    DocumentSnapshot snap = waitFor(ref.get());
+
+    assertEquals(pojo, snap.get("field", POJO.class));
+    assertEquals(pojo, snap.get(FieldPath.of("field"), POJO.class));
+    assertEquals(
+        pojo, snap.get("field", POJO.class, DocumentSnapshot.ServerTimestampBehavior.DEFAULT));
+    assertEquals(
+        pojo,
+        snap.get(
+            FieldPath.of("field"), POJO.class, DocumentSnapshot.ServerTimestampBehavior.DEFAULT));
   }
 
   @Test

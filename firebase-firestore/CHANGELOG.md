@@ -3,6 +3,12 @@
   default so timestamp fields read from a `DocumentSnapshot` will be returned
   as `Timestamp` objects instead of `Date`. Any code expecting to receive a
   `Date` object must be updated.
+- [feature] Custom objects (POJOs) can now be passed as a field value in
+  update(), within `Map<>` objects passed to set(), in array transform
+  operations, and in query filters.
+- [feature] DocumentSnapshot.get() now supports retrieving fields as
+  custom objects (POJOs) by passing a Class<T> instance, e.g.
+  `snapshot.get("field", CustomType.class)`.
 
 # 17.1.5
 - [changed] Firestore now recovers more quickly from bad network states.
