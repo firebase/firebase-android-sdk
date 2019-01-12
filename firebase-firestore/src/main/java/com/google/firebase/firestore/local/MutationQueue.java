@@ -28,10 +28,6 @@ interface MutationQueue {
   /**
    * Starts the mutation queue, performing any initial reads that might be required to establish
    * invariants, etc.
-   *
-   * <p>After starting, the mutation queue must guarantee that the highestAcknowledgedBatchID is
-   * less than nextBatchID. This prevents the local store from creating new batches that the
-   * mutation queue would consider erroneously acknowledged.
    */
   void start();
 

@@ -175,23 +175,6 @@ public abstract class MutationQueueTestCase {
   }
 
   @Test
-  public void testNextMutationBatchAfterBatchIdSkipsAcknowledgedBatches() {
-    List<MutationBatch> batches = createBatches(3);
-    assertEquals(
-        batches.get(0), mutationQueue.getNextMutationBatchAfterBatchId(MutationBatch.UNKNOWN));
-
-    acknowledgeBatch(batches.get(0));
-    assertEquals(
-        batches.get(1), mutationQueue.getNextMutationBatchAfterBatchId(MutationBatch.UNKNOWN));
-    assertEquals(
-        batches.get(1),
-        mutationQueue.getNextMutationBatchAfterBatchId(batches.get(0).getBatchId()));
-    assertEquals(
-        batches.get(2),
-        mutationQueue.getNextMutationBatchAfterBatchId(batches.get(1).getBatchId()));
-  }
-
-  @Test
   public void testAllMutationBatchesAffectingDocumentKey() {
     List<Mutation> mutations =
         asList(

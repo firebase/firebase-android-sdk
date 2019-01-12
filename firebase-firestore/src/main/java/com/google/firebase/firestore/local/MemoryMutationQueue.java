@@ -61,9 +61,6 @@ final class MemoryMutationQueue implements MutationQueue {
   /** The next value to use when assigning sequential IDs to each mutation batch. */
   private int nextBatchId;
 
-  /** The highest acknowledged mutation in the queue. */
-  private int highestAcknowledgedBatchId;
-
   /**
    * The last received stream token from the server, used to acknowledge which responses the client
    * has processed. Stream tokens are opaque checkpoint markers whose only real value is their
@@ -79,7 +76,6 @@ final class MemoryMutationQueue implements MutationQueue {
 
     batchesByDocumentKey = new ImmutableSortedSet<>(emptyList(), DocumentReference.BY_KEY);
     nextBatchId = 1;
-    highestAcknowledgedBatchId = MutationBatch.UNKNOWN;
     lastStreamToken = WriteStream.EMPTY_STREAM_TOKEN;
   }
 
@@ -90,14 +86,10 @@ final class MemoryMutationQueue implements MutationQueue {
     // Note: The queue may be shutdown / started multiple times, since we maintain the queue for the
     // duration of the app session in case a user logs out / back in. To behave like the
     // SQLite-backed MutationQueue (and accommodate tests that expect as much), we reset nextBatchId
-    // and highestAcknowledgedBatchId if the queue is empty.
+    // if the queue is empty.
     if (isEmpty()) {
       nextBatchId = 1;
-      highestAcknowledgedBatchId = MutationBatch.UNKNOWN;
     }
-    hardAssert(
-        highestAcknowledgedBatchId < nextBatchId,
-        "highestAcknowledgedBatchId must be less than the nextBatchId");
   }
 
   @Override
@@ -110,9 +102,6 @@ final class MemoryMutationQueue implements MutationQueue {
   @Override
   public void acknowledgeBatch(MutationBatch batch, ByteString streamToken) {
     int batchId = batch.getBatchId();
-    hardAssert(
-        batchId > highestAcknowledgedBatchId, "Mutation batchIds must be acknowledged in order");
-
     int batchIndex = indexOfExistingBatchId(batchId, "acknowledged");
     hardAssert(batchIndex == 0, "Can only acknowledge the first batch in the mutation queue");
 
@@ -124,7 +113,6 @@ final class MemoryMutationQueue implements MutationQueue {
         batchId,
         check.getBatchId());
 
-    highestAcknowledgedBatchId = batchId;
     lastStreamToken = checkNotNull(streamToken);
   }
 
@@ -180,10 +168,7 @@ final class MemoryMutationQueue implements MutationQueue {
   @Nullable
   @Override
   public MutationBatch getNextMutationBatchAfterBatchId(int batchId) {
-    // All batches with batchId <= highestAcknowledgedBatchId have been acknowledged so the
-    // first unacknowledged batch after batchId will have a batchId larger than both of these
-    // values.
-    int nextBatchId = Math.max(batchId, highestAcknowledgedBatchId) + 1;
+    int nextBatchId = batchId + 1;
 
     // The requested batchId may still be out of range so normalize it to the start of the queue.
     int rawIndex = indexOfBatchId(nextBatchId);
