@@ -1,4 +1,8 @@
 # Unreleased
+- [changed] The `timestampsInSnapshotsEnabled` setting is now enabled by
+  default so timestamp fields read from a `DocumentSnapshot` will be returned
+  as `Timestamp` objects instead of `Date`. Any code expecting to receive a
+  `Date` object must be updated.
 - [feature] Custom objects (POJOs) can now be passed as a field value in
   update(), within `Map<>` objects passed to set(), in array transform
   operations, and in query filters.
