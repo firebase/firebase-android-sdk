@@ -1,4 +1,8 @@
 # Unreleased
+- [changed] The `timestampsInSnapshotsEnabled` setting is now enabled by
+  default so timestamp fields read from a `DocumentSnapshot` will be returned
+  as `Timestamp` objects instead of `Date`. Any code expecting to receive a
+  `Date` object must be updated.
 
 # 17.1.5
 - [changed] Firestore now recovers more quickly from bad network states.
