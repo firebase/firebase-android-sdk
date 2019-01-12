@@ -23,9 +23,9 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.FirestoreChannel;
-import com.google.firestore.v1beta1.FirestoreGrpc;
-import com.google.firestore.v1beta1.WriteRequest;
-import com.google.firestore.v1beta1.WriteResponse;
+import com.google.firestore.v1.FirestoreGrpc;
+import com.google.firestore.v1.WriteRequest;
+import com.google.firestore.v1.WriteResponse;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,7 +45,7 @@ import java.util.List;
  * okay to use the same streamToken for the calls to {@code writeMutations}.
  *
  * @see <a
- *     href="https://github.com/googleapis/googleapis/blob/master/google/firestore/v1beta1/firestore.proto#L139">firestore.proto</a>
+ *     href="https://github.com/googleapis/googleapis/blob/master/google/firestore/v1/firestore.proto#L139">firestore.proto</a>
  */
 public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, WriteStream.Callback> {
 
@@ -179,7 +179,7 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
       int count = response.getWriteResultsCount();
       List<MutationResult> results = new ArrayList<>(count);
       for (int i = 0; i < count; i++) {
-        com.google.firestore.v1beta1.WriteResult result = response.getWriteResults(i);
+        com.google.firestore.v1.WriteResult result = response.getWriteResults(i);
         results.add(serializer.decodeMutationResult(result, commitVersion));
       }
       listener.onWriteResponse(commitVersion, results);
