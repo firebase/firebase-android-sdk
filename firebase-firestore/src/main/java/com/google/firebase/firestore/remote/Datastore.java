@@ -28,11 +28,11 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.FirestoreChannel;
 import com.google.firebase.firestore.util.Supplier;
-import com.google.firestore.v1beta1.BatchGetDocumentsRequest;
-import com.google.firestore.v1beta1.BatchGetDocumentsResponse;
-import com.google.firestore.v1beta1.CommitRequest;
-import com.google.firestore.v1beta1.CommitResponse;
-import com.google.firestore.v1beta1.FirestoreGrpc;
+import com.google.firestore.v1.BatchGetDocumentsRequest;
+import com.google.firestore.v1.BatchGetDocumentsResponse;
+import com.google.firestore.v1.CommitRequest;
+import com.google.firestore.v1.CommitResponse;
+import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.android.AndroidChannelBuilder;
@@ -179,7 +179,7 @@ public class Datastore {
               int count = response.getWriteResultsCount();
               ArrayList<MutationResult> results = new ArrayList<>(count);
               for (int i = 0; i < count; i++) {
-                com.google.firestore.v1beta1.WriteResult result = response.getWriteResults(i);
+                com.google.firestore.v1.WriteResult result = response.getWriteResults(i);
                 results.add(serializer.decodeMutationResult(result, commitVersion));
               }
               return results;
