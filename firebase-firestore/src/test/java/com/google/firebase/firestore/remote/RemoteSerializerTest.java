@@ -498,7 +498,7 @@ public final class RemoteSerializerTest {
             .addOrderBy(defaultKeyOrder());
     QueryTarget.Builder queryBuilder =
         QueryTarget.newBuilder()
-            .setParent("projects/p/databases/d")
+            .setParent("projects/p/databases/d/documents")
             .setStructuredQuery(structuredQueryBuilder);
     Target expected =
         Target.newBuilder()
@@ -558,7 +558,7 @@ public final class RemoteSerializerTest {
             .addOrderBy(defaultKeyOrder());
     QueryTarget.Builder queryBuilder =
         QueryTarget.newBuilder()
-            .setParent("projects/p/databases/d")
+            .setParent("projects/p/databases/d/documents")
             .setStructuredQuery(structuredQueryBuilder);
     Target expected =
         Target.newBuilder()
@@ -664,7 +664,7 @@ public final class RemoteSerializerTest {
             .addOrderBy(defaultKeyOrder());
     QueryTarget.Builder queryBuilder =
         QueryTarget.newBuilder()
-            .setParent("projects/p/databases/d")
+            .setParent("projects/p/databases/d/documents")
             .setStructuredQuery(structuredQueryBuilder);
     Target expected =
         Target.newBuilder()
@@ -692,7 +692,7 @@ public final class RemoteSerializerTest {
             .addOrderBy(defaultKeyOrder());
     QueryTarget.Builder queryBuilder =
         QueryTarget.newBuilder()
-            .setParent("projects/p/databases/d")
+            .setParent("projects/p/databases/d/documents")
             .setStructuredQuery(structuredQueryBuilder);
     Target expected =
         Target.newBuilder()
@@ -751,7 +751,7 @@ public final class RemoteSerializerTest {
             .setLimit(Int32Value.newBuilder().setValue(26));
     QueryTarget.Builder queryBuilder =
         QueryTarget.newBuilder()
-            .setParent("projects/p/databases/d")
+            .setParent("projects/p/databases/d/documents")
             .setStructuredQuery(structuredQueryBuilder);
     Target expected =
         Target.newBuilder()
@@ -791,7 +791,7 @@ public final class RemoteSerializerTest {
 
     QueryTarget.Builder queryBuilder =
         QueryTarget.newBuilder()
-            .setParent("projects/p/databases/d")
+            .setParent("projects/p/databases/d/documents")
             .setStructuredQuery(structuredQueryBuilder);
     Target expected =
         Target.newBuilder()
@@ -819,7 +819,7 @@ public final class RemoteSerializerTest {
 
     QueryTarget.Builder queryBuilder =
         QueryTarget.newBuilder()
-            .setParent("projects/p/databases/d")
+            .setParent("projects/p/databases/d/documents")
             .setStructuredQuery(structuredQueryBuilder);
     Target expected =
         Target.newBuilder()
