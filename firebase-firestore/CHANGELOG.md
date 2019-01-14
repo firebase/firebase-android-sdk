@@ -9,6 +9,9 @@
 - [feature] DocumentSnapshot.get() now supports retrieving fields as
   custom objects (POJOs) by passing a Class<T> instance, e.g.
   `snapshot.get("field", CustomType.class)`.
+- [fixed] Fixed a crash that could happen when the app is shut down after
+  a write has been sent to the server but before it has been received on
+  a listener.
 
 # 17.1.5
 - [changed] Firestore now recovers more quickly from bad network states.
