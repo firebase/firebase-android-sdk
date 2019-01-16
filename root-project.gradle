@@ -156,22 +156,6 @@ configure(subprojects) {
         }
 
         sub.apply plugin: LicenseResolverPlugin
-        sub.thirdPartyLicenses {
-            def root = "file://$rootDir/third_party/licenses"
-
-            add 'CCTZ', "$root/apache-2.0.txt"
-            add 'ICU4C', "$root/icu.txt"
-            add 'JSR 305', "$root/jsr305.txt"
-            add 'PCRE', "$root/pcre.txt"
-            add 'Protobuf Nano', "$root/nanoproto.txt"
-            add 'RE2', "$root/re2.txt"
-            add 'STL', "$root/sgi-stl.txt"
-            add 'UTF', "$root/utf.txt"
-            add 'darts_clone', "$root/darts_clone.txt"
-            add 'flatbuffers', "$root/apache-2.0.txt"
-            add 'safeparcel', "$root/apache-2.0.txt"
-            add 'zlib', "$root/zlib.txt"
-        }
     }
 }
 
