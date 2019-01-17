@@ -19,6 +19,7 @@ import os
 import re
 
 from fireci import ci_command
+from fireci import stats
 
 
 @click.option(
@@ -57,6 +58,8 @@ from fireci import ci_command
 def copyright_check(dir_to_scan, ignore_path, include_extension,
                     expected_regex):
   """Checks matching files' content for copyright information."""
+  stats.configure()
+  stats.measure(10)
   expression = re.compile(expected_regex)
   failed_files = []
   with chdir(dir_to_scan):
