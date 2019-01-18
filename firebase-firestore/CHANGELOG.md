@@ -2,15 +2,15 @@
 
 # 18.0.0
 - [changed] The `timestampsInSnapshotsEnabled` setting is now enabled by
-  default. Timestamp fields taht read from a `DocumentSnapshot` are now
+  default. Timestamp fields that read from a `DocumentSnapshot` are now
   returned as `Timestamp` objects instead of `Date` objects. This is a breaking
   change; developers must update any code that expects to receive a `Date`
   object. See https://firebase.google.com/docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings.Builder.html#setTimestampsInSnapshotsEnabled(boolean) for more details.
 - [feature] Custom objects (POJOs) can now be passed in several ways: as a
-  field value in update(), within `Map<>` objects passed to set(), in array
+  field value in `update()`, within `Map<>` objects passed to `set()`, in array
   transform operations, and in query filters.
-- [feature] DocumentSnapshot.get() now supports retrieving fields as
-  custom objects (POJOs) by passing a Class<T> instance, e.g.,
+- [feature] `DocumentSnapshot.get()` now supports retrieving fields as
+  custom objects (POJOs) by passing a `Class<T>` instance, e.g.,
   `snapshot.get("field", CustomType.class)`.
 - [fixed] Fixed an issue where if an app sent a write to the server, but the
   app was shut down before a listener received the write, the app could crash.
