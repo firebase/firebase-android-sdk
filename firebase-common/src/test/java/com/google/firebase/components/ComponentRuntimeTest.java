@@ -266,4 +266,22 @@ public final class ComponentRuntimeTest {
       // success.
     }
   }
+
+  @Test
+  public void setComponents_shouldNotPreventValueComponentsFromBeingRegistered() {
+    ComponentRuntime runtime =
+        new ComponentRuntime(
+            EXECUTOR,
+            Collections.emptySet(),
+            Component.intoSet(1, Integer.class),
+            Component.intoSet(2, Integer.class),
+            Component.of(2f, Float.class),
+            Component.intoSet(3, Integer.class),
+            Component.intoSet(4, Integer.class),
+            Component.of(4d, Double.class));
+
+    assertThat(runtime.setOf(Integer.class)).containsExactly(1, 2, 3, 4);
+    assertThat(runtime.get(Float.class)).isEqualTo(2f);
+    assertThat(runtime.get(Double.class)).isEqualTo(4d);
+  }
 }
