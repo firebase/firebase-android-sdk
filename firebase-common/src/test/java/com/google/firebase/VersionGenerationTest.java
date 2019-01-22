@@ -10,5 +10,4 @@ public class VersionGenerationTest {
   public void isVersionGenerated_shouldNotBeEmpty() {
     assertThat(BuildConfig.VERSION_NAME).isNotEmpty();
   }
-
 }
