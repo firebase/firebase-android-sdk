@@ -75,7 +75,7 @@ public class ComponentRuntime extends AbstractComponentContainer {
     for (Map.Entry<Component<?>, Lazy<?>> entry : components.entrySet()) {
       Component<?> component = entry.getKey();
       if (!component.isValue()) {
-        return;
+        continue;
       }
 
       Lazy<?> lazy = entry.getValue();
