@@ -77,7 +77,7 @@ def new_exporter():
   try:
     _, project_id = google.auth.default()
     return stackdriver_exporter.new_stats_exporter(
-        stackdriver_exporter.Options(project_id))
+        stackdriver_exporter.Options(project_id=project_id, resource='global'))
   except google.auth.exceptions.DefaultCredentialsError:
     _logger.error("Using stdout exporter")
     return Exporter()
