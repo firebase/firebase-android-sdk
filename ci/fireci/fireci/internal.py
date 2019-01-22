@@ -22,6 +22,7 @@ import os
 import shutil
 
 from . import emulator
+from . import stats
 
 _logger = logging.getLogger('fireci')
 
@@ -112,6 +113,7 @@ def main(options, **kwargs):
     """
   for k, v in kwargs.items():
     setattr(options, k, v)
+  stats.configure()
 
 
 def ci_command(name=None):
@@ -127,18 +129,20 @@ def ci_command(name=None):
     """
 
   def ci_command(f):
+    actual_name = f.__name__ if name is None else name
 
-    @main.command(name=f.__name__ if name is None else name, help=f.__doc__)
+    @main.command(name=actual_name, help=f.__doc__)
     @_pass_options
     @click.pass_context
     def new_func(ctx, options, *args, **kwargs):
-      with _artifact_handler(options.artifact_target_dir,
-                             options.artifact_patterns), _emulator_handler(
-                                 options.with_emulator,
-                                 options.artifact_target_dir,
-                                 name=options.emulator_name,
-                                 emulator_binary=options.emulator_binary,
-                                 adb_binary=options.adb_binary):
+      with stats.measure(actual_name), _artifact_handler(
+          options.artifact_target_dir,
+          options.artifact_patterns), _emulator_handler(
+              options.with_emulator,
+              options.artifact_target_dir,
+              name=options.emulator_name,
+              emulator_binary=options.emulator_binary,
+              adb_binary=options.adb_binary):
         return ctx.invoke(f, *args, **kwargs)
 
     return functools.update_wrapper(new_func, f)

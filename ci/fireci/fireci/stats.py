@@ -12,15 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+import base64
+import contextlib
+import copy
 import google.auth
 import google.auth.exceptions
+import logging
+import os
+import time
+
 from opencensus.stats import stats
 from opencensus.stats import measure
 from opencensus.stats import view
 from opencensus.stats import aggregation
-from opencensus.tags import tag_key
-from opencensus.tags import tag_map
+from opencensus import tags
+from opencensus.tags import execution_context
+from opencensus.tags.propagation import binary_serializer
 from opencensus.stats.exporters.base import StatsExporter
 from opencensus.stats.exporters import stackdriver_exporter
 
@@ -29,8 +36,21 @@ STATS = stats.Stats()
 
 m_latency_ms = measure.MeasureFloat("latency", "The latency in milliseconds",
                                     "ms")
+m_success = measure.MeasureInt("success", "Indicated success or failure.", "1")
 
-key_method = tag_key.TagKey("method")
+key_stage = tags.TagKey("stage")
+key_repo_owner = tags.TagKey("repo_owner")
+key_repo_name = tags.TagKey("repo_name")
+key_pull_number = tags.TagKey("pull_number")
+key_job_name = tags.TagKey("job_name")
+
+TAGS = [
+    key_stage,
+    key_repo_owner,
+    key_repo_name,
+    key_pull_number,
+    key_job_name,
+]
 
 
 class Exporter(StatsExporter):
@@ -59,19 +79,64 @@ def new_exporter():
     return stackdriver_exporter.new_stats_exporter(
         stackdriver_exporter.Options(project_id))
   except google.auth.exceptions.DefaultCredentialsError:
+    _logger.error("Using stdout exporter")
     return Exporter()
 
 
 def configure():
-  latency_view = view.View(
-      "myapp/latency", "The distribution of the latencies", [key_method],
-      m_latency_ms,
-      aggregation.DistributionAggregation([25, 100, 200, 400, 800, 10000]))
-  STATS.view_manager.register_view(latency_view)
   STATS.view_manager.register_exporter(new_exporter())
+  latency_view = view.View("fireci/latency",
+                           "Latency of fireci execution stages", TAGS,
+                           m_latency_ms, aggregation.LastValueAggregation())
+  success_view = view.View("fireci/success",
+                           "Success indication of fireci execution stages",
+                           TAGS, m_success, aggregation.LastValueAggregation())
+  STATS.view_manager.register_view(latency_view)
+  STATS.view_manager.register_view(success_view)
+
+  context = tags.TagMap()
+  for tag in TAGS:
+    if tag.upper() in os.environ:
+      context.insert(tag, tags.TagValue(os.environ[tag.upper()]))
+
+  execution_context.set_current_tag_map(context)
 
 
-def measure(value):
+@contextlib.contextmanager
+def measure(name):
+  tmap = copy.deepcopy(execution_context.get_current_tag_map())
+  tmap.insert(key_stage, name)
+  start = time.time()
+  try:
+    yield
+  except:
+    mmap = STATS.stats_recorder.new_measurement_map()
+    mmap.measure_int_put(m_success, 0)
+    mmap.record(tmap)
+    raise
+
+  elapsed = (time.time() - start) * 1000
   mmap = STATS.stats_recorder.new_measurement_map()
-  mmap.measure_float_put(m_latency_ms, value)
-  mmap.record()
+  mmap.measure_float_put(m_latency_ms, elapsed)
+  mmap.measure_int_put(m_success, 1)
+  mmap.record(tmap)
+  _logger.info("%s took %sms", name, elapsed)
+
+
+def measure_call(name):
+
+  def decorator(f):
+
+    def decorated(*args, **kwargs):
+      with measure(name):
+        f(*args, **kwargs)
+
+    return decorated
+
+  return decorator
+
+
+def propagate_context_into(data_dict):
+  value = binary_serializer.BinarySerializer().to_byte_array(
+      execution_context.get_current_tag_map())
+  data_dict['OPENCENSUS_STATS_CONTEXT'] = base64.b64encode(value)
