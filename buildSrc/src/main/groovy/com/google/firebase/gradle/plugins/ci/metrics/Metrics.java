@@ -37,6 +37,7 @@ import org.gradle.BuildResult;
 import org.gradle.api.GradleException;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.invocation.Gradle;
+import org.gradle.api.logging.Logger;
 
 /**
  * Object used to record measurements via {@link #measureSuccess(String, long)} and {@link
@@ -48,6 +49,7 @@ class Metrics {
 
   private final boolean metricsEnabled;
   private final TagContext globalContext;
+  private final Logger logger;
 
   private static Measure.MeasureDouble M_LATENCY =
       Measure.MeasureDouble.create("latency", "", "ms");
@@ -64,14 +66,17 @@ class Metrics {
           TagKey.create("job_name"),
           TagKey.create("build_id"));
 
-  Metrics(Gradle gradle) {
+  Metrics(Gradle gradle, Logger logger) {
+    this.logger = logger;
     String enabled = System.getenv("FIREBASE_ENABLE_METRICS");
     metricsEnabled = enabled != null && enabled.equals("1");
     globalContext = deserializeContext();
 
     if (!metricsEnabled) {
+      logger.warn("Metrics collection is disabled.");
       return;
     }
+    logger.warn("Metrics collection is enabled.");
 
     ensureStackdriver(gradle);
 

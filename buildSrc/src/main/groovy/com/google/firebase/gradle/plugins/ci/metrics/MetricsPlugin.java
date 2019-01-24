@@ -22,7 +22,7 @@ import org.gradle.api.execution.TaskExecutionGraph;
 public class MetricsPlugin implements Plugin<Project> {
   @Override
   public void apply(Project project) {
-    Metrics metrics = new Metrics(project.getGradle());
+    Metrics metrics = new Metrics(project.getGradle(), project.getLogger());
 
     TaskExecutionGraph taskGraph = project.getGradle().getTaskGraph();
     taskGraph.addTaskExecutionListener(new MeasuringTaskExecutionListener(metrics));
