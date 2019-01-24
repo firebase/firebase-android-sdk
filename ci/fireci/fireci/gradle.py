@@ -21,6 +21,8 @@ from . import stats
 
 _logger = logging.getLogger('fireci.gradle')
 
+_NO_DAEMON_FLAG = '--no-daemon'
+
 ADB_INSTALL_TIMEOUT = '5'
 
 
@@ -32,6 +34,8 @@ def P(name, value):
 @stats.measure_call('gradle')
 def run(*args, gradle_opts='', workdir=None):
   """Invokes gradle with specified args and gradle_opts."""
+  if _NO_DAEMON_FLAG not in args:
+    args = args + (_NO_DAEMON_FLAG,)
   new_env = dict(os.environ)
   if gradle_opts:
     new_env['GRADLE_OPTS'] = gradle_opts
