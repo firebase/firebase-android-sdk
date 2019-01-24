@@ -24,8 +24,14 @@ requires = []
 setup(
     name='fireci',
     version='0.1',
+    # this is a temporary measure until opencensus 0.2 release is out.
+    dependency_links=[
+        'https://github.com/census-instrumentation/opencensus-python/tarball/master#egg=opencensus'
+    ],
     install_requires=[
         'click==7.0',
+        'opencensus',
+        'google-cloud-monitoring==0.31.1',
     ],
     packages=find_packages(exclude=['tests']),
     entry_points={
