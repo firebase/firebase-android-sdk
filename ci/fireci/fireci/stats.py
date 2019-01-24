@@ -47,6 +47,7 @@ _TAGS = [
     tags.TagKey("repo_name"),
     tags.TagKey("pull_number"),
     tags.TagKey("job_name"),
+    tags.TagKey("build_id"),
 ]
 
 _METRICS_ENABLED = False
