@@ -38,11 +38,11 @@ class MeasuringTaskExecutionListener implements TaskExecutionListener {
     long startTime = taskStartTimes.remove(task);
 
     if (taskState.getFailure() != null) {
-      metrics.measureFailure(task.getPath());
+      metrics.measureFailure(task);
       return;
     }
 
     long elapsedTime = System.currentTimeMillis() - startTime;
-    metrics.measureSuccess(task.getPath(), elapsedTime);
+    metrics.measureSuccess(task, elapsedTime);
   }
 }

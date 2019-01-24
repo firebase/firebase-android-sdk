@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.gradle.BuildListener;
 import org.gradle.BuildResult;
 import org.gradle.api.GradleException;
+import org.gradle.api.Task;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
@@ -56,10 +57,12 @@ class Metrics {
   private static Measure.MeasureLong M_SUCCESS = Measure.MeasureLong.create("success", "", "1");
 
   private static final TagKey STAGE = TagKey.create("stage");
+  private static final TagKey GRADLE_PROJECT = TagKey.create("gradle_project");
 
   private static final List<TagKey> TAG_KEYS =
       Arrays.asList(
           STAGE,
+          GRADLE_PROJECT,
           TagKey.create("repo_owner"),
           TagKey.create("repo_name"),
           TagKey.create("pull_number"),
@@ -83,7 +86,7 @@ class Metrics {
     Stats.getViewManager()
         .registerView(
             View.create(
-                View.Name.create("fireci/latency"),
+                View.Name.create("fireci/tasklatency"),
                 "The latency in milliseconds",
                 M_LATENCY,
                 Aggregation.LastValue.create(),
@@ -100,23 +103,31 @@ class Metrics {
   }
 
   /** Records failure of the execution stage named {@code name}. */
-  void measureFailure(String name) {
+  void measureFailure(Task task) {
     if (!metricsEnabled) {
       return;
     }
     TagContext ctx =
-        Tags.getTagger().toBuilder(globalContext).put(STAGE, TagValue.create(name)).build();
+        Tags.getTagger()
+            .toBuilder(globalContext)
+            .put(STAGE, TagValue.create(task.getName()))
+            .put(GRADLE_PROJECT, TagValue.create(task.getProject().getPath()))
+            .build();
     Stats.getStatsRecorder().newMeasureMap().put(M_SUCCESS, 0).record(ctx);
   }
 
   /** Records success and latency of the execution stage named {@code name}. */
-  void measureSuccess(String name, long elapsedTime) {
+  void measureSuccess(Task task, long elapsedTime) {
     if (!metricsEnabled) {
       return;
     }
 
     TagContext ctx =
-        Tags.getTagger().toBuilder(globalContext).put(STAGE, TagValue.create(name)).build();
+        Tags.getTagger()
+            .toBuilder(globalContext)
+            .put(STAGE, TagValue.create(task.getName()))
+            .put(GRADLE_PROJECT, TagValue.create(task.getProject().getPath()))
+            .build();
     Stats.getStatsRecorder()
         .newMeasureMap()
         .put(M_SUCCESS, 1)
