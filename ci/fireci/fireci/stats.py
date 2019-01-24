@@ -152,7 +152,7 @@ def measure_call(name):
 
     def decorated(*args, **kwargs):
       with measure(name):
-        f(*args, **kwargs)
+        return f(*args, **kwargs)
 
     functools.update_wrapper(decorated, f)
     return decorated
