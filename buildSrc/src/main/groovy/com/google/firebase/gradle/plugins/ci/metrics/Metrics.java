@@ -140,12 +140,14 @@ class Metrics {
         .record(ctx);
   }
 
-  private static void ensureStackdriver(Gradle gradle) {
+  private void ensureStackdriver(Gradle gradle) {
     // make sure we only initialize stackdriver once as gradle daemon is not guaranteed to restart
     // across gradle invocations.
     if (!STACKDRIVER_INITIALIZED.compareAndSet(false, true)) {
+      logger.warn("Stackdriver exporter already initialized.");
       return;
     }
+    logger.warn("Initializing Stackdriver exporter.");
 
     try {
       StackdriverStatsExporter.createAndRegister(
@@ -171,6 +173,7 @@ class Metrics {
             @Override
             public void buildFinished(BuildResult buildResult) {
               try {
+                logger.warn("Draining metrics to Stackdriver.");
                 Thread.sleep(STACKDRIVER_UPLOAD_PERIOD_MS);
               } catch (InterruptedException e) {
               }
