@@ -41,8 +41,8 @@ import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 
 /**
- * Object used to record measurements via {@link #measureSuccess(String, long)} and {@link
- * #measureFailure(String)}.
+ * Object used to record measurements via {@link #measureSuccess(Task, long)} and {@link
+ * #measureFailure(Task)}.
  */
 class Metrics {
   private static final AtomicBoolean STACKDRIVER_INITIALIZED = new AtomicBoolean();
@@ -107,6 +107,9 @@ class Metrics {
     if (!metricsEnabled) {
       return;
     }
+
+    logger.warn("Task {} failed.", task.getPath());
+
     TagContext ctx =
         Tags.getTagger()
             .toBuilder(globalContext)
@@ -121,6 +124,8 @@ class Metrics {
     if (!metricsEnabled) {
       return;
     }
+
+    logger.warn("Task {} took {}ms", task.getPath(), elapsedTime);
 
     TagContext ctx =
         Tags.getTagger()
