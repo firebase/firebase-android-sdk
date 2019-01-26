@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.database.sqlite.SQLiteStatement;
+import android.os.ParcelFileDescriptor;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
@@ -31,6 +32,7 @@ import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +43,8 @@ import javax.annotation.Nullable;
 
 /** A mutation queue for a specific user, backed by SQLite. */
 final class SQLiteMutationQueue implements MutationQueue {
+
+  private static final int BLOB_MAX_INLINE_LENGTH = 1000000;
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
@@ -204,9 +208,12 @@ final class SQLiteMutationQueue implements MutationQueue {
   @Nullable
   @Override
   public MutationBatch lookupMutationBatch(int batchId) {
-    return db.query("SELECT mutations FROM mutations WHERE uid = ? AND batch_id = ?")
-        .binding(uid, batchId)
-        .firstValue(row -> decodeMutationBatch(row.getBlob(0)));
+    return db.query(
+            "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) "
+                + "FROM mutations m "
+                + "WHERE uid = ? AND batch_id = ?")
+        .binding(BLOB_MAX_INLINE_LENGTH, uid, batchId)
+        .firstValue(row -> decodeMutationBatchRow(row.getInt(0), row.getBlob(1)));
   }
 
   @Nullable
@@ -215,19 +222,23 @@ final class SQLiteMutationQueue implements MutationQueue {
     int nextBatchId = batchId + 1;
 
     return db.query(
-            "SELECT mutations FROM mutations "
+            "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) "
+                + "FROM mutations m "
                 + "WHERE uid = ? AND batch_id >= ? "
                 + "ORDER BY batch_id ASC LIMIT 1")
-        .binding(uid, nextBatchId)
-        .firstValue(row -> decodeMutationBatch(row.getBlob(0)));
+        .binding(BLOB_MAX_INLINE_LENGTH, uid, nextBatchId)
+        .firstValue(row -> decodeMutationBatchRow(row.getInt(0), row.getBlob(1)));
   }
 
   @Override
   public List<MutationBatch> getAllMutationBatches() {
     List<MutationBatch> result = new ArrayList<>();
-    db.query("SELECT mutations FROM mutations WHERE uid = ? ORDER BY batch_id ASC")
-        .binding(uid)
-        .forEach(row -> result.add(decodeMutationBatch(row.getBlob(0))));
+    db.query(
+            "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) "
+                + "FROM mutations m "
+                + "WHERE uid = ? ORDER BY batch_id ASC")
+        .binding(BLOB_MAX_INLINE_LENGTH, uid)
+        .forEach(row -> result.add(decodeMutationBatchRow(row.getInt(0), row.getBlob(1))));
     return result;
   }
 
@@ -237,14 +248,15 @@ final class SQLiteMutationQueue implements MutationQueue {
 
     List<MutationBatch> result = new ArrayList<>();
     db.query(
-            "SELECT m.mutations FROM document_mutations dm, mutations m "
+            "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) "
+                + "FROM document_mutations dm, mutations m "
                 + "WHERE dm.uid = ? "
                 + "AND dm.path = ? "
                 + "AND dm.uid = m.uid "
                 + "AND dm.batch_id = m.batch_id "
                 + "ORDER BY dm.batch_id")
-        .binding(uid, path)
-        .forEach(row -> result.add(decodeMutationBatch(row.getBlob(0))));
+        .binding(BLOB_MAX_INLINE_LENGTH, uid, path)
+        .forEach(row -> result.add(decodeMutationBatchRow(row.getInt(0), row.getBlob(1))));
     return result;
   }
 
@@ -259,10 +271,11 @@ final class SQLiteMutationQueue implements MutationQueue {
     SQLitePersistence.LongQuery longQuery =
         new SQLitePersistence.LongQuery(
             db,
-            "SELECT DISTINCT dm.batch_id, m.mutations FROM document_mutations dm, mutations m "
+            "SELECT DISTINCT dm.batch_id, SUBSTR(m.mutations, 1, ?) "
+                + "FROM document_mutations dm, mutations m "
                 + "WHERE dm.uid = ? "
                 + "AND dm.path IN (",
-            Arrays.asList(uid),
+            Arrays.asList(BLOB_MAX_INLINE_LENGTH, uid),
             args,
             ") "
                 + "AND dm.uid = m.uid "
@@ -279,7 +292,7 @@ final class SQLiteMutationQueue implements MutationQueue {
                 int batchId = row.getInt(0);
                 if (!uniqueBatchIds.contains(batchId)) {
                   uniqueBatchIds.add(batchId);
-                  result.add(decodeMutationBatch(row.getBlob(1)));
+                  result.add(decodeMutationBatchRow(batchId, row.getBlob(1)));
                 }
               });
     }
@@ -321,14 +334,15 @@ final class SQLiteMutationQueue implements MutationQueue {
 
     List<MutationBatch> result = new ArrayList<>();
     db.query(
-            "SELECT dm.batch_id, dm.path, m.mutations FROM document_mutations dm, mutations m "
+            "SELECT dm.batch_id, dm.path, SUBSTR(m.mutations, 1, ?) "
+                + "FROM document_mutations dm, mutations m "
                 + "WHERE dm.uid = ? "
                 + "AND dm.path >= ? "
                 + "AND dm.path < ? "
                 + "AND dm.uid = m.uid "
                 + "AND dm.batch_id = m.batch_id "
                 + "ORDER BY dm.batch_id")
-        .binding(uid, prefixPath, prefixSuccessorPath)
+        .binding(BLOB_MAX_INLINE_LENGTH, uid, prefixPath, prefixSuccessorPath)
         .forEach(
             row -> {
               // Ensure unique batches only. This works because the batches come out in order so we
@@ -350,7 +364,7 @@ final class SQLiteMutationQueue implements MutationQueue {
                 return;
               }
 
-              result.add(decodeMutationBatch(row.getBlob(2)));
+              result.add(decodeMutationBatchRow(batchId, row.getBlob(2)));
             });
 
     return result;
@@ -397,6 +411,38 @@ final class SQLiteMutationQueue implements MutationQueue {
         "Document leak -- detected dangling mutation references when queue is empty. "
             + "Dangling keys: %s",
         danglingMutationReferences);
+  }
+
+  /**
+   * Decodes a mutation batch row containing a batch id and a substring of a blob. If the blob is
+   * too large, executes another query to load the blob directly.
+   *
+   * @param batchId The batch ID of the row containing the blob
+   * @param bytes The bytes represented
+   * @return
+   */
+  private MutationBatch decodeMutationBatchRow(int batchId, byte[] bytes) {
+    if (bytes.length < BLOB_MAX_INLINE_LENGTH) {
+      return decodeMutationBatch(bytes);
+    }
+
+    SQLiteStatement loader =
+        db.prepare("SELECT mutations FROM mutations WHERE uid = ? AND batch_id = ?");
+    loader.bindString(1, uid);
+    loader.bindLong(2, batchId);
+
+    ParcelFileDescriptor blobFile = loader.simpleQueryForBlobFileDescriptor();
+    hardAssert(blobFile != null, "Blob exists so descriptor should not be null");
+
+    try (ParcelFileDescriptor.AutoCloseInputStream stream =
+        new ParcelFileDescriptor.AutoCloseInputStream(blobFile)) {
+      return serializer.decodeMutationBatch(
+          com.google.firebase.firestore.proto.WriteBatch.parseFrom(stream));
+    } catch (InvalidProtocolBufferException e) {
+      throw fail("MutationBatch failed to parse: %s", e);
+    } catch (IOException e) {
+      throw fail("Failed to read blob for uid=%s, batch_id=%d: %s", uid, batchId, e);
+    }
   }
 
   private MutationBatch decodeMutationBatch(byte[] bytes) {

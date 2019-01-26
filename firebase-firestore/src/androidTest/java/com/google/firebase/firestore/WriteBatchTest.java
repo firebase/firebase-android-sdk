@@ -32,7 +32,10 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import com.google.firebase.firestore.util.Util;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -252,5 +255,29 @@ public class WriteBatchTest {
     Timestamp when = serverSnap.getTimestamp("when");
     assertNotNull(when);
     assertEquals(map("a", 1L, "b", 2L, "when", when), serverSnap.getData());
+  }
+
+  @Test
+  public void testCanWriteVeryLargeBatches() {
+    String a = Character.toString('a');
+    StringBuilder buf = new StringBuilder(1000);
+    for (int i = 0; i < 1000; i++) {
+      buf.append(a);
+    }
+    String kb = buf.toString();
+    Map<String, Object> values = new HashMap<>();
+    for (int j = 0; j < 1000; j++) {
+      values.put(Util.autoId(), kb);
+    }
+
+    DocumentReference doc = testDocument();
+    WriteBatch batch = doc.getFirestore().batch();
+
+    batch.set(doc, values);
+    for (int i = 0; i < 2; i++) {
+      batch.update(doc, values);
+    }
+
+    waitFor(batch.commit());
   }
 }
