@@ -223,9 +223,10 @@ final class SQLiteMutationQueue implements MutationQueue {
     int nextBatchId = batchId + 1;
 
     SQLiteStatement query =
-        db.prepare("SELECT mutations FROM mutations "
-            + "WHERE uid = ? AND batch_id >= ? "
-            + "ORDER BY batch_id ASC LIMIT 1");
+        db.prepare(
+            "SELECT mutations FROM mutations "
+                + "WHERE uid = ? AND batch_id >= ? "
+                + "ORDER BY batch_id ASC LIMIT 1");
     query.bindString(1, uid);
     query.bindLong(2, nextBatchId);
 
@@ -242,7 +243,7 @@ final class SQLiteMutationQueue implements MutationQueue {
     }
 
     try (ParcelFileDescriptor.AutoCloseInputStream stream =
-             new ParcelFileDescriptor.AutoCloseInputStream(blobFile)) {
+        new ParcelFileDescriptor.AutoCloseInputStream(blobFile)) {
       return serializer.decodeMutationBatch(
           com.google.firebase.firestore.proto.WriteBatch.parseFrom(stream));
     } catch (InvalidProtocolBufferException e) {
@@ -440,7 +441,7 @@ final class SQLiteMutationQueue implements MutationQueue {
    * too large, executes another query to load the blob directly.
    *
    * @param batchId The batch ID of the row containing the bytes, for fallback lookup if the value
-   *                is too large.
+   *     is too large.
    * @param bytes The bytes represented
    */
   private MutationBatch decodeInlineMutationBatch(int batchId, byte[] bytes) {
