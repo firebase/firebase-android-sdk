@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.database.sqlite.SQLiteDoneException;
 import android.database.sqlite.SQLiteStatement;
 import android.os.ParcelFileDescriptor;
 import com.google.firebase.Timestamp;
@@ -208,12 +209,12 @@ final class SQLiteMutationQueue implements MutationQueue {
   @Nullable
   @Override
   public MutationBatch lookupMutationBatch(int batchId) {
-    return db.query(
-            "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) "
-                + "FROM mutations m "
-                + "WHERE uid = ? AND batch_id = ?")
-        .binding(BLOB_MAX_INLINE_LENGTH, uid, batchId)
-        .firstValue(row -> decodeMutationBatchRow(row.getInt(0), row.getBlob(1)));
+    SQLiteStatement query =
+        db.prepare("SELECT mutations FROM mutations WHERE uid = ? AND batch_id = ?");
+    query.bindString(1, uid);
+    query.bindLong(2, batchId);
+
+    return executeSimpleMutationBatchLookup(query);
   }
 
   @Nullable
@@ -221,13 +222,34 @@ final class SQLiteMutationQueue implements MutationQueue {
   public MutationBatch getNextMutationBatchAfterBatchId(int batchId) {
     int nextBatchId = batchId + 1;
 
-    return db.query(
-            "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) "
-                + "FROM mutations m "
-                + "WHERE uid = ? AND batch_id >= ? "
-                + "ORDER BY batch_id ASC LIMIT 1")
-        .binding(BLOB_MAX_INLINE_LENGTH, uid, nextBatchId)
-        .firstValue(row -> decodeMutationBatchRow(row.getInt(0), row.getBlob(1)));
+    SQLiteStatement query =
+        db.prepare("SELECT mutations FROM mutations "
+            + "WHERE uid = ? AND batch_id >= ? "
+            + "ORDER BY batch_id ASC LIMIT 1");
+    query.bindString(1, uid);
+    query.bindLong(2, nextBatchId);
+
+    return executeSimpleMutationBatchLookup(query);
+  }
+
+  @Nullable
+  private MutationBatch executeSimpleMutationBatchLookup(SQLiteStatement query) {
+    ParcelFileDescriptor blobFile;
+    try {
+      blobFile = query.simpleQueryForBlobFileDescriptor();
+    } catch (SQLiteDoneException e) {
+      return null;
+    }
+
+    try (ParcelFileDescriptor.AutoCloseInputStream stream =
+             new ParcelFileDescriptor.AutoCloseInputStream(blobFile)) {
+      return serializer.decodeMutationBatch(
+          com.google.firebase.firestore.proto.WriteBatch.parseFrom(stream));
+    } catch (InvalidProtocolBufferException e) {
+      throw fail("MutationBatch failed to parse: %s", e);
+    } catch (IOException e) {
+      throw fail("MutationBatch failed to load: %s", e);
+    }
   }
 
   @Override
@@ -238,7 +260,7 @@ final class SQLiteMutationQueue implements MutationQueue {
                 + "FROM mutations m "
                 + "WHERE uid = ? ORDER BY batch_id ASC")
         .binding(BLOB_MAX_INLINE_LENGTH, uid)
-        .forEach(row -> result.add(decodeMutationBatchRow(row.getInt(0), row.getBlob(1))));
+        .forEach(row -> result.add(decodeInlineMutationBatch(row.getInt(0), row.getBlob(1))));
     return result;
   }
 
@@ -256,7 +278,7 @@ final class SQLiteMutationQueue implements MutationQueue {
                 + "AND dm.batch_id = m.batch_id "
                 + "ORDER BY dm.batch_id")
         .binding(BLOB_MAX_INLINE_LENGTH, uid, path)
-        .forEach(row -> result.add(decodeMutationBatchRow(row.getInt(0), row.getBlob(1))));
+        .forEach(row -> result.add(decodeInlineMutationBatch(row.getInt(0), row.getBlob(1))));
     return result;
   }
 
@@ -292,7 +314,7 @@ final class SQLiteMutationQueue implements MutationQueue {
                 int batchId = row.getInt(0);
                 if (!uniqueBatchIds.contains(batchId)) {
                   uniqueBatchIds.add(batchId);
-                  result.add(decodeMutationBatchRow(batchId, row.getBlob(1)));
+                  result.add(decodeInlineMutationBatch(batchId, row.getBlob(1)));
                 }
               });
     }
@@ -364,7 +386,7 @@ final class SQLiteMutationQueue implements MutationQueue {
                 return;
               }
 
-              result.add(decodeMutationBatchRow(batchId, row.getBlob(2)));
+              result.add(decodeInlineMutationBatch(batchId, row.getBlob(2)));
             });
 
     return result;
@@ -417,32 +439,16 @@ final class SQLiteMutationQueue implements MutationQueue {
    * Decodes a mutation batch row containing a batch id and a substring of a blob. If the blob is
    * too large, executes another query to load the blob directly.
    *
-   * @param batchId The batch ID of the row containing the blob
+   * @param batchId The batch ID of the row containing the bytes, for fallback lookup if the value
+   *                is too large.
    * @param bytes The bytes represented
-   * @return
    */
-  private MutationBatch decodeMutationBatchRow(int batchId, byte[] bytes) {
+  private MutationBatch decodeInlineMutationBatch(int batchId, byte[] bytes) {
     if (bytes.length < BLOB_MAX_INLINE_LENGTH) {
       return decodeMutationBatch(bytes);
     }
 
-    SQLiteStatement loader =
-        db.prepare("SELECT mutations FROM mutations WHERE uid = ? AND batch_id = ?");
-    loader.bindString(1, uid);
-    loader.bindLong(2, batchId);
-
-    ParcelFileDescriptor blobFile = loader.simpleQueryForBlobFileDescriptor();
-    hardAssert(blobFile != null, "Blob exists so descriptor should not be null");
-
-    try (ParcelFileDescriptor.AutoCloseInputStream stream =
-        new ParcelFileDescriptor.AutoCloseInputStream(blobFile)) {
-      return serializer.decodeMutationBatch(
-          com.google.firebase.firestore.proto.WriteBatch.parseFrom(stream));
-    } catch (InvalidProtocolBufferException e) {
-      throw fail("MutationBatch failed to parse: %s", e);
-    } catch (IOException e) {
-      throw fail("Failed to read blob for uid=%s, batch_id=%d: %s", uid, batchId, e);
-    }
+    return lookupMutationBatch(batchId);
   }
 
   private MutationBatch decodeMutationBatch(byte[] bytes) {
