@@ -137,8 +137,8 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   private static final String FRAGMENT_TAG = "FirestoreOnStopObserverFragment";
 
   /**
-   * Implementation for non-FragmentActivity Activity's. Unfortunatly, all Fragment related
-   * classes/methods with nonFragmentActivityActivity's are deprecated, implying that almost
+   * Implementation for non-FragmentActivity Activities. Unfortunately, all Fragment related
+   * classes/methods with nonFragmentActivityActivities are deprecated, implying that almost
    * everything in this function is deprecated.
    */
   @SuppressWarnings("deprecation")
