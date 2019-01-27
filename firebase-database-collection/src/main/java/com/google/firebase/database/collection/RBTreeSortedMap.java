@@ -243,7 +243,7 @@ public class RBTreeSortedMap<K, V> extends ImmutableSortedMap<K, V> {
       public Base1_2(int size) {
         int toCalc = size + 1;
         length = (int) Math.floor(Math.log(toCalc) / Math.log(2));
-        long mask = (long) (Math.pow(2, length)) - 1;
+        long mask = ((long) Math.pow(2, length)) - 1;
         value = toCalc & mask;
       }
 
