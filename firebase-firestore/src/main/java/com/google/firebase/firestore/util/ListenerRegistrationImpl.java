@@ -118,6 +118,9 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   @Nullable
   private static <T> T castFragment(Class<T> fragmentClass, @Nullable Object fragment, String tag) {
     try {
+      if (fragment == null) {
+        return null;
+      }
       return fragmentClass.cast(fragment);
     } catch (ClassCastException e) {
       throw new IllegalStateException(
