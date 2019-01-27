@@ -340,7 +340,7 @@ public class RBTreeSortedMap<K, V> extends ImmutableSortedMap<K, V> {
         Comparator<A> comparator) {
       Builder<A, B, C> builder = new Builder<>(keys, values, translator);
       Collections.sort(keys, comparator);
-      Iterator<BooleanChunk> iter = (new Base1_2(keys.size())).iterator();
+      Iterator<BooleanChunk> iter = new Base1_2(keys.size()).iterator();
       int index = keys.size();
       while (iter.hasNext()) {
         BooleanChunk next = iter.next();
