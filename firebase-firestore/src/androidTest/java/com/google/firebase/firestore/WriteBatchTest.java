@@ -279,5 +279,7 @@ public class WriteBatchTest {
     }
 
     waitFor(batch.commit());
+    DocumentSnapshot snap = waitFor(doc.get());
+    assertEquals(values, snap.getData());
   }
 }
