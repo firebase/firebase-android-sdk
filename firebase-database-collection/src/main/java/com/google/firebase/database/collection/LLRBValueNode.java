@@ -67,9 +67,9 @@ public abstract class LLRBValueNode<K, V> implements LLRBNode<K, V> {
     LLRBNode<K, V> newLeft = left == null ? this.left : left;
     LLRBNode<K, V> newRight = right == null ? this.right : right;
     if (color == Color.RED) {
-      return new LLRBRedValueNode<K, V>(newKey, newValue, newLeft, newRight);
+      return new LLRBRedValueNode<>(newKey, newValue, newLeft, newRight);
     } else {
-      return new LLRBBlackValueNode<K, V>(newKey, newValue, newLeft, newRight);
+      return new LLRBBlackValueNode<>(newKey, newValue, newLeft, newRight);
     }
   }
 
