@@ -78,6 +78,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
     CallbackList callbacks = new CallbackList();
 
     @Override
+    @SuppressWarnings("SynchronizeOnNonFinalField")
     public void onStop() {
       super.onStop();
 
@@ -100,6 +101,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
     CallbackList callbacks = new CallbackList();
 
     @Override
+    @SuppressWarnings("SynchronizeOnNonFinalField")
     public void onStop() {
       super.onStop();
 
