@@ -27,7 +27,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
@@ -326,7 +325,6 @@ public abstract class MutationQueueTestCase {
   @Test
   public void testRemoveMutationBatches() {
     List<MutationBatch> batches = createBatches(10);
-    MutationBatch last = batches.get(batches.size() - 1);
 
     removeMutationBatches(batches.remove(0));
     assertEquals(9, batchCount());
