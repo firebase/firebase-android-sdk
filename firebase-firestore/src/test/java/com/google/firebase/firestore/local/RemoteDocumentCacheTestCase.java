@@ -106,7 +106,7 @@ abstract class RemoteDocumentCacheTestCase {
     }
     written.put(DocumentKey.fromPathString("foo/nonexistent"), null);
 
-    List<String> keys = new ArrayList(Arrays.asList(paths));
+    List<String> keys = new ArrayList<>(Arrays.asList(paths));
     keys.add("foo/nonexistent");
     Map<DocumentKey, MaybeDocument> read = getAll(keys);
     assertEquals(written, read);
