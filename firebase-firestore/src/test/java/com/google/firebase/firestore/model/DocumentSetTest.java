@@ -38,13 +38,10 @@ import org.robolectric.annotation.Config;
 public class DocumentSetTest {
 
   private static final Comparator<Document> TEST_COMPARATOR =
-      new Comparator<Document>() {
-        @Override
-        public int compare(Document left, Document right) {
-          FieldValue leftValue = left.getField(field("sort"));
-          FieldValue rightValue = right.getField(field("sort"));
-          return leftValue.compareTo(rightValue);
-        }
+      (left, right) -> {
+        FieldValue leftValue = left.getField(field("sort"));
+        FieldValue rightValue = right.getField(field("sort"));
+        return leftValue.compareTo(rightValue);
       };
 
   private static final Document DOC1 = doc("docs/1", 0, map("sort", 2));
