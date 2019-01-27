@@ -18,9 +18,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.database.sqlite.SQLiteDoneException;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteStatement;
-import android.os.ParcelFileDescriptor;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
@@ -29,11 +28,11 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.WriteStream;
+import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -95,10 +94,7 @@ final class SQLiteMutationQueue implements MutationQueue {
     int rows =
         db.query("SELECT last_stream_token FROM mutation_queues WHERE uid = ?")
             .binding(uid)
-            .first(
-                row -> {
-                  lastStreamToken = ByteString.copyFrom(row.getBlob(0));
-                });
+            .first(row -> lastStreamToken = ByteString.copyFrom(row.getBlob(0)));
 
     if (rows == 0) {
       // Ensure we write a default entry in mutation_queues since loadNextBatchIdAcrossAllUsers()
@@ -209,12 +205,9 @@ final class SQLiteMutationQueue implements MutationQueue {
   @Nullable
   @Override
   public MutationBatch lookupMutationBatch(int batchId) {
-    SQLiteStatement query =
-        db.prepare("SELECT mutations FROM mutations WHERE uid = ? AND batch_id = ?");
-    query.bindString(1, uid);
-    query.bindLong(2, batchId);
-
-    return executeSimpleMutationBatchLookup(query);
+    return db.query("SELECT SUBSTR(mutations, 1, ?) FROM mutations WHERE uid = ? AND batch_id = ?")
+        .binding(BLOB_MAX_INLINE_LENGTH, uid, batchId)
+        .firstValue(row -> decodeInlineMutationBatch(batchId, row.getBlob(0)));
   }
 
   @Nullable
@@ -222,35 +215,12 @@ final class SQLiteMutationQueue implements MutationQueue {
   public MutationBatch getNextMutationBatchAfterBatchId(int batchId) {
     int nextBatchId = batchId + 1;
 
-    SQLiteStatement query =
-        db.prepare(
-            "SELECT mutations FROM mutations "
-                + "WHERE uid = ? AND batch_id >= ? "
-                + "ORDER BY batch_id ASC LIMIT 1");
-    query.bindString(1, uid);
-    query.bindLong(2, nextBatchId);
-
-    return executeSimpleMutationBatchLookup(query);
-  }
-
-  @Nullable
-  private MutationBatch executeSimpleMutationBatchLookup(SQLiteStatement query) {
-    ParcelFileDescriptor blobFile;
-    try {
-      blobFile = query.simpleQueryForBlobFileDescriptor();
-    } catch (SQLiteDoneException e) {
-      return null;
-    }
-
-    try (ParcelFileDescriptor.AutoCloseInputStream stream =
-        new ParcelFileDescriptor.AutoCloseInputStream(blobFile)) {
-      return serializer.decodeMutationBatch(
-          com.google.firebase.firestore.proto.WriteBatch.parseFrom(stream));
-    } catch (InvalidProtocolBufferException e) {
-      throw fail("MutationBatch failed to parse: %s", e);
-    } catch (IOException e) {
-      throw fail("MutationBatch failed to load: %s", e);
-    }
+    return db.query(
+            "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) FROM mutations m "
+                + "WHERE m.uid = ? AND m.batch_id >= ? "
+                + "ORDER BY m.batch_id ASC LIMIT 1")
+        .binding(BLOB_MAX_INLINE_LENGTH, uid, nextBatchId)
+        .firstValue(row -> decodeInlineMutationBatch(row.getInt(0), row.getBlob(1)));
   }
 
   @Override
@@ -437,27 +407,75 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   /**
-   * Decodes a mutation batch row containing a batch id and a substring of a blob. If the blob is
-   * too large, executes another query to load the blob directly.
+   * Decodes mutation batch bytes obtained via substring. If the blob is too smaller than
+   * BLOB_MAX_INLINE_LENGTH, executes additional queries to load the rest of the blob.
    *
    * @param batchId The batch ID of the row containing the bytes, for fallback lookup if the value
    *     is too large.
-   * @param bytes The bytes represented
+   * @param bytes The bytes of the first chunk of the mutation batch. Should be obtained via
+   *     SUBSTR(mutations, 1, BLOB_MAX_INLINE_LENGTH).
    */
   private MutationBatch decodeInlineMutationBatch(int batchId, byte[] bytes) {
-    if (bytes.length < BLOB_MAX_INLINE_LENGTH) {
-      return decodeMutationBatch(bytes);
-    }
-
-    return lookupMutationBatch(batchId);
-  }
-
-  private MutationBatch decodeMutationBatch(byte[] bytes) {
     try {
+      if (bytes.length < BLOB_MAX_INLINE_LENGTH) {
+        return serializer.decodeMutationBatch(
+            com.google.firebase.firestore.proto.WriteBatch.parseFrom(bytes));
+      }
+
+      BlobAccumulator accumulator = new BlobAccumulator(bytes);
+      while (accumulator.more) {
+        int start = accumulator.numChunks() * BLOB_MAX_INLINE_LENGTH + 1;
+
+        db.query("SELECT SUBSTR(mutations, ?, ?) FROM mutations WHERE uid = ? AND batch_id = ?")
+            .binding(start, BLOB_MAX_INLINE_LENGTH, uid, batchId)
+            .first(accumulator);
+      }
+
+      ByteString blob = accumulator.result();
       return serializer.decodeMutationBatch(
-          com.google.firebase.firestore.proto.WriteBatch.parseFrom(bytes));
+          com.google.firebase.firestore.proto.WriteBatch.parseFrom(blob));
     } catch (InvalidProtocolBufferException e) {
       throw fail("MutationBatch failed to parse: %s", e);
+    }
+  }
+
+  /**
+   * Explicit consumer of blob chunks, accumulating the chunks and wrapping them in a single
+   * ByteString. Accepts a Cursor whose results include the blob in column 0.
+   *
+   * <p>(This is a named class here to allow decodeInlineMutationBlock to access the result of the
+   * accumulation.)
+   */
+  private static class BlobAccumulator implements Consumer<Cursor> {
+    private final ArrayList<ByteString> chunks = new ArrayList<>();
+    private boolean more = true;
+
+    BlobAccumulator(byte[] firstChunk) {
+      addChunk(firstChunk);
+    }
+
+    int numChunks() {
+      return chunks.size();
+    }
+
+    ByteString result() {
+      // Not actually a copy; this creates a balanced rope-like structure that reuses the given
+      // ByteStrings as a part of its representation.
+      return ByteString.copyFrom(chunks);
+    }
+
+    @Override
+    public void accept(Cursor row) {
+      byte[] bytes = row.getBlob(0);
+      addChunk(bytes);
+      if (bytes.length < BLOB_MAX_INLINE_LENGTH) {
+        more = false;
+      }
+    }
+
+    private void addChunk(byte[] bytes) {
+      ByteString wrapped = ByteString.copyFrom(bytes);
+      chunks.add(wrapped);
     }
   }
 }
