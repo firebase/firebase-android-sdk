@@ -31,8 +31,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
 /**
- * Android implementation of ConnectivityMonitor. Parallel implementations exist for N+ and
- * pre-N.
+ * Android implementation of ConnectivityMonitor. Parallel implementations exist for N+ and pre-N.
  *
  * <p>Implementation note: Most of the code here was shamelessly stolen from
  * https://github.com/grpc/grpc-java/blob/master/android/src/main/java/io/grpc/android/AndroidChannelBuilder.java
