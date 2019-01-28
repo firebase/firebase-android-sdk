@@ -16,10 +16,18 @@ package com.google.firebase.platforminfo;
 
 import com.google.firebase.components.Component;
 
-public class PlatformInfo {
-  private PlatformInfo() {}
+/** Factory to create a component that publishes the version of an SDK */
+public class SDKVersionComponentFactory {
+  private SDKVersionComponentFactory() {}
 
-  public static Component<?> component(String key, String value) {
-    return Component.intoSet(new PlatformInfoToken(key, value), PlatformInfoToken.class);
+  /**
+   * Creates a component that publishes SDK versions
+   *
+   * @param sdkName
+   * @param version
+   * @return
+   */
+  public static Component<?> createComponent(String sdkName, String version) {
+    return Component.intoSet(SDKVersion.builder().setSDKName(sdkName).setVersion(version).build(), SDKVersion.class);
   }
 }

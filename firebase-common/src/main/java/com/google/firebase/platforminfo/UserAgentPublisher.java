@@ -14,24 +14,7 @@
 
 package com.google.firebase.platforminfo;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-public class PlatformInfoCompat {
-  private static final Set<PlatformInfoToken> infos = new HashSet<>();
-
-  private PlatformInfoCompat() {}
-
-  public static void register(String key, String value) {
-    synchronized (infos) {
-      infos.add(new PlatformInfoToken(key, value));
-    }
-  }
-
-  static Set<PlatformInfoToken> getGlobalInfo() {
-    synchronized (infos) {
-      return Collections.unmodifiableSet(infos);
-    }
-  }
+/** Component that publishes a user agent string */
+public interface UserAgentPublisher {
+  String getUserAgent();
 }

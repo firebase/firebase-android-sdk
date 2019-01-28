@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.platforminfo;
+package com.google.firebase.components;
 
-/** The class is not public to ensure other components cannot depend on it. */
-class PlatformInfoToken {
-  final String key;
-  final String value;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 
-  PlatformInfoToken(String key, String value) {
-    this.key = key;
-    this.value = value;
+public class TestUserAgentDependentComponent {
+  private final UserAgentPublisher userAgentPublisher;
+
+  public TestUserAgentDependentComponent(UserAgentPublisher userAgentPublisher) {
+    this.userAgentPublisher = userAgentPublisher;
+  }
+
+  public UserAgentPublisher getUserAgentPublisher() {
+    return userAgentPublisher;
   }
 }
