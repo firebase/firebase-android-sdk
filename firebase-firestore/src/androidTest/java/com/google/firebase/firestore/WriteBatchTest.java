@@ -259,6 +259,12 @@ public class WriteBatchTest {
 
   @Test
   public void testCanWriteVeryLargeBatches() {
+    // On Android, SQLite Cursors are limited reading no more than 2 MB per row (despite being able
+    // to write very large values). This test verifies that the SQLiteMutationQueue properly works
+    // around this limitation.
+
+    // Create a map containing nearly 1 MB of data. Note that if you use 1024 below this will create
+    // a document larger than 1 MB, which will be rejected by the backend as too large.
     String a = Character.toString('a');
     StringBuilder buf = new StringBuilder(1000);
     for (int i = 0; i < 1000; i++) {
@@ -273,6 +279,9 @@ public class WriteBatchTest {
     DocumentReference doc = testDocument();
     WriteBatch batch = doc.getFirestore().batch();
 
+    // Write a batch containing 3 copies of the data, creating a ~3 MB batch. Writing to the same
+    // document in a batch is allowed and so long as the net size of the document is under 1 MB the
+    // batch is allowed.
     batch.set(doc, values);
     for (int i = 0; i < 2; i++) {
       batch.update(doc, values);

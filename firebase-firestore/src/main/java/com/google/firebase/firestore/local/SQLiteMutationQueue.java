@@ -44,6 +44,16 @@ import javax.annotation.Nullable;
 /** A mutation queue for a specific user, backed by SQLite. */
 final class SQLiteMutationQueue implements MutationQueue {
 
+  /**
+   * On Android, SQLite Cursors are limited reading no more than 2 MB per row (despite being able to
+   * write very large values). All reads of the mutations column in the mutations table need to read
+   * in chunks with SUBSTR to avoid going over this limit.
+   *
+   * <p>The value here has to be 2 MB or smaller, while allowing for all possible other values that
+   * might be selected out along with the mutations column in any given result set. Nearly 1 MB is
+   * conservative, but allows all combinations of document paths and batch ids without needing to
+   * figure out if the row has gotten too large.
+   */
   private static final int BLOB_MAX_INLINE_LENGTH = 1000000;
 
   private final SQLitePersistence db;
@@ -216,9 +226,9 @@ final class SQLiteMutationQueue implements MutationQueue {
     int nextBatchId = batchId + 1;
 
     return db.query(
-            "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) FROM mutations m "
-                + "WHERE m.uid = ? AND m.batch_id >= ? "
-                + "ORDER BY m.batch_id ASC LIMIT 1")
+            "SELECT batch_id, SUBSTR(mutations, 1, ?) FROM mutations "
+                + "WHERE uid = ? AND batch_id >= ? "
+                + "ORDER BY batch_id ASC LIMIT 1")
         .binding(BLOB_MAX_INLINE_LENGTH, uid, nextBatchId)
         .firstValue(row -> decodeInlineMutationBatch(row.getInt(0), row.getBlob(1)));
   }
@@ -227,8 +237,8 @@ final class SQLiteMutationQueue implements MutationQueue {
   public List<MutationBatch> getAllMutationBatches() {
     List<MutationBatch> result = new ArrayList<>();
     db.query(
-            "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) "
-                + "FROM mutations m "
+            "SELECT batch_id, SUBSTR(mutations, 1, ?) "
+                + "FROM mutations "
                 + "WHERE uid = ? ORDER BY batch_id ASC")
         .binding(BLOB_MAX_INLINE_LENGTH, uid)
         .forEach(row -> result.add(decodeInlineMutationBatch(row.getInt(0), row.getBlob(1))));
@@ -407,7 +417,7 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   /**
-   * Decodes mutation batch bytes obtained via substring. If the blob is too smaller than
+   * Decodes mutation batch bytes obtained via substring. If the blob is smaller than
    * BLOB_MAX_INLINE_LENGTH, executes additional queries to load the rest of the blob.
    *
    * @param batchId The batch ID of the row containing the bytes, for fallback lookup if the value
