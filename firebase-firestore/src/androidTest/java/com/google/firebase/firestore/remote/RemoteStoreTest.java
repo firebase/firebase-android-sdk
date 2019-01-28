@@ -26,6 +26,7 @@ import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import io.grpc.Status;
 import java.util.concurrent.Semaphore;
+import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -60,11 +61,11 @@ public class RemoteStoreTest {
           }
         };
 
-    FakeNetworkReachabilityMonitor nrm = new FakeNetworkReachabilityMonitor();
-    RemoteStore remoteStore = new RemoteStore(callbacks, null, datastore, testQueue, nrm);
     waitForIdle(testQueue);
+    FakeConnectivityMonitor connectivityMonitor = new FakeConnectivityMonitor();
+    RemoteStore remoteStore = new RemoteStore(callback, null, datastore, testQueue, connectivityMonitor);
 
-    nrm.goOffline();
+    connectivityMonitor.goOffline();
     waitFor(networkChangeSemaphore);
   }
 
@@ -72,22 +73,22 @@ public class RemoteStoreTest {
     waitFor(testQueue.enqueue(() -> {}));
   }
 
-  class FakeNetworkReachabilityMonitor implements NetworkReachabilityMonitor {
-    private NetworkReachabilityCallback callback = null;
+  class FakeConnectivityMonitor implements ConnectivityMonitor {
+    private Consumer<NetworkStatus> callback = null;
 
-    public void onNetworkReachabilityChange(NetworkReachabilityCallback callback) {
+    public void addCallback(Consumer<NetworkStatus> callback) {
       this.callback = callback;
     }
 
     public void goOffline() {
       if (callback != null) {
-        callback.onChange(NetworkReachabilityMonitor.Reachability.UNREACHABLE);
+        callback.accept(ConnectivityMonitor.NetworkStatus.UNREACHABLE);
       }
     }
 
     public void goOnline() {
       if (callback != null) {
-        callback.onChange(NetworkReachabilityMonitor.Reachability.REACHABLE);
+        callback.accept(ConnectivityMonitor.NetworkStatus.REACHABLE);
       }
     }
   }
