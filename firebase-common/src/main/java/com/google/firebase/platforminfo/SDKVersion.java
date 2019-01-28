@@ -13,9 +13,9 @@
 // limitations under the License.
 
 package com.google.firebase.platforminfo;
+
 import com.google.auto.value.AutoValue;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /** The class is not public to ensure other components cannot depend on it. */
 @AutoValue
@@ -33,7 +33,9 @@ abstract class SDKVersion {
   @AutoValue.Builder
   public abstract static class Builder {
     public abstract Builder setSDKName(String sdkName);
+
     public abstract Builder setVersion(String version);
+
     public abstract SDKVersion build();
   }
 }

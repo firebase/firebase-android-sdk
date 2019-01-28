@@ -28,6 +28,7 @@ public class SDKVersionComponentFactory {
    * @return
    */
   public static Component<?> createComponent(String sdkName, String version) {
-    return Component.intoSet(SDKVersion.builder().setSDKName(sdkName).setVersion(version).build(), SDKVersion.class);
+    return Component.intoSet(
+        SDKVersion.builder().setSDKName(sdkName).setVersion(version).build(), SDKVersion.class);
   }
 }

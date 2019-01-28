@@ -144,7 +144,8 @@ public class FirebaseAppTest {
     String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
     Arrays.sort(actualUserAgent);
 
-    //After sorting the user agents are expected to be {"firebase-common/x.y.z", "test-component/1.2.3"}
+    // After sorting the user agents are expected to be {"firebase-common/x.y.z",
+    // "test-component/1.2.3"}
     assertThat(actualUserAgent[0]).contains("firebase-common");
   }
 
