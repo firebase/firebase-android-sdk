@@ -28,6 +28,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.MutationResult;
+import com.google.firebase.firestore.remote.NetworkReachabilityMonitor.Reachability;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
@@ -146,7 +147,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       RemoteStoreCallback remoteStoreCallback,
       LocalStore localStore,
       Datastore datastore,
-      AsyncQueue workerQueue) {
+      AsyncQueue workerQueue,
+      NetworkReachabilityMonitor networkReachabilityMonitor) {
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
@@ -201,6 +203,26 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 handleWriteStreamClose(status);
               }
             });
+
+    networkReachabilityMonitor.onNetworkReachabilityChange(
+        (Reachability reachability) -> {
+          switch (reachability) {
+            case REACHABLE:
+              workerQueue.enqueueAndForget(
+                  () -> {
+                    disableNetwork();
+                    enableNetwork();
+                  });
+              break;
+
+            case UNREACHABLE:
+              workerQueue.enqueueAndForget(
+                  () -> {
+                    disableNetwork();
+                  });
+              break;
+          }
+        });
   }
 
   /** Re-enables the network. Only to be called as the counterpart to disableNetwork(). */
