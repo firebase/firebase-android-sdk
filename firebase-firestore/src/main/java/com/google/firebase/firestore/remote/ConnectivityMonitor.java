@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.remote;
 
-import java.util.function.Consumer;
+import com.google.firebase.firestore.util.Consumer;
 
 /** Interface for monitoring changes in network connectivity/reachability. */
 public interface ConnectivityMonitor {

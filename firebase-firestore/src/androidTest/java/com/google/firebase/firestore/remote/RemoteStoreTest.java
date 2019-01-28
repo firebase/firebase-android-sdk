@@ -24,9 +24,9 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Consumer;
 import io.grpc.Status;
 import java.util.concurrent.Semaphore;
-import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
