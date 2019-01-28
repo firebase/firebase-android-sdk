@@ -206,21 +206,12 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     networkReachabilityMonitor.onNetworkReachabilityChange(
         (Reachability reachability) -> {
-          switch (reachability) {
-            case REACHABLE:
-              workerQueue.enqueueAndForget(
-                  () -> {
-                    disableNetwork();
-                    enableNetwork();
-                  });
-              break;
-
-            case UNREACHABLE:
-              workerQueue.enqueueAndForget(
-                  () -> {
-                    disableNetwork();
-                  });
-              break;
+          // If the network has been explicitly disabled, make sure we don't accidentally re-enable
+          // it.
+          if (canUseNetwork()) {
+            // Tear down and re-create our network streams. This will ensure the backoffs are reset.
+            Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
+            restartNetwork();
           }
         });
   }
@@ -300,11 +291,15 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       // for the new user and re-fill the write pipeline with new mutations from the LocalStore
       // (since mutations are per-user).
       Logger.debug(LOG_TAG, "Restarting streams for new credential.");
-      networkEnabled = false;
-      disableNetworkInternal();
-      onlineStateTracker.updateState(OnlineState.UNKNOWN);
-      enableNetwork();
+      restartNetwork();
     }
+  }
+
+  private void restartNetwork() {
+    networkEnabled = false;
+    disableNetworkInternal();
+    onlineStateTracker.updateState(OnlineState.UNKNOWN);
+    enableNetwork();
   }
 
   // Watch Stream
