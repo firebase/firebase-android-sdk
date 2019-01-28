@@ -27,22 +27,23 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
 /**
- * Android implementation of NetworkReachabilityMonitor. Parallel implementations exist for N+ and
+ * Android implementation of ConnectivityMonitor. Parallel implementations exist for N+ and
  * pre-N.
  *
  * <p>Implementation note: Most of the code here was shamelessly stolen from
  * https://github.com/grpc/grpc-java/blob/master/android/src/main/java/io/grpc/android/AndroidChannelBuilder.java
  */
-public final class AndroidNetworkReachabilityMonitor implements NetworkReachabilityMonitor {
+public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
 
   private final Context context;
   @Nullable private final ConnectivityManager connectivityManager;
-  private final List<NetworkReachabilityCallback> callbacks = new ArrayList<>();
+  private final List<Consumer<NetworkStatus>> callbacks = new ArrayList<>();
 
-  public AndroidNetworkReachabilityMonitor(Context context) {
+  public AndroidConnectivityMonitor(Context context) {
     // This notnull restriction could be eliminated... the pre-N method doesn't
     // require a Context, and we could use that even on N+ if necessary.
     hardAssert(context != null, "Context must be non-null");
@@ -54,7 +55,7 @@ public final class AndroidNetworkReachabilityMonitor implements NetworkReachabil
   }
 
   @Override
-  public void onNetworkReachabilityChange(NetworkReachabilityCallback callback) {
+  public void addCallback(Consumer<NetworkStatus> callback) {
     callbacks.add(callback);
   }
 
@@ -80,15 +81,15 @@ public final class AndroidNetworkReachabilityMonitor implements NetworkReachabil
   private class DefaultNetworkCallback extends ConnectivityManager.NetworkCallback {
     @Override
     public void onAvailable(Network network) {
-      for (NetworkReachabilityCallback callback : callbacks) {
-        callback.onChange(Reachability.REACHABLE);
+      for (Consumer<NetworkStatus> callback : callbacks) {
+        callback.accept(NetworkStatus.REACHABLE);
       }
     }
 
     @Override
     public void onLost(Network network) {
-      for (NetworkReachabilityCallback callback : callbacks) {
-        callback.onChange(Reachability.UNREACHABLE);
+      for (Consumer<NetworkStatus> callback : callbacks) {
+        callback.accept(NetworkStatus.UNREACHABLE);
       }
     }
   }
@@ -105,12 +106,12 @@ public final class AndroidNetworkReachabilityMonitor implements NetworkReachabil
       boolean wasConnected = isConnected;
       isConnected = networkInfo != null && networkInfo.isConnected();
       if (isConnected && !wasConnected) {
-        for (NetworkReachabilityCallback callback : callbacks) {
-          callback.onChange(Reachability.REACHABLE);
+        for (Consumer<NetworkStatus> callback : callbacks) {
+          callback.accept(NetworkStatus.REACHABLE);
         }
       } else if (!isConnected && wasConnected) {
-        for (NetworkReachabilityCallback callback : callbacks) {
-          callback.onChange(Reachability.UNREACHABLE);
+        for (Consumer<NetworkStatus> callback : callbacks) {
+          callback.accept(NetworkStatus.UNREACHABLE);
         }
       }
     }

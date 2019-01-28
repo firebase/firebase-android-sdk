@@ -44,9 +44,9 @@ import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
-import com.google.firebase.firestore.remote.AndroidNetworkReachabilityMonitor;
+import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
+import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.Datastore;
-import com.google.firebase.firestore.remote.NetworkReachabilityMonitor;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
@@ -243,10 +243,8 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     }
 
     Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context);
-    NetworkReachabilityMonitor networkReachabilityMonitor =
-        new AndroidNetworkReachabilityMonitor(context);
-    remoteStore =
-        new RemoteStore(this, localStore, datastore, asyncQueue, networkReachabilityMonitor);
+    ConnectivityMonitor connectivityMonitor = new AndroidConnectivityMonitor(context);
+    remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue, connectivityMonitor);
 
     syncEngine = new SyncEngine(localStore, remoteStore, user);
     eventManager = new EventManager(syncEngine);

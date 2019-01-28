@@ -14,19 +14,20 @@
 
 package com.google.firebase.firestore.remote;
 
+import java.util.function.Consumer;
+
 /** Interface for monitoring changes in network connectivity/reachability. */
-public interface NetworkReachabilityMonitor {
-  enum Reachability {
+public interface ConnectivityMonitor {
+  enum NetworkStatus {
     UNREACHABLE,
     REACHABLE,
+    // TODO(rsgowman): REACHABLE_VIA_CELLULAR.
+    // Leaving this off for now, since (a) we don't need it, and (b) it's somewhat messy to
+    // determine, and (c) we need two parallel implementations (for N+ and pre-N).
   };
-
-  interface NetworkReachabilityCallback {
-    void onChange(Reachability networkStatus);
-  }
 
   // TODO(rsgowman): Skipping isNetworkReachable() until we need it.
   // boolean isNetworkReachable();
 
-  void onNetworkReachabilityChange(NetworkReachabilityCallback callback);
+  void addCallback(Consumer<NetworkStatus> callback);
 }

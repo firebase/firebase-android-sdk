@@ -28,7 +28,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.remote.NetworkReachabilityMonitor.Reachability;
+import com.google.firebase.firestore.remote.ConnectivityMonitor.NetworkStatus;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
@@ -148,7 +148,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       LocalStore localStore,
       Datastore datastore,
       AsyncQueue workerQueue,
-      NetworkReachabilityMonitor networkReachabilityMonitor) {
+      ConnectivityMonitor connectivityMonitor) {
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
@@ -204,8 +204,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
               }
             });
 
-    networkReachabilityMonitor.onNetworkReachabilityChange(
-        (Reachability reachability) -> {
+    connectivityMonitor.addCallback(
+        (NetworkStatus networkStatus) -> {
           // If the network has been explicitly disabled, make sure we don't accidentally re-enable
           // it.
           if (canUseNetwork()) {
