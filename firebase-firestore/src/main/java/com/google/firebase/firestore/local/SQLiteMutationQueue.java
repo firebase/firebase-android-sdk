@@ -434,6 +434,9 @@ final class SQLiteMutationQueue implements MutationQueue {
 
       BlobAccumulator accumulator = new BlobAccumulator(bytes);
       while (accumulator.more) {
+        // As we read in chunks the start of the next chunk should be the total accumulated length
+        // plus 1 (since SUBSTR() counts from 1). The second argument is not adjusted because it's
+        // the length of the chunk, not the end index.
         int start = accumulator.numChunks() * BLOB_MAX_INLINE_LENGTH + 1;
 
         db.query("SELECT SUBSTR(mutations, ?, ?) FROM mutations WHERE uid = ? AND batch_id = ?")
