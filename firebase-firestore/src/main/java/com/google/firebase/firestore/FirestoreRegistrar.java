@@ -21,6 +21,8 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.platforminfo.SDKVersionComponentFactory;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,17 +36,12 @@ public class FirestoreRegistrar implements ComponentRegistrar {
   @Override
   @Keep
   public List<Component<?>> getComponents() {
-    return Collections.singletonList(
-        Component.builder(FirestoreMultiDbComponent.class)
-            .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(Context.class))
-            .add(Dependency.optional(InternalAuthProvider.class))
-            .factory(
-                c ->
-                    new FirestoreMultiDbComponent(
-                        c.get(Context.class),
-                        c.get(FirebaseApp.class),
-                        c.get(InternalAuthProvider.class)))
-            .build());
+    return Arrays.asList(Component.builder(FirestoreMultiDbComponent.class)
+        .add(Dependency.required(FirebaseApp.class))
+        .add(Dependency.required(Context.class))
+        .add(Dependency.optional(InternalAuthProvider.class))
+        .factory(c -> new FirestoreMultiDbComponent(c.get(Context.class), c.get(FirebaseApp.class),
+            c.get(InternalAuthProvider.class)))
+        .build(), SDKVersionComponentFactory.createComponent("firebase-firestore", BuildConfig.VERSION_NAME));
   }
 }
