@@ -17,6 +17,7 @@ import os
 
 from . import gradle
 from . import ci_command
+from . import stats
 
 
 @click.argument('task', required=True, nargs=-1)

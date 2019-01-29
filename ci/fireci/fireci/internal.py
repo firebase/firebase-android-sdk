@@ -22,6 +22,7 @@ import os
 import shutil
 
 from . import emulator
+from . import stats
 
 _logger = logging.getLogger('fireci')
 
@@ -104,6 +105,11 @@ _pass_options = click.make_pass_decorator(_CommonOptions, ensure=True)
     default='adb',
     help='Specifies the name/full path to the adb binary.',
 )
+@click.option(
+    '--enable-metrics',
+    is_flag=True,
+    envvar='FIREBASE_ENABLE_METRICS',
+    help='Enables metrics collection for various build stages.')
 @_pass_options
 def main(options, **kwargs):
   """Main command group.
@@ -112,6 +118,8 @@ def main(options, **kwargs):
     """
   for k, v in kwargs.items():
     setattr(options, k, v)
+  if options.enable_metrics:
+    stats.configure()
 
 
 def ci_command(name=None):
@@ -127,18 +135,20 @@ def ci_command(name=None):
     """
 
   def ci_command(f):
+    actual_name = f.__name__ if name is None else name
 
-    @main.command(name=f.__name__ if name is None else name, help=f.__doc__)
+    @main.command(name=actual_name, help=f.__doc__)
     @_pass_options
     @click.pass_context
     def new_func(ctx, options, *args, **kwargs):
-      with _artifact_handler(options.artifact_target_dir,
-                             options.artifact_patterns), _emulator_handler(
-                                 options.with_emulator,
-                                 options.artifact_target_dir,
-                                 name=options.emulator_name,
-                                 emulator_binary=options.emulator_binary,
-                                 adb_binary=options.adb_binary):
+      with stats.measure("cicmd:" + actual_name), _artifact_handler(
+          options.artifact_target_dir,
+          options.artifact_patterns), _emulator_handler(
+              options.with_emulator,
+              options.artifact_target_dir,
+              name=options.emulator_name,
+              emulator_binary=options.emulator_binary,
+              adb_binary=options.adb_binary):
         return ctx.invoke(f, *args, **kwargs)
 
     return functools.update_wrapper(new_func, f)
