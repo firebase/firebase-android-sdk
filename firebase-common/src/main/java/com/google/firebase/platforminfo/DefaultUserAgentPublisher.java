@@ -40,7 +40,6 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
    * computed in advance since the components framework guarantees that we receive all published
    * versions. 2. For our GamesSDKs, the strings are recomputed each time since the registration of
    * the versions happens out of band and we take the optimistic approach of recomputing each time.
-   *
    */
   @Override
   public String getUserAgent() {
@@ -64,9 +63,7 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
     return sb.toString();
   }
 
-  /**
-   * Creates a component to codify a user agent string that captures SDK versions.
-   */
+  /** Creates a component to codify a user agent string that captures SDK versions. */
   public static Component<UserAgentPublisher> component() {
     return Component.builder(UserAgentPublisher.class)
         .add(Dependency.setOf(LibraryVersion.class))

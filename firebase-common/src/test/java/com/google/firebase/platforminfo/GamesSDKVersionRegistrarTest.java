@@ -14,22 +14,23 @@
 
 package com.google.firebase.platforminfo;
 
-import org.junit.Test;
-
 import static com.google.common.truth.Truth.assertThat;
+
+import org.junit.Test;
 
 public class GamesSDKVersionRegistrarTest {
   @Test
-  public void registerVersion_persistsVersion(){
-    GamesSDKVersionRegistrar  gamesSDKVersionRegistrar = new GamesSDKVersionRegistrar();
+  public void registerVersion_persistsVersion() {
+    GamesSDKVersionRegistrar gamesSDKVersionRegistrar = new GamesSDKVersionRegistrar();
     gamesSDKVersionRegistrar.registerVersion("foo", "1.1.1");
 
-    assertThat(gamesSDKVersionRegistrar.getRegisteredVersions()).contains(LibraryVersion.create("foo", "1.1.1"));
+    assertThat(gamesSDKVersionRegistrar.getRegisteredVersions())
+        .contains(LibraryVersion.create("foo", "1.1.1"));
   }
 
   @Test
-  public void getRegisteredVersions_returnsEmptySet_whenNoVersionsAreRegistered(){
-    GamesSDKVersionRegistrar  gamesSDKVersionRegistrar = new GamesSDKVersionRegistrar();
+  public void getRegisteredVersions_returnsEmptySet_whenNoVersionsAreRegistered() {
+    GamesSDKVersionRegistrar gamesSDKVersionRegistrar = new GamesSDKVersionRegistrar();
 
     assertThat(gamesSDKVersionRegistrar.getRegisteredVersions()).isEmpty();
   }

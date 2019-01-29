@@ -23,9 +23,6 @@ import java.util.HashSet;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 public class DefaultUserAgentPublisherTest {
   private Set<LibraryVersion> libraryVersions;
@@ -35,8 +32,8 @@ public class DefaultUserAgentPublisherTest {
   @Before
   public void before() {
     libraryVersions = new HashSet<>();
-    libraryVersions.add(LibraryVersion.create("foo","1"));
-    libraryVersions.add(LibraryVersion.create("bar","2"));
+    libraryVersions.add(LibraryVersion.create("foo", "1"));
+    libraryVersions.add(LibraryVersion.create("bar", "2"));
 
     gamesSDKVersionRegistrar = mock(GamesSDKVersionRegistrar.class);
 
@@ -67,8 +64,8 @@ public class DefaultUserAgentPublisherTest {
       getUserAgent_returnsStringIncludingGamesSDKVersions_whenGamesSDKVersionRegistrarReturnsVersions() {
     String[] expectedUserAgent = {"bar/2", "buzz/2", "fizz/1", "foo/1"};
     HashSet<LibraryVersion> gamesLibraryVersions = new HashSet<>();
-    gamesLibraryVersions.add(LibraryVersion.create("fizz","1"));
-    gamesLibraryVersions.add(LibraryVersion.create("buzz","2"));
+    gamesLibraryVersions.add(LibraryVersion.create("fizz", "1"));
+    gamesLibraryVersions.add(LibraryVersion.create("buzz", "2"));
     when(gamesSDKVersionRegistrar.getRegisteredVersions()).thenReturn(gamesLibraryVersions);
     userAgentPublisher = new DefaultUserAgentPublisher(libraryVersions, gamesSDKVersionRegistrar);
 

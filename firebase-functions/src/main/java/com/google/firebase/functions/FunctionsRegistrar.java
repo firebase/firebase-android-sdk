@@ -22,10 +22,6 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
-<<<<<<< Updated upstream
-=======
-import com.google.firebase.platforminfo.LibraryVersionComponent;
->>>>>>> Stashed changes
 import java.util.Arrays;
 import java.util.List;
 

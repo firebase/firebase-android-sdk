@@ -50,6 +50,6 @@ class TestComponentRegistrar implements ComponentRegistrar {
                 container ->
                     new TestUserAgentDependentComponent(container.get(UserAgentPublisher.class)))
             .build(),
-        LibraryVersionComponent.createComponent(TEST_COMPONENT_NAME, TEST_VERSION));
+        LibraryVersionComponent.create(TEST_COMPONENT_NAME, TEST_VERSION));
   }
 }

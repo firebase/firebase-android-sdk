@@ -23,8 +23,7 @@ import java.util.Set;
  * components framework, we have a mechanism where the versions can be wired as out of band as side
  * effects. See {@link GamesSDKVersionRegistrar#registerVersion(String, String)}
  *
- * <p>Java libraries should use {@link LibraryVersionComponent#createComponent(String, String)}
- * instead.
+ * <p>Java libraries should use {@link LibraryVersionComponent#create(String, String)} instead.
  */
 public class GamesSDKVersionRegistrar {
   private final Set<LibraryVersion> infos = new HashSet<>();
@@ -43,18 +42,14 @@ public class GamesSDKVersionRegistrar {
     }
   }
 
-  /**
-   * Returns registered versions
-   */
+  /** Returns registered versions */
   Set<LibraryVersion> getRegisteredVersions() {
     synchronized (infos) {
       return Collections.unmodifiableSet(infos);
     }
   }
 
-  /**
-   * Returns an instance of {@link GamesSDKVersionRegistrar}
-   */
+  /** Returns an instance of {@link GamesSDKVersionRegistrar} */
   public static GamesSDKVersionRegistrar getInstance() {
     if (instance == null) {
       synchronized (GamesSDKVersionRegistrar.class) {

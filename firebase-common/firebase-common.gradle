@@ -28,7 +28,6 @@ android {
       versionName version
       multiDexEnabled true
       testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-      versionName project.version
     }
     sourceSets {
         androidTest {

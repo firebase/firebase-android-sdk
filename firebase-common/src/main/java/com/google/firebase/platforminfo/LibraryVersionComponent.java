@@ -20,11 +20,8 @@ import com.google.firebase.components.Component;
 public class LibraryVersionComponent {
   private LibraryVersionComponent() {}
 
-  /**
-   * Creates a component that publishes SDK versions
-   */
-  public static Component<?> createComponent(String sdkName, String version) {
-    return Component.intoSet(
-        LibraryVersion.create(sdkName, version), LibraryVersion.class);
+  /** Creates a component that publishes SDK versions */
+  public static Component<?> create(String sdkName, String version) {
+    return Component.intoSet(LibraryVersion.create(sdkName, version), LibraryVersion.class);
   }
 }

@@ -21,12 +21,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
-<<<<<<< Updated upstream
 import java.util.Collections;
-=======
-import com.google.firebase.platforminfo.LibraryVersionComponent;
-import java.util.Arrays;
->>>>>>> Stashed changes
 import java.util.List;
 
 /**
@@ -51,6 +46,5 @@ public class FirestoreRegistrar implements ComponentRegistrar {
                         c.get(FirebaseApp.class),
                         c.get(InternalAuthProvider.class)))
             .build());
-
   }
 }

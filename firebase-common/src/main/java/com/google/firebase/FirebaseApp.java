@@ -541,7 +541,7 @@ public class FirebaseApp {
             Component.of(applicationContext, Context.class),
             Component.of(this, FirebaseApp.class),
             Component.of(options, FirebaseOptions.class),
-            LibraryVersionComponent.createComponent(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
+            LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
             DefaultUserAgentPublisher.component());
     publisher = componentRuntime.get(Publisher.class);
   }
