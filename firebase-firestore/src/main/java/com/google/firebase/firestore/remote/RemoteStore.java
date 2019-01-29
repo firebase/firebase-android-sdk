@@ -273,6 +273,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     cleanUpWatchStreamState();
   }
 
+  private void restartNetwork() {
+    networkEnabled = false;
+    disableNetworkInternal();
+    onlineStateTracker.updateState(OnlineState.UNKNOWN);
+    enableNetwork();
+  }
+
   /**
    * Starts up the remote store, creating streams, restoring state from LocalStore, etc. This should
    * called before using any other API endpoints in this class.
@@ -312,13 +319,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       Logger.debug(LOG_TAG, "Restarting streams for new credential.");
       restartNetwork();
     }
-  }
-
-  private void restartNetwork() {
-    networkEnabled = false;
-    disableNetworkInternal();
-    onlineStateTracker.updateState(OnlineState.UNKNOWN);
-    enableNetwork();
   }
 
   // Watch Stream
