@@ -1,8 +1,8 @@
 # Unreleased
 
 # 18.0.1
-- [changed] Firestore streams now recovers more quickly from bad network states
-  (#215).
+- [changed] Firestore now recovers more quickly from long periods without
+  network access (#217).
 
 # 18.0.0
 - [changed] The `timestampsInSnapshotsEnabled` setting is now enabled by
