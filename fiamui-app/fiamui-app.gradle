@@ -15,12 +15,12 @@
 apply plugin: "com.android.application"
 
 android {
-  compileSdkVersion 27
+  compileSdkVersion project.targetSdkVersion
 
   defaultConfig {
     applicationId "com.example.firebase.fiamui"
     minSdkVersion 16
-    targetSdkVersion 27
+    targetSdkVersion project.targetSdkVersion
     versionCode 1
     versionName "1.0"
     testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"

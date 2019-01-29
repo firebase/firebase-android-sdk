@@ -15,8 +15,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.google.protobuf'
 
-def androidVersion = 28
-
 protobuf {
     // Configure the protoc executable
     protoc {
@@ -53,10 +51,10 @@ android {
         timeOutInMs 60 * 1000
     }
 
-    compileSdkVersion androidVersion
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        targetSdkVersion androidVersion
-        minSdkVersion 14
+        targetSdkVersion project.targetSdkVersion
+        minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
