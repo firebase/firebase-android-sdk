@@ -1,4 +1,6 @@
 # Unreleased
+- [fixed] Fixed an issue where Firestore would crash if handling write batches
+  larger than 2 MB in size (#208).
 
 # 18.0.0
 - [changed] The `timestampsInSnapshotsEnabled` setting is now enabled by
