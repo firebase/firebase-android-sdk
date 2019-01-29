@@ -73,22 +73,24 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && connectivityManager != null) {
       final DefaultNetworkCallback defaultNetworkCallback = new DefaultNetworkCallback();
       connectivityManager.registerDefaultNetworkCallback(defaultNetworkCallback);
-      unregisterRunnable = new Runnable() {
-        @Override
-        public void run() {
-          connectivityManager.unregisterNetworkCallback(defaultNetworkCallback);
-        }
-      };
+      unregisterRunnable =
+          new Runnable() {
+            @Override
+            public void run() {
+              connectivityManager.unregisterNetworkCallback(defaultNetworkCallback);
+            }
+          };
     } else {
       NetworkReceiver networkReceiver = new NetworkReceiver();
       IntentFilter networkIntentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
       context.registerReceiver(networkReceiver, networkIntentFilter);
-      unregisterRunnable = new Runnable() {
-        @Override
-        public void run() {
-          context.unregisterReceiver(networkReceiver);
-        }
-      };
+      unregisterRunnable =
+          new Runnable() {
+            @Override
+            public void run() {
+              context.unregisterReceiver(networkReceiver);
+            }
+          };
     }
   }
 

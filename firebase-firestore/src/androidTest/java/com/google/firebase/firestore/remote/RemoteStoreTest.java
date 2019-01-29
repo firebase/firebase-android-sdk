@@ -99,8 +99,7 @@ public class RemoteStoreTest {
     }
 
     @Override
-    public void shutdown() {
-    }
+    public void shutdown() {}
 
     public void goOffline() {
       if (callback != null) {
