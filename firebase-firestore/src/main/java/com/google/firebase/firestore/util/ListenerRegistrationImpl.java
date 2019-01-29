@@ -78,6 +78,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
     CallbackList callbacks = new CallbackList();
 
     @Override
+    @SuppressWarnings("SynchronizeOnNonFinalField")
     public void onStop() {
       super.onStop();
 
@@ -100,6 +101,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
     CallbackList callbacks = new CallbackList();
 
     @Override
+    @SuppressWarnings("SynchronizeOnNonFinalField")
     public void onStop() {
       super.onStop();
 
@@ -116,6 +118,9 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   @Nullable
   private static <T> T castFragment(Class<T> fragmentClass, @Nullable Object fragment, String tag) {
     try {
+      if (fragment == null) {
+        return null;
+      }
       return fragmentClass.cast(fragment);
     } catch (ClassCastException e) {
       throw new IllegalStateException(
@@ -132,8 +137,8 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   private static final String FRAGMENT_TAG = "FirestoreOnStopObserverFragment";
 
   /**
-   * Implementation for non-FragmentActivity Activity's. Unfortunatly, all Fragment related
-   * classes/methods with nonFragmentActivityActivity's are deprecated, implying that almost
+   * Implementation for non-FragmentActivity Activities. Unfortunately, all Fragment related
+   * classes/methods with nonFragmentActivityActivities are deprecated, implying that almost
    * everything in this function is deprecated.
    */
   @SuppressWarnings("deprecation")
