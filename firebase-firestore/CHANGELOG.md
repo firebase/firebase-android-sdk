@@ -1,8 +1,8 @@
 # Unreleased
-- [fixed] Fixed an issue where Firestore would crash if handling write batches
-  larger than 2 MB in size (#208).
 
 # 18.0.1
+- [fixed] Fixed an issue where Firestore would crash if handling write batches
+  larger than 2 MB in size (#208).
 - [changed] Firestore now recovers more quickly from long periods without
   network access (#217).
 
