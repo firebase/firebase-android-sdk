@@ -17,7 +17,7 @@ package com.google.firebase.components;
 import android.content.Context;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.platforminfo.SDKVersionComponentFactory;
+import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.Arrays;
 import java.util.List;
@@ -50,6 +50,6 @@ class TestComponentRegistrar implements ComponentRegistrar {
                 container ->
                     new TestUserAgentDependentComponent(container.get(UserAgentPublisher.class)))
             .build(),
-        SDKVersionComponentFactory.createComponent(TEST_COMPONENT_NAME, TEST_VERSION));
+        LibraryVersionComponent.createComponent(TEST_COMPONENT_NAME, TEST_VERSION));
   }
 }

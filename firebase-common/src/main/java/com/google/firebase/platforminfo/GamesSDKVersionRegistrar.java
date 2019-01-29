@@ -23,35 +23,30 @@ import java.util.Set;
  * components framework, we have a mechanism where the versions can be wired as out of band as side
  * effects. See {@link GamesSDKVersionRegistrar#registerVersion(String, String)}
  *
- * <p>Java libraries should use {@link SDKVersionComponentFactory#createComponent(String, String)}
+ * <p>Java libraries should use {@link LibraryVersionComponent#createComponent(String, String)}
  * instead.
  */
 public class GamesSDKVersionRegistrar {
-  private final Set<SDKVersion> infos = new HashSet<>();
+  private final Set<LibraryVersion> infos = new HashSet<>();
   private static volatile GamesSDKVersionRegistrar instance;
 
-  private GamesSDKVersionRegistrar() {}
+  GamesSDKVersionRegistrar() {}
 
   /**
    * Thread safe method to publish versions outside of the components mechanics.
    *
    * <p>It is the responsibility of the caller to register the version at app launch.
-   *
-   * @param sdkName
-   * @param version
    */
   public void registerVersion(String sdkName, String version) {
     synchronized (infos) {
-      infos.add(SDKVersion.builder().setSDKName(sdkName).setVersion(version).build());
+      infos.add(LibraryVersion.create(sdkName, version));
     }
   }
 
   /**
    * Returns registered versions
-   *
-   * @return
    */
-  Set<SDKVersion> getRegisteredVersions() {
+  Set<LibraryVersion> getRegisteredVersions() {
     synchronized (infos) {
       return Collections.unmodifiableSet(infos);
     }
@@ -59,8 +54,6 @@ public class GamesSDKVersionRegistrar {
 
   /**
    * Returns an instance of {@link GamesSDKVersionRegistrar}
-   *
-   * @return
    */
   public static GamesSDKVersionRegistrar getInstance() {
     if (instance == null) {

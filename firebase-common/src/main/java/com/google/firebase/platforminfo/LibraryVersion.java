@@ -12,8 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.components;
+package com.google.firebase.platforminfo;
 
-class VersionPublishingComponent {
-  VersionPublishingComponent() {}
+import com.google.auto.value.AutoValue;
+import javax.annotation.Nonnull;
+
+/** The class is not public to ensure other components cannot depend on it. */
+@AutoValue
+abstract class LibraryVersion {
+  static LibraryVersion create(String name, String version) {
+    return new AutoValue_LibraryVersion(name, version);
+  }
+
+  @Nonnull
+  public abstract String getLibraryName();
+
+  @Nonnull
+  public abstract String getVersion();
 }

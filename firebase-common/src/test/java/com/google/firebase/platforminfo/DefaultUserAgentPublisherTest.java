@@ -27,24 +27,22 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(manifest = "NoAutoDataCollectionAndroidManifest.xml")
 public class DefaultUserAgentPublisherTest {
-  Set<SDKVersion> sdkVersions;
-  DefaultUserAgentPublisher userAgentPublisher;
-  GamesSDKVersionRegistrar gamesSDKVersionRegistrar;
+  private Set<LibraryVersion> libraryVersions;
+  private DefaultUserAgentPublisher userAgentPublisher;
+  private GamesSDKVersionRegistrar gamesSDKVersionRegistrar;
 
   @Before
   public void before() {
-    sdkVersions = new HashSet<>();
-    sdkVersions.add(SDKVersion.builder().setSDKName("foo").setVersion("1").build());
-    sdkVersions.add(SDKVersion.builder().setSDKName("bar").setVersion("2").build());
+    libraryVersions = new HashSet<>();
+    libraryVersions.add(LibraryVersion.create("foo","1"));
+    libraryVersions.add(LibraryVersion.create("bar","2"));
 
     gamesSDKVersionRegistrar = mock(GamesSDKVersionRegistrar.class);
 
     when(gamesSDKVersionRegistrar.getRegisteredVersions()).thenReturn(new HashSet<>());
 
-    userAgentPublisher = new DefaultUserAgentPublisher(sdkVersions, gamesSDKVersionRegistrar);
+    userAgentPublisher = new DefaultUserAgentPublisher(libraryVersions, gamesSDKVersionRegistrar);
   }
 
   @Test
@@ -68,11 +66,11 @@ public class DefaultUserAgentPublisherTest {
   public void
       getUserAgent_returnsStringIncludingGamesSDKVersions_whenGamesSDKVersionRegistrarReturnsVersions() {
     String[] expectedUserAgent = {"bar/2", "buzz/2", "fizz/1", "foo/1"};
-    HashSet<SDKVersion> gamesSDKVersions = new HashSet<>();
-    gamesSDKVersions.add(SDKVersion.builder().setSDKName("fizz").setVersion("1").build());
-    gamesSDKVersions.add(SDKVersion.builder().setSDKName("buzz").setVersion("2").build());
-    when(gamesSDKVersionRegistrar.getRegisteredVersions()).thenReturn(gamesSDKVersions);
-    userAgentPublisher = new DefaultUserAgentPublisher(sdkVersions, gamesSDKVersionRegistrar);
+    HashSet<LibraryVersion> gamesLibraryVersions = new HashSet<>();
+    gamesLibraryVersions.add(LibraryVersion.create("fizz","1"));
+    gamesLibraryVersions.add(LibraryVersion.create("buzz","2"));
+    when(gamesSDKVersionRegistrar.getRegisteredVersions()).thenReturn(gamesLibraryVersions);
+    userAgentPublisher = new DefaultUserAgentPublisher(libraryVersions, gamesSDKVersionRegistrar);
 
     String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
     Arrays.sort(actualUserAgent);

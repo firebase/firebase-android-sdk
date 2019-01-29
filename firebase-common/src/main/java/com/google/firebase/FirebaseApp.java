@@ -56,7 +56,7 @@ import com.google.firebase.internal.DefaultIdTokenListenersCountChangedListener;
 import com.google.firebase.internal.InternalTokenProvider;
 import com.google.firebase.internal.InternalTokenResult;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
-import com.google.firebase.platforminfo.SDKVersionComponentFactory;
+import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -153,7 +153,7 @@ public class FirebaseApp {
   @GuardedBy("LOCK")
   static final Map<String, FirebaseApp> INSTANCES = new ArrayMap<>();
 
-  public static final String FIREBASE_COMMON = "firebase-common";
+  private static final String FIREBASE_COMMON = "firebase-common";
 
   private final Context applicationContext;
   private final String name;
@@ -541,7 +541,7 @@ public class FirebaseApp {
             Component.of(applicationContext, Context.class),
             Component.of(this, FirebaseApp.class),
             Component.of(options, FirebaseOptions.class),
-            SDKVersionComponentFactory.createComponent(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
+            LibraryVersionComponent.createComponent(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
             DefaultUserAgentPublisher.component());
     publisher = componentRuntime.get(Publisher.class);
   }

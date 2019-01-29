@@ -30,8 +30,8 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
   private final GamesSDKVersionRegistrar gamesSDKRegistrar;
 
   DefaultUserAgentPublisher(
-      Set<SDKVersion> SDKVersions, GamesSDKVersionRegistrar gamesSDKRegistrar) {
-    this.javaSDKVersionUserAgent = toUserAgent(SDKVersions);
+      Set<LibraryVersion> LibraryVersions, GamesSDKVersionRegistrar gamesSDKRegistrar) {
+    this.javaSDKVersionUserAgent = toUserAgent(LibraryVersions);
     this.gamesSDKRegistrar = gamesSDKRegistrar;
   }
 
@@ -41,7 +41,6 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
    * versions. 2. For our GamesSDKs, the strings are recomputed each time since the registration of
    * the versions happens out of band and we take the optimistic approach of recomputing each time.
    *
-   * @return
    */
   @Override
   public String getUserAgent() {
@@ -52,12 +51,12 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
     return javaSDKVersionUserAgent + ' ' + toUserAgent(gamesSDKRegistrar.getRegisteredVersions());
   }
 
-  private static String toUserAgent(Set<SDKVersion> tokens) {
+  private static String toUserAgent(Set<LibraryVersion> tokens) {
     StringBuilder sb = new StringBuilder();
-    Iterator<SDKVersion> iterator = tokens.iterator();
+    Iterator<LibraryVersion> iterator = tokens.iterator();
     while (iterator.hasNext()) {
-      SDKVersion token = iterator.next();
-      sb.append(token.getSDKName()).append('/').append(token.getVersion());
+      LibraryVersion token = iterator.next();
+      sb.append(token.getLibraryName()).append('/').append(token.getVersion());
       if (iterator.hasNext()) {
         sb.append(' ');
       }
@@ -67,16 +66,14 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
 
   /**
    * Creates a component to codify a user agent string that captures SDK versions.
-   *
-   * @return
    */
   public static Component<UserAgentPublisher> component() {
     return Component.builder(UserAgentPublisher.class)
-        .add(Dependency.setOf(SDKVersion.class))
+        .add(Dependency.setOf(LibraryVersion.class))
         .factory(
             c ->
                 new DefaultUserAgentPublisher(
-                    c.setOf(SDKVersion.class), GamesSDKVersionRegistrar.getInstance()))
+                    c.setOf(LibraryVersion.class), GamesSDKVersionRegistrar.getInstance()))
         .build();
   }
 }
