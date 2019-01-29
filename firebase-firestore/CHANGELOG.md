@@ -1,5 +1,8 @@
 # Unreleased
 
+# 18.0.1
+- [changed] Firestore streams now recovers more quickly from bad network states.
+
 # 18.0.0
 - [changed] The `timestampsInSnapshotsEnabled` setting is now enabled by
   default. Timestamp fields that read from a `DocumentSnapshot` are now
