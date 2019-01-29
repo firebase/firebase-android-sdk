@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.OnlineState;
+import com.google.firebase.firestore.local.LocalStore;
+import com.google.firebase.firestore.local.MemoryPersistence;
+import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
@@ -42,7 +46,7 @@ public class RemoteStoreTest {
             null,
             InstrumentationRegistry.getContext());
     Semaphore networkChangeSemaphore = new Semaphore(0);
-    RemoteStore.RemoteStoreCallback callbacks =
+    RemoteStore.RemoteStoreCallback callback =
         new RemoteStore.RemoteStoreCallback() {
           public void handleRemoteEvent(RemoteEvent remoteEvent) {}
 
@@ -61,15 +65,36 @@ public class RemoteStoreTest {
           }
         };
 
-    waitForIdle(testQueue);
     FakeConnectivityMonitor connectivityMonitor = new FakeConnectivityMonitor();
-    RemoteStore remoteStore = new RemoteStore(callback, null, datastore, testQueue, connectivityMonitor);
+    Persistence persistence = MemoryPersistence.createEagerGcMemoryPersistence();
+    persistence.start();
+    LocalStore localStore = new LocalStore(persistence, User.UNAUTHENTICATED);
+    RemoteStore remoteStore =
+        new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
 
-    connectivityMonitor.goOffline();
+    waitFor(testQueue.enqueue(() -> remoteStore.forceEnableNetwork()));
+    drain(testQueue);
+    networkChangeSemaphore.drainPermits();
+
+    waitFor(
+        testQueue.enqueue(
+            () -> {
+              connectivityMonitor.goOffline();
+            }));
+    waitFor(networkChangeSemaphore);
+    drain(testQueue);
+
+    waitFor(testQueue.enqueue(() -> remoteStore.forceEnableNetwork()));
+    networkChangeSemaphore.drainPermits();
+    waitFor(
+        testQueue.enqueue(
+            () -> {
+              connectivityMonitor.goOnline();
+            }));
     waitFor(networkChangeSemaphore);
   }
 
-  private void waitForIdle(AsyncQueue testQueue) {
+  private void drain(AsyncQueue testQueue) {
     waitFor(testQueue.enqueue(() -> {}));
   }
 

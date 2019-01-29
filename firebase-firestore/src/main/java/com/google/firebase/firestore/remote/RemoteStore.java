@@ -17,6 +17,7 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Transaction;
@@ -232,6 +233,17 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       // This will start the write stream if necessary.
       fillWritePipeline();
     }
+  }
+
+  /**
+   * Re-enables the network, and forces the state to ONLINE. Without this, the state will be
+   * UNKNOWN. If the OnlineStateTracker updates the state from UNKNOWN to UNKNOWN, then it doesn't
+   * trigger the callback.
+   */
+  @VisibleForTesting
+  void forceEnableNetwork() {
+    enableNetwork();
+    onlineStateTracker.updateState(OnlineState.ONLINE);
   }
 
   /** Temporarily disables the network. The network can be re-enabled using enableNetwork(). */

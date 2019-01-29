@@ -56,10 +56,10 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.remote.AndroidNetworkReachabilityMonitor;
+import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
+import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.ExistenceFilter;
 import com.google.firebase.firestore.remote.MockDatastore;
-import com.google.firebase.firestore.remote.NetworkReachabilityMonitor;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.RemoteStore.RemoteStoreCallback;
@@ -268,9 +268,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     // Set up the sync engine and various stores.
     datastore = new MockDatastore(queue, RuntimeEnvironment.application);
 
-    NetworkReachabilityMonitor networkReachabilityMonitor =
-        new AndroidNetworkReachabilityMonitor(RuntimeEnvironment.application);
-    remoteStore = new RemoteStore(this, localStore, datastore, queue, networkReachabilityMonitor);
+    ConnectivityMonitor connectivityMonitor =
+        new AndroidConnectivityMonitor(RuntimeEnvironment.application);
+    remoteStore = new RemoteStore(this, localStore, datastore, queue, connectivityMonitor);
     syncEngine = new SyncEngine(localStore, remoteStore, currentUser);
     eventManager = new EventManager(syncEngine);
     localStore.start();
