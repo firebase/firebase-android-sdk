@@ -25,11 +25,11 @@ import static com.google.firebase.firestore.testutil.TestUtil.targetChange;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.TestUtil.TestTargetMetadataProvider;

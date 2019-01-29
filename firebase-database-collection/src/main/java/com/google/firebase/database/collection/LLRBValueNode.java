@@ -67,9 +67,9 @@ public abstract class LLRBValueNode<K, V> implements LLRBNode<K, V> {
     LLRBNode<K, V> newLeft = left == null ? this.left : left;
     LLRBNode<K, V> newRight = right == null ? this.right : right;
     if (color == Color.RED) {
-      return new LLRBRedValueNode<K, V>(newKey, newValue, newLeft, newRight);
+      return new LLRBRedValueNode<>(newKey, newValue, newLeft, newRight);
     } else {
-      return new LLRBBlackValueNode<K, V>(newKey, newValue, newLeft, newRight);
+      return new LLRBBlackValueNode<>(newKey, newValue, newLeft, newRight);
     }
   }
 
@@ -221,7 +221,7 @@ public abstract class LLRBValueNode<K, V> implements LLRBNode<K, V> {
     if (n.right.isRed() && !n.left.isRed()) {
       n = n.rotateLeft();
     }
-    if (n.left.isRed() && ((LLRBValueNode<K, V>) (n.left)).left.isRed()) {
+    if (n.left.isRed() && ((LLRBValueNode<K, V>) n.left).left.isRed()) {
       n = n.rotateRight();
     }
     if (n.left.isRed() && n.right.isRed()) {
@@ -232,13 +232,13 @@ public abstract class LLRBValueNode<K, V> implements LLRBNode<K, V> {
 
   private LLRBValueNode<K, V> rotateLeft() {
     LLRBValueNode<K, V> newLeft =
-        this.copy(null, null, Color.RED, null, ((LLRBValueNode<K, V>) (this.right)).left);
+        this.copy(null, null, Color.RED, null, ((LLRBValueNode<K, V>) this.right).left);
     return (LLRBValueNode<K, V>) this.right.copy(null, null, this.getColor(), newLeft, null);
   }
 
   private LLRBValueNode<K, V> rotateRight() {
     LLRBValueNode<K, V> newRight =
-        this.copy(null, null, Color.RED, ((LLRBValueNode<K, V>) (this.left)).right, null);
+        this.copy(null, null, Color.RED, ((LLRBValueNode<K, V>) this.left).right, null);
     return (LLRBValueNode<K, V>) this.left.copy(null, null, this.getColor(), null, newRight);
   }
 

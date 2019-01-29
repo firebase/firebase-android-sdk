@@ -291,7 +291,7 @@ public class SQLiteSchemaTest {
               String path = row.getString(0);
               long sequenceNumber = row.getLong(1);
 
-              int docNum = Integer.parseInt(path.split("_")[1]);
+              int docNum = Integer.parseInt(path.split("_", -1)[1]);
               // The even documents were missing sequence numbers, they should now be filled in
               // to have the new sequence number. The odd documents should have their
               // sequence number unchanged, and so be the old value.

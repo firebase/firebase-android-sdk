@@ -41,7 +41,7 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @SuppressWarnings({"unused", "WeakerAccess", "SpellCheckingInspection"})
 public class MapperTest {
-  private static final double EPSILON = 0.00001f;
+  private static final double EPSILON = 0.0003;
 
   private static class StringBean {
     private String value;
