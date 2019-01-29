@@ -207,13 +207,16 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     connectivityMonitor.addCallback(
         (NetworkStatus networkStatus) -> {
-          // If the network has been explicitly disabled, make sure we don't accidentally re-enable
-          // it.
-          if (canUseNetwork()) {
-            // Tear down and re-create our network streams. This will ensure the backoffs are reset.
-            Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
-            restartNetwork();
-          }
+          workerQueue.enqueueAndForget(() -> {
+            // If the network has been explicitly disabled, make sure we don't accidentally
+            // re-enable it.
+            if (canUseNetwork()) {
+              // Tear down and re-create our network streams. This will ensure the backoffs are
+              // reset.
+              Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
+              restartNetwork();
+            }
+          });
         });
   }
 

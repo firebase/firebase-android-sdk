@@ -76,21 +76,13 @@ public class RemoteStoreTest {
     drain(testQueue);
     networkChangeSemaphore.drainPermits();
 
-    waitFor(
-        testQueue.enqueue(
-            () -> {
-              connectivityMonitor.goOffline();
-            }));
+    connectivityMonitor.goOffline();
     waitFor(networkChangeSemaphore);
     drain(testQueue);
 
     waitFor(testQueue.enqueue(() -> remoteStore.forceEnableNetwork()));
     networkChangeSemaphore.drainPermits();
-    waitFor(
-        testQueue.enqueue(
-            () -> {
-              connectivityMonitor.goOnline();
-            }));
+    connectivityMonitor.goOnline();
     waitFor(networkChangeSemaphore);
   }
 
