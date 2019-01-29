@@ -80,20 +80,13 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
   private class DefaultNetworkCallback extends ConnectivityManager.NetworkCallback {
     @Override
     public void onAvailable(Network network) {
-      android.util.Log.e("RSG", "ConnectivityManager.NetworkCallback.onAvailable");
       for (Consumer<NetworkStatus> callback : callbacks) {
         callback.accept(NetworkStatus.REACHABLE);
       }
     }
 
     @Override
-    public void onCapabilitiesChanged(Network network, android.net.NetworkCapabilities networkCapabilities) {
-      android.util.Log.e("RSG", "ConnectivityManager.NetworkCallback.onCapabilitiesChanged");
-    }
-
-    @Override
     public void onLost(Network network) {
-      android.util.Log.e("RSG", "ConnectivityManager.NetworkCallback.onLost");
       for (Consumer<NetworkStatus> callback : callbacks) {
         callback.accept(NetworkStatus.UNREACHABLE);
       }
