@@ -30,4 +30,10 @@ public interface ConnectivityMonitor {
   // boolean isNetworkReachable();
 
   void addCallback(Consumer<NetworkStatus> callback);
+
+  /**
+   * Stops monitoring connectivity. After this call completes, no further callbacks will be
+   * triggered. After shutdown() is called, no further calls are allowed on this instance.
+   */
+  void shutdown();
 }

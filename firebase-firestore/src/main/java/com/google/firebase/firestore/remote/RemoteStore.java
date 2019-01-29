@@ -109,6 +109,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final RemoteStoreCallback remoteStoreCallback;
   private final LocalStore localStore;
   private final Datastore datastore;
+  private final ConnectivityMonitor connectivityMonitor;
 
   /**
    * A mapping of watched targets that the client cares about tracking and the user has explicitly
@@ -153,6 +154,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
+    this.connectivityMonitor = connectivityMonitor;
 
     listenTargets = new HashMap<>();
     writePipeline = new ArrayDeque<>();
@@ -286,6 +288,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    */
   public void shutdown() {
     Logger.debug(LOG_TAG, "Shutting down");
+    connectivityMonitor.shutdown();
     networkEnabled = false;
     this.disableNetworkInternal();
     datastore.shutdown();

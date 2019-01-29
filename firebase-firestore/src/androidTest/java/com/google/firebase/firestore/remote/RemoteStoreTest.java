@@ -93,8 +93,13 @@ public class RemoteStoreTest {
   class FakeConnectivityMonitor implements ConnectivityMonitor {
     private Consumer<NetworkStatus> callback = null;
 
+    @Override
     public void addCallback(Consumer<NetworkStatus> callback) {
       this.callback = callback;
+    }
+
+    @Override
+    public void shutdown() {
     }
 
     public void goOffline() {

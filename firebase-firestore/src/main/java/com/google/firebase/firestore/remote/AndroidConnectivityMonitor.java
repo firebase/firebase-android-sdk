@@ -40,6 +40,7 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
 
   private final Context context;
   @Nullable private final ConnectivityManager connectivityManager;
+  @Nullable private Runnable unregisterRunnable;
   private final List<Consumer<NetworkStatus>> callbacks = new ArrayList<>();
 
   public AndroidConnectivityMonitor(Context context) {
@@ -58,21 +59,37 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
     callbacks.add(callback);
   }
 
+  @Override
+  public void shutdown() {
+    if (unregisterRunnable != null) {
+      unregisterRunnable.run();
+      unregisterRunnable = null;
+    }
+  }
+
   private void configureNetworkMonitoring() {
     // Android N added the registerDefaultNetworkCallback API to listen to changes in the device's
     // default network. For earlier Android API levels, use the BroadcastReceiver API.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && connectivityManager != null) {
-      DefaultNetworkCallback defaultNetworkCallback = new DefaultNetworkCallback();
+      final DefaultNetworkCallback defaultNetworkCallback = new DefaultNetworkCallback();
       connectivityManager.registerDefaultNetworkCallback(defaultNetworkCallback);
+      unregisterRunnable = new Runnable() {
+        @Override
+        public void run() {
+          connectivityManager.unregisterNetworkCallback(defaultNetworkCallback);
+        }
+      };
     } else {
       NetworkReceiver networkReceiver = new NetworkReceiver();
       IntentFilter networkIntentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
       context.registerReceiver(networkReceiver, networkIntentFilter);
+      unregisterRunnable = new Runnable() {
+        @Override
+        public void run() {
+          context.unregisterReceiver(networkReceiver);
+        }
+      };
     }
-
-    // TODO(rsgowman): We should handle unregistering the listener (via
-    // ConnectivityManager.unregisterNetworkCallback() or Context.unregisterReciver()). But we
-    // don't support tearing down firestore itself, so it would never be called.
   }
 
   /** Respond to changes in the default network. Only used on API levels 24+. */
