@@ -18,20 +18,20 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
-public class GamesSDKVersionRegistrarTest {
+public class OutOfBandVersionRegistrarTest {
   @Test
   public void registerVersion_persistsVersion() {
-    GamesSDKVersionRegistrar gamesSDKVersionRegistrar = new GamesSDKVersionRegistrar();
-    gamesSDKVersionRegistrar.registerVersion("foo", "1.1.1");
+    OutOfBandVersionRegistrar outOfBandVersionRegistrar = new OutOfBandVersionRegistrar();
+    outOfBandVersionRegistrar.registerVersion("foo", "1.1.1");
 
-    assertThat(gamesSDKVersionRegistrar.getRegisteredVersions())
+    assertThat(outOfBandVersionRegistrar.getRegisteredVersions())
         .contains(LibraryVersion.create("foo", "1.1.1"));
   }
 
   @Test
   public void getRegisteredVersions_returnsEmptySet_whenNoVersionsAreRegistered() {
-    GamesSDKVersionRegistrar gamesSDKVersionRegistrar = new GamesSDKVersionRegistrar();
+    OutOfBandVersionRegistrar outOfBandVersionRegistrar = new OutOfBandVersionRegistrar();
 
-    assertThat(gamesSDKVersionRegistrar.getRegisteredVersions()).isEmpty();
+    assertThat(outOfBandVersionRegistrar.getRegisteredVersions()).isEmpty();
   }
 }

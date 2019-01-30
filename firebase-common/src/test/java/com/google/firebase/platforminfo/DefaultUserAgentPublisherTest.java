@@ -27,7 +27,7 @@ import org.junit.Test;
 public class DefaultUserAgentPublisherTest {
   private Set<LibraryVersion> libraryVersions;
   private DefaultUserAgentPublisher userAgentPublisher;
-  private GamesSDKVersionRegistrar gamesSDKVersionRegistrar;
+  private OutOfBandVersionRegistrar outOfBandVersionRegistrar;
 
   @Before
   public void before() {
@@ -35,11 +35,11 @@ public class DefaultUserAgentPublisherTest {
     libraryVersions.add(LibraryVersion.create("foo", "1"));
     libraryVersions.add(LibraryVersion.create("bar", "2"));
 
-    gamesSDKVersionRegistrar = mock(GamesSDKVersionRegistrar.class);
+    outOfBandVersionRegistrar = mock(OutOfBandVersionRegistrar.class);
 
-    when(gamesSDKVersionRegistrar.getRegisteredVersions()).thenReturn(new HashSet<>());
+    when(outOfBandVersionRegistrar.getRegisteredVersions()).thenReturn(new HashSet<>());
 
-    userAgentPublisher = new DefaultUserAgentPublisher(libraryVersions, gamesSDKVersionRegistrar);
+    userAgentPublisher = new DefaultUserAgentPublisher(libraryVersions, outOfBandVersionRegistrar);
   }
 
   @Test
@@ -54,7 +54,7 @@ public class DefaultUserAgentPublisherTest {
 
   @Test
   public void getUserAgent_returnsEmptyString_whenVersionSetIsEmpty() {
-    userAgentPublisher = new DefaultUserAgentPublisher(new HashSet<>(), gamesSDKVersionRegistrar);
+    userAgentPublisher = new DefaultUserAgentPublisher(new HashSet<>(), outOfBandVersionRegistrar);
 
     assertThat(userAgentPublisher.getUserAgent()).isEqualTo("");
   }
@@ -66,8 +66,8 @@ public class DefaultUserAgentPublisherTest {
     HashSet<LibraryVersion> gamesLibraryVersions = new HashSet<>();
     gamesLibraryVersions.add(LibraryVersion.create("fizz", "1"));
     gamesLibraryVersions.add(LibraryVersion.create("buzz", "2"));
-    when(gamesSDKVersionRegistrar.getRegisteredVersions()).thenReturn(gamesLibraryVersions);
-    userAgentPublisher = new DefaultUserAgentPublisher(libraryVersions, gamesSDKVersionRegistrar);
+    when(outOfBandVersionRegistrar.getRegisteredVersions()).thenReturn(gamesLibraryVersions);
+    userAgentPublisher = new DefaultUserAgentPublisher(libraryVersions, outOfBandVersionRegistrar);
 
     String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
     Arrays.sort(actualUserAgent);
