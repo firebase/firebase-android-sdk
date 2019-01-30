@@ -18,20 +18,22 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
-public class OutOfBandVersionRegistrarTest {
+public class OutOfBandLibraryVersionRegistrarTest {
   @Test
   public void registerVersion_persistsVersion() {
-    OutOfBandVersionRegistrar outOfBandVersionRegistrar = new OutOfBandVersionRegistrar();
-    outOfBandVersionRegistrar.registerVersion("foo", "1.1.1");
+    OutOfBandLibraryVersionRegistrar outOfBandLibraryVersionRegistrar =
+        new OutOfBandLibraryVersionRegistrar();
+    outOfBandLibraryVersionRegistrar.registerVersion("foo", "1.1.1");
 
-    assertThat(outOfBandVersionRegistrar.getRegisteredVersions())
+    assertThat(outOfBandLibraryVersionRegistrar.getRegisteredVersions())
         .contains(LibraryVersion.create("foo", "1.1.1"));
   }
 
   @Test
   public void getRegisteredVersions_returnsEmptySet_whenNoVersionsAreRegistered() {
-    OutOfBandVersionRegistrar outOfBandVersionRegistrar = new OutOfBandVersionRegistrar();
+    OutOfBandLibraryVersionRegistrar outOfBandLibraryVersionRegistrar =
+        new OutOfBandLibraryVersionRegistrar();
 
-    assertThat(outOfBandVersionRegistrar.getRegisteredVersions()).isEmpty();
+    assertThat(outOfBandLibraryVersionRegistrar.getRegisteredVersions()).isEmpty();
   }
 }
