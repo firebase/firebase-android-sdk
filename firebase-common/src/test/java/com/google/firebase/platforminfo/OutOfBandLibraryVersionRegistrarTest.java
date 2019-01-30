@@ -17,7 +17,10 @@ package com.google.firebase.platforminfo;
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class OutOfBandLibraryVersionRegistrarTest {
   @Test
   public void registerVersion_persistsVersion() {
