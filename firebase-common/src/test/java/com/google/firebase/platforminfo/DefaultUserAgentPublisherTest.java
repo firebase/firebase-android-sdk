@@ -23,7 +23,10 @@ import java.util.HashSet;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class DefaultUserAgentPublisherTest {
   private Set<LibraryVersion> libraryVersions;
   private DefaultUserAgentPublisher userAgentPublisher;
