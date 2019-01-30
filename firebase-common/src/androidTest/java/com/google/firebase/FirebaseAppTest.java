@@ -43,7 +43,9 @@ import com.google.firebase.components.EagerSdkVerifier;
 import com.google.firebase.components.InitTracker;
 import com.google.firebase.components.TestComponentOne;
 import com.google.firebase.components.TestComponentTwo;
+import com.google.firebase.components.TestUserAgentDependentComponent;
 import com.google.firebase.internal.InternalTokenResult;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import com.google.firebase.testing.FirebaseAppRule;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -65,10 +67,8 @@ import org.junit.runner.RunWith;
 // TODO(arondeak): uncomment lines when Firebase API targets are in integ.
 @RunWith(AndroidJUnit4.class)
 public class FirebaseAppTest {
-
   protected static final String GOOGLE_APP_ID = "1:855246033427:android:6e48bff8253f3f6e6e";
   protected static final String GOOGLE_API_KEY = "AIzaSyD3asb-2pEZVqMkmL6M9N6nHZRR_znhrh0";
-  private static final String APP_NAME = "myApp";
 
   protected static final FirebaseOptions OPTIONS =
       new FirebaseOptions.Builder()
@@ -116,6 +116,37 @@ public class FirebaseAppTest {
     backgroundDetector.onActivityResumed(null);
     assertThat(callbackCount.get()).isEqualTo(2);
     assertThat(backgroundState.get()).isFalse();
+  }
+
+  @Test
+  public void testInitializeApp_shouldPublishUserAgentPublisherThatReturnsPublishedVersions() {
+    String[] expectedUserAgent = {"firebase-common/16.0.5", "test-component/1.2.3"};
+    Context mockContext = createForwardingMockContext();
+    FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
+
+    TestUserAgentDependentComponent userAgentDependant =
+        firebaseApp.get(TestUserAgentDependentComponent.class);
+    UserAgentPublisher userAgentPublisher = userAgentDependant.getUserAgentPublisher();
+    String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
+    Arrays.sort(actualUserAgent);
+
+    assertThat(actualUserAgent).asList().contains("test-component/1.2.3");
+  }
+
+  @Test
+  public void testInitializeApp_shouldPublishVersionForFirebaseCommon() {
+    Context mockContext = createForwardingMockContext();
+    FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
+
+    TestUserAgentDependentComponent userAgentDependant =
+        firebaseApp.get(TestUserAgentDependentComponent.class);
+    UserAgentPublisher userAgentPublisher = userAgentDependant.getUserAgentPublisher();
+    String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
+    Arrays.sort(actualUserAgent);
+
+    // After sorting the user agents are expected to be {"firebase-common/x.y.z",
+    // "test-component/1.2.3"}
+    assertThat(actualUserAgent[0]).contains("firebase-common");
   }
 
   @Test
