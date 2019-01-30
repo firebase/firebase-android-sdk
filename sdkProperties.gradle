@@ -12,18 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply plugin: 'com.android.library'
-
-android {
-    compileSdkVersion project.targetSdkVersion
-    defaultConfig {
-        minSdkVersion 9
-    }
-}
-
-dependencies {
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'net.java:quickcheck:0.6'
-    testAnnotationProcessor 'net.java:quickcheck-src-generator:0.6'
-    testAnnotationProcessor 'net.java.quickcheck:quickcheck-src-generator:0.6'
+ext {
+    targetSdkVersion = 28
+    minSdkVersion = 14
 }
