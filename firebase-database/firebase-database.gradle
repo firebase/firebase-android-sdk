@@ -14,9 +14,6 @@
 
 apply plugin: 'com.android.library'
 
-def androidVersion = 28
-
-
 tasks.withType(org.gradle.api.tasks.testing.Test) {
     testLogging {
         exceptionFormat = 'full'
@@ -32,10 +29,10 @@ android {
         timeOutInMs 60 * 1000
     }
 
-    compileSdkVersion androidVersion
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        targetSdkVersion androidVersion
-        minSdkVersion 14
+        targetSdkVersion project.targetSdkVersion
+        minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
