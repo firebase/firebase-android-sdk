@@ -26,11 +26,13 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.StreamDownloadTask.TaskSnapshot;
+import com.google.firebase.storage.TestUserAgentDependentComponent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -133,5 +135,24 @@ public class IntegrationTest {
 
     assertThat(metadata.getCustomMetadata("rand"))
         .isEqualTo(randomMetadata.getCustomMetadata("rand"));
+  }
+
+  @Test
+  public void databaseRegistrar_getComponents_publishesLibVersionComponent() {
+    TestUserAgentDependentComponent userAgentDependant =
+        storageClient.getApp().get(TestUserAgentDependentComponent.class);
+    UserAgentPublisher userAgentPublisher = userAgentDependant.getUserAgentPublisher();
+    String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
+
+    assertThat(arrayElementContains(actualUserAgent, "firebase-storage")).isTrue();
+  }
+
+  private boolean arrayElementContains(String[] array, String str) {
+    for (String s : array) {
+      if (s.contains(str)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
