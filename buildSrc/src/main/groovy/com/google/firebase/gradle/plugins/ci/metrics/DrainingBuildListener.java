@@ -18,6 +18,19 @@ import org.gradle.BuildAdapter;
 import org.gradle.BuildResult;
 import org.gradle.api.logging.Logger;
 
+/**
+ * Build listener that waits for Stackdriver to export metrics before exiting.
+ *
+ * <p>Stackdriver exporter is implemented in such a way that it exports metrics on a periodic basis,
+ * with period being configurable. This means that, when the build finishes and exits, it is highly
+ * likely that there are unexported metrics in memory. For this reason we have this build listener
+ * that makes the gradle process sleep for the duration of the configured export period to make sure
+ * metrics get exported.
+ *
+ * @see <a
+ *     href="https://opencensus.io/exporters/supported-exporters/java/stackdriver-stats/">Opencensus
+ *     docs</a>
+ */
 class DrainingBuildListener extends BuildAdapter {
   private final long sleepDuration;
   private final Logger logger;
