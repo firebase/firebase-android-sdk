@@ -122,10 +122,10 @@ class StackdriverMetrics implements Metrics {
     // make sure we only initialize stackdriver once as gradle daemon is not guaranteed to restart
     // across gradle invocations.
     if (!STACKDRIVER_INITIALIZED.compareAndSet(false, true)) {
-      logger.warn("Stackdriver exporter already initialized.");
+      logger.lifecycle("Stackdriver exporter already initialized.");
       return;
     }
-    logger.warn("Initializing Stackdriver exporter.");
+    logger.lifecycle("Initializing Stackdriver exporter.");
 
     try {
       StackdriverStatsExporter.createAndRegister(

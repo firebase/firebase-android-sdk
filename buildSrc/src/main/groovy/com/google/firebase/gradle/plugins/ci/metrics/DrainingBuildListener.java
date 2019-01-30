@@ -30,7 +30,7 @@ class DrainingBuildListener extends BuildAdapter {
   @Override
   public void buildFinished(BuildResult result) {
     try {
-      logger.warn("Draining metrics to Stackdriver.");
+      logger.lifecycle("Draining metrics to Stackdriver.");
       Thread.sleep(sleepDuration);
     } catch (InterruptedException e) {
       // Restore the interrupted status

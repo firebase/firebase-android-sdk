@@ -23,10 +23,10 @@ public class MetricsPlugin implements Plugin<Project> {
   @Override
   public void apply(Project project) {
     if (!isCollectionEnabled()) {
-      project.getLogger().warn("Metrics collection is disabled.");
+      project.getLogger().lifecycle("Metrics collection is disabled.");
       return;
     }
-    project.getLogger().warn("Metrics collection is enabled.");
+    project.getLogger().lifecycle("Metrics collection is enabled.");
 
     Metrics metrics = new StackdriverMetrics(project.getGradle(), project.getLogger());
 
