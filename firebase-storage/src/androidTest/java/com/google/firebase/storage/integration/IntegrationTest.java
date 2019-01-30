@@ -14,9 +14,6 @@
 
 package com.google.firebase.storage.integration;
 
-import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-import static com.google.common.truth.Truth.assertThat;
-
 import android.net.Uri;
 import android.os.Environment;
 import android.support.test.InstrumentationRegistry;
@@ -26,13 +23,11 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.platforminfo.UserAgentPublisher;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.StreamDownloadTask.TaskSnapshot;
-import com.google.firebase.storage.TestUserAgentDependentComponent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +36,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static com.google.common.truth.Truth.assertThat;
 
 @RunWith(AndroidJUnit4.class)
 public class IntegrationTest {
