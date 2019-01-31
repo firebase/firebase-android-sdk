@@ -1,13 +1,13 @@
 package com.google.firebase.firestore;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import org.junit.Test;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
-
-import static com.google.common.truth.Truth.assertThat;
 
 @org.junit.runner.RunWith(RobolectricTestRunner.class)
 public class FirestoreRegistrarTest {

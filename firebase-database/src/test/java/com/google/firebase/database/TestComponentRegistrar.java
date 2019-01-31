@@ -1,6 +1,5 @@
 package com.google.firebase.database;
 
-
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;

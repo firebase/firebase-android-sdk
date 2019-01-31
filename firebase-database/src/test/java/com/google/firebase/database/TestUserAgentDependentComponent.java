@@ -27,4 +27,3 @@ public class TestUserAgentDependentComponent {
     return userAgentPublisher;
   }
 }
-
