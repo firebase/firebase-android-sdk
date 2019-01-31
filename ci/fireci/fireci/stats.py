@@ -48,6 +48,7 @@ _TAGS = [
     tags.TagKey("pull_number"),
     tags.TagKey("job_name"),
     tags.TagKey("build_id"),
+    tags.TagKey("job_type"),
 ]
 
 _METRICS_ENABLED = False

@@ -63,7 +63,8 @@ class StackdriverMetrics implements Metrics {
           TagKey.create("repo_name"),
           TagKey.create("pull_number"),
           TagKey.create("job_name"),
-          TagKey.create("build_id"));
+          TagKey.create("build_id"),
+          TagKey.create("job_type"));
 
   StackdriverMetrics(Gradle gradle, Logger logger) {
     this.logger = logger;
@@ -83,7 +84,7 @@ class StackdriverMetrics implements Metrics {
     Stats.getViewManager()
         .registerView(
             View.create(
-                View.Name.create("fireci/success"),
+                View.Name.create("fireci/tasksuccess"),
                 "Indicated success or failure.",
                 M_SUCCESS,
                 Aggregation.LastValue.create(),
