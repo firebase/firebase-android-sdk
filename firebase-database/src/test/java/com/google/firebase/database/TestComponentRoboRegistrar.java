@@ -11,9 +11,6 @@ import java.util.List;
 public class TestComponentRoboRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
-    if(true){
-      throw new RuntimeException("asdssdsdd");
-    }
     return Collections.singletonList(
         Component.builder(TestUserAgentDependentComponent.class)
             .add(Dependency.required(UserAgentPublisher.class))
