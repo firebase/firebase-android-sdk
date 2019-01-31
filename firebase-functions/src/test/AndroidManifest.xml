@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.google.firebase.firestore.model">
+  <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
+  <!--<uses-sdk android:minSdkVersion="14"/>-->
+  <application
+      android:label="FunctionsCommonTests" >
+    <uses-library android:name="android.test.runner" />
+
+    <service android:name="com.google.firebase.components.ComponentDiscoveryService"
+        android:exported="false">
+      <meta-data android:name="com.google.firebase.components:com.google.firebase.functions.TestComponentRegistrar"
+          android:value="com.google.firebase.components.ComponentRegistrar" />
+    </service>
+  </application>
+  <instrumentation
+      android:name="com.google.android.apps.common.testing.testrunner.Google3InstrumentationTestRunner"
+      android:targetPackage="com.google.firebase.firestore.model" />
+</manifest>

@@ -1,5 +1,4 @@
-package com.google.firebase.database;
-
+package com.google.firebase.functions;
 
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
@@ -8,7 +7,7 @@ import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.Collections;
 import java.util.List;
 
-public class TestComponentRoboRegistrar implements ComponentRegistrar {
+public class TestComponentRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
     return Collections.singletonList(
