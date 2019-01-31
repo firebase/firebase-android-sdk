@@ -68,6 +68,8 @@ android {
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
     }
+
+    testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {

@@ -14,6 +14,9 @@
 
 package com.google.firebase.storage.integration;
 
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static com.google.common.truth.Truth.assertThat;
+
 import android.net.Uri;
 import android.os.Environment;
 import android.support.test.InstrumentationRegistry;
@@ -36,9 +39,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-import static com.google.common.truth.Truth.assertThat;
 
 @RunWith(AndroidJUnit4.class)
 public class IntegrationTest {

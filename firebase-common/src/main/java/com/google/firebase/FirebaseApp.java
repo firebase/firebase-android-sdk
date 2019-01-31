@@ -534,6 +534,9 @@ public class FirebaseApp {
 
     List<ComponentRegistrar> registrars =
         ComponentDiscovery.forContext(applicationContext).discover();
+    if(true){
+      throw new RuntimeException(registrars.toString());
+    }
     componentRuntime =
         new ComponentRuntime(
             UI_EXECUTOR,

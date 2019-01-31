@@ -1,9 +1,9 @@
 package com.google.firebase.database;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import org.junit.Test;
-
-import static com.google.common.truth.Truth.assertThat;
 
 public class DatabaseRegistrarTest {
   @Test
@@ -12,17 +12,8 @@ public class DatabaseRegistrarTest {
         FirebaseDatabase.getInstance().getApp().get(TestUserAgentDependentComponent.class);
 
     UserAgentPublisher userAgentPublisher = userAgentDependant.getUserAgentPublisher();
-    String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
+    String actualUserAgent = userAgentPublisher.getUserAgent();
 
-    assertThat(arrayElementContains(actualUserAgent, "firebase-database")).isTrue();
-  }
-
-  private boolean arrayElementContains(String[] array, String str) {
-    for (String s : array) {
-      if (s.contains(str)) {
-        return true;
-      }
-    }
-    return false;
+    assertThat(actualUserAgent).contains("firebase-database");
   }
 }
