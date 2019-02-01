@@ -108,5 +108,5 @@ exports.httpErrorTest = functions.https.onRequest((request, response) => {
 
 exports.timeoutTest = functions.https.onRequest((request, response) => {
   // Wait for longer than 500ms.
-  setTimeout(500, () => response.send({data: true}));
+  setTimeout(() => response.send({data: true}), 500);
 });
