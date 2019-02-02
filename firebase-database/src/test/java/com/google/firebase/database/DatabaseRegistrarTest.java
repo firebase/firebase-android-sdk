@@ -22,15 +22,16 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
-@org.junit.runner.RunWith(RobolectricTestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 public class DatabaseRegistrarTest {
   private static final String TEST_NAMESPACE = "http://tests.firebaselocal.com:9000";
 
   @Test
-  public void databaseRegistrar_getComponents_publishesLibVersionComponent() {
+  public void getComponents_publishesLibVersionComponent() {
     FirebaseApp app = appForDatabaseUrl(TEST_NAMESPACE, "test");
     TestUserAgentDependentComponent userAgentDependant =
         FirebaseDatabase.getInstance(app).getApp().get(TestUserAgentDependentComponent.class);

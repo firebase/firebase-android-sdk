@@ -22,13 +22,14 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
-@org.junit.runner.RunWith(RobolectricTestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 public class StorageRegistrarTest {
   @Test
-  public void storageRegistrar_getComponents_publishesLibVersionComponent() {
+  public void getComponents_publishesLibVersionComponent() {
     FirebaseApp app =
         FirebaseApp.initializeApp(
             RuntimeEnvironment.application.getApplicationContext(),
