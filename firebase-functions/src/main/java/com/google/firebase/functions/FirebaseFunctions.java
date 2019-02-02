@@ -27,6 +27,12 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -34,14 +40,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -256,8 +254,8 @@ public class FirebaseFunctions {
           public void onFailure(Call ignored, IOException e) {
             if (e instanceof InterruptedIOException) {
               FirebaseFunctionsException exception =
-                  new FirebaseFunctionsException(Code.DEADLINE_EXCEEDED.name(),
-                      Code.DEADLINE_EXCEEDED, null, e);
+                  new FirebaseFunctionsException(
+                      Code.DEADLINE_EXCEEDED.name(), Code.DEADLINE_EXCEEDED, null, e);
               tcs.setException(exception);
             } else {
               FirebaseFunctionsException exception =

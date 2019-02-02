@@ -15,17 +15,14 @@
 package com.google.firebase.functions;
 
 import java.util.concurrent.TimeUnit;
-
 import okhttp3.OkHttpClient;
 
-/**
- * An internal class for keeping track of options applied to an HttpsCallableReference.
- */
+/** An internal class for keeping track of options applied to an HttpsCallableReference. */
 class HttpsCallOptions {
 
   // The default timeout to use for all calls.
-  final static private long DEFAULT_TIMEOUT = 60;
-  final static private TimeUnit DEFAULT_TIMEOUT_UNITS = TimeUnit.SECONDS;
+  private static final long DEFAULT_TIMEOUT = 60;
+  private static final TimeUnit DEFAULT_TIMEOUT_UNITS = TimeUnit.SECONDS;
 
   // The timeout to use for calls from references created by this Functions.
   private long timeout = DEFAULT_TIMEOUT;
@@ -42,9 +39,7 @@ class HttpsCallOptions {
     this.timeoutUnits = units;
   }
 
-  /**
-   * Creates a new OkHttpClient with these options applied to it.
-   */
+  /** Creates a new OkHttpClient with these options applied to it. */
   OkHttpClient apply(OkHttpClient client) {
     return client.newBuilder().callTimeout(timeout, timeoutUnits).build();
   }

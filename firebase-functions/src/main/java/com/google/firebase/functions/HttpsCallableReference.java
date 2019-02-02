@@ -16,7 +16,6 @@ package com.google.firebase.functions;
 
 import android.support.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
-
 import java.util.concurrent.TimeUnit;
 
 /** A reference to a particular Callable HTTPS trigger in Cloud Functions. */
