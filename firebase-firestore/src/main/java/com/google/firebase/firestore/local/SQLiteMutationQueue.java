@@ -207,6 +207,8 @@ final class SQLiteMutationQueue implements MutationQueue {
 
       String path = EncodedPath.encode(key.getPath());
       db.execute(indexInserter, uid, path, batchId);
+
+      db.getIndexManager().addToCollectionParentIndex(key.getPath().popLast());
     }
 
     return batch;
@@ -314,6 +316,9 @@ final class SQLiteMutationQueue implements MutationQueue {
 
   @Override
   public List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
+    hardAssert(
+        !query.isCollectionGroupQuery(),
+        "CollectionGroup queries should be handled in LocalDocumentsView");
     // Use the query path as a prefix for testing if a document matches the query.
     ResourcePath prefix = query.getPath();
     int immediateChildrenPathLength = prefix.length() + 1;

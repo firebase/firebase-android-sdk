@@ -95,6 +95,11 @@ public final class DocumentKey implements Comparable<DocumentKey> {
     return path;
   }
 
+  /** Returns true if the document is in the specified collectionId. */
+  public boolean hasCollectionId(String collectionId) {
+    return path.length() >= 2 && path.segments.get(path.length() - 2).equals(collectionId);
+  }
+
   @Override
   public int compareTo(@NonNull DocumentKey another) {
     return path.compareTo(another.path);

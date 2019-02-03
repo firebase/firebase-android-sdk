@@ -236,6 +236,28 @@ public class FirebaseFirestore {
   }
 
   /**
+   * Creates and returns a new Query that includes all documents in the database that are contained
+   * in a collection or subcollection with the given collectionId.
+   *
+   * @param collectionId Identifies the collections to query over. Every collection or subcollection
+   *     with this ID as the last segment of its path will be included. Cannot contain a slash.
+   * @return The created Query.
+   */
+  @NonNull
+  @PublicApi
+  public Query collectionGroup(@NonNull String collectionId) {
+    checkNotNull(collectionId, "Provided collection ID must not be null.");
+    if (collectionId.contains("/")) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Invalid collectionId '%s'. Collection IDs must not contain '/'.", collectionId));
+    }
+    ensureClientConfigured();
+    return new Query(
+        new com.google.firebase.firestore.core.Query(ResourcePath.EMPTY, collectionId), this);
+  }
+
+  /**
    * Executes the given updateFunction and then attempts to commit the changes applied within the
    * transaction. If any document read within the transaction has changed, the updateFunction will
    * be retried. If it fails to commit after 5 attempts, the transaction will fail.

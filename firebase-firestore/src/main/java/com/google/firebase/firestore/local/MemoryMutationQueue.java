@@ -143,10 +143,14 @@ final class MemoryMutationQueue implements MutationQueue {
     MutationBatch batch = new MutationBatch(batchId, localWriteTime, mutations);
     queue.add(batch);
 
-    // Track references by document key.
+    // Track references by document key and index collection parents.
     for (Mutation mutation : mutations) {
       batchesByDocumentKey =
           batchesByDocumentKey.insert(new DocumentReference(mutation.getKey(), batchId));
+
+      persistence
+          .getIndexManager()
+          .addToCollectionParentIndex(mutation.getKey().getPath().popLast());
     }
 
     return batch;
@@ -224,6 +228,10 @@ final class MemoryMutationQueue implements MutationQueue {
 
   @Override
   public List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
+    hardAssert(
+        !query.isCollectionGroupQuery(),
+        "CollectionGroup queries should be handled in LocalDocumentsView");
+
     // Use the query path as a prefix for testing if a document matches the query.
     ResourcePath prefix = query.getPath();
     int immediateChildrenPathLength = prefix.length() + 1;

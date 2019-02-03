@@ -1,4 +1,6 @@
 # Unreleased
+- [feature] You can now query across all collections in your database with a
+  given collection ID using the `FirebaseFirestore.collectionGroup()` method.
 
 # 18.0.1
 - [fixed] Fixed an issue where Firestore would crash if handling write batches
