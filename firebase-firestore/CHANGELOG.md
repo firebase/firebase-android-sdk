@@ -1,5 +1,5 @@
 # Unreleased
-- [fixed] Fixed calculation of SQLite database size on Android 9 (P) devices.
+- [fixed] Fixed calculation of SQLite database size on Android 9 Pie devices.
   Previous method could be off by a few MBs on these devices, potentially
   delaying garbage collection.
 
