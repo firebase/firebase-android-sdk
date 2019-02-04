@@ -16,17 +16,10 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
-import com.google.firebase.platforminfo.UserAgentPublisher;
-import org.junit.Test;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
-@org.junit.runner.RunWith(RobolectricTestRunner.class)
-public class FirestoreRegistrarTest {
+@org.junit.runner.RunWith(RobolectricTestRunner.class) public class FirestoreRegistrarTest {
+  //TODO(rgowman:b/123870630): Enable test.
   //@Test
   //public void storageRegistrar_getComponents_publishesLibVersionComponent() {
   //  FirebaseApp app =
