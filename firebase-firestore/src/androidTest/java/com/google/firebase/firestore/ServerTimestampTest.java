@@ -215,7 +215,8 @@ public class ServerTimestampTest {
     DocumentSnapshot localSnapshot = accumulator.awaitLocalEvent();
     assertEquals(42L, localSnapshot.get("a", ServerTimestampBehavior.PREVIOUS));
 
-    docRef.update("a", FieldValue.serverTimestamp());
+    // include b=1 to ensure there's a change resulting in a new snapshot.
+    docRef.update("a", FieldValue.serverTimestamp(), "b", 1);
     localSnapshot = accumulator.awaitLocalEvent();
     assertEquals(42L, localSnapshot.get("a", ServerTimestampBehavior.PREVIOUS));
 
