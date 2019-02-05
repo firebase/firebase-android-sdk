@@ -21,15 +21,15 @@ import java.util.Set;
 /**
  * In order to allow the C++ and Unity SDKs to publish their versions without the use of the
  * components framework, we have a mechanism where the versions can be wired as out of band as side
- * effects. See {@link OutOfBandLibraryVersionRegistrar#registerVersion(String, String)}
+ * effects. See {@link GlobalLibraryVersionRegistrar#registerVersion(String, String)}
  *
  * <p>Java libraries should use {@link LibraryVersionComponent#create(String, String)} instead.
  */
-public class OutOfBandLibraryVersionRegistrar {
+public class GlobalLibraryVersionRegistrar {
   private final Set<LibraryVersion> infos = new HashSet<>();
-  private static volatile OutOfBandLibraryVersionRegistrar INSTANCE;
+  private static volatile GlobalLibraryVersionRegistrar INSTANCE;
 
-  OutOfBandLibraryVersionRegistrar() {}
+  GlobalLibraryVersionRegistrar() {}
 
   /**
    * Thread safe method to publish versions outside of the components mechanics.
@@ -49,14 +49,14 @@ public class OutOfBandLibraryVersionRegistrar {
     }
   }
 
-  /** Returns an instance of {@link OutOfBandLibraryVersionRegistrar} */
-  public static OutOfBandLibraryVersionRegistrar getInstance() {
-    OutOfBandLibraryVersionRegistrar localRef = INSTANCE;
+  /** Returns an instance of {@link GlobalLibraryVersionRegistrar} */
+  public static GlobalLibraryVersionRegistrar getInstance() {
+    GlobalLibraryVersionRegistrar localRef = INSTANCE;
     if (localRef == null) {
-      synchronized (OutOfBandLibraryVersionRegistrar.class) {
+      synchronized (GlobalLibraryVersionRegistrar.class) {
         localRef = INSTANCE;
         if (localRef == null) {
-          INSTANCE = localRef = new OutOfBandLibraryVersionRegistrar();
+          INSTANCE = localRef = new GlobalLibraryVersionRegistrar();
         }
       }
     }
