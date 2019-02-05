@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.util;
 
 import android.util.Log;
-import com.google.firebase.firestore.core.Version;
+import com.google.firebase.firestore.BuildConfig;
 
 /** Helper class to log messages for Firestore */
 public class Logger {
@@ -40,7 +40,8 @@ public class Logger {
   private static void doLog(Level level, String tag, String toLog, Object... values) {
     if (level.ordinal() >= Logger.logLevel.ordinal()) {
       String value =
-          String.format("(%s) [%s]: ", Version.SDK_VERSION, tag) + String.format(toLog, values);
+          String.format("(%s) [%s]: ", BuildConfig.VERSION_NAME, tag)
+              + String.format(toLog, values);
       switch (level) {
         case DEBUG:
           Log.i("Firestore", value);
