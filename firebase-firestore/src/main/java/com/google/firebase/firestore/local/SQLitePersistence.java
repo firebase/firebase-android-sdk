@@ -205,13 +205,7 @@ public final class SQLitePersistence extends Persistence {
    * @see https://www.sqlite.org/pragma.html#pragma_page_size
    */
   private long getPageSize() {
-    Cursor cursor = db.rawQuery("PRAGMA page_size", null);
-    try {
-      cursor.moveToFirst();
-      return cursor.getLong(/*column=*/ 0);
-    } finally {
-      cursor.close();
-    }
+    return query("PRAGMA page_size").firstValue(row -> row.getLong(/*column=*/ 0));
   }
 
   /**
@@ -221,13 +215,7 @@ public final class SQLitePersistence extends Persistence {
    * @see https://www.sqlite.org/pragma.html#pragma_page_count.
    */
   private long getPageCount() {
-    Cursor cursor = db.rawQuery("PRAGMA page_count", null);
-    try {
-      cursor.moveToFirst();
-      return cursor.getLong(/*column=*/ 0);
-    } finally {
-      cursor.close();
-    }
+    return query("PRAGMA page_count").firstValue(row -> row.getLong(/*column=*/ 0));
   }
 
   /**
