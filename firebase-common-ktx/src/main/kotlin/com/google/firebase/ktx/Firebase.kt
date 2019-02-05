@@ -52,7 +52,7 @@ val Firebase.options: FirebaseOptions
 
 /** @hide */
 @Keep
-class FirebaseKtxCommonRegistrar : ComponentRegistrar {
+class FirebaseCommonKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> {
         return listOf(
                 LibraryVersionComponent.create(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME),
