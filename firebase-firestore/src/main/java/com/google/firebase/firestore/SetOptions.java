@@ -78,7 +78,7 @@ public final class SetOptions {
    */
   @NonNull
   @PublicApi
-  public static SetOptions mergeFields(List<String> fields) {
+  public static SetOptions mergeFields(@NonNull List<String> fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
     for (String field : fields) {
@@ -121,7 +121,7 @@ public final class SetOptions {
    */
   @NonNull
   @PublicApi
-  public static SetOptions mergeFieldPaths(List<FieldPath> fields) {
+  public static SetOptions mergeFieldPaths(@NonNull List<FieldPath> fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
     for (FieldPath field : fields) {
