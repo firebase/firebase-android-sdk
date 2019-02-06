@@ -27,10 +27,10 @@ import java.util.Set;
  */
 public class DefaultUserAgentPublisher implements UserAgentPublisher {
   private final String javaSDKVersionUserAgent;
-  private final OutOfBandLibraryVersionRegistrar gamesSDKRegistrar;
+  private final GlobalLibraryVersionRegistrar gamesSDKRegistrar;
 
   DefaultUserAgentPublisher(
-      Set<LibraryVersion> libraryVersions, OutOfBandLibraryVersionRegistrar gamesSDKRegistrar) {
+      Set<LibraryVersion> libraryVersions, GlobalLibraryVersionRegistrar gamesSDKRegistrar) {
     this.javaSDKVersionUserAgent = toUserAgent(libraryVersions);
     this.gamesSDKRegistrar = gamesSDKRegistrar;
   }
@@ -70,7 +70,7 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
         .factory(
             c ->
                 new DefaultUserAgentPublisher(
-                    c.setOf(LibraryVersion.class), OutOfBandLibraryVersionRegistrar.getInstance()))
+                    c.setOf(LibraryVersion.class), GlobalLibraryVersionRegistrar.getInstance()))
         .build();
   }
 }
