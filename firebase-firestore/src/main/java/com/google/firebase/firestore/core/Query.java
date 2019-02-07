@@ -111,7 +111,7 @@ public final class Query {
 
   /** Returns true if this is a collection group query. */
   public boolean isCollectionGroupQuery() {
-    return this.collectionGroup != null;
+    return collectionGroup != null;
   }
 
   /** The filters on the documents returned by the query. */

@@ -28,6 +28,9 @@ public interface IndexManager {
    * Creates an index entry mapping the collectionId (last segment of the path) to the parent path
    * (either the containing document location or the empty path for root-level collections). Index
    * entries can be retrieved via getCollectionParents().
+   *
+   * <p>NOTE: Currently we don't remove index entries. If this ends up being an issue we can devise
+   * some sort of GC strategy.
    */
   void addToCollectionParentIndex(ResourcePath collectionPath);
 

@@ -329,14 +329,14 @@ public class Query {
               "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
                   + "document ID, but it was an empty string.");
         }
-        if (!this.query.isCollectionGroupQuery() && documentKey.contains("/")) {
+        if (!query.isCollectionGroupQuery() && documentKey.contains("/")) {
           throw new IllegalArgumentException(
               "Invalid query. When querying a collection by FieldPath.documentId() you must "
                   + "provide a plain document ID, but '"
                   + documentKey
                   + "' contains a '/' character.");
         }
-        ResourcePath path = this.query.getPath().append(ResourcePath.fromString(documentKey));
+        ResourcePath path = query.getPath().append(ResourcePath.fromString(documentKey));
         if (!DocumentKey.isDocumentKey(path)) {
           throw new IllegalArgumentException(
               "Invalid query. When querying a collection group by FieldPath.documentId(), the "
@@ -663,7 +663,7 @@ public class Query {
                   + ".");
         }
         String documentId = (String) rawValue;
-        if (!this.query.isCollectionGroupQuery() && documentId.contains("/")) {
+        if (!query.isCollectionGroupQuery() && documentId.contains("/")) {
           throw new IllegalArgumentException(
               "Invalid query. When querying a collection and ordering by FieldPath.documentId(), "
                   + "the value passed to "

@@ -41,8 +41,8 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public void addToCollectionParentIndex(ResourcePath collectionPath) {
     hardAssert(collectionPath.length() % 2 == 1, "Expected a collection path.");
+
     if (collectionParentsCache.add(collectionPath)) {
-      hardAssert(collectionPath.length() >= 1, "Invalid collection path.");
       String collectionId = collectionPath.getLastSegment();
       ResourcePath parentPath = collectionPath.popLast();
       db.execute(

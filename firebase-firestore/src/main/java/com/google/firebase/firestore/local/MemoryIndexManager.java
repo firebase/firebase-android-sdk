@@ -44,7 +44,7 @@ class MemoryIndexManager implements IndexManager {
 
   /**
    * Internal implementation of the collection-parent index. Also used for in-memory caching by
-   * SQLiteIndexManager and initial index population in SQLiteSchema.java
+   * SQLiteIndexManager and initial index population in SQLiteSchema.
    */
   static class MemoryCollectionParentIndex {
     private final HashMap<String, HashSet<ResourcePath>> index = new HashMap<>();
@@ -52,6 +52,7 @@ class MemoryIndexManager implements IndexManager {
     // Returns false if the entry already existed.
     boolean add(ResourcePath collectionPath) {
       hardAssert(collectionPath.length() % 2 == 1, "Expected a collection path.");
+
       String collectionId = collectionPath.getLastSegment();
       ResourcePath parentPath = collectionPath.popLast();
       HashSet<ResourcePath> existingParents = index.get(collectionId);
