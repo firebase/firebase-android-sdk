@@ -14,48 +14,45 @@
 
 package com.google.firebase.testapps.database;
 
-import android.support.test.espresso.IdlingRegistry;
-import android.support.test.espresso.IdlingResource;
-import android.support.test.filters.LargeTest;
-import android.support.test.rule.ActivityTestRule;
-import android.support.test.runner.AndroidJUnit4;
-
+import android.app.Activity;
+import android.app.Instrumentation;
+import android.content.Intent;
+import androidx.test.espresso.IdlingRegistry;
+import androidx.test.espresso.IdlingResource;
+import androidx.test.espresso.intent.rule.IntentsTestRule;
+import androidx.test.filters.LargeTest;
+import androidx.test.runner.AndroidJUnit4;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static android.support.test.espresso.Espresso.onView;
-import static android.support.test.espresso.assertion.ViewAssertions.matches;
-import static android.support.test.espresso.matcher.ViewMatchers.withId;
-import static android.support.test.espresso.matcher.ViewMatchers.withText;
+import static androidx.test.espresso.intent.Intents.intended;
+import static androidx.test.espresso.intent.Intents.intending;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-@LargeTest
-@RunWith(AndroidJUnit4.class)
-public class TestActivityTest {
-
-  @Rule
-  public ActivityTestRule<TestActivity> mActivityTestRule =
-      new ActivityTestRule<>(TestActivity.class);
+@LargeTest @RunWith(AndroidJUnit4.class) public class TestActivityTest {
+  @Rule public IntentsTestRule<TestActivity> intentsTestRule =
+      new IntentsTestRule<>(TestActivity.class);
 
   private IdlingResource mIdlingResource;
 
-  @Before
-  public void before() {
-    mIdlingResource = mActivityTestRule.getActivity().getIdlingResource();
+  @Before public void before() {
+    intending(hasAction(Intent.ACTION_SEND)).respondWith(
+        new Instrumentation.ActivityResult(Activity.RESULT_OK, new Intent()));
+    mIdlingResource = intentsTestRule.getActivity().getIdlingResource();
     IdlingRegistry.getInstance().register(mIdlingResource);
   }
 
-  @After
-  public void unregisterIdlingResource() {
+  @After public void unregisterIdlingResource() {
     if (mIdlingResource != null) {
       IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
   }
 
-  @Test
-  public void testActivityTest() throws Exception {
-    onView(withId(R.id.restaurant)).check(matches(withText("{location=Google MTV}")));
+  @Test public void testActivityTest() {
+    intended(hasExtra(Intent.EXTRA_TEXT, "{location=Google MTV}"));
   }
 }

@@ -15,16 +15,16 @@
 package com.google.firebase.testapps.database;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
-import android.support.test.espresso.IdlingResource;
-import android.support.test.espresso.idling.CountingIdlingResource;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import androidx.test.espresso.IdlingResource;
+import androidx.test.espresso.idling.CountingIdlingResource;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -32,7 +32,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
 import java.util.Map;
 
 public class TestActivity extends Activity {
@@ -42,8 +41,7 @@ public class TestActivity extends Activity {
   private FirebaseAuth auth;
   private TextView restaurantTextView;
 
-  @Override
-  protected void onCreate(@Nullable Bundle savedInstanceState) {
+  @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.test_activity);
 
@@ -57,47 +55,42 @@ public class TestActivity extends Activity {
     db.setPersistenceEnabled(false);
 
     //// Listen for a change to the collection
-    db.getReference("restaurants")
-        .addValueEventListener(
-            new ValueEventListener() {
-              @Override
-              public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
-                Map<String, Map<String, String>> value =
-                    (Map<String, Map<String, String>>) dataSnapshot.getValue();
-                if (value != null) {
-                  restaurantTextView.setText(value.get("Baadal").toString());
-                  idlingResource.decrement();
-                }
-              }
+    db.getReference("restaurants").addValueEventListener(new ValueEventListener() {
+      @Override public void onDataChange(DataSnapshot dataSnapshot) {
+        // This method is called once with the initial value and again
+        // whenever data at this location is updated.
+        Map<String, Map<String, String>> value =
+            (Map<String, Map<String, String>>) dataSnapshot.getValue();
+        if (value != null) {
+          restaurantTextView.setText(value.get("Baadal").toString());
+          idlingResource.decrement();
 
-              @Override
-              public void onCancelled(DatabaseError error) {
-                // Failed to read value
-                Toast.makeText(TestActivity.this, error.toString(), Toast.LENGTH_LONG).show();
-                idlingResource.decrement();
-              }
-            });
+          Intent sendIntent = new Intent();
+          sendIntent.setAction(Intent.ACTION_SEND);
+          sendIntent.putExtra(Intent.EXTRA_TEXT, value.get("Baadal").toString());
+          sendIntent.setType("text/plain");
+          startActivity(sendIntent);
+        }
+      }
+
+      @Override public void onCancelled(DatabaseError error) {
+        // Failed to read value
+        Toast.makeText(TestActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+        idlingResource.decrement();
+      }
+    });
 
     //// Signout of any existing sessions and sign in with email and password
     auth.signOut();
     auth.signInWithEmailAndPassword("test@mailinator.com", "password")
         .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
-          @Override
-          public void onSuccess(AuthResult authResult) {
-            db.getReference("restaurants")
-                    .child("Baadal")
-                    .child("location")
-                    .setValue("Google MTV");
+          @Override public void onSuccess(AuthResult authResult) {
+            db.getReference("restaurants").child("Baadal").child("location").setValue("Google MTV");
           }
         });
   }
 
-  @VisibleForTesting
-  @NonNull
-  @Keep
-  public IdlingResource getIdlingResource() {
+  @VisibleForTesting @NonNull @Keep public IdlingResource getIdlingResource() {
     return idlingResource;
   }
 }
