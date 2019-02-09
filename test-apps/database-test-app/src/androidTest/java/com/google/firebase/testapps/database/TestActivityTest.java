@@ -58,6 +58,11 @@ public class TestActivityTest {
 
   @Test
   public void testActivityTest() {
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     intended(hasExtra(Intent.EXTRA_TEXT, "{location=Google MTV}"));
   }
 }
