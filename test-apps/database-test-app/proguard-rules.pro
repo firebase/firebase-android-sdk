@@ -1,4 +1,4 @@
 -keepattributes SourceFile,LineNumberTable
 
--keep class android.support.test.espresso.IdlingResource { *; }
--keep class android.support.test.espresso.IdlingRegistry { *; }
+-keep class androidx.test.espresso.IdlingRegistry { *; }
+-keep class androidx.test.espresso.IdlingResource { *; }

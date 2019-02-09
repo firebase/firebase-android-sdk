@@ -37,7 +37,8 @@ public class TestActivity extends Activity {
 
   private FirebaseStorage storage;
   private FirebaseAuth auth;
-  private CountingIdlingResource idlingResource = new CountingIdlingResource("Firebase storage download");
+  private CountingIdlingResource idlingResource =
+      new CountingIdlingResource("Firebase storage download");
   private TextView stringTextView;
 
   @Override
