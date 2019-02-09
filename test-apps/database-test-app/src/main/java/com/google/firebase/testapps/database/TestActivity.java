@@ -41,7 +41,8 @@ public class TestActivity extends Activity {
   private FirebaseAuth auth;
   private TextView restaurantTextView;
 
-  @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
+  @Override
+  protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.test_activity);
 
@@ -55,42 +56,54 @@ public class TestActivity extends Activity {
     db.setPersistenceEnabled(false);
 
     //// Listen for a change to the collection
-    db.getReference("restaurants").addValueEventListener(new ValueEventListener() {
-      @Override public void onDataChange(DataSnapshot dataSnapshot) {
-        // This method is called once with the initial value and again
-        // whenever data at this location is updated.
-        Map<String, Map<String, String>> value =
-            (Map<String, Map<String, String>>) dataSnapshot.getValue();
-        if (value != null) {
-          restaurantTextView.setText(value.get("Baadal").toString());
-          idlingResource.decrement();
+    db.getReference("restaurants")
+        .addValueEventListener(
+            new ValueEventListener() {
+              @Override
+              public void onDataChange(DataSnapshot dataSnapshot) {
+                // This method is called once with the initial value and again
+                // whenever data at this location is updated.
+                Map<String, Map<String, String>> value =
+                    (Map<String, Map<String, String>>) dataSnapshot.getValue();
+                if (value != null) {
+                  restaurantTextView.setText(value.get("Baadal").toString());
+                  idlingResource.decrement();
 
-          Intent sendIntent = new Intent();
-          sendIntent.setAction(Intent.ACTION_SEND);
-          sendIntent.putExtra(Intent.EXTRA_TEXT, value.get("Baadal").toString());
-          sendIntent.setType("text/plain");
-          startActivity(sendIntent);
-        }
-      }
+                  Intent sendIntent = new Intent();
+                  sendIntent.setAction(Intent.ACTION_SEND);
+                  sendIntent.putExtra(Intent.EXTRA_TEXT, value.get("Baadal").toString());
+                  sendIntent.setType("text/plain");
+                  startActivity(sendIntent);
+                }
+              }
 
-      @Override public void onCancelled(DatabaseError error) {
-        // Failed to read value
-        Toast.makeText(TestActivity.this, error.toString(), Toast.LENGTH_LONG).show();
-        idlingResource.decrement();
-      }
-    });
+              @Override
+              public void onCancelled(DatabaseError error) {
+                // Failed to read value
+                Toast.makeText(TestActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                idlingResource.decrement();
+              }
+            });
 
     //// Signout of any existing sessions and sign in with email and password
     auth.signOut();
     auth.signInWithEmailAndPassword("test@mailinator.com", "password")
-        .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
-          @Override public void onSuccess(AuthResult authResult) {
-            db.getReference("restaurants").child("Baadal").child("location").setValue("Google MTV");
-          }
-        });
+        .addOnSuccessListener(
+            new OnSuccessListener<AuthResult>() {
+              @Override
+              public void onSuccess(AuthResult authResult) {
+                db.getReference("restaurants")
+                    .child("Baadal")
+                    .child("location")
+                    .setValue("Google MTV");
+              }
+            });
   }
 
-  @VisibleForTesting @NonNull @Keep public IdlingResource getIdlingResource() {
+  @VisibleForTesting
+  @NonNull
+  @Keep
+  public IdlingResource getIdlingResource() {
     return idlingResource;
   }
 }

@@ -14,17 +14,15 @@
 
 package com.google.firebase.testapps.storage;
 
-import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.*;
 import static android.support.test.espresso.assertion.ViewAssertions.*;
 import static android.support.test.espresso.matcher.ViewMatchers.*;
 
-import android.support.test.espresso.Espresso;
 import android.support.test.espresso.IdlingRegistry;
 import android.support.test.espresso.IdlingResource;
+import android.support.test.filters.LargeTest;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.support.test.filters.LargeTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -56,6 +54,6 @@ public class TestActivityTest {
 
   @Test
   public void testActivityTest() throws Exception {
-    //onView(withId(R.id.restaurant)).check(matches(withText("Google MTV")));
+    // onView(withId(R.id.restaurant)).check(matches(withText("Google MTV")));
   }
 }
