@@ -67,13 +67,14 @@ public class TestActivity extends Activity {
                     (Map<String, Map<String, String>>) dataSnapshot.getValue();
                 if (value != null) {
                   restaurantTextView.setText(value.get("Baadal").toString());
-                  idlingResource.decrement();
 
                   Intent sendIntent = new Intent();
                   sendIntent.setAction(Intent.ACTION_SEND);
                   sendIntent.putExtra(Intent.EXTRA_TEXT, value.get("Baadal").toString());
                   sendIntent.setType("text/plain");
                   startActivity(sendIntent);
+
+                  idlingResource.decrement();
                 }
               }
 
