@@ -21,7 +21,7 @@ import okhttp3.OkHttpClient;
 class HttpsCallOptions {
 
   // The default timeout to use for all calls.
-  private static final long DEFAULT_TIMEOUT = 60;
+  private static final long DEFAULT_TIMEOUT = 70;
   private static final TimeUnit DEFAULT_TIMEOUT_UNITS = TimeUnit.SECONDS;
 
   // The timeout to use for calls from references created by this Functions.
