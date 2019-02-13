@@ -17,7 +17,6 @@ package com.google.firebase.firestore.util;
 import static com.google.firebase.firestore.util.ApiUtil.invoke;
 import static com.google.firebase.firestore.util.ApiUtil.newInstance;
 
-import com.google.api.Property;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
@@ -157,10 +156,11 @@ public class CustomClassMapper {
     } else if (o.getClass().isArray()) {
       throw serializeError(path, "Serializing Arrays is not supported, please use Lists instead");
     } else if (o instanceof Enum) {
-      String enumField = ((Enum<?>)o).name();
+      String enumField = ((Enum<?>) o).name();
       try {
         if (o.getClass().getField(enumField).isAnnotationPresent(PropertyName.class)) {
-          PropertyName annotation = o.getClass().getField(enumField).getAnnotation(PropertyName.class);
+          PropertyName annotation =
+              o.getClass().getField(enumField).getAnnotation(PropertyName.class);
           return annotation.value();
         }
       } catch (Exception ex) {
@@ -337,7 +337,7 @@ public class CustomClassMapper {
 
       // try to use PropertyName if exist
       Field[] enumFields = clazz.getFields();
-      for (Field field : enumFields){
+      for (Field field : enumFields) {
         if (field.isAnnotationPresent(PropertyName.class)) {
           PropertyName propertyName = field.getAnnotation(PropertyName.class);
           if (value.equals(propertyName.value())) {
