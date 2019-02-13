@@ -16,8 +16,9 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import com.google.firebase.firestore.OrderBy;
 import com.google.firebase.firestore.core.Filter.Operator;
-import com.google.firebase.firestore.core.OrderBy.Direction;
+import com.google.firebase.firestore.OrderBy.Direction;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -174,7 +175,7 @@ public final class Query {
     Assert.hardAssert(
         explicitSortOrder.isEmpty()
             || newInequalityField == null
-            || explicitSortOrder.get(0).field.equals(newInequalityField),
+            || explicitSortOrder.get(0).getField().equals(newInequalityField),
         "First orderBy must match inequality field");
 
     List<Filter> updatedFilter = new ArrayList<>(filters);
@@ -194,7 +195,7 @@ public final class Query {
     }
     if (explicitSortOrder.isEmpty()) {
       FieldPath inequality = inequalityField();
-      if (inequality != null && !inequality.equals(order.field)) {
+      if (inequality != null && !inequality.equals(order.getField())) {
         throw Assert.fail("First orderBy must match inequality field");
       }
     }
@@ -310,7 +311,7 @@ public final class Query {
   private boolean matchesOrderBy(Document doc) {
     for (OrderBy order : explicitSortOrder) {
       // order by key always matches
-      if (!order.getField().equals(FieldPath.KEY_PATH) && (doc.getField(order.field) == null)) {
+      if (!order.getField().equals(FieldPath.KEY_PATH) && (doc.getField(order.getField()) == null)) {
         return false;
       }
     }

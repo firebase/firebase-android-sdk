@@ -672,7 +672,7 @@ com.google.firebase.firestore.core.Bound -> com.google.firebase.firestore.b.zza:
     42:42:boolean isBefore() -> zzb
     47:56:java.lang.String canonicalString() -> zzc
     61:89:boolean sortsBeforeDocument(java.util.List,com.google.firebase.firestore.model.Document) -> zza
-    1035:1035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.core.OrderBy.getField():35:35 -> zza
+    1035:1035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.OrderBy.getField():35:35 -> zza
     1035:1035:boolean sortsBeforeDocument(java.util.List,com.google.firebase.firestore.model.Document):74 -> zza
     94:103:boolean equals(java.lang.Object) -> equals
     108:110:int hashCode() -> hashCode
@@ -882,29 +882,29 @@ com.google.firebase.firestore.core.OnlineState -> com.google.firebase.firestore.
     com.google.firebase.firestore.core.OnlineState[] $VALUES -> zzd
     9:9:void <init>(java.lang.String,int) -> <init>
     9:31:void <clinit>() -> <clinit>
-com.google.firebase.firestore.core.OrderBy -> com.google.firebase.firestore.b.zzw:
-    com.google.firebase.firestore.core.OrderBy$Direction direction -> zzb
+com.google.firebase.firestore.OrderBy -> com.google.firebase.firestore.b.zzw:
+    com.google.firebase.firestore.OrderBy$Direction direction -> zzb
     com.google.firebase.firestore.model.FieldPath field -> zza
-    27:27:com.google.firebase.firestore.core.OrderBy getInstance(com.google.firebase.firestore.core.OrderBy$Direction,com.google.firebase.firestore.model.FieldPath) -> zza
-    31:31:com.google.firebase.firestore.core.OrderBy$Direction getDirection() -> zza
+    27:27:com.google.firebase.firestore.OrderBy getInstance(com.google.firebase.firestore.OrderBy$Direction,com.google.firebase.firestore.model.FieldPath) -> zza
+    31:31:com.google.firebase.firestore.OrderBy$Direction getDirection() -> zza
     35:35:com.google.firebase.firestore.model.FieldPath getField() -> zzb
-    41:44:void <init>(com.google.firebase.firestore.core.OrderBy$Direction,com.google.firebase.firestore.model.FieldPath) -> <init>
+    41:44:void <init>(com.google.firebase.firestore.OrderBy$Direction,com.google.firebase.firestore.model.FieldPath) -> <init>
     47:54:int compare(com.google.firebase.firestore.model.Document,com.google.firebase.firestore.model.Document) -> zza
     60:65:boolean equals(java.lang.Object) -> equals
     70:73:int hashCode() -> hashCode
     78:78:java.lang.String toString() -> toString
-com.google.firebase.firestore.core.OrderBy$Direction -> com.google.firebase.firestore.b.zzw$zza:
-    com.google.firebase.firestore.core.OrderBy$Direction ASCENDING -> zza
-    com.google.firebase.firestore.core.OrderBy$Direction DESCENDING -> zzb
+com.google.firebase.firestore.OrderBy$Direction -> com.google.firebase.firestore.b.zzw$zza:
+    com.google.firebase.firestore.OrderBy$Direction ASCENDING -> zza
+    com.google.firebase.firestore.OrderBy$Direction DESCENDING -> zzb
     int comparisonModifier -> zzc
-    com.google.firebase.firestore.core.OrderBy$Direction[] $VALUES -> zzd
+    com.google.firebase.firestore.OrderBy$Direction[] $VALUES -> zzd
     17:19:void <init>(java.lang.String,int,int) -> <init>
     22:22:int getComparisonModifier() -> zza
     11:13:void <clinit>() -> <clinit>
 com.google.firebase.firestore.core.Query -> com.google.firebase.firestore.b.zzx:
     long NO_LIMIT -> zza
-    com.google.firebase.firestore.core.OrderBy KEY_ORDERING_ASC -> zzb
-    com.google.firebase.firestore.core.OrderBy KEY_ORDERING_DESC -> zzc
+    com.google.firebase.firestore.OrderBy KEY_ORDERING_ASC -> zzb
+    com.google.firebase.firestore.OrderBy KEY_ORDERING_DESC -> zzc
     java.util.List explicitSortOrder -> zzd
     java.util.List memoizedOrderBy -> zze
     java.util.List filters -> zzf
@@ -922,11 +922,11 @@ com.google.firebase.firestore.core.Query -> com.google.firebase.firestore.b.zzx:
     81:81:com.google.firebase.firestore.core.Bound getStartAt() -> zzf
     85:85:com.google.firebase.firestore.core.Bound getEndAt() -> zzg
     89:92:com.google.firebase.firestore.model.FieldPath getFirstOrderByField() -> zzh
-    1035:1035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.core.OrderBy.getField():35:35 -> zzh
+    1035:1035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.OrderBy.getField():35:35 -> zzh
     1035:1035:com.google.firebase.firestore.model.FieldPath getFirstOrderByField():92 -> zzh
     97:105:com.google.firebase.firestore.model.FieldPath inequalityField() -> zzi
     109:131:com.google.firebase.firestore.core.Query filter(com.google.firebase.firestore.core.Filter) -> zza
-    135:146:com.google.firebase.firestore.core.Query orderBy(com.google.firebase.firestore.core.OrderBy) -> zza
+    135:146:com.google.firebase.firestore.core.Query orderBy(com.google.firebase.firestore.OrderBy) -> zza
     150:150:com.google.firebase.firestore.core.Query limit(long) -> zza
     154:154:com.google.firebase.firestore.core.Query startAt(com.google.firebase.firestore.core.Bound) -> zza
     158:158:com.google.firebase.firestore.core.Query endAt(com.google.firebase.firestore.core.Bound) -> zzb
@@ -934,14 +934,14 @@ com.google.firebase.firestore.core.Query -> com.google.firebase.firestore.b.zzx:
     166:201:java.util.List getOrderBy() -> zzk
     1128:1128:boolean com.google.firebase.firestore.model.FieldPath.isKeyField():128:128 -> zzk
     1128:1128:java.util.List getOrderBy():173 -> zzk
-    2035:2035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.core.OrderBy.getField():35:35 -> zzk
+    2035:2035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.OrderBy.getField():35:35 -> zzk
     2035:2035:java.util.List getOrderBy():185 -> zzk
     247:247:boolean matches(com.google.firebase.firestore.model.Document) -> zza
     2205:2209:boolean matchesPath(com.google.firebase.firestore.model.Document):205:209 -> zza
     2205:2209:boolean matches(com.google.firebase.firestore.model.Document):247 -> zza
     2226:2232:boolean matchesOrderBy(com.google.firebase.firestore.model.Document):226:232 -> zza
     2226:2232:boolean matches(com.google.firebase.firestore.model.Document):247 -> zza
-    3035:3035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.core.OrderBy.getField():35:35 -> zza
+    3035:3035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.OrderBy.getField():35:35 -> zza
     3035:3035:boolean matchesOrderBy(com.google.firebase.firestore.model.Document):228 -> zza
     3035:3035:boolean matches(com.google.firebase.firestore.model.Document):247 -> zza
     3214:3219:boolean matchesFilters(com.google.firebase.firestore.model.Document):214:219 -> zza
@@ -954,7 +954,7 @@ com.google.firebase.firestore.core.Query -> com.google.firebase.firestore.b.zzx:
     4060:4060:java.lang.String getCanonicalId():287 -> zzm
     4068:4068:java.util.List getFilters():68:68 -> zzm
     4068:4068:java.lang.String getCanonicalId():291 -> zzm
-    5035:5035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.core.OrderBy.getField():35:35 -> zzm
+    5035:5035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.OrderBy.getField():35:35 -> zzm
     5035:5035:java.lang.String getCanonicalId():298 -> zzm
     323:347:boolean equals(java.lang.Object) -> equals
     352:358:int hashCode() -> hashCode
@@ -963,7 +963,7 @@ com.google.firebase.firestore.core.Query -> com.google.firebase.firestore.b.zzx:
 com.google.firebase.firestore.core.Query$QueryComparator -> com.google.firebase.firestore.b.zzx$zza:
     java.util.List sortOrder -> zza
     257:266:void <init>(java.util.List) -> <init>
-    1035:1035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.core.OrderBy.getField():35:35 -> <init>
+    1035:1035:com.google.firebase.firestore.model.FieldPath com.google.firebase.firestore.OrderBy.getField():35:35 -> <init>
     1035:1035:void <init>(java.util.List):260 -> <init>
     254:254:int compare(java.lang.Object,java.lang.Object) -> compare
     1270:1276:int compare(com.google.firebase.firestore.model.Document,com.google.firebase.firestore.model.Document):270:276 -> compare
@@ -2697,14 +2697,14 @@ com.google.firebase.firestore.remote.RemoteSerializer -> com.google.firebase.fir
     5800:5809:com.google.firebase.firestore.core.Filter decodeUnaryFilter(com.google.firestore.v1beta1.StructuredQuery$UnaryFilter):800:809 -> zza
     5800:5809:java.util.List decodeFilters(com.google.firestore.v1beta1.StructuredQuery$Filter):760 -> zza
     5800:5809:com.google.firebase.firestore.core.Query decodeQueryTarget(com.google.firestore.v1beta1.Target$QueryTarget):682 -> zza
-    5865:5877:com.google.firebase.firestore.core.OrderBy decodeOrderBy(com.google.firestore.v1beta1.StructuredQuery$Order):865:877 -> zza
+    5865:5877:com.google.firebase.firestore.OrderBy decodeOrderBy(com.google.firestore.v1beta1.StructuredQuery$Order):865:877 -> zza
     5865:5877:com.google.firebase.firestore.core.Query decodeQueryTarget(com.google.firestore.v1beta1.Target$QueryTarget):692 -> zza
     719:733:com.google.firestore.v1beta1.StructuredQuery$Filter encodeFilters(java.util.List) -> zza
     772:776:com.google.firestore.v1beta1.StructuredQuery$Filter encodeRelationFilter(com.google.firebase.firestore.core.RelationFilter) -> zza
     787:796:com.google.firestore.v1beta1.StructuredQuery$Filter encodeUnaryFilter(com.google.firebase.firestore.core.Filter) -> zza
     814:814:com.google.firestore.v1beta1.StructuredQuery$FieldReference encodeFieldPath(com.google.firebase.firestore.model.FieldPath) -> zza
     818:830:com.google.firestore.v1beta1.StructuredQuery$FieldFilter$Operator encodeRelationFilterOperator(com.google.firebase.firestore.core.RelationFilter$Operator) -> zza
-    854:861:com.google.firestore.v1beta1.StructuredQuery$Order encodeOrderBy(com.google.firebase.firestore.core.OrderBy) -> zza
+    854:861:com.google.firestore.v1beta1.StructuredQuery$Order encodeOrderBy(com.google.firebase.firestore.OrderBy) -> zza
     883:888:com.google.firestore.v1beta1.Cursor encodeBound(com.google.firebase.firestore.core.Bound) -> zza
     892:899:com.google.firebase.firestore.core.Bound decodeBound(com.google.firestore.v1beta1.Cursor) -> zza
     907:977:com.google.firebase.firestore.remote.WatchChange decodeWatchChange(com.google.firestore.v1beta1.ListenResponse) -> zza

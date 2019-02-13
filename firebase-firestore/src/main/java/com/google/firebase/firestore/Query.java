@@ -30,7 +30,6 @@ import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
-import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.RelationFilter;
 import com.google.firebase.firestore.core.ViewSnapshot;
