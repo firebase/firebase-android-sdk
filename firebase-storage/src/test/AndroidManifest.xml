@@ -12,20 +12,17 @@
 <!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
-<manifest package="com.google.firebase.storage"
+
+<manifest package="com.firebase.storage.example"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--Although the *SdkVersion is captured in gradle build files, this is required for bazel builds-->
     <!--<uses-sdk android:minSdkVersion="14" android:targetSdkVersion="21"/>-->
+
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <application android:label="FirebaseStorageTests" android:largeHeap="true">
-        <uses-library android:name="android.test.runner" />
+    <application>
     </application>
-
-  <instrumentation
-      android:name="com.google.android.apps.common.testing.testrunner.Google3InstrumentationTestRunner"
-      android:targetPackage="com.google.firebase.storage" />
 
 </manifest>
