@@ -1982,7 +1982,6 @@ public class MapperTest {
     bean.complexEnum = ComplexEnum.One;
     bean.enumUsingPropertyName = ComplexEnum.THREE;
     bean.setEnumValue(SimpleEnum.Foo);
-    Object result = serialize(bean);
     assertJson("{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'enumUsingPropertyName': 'three'}", serialize(bean));
   }
 
