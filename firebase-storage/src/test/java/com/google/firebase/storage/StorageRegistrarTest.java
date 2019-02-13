@@ -36,10 +36,7 @@ public class StorageRegistrarTest {
             new FirebaseOptions.Builder()
                 .setApplicationId("1:196403931065:android:60949756fbe381ea")
                 .build());
-    TestUserAgentDependentComponent userAgentDependant =
-        FirebaseStorage.getInstance(app).getApp().get(TestUserAgentDependentComponent.class);
-
-    UserAgentPublisher userAgentPublisher = userAgentDependant.getUserAgentPublisher();
+    UserAgentPublisher userAgentPublisher = app.get(UserAgentPublisher.class);
     String actualUserAgent = userAgentPublisher.getUserAgent();
 
     assertThat(actualUserAgent).contains("firebase-storage");

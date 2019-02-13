@@ -33,12 +33,9 @@ public class DatabaseRegistrarTest {
   @Test
   public void getComponents_publishesLibVersionComponent() {
     FirebaseApp app = appForDatabaseUrl(TEST_NAMESPACE, "test");
-    TestUserAgentDependentComponent userAgentDependant =
-        FirebaseDatabase.getInstance(app).getApp().get(TestUserAgentDependentComponent.class);
+    UserAgentPublisher userAgentPublisher = app.get(UserAgentPublisher.class);
 
-    UserAgentPublisher userAgentPublisher = userAgentDependant.getUserAgentPublisher();
     String actualUserAgent = userAgentPublisher.getUserAgent();
-
     assertThat(actualUserAgent).contains("firebase-database");
   }
 
