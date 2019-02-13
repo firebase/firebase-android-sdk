@@ -16,25 +16,36 @@
 
 package com.google.firebase.firestore;
 
-import org.robolectric.RobolectricTestRunner;
+import static com.google.common.truth.Truth.assertThat;
 
-@org.junit.runner.RunWith(RobolectricTestRunner.class) public class FirestoreRegistrarTest {
-  //TODO(rgowman:b/123870630): Enable test.
-  //@Test
-  //public void storageRegistrar_getComponents_publishesLibVersionComponent() {
-  //  FirebaseApp app =
-  //      FirebaseApp.initializeApp(
-  //          RuntimeEnvironment.application.getApplicationContext(),
-  //          new FirebaseOptions.Builder()
-  //              .setProjectId("projectId")
-  //              .setApplicationId("1:196403931065:android:60949756fbe381ea")
-  //              .build());
-  //  TestUserAgentDependentComponent userAgentDependant =
-  //      FirebaseFirestore.getInstance(app).getApp().get(TestUserAgentDependentComponent.class);
-  //
-  //  UserAgentPublisher userAgentPublisher = userAgentDependant.getUserAgentPublisher();
-  //  String actualUserAgent = userAgentPublisher.getUserAgent();
-  //
-  //  assertThat(actualUserAgent).contains("firebase-firestore");
-  //}
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.platforminfo.UserAgentPublisher;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+
+@RunWith(RobolectricTestRunner.class)
+public class FirestoreRegistrarTest {
+  // TODO(rgowman:b/123870630): Enable test.
+  @Ignore
+  @Test
+  public void storageRegistrar_getComponents_publishesLibVersionComponent() {
+    FirebaseApp app =
+        FirebaseApp.initializeApp(
+            RuntimeEnvironment.application.getApplicationContext(),
+            new FirebaseOptions.Builder()
+                .setProjectId("projectId")
+                .setApplicationId("1:196403931065:android:60949756fbe381ea")
+                .build());
+    TestUserAgentDependentComponent userAgentDependant =
+        FirebaseFirestore.getInstance(app).getApp().get(TestUserAgentDependentComponent.class);
+
+    UserAgentPublisher userAgentPublisher = userAgentDependant.getUserAgentPublisher();
+    String actualUserAgent = userAgentPublisher.getUserAgent();
+
+    assertThat(actualUserAgent).contains("firebase-firestore");
+  }
 }
