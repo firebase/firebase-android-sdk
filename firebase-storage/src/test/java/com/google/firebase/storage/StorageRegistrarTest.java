@@ -39,6 +39,6 @@ public class StorageRegistrarTest {
     UserAgentPublisher userAgentPublisher = app.get(UserAgentPublisher.class);
     String actualUserAgent = userAgentPublisher.getUserAgent();
 
-    assertThat(actualUserAgent).contains("firebase-storage");
+    assertThat(actualUserAgent).contains("fire-gcs");
   }
 }

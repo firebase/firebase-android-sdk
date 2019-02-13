@@ -153,7 +153,8 @@ public class FirebaseApp {
   @GuardedBy("LOCK")
   static final Map<String, FirebaseApp> INSTANCES = new ArrayMap<>();
 
-  private static final String FIREBASE_COMMON = "firebase-common";
+  private static final String FIREBASE_ANDROID = "fire-android";
+  private static final String FIREBASE_COMMON = "fire-core";
 
   private final Context applicationContext;
   private final String name;
@@ -547,6 +548,7 @@ public class FirebaseApp {
             Component.of(applicationContext, Context.class),
             Component.of(this, FirebaseApp.class),
             Component.of(options, FirebaseOptions.class),
+            LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
             LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
             DefaultUserAgentPublisher.component());
     publisher = componentRuntime.get(Publisher.class);

@@ -36,7 +36,7 @@ public class DatabaseRegistrarTest {
     UserAgentPublisher userAgentPublisher = app.get(UserAgentPublisher.class);
 
     String actualUserAgent = userAgentPublisher.getUserAgent();
-    assertThat(actualUserAgent).contains("firebase-database");
+    assertThat(actualUserAgent).contains("fire-rtdb");
   }
 
   private static FirebaseApp appForDatabaseUrl(String url, String name) {

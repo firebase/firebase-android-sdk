@@ -43,6 +43,6 @@ public class FirestoreRegistrarTest {
     UserAgentPublisher userAgentPublisher = app.get(UserAgentPublisher.class);
     String actualUserAgent = userAgentPublisher.getUserAgent();
 
-    assertThat(actualUserAgent).contains("firebase-firestore");
+    assertThat(actualUserAgent).contains("fire-fst");
   }
 }
