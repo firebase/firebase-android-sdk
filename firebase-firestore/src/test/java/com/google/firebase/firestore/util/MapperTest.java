@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import com.google.api.Property;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
@@ -709,7 +710,10 @@ public class MapperTest {
 
   private enum ComplexEnum {
     One("one"),
-    Two("two");
+    Two("two"),
+
+    @PropertyName("three")
+    THREE("three");
 
     private final String value;
 
@@ -728,6 +732,8 @@ public class MapperTest {
     private SimpleEnum enumValue;
 
     public ComplexEnum complexEnum;
+
+    public ComplexEnum enumUsingPropertyName;
 
     public SimpleEnum getEnumValue() {
       return enumValue;
@@ -1974,18 +1980,20 @@ public class MapperTest {
     EnumBean bean = new EnumBean();
     bean.enumField = SimpleEnum.Bar;
     bean.complexEnum = ComplexEnum.One;
+    bean.enumUsingPropertyName = ComplexEnum.THREE;
     bean.setEnumValue(SimpleEnum.Foo);
-
-    assertJson("{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}", serialize(bean));
+    Object result = serialize(bean);
+    assertJson("{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'enumUsingPropertyName': 'three'}", serialize(bean));
   }
 
   @Test
   public void enumsAreParsed() {
-    String json = "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}";
+    String json = "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'enumUsingPropertyName': 'three'}";
     EnumBean bean = deserialize(json, EnumBean.class);
     assertEquals(bean.enumField, SimpleEnum.Bar);
     assertEquals(bean.enumValue, SimpleEnum.Foo);
     assertEquals(bean.complexEnum, ComplexEnum.One);
+    assertEquals(bean.enumUsingPropertyName, ComplexEnum.THREE);
   }
 
   @Test

@@ -17,6 +17,7 @@ package com.google.firebase.firestore.util;
 import static com.google.firebase.firestore.util.ApiUtil.invoke;
 import static com.google.firebase.firestore.util.ApiUtil.newInstance;
 
+import com.google.api.Property;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
@@ -156,7 +157,16 @@ public class CustomClassMapper {
     } else if (o.getClass().isArray()) {
       throw serializeError(path, "Serializing Arrays is not supported, please use Lists instead");
     } else if (o instanceof Enum) {
-      return ((Enum<?>) o).name();
+      String enumField = ((Enum<?>)o).name();
+      try {
+        if (o.getClass().getField(enumField).isAnnotationPresent(PropertyName.class)) {
+          PropertyName annotation = o.getClass().getField(enumField).getAnnotation(PropertyName.class);
+          return annotation.value();
+        }
+      } catch (Exception ex) {
+        return enumField;
+      }
+      return enumField;
     } else if (o instanceof Date
         || o instanceof Timestamp
         || o instanceof GeoPoint
@@ -324,6 +334,19 @@ public class CustomClassMapper {
       String value = (String) object;
       // We cast to Class without generics here since we can't prove the bound
       // T extends Enum<T> statically
+
+      // try to use PropertyName if exist
+      Field[] enumFields = clazz.getFields();
+      for (Field field : enumFields){
+        if (field.isAnnotationPresent(PropertyName.class)) {
+          PropertyName propertyName = field.getAnnotation(PropertyName.class);
+          if (value.equals(propertyName.value())) {
+            value = field.getName();
+            break;
+          }
+        }
+      }
+
       try {
         return (T) Enum.valueOf((Class) clazz, value);
       } catch (IllegalArgumentException e) {
