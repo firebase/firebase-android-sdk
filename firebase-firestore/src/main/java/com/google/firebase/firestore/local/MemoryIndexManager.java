@@ -22,12 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * An in-memory implementation of IndexManager.
- *
- * <p>It's also used as an implementation detail in SQLiteIndexManager and SQLiteSchema as a
- * convenient way to track entries we've already written.
- */
+/** An in-memory implementation of IndexManager. */
 class MemoryIndexManager implements IndexManager {
   private final MemoryCollectionParentIndex collectionParentsIndex =
       new MemoryCollectionParentIndex();
