@@ -56,6 +56,6 @@ public class FunctionsRegistrar implements ComponentRegistrar {
                         c.get(ContextProvider.class),
                         c.get(FirebaseOptions.class).getProjectId()))
             .build(),
-        LibraryVersionComponent.create("firebase-functions", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create("fire-fn", BuildConfig.VERSION_NAME));
   }
 }

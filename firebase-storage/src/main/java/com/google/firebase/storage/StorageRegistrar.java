@@ -24,6 +24,6 @@ public class StorageRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
     return Collections.singletonList(
-        LibraryVersionComponent.create("firebase-storage", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create("fire-gcs", BuildConfig.VERSION_NAME));
   }
 }

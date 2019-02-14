@@ -24,6 +24,6 @@ public class DatabaseRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
     return Collections.singletonList(
-        LibraryVersionComponent.create("firebase-database", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create("fire-rtdb", BuildConfig.VERSION_NAME));
   }
 }
