@@ -156,17 +156,13 @@ public class CustomClassMapper {
     } else if (o.getClass().isArray()) {
       throw serializeError(path, "Serializing Arrays is not supported, please use Lists instead");
     } else if (o instanceof Enum) {
-      String enumField = ((Enum<?>) o).name();
+      String enumName = ((Enum<?>) o).name();
       try {
-        if (o.getClass().getField(enumField).isAnnotationPresent(PropertyName.class)) {
-          PropertyName annotation =
-              o.getClass().getField(enumField).getAnnotation(PropertyName.class);
-          return annotation.value();
-        }
-      } catch (Exception ex) {
-        return enumField;
+        Field enumField = o.getClass().getField(enumName);
+        return BeanMapper.propertyName(enumField);
+      } catch (NoSuchFieldException ex) {
+        return enumName;
       }
-      return enumField;
     } else if (o instanceof Date
         || o instanceof Timestamp
         || o instanceof GeoPoint
@@ -338,9 +334,9 @@ public class CustomClassMapper {
       // try to use PropertyName if exist
       Field[] enumFields = clazz.getFields();
       for (Field field : enumFields) {
-        if (field.isAnnotationPresent(PropertyName.class)) {
-          PropertyName propertyName = field.getAnnotation(PropertyName.class);
-          if (value.equals(propertyName.value())) {
+        if (field.isEnumConstant()) {
+          String propertyName = BeanMapper.propertyName(field);
+          if (value.equals(propertyName)) {
             value = field.getName();
             break;
           }
