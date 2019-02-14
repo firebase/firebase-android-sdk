@@ -258,9 +258,9 @@ public final class Query {
   }
 
   /**
-   * Helper to convert a Collection Group query into a collection query at a specific path. This is
-   * used when executing Collection Group queries, since we have to split the query into a set of
-   * Collection queries at multiple paths.
+   * Helper to convert a collection group query into a collection query at a specific path. This is
+   * used when executing collection group queries, since we have to split the query into a set of
+   * collection queries at multiple paths.
    */
   public Query asCollectionQueryAtPath(ResourcePath path) {
     return new Query(

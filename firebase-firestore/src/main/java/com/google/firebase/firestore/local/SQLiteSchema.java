@@ -115,7 +115,7 @@ class SQLiteSchema {
     }
 
     if (fromVersion < 8 && toVersion >= 8) {
-      createV8CollectionParentIndex();
+      createV8CollectionParentsIndex();
     }
 
     /*
@@ -372,10 +372,14 @@ class SQLiteSchema {
         });
   }
 
-  private void createV8CollectionParentIndex() {
+  private void createV8CollectionParentsIndex() {
     ifTablesDontExist(
         new String[] {"collection_parents"},
         () -> {
+          // A table storing associations between a Collection ID (e.g. 'messages') to a parent path
+          // (e.g. '/chats/123') that contains it as a (sub)collection. This is used to efficiently
+          // find all collections to query when performing a Collection Group query. Note that the
+          // parent path will be an empty path in the case of root-level collections.
           db.execSQL(
               "CREATE TABLE collection_parents ("
                   + "collection_id TEXT, "
@@ -390,10 +394,10 @@ class SQLiteSchema {
         db.compileStatement(
             "INSERT OR REPLACE INTO collection_parents (collection_id, parent) VALUES (?, ?)");
     Consumer<ResourcePath> addEntry =
-        path -> {
-          if (cache.add(path)) {
-            String collectionId = path.getLastSegment();
-            ResourcePath parentPath = path.popLast();
+        collectionPath -> {
+          if (cache.add(collectionPath)) {
+            String collectionId = collectionPath.getLastSegment();
+            ResourcePath parentPath = collectionPath.popLast();
             addIndexEntry.clearBindings();
             addIndexEntry.bindString(1, collectionId);
             addIndexEntry.bindString(2, EncodedPath.encode(parentPath));
