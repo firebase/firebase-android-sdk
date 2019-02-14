@@ -40,6 +40,6 @@ public class FunctionsRegistrarTest {
     UserAgentPublisher userAgentPublisher = app.get(UserAgentPublisher.class);
     String actualUserAgent = userAgentPublisher.getUserAgent();
 
-    assertThat(actualUserAgent).contains("firebase-functions");
+    assertThat(actualUserAgent).contains("fire-fn");
   }
 }
