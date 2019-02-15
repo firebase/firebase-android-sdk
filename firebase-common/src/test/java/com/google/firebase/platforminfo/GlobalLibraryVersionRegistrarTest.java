@@ -21,22 +21,22 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class OutOfBandLibraryVersionRegistrarTest {
+public class GlobalLibraryVersionRegistrarTest {
   @Test
   public void registerVersion_persistsVersion() {
-    OutOfBandLibraryVersionRegistrar outOfBandLibraryVersionRegistrar =
-        new OutOfBandLibraryVersionRegistrar();
-    outOfBandLibraryVersionRegistrar.registerVersion("foo", "1.1.1");
+    GlobalLibraryVersionRegistrar globalLibraryVersionRegistrar =
+        new GlobalLibraryVersionRegistrar();
+    globalLibraryVersionRegistrar.registerVersion("foo", "1.1.1");
 
-    assertThat(outOfBandLibraryVersionRegistrar.getRegisteredVersions())
+    assertThat(globalLibraryVersionRegistrar.getRegisteredVersions())
         .contains(LibraryVersion.create("foo", "1.1.1"));
   }
 
   @Test
   public void getRegisteredVersions_returnsEmptySet_whenNoVersionsAreRegistered() {
-    OutOfBandLibraryVersionRegistrar outOfBandLibraryVersionRegistrar =
-        new OutOfBandLibraryVersionRegistrar();
+    GlobalLibraryVersionRegistrar globalLibraryVersionRegistrar =
+        new GlobalLibraryVersionRegistrar();
 
-    assertThat(outOfBandLibraryVersionRegistrar.getRegisteredVersions()).isEmpty();
+    assertThat(globalLibraryVersionRegistrar.getRegisteredVersions()).isEmpty();
   }
 }

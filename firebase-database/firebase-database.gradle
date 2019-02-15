@@ -14,16 +14,6 @@
 
 apply plugin: 'com.android.library'
 
-tasks.withType(org.gradle.api.tasks.testing.Test) {
-    testLogging {
-        exceptionFormat = 'full'
-        showStandardStreams = true
-        showCauses = true
-        showExceptions =true
-        showStackTraces = true
-    }
-}
-
 android {
     adbOptions {
         timeOutInMs 60 * 1000
@@ -68,6 +58,8 @@ android {
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
     }
+
+    testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {

@@ -15,7 +15,7 @@
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 
 buildscript {
-
+    ext.kotlinVersion = '1.3.20'
     repositories {
         google()
         jcenter()
@@ -34,6 +34,7 @@ buildscript {
         classpath 'com.google.gms:google-services:4.1.0'
         classpath 'me.tatarka:gradle-retrolambda:3.7.0'
         classpath 'digital.wup:android-maven-publish:3.6.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
 
