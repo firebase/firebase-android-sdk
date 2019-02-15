@@ -42,6 +42,7 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
         project.configure(project.subprojects) {
             def checkDependents = it.task('checkDependents') {}
             def connectedCheckDependents = it.task('connectedCheckDependents')
+            def deviceCheckDependents = it.task('deviceCheckDependents')
 
             configurations.all {
                 if (it.name == 'debugUnitTestRuntimeClasspath') {
@@ -56,6 +57,11 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                             .debugAndroidTestRuntimeClasspath.getTaskDependencyFromProjectDependency(
                             false, "connectedCheckDependents"))
                     connectedCheckDependents.dependsOn 'connectedCheck'
+
+                    deviceCheckDependents.dependsOn(configurations
+                            .debugAndroidTestRuntimeClasspath.getTaskDependencyFromProjectDependency(
+                            false, "deviceCheckDependents"))
+                    deviceCheckDependents.dependsOn 'deviceCheck'
                 }
 
                 if (it.name == 'annotationProcessor') {
@@ -65,6 +71,9 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                     checkDependents.dependsOn(configurations
                             .annotationProcessor.getTaskDependencyFromProjectDependency(
                             false, "checkDependents"))
+                    deviceCheckDependents.dependsOn(configurations
+                            .annotationProcessor.getTaskDependencyFromProjectDependency(
+                            false, "deviceCheckDependents"))
                 }
             }
 
@@ -81,6 +90,7 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                     // defined.
                     tasks.maybeCreate('connectedCheck')
                     tasks.maybeCreate('check')
+                    tasks.maybeCreate('deviceCheck')
                 }
             }
         }
@@ -104,6 +114,14 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
             task.description = 'Runs the connectedCheck task in all changed projects.'
             affectedProjects.each {
                 task.dependsOn("$it.path:connectedCheckDependents")
+            }
+        }
+
+        project.task('deviceCheckChanged') { task ->
+            task.group = 'verification'
+            task.description = 'Runs the deviceCheck task in all changed projects.'
+            affectedProjects.each {
+                task.dependsOn("$it.path:deviceCheckDependents")
             }
         }
 
