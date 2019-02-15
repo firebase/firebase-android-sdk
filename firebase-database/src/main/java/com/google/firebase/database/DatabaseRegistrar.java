@@ -14,12 +14,15 @@
 
 package com.google.firebase.database;
 
+import android.support.annotation.Keep;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Collections;
 import java.util.List;
 
+/** @hide */
+@Keep
 public class DatabaseRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {

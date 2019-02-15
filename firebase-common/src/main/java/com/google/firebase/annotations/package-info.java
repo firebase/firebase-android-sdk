@@ -12,21 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.storage;
-
-import android.support.annotation.Keep;
-import com.google.firebase.components.Component;
-import com.google.firebase.components.ComponentRegistrar;
-import com.google.firebase.platforminfo.LibraryVersionComponent;
-import java.util.Collections;
-import java.util.List;
-
 /** @hide */
-@Keep
-public class StorageRegistrar implements ComponentRegistrar {
-  @Override
-  public List<Component<?>> getComponents() {
-    return Collections.singletonList(
-        LibraryVersionComponent.create("fire-gcs", BuildConfig.VERSION_NAME));
-  }
-}
+package com.google.firebase.annotations;
