@@ -29,7 +29,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.Filter;
-import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.Filter.Operator;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.RelationFilter;
 import com.google.firebase.firestore.core.ViewSnapshot;
@@ -905,8 +905,14 @@ public class Query {
   }
 
   @PublicApi
-  public List<Filter> getFilters() {
-    return query.getFilters();
+  public List<com.google.firebase.firestore.Filter> getFilters() {
+    com.google.firebase.firestore.Filter newFilter;
+    List<com.google.firebase.firestore.Filter> filters = new ArrayList<>();
+    for (Filter filter : query.getFilters()) {
+      newFilter = new com.google.firebase.firestore.Filter(filter);
+      filters.add(newFilter);
+    }
+    return filters;
   }
 
   @PublicApi

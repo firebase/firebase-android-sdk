@@ -20,7 +20,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Filter;
-import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.Filter.Operator;
 import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.core.NaNFilter;
 import com.google.firebase.firestore.core.NullFilter;

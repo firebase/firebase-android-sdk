@@ -17,8 +17,8 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.OrderBy;
-import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.OrderBy.Direction;
+import com.google.firebase.firestore.Filter.Operator;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;

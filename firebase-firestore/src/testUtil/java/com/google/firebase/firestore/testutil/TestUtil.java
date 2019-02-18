@@ -34,7 +34,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.TestAccessHelper;
 import com.google.firebase.firestore.UserDataConverter;
 import com.google.firebase.firestore.core.Filter;
-import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.Filter.Operator;
 import com.google.firebase.firestore.OrderBy;
 import com.google.firebase.firestore.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;

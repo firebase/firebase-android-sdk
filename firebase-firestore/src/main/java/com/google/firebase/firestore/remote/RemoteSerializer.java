@@ -102,6 +102,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import com.google.firebase.firestore.Filter.Operator;
 
 /** Serializer that converts to and from Firestore API protos. */
 public final class RemoteSerializer {
@@ -847,7 +848,7 @@ public final class RemoteSerializer {
 
   private Filter decodeRelationFilter(StructuredQuery.FieldFilter proto) {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
-    RelationFilter.Operator filterOperator = decodeRelationFilterOperator(proto.getOp());
+    Operator filterOperator = decodeRelationFilterOperator(proto.getOp());
     FieldValue value = decodeValue(proto.getValue());
     return Filter.create(fieldPath, filterOperator, value);
   }
@@ -883,7 +884,7 @@ public final class RemoteSerializer {
     return FieldReference.newBuilder().setFieldPath(field.canonicalString()).build();
   }
 
-  private FieldFilter.Operator encodeRelationFilterOperator(RelationFilter.Operator operator) {
+  private FieldFilter.Operator encodeRelationFilterOperator(Operator operator) {
     switch (operator) {
       case LESS_THAN:
         return FieldFilter.Operator.LESS_THAN;
@@ -902,20 +903,20 @@ public final class RemoteSerializer {
     }
   }
 
-  private RelationFilter.Operator decodeRelationFilterOperator(FieldFilter.Operator operator) {
+  private Operator decodeRelationFilterOperator(FieldFilter.Operator operator) {
     switch (operator) {
       case LESS_THAN:
-        return RelationFilter.Operator.LESS_THAN;
+        return Operator.LESS_THAN;
       case LESS_THAN_OR_EQUAL:
-        return RelationFilter.Operator.LESS_THAN_OR_EQUAL;
+        return Operator.LESS_THAN_OR_EQUAL;
       case EQUAL:
-        return RelationFilter.Operator.EQUAL;
+        return Operator.EQUAL;
       case GREATER_THAN_OR_EQUAL:
-        return RelationFilter.Operator.GREATER_THAN_OR_EQUAL;
+        return Operator.GREATER_THAN_OR_EQUAL;
       case GREATER_THAN:
-        return RelationFilter.Operator.GREATER_THAN;
+        return Operator.GREATER_THAN;
       case ARRAY_CONTAINS:
-        return RelationFilter.Operator.ARRAY_CONTAINS;
+        return Operator.ARRAY_CONTAINS;
       default:
         throw fail("Unhandled FieldFilter.operator %d", operator);
     }
