@@ -97,10 +97,10 @@ configure(subprojects) {
     }
     apply plugin: 'jacoco'
     jacoco {
-        toolVersion = '0.8.2'
+        toolVersion = '0.8.3'
     }
     task(['type': JacocoReport, 'dependsOn': 'check', 'group': 'Coverage',
-          'description': 'Generates JaCoCo unit test coverage reports.'], 'coverage') {
+          'description': 'Generates JaCoCo unit test coverage reports.'], 'checkCoverage') {
         def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**Manifest*.*']
         classDirectories = files([
             fileTree(dir: "$buildDir/intermediates/javac/debug", excludes: excludes)
