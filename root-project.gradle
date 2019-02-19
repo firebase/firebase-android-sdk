@@ -95,6 +95,27 @@ configure(subprojects) {
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
         exclude '**/package-info.java'
     }
+    apply plugin: 'jacoco'
+    jacoco {
+        toolVersion = '0.8.3'
+    }
+    task(['type': JacocoReport, 'dependsOn': 'check', 'group': 'Coverage',
+          'description': 'Generates JaCoCo unit test coverage reports.'], 'checkCoverage') {
+        def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**Manifest*.*']
+        classDirectories = files([
+            fileTree(dir: "$buildDir/intermediates/javac/debug", excludes: excludes)
+        ])
+        sourceDirectories = files(['src/main/java'])
+        executionData = fileTree(dir: "$buildDir", includes: ['jacoco/*.exec'])
+        reports {
+            html.enabled true
+            xml.enabled true
+            csv.enabled true
+        }
+    }
+    tasks.withType(Test) {
+        jacoco.includeNoLocationClasses true
+    }
 
     tasks.withType(JavaCompile) {
         options.errorprone.excludedPaths = '.*/build/generated/.*'
