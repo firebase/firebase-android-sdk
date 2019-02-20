@@ -33,7 +33,6 @@ import javax.lang.model.element.Modifier;
     summary =
         "Avoid static/default methods in interfaces: We currently desugar SDKs with retrolambda "
             + "which has limited support for those.",
-    category = BugPattern.Category.ANDROID,
     severity = BugPattern.SeverityLevel.ERROR)
 @AutoService(BugChecker.class)
 public class NoStaticOrDefaultMethodsInInterfaces extends BugChecker
