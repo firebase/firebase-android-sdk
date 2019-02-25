@@ -63,5 +63,6 @@ ${FUNCTIONS} deploy unknownErrorTest --trigger-http
 ${FUNCTIONS} deploy unhandledErrorTest --trigger-http
 ${FUNCTIONS} deploy explicitErrorTest --trigger-http
 ${FUNCTIONS} deploy httpErrorTest --trigger-http
+${FUNCTIONS} deploy timeoutTest --trigger-http
 
 echo "Finished setting up Cloud Functions emulator."
