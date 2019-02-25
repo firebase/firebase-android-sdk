@@ -1194,6 +1194,53 @@ public class MapperTest {
     assertEquals("bar", bean.XMLAndURL2);
   }
 
+  /** Based on https://github.com/firebase/firebase-android-sdk/issues/252. */
+  private static class AllCapsDefaultHandlingBean {
+    private String UUID;
+
+    public String getUUID() {
+      return UUID;
+    }
+
+    public void setUUID(String value) {
+      UUID = value;
+    }
+  }
+
+  @Test
+  public void allCapsGetterSerializesToLowercaseByDefault() {
+    AllCapsDefaultHandlingBean bean = new AllCapsDefaultHandlingBean();
+    bean.setUUID("value");
+    assertJson("{'uuid': 'value'}", serialize(bean));
+    AllCapsDefaultHandlingBean deserialized =
+        deserialize("{'uuid': 'value'}", AllCapsDefaultHandlingBean.class);
+    assertEquals("value", deserialized.getUUID());
+  }
+
+  private static class AllCapsWithPropertyName {
+    private String UUID;
+
+    @PropertyName("UUID")
+    public String getUUID() {
+      return UUID;
+    }
+
+    @PropertyName("UUID")
+    public void setUUID(String value) {
+      UUID = value;
+    }
+  }
+
+  @Test
+  public void allCapsWithPropertyNameSerializesToUppercase() {
+    AllCapsWithPropertyName bean = new AllCapsWithPropertyName();
+    bean.setUUID("value");
+    assertJson("{'UUID': 'value'}", serialize(bean));
+    AllCapsWithPropertyName deserialized =
+        deserialize("{'UUID': 'value'}", AllCapsWithPropertyName.class);
+    assertEquals("value", deserialized.getUUID());
+  }
+
   @Test
   public void setterIsCalledWhenPresent() {
     SetterBean bean = deserialize("{'value': 'foo'}", SetterBean.class);
