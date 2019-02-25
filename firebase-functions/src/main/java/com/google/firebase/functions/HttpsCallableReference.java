@@ -16,14 +16,19 @@ package com.google.firebase.functions;
 
 import android.support.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
+import java.util.concurrent.TimeUnit;
 
 /** A reference to a particular Callable HTTPS trigger in Cloud Functions. */
 public class HttpsCallableReference {
+
   // The functions client to use for making calls.
   private final FirebaseFunctions functionsClient;
 
   // The name of the HTTPS endpoint this reference refers to.
   private final String name;
+
+  // Options for how to do the HTTPS call.
+  HttpsCallOptions options = new HttpsCallOptions();
 
   /** Creates a new reference with the given options. */
   HttpsCallableReference(FirebaseFunctions functionsClient, String name) {
@@ -71,7 +76,7 @@ public class HttpsCallableReference {
    * @see FirebaseFunctionsException
    */
   public Task<HttpsCallableResult> call(@Nullable Object data) {
-    return functionsClient.call(name, data);
+    return functionsClient.call(name, data, options);
   }
 
   /**
@@ -89,6 +94,28 @@ public class HttpsCallableReference {
    * @return A Task that will be completed when the HTTPS request has completed.
    */
   public Task<HttpsCallableResult> call() {
-    return functionsClient.call(name, null);
+    return functionsClient.call(name, null, options);
+  }
+
+  /**
+   * Changes the timeout for calls from this instance of Functions. The default is 60 seconds.
+   *
+   * @param timeout The length of the timeout, in the given units.
+   * @param units The units for the specified timeout.
+   */
+  public void setTimeout(long timeout, TimeUnit units) {
+    options.setTimeout(timeout, units);
+  }
+
+  /**
+   * Creates a new reference with the given timeout for calls. The default is 60 seconds.
+   *
+   * @param timeout The length of the timeout, in the given units.
+   * @param units The units for the specified timeout.
+   */
+  public HttpsCallableReference withTimeout(long timeout, TimeUnit units) {
+    HttpsCallableReference other = new HttpsCallableReference(functionsClient, name);
+    other.setTimeout(timeout, units);
+    return other;
   }
 }
