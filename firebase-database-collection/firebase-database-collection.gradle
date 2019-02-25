@@ -14,10 +14,8 @@
 
 apply plugin: 'com.android.library'
 
-def androidVersion = 28
-
 android {
-    compileSdkVersion androidVersion
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 9
     }

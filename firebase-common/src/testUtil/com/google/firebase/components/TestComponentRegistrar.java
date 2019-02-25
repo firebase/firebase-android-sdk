@@ -17,10 +17,15 @@ package com.google.firebase.components;
 import android.content.Context;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.platforminfo.LibraryVersionComponent;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.Arrays;
 import java.util.List;
 
 class TestComponentRegistrar implements ComponentRegistrar {
+  private static final String TEST_COMPONENT_NAME = "test-component";
+  private static String TEST_VERSION = "1.2.3";
+
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
@@ -38,6 +43,13 @@ class TestComponentRegistrar implements ComponentRegistrar {
                         container.get(FirebaseApp.class),
                         container.get(FirebaseOptions.class),
                         container.get(TestComponentOne.class)))
-            .build());
+            .build(),
+        Component.builder(TestUserAgentDependentComponent.class)
+            .add(Dependency.required(UserAgentPublisher.class))
+            .factory(
+                container ->
+                    new TestUserAgentDependentComponent(container.get(UserAgentPublisher.class)))
+            .build(),
+        LibraryVersionComponent.create(TEST_COMPONENT_NAME, TEST_VERSION));
   }
 }

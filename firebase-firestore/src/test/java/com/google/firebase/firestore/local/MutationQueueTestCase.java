@@ -27,7 +27,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
@@ -172,23 +171,6 @@ public abstract class MutationQueueTestCase {
     MutationBatch last = batches.get(batches.size() - 1);
     MutationBatch notFound = mutationQueue.getNextMutationBatchAfterBatchId(last.getBatchId());
     assertNull(notFound);
-  }
-
-  @Test
-  public void testNextMutationBatchAfterBatchIdSkipsAcknowledgedBatches() {
-    List<MutationBatch> batches = createBatches(3);
-    assertEquals(
-        batches.get(0), mutationQueue.getNextMutationBatchAfterBatchId(MutationBatch.UNKNOWN));
-
-    acknowledgeBatch(batches.get(0));
-    assertEquals(
-        batches.get(1), mutationQueue.getNextMutationBatchAfterBatchId(MutationBatch.UNKNOWN));
-    assertEquals(
-        batches.get(1),
-        mutationQueue.getNextMutationBatchAfterBatchId(batches.get(0).getBatchId()));
-    assertEquals(
-        batches.get(2),
-        mutationQueue.getNextMutationBatchAfterBatchId(batches.get(1).getBatchId()));
   }
 
   @Test
@@ -343,7 +325,6 @@ public abstract class MutationQueueTestCase {
   @Test
   public void testRemoveMutationBatches() {
     List<MutationBatch> batches = createBatches(10);
-    MutationBatch last = batches.get(batches.size() - 1);
 
     removeMutationBatches(batches.remove(0));
     assertEquals(9, batchCount());

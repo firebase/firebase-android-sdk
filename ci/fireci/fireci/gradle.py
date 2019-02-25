@@ -17,6 +17,8 @@ import os
 import subprocess
 import sys
 
+from . import stats
+
 _logger = logging.getLogger('fireci.gradle')
 
 ADB_INSTALL_TIMEOUT = '5'
@@ -27,6 +29,7 @@ def P(name, value):
   return '-P{}={}'.format(name, value)
 
 
+@stats.measure_call('gradle')
 def run(*args, gradle_opts='', workdir=None):
   """Invokes gradle with specified args and gradle_opts."""
   new_env = dict(os.environ)
@@ -34,6 +37,7 @@ def run(*args, gradle_opts='', workdir=None):
     new_env['GRADLE_OPTS'] = gradle_opts
   new_env[
       'ADB_INSTALL_TIMEOUT'] = ADB_INSTALL_TIMEOUT  # 5 minutes, rather than 2 minutes
+  stats.propagate_context_into(new_env)
 
   command = ['./gradlew'] + list(args)
   _logger.info('Executing gradle command: "%s" in directory: "%s"',

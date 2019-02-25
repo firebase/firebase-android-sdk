@@ -25,13 +25,13 @@ android {
         abortOnError false
         checkReleaseBuilds false
     }
-    compileSdkVersion 26
+    compileSdkVersion project.targetSdkVersion
 
     defaultConfig {
         applicationId 'com.google.apksize'
-        minSdkVersion 26
-	multiDexEnabled true
-        targetSdkVersion 26
+        minSdkVersion project.targetSdkVersion
+	    multiDexEnabled true
+        targetSdkVersion project.targetSdkVersion
         versionCode 1
         versionName '1.0'
     }

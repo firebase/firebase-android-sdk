@@ -275,7 +275,7 @@ public class FieldValueTest {
     FieldValue val = wrapObject("foo", map("a", 1, "b", true, "c", "string"));
     assertTrue(val instanceof ObjectValue);
     ObjectValue obj = (ObjectValue) val;
-    assertTrue((obj.get(field("foo"))) instanceof ObjectValue);
+    assertTrue(obj.get(field("foo")) instanceof ObjectValue);
     assertEquals(wrap(1), obj.get(field("foo.a")));
     assertEquals(wrap(true), obj.get(field("foo.b")));
     assertEquals(wrap("string"), obj.get(field("foo.c")));
@@ -411,7 +411,7 @@ public class FieldValueTest {
       wrap(array);
       fail("wrap should have failed");
     } catch (IllegalArgumentException e) {
-      assertNotEquals(-1, e.getMessage().indexOf("use a List instead"));
+      assertNotEquals(-1, e.getMessage().indexOf("use Lists instead"));
     }
   }
 

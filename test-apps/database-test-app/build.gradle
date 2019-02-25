@@ -18,12 +18,12 @@ apply plugin: 'com.android.application'
 
 android {
     testBuildType = project.testBuildType
-    compileSdkVersion 28
+    compileSdkVersion project.targetSdkVersion
 
     defaultConfig {
         applicationId "com.google.firebase.testapps.database"
         minSdkVersion 16
-        targetSdkVersion 28
+        targetSdkVersion project.targetSdkVersion
         versionCode 1
         versionName "1.0"
         multiDexEnabled true

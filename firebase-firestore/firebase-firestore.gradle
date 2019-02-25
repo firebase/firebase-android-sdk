@@ -15,8 +15,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.google.protobuf'
 
-def androidVersion = 28
-
 protobuf {
     // Configure the protoc executable
     protoc {
@@ -53,10 +51,11 @@ android {
         timeOutInMs 60 * 1000
     }
 
-    compileSdkVersion androidVersion
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        targetSdkVersion androidVersion
-        minSdkVersion 14
+        targetSdkVersion project.targetSdkVersion
+        minSdkVersion project.minSdkVersion
+        versionName version
         multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -84,6 +83,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
@@ -122,6 +122,14 @@ dependencies {
     androidTestImplementation "com.android.support:support-annotations:$supportAnnotationsVersion"
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test:rules:1.0.2'
+}
+
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        // TODO(rsgowman): Also add "-Xlint:unchecked". But currently that
+        // enables 100+ warnings due to our generated source code.
+        options.compilerArgs << "-Xlint:deprecation"
+    }
 }
 
 // ==========================================================================

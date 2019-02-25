@@ -91,6 +91,7 @@ public class IntegrationTestUtil {
     return newTestSettingsWithSnapshotTimestampsEnabled(true);
   }
 
+  @SuppressWarnings("deprecation") // for setTimestampsInSnapshotsEnabled()
   public static FirebaseFirestoreSettings newTestSettingsWithSnapshotTimestampsEnabled(
       boolean enabled) {
     return new FirebaseFirestoreSettings.Builder()
