@@ -1194,9 +1194,7 @@ public class MapperTest {
     assertEquals("bar", bean.XMLAndURL2);
   }
 
-  /**
-   * Based on https://github.com/firebase/firebase-android-sdk/issues/252.
-   */
+  /** Based on https://github.com/firebase/firebase-android-sdk/issues/252. */
   private static class AllCapsDefaultHandlingBean {
     private String UUID;
 
