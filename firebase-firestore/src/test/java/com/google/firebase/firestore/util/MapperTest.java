@@ -709,7 +709,10 @@ public class MapperTest {
 
   private enum ComplexEnum {
     One("one"),
-    Two("two");
+    Two("two"),
+
+    @PropertyName("Three")
+    THREE("three");
 
     private final String value;
 
@@ -722,12 +725,24 @@ public class MapperTest {
     }
   }
 
+  private enum PathologicalEnum {
+    @PropertyName("Two")
+    One,
+
+    @PropertyName("One")
+    Two
+  }
+
   private static class EnumBean {
     public SimpleEnum enumField;
 
     private SimpleEnum enumValue;
 
     public ComplexEnum complexEnum;
+
+    public ComplexEnum enumUsingPropertyName;
+
+    public PathologicalEnum pathologicalEnum;
 
     public SimpleEnum getEnumValue() {
       return enumValue;
@@ -2021,18 +2036,24 @@ public class MapperTest {
     EnumBean bean = new EnumBean();
     bean.enumField = SimpleEnum.Bar;
     bean.complexEnum = ComplexEnum.One;
+    bean.enumUsingPropertyName = ComplexEnum.THREE;
+    bean.pathologicalEnum = PathologicalEnum.One;
     bean.setEnumValue(SimpleEnum.Foo);
-
-    assertJson("{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}", serialize(bean));
+    assertJson(
+        "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'enumUsingPropertyName': 'Three', 'pathologicalEnum': 'Two'}",
+        serialize(bean));
   }
 
   @Test
   public void enumsAreParsed() {
-    String json = "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}";
+    String json =
+        "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'enumUsingPropertyName': 'Three', 'pathologicalEnum': 'Two'}";
     EnumBean bean = deserialize(json, EnumBean.class);
     assertEquals(bean.enumField, SimpleEnum.Bar);
     assertEquals(bean.enumValue, SimpleEnum.Foo);
     assertEquals(bean.complexEnum, ComplexEnum.One);
+    assertEquals(bean.enumUsingPropertyName, ComplexEnum.THREE);
+    assertEquals(bean.pathologicalEnum, PathologicalEnum.One);
   }
 
   @Test
