@@ -156,7 +156,13 @@ public class CustomClassMapper {
     } else if (o.getClass().isArray()) {
       throw serializeError(path, "Serializing Arrays is not supported, please use Lists instead");
     } else if (o instanceof Enum) {
-      return ((Enum<?>) o).name();
+      String enumName = ((Enum<?>) o).name();
+      try {
+        Field enumField = o.getClass().getField(enumName);
+        return BeanMapper.propertyName(enumField);
+      } catch (NoSuchFieldException ex) {
+        return enumName;
+      }
     } else if (o instanceof Date
         || o instanceof Timestamp
         || o instanceof GeoPoint
@@ -324,6 +330,19 @@ public class CustomClassMapper {
       String value = (String) object;
       // We cast to Class without generics here since we can't prove the bound
       // T extends Enum<T> statically
+
+      // try to use PropertyName if exist
+      Field[] enumFields = clazz.getFields();
+      for (Field field : enumFields) {
+        if (field.isEnumConstant()) {
+          String propertyName = BeanMapper.propertyName(field);
+          if (value.equals(propertyName)) {
+            value = field.getName();
+            break;
+          }
+        }
+      }
+
       try {
         return (T) Enum.valueOf((Class) clazz, value);
       } catch (IllegalArgumentException e) {
