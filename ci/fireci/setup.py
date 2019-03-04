@@ -26,7 +26,7 @@ setup(
     version='0.1',
     # this is a temporary measure until opencensus 0.2 release is out.
     dependency_links=[
-        'https://github.com/census-instrumentation/opencensus-python/tarball/master#egg=opencensus'
+        'https://github.com/census-instrumentation/opencensus-python/tarball/5dac1d99#egg=opencensus'
     ],
     install_requires=[
         'click==7.0',
