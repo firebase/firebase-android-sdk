@@ -45,6 +45,7 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
+import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
@@ -59,6 +60,7 @@ import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.GeoPointValue;
 import com.google.firebase.firestore.model.value.IntegerValue;
 import com.google.firebase.firestore.model.value.NullValue;
+import com.google.firebase.firestore.model.value.NumberValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.model.value.StringValue;
@@ -556,6 +558,13 @@ public final class RemoteSerializer {
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
           .setRemoveAllFromArray(encodeArrayTransformElements(remove.getElements()))
           .build();
+    } else if (transform instanceof NumericIncrementTransformOperation) {
+      NumericIncrementTransformOperation incrementOperation =
+          (NumericIncrementTransformOperation) transform;
+      return DocumentTransform.FieldTransform.newBuilder()
+          .setFieldPath(fieldTransform.getFieldPath().canonicalString())
+          .setIncrement(encodeValue(incrementOperation.getOperand()))
+          .build();
     } else {
       throw fail("Unknown transform: %s", transform);
     }
@@ -592,6 +601,18 @@ public final class RemoteSerializer {
             FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
             new ArrayTransformOperation.Remove(
                 decodeArrayTransformElements(fieldTransform.getRemoveAllFromArray())));
+      case INCREMENT:
+        {
+          FieldValue operand = decodeValue(fieldTransform.getIncrement());
+          hardAssert(
+              operand instanceof NumberValue,
+              "Expected NUMERIC_ADD transform to be of number type, but was %s",
+              operand.getClass().getCanonicalName());
+          return new FieldTransform(
+              FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
+              new NumericIncrementTransformOperation(
+                  (NumberValue) decodeValue(fieldTransform.getIncrement())));
+        }
       default:
         throw fail("Unknown FieldTransform proto: %s", fieldTransform);
     }

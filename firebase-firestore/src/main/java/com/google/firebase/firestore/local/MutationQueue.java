@@ -43,8 +43,17 @@ interface MutationQueue {
   /** Sets the stream token for this mutation queue. */
   void setLastStreamToken(ByteString streamToken);
 
-  /** Creates a new mutation batch and adds it to this mutation queue. */
-  MutationBatch addMutationBatch(Timestamp localWriteTime, List<Mutation> mutations);
+  /**
+   * Creates a new mutation batch and adds it to this mutation queue.
+   *
+   * @param localWriteTime The original write time of this mutation.
+   * @param baseMutations Mutations that are used to populate the base values when this mutation is
+   *     applied locally. These mutations are used to locally overwrite values that are persisted in
+   *     the remote document cache.
+   * @param mutations The user-provided mutations in this mutation batch.
+   */
+  MutationBatch addMutationBatch(
+      Timestamp localWriteTime, List<Mutation> baseMutations, List<Mutation> mutations);
 
   /** Loads the mutation batch with the given batchId. */
   @Nullable

@@ -20,6 +20,7 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.fail;
 
 import android.content.Context;
+import android.net.SSLCertificateSocketFactory;
 import android.support.test.InstrumentationRegistry;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -38,10 +39,12 @@ import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
+import io.grpc.okhttp.OkHttpChannelBuilder;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,6 +58,14 @@ import java.util.concurrent.TimeoutException;
 
 /** A set of helper methods for tests */
 public class IntegrationTestUtil {
+
+  // Whether the integration tests should run against a local Firestore emulator instead of the
+  // Production environment. Note that the Android Emulator treats "10.0.2.2" as its host machine.
+  // TODO(mrschmidt): Support multiple envrionments (Emulator, QA, Nightly, Production)
+  private static final boolean CONNECT_TO_EMULATOR = false;
+
+  private static final String EMULATOR_HOST = "10.0.2.2";
+  private static final int EMULATOR_PORT = 8081;
 
   // Alternate project ID for creating "bad" references. Doesn't actually need to work.
   public static final String BAD_PROJECT_ID = "test-project-2";
@@ -80,11 +91,19 @@ public class IntegrationTestUtil {
   }
 
   public static DatabaseInfo testEnvDatabaseInfo() {
-    return new DatabaseInfo(
-        DatabaseId.forProject(provider.projectId()),
-        "test-persistenceKey",
-        provider.firestoreHost(),
-        /*sslEnabled=*/ true);
+    if (CONNECT_TO_EMULATOR) {
+      return new DatabaseInfo(
+          DatabaseId.forProject(provider.projectId()),
+          "test-persistenceKey",
+          String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT),
+          /*sslEnabled=*/ true);
+    } else {
+      return new DatabaseInfo(
+          DatabaseId.forProject(provider.projectId()),
+          "test-persistenceKey",
+          provider.firestoreHost(),
+          /*sslEnabled=*/ true);
+    }
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
@@ -94,11 +113,37 @@ public class IntegrationTestUtil {
   @SuppressWarnings("deprecation") // for setTimestampsInSnapshotsEnabled()
   public static FirebaseFirestoreSettings newTestSettingsWithSnapshotTimestampsEnabled(
       boolean enabled) {
-    return new FirebaseFirestoreSettings.Builder()
-        .setHost(provider.firestoreHost())
-        .setPersistenceEnabled(true)
-        .setTimestampsInSnapshotsEnabled(enabled)
-        .build();
+    FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
+
+    if (CONNECT_TO_EMULATOR) {
+      settings.setHost(String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT));
+
+      // The `sslEnabled` flag in DatabaseInfo currently does not in fact disable all SSL checks.
+      // Instead, we manually disable the SSL certificate check and the hostname verification for
+      // connections to the emulator.
+      // TODO(mrschmidt): Update the client to respect the `sslEnabled` flag and remove these
+      // channel overrides.
+      OkHttpChannelBuilder channelBuilder =
+          new OkHttpChannelBuilder(EMULATOR_HOST, EMULATOR_PORT) {
+            @Override
+            protected String checkAuthority(String authority) {
+              return authority;
+            }
+          };
+      channelBuilder.hostnameVerifier((hostname, session) -> true);
+      SSLCertificateSocketFactory insecureFactory =
+          (SSLCertificateSocketFactory) SSLCertificateSocketFactory.getInsecure(0, null);
+      channelBuilder.sslSocketFactory(insecureFactory);
+
+      Datastore.overrideChannelBuilder(() -> channelBuilder);
+    } else {
+      settings.setHost(provider.firestoreHost());
+    }
+
+    settings.setPersistenceEnabled(true);
+    settings.setTimestampsInSnapshotsEnabled(enabled);
+
+    return settings.build();
   }
 
   /** Initializes a new Firestore instance that uses the default project. */

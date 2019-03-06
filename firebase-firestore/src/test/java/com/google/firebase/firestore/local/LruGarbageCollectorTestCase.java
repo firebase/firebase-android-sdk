@@ -40,6 +40,7 @@ import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -365,7 +366,7 @@ public abstract class LruGarbageCollectorTestCase {
         "actually register the mutations",
         () -> {
           Timestamp writeTime = Timestamp.now();
-          mutationQueue.addMutationBatch(writeTime, mutations);
+          mutationQueue.addMutationBatch(writeTime, Collections.emptyList(), mutations);
         });
 
     // Mark 5 documents eligible for GC. This simulates documents that were mutated then ack'd.

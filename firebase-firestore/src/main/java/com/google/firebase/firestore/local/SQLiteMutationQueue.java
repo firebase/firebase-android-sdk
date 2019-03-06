@@ -179,11 +179,12 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   @Override
-  public MutationBatch addMutationBatch(Timestamp localWriteTime, List<Mutation> mutations) {
+  public MutationBatch addMutationBatch(
+      Timestamp localWriteTime, List<Mutation> baseMutations, List<Mutation> mutations) {
     int batchId = nextBatchId;
     nextBatchId += 1;
 
-    MutationBatch batch = new MutationBatch(batchId, localWriteTime, mutations);
+    MutationBatch batch = new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
     MessageLite proto = serializer.encodeMutationBatch(batch);
 
     db.execute(

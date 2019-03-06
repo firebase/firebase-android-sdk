@@ -15,6 +15,8 @@
 package com.google.firebase.firestore.model.mutation;
 
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.ObjectValue;
 import java.util.Set;
 
 /**
@@ -67,6 +69,25 @@ public final class FieldMask {
     }
 
     return false;
+  }
+
+  /**
+   * Applies this field mask to the provided object value and returns an object that only contains
+   * fields that are specified in both the input object and this field mask.
+   */
+  public ObjectValue applyTo(ObjectValue data) {
+    ObjectValue filteredObject = ObjectValue.emptyObject();
+    for (FieldPath path : mask) {
+      if (path.isEmpty()) {
+        return data;
+      } else {
+        FieldValue newValue = data.get(path);
+        if (newValue != null) {
+          filteredObject = filteredObject.set(path, newValue);
+        }
+      }
+    }
+    return filteredObject;
   }
 
   @Override
