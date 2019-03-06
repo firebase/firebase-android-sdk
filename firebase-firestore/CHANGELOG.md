@@ -1,6 +1,6 @@
 # Unreleased
 - [feature] Added `FieldValue.increment()`, which can be used in `update()`
-  and ``set(..., SetOptions.merge())`` to increment or decrement numeric field
+  and `set(..., SetOptions.merge())` to increment or decrement numeric field
   values safely without transactions.
 - [fixed] Fixed calculation of SQLite database size on Android 9 Pie devices.
   Previous method could be off by a few MBs on these devices, potentially
