@@ -30,4 +30,7 @@ public interface TransformOperation {
    * potentially using the server-provided transformResult.
    */
   FieldValue applyToRemoteDocument(FieldValue previousValue, FieldValue transformResult);
+
+  /** Returns whether this field transform is idempotent. */
+  boolean isIdempotent();
 }

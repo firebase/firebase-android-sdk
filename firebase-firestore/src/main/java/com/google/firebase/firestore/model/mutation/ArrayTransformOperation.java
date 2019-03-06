@@ -88,6 +88,11 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     }
   }
 
+  @Override
+  public boolean isIdempotent() {
+    return true;
+  }
+
   /** An array union transform operation. */
   public static class Union extends ArrayTransformOperation {
     public Union(List<FieldValue> elements) {

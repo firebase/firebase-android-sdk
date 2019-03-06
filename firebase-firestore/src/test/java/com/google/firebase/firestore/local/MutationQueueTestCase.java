@@ -40,6 +40,7 @@ import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.After;
@@ -190,7 +191,9 @@ public abstract class MutationQueueTestCase {
         "New mutation batch",
         () -> {
           for (Mutation mutation : mutations) {
-            batches.add(mutationQueue.addMutationBatch(Timestamp.now(), asList(mutation)));
+            batches.add(
+                mutationQueue.addMutationBatch(
+                    Timestamp.now(), Collections.emptyList(), asList(mutation)));
           }
         });
 
@@ -218,7 +221,9 @@ public abstract class MutationQueueTestCase {
         "New mutation batch",
         () -> {
           for (Mutation mutation : mutations) {
-            batches.add(mutationQueue.addMutationBatch(Timestamp.now(), asList(mutation)));
+            batches.add(
+                mutationQueue.addMutationBatch(
+                    Timestamp.now(), Collections.emptyList(), asList(mutation)));
           }
         });
 
@@ -247,7 +252,9 @@ public abstract class MutationQueueTestCase {
         "New mutation batch",
         () -> {
           for (Mutation mutation : mutations) {
-            batches.add(mutationQueue.addMutationBatch(Timestamp.now(), asList(mutation)));
+            batches.add(
+                mutationQueue.addMutationBatch(
+                    Timestamp.now(), Collections.emptyList(), asList(mutation)));
           }
         });
 
@@ -283,7 +290,9 @@ public abstract class MutationQueueTestCase {
         "New mutation batch",
         () -> {
           for (Mutation mutation : mutations) {
-            batches.add(mutationQueue.addMutationBatch(Timestamp.now(), asList(mutation)));
+            batches.add(
+                mutationQueue.addMutationBatch(
+                    Timestamp.now(), Collections.emptyList(), asList(mutation)));
           }
         });
 
@@ -307,10 +316,12 @@ public abstract class MutationQueueTestCase {
           batches.add(
               mutationQueue.addMutationBatch(
                   Timestamp.now(),
+                  Collections.emptyList(),
                   asList(setMutation("foo/bar", value), setMutation("foo/bar/baz/quux", value))));
           batches.add(
               mutationQueue.addMutationBatch(
                   Timestamp.now(),
+                  Collections.emptyList(),
                   asList(setMutation("foo/bar", value), setMutation("foo/baz", value))));
         });
 
@@ -401,7 +412,9 @@ public abstract class MutationQueueTestCase {
 
     return persistence.runTransaction(
         "New mutation batch",
-        () -> mutationQueue.addMutationBatch(Timestamp.now(), asList(mutation)));
+        () ->
+            mutationQueue.addMutationBatch(
+                Timestamp.now(), Collections.emptyList(), asList(mutation)));
   }
 
   /**

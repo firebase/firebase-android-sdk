@@ -61,7 +61,7 @@ public abstract class FieldValue {
     }
 
     List<Object> getElements() {
-      return this.elements;
+      return elements;
     }
   }
 
@@ -79,7 +79,25 @@ public abstract class FieldValue {
     }
 
     List<Object> getElements() {
-      return this.elements;
+      return elements;
+    }
+  }
+
+  /* FieldValue class for increment() transforms. */
+  static class NumericIncrementFieldValue extends FieldValue {
+    private final Number operand;
+
+    NumericIncrementFieldValue(Number operand) {
+      this.operand = operand;
+    }
+
+    @Override
+    String getMethodName() {
+      return "FieldValue.increment";
+    }
+
+    Number getOperand() {
+      return operand;
     }
   }
 
@@ -133,5 +151,40 @@ public abstract class FieldValue {
   @PublicApi
   public static FieldValue arrayRemove(@NonNull Object... elements) {
     return new ArrayRemoveFieldValue(Arrays.asList(elements));
+  }
+
+  /**
+   * Returns a special value that can be used with set() or update() that tells the server to
+   * increment the field's current value by the given value.
+   *
+   * <p>If the current field value is an integer, possible integer overflows are resolved to
+   * Long.MAX_VALUE or Long.MIN_VALUE. If the current field value is a double, both values will be
+   * interpreted as doubles and the arithmetic will follow IEEE 754 semantics.
+   *
+   * <p>If the current field is not an integer or double, or if the field does not yet exist, the
+   * transformation will set the field to the given value.
+   *
+   * @return The FieldValue sentinel for use in a call to set() or update().
+   */
+  @NonNull
+  @PublicApi
+  public static FieldValue increment(long l) {
+    return new NumericIncrementFieldValue(l);
+  }
+
+  /**
+   * Returns a special value that can be used with set() or update() that tells the server to
+   * increment the field's current value by the given value.
+   *
+   * <p>If the current value is an integer or a double, both the current and the given value will be
+   * interpreted as doubles and all arithmetic will follow IEEE 754 semantics. Otherwise, the
+   * transformation will set the field to the given value.
+   *
+   * @return The FieldValue sentinel for use in a call to set() or update().
+   */
+  @NonNull
+  @PublicApi
+  public static FieldValue increment(double l) {
+    return new NumericIncrementFieldValue(l);
   }
 }
