@@ -90,7 +90,7 @@ public final class LocalSerializerTest {
     Write baseWriteProto =
         Write.newBuilder()
             .setUpdate(
-                com.google.firestore.v1beta1.Document.newBuilder()
+                com.google.firestore.v1.Document.newBuilder()
                     .setName("projects/p/databases/d/documents/foo/bar")
                     .putFields("a", Value.newBuilder().setStringValue("b").build()))
             .setUpdateMask(DocumentMask.newBuilder().addFieldPaths("a"))

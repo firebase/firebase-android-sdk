@@ -66,5 +66,5 @@ message WriteBatch {
   // non-idempotent write before the write is removed from the queue.
   //
   // These writes are never sent to the backend.
-  repeated google.firestore.v1beta1.Write base_writes = 4;
+  repeated google.firestore.v1.Write base_writes = 4;
 }
