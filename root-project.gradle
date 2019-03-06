@@ -15,7 +15,7 @@
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 
 buildscript {
-
+    ext.kotlinVersion = '1.3.20'
     repositories {
         google()
         jcenter()
@@ -34,8 +34,11 @@ buildscript {
         classpath 'com.google.gms:google-services:4.1.0'
         classpath 'me.tatarka:gradle-retrolambda:3.7.0'
         classpath 'digital.wup:android-maven-publish:3.6.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
+
+apply from: 'sdkProperties.gradle'
 
 ext {
     playServicesVersion = '16.0.1'
@@ -48,6 +51,7 @@ ext {
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
+apply plugin: com.google.firebase.gradle.plugins.ci.metrics.MetricsPlugin
 
 firebaseContinuousIntegration {
     ignorePaths = [
@@ -90,6 +94,27 @@ configure(subprojects) {
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
         exclude '**/package-info.java'
+    }
+    apply plugin: 'jacoco'
+    jacoco {
+        toolVersion = '0.8.3'
+    }
+    task(['type': JacocoReport, 'dependsOn': 'check', 'group': 'Coverage',
+          'description': 'Generates JaCoCo unit test coverage reports.'], 'checkCoverage') {
+        def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**Manifest*.*']
+        classDirectories = files([
+            fileTree(dir: "$buildDir/intermediates/javac/debug", excludes: excludes)
+        ])
+        sourceDirectories = files(['src/main/java'])
+        executionData = fileTree(dir: "$buildDir", includes: ['jacoco/*.exec'])
+        reports {
+            html.enabled true
+            xml.enabled true
+            csv.enabled true
+        }
+    }
+    tasks.withType(Test) {
+        jacoco.includeNoLocationClasses true
     }
 
     tasks.withType(JavaCompile) {
@@ -156,22 +181,6 @@ configure(subprojects) {
         }
 
         sub.apply plugin: LicenseResolverPlugin
-        sub.thirdPartyLicenses {
-            def root = "file://$rootDir/third_party/licenses"
-
-            add 'CCTZ', "$root/apache-2.0.txt"
-            add 'ICU4C', "$root/icu.txt"
-            add 'JSR 305', "$root/jsr305.txt"
-            add 'PCRE', "$root/pcre.txt"
-            add 'Protobuf Nano', "$root/nanoproto.txt"
-            add 'RE2', "$root/re2.txt"
-            add 'STL', "$root/sgi-stl.txt"
-            add 'UTF', "$root/utf.txt"
-            add 'darts_clone', "$root/darts_clone.txt"
-            add 'flatbuffers', "$root/apache-2.0.txt"
-            add 'safeparcel', "$root/apache-2.0.txt"
-            add 'zlib', "$root/zlib.txt"
-        }
     }
 }
 

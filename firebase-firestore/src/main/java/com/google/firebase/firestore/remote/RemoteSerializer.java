@@ -69,29 +69,29 @@ import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChan
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.util.Assert;
-import com.google.firestore.v1beta1.BatchGetDocumentsResponse;
-import com.google.firestore.v1beta1.BatchGetDocumentsResponse.ResultCase;
-import com.google.firestore.v1beta1.Cursor;
-import com.google.firestore.v1beta1.DocumentChange;
-import com.google.firestore.v1beta1.DocumentDelete;
-import com.google.firestore.v1beta1.DocumentMask;
-import com.google.firestore.v1beta1.DocumentRemove;
-import com.google.firestore.v1beta1.DocumentTransform;
-import com.google.firestore.v1beta1.ListenResponse;
-import com.google.firestore.v1beta1.ListenResponse.ResponseTypeCase;
-import com.google.firestore.v1beta1.MapValue;
-import com.google.firestore.v1beta1.StructuredQuery;
-import com.google.firestore.v1beta1.StructuredQuery.CollectionSelector;
-import com.google.firestore.v1beta1.StructuredQuery.CompositeFilter;
-import com.google.firestore.v1beta1.StructuredQuery.FieldFilter;
-import com.google.firestore.v1beta1.StructuredQuery.FieldReference;
-import com.google.firestore.v1beta1.StructuredQuery.Filter.FilterTypeCase;
-import com.google.firestore.v1beta1.StructuredQuery.Order;
-import com.google.firestore.v1beta1.StructuredQuery.UnaryFilter;
-import com.google.firestore.v1beta1.Target;
-import com.google.firestore.v1beta1.Target.DocumentsTarget;
-import com.google.firestore.v1beta1.Target.QueryTarget;
-import com.google.firestore.v1beta1.Value;
+import com.google.firestore.v1.BatchGetDocumentsResponse;
+import com.google.firestore.v1.BatchGetDocumentsResponse.ResultCase;
+import com.google.firestore.v1.Cursor;
+import com.google.firestore.v1.DocumentChange;
+import com.google.firestore.v1.DocumentDelete;
+import com.google.firestore.v1.DocumentMask;
+import com.google.firestore.v1.DocumentRemove;
+import com.google.firestore.v1.DocumentTransform;
+import com.google.firestore.v1.ListenResponse;
+import com.google.firestore.v1.ListenResponse.ResponseTypeCase;
+import com.google.firestore.v1.MapValue;
+import com.google.firestore.v1.StructuredQuery;
+import com.google.firestore.v1.StructuredQuery.CollectionSelector;
+import com.google.firestore.v1.StructuredQuery.CompositeFilter;
+import com.google.firestore.v1.StructuredQuery.FieldFilter;
+import com.google.firestore.v1.StructuredQuery.FieldReference;
+import com.google.firestore.v1.StructuredQuery.Filter.FilterTypeCase;
+import com.google.firestore.v1.StructuredQuery.Order;
+import com.google.firestore.v1.StructuredQuery.UnaryFilter;
+import com.google.firestore.v1.Target;
+import com.google.firestore.v1.Target.DocumentsTarget;
+import com.google.firestore.v1.Target.QueryTarget;
+import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Int32Value;
 import com.google.type.LatLng;
@@ -176,17 +176,15 @@ public final class RemoteSerializer {
   }
 
   private String encodeQueryPath(ResourcePath path) {
-    if (path.length() == 0) {
-      // If the path is empty, the backend requires we leave off the /documents at the end.
-      return databaseName;
-    }
     return encodeResourceName(databaseId, path);
   }
 
   private ResourcePath decodeQueryPath(String name) {
     ResourcePath resource = decodeResourceName(name);
     if (resource.length() == 4) {
-      // Path missing the trailing documents path segment, indicating an empty path.
+      // In v1beta1 queries for collections at the root did not have a trailing "/documents". In v1
+      // all resource paths contain "/documents". Preserve the ability to read the v1 form for
+      // compatibility with queries persisted in the local query cache.
       return ResourcePath.EMPTY;
     } else {
       return extractLocalPathFromResourceName(resource);
@@ -253,9 +251,8 @@ public final class RemoteSerializer {
    * @param value the model to convert
    * @return The proto representation of the model
    */
-  public com.google.firestore.v1beta1.Value encodeValue(FieldValue value) {
-    com.google.firestore.v1beta1.Value.Builder builder =
-        com.google.firestore.v1beta1.Value.newBuilder();
+  public com.google.firestore.v1.Value encodeValue(FieldValue value) {
+    com.google.firestore.v1.Value.Builder builder = com.google.firestore.v1.Value.newBuilder();
 
     if (value instanceof NullValue) {
       builder.setNullValueValue(0);
@@ -302,7 +299,7 @@ public final class RemoteSerializer {
    *
    * @return The model equivalent of the proto data.
    */
-  public FieldValue decodeValue(com.google.firestore.v1beta1.Value proto) {
+  public FieldValue decodeValue(com.google.firestore.v1.Value proto) {
     switch (proto.getValueTypeCase()) {
       case NULL_VALUE:
         return NullValue.nullValue();
@@ -338,17 +335,17 @@ public final class RemoteSerializer {
     }
   }
 
-  private com.google.firestore.v1beta1.ArrayValue encodeArrayValue(ArrayValue value) {
+  private com.google.firestore.v1.ArrayValue encodeArrayValue(ArrayValue value) {
     List<FieldValue> internalValue = value.getInternalValue();
-    com.google.firestore.v1beta1.ArrayValue.Builder arrayBuilder =
-        com.google.firestore.v1beta1.ArrayValue.newBuilder();
+    com.google.firestore.v1.ArrayValue.Builder arrayBuilder =
+        com.google.firestore.v1.ArrayValue.newBuilder();
     for (FieldValue subValue : internalValue) {
       arrayBuilder.addValues(encodeValue(subValue));
     }
     return arrayBuilder.build();
   }
 
-  private ArrayValue decodeArrayValue(com.google.firestore.v1beta1.ArrayValue protoArray) {
+  private ArrayValue decodeArrayValue(com.google.firestore.v1.ArrayValue protoArray) {
     int count = protoArray.getValuesCount();
     List<FieldValue> wrappedList = new ArrayList<>(count);
     for (int i = 0; i < count; i++) {
@@ -372,9 +369,9 @@ public final class RemoteSerializer {
   // PORTING NOTE: There's no encodeFields here because there's no way to write it that doesn't
   // involve creating a temporary map.
 
-  public ObjectValue decodeFields(Map<String, com.google.firestore.v1beta1.Value> fields) {
+  public ObjectValue decodeFields(Map<String, com.google.firestore.v1.Value> fields) {
     ObjectValue result = ObjectValue.emptyObject();
-    for (Map.Entry<String, com.google.firestore.v1beta1.Value> entry : fields.entrySet()) {
+    for (Map.Entry<String, com.google.firestore.v1.Value> entry : fields.entrySet()) {
       FieldPath path = FieldPath.fromSingleSegment(entry.getKey());
       FieldValue value = decodeValue(entry.getValue());
       result = result.set(path, value);
@@ -384,9 +381,9 @@ public final class RemoteSerializer {
 
   // Documents
 
-  public com.google.firestore.v1beta1.Document encodeDocument(DocumentKey key, ObjectValue value) {
-    com.google.firestore.v1beta1.Document.Builder builder =
-        com.google.firestore.v1beta1.Document.newBuilder();
+  public com.google.firestore.v1.Document encodeDocument(DocumentKey key, ObjectValue value) {
+    com.google.firestore.v1.Document.Builder builder =
+        com.google.firestore.v1.Document.newBuilder();
     builder.setName(encodeKey(key));
     for (Map.Entry<String, FieldValue> entry : value.getInternalValue()) {
       builder.putFields(entry.getKey(), encodeValue(entry.getValue()));
@@ -431,9 +428,8 @@ public final class RemoteSerializer {
   // Mutations
 
   /** Converts a Mutation model to a Write proto */
-  public com.google.firestore.v1beta1.Write encodeMutation(Mutation mutation) {
-    com.google.firestore.v1beta1.Write.Builder builder =
-        com.google.firestore.v1beta1.Write.newBuilder();
+  public com.google.firestore.v1.Write encodeMutation(Mutation mutation) {
+    com.google.firestore.v1.Write.Builder builder = com.google.firestore.v1.Write.newBuilder();
     if (mutation instanceof SetMutation) {
       builder.setUpdate(encodeDocument(mutation.getKey(), ((SetMutation) mutation).getValue()));
     } else if (mutation instanceof PatchMutation) {
@@ -459,7 +455,7 @@ public final class RemoteSerializer {
     return builder.build();
   }
 
-  public Mutation decodeMutation(com.google.firestore.v1beta1.Write mutation) {
+  public Mutation decodeMutation(com.google.firestore.v1.Write mutation) {
     Precondition precondition =
         mutation.hasCurrentDocument()
             ? decodePrecondition(mutation.getCurrentDocument())
@@ -500,10 +496,10 @@ public final class RemoteSerializer {
     }
   }
 
-  private com.google.firestore.v1beta1.Precondition encodePrecondition(Precondition precondition) {
+  private com.google.firestore.v1.Precondition encodePrecondition(Precondition precondition) {
     hardAssert(!precondition.isNone(), "Can't serialize an empty precondition");
-    com.google.firestore.v1beta1.Precondition.Builder builder =
-        com.google.firestore.v1beta1.Precondition.newBuilder();
+    com.google.firestore.v1.Precondition.Builder builder =
+        com.google.firestore.v1.Precondition.newBuilder();
     if (precondition.getUpdateTime() != null) {
       return builder.setUpdateTime(encodeVersion(precondition.getUpdateTime())).build();
     } else if (precondition.getExists() != null) {
@@ -513,7 +509,7 @@ public final class RemoteSerializer {
     }
   }
 
-  private Precondition decodePrecondition(com.google.firestore.v1beta1.Precondition precondition) {
+  private Precondition decodePrecondition(com.google.firestore.v1.Precondition precondition) {
     switch (precondition.getConditionTypeCase()) {
       case UPDATE_TIME:
         return Precondition.updateTime(decodeVersion(precondition.getUpdateTime()));
@@ -574,10 +570,10 @@ public final class RemoteSerializer {
     }
   }
 
-  private com.google.firestore.v1beta1.ArrayValue encodeArrayTransformElements(
+  private com.google.firestore.v1.ArrayValue encodeArrayTransformElements(
       List<FieldValue> elements) {
-    com.google.firestore.v1beta1.ArrayValue.Builder arrayBuilder =
-        com.google.firestore.v1beta1.ArrayValue.newBuilder();
+    com.google.firestore.v1.ArrayValue.Builder arrayBuilder =
+        com.google.firestore.v1.ArrayValue.newBuilder();
     for (FieldValue subValue : elements) {
       arrayBuilder.addValues(encodeValue(subValue));
     }
@@ -623,7 +619,7 @@ public final class RemoteSerializer {
   }
 
   private List<FieldValue> decodeArrayTransformElements(
-      com.google.firestore.v1beta1.ArrayValue elementsProto) {
+      com.google.firestore.v1.ArrayValue elementsProto) {
     int count = elementsProto.getValuesCount();
     List<FieldValue> result = new ArrayList<>(count);
     for (int i = 0; i < count; i++) {
@@ -633,7 +629,7 @@ public final class RemoteSerializer {
   }
 
   public MutationResult decodeMutationResult(
-      com.google.firestore.v1beta1.WriteResult proto, SnapshotVersion commitVersion) {
+      com.google.firestore.v1.WriteResult proto, SnapshotVersion commitVersion) {
     // NOTE: Deletes don't have an updateTime but the commit timestamp from the containing
     // CommitResponse or WriteResponse indicates essentially that the delete happened no later than
     // that. For our purposes we don't care exactly when the delete happened so long as we can tell
@@ -1000,7 +996,7 @@ public final class RemoteSerializer {
 
     switch (protoChange.getResponseTypeCase()) {
       case TARGET_CHANGE:
-        com.google.firestore.v1beta1.TargetChange targetChange = protoChange.getTargetChange();
+        com.google.firestore.v1.TargetChange targetChange = protoChange.getTargetChange();
         WatchTargetChangeType changeType;
         Status cause = null;
         switch (targetChange.getTargetChangeType()) {
@@ -1061,7 +1057,7 @@ public final class RemoteSerializer {
         watchChange = new WatchChange.DocumentChange(Collections.emptyList(), removed, key, null);
         break;
       case FILTER:
-        com.google.firestore.v1beta1.ExistenceFilter protoFilter = protoChange.getFilter();
+        com.google.firestore.v1.ExistenceFilter protoFilter = protoChange.getFilter();
         // TODO: implement existence filter parsing (see b/33076578)
         ExistenceFilter filter = new ExistenceFilter(protoFilter.getCount());
         int targetId = protoFilter.getTargetId();

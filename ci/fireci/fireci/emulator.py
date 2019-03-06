@@ -19,6 +19,8 @@ import signal
 import subprocess
 import time
 
+from . import stats
+
 _logger = logging.getLogger('fireci.emulator')
 
 EMULATOR_BINARY = 'emulator'
@@ -65,6 +67,7 @@ class EmulatorHandler:
     self._wait_for_device_stdin = wait_for_device_stdin
     self._logcat_stdin = logcat_stdin
 
+  @stats.measure_call("emulator_startup")
   def __enter__(self):
     _logger.info('Starting avd "{}..."'.format(self._name))
     self._process = subprocess.Popen(
@@ -86,6 +89,7 @@ class EmulatorHandler:
         stdout=self._adb_log,
     )
 
+  @stats.measure_call("emulator_shutdown")
   def __exit__(self, exception_type, exception_value, traceback):
     _logger.info('Shutting down avd "{}"...'.format(self._name))
     self._kill(self._process)

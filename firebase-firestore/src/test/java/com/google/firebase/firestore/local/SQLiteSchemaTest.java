@@ -25,8 +25,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.WriteBatch;
-import com.google.firestore.v1beta1.Document;
-import com.google.firestore.v1beta1.Write;
+import com.google.firestore.v1.Document;
+import com.google.firestore.v1.Write;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -291,7 +291,7 @@ public class SQLiteSchemaTest {
               String path = row.getString(0);
               long sequenceNumber = row.getLong(1);
 
-              int docNum = Integer.parseInt(path.split("_")[1]);
+              int docNum = Integer.parseInt(path.split("_", -1)[1]);
               // The even documents were missing sequence numbers, they should now be filled in
               // to have the new sequence number. The odd documents should have their
               // sequence number unchanged, and so be the old value.

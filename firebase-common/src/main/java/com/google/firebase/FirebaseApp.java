@@ -55,6 +55,8 @@ import com.google.firebase.events.Publisher;
 import com.google.firebase.internal.DefaultIdTokenListenersCountChangedListener;
 import com.google.firebase.internal.InternalTokenProvider;
 import com.google.firebase.internal.InternalTokenResult;
+import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
+import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -151,6 +153,9 @@ public class FirebaseApp {
   @GuardedBy("LOCK")
   static final Map<String, FirebaseApp> INSTANCES = new ArrayMap<>();
 
+  private static final String FIREBASE_ANDROID = "fire-android";
+  private static final String FIREBASE_COMMON = "fire-core";
+
   private final Context applicationContext;
   private final String name;
   private final FirebaseOptions options;
@@ -228,7 +233,7 @@ public class FirebaseApp {
    *
    * @throws IllegalStateException if the default app was not initialized.
    */
-  @Nullable
+  @NonNull
   @PublicApi
   public static FirebaseApp getInstance() {
     synchronized (LOCK) {
@@ -252,6 +257,7 @@ public class FirebaseApp {
    * @throws IllegalStateException if the {@link FirebaseApp} was not initialized, either via {@link
    *     #initializeApp(Context, FirebaseOptions, String)}.
    */
+  @NonNull
   @PublicApi
   public static FirebaseApp getInstance(@NonNull String name) {
     synchronized (LOCK) {
@@ -293,7 +299,7 @@ public class FirebaseApp {
    */
   @Nullable
   @PublicApi
-  public static FirebaseApp initializeApp(Context context) {
+  public static FirebaseApp initializeApp(@NonNull Context context) {
     synchronized (LOCK) {
       if (INSTANCES.containsKey(DEFAULT_APP_NAME)) {
         return getInstance();
@@ -319,8 +325,10 @@ public class FirebaseApp {
    * to do so automatically in {@link com.google.firebase.provider.FirebaseInitProvider}. Automatic
    * initialization that way is the expected situation.
    */
+  @NonNull
   @PublicApi
-  public static FirebaseApp initializeApp(Context context, FirebaseOptions options) {
+  public static FirebaseApp initializeApp(
+      @NonNull Context context, @NonNull FirebaseOptions options) {
     return initializeApp(context, options, DEFAULT_APP_NAME);
   }
 
@@ -334,8 +342,10 @@ public class FirebaseApp {
    * @throws IllegalStateException if an app with the same name has already been initialized.
    * @return an instance of {@link FirebaseApp}
    */
+  @NonNull
   @PublicApi
-  public static FirebaseApp initializeApp(Context context, FirebaseOptions options, String name) {
+  public static FirebaseApp initializeApp(
+      @NonNull Context context, @NonNull FirebaseOptions options, @NonNull String name) {
     GlobalBackgroundStateListener.ensureBackgroundStateListenerRegistered(context);
     String normalizedName = normalize(name);
     final FirebaseApp firebaseApp;
@@ -379,31 +389,6 @@ public class FirebaseApp {
   }
 
   /**
-   * Fetch a valid STS Token.
-   *
-   * @param forceRefresh force refreshes the token. Should only be set to <code>true</code> if the
-   *     token is invalidated out of band.
-   * @return a {@link Task}
-   * @deprecated use {@link
-   *     com.google.firebase.auth.internal.InternalAuthProvider#getToken(boolean)} from
-   *     firebase-auth-interop instead.
-   * @hide
-   */
-  @Deprecated
-  @KeepForSdk
-  public Task<GetTokenResult> getToken(boolean forceRefresh) {
-    checkNotDeleted();
-
-    if (tokenProvider == null) {
-      return Tasks.forException(
-          new FirebaseApiNotAvailableException(
-              "firebase-auth is not " + "linked, please fall back to unauthenticated mode."));
-    } else {
-      return tokenProvider.getAccessToken(forceRefresh);
-    }
-  }
-
-  /**
    * Fetch the UID of the currently logged-in user.
    *
    * @deprecated use {@link com.google.firebase.auth.internal.InternalAuthProvider#getUid()} from
@@ -420,6 +405,32 @@ public class FirebaseApp {
           "firebase-auth is not " + "linked, please fall back to unauthenticated mode.");
     }
     return tokenProvider.getUid();
+  }
+
+  /**
+   * Fetch a valid STS Token.
+   *
+   * @param forceRefresh force refreshes the token. Should only be set to <code>true</code> if the
+   *     token is invalidated out of band.
+   * @return a {@link Task}
+   * @deprecated use {@link
+   *     com.google.firebase.auth.internal.InternalAuthProvider#getToken(boolean)} from
+   *     firebase-auth-interop instead.
+   * @hide
+   */
+  @Deprecated
+  @NonNull
+  @KeepForSdk
+  public Task<GetTokenResult> getToken(boolean forceRefresh) {
+    checkNotDeleted();
+
+    if (tokenProvider == null) {
+      return Tasks.forException(
+          new FirebaseApiNotAvailableException(
+              "firebase-auth is not " + "linked, please fall back to unauthenticated mode."));
+    } else {
+      return tokenProvider.getAccessToken(forceRefresh);
+    }
   }
 
   /**
@@ -536,7 +547,10 @@ public class FirebaseApp {
             registrars,
             Component.of(applicationContext, Context.class),
             Component.of(this, FirebaseApp.class),
-            Component.of(options, FirebaseOptions.class));
+            Component.of(options, FirebaseOptions.class),
+            LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
+            LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
+            DefaultUserAgentPublisher.component());
     publisher = componentRuntime.get(Publisher.class);
   }
 

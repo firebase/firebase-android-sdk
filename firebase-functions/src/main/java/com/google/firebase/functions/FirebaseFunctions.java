@@ -27,18 +27,19 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
-import com.squareup.okhttp.Call;
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -197,7 +198,7 @@ public class FirebaseFunctions {
    * @param data Parameters to pass to the function. Can be anything encodable as JSON.
    * @return A Task that will be completed when the request is complete.
    */
-  Task<HttpsCallableResult> call(String name, @Nullable Object data) {
+  Task<HttpsCallableResult> call(String name, @Nullable Object data, HttpsCallOptions options) {
     return providerInstalled
         .getTask()
         .continueWithTask(task -> contextProvider.getContext())
@@ -207,7 +208,7 @@ public class FirebaseFunctions {
                 return Tasks.forException(task.getException());
               }
               HttpsCallableContext context = task.getResult();
-              return call(name, data, context);
+              return call(name, data, context, options);
             });
   }
 
@@ -220,7 +221,7 @@ public class FirebaseFunctions {
    * @return A Task that will be completed when the request is complete.
    */
   private Task<HttpsCallableResult> call(
-      String name, @Nullable Object data, HttpsCallableContext context) {
+      String name, @Nullable Object data, HttpsCallableContext context, HttpsCallOptions options) {
     if (name == null) {
       throw new IllegalArgumentException("name cannot be null");
     }
@@ -243,17 +244,28 @@ public class FirebaseFunctions {
       request = request.header("Firebase-Instance-ID-Token", context.getInstanceIdToken());
     }
 
+    OkHttpClient callClient = options.apply(client);
+    Call call = callClient.newCall(request.build());
+
     TaskCompletionSource<HttpsCallableResult> tcs = new TaskCompletionSource<>();
-    Call call = client.newCall(request.build());
     call.enqueue(
         new Callback() {
           @Override
-          public void onFailure(Request request, IOException e) {
-            tcs.setException(e);
+          public void onFailure(Call ignored, IOException e) {
+            if (e instanceof InterruptedIOException) {
+              FirebaseFunctionsException exception =
+                  new FirebaseFunctionsException(
+                      Code.DEADLINE_EXCEEDED.name(), Code.DEADLINE_EXCEEDED, null, e);
+              tcs.setException(exception);
+            } else {
+              FirebaseFunctionsException exception =
+                  new FirebaseFunctionsException(Code.INTERNAL.name(), Code.INTERNAL, null, e);
+              tcs.setException(exception);
+            }
           }
 
           @Override
-          public void onResponse(Response response) throws IOException {
+          public void onResponse(Call ignored, Response response) throws IOException {
             Code code = Code.fromHttpStatus(response.code());
             String body = response.body().string();
 

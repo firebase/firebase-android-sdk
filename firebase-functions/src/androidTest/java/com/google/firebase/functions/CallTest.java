@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -236,6 +237,23 @@ public class CallTest {
     FirebaseFunctionsException ffe = (FirebaseFunctionsException) cause;
     assertEquals(Code.INVALID_ARGUMENT, ffe.getCode());
     assertEquals("INVALID_ARGUMENT", ffe.getMessage());
+    assertNull(ffe.getDetails());
+  }
+
+  @Test
+  public void testTimeout() throws InterruptedException, ExecutionException {
+    FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
+    useTestURL(functions);
+
+    HttpsCallableReference function =
+        functions.getHttpsCallable("timeoutTest").withTimeout(10, TimeUnit.MILLISECONDS);
+    Task<HttpsCallableResult> result = function.call();
+    ExecutionException exe = assertThrows(ExecutionException.class, () -> Tasks.await(result));
+    Throwable cause = exe.getCause();
+    assertTrue(cause.toString(), cause instanceof FirebaseFunctionsException);
+    FirebaseFunctionsException ffe = (FirebaseFunctionsException) cause;
+    assertEquals(Code.DEADLINE_EXCEEDED, ffe.getCode());
+    assertEquals("DEADLINE_EXCEEDED", ffe.getMessage());
     assertNull(ffe.getDetails());
   }
 }

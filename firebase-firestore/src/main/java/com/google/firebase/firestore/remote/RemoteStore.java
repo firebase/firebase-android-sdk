@@ -17,6 +17,7 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Transaction;
@@ -28,6 +29,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.MutationResult;
+import com.google.firebase.firestore.remote.ConnectivityMonitor.NetworkStatus;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
@@ -37,7 +39,6 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
-import io.grpc.Status.Code;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -108,6 +109,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final RemoteStoreCallback remoteStoreCallback;
   private final LocalStore localStore;
   private final Datastore datastore;
+  private final ConnectivityMonitor connectivityMonitor;
 
   /**
    * A mapping of watched targets that the client cares about tracking and the user has explicitly
@@ -147,10 +149,12 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       RemoteStoreCallback remoteStoreCallback,
       LocalStore localStore,
       Datastore datastore,
-      AsyncQueue workerQueue) {
+      AsyncQueue workerQueue,
+      ConnectivityMonitor connectivityMonitor) {
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
+    this.connectivityMonitor = connectivityMonitor;
 
     listenTargets = new HashMap<>();
     writePipeline = new ArrayDeque<>();
@@ -202,6 +206,21 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 handleWriteStreamClose(status);
               }
             });
+
+    connectivityMonitor.addCallback(
+        (NetworkStatus networkStatus) -> {
+          workerQueue.enqueueAndForget(
+              () -> {
+                // If the network has been explicitly disabled, make sure we don't accidentally
+                // re-enable it.
+                if (canUseNetwork()) {
+                  // Tear down and re-create our network streams. This will ensure the backoffs are
+                  // reset.
+                  Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
+                  restartNetwork();
+                }
+              });
+        });
   }
 
   /** Re-enables the network. Only to be called as the counterpart to disableNetwork(). */
@@ -220,6 +239,17 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       // This will start the write stream if necessary.
       fillWritePipeline();
     }
+  }
+
+  /**
+   * Re-enables the network, and forces the state to ONLINE. Without this, the state will be
+   * UNKNOWN. If the OnlineStateTracker updates the state from UNKNOWN to UNKNOWN, then it doesn't
+   * trigger the callback.
+   */
+  @VisibleForTesting
+  void forceEnableNetwork() {
+    enableNetwork();
+    onlineStateTracker.updateState(OnlineState.ONLINE);
   }
 
   /** Temporarily disables the network. The network can be re-enabled using enableNetwork(). */
@@ -243,6 +273,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     cleanUpWatchStreamState();
   }
 
+  private void restartNetwork() {
+    networkEnabled = false;
+    disableNetworkInternal();
+    onlineStateTracker.updateState(OnlineState.UNKNOWN);
+    enableNetwork();
+  }
+
   /**
    * Starts up the remote store, creating streams, restoring state from LocalStore, etc. This should
    * called before using any other API endpoints in this class.
@@ -258,6 +295,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    */
   public void shutdown() {
     Logger.debug(LOG_TAG, "Shutting down");
+    connectivityMonitor.shutdown();
     networkEnabled = false;
     this.disableNetworkInternal();
     datastore.shutdown();
@@ -279,10 +317,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       // for the new user and re-fill the write pipeline with new mutations from the LocalStore
       // (since mutations are per-user).
       Logger.debug(LOG_TAG, "Restarting streams for new credential.");
-      networkEnabled = false;
-      disableNetworkInternal();
-      onlineStateTracker.updateState(OnlineState.UNKNOWN);
-      enableNetwork();
+      restartNetwork();
     }
   }
 
@@ -642,9 +677,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void handleWriteHandshakeError(Status status) {
     hardAssert(!status.isOk(), "Handling write error with status OK.");
-    // Reset the token if it's a permanent error or the error code is ABORTED, signaling the write
-    // stream is no longer valid.
-    if (Datastore.isPermanentWriteError(status) || status.getCode().equals(Code.ABORTED)) {
+    // Reset the token if it's a permanent error, signaling the write stream is no longer valid.
+    // Note that the handshake does not count as a write: see comments on isPermanentWriteError for
+    // details.
+    if (Datastore.isPermanentError(status)) {
       String token = Util.toDebugString(writeStream.getLastStreamToken());
       Logger.debug(
           LOG_TAG,
@@ -658,7 +694,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void handleWriteError(Status status) {
     hardAssert(!status.isOk(), "Handling write error with status OK.");
-    // Only handle permanent error, if it's transient just let the retry logic kick in.
+    // Only handle permanent errors here. If it's transient, just let the retry logic kick in.
     if (Datastore.isPermanentWriteError(status)) {
       // If this was a permanent error, the request itself was the problem so it's not going
       // to succeed if we resend it.

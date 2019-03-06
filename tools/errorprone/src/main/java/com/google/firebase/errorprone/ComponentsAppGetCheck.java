@@ -52,7 +52,6 @@ import com.sun.tools.javac.code.Type;
         "Use of FirebaseApp#get(Class) is discouraged, and is only acceptable"
             + " in SDK#getInstance(...) methods. Instead declare dependencies explicitly in"
             + " your ComponentRegistrar and inject.",
-    category = BugPattern.Category.INJECT,
     severity = BugPattern.SeverityLevel.ERROR)
 @AutoService(BugChecker.class)
 public class ComponentsAppGetCheck extends BugChecker

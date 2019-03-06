@@ -37,7 +37,7 @@ public final class FirebaseFirestoreSettings {
   // we will switch the default to the above value, 100 MB.
   private static final long DEFAULT_CACHE_SIZE_BYTES = CACHE_SIZE_UNLIMITED;
   private static final String DEFAULT_HOST = "firestore.googleapis.com";
-  private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = false;
+  private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = true;
 
   /** A Builder for creating {@link FirebaseFirestoreSettings}. */
   @PublicApi
@@ -110,28 +110,27 @@ public final class FirebaseFirestoreSettings {
     }
 
     /**
-     * Enables the use of {@link com.google.firebase.Timestamp Timestamps} for timestamp fields in
-     * {@link DocumentSnapshot DocumentSnapshots}.
+     * Specifies whether to use {@link com.google.firebase.Timestamp Timestamps} for timestamp
+     * fields in {@link DocumentSnapshot DocumentSnapshots}. This is now enabled by default and
+     * should not be disabled.
      *
-     * <p>Currently, Firestore returns timestamp fields as {@link java.util.Date} but {@link
-     * java.util.Date Date} only supports millisecond precision, which leads to truncation and
-     * causes unexpected behavior when using a timestamp from a snapshot as a part of a subsequent
-     * query.
+     * <p>Previously, Firestore returned timestamp fields as {@link java.util.Date} but {@link
+     * java.util.Date} only supports millisecond precision, which leads to truncation and causes
+     * unexpected behavior when using a timestamp from a snapshot as a part of a subsequent query.
      *
-     * <p>Setting {@code setTimestampsInSnapshotsEnabled(true)} will cause Firestore to return
-     * {@link com.google.firebase.Timestamp Timestamp} values instead of {@link java.util.Date
-     * Date}, avoiding this kind of problem. To make this work you must also change any code that
-     * uses {@link java.util.Date Date} to use {@link com.google.firebase.Timestamp Timestamp}
-     * instead.
+     * <p>So now Firestore returns {@link com.google.firebase.Timestamp Timestamp} values instead of
+     * {@link java.util.Date}, avoiding this kind of problem.
      *
-     * <p>NOTE: in the future {@link FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled} will
-     * default to true and this option will be removed so you should change your code to use
-     * Timestamp now and opt-in to this new behavior as soon as you can.
+     * <p>To opt into the old behavior of returning {@link java.util.Date Dates}, you can
+     * temporarily set {@link FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled} to false.
      *
-     * @return A settings object on which the return type for timestamp fields is configured as
-     *     specified by the given {@code value}.
+     * @deprecated This setting now defaults to true and will be removed in a future release. If you
+     *     are already setting it to true, just remove the setting. If you are setting it to false,
+     *     you should update your code to expect {@link com.google.firebase.Timestamp Timestamps}
+     *     instead of {@link java.util.Date Dates} and then remove the setting.
      */
     @NonNull
+    @Deprecated
     @PublicApi
     public Builder setTimestampsInSnapshotsEnabled(boolean value) {
       this.timestampsInSnapshotsEnabled = value;

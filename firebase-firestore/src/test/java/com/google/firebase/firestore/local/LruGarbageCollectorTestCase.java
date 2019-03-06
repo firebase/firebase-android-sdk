@@ -125,7 +125,7 @@ public abstract class LruGarbageCollectorTestCase {
   }
 
   private DocumentKey nextTestDocumentKey() {
-    return DocumentKey.fromPathString("docs/doc_" + (++previousDocNum));
+    return DocumentKey.fromPathString("docs/doc_" + ++previousDocNum);
   }
 
   private Document nextTestDocument() {

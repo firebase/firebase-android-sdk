@@ -16,14 +16,14 @@ package com.google.firebase.firestore.util;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
-import com.google.firebase.firestore.core.Version;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.remote.FirestoreCallCredentials;
-import com.google.firestore.v1beta1.FirestoreGrpc;
-import com.google.firestore.v1beta1.FirestoreGrpc.FirestoreStub;
+import com.google.firestore.v1.FirestoreGrpc;
+import com.google.firestore.v1.FirestoreGrpc.FirestoreStub;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
 import io.grpc.ManagedChannel;
@@ -50,7 +50,7 @@ public class FirestoreChannel {
   // to us at build time or runtime (it's empty when building in google3). So for now we omit the
   // version of grpc.
   private static final String X_GOOG_API_CLIENT_VALUE =
-      "gl-java/ fire/" + Version.SDK_VERSION + " grpc/";
+      "gl-java/ fire/" + BuildConfig.VERSION_NAME + " grpc/";
 
   /** The async worker queue that is used to dispatch events. */
   private final AsyncQueue asyncQueue;

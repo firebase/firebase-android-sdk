@@ -15,7 +15,6 @@
 package com.google.firebase.components;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -38,10 +37,9 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public final class LazyTest {
-  private static final ComponentContainer CONTAINER = new EmptyContainer();
 
   @SuppressWarnings("unchecked")
-  private final ComponentFactory<Object> mockFactory = mock(ComponentFactory.class);
+  private final Provider<Object> mockProvider = mock(Provider.class);
 
   @Test
   public void get_whenLazyIsInitializedWithValue_shouldReturnTheValue() {
@@ -54,13 +52,13 @@ public final class LazyTest {
   @Test
   public void get_shouldDelegateToFactory() {
     Object instance = new Object();
-    Lazy<Object> lazy = new Lazy<>(mockFactory, CONTAINER);
+    Lazy<Object> lazy = new Lazy<>(mockProvider);
 
-    when(mockFactory.create(any())).thenReturn(instance);
+    when(mockProvider.get()).thenReturn(instance);
 
     assertThat(lazy.get()).isSameAs(instance);
 
-    verify(mockFactory, times(1)).create(CONTAINER);
+    verify(mockProvider, times(1)).get();
   }
 
   @Test
@@ -70,8 +68,8 @@ public final class LazyTest {
 
     ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 
-    LatchedFactory factory = new LatchedFactory(latch);
-    Lazy<Object> lazy = new Lazy<>(factory, CONTAINER);
+    LatchedProvider provider = new LatchedProvider(latch);
+    Lazy<Object> lazy = new Lazy<>(provider);
 
     List<Callable<Object>> tasks = new ArrayList<>(numThreads);
     for (int i = 0; i < numThreads; i++) {
@@ -83,7 +81,7 @@ public final class LazyTest {
     }
     List<Future<Object>> futures = executor.invokeAll(tasks);
 
-    assertThat(factory.instantiationCount.get()).isEqualTo(1);
+    assertThat(provider.instantiationCount.get()).isEqualTo(1);
 
     Set<Object> createdInstances = new HashSet<>();
     for (Future<Object> future : futures) {
@@ -92,23 +90,16 @@ public final class LazyTest {
     assertThat(createdInstances).hasSize(1);
   }
 
-  private static class EmptyContainer extends AbstractComponentContainer {
-    @Override
-    public <T> Provider<T> getProvider(Class<T> anInterface) {
-      return null;
-    }
-  }
-
-  private static class LatchedFactory implements ComponentFactory<Object> {
+  private static class LatchedProvider implements Provider<Object> {
     private final CountDownLatch latch;
     final AtomicInteger instantiationCount = new AtomicInteger();
 
-    LatchedFactory(CountDownLatch latch) {
+    LatchedProvider(CountDownLatch latch) {
       this.latch = latch;
     }
 
     @Override
-    public Object create(ComponentContainer container) {
+    public Object get() {
       // wait for all threads to start and get as close to calling Lazy#get() as possible.
       uninterruptablyAwait(latch);
       instantiationCount.incrementAndGet();

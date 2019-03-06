@@ -21,9 +21,9 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.FirestoreChannel;
-import com.google.firestore.v1beta1.FirestoreGrpc;
-import com.google.firestore.v1beta1.ListenRequest;
-import com.google.firestore.v1beta1.ListenResponse;
+import com.google.firestore.v1.FirestoreGrpc;
+import com.google.firestore.v1.ListenRequest;
+import com.google.firestore.v1.ListenResponse;
 import com.google.protobuf.ByteString;
 import java.util.Map;
 
@@ -34,7 +34,7 @@ import java.util.Map;
  * sent to control what changes will be sent from the server for WatchChanges.
  *
  * @see <a
- *     href="https://github.com/googleapis/googleapis/blob/master/google/firestore/v1beta1/firestore.proto#L147">firestore.proto</a>
+ *     href="https://github.com/googleapis/googleapis/blob/master/google/firestore/v1/firestore.proto#L147">firestore.proto</a>
  */
 public class WatchStream
     extends AbstractStream<ListenRequest, ListenResponse, WatchStream.Callback> {
@@ -100,7 +100,7 @@ public class WatchStream
   }
 
   @Override
-  public void onNext(com.google.firestore.v1beta1.ListenResponse listenResponse) {
+  public void onNext(com.google.firestore.v1.ListenResponse listenResponse) {
     // A successful response means the stream is healthy
     backoff.reset();
 

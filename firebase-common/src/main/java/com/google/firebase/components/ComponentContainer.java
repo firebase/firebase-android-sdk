@@ -16,6 +16,7 @@ package com.google.firebase.components;
 
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.inject.Provider;
+import java.util.Set;
 
 /** Provides a means to retrieve instances of requested classes/interfaces. */
 @KeepForSdk
@@ -25,4 +26,10 @@ public interface ComponentContainer {
 
   @KeepForSdk
   <T> Provider<T> getProvider(Class<T> anInterface);
+
+  @KeepForSdk
+  <T> Set<T> setOf(Class<T> anInterface);
+
+  @KeepForSdk
+  <T> Provider<Set<T>> setOfProvider(Class<T> anInterface);
 }
