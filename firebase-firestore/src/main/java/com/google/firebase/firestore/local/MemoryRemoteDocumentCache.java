@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyMaybeDocumentMap;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
@@ -34,13 +35,18 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   /** Underlying cache of documents. */
   private ImmutableSortedMap<DocumentKey, MaybeDocument> docs;
 
-  MemoryRemoteDocumentCache() {
+  private final MemoryPersistence persistence;
+
+  MemoryRemoteDocumentCache(MemoryPersistence persistence) {
     docs = emptyMaybeDocumentMap();
+    this.persistence = persistence;
   }
 
   @Override
   public void add(MaybeDocument document) {
     docs = docs.insert(document.getKey(), document);
+
+    persistence.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
   }
 
   @Override
@@ -69,6 +75,9 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(Query query) {
+    hardAssert(
+        !query.isCollectionGroupQuery(),
+        "CollectionGroup queries should be handled in LocalDocumentsView");
     ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents

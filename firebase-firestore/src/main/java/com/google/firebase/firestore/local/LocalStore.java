@@ -133,7 +133,8 @@ public final class LocalStore {
     targetIdGenerator = TargetIdGenerator.forQueryCache(queryCache.getHighestTargetId());
     mutationQueue = persistence.getMutationQueue(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
-    localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue);
+    localDocuments =
+        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
     // TODO: Use IndexedQueryEngine as appropriate.
     queryEngine = new SimpleQueryEngine(localDocuments);
 
@@ -167,7 +168,8 @@ public final class LocalStore {
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
 
     // Recreate our LocalDocumentsView using the new MutationQueue.
-    localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue);
+    localDocuments =
+        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
     // TODO: Use IndexedQueryEngine as appropriate.
     queryEngine = new SimpleQueryEngine(localDocuments);
 

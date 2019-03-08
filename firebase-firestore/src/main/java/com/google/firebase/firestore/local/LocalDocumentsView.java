@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyMaybeDocumentMap;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
@@ -41,10 +42,15 @@ final class LocalDocumentsView {
 
   private final RemoteDocumentCache remoteDocumentCache;
   private final MutationQueue mutationQueue;
+  private final IndexManager indexManager;
 
-  LocalDocumentsView(RemoteDocumentCache remoteDocumentCache, MutationQueue mutationQueue) {
+  LocalDocumentsView(
+      RemoteDocumentCache remoteDocumentCache,
+      MutationQueue mutationQueue,
+      IndexManager indexManager) {
     this.remoteDocumentCache = remoteDocumentCache;
     this.mutationQueue = mutationQueue;
+    this.indexManager = indexManager;
   }
 
   /**
@@ -126,8 +132,10 @@ final class LocalDocumentsView {
   /** Performs a query against the local view of all documents. */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(Query query) {
     ResourcePath path = query.getPath();
-    if (DocumentKey.isDocumentKey(path)) {
+    if (query.isDocumentQuery()) {
       return getDocumentsMatchingDocumentQuery(path);
+    } else if (query.isCollectionGroupQuery()) {
+      return getDocumentsMatchingCollectionGroupQuery(query);
     } else {
       return getDocumentsMatchingCollectionQuery(query);
     }
@@ -143,6 +151,28 @@ final class LocalDocumentsView {
       result = result.insert(doc.getKey(), (Document) doc);
     }
     return result;
+  }
+
+  private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionGroupQuery(
+      Query query) {
+    hardAssert(
+        query.getPath().isEmpty(),
+        "Currently we only support collection group queries at the root.");
+    String collectionId = query.getCollectionGroup();
+    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+    List<ResourcePath> parents = indexManager.getCollectionParents(collectionId);
+
+    // Perform a collection query against each parent that contains the collectionId and
+    // aggregate the results.
+    for (ResourcePath parent : parents) {
+      Query collectionQuery = query.asCollectionQueryAtPath(parent.append(collectionId));
+      ImmutableSortedMap<DocumentKey, Document> collectionResults =
+          getDocumentsMatchingCollectionQuery(collectionQuery);
+      for (Map.Entry<DocumentKey, Document> docEntry : collectionResults) {
+        results = results.insert(docEntry.getKey(), docEntry.getValue());
+      }
+    }
+    return results;
   }
 
   /** Queries the remote documents and overlays mutations. */

@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySn
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
@@ -424,5 +425,120 @@ public class QueryTest {
 
     // NOTE: The backend doesn't currently support null, NaN, objects, or arrays, so there isn't
     // much of anything else interesting to test.
+  }
+
+  @Test
+  public void testCollectionGroupQueries() {
+    FirebaseFirestore db = testFirestore();
+    // Use .document() to get a random collection group name to use but ensure it starts with 'b'
+    // for predictable ordering.
+    String collectionGroup = "b" + db.collection("foo").document().getId();
+
+    String[] docPaths =
+        new String[] {
+          "abc/123/${collectionGroup}/cg-doc1",
+          "abc/123/${collectionGroup}/cg-doc2",
+          "${collectionGroup}/cg-doc3",
+          "${collectionGroup}/cg-doc4",
+          "def/456/${collectionGroup}/cg-doc5",
+          "${collectionGroup}/virtual-doc/nested-coll/not-cg-doc",
+          "x${collectionGroup}/not-cg-doc",
+          "${collectionGroup}x/not-cg-doc",
+          "abc/123/${collectionGroup}x/not-cg-doc",
+          "abc/123/x${collectionGroup}/not-cg-doc",
+          "abc/${collectionGroup}"
+        };
+    WriteBatch batch = db.batch();
+    for (String path : docPaths) {
+      batch.set(db.document(path.replace("${collectionGroup}", collectionGroup)), map("x", 1));
+    }
+    waitFor(batch.commit());
+
+    QuerySnapshot querySnapshot = waitFor(db.collectionGroup(collectionGroup).get());
+    assertEquals(
+        asList("cg-doc1", "cg-doc2", "cg-doc3", "cg-doc4", "cg-doc5"),
+        querySnapshotToIds(querySnapshot));
+  }
+
+  @Test
+  public void testCollectionGroupQueriesWithStartAtEndAtWithArbitraryDocumentIds() {
+    FirebaseFirestore db = testFirestore();
+    // Use .document() to get a random collection group name to use but ensure it starts with 'b'
+    // for predictable ordering.
+    String collectionGroup = "b" + db.collection("foo").document().getId();
+
+    String[] docPaths =
+        new String[] {
+          "a/a/${collectionGroup}/cg-doc1",
+          "a/b/a/b/${collectionGroup}/cg-doc2",
+          "a/b/${collectionGroup}/cg-doc3",
+          "a/b/c/d/${collectionGroup}/cg-doc4",
+          "a/c/${collectionGroup}/cg-doc5",
+          "${collectionGroup}/cg-doc6",
+          "a/b/nope/nope"
+        };
+    WriteBatch batch = db.batch();
+    for (String path : docPaths) {
+      batch.set(db.document(path.replace("${collectionGroup}", collectionGroup)), map("x", 1));
+    }
+    waitFor(batch.commit());
+
+    QuerySnapshot querySnapshot =
+        waitFor(
+            db.collectionGroup(collectionGroup)
+                .orderBy(FieldPath.documentId())
+                .startAt("a/b")
+                .endAt("a/b0")
+                .get());
+    assertEquals(asList("cg-doc2", "cg-doc3", "cg-doc4"), querySnapshotToIds(querySnapshot));
+
+    querySnapshot =
+        waitFor(
+            db.collectionGroup(collectionGroup)
+                .orderBy(FieldPath.documentId())
+                .startAfter("a/b")
+                .endBefore("a/b/" + collectionGroup + "/cg-doc3")
+                .get());
+    assertEquals(asList("cg-doc2"), querySnapshotToIds(querySnapshot));
+  }
+
+  @Test
+  public void testCollectionGroupQueriesWithWhereFiltersOnArbitraryDocumentIds() {
+    FirebaseFirestore db = testFirestore();
+    // Use .document() to get a random collection group name to use but ensure it starts with 'b'
+    // for predictable ordering.
+    String collectionGroup = "b" + db.collection("foo").document().getId();
+
+    String[] docPaths =
+        new String[] {
+          "a/a/${collectionGroup}/cg-doc1",
+          "a/b/a/b/${collectionGroup}/cg-doc2",
+          "a/b/${collectionGroup}/cg-doc3",
+          "a/b/c/d/${collectionGroup}/cg-doc4",
+          "a/c/${collectionGroup}/cg-doc5",
+          "${collectionGroup}/cg-doc6",
+          "a/b/nope/nope"
+        };
+    WriteBatch batch = db.batch();
+    for (String path : docPaths) {
+      batch.set(db.document(path.replace("${collectionGroup}", collectionGroup)), map("x", 1));
+    }
+    waitFor(batch.commit());
+
+    QuerySnapshot querySnapshot =
+        waitFor(
+            db.collectionGroup(collectionGroup)
+                .whereGreaterThanOrEqualTo(FieldPath.documentId(), "a/b")
+                .whereLessThanOrEqualTo(FieldPath.documentId(), "a/b0")
+                .get());
+    assertEquals(asList("cg-doc2", "cg-doc3", "cg-doc4"), querySnapshotToIds(querySnapshot));
+
+    querySnapshot =
+        waitFor(
+            db.collectionGroup(collectionGroup)
+                .whereGreaterThan(FieldPath.documentId(), "a/b")
+                .whereLessThan(FieldPath.documentId(), "a/b/" + collectionGroup + "/cg-doc3")
+                .get());
+    assertEquals(asList("cg-doc2"), querySnapshotToIds(querySnapshot));
   }
 }

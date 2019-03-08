@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
@@ -49,6 +50,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         "INSERT OR REPLACE INTO remote_documents (path, contents) VALUES (?, ?)",
         path,
         message.toByteArray());
+
+    db.getIndexManager().addToCollectionParentIndex(maybeDocument.getKey().getPath().popLast());
   }
 
   @Override
@@ -104,6 +107,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(Query query) {
+    hardAssert(
+        !query.isCollectionGroupQuery(),
+        "CollectionGroup queries should be handled in LocalDocumentsView");
+
     // Use the query path as a prefix for testing if a document matches the query.
     ResourcePath prefix = query.getPath();
     int immediateChildrenPathLength = prefix.length() + 1;

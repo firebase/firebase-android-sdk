@@ -324,20 +324,28 @@ public class Query {
       }
       if (value instanceof String) {
         String documentKey = (String) value;
-        if (documentKey.contains("/")) {
-          // TODO: Allow slashes once ancestor queries are supported
-          throw new IllegalArgumentException(
-              "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
-                  + "document ID, but '"
-                  + documentKey
-                  + "' contains a '/' character.");
-        } else if (documentKey.isEmpty()) {
+        if (documentKey.isEmpty()) {
           throw new IllegalArgumentException(
               "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
                   + "document ID, but it was an empty string.");
         }
-        ResourcePath path = this.query.getPath().append(documentKey);
-        hardAssert(path.length() % 2 == 0, "Path should be a document key");
+        if (!query.isCollectionGroupQuery() && documentKey.contains("/")) {
+          throw new IllegalArgumentException(
+              "Invalid query. When querying a collection by FieldPath.documentId() you must "
+                  + "provide a plain document ID, but '"
+                  + documentKey
+                  + "' contains a '/' character.");
+        }
+        ResourcePath path = query.getPath().append(ResourcePath.fromString(documentKey));
+        if (!DocumentKey.isDocumentKey(path)) {
+          throw new IllegalArgumentException(
+              "Invalid query. When querying a collection group by FieldPath.documentId(), the "
+                  + "value provided must result in a valid document path, but '"
+                  + path
+                  + "' is not because it has an odd number of segments ("
+                  + path.length()
+                  + ").");
+        }
         fieldValue =
             ReferenceValue.valueOf(this.getFirestore().getDatabaseId(), DocumentKey.fromPath(path));
       } else if (value instanceof DocumentReference) {
@@ -655,15 +663,26 @@ public class Query {
                   + ".");
         }
         String documentId = (String) rawValue;
-        if (documentId.contains("/")) {
+        if (!query.isCollectionGroupQuery() && documentId.contains("/")) {
           throw new IllegalArgumentException(
-              "Invalid query. Document ID '"
-                  + documentId
-                  + "' contains a slash in "
+              "Invalid query. When querying a collection and ordering by FieldPath.documentId(), "
+                  + "the value passed to "
                   + methodName
-                  + "().");
+                  + "() must be a plain document ID, but '"
+                  + documentId
+                  + "' contains a slash.");
         }
-        DocumentKey key = DocumentKey.fromPath(query.getPath().append(documentId));
+        ResourcePath path = query.getPath().append(ResourcePath.fromString(documentId));
+        if (!DocumentKey.isDocumentKey(path)) {
+          throw new IllegalArgumentException(
+              "Invalid query. When querying a collection group and ordering by "
+                  + "FieldPath.documentId(), the value passed to "
+                  + methodName
+                  + "() must result in a valid document path, but '"
+                  + path
+                  + "' is not because it contains an odd number of segments.");
+        }
+        DocumentKey key = DocumentKey.fromPath(path);
         components.add(ReferenceValue.valueOf(firestore.getDatabaseId(), key));
       } else {
         FieldValue wrapped = firestore.getDataConverter().parseQueryValue(rawValue);
