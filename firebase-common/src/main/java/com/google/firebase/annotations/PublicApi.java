@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
  * Indicates that this object (class, method, etc) should be retained while preguarding an SDK, but
  * is safe to be proguarded away in the final app.
  *
- * NOTE: For projects /not/ using proguard, the PublicApi annotation acts merely as a convention
+ * <p>NOTE: For projects /not/ using proguard, the PublicApi annotation acts merely as a convention
  * and has no actual impact. These projects must abide by normal java visibility rules to govern the
  * visibility of methods in their public API.
  */
