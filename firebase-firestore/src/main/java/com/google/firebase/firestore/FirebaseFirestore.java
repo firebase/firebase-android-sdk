@@ -245,7 +245,7 @@ public class FirebaseFirestore {
    * @return The created Query.
    */
   @NonNull
-  //@PublicApi
+  // @PublicApi
   /* public */ Query collectionGroup(@NonNull String collectionId) {
     checkNotNull(collectionId, "Provided collection ID must not be null.");
     if (collectionId.contains("/")) {

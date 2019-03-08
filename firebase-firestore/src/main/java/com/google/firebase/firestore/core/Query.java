@@ -83,8 +83,8 @@ public final class Query {
   }
 
   /**
-   * Initializes a Query with a path and (optional) collectionGroup. Path must currently be
-   * empty in the case of a collection group query.
+   * Initializes a Query with a path and (optional) collectionGroup. Path must currently be empty in
+   * the case of a collection group query.
    */
   public Query(ResourcePath path, @Nullable String collectionGroup) {
     this(
