@@ -26,6 +26,7 @@ import com.google.firebase.firestore.model.value.IntegerValue
 import com.google.firebase.firestore.model.value.ObjectValue
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
+import com.google.firebase.ktx.initialize
 import com.google.firebase.platforminfo.UserAgentPublisher
 import org.junit.After
 import org.junit.Before
@@ -43,7 +44,7 @@ const val EXISTING_APP = "existing"
 abstract class BaseTestCase {
     @Before
     fun setUp() {
-        FirebaseApp.initializeApp(
+        Firebase.initialize(
                 RuntimeEnvironment.application,
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
@@ -52,7 +53,7 @@ abstract class BaseTestCase {
                         .build()
         )
 
-        FirebaseApp.initializeApp(
+        Firebase.initialize(
                 RuntimeEnvironment.application,
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
@@ -88,8 +89,8 @@ class FirestoreTests : BaseTestCase() {
 class LibraryVersionTest : BaseTestCase() {
     @Test
     fun `library version should be registered with runtime`() {
-        val uaPublisher = Firebase.app.get(UserAgentPublisher::class.java)
-        assertThat(uaPublisher.userAgent).contains(LIBRARY_NAME)
+        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
     }
 }
 

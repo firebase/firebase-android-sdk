@@ -298,7 +298,7 @@ public class FirebaseFirestore {
    * writes made by the batchFunction as a single atomic unit.
    *
    * @param batchFunction The function to execute within the batch context.
-   * @return A Task that will be resolved when the write finishes.
+   * @return A Task that will be resolved when the batch has been committed.
    */
   @NonNull
   @PublicApi

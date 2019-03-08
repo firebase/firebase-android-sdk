@@ -47,13 +47,13 @@ inline fun <reified T> DocumentSnapshot.toObject(
  * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
  * exist.
  */
-inline fun <reified T : Any> DocumentSnapshot.getField(field: String): T? = get(field, T::class.java)
+inline fun <reified T> DocumentSnapshot.getField(field: String): T? = get(field, T::class.java)
 
 /**
  * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
  * exist.
  */
-inline fun <reified T : Any> DocumentSnapshot.getField(
+inline fun <reified T> DocumentSnapshot.getField(
     field: String,
     serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
 ): T? =
@@ -63,13 +63,13 @@ inline fun <reified T : Any> DocumentSnapshot.getField(
  * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
  * exist.
  */
-inline fun <reified T : Any> DocumentSnapshot.getField(field: FieldPath): T? = get(field, T::class.java)
+inline fun <reified T> DocumentSnapshot.getField(field: FieldPath): T? = get(field, T::class.java)
 
 /**
  * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
  * exist.
  */
-inline fun <reified T : Any> DocumentSnapshot.getField(
+inline fun <reified T> DocumentSnapshot.getField(
     field: FieldPath,
     serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
 ): T? =
