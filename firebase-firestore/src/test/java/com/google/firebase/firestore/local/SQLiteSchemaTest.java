@@ -14,6 +14,11 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.local.EncodedPath.decodeResourcePath;
+import static com.google.firebase.firestore.local.EncodedPath.encode;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.path;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -27,8 +32,10 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firestore.v1.Document;
 import com.google.firestore.v1.Write;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.After;
@@ -243,7 +250,7 @@ public class SQLiteSchemaTest {
     for (String doc : docs) {
       db.execSQL(
           "INSERT INTO document_mutations (uid, path, batch_id) VALUES (?, ?, ?)",
-          new Object[] {uid, EncodedPath.encode(ResourcePath.fromString(doc)), batchId});
+          new Object[] {uid, encode(ResourcePath.fromString(doc)), batchId});
 
       write.addWrites(
           Write.newBuilder()
@@ -298,6 +305,57 @@ public class SQLiteSchemaTest {
               long expected = docNum % 2 == 1 ? oldSequenceNumber : newSequenceNumber;
               assertEquals(expected, sequenceNumber);
             });
+  }
+
+  @Test
+  public void canCreateCollectionParentsIndex() {
+    // This test creates a database with schema version 7 that has a few
+    // mutations and a few remote documents and then ensures that appropriate
+    // entries are written to the collectionParentIndex.
+    List<String> writePaths = asList("cg1/x", "cg1/y", "cg1/x/cg1/x", "cg2/x", "cg1/x/cg2/x");
+    List<String> remoteDocPaths =
+        asList("cg1/z", "cg1/y/cg1/x", "cg2/x/cg3/x", "blah/x/blah/x/cg3/x");
+    Map<String, List<String>> expectedParents =
+        map(
+            "cg1", asList("", "cg1/x", "cg1/y"),
+            "cg2", asList("", "cg1/x"),
+            "cg3", asList("blah/x/blah/x", "cg2/x"));
+
+    schema.runMigrations(0, 7);
+    // Write mutations.
+    int batchId = 1;
+    for (String writePath : writePaths) {
+      addMutationBatch(db, batchId++, "user", writePath);
+    }
+    // Write remote document entries.
+    for (String remoteDocPath : remoteDocPaths) {
+      db.execSQL(
+          "INSERT INTO remote_documents (path) VALUES (?)",
+          new String[] {encode(path(remoteDocPath))});
+    }
+
+    // Migrate to v8 and verify index entries.
+    schema.runMigrations(7, 8);
+    Map<String, List<String>> actualParents = new HashMap<>();
+    new SQLitePersistence.Query(db, "SELECT collection_id, parent FROM collection_parents")
+        .forEach(
+            row -> {
+              String collectionId = row.getString(0);
+              String parent = decodeResourcePath(row.getString(1)).toString();
+              List<String> parents = actualParents.get(collectionId);
+              if (parents == null) {
+                parents = new ArrayList<>();
+                actualParents.put(collectionId, parents);
+              }
+              parents.add(parent);
+            });
+
+    // Sort results.
+    for (List<String> parents : actualParents.values()) {
+      parents.sort(String::compareTo);
+    }
+
+    assertEquals(expectedParents, actualParents);
   }
 
   private void assertNoResultsForQuery(String query, String[] args) {

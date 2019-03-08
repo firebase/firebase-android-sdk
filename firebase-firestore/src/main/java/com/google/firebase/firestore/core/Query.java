@@ -41,7 +41,7 @@ public final class Query {
    * @return A new instance of the Query.
    */
   public static Query atPath(ResourcePath path) {
-    return new Query(path, Collections.emptyList(), Collections.emptyList(), NO_LIMIT, null, null);
+    return new Query(path, /*collectionGroup=*/ null);
   }
 
   private static final OrderBy KEY_ORDERING_ASC =
@@ -57,6 +57,8 @@ public final class Query {
 
   private final ResourcePath path;
 
+  private final @Nullable String collectionGroup;
+
   private final long limit;
 
   private final @Nullable Bound startAt;
@@ -65,12 +67,14 @@ public final class Query {
   /** Initializes a Query with all of its components directly. */
   public Query(
       ResourcePath path,
+      @Nullable String collectionGroup,
       List<Filter> filters,
       List<OrderBy> explicitSortOrder,
       long limit,
       @Nullable Bound startAt,
       @Nullable Bound endAt) {
     this.path = path;
+    this.collectionGroup = collectionGroup;
     this.explicitSortOrder = explicitSortOrder;
     this.filters = filters;
     this.limit = limit;
@@ -78,14 +82,39 @@ public final class Query {
     this.endAt = endAt;
   }
 
+  /**
+   * Initializes a Query with a path and (optional) collectionGroup. Path must currently be empty in
+   * the case of a collection group query.
+   */
+  public Query(ResourcePath path, @Nullable String collectionGroup) {
+    this(
+        path,
+        collectionGroup,
+        Collections.emptyList(),
+        Collections.emptyList(),
+        NO_LIMIT,
+        null,
+        null);
+  }
+
   /** The base path of the query. */
   public ResourcePath getPath() {
     return path;
   }
 
+  /** An optional collection group within which to query. */
+  public @Nullable String getCollectionGroup() {
+    return collectionGroup;
+  }
+
   /** Returns true if this Query is for a specific document. */
   public boolean isDocumentQuery() {
-    return DocumentKey.isDocumentKey(path) && filters.isEmpty();
+    return DocumentKey.isDocumentKey(path) && collectionGroup == null && filters.isEmpty();
+  }
+
+  /** Returns true if this is a collection group query. */
+  public boolean isCollectionGroupQuery() {
+    return collectionGroup != null;
   }
 
   /** The filters on the documents returned by the query. */
@@ -157,8 +186,7 @@ public final class Query {
    * @return the new Query.
    */
   public Query filter(Filter filter) {
-    Assert.hardAssert(!DocumentKey.isDocumentKey(path), "No filter is allowed for document query");
-
+    hardAssert(!isDocumentQuery(), "No filter is allowed for document query");
     FieldPath newInequalityField = null;
     if (filter instanceof RelationFilter && ((RelationFilter) filter).isInequality()) {
       newInequalityField = filter.getField();
@@ -179,7 +207,8 @@ public final class Query {
 
     List<Filter> updatedFilter = new ArrayList<>(filters);
     updatedFilter.add(filter);
-    return new Query(path, updatedFilter, explicitSortOrder, limit, startAt, endAt);
+    return new Query(
+        path, collectionGroup, updatedFilter, explicitSortOrder, limit, startAt, endAt);
   }
 
   /**
@@ -189,9 +218,7 @@ public final class Query {
    * @return the new Query.
    */
   public Query orderBy(OrderBy order) {
-    if (DocumentKey.isDocumentKey(path)) {
-      throw Assert.fail("No ordering is allowed for document query");
-    }
+    hardAssert(!isDocumentQuery(), "No ordering is allowed for document query");
     if (explicitSortOrder.isEmpty()) {
       FieldPath inequality = inequalityField();
       if (inequality != null && !inequality.equals(order.field)) {
@@ -200,7 +227,7 @@ public final class Query {
     }
     List<OrderBy> updatedSortOrder = new ArrayList<>(explicitSortOrder);
     updatedSortOrder.add(order);
-    return new Query(path, filters, updatedSortOrder, limit, startAt, endAt);
+    return new Query(path, collectionGroup, filters, updatedSortOrder, limit, startAt, endAt);
   }
 
   /**
@@ -210,7 +237,7 @@ public final class Query {
    *     limit is applied. Otherwise, if {@code limit <= 0}, behavior is unspecified.
    */
   public Query limit(long limit) {
-    return new Query(path, filters, explicitSortOrder, limit, startAt, endAt);
+    return new Query(path, collectionGroup, filters, explicitSortOrder, limit, startAt, endAt);
   }
 
   /**
@@ -220,7 +247,7 @@ public final class Query {
    * @return the new Query.
    */
   public Query startAt(Bound bound) {
-    return new Query(path, filters, explicitSortOrder, limit, bound, endAt);
+    return new Query(path, collectionGroup, filters, explicitSortOrder, limit, bound, endAt);
   }
 
   /**
@@ -230,7 +257,17 @@ public final class Query {
    * @return the new Query.
    */
   public Query endAt(Bound bound) {
-    return new Query(path, filters, explicitSortOrder, limit, startAt, bound);
+    return new Query(path, collectionGroup, filters, explicitSortOrder, limit, startAt, bound);
+  }
+
+  /**
+   * Helper to convert a collection group query into a collection query at a specific path. This is
+   * used when executing collection group queries, since we have to split the query into a set of
+   * collection queries at multiple paths.
+   */
+  public Query asCollectionQueryAtPath(ResourcePath path) {
+    return new Query(
+        path, /*collectionGroup=*/ null, filters, explicitSortOrder, limit, startAt, endAt);
   }
 
   /**
@@ -288,9 +325,13 @@ public final class Query {
     return memoizedOrderBy;
   }
 
-  private boolean matchesPath(Document doc) {
+  private boolean matchesPathAndCollectionGroup(Document doc) {
     ResourcePath docPath = doc.getKey().getPath();
-    if (DocumentKey.isDocumentKey(path)) {
+    if (collectionGroup != null) {
+      // NOTE: this.path is currently always empty since we don't expose Collection
+      // Group queries rooted at a document path yet.
+      return doc.getKey().hasCollectionId(collectionGroup) && path.isPrefixOf(docPath);
+    } else if (DocumentKey.isDocumentKey(path)) {
       return path.equals(docPath);
     } else {
       return path.isPrefixOf(docPath) && path.length() == docPath.length() - 1;
@@ -330,7 +371,10 @@ public final class Query {
 
   /** Returns true if the document matches the constraints of this query. */
   public boolean matches(Document doc) {
-    return matchesPath(doc) && matchesOrderBy(doc) && matchesFilters(doc) && matchesBounds(doc);
+    return matchesPathAndCollectionGroup(doc)
+        && matchesOrderBy(doc)
+        && matchesFilters(doc)
+        && matchesBounds(doc);
   }
 
   /** Returns a comparator that will sort documents according to this Query's sort order. */
@@ -372,6 +416,11 @@ public final class Query {
     // TODO: Cache the return value.
     StringBuilder builder = new StringBuilder();
     builder.append(getPath().canonicalString());
+
+    if (collectionGroup != null) {
+      builder.append("|cg:");
+      builder.append(collectionGroup);
+    }
 
     // Add filters.
     builder.append("|f:");
@@ -416,6 +465,11 @@ public final class Query {
 
     Query query = (Query) o;
 
+    if (collectionGroup != null
+        ? !collectionGroup.equals(query.collectionGroup)
+        : query.collectionGroup != null) {
+      return false;
+    }
     if (limit != query.limit) {
       return false;
     }
@@ -437,6 +491,7 @@ public final class Query {
   @Override
   public int hashCode() {
     int result = getOrderBy().hashCode();
+    result = 31 * result + (collectionGroup != null ? collectionGroup.hashCode() : 0);
     result = 31 * result + filters.hashCode();
     result = 31 * result + path.hashCode();
     result = 31 * result + (int) (limit ^ (limit >>> 32));
@@ -450,6 +505,10 @@ public final class Query {
     StringBuilder builder = new StringBuilder();
     builder.append("Query(");
     builder.append(path.canonicalString());
+    if (collectionGroup != null) {
+      builder.append(" collectionGroup=");
+      builder.append(collectionGroup);
+    }
     if (!filters.isEmpty()) {
       builder.append(" where ");
       for (int i = 0; i < filters.size(); i++) {

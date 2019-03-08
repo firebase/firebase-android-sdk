@@ -25,6 +25,8 @@ import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.Log;
 import com.google.common.base.Preconditions;
+import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.util.Consumer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +46,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 7;
+  static final int VERSION = 8;
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
@@ -110,6 +112,10 @@ class SQLiteSchema {
 
     if (fromVersion < 7 && toVersion >= 7) {
       ensureSequenceNumbers();
+    }
+
+    if (fromVersion < 8 && toVersion >= 8) {
+      createV8CollectionParentsIndex();
     }
 
     /*
@@ -363,6 +369,58 @@ class SQLiteSchema {
           tagDocument.bindString(1, row.getString(0));
           tagDocument.bindLong(2, sequenceNumber);
           hardAssert(tagDocument.executeInsert() != -1, "Failed to insert a sentinel row");
+        });
+  }
+
+  private void createV8CollectionParentsIndex() {
+    ifTablesDontExist(
+        new String[] {"collection_parents"},
+        () -> {
+          // A table storing associations between a Collection ID (e.g. 'messages') to a parent path
+          // (e.g. '/chats/123') that contains it as a (sub)collection. This is used to efficiently
+          // find all collections to query when performing a Collection Group query. Note that the
+          // parent path will be an empty path in the case of root-level collections.
+          db.execSQL(
+              "CREATE TABLE collection_parents ("
+                  + "collection_id TEXT, "
+                  + "parent TEXT, "
+                  + "PRIMARY KEY(collection_id, parent))");
+        });
+
+    // Helper to add an index entry iff we haven't already written it.
+    MemoryIndexManager.MemoryCollectionParentIndex cache =
+        new MemoryIndexManager.MemoryCollectionParentIndex();
+    SQLiteStatement addIndexEntry =
+        db.compileStatement(
+            "INSERT OR REPLACE INTO collection_parents (collection_id, parent) VALUES (?, ?)");
+    Consumer<ResourcePath> addEntry =
+        collectionPath -> {
+          if (cache.add(collectionPath)) {
+            String collectionId = collectionPath.getLastSegment();
+            ResourcePath parentPath = collectionPath.popLast();
+            addIndexEntry.clearBindings();
+            addIndexEntry.bindString(1, collectionId);
+            addIndexEntry.bindString(2, EncodedPath.encode(parentPath));
+            addIndexEntry.execute();
+          }
+        };
+
+    // Index existing remote documents.
+    SQLitePersistence.Query remoteDocumentsQuery =
+        new SQLitePersistence.Query(db, "SELECT path FROM remote_documents");
+    remoteDocumentsQuery.forEach(
+        row -> {
+          ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+          addEntry.accept(path.popLast());
+        });
+
+    // Index existing mutations.
+    SQLitePersistence.Query documentMutationsQuery =
+        new SQLitePersistence.Query(db, "SELECT path FROM document_mutations");
+    documentMutationsQuery.forEach(
+        row -> {
+          ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+          addEntry.accept(path.popLast());
         });
   }
 

@@ -712,10 +712,17 @@ public final class RemoteSerializer {
     // Dissect the path into parent, collectionId, and optional key filter.
     QueryTarget.Builder builder = QueryTarget.newBuilder();
     StructuredQuery.Builder structuredQueryBuilder = StructuredQuery.newBuilder();
-    if (query.getPath().length() == 0) {
-      builder.setParent(encodeQueryPath(ResourcePath.EMPTY));
+    ResourcePath path = query.getPath();
+    if (query.getCollectionGroup() != null) {
+      Assert.hardAssert(
+          path.length() % 2 == 0,
+          "Collection Group queries should be within a document path or root.");
+      builder.setParent(encodeQueryPath(path));
+      CollectionSelector.Builder from = CollectionSelector.newBuilder();
+      from.setCollectionId(query.getCollectionGroup());
+      from.setAllDescendants(true);
+      structuredQueryBuilder.addFrom(from);
     } else {
-      ResourcePath path = query.getPath();
       Assert.hardAssert(path.length() % 2 != 0, "Document queries with filters are not supported.");
       builder.setParent(encodeQueryPath(path.popLast()));
       CollectionSelector.Builder from = CollectionSelector.newBuilder();
@@ -754,13 +761,19 @@ public final class RemoteSerializer {
     ResourcePath path = decodeQueryPath(target.getParent());
 
     StructuredQuery query = target.getStructuredQuery();
+
+    String collectionGroup = null;
     int fromCount = query.getFromCount();
     if (fromCount > 0) {
       hardAssert(
           fromCount == 1, "StructuredQuery.from with more than one collection is not supported.");
 
       CollectionSelector from = query.getFrom(0);
-      path = path.append(from.getCollectionId());
+      if (from.getAllDescendants()) {
+        collectionGroup = from.getCollectionId();
+      } else {
+        path = path.append(from.getCollectionId());
+      }
     }
 
     List<Filter> filterBy;
@@ -796,7 +809,7 @@ public final class RemoteSerializer {
       endAt = decodeBound(query.getEndAt());
     }
 
-    return new Query(path, filterBy, orderBy, limit, startAt, endAt);
+    return new Query(path, collectionGroup, filterBy, orderBy, limit, startAt, endAt);
   }
 
   // Filters

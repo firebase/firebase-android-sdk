@@ -86,6 +86,9 @@ public abstract class Persistence {
   /** Creates a RemoteDocumentCache representing the persisted cache of remote documents. */
   abstract RemoteDocumentCache getRemoteDocumentCache();
 
+  /** Creates an IndexManager that manages our persisted query indexes. */
+  abstract IndexManager getIndexManager();
+
   /**
    * Performs an operation inside a persistence transaction. Any reads or writes against persistence
    * must be performed within a transaction. Writes will be committed atomically once the

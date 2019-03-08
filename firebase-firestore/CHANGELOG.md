@@ -5,6 +5,9 @@
 - [fixed] Fixed calculation of SQLite database size on Android 9 Pie devices.
   Previous method could be off by a few MBs on these devices, potentially
   delaying garbage collection.
+- [changed] Prepared the persistence layer to support collection group queries.
+  While this feature is not yet available, all schema changes are included
+  in this release.
 
 # 18.0.1
 - [fixed] Fixed an issue where Firestore would crash if handling write batches
