@@ -35,6 +35,7 @@ buildscript {
         classpath 'me.tatarka:gradle-retrolambda:3.7.0'
         classpath 'digital.wup:android-maven-publish:3.6.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath 'org.jlleitschuh.gradle:ktlint-gradle:7.1.0'
     }
 }
 
@@ -120,6 +121,8 @@ configure(subprojects) {
     tasks.withType(JavaCompile) {
         options.errorprone.excludedPaths = '.*/build/generated/.*'
     }
+
+    apply plugin: "org.jlleitschuh.gradle.ktlint"
 
     // Adds firebase custom errorprone checks to the annotation processor classpath.
     configurations.whenObjectAdded {
