@@ -31,6 +31,7 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
+import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.BlobValue;
@@ -40,6 +41,7 @@ import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.GeoPointValue;
 import com.google.firebase.firestore.model.value.IntegerValue;
 import com.google.firebase.firestore.model.value.NullValue;
+import com.google.firebase.firestore.model.value.NumberValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.model.value.StringValue;
@@ -348,6 +350,16 @@ public final class UserDataConverter {
           parseArrayTransformElements(((ArrayRemoveFieldValue) value).getElements());
       ArrayTransformOperation arrayRemove = new ArrayTransformOperation.Remove(parsedElements);
       context.addToFieldTransforms(context.getPath(), arrayRemove);
+
+    } else if (value
+        instanceof com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue) {
+      com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue
+          numericIncrementFieldValue =
+              (com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue) value;
+      NumberValue operand = (NumberValue) parseQueryValue(numericIncrementFieldValue.getOperand());
+      NumericIncrementTransformOperation incrementOperation =
+          new NumericIncrementTransformOperation(operand);
+      context.addToFieldTransforms(context.getPath(), incrementOperation);
 
     } else {
       throw Assert.fail("Unknown FieldValue type: %s", Util.typeName(value));

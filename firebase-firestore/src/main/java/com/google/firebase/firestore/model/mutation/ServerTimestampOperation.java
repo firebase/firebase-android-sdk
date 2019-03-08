@@ -38,6 +38,11 @@ public class ServerTimestampOperation implements TransformOperation {
     return transformResult;
   }
 
+  @Override
+  public boolean isIdempotent() {
+    return true;
+  }
+
   // NOTE: Since we've guaranteed a singleton instance, we can rely on Object's default
   // implementation of equals() / hashCode().
 }

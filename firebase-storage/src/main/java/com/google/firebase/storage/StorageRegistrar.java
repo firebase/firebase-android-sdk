@@ -12,11 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.core;
+package com.google.firebase.storage;
 
-/** Holds static version string of the SDK. */
-public class Version {
-  // TODO: Replace this version with the general Firestore version once we stop doing
-  // out-of-band releases.
-  public static final String SDK_VERSION = "0.6.6-dev";
+import android.support.annotation.Keep;
+import com.google.firebase.components.Component;
+import com.google.firebase.components.ComponentRegistrar;
+import com.google.firebase.platforminfo.LibraryVersionComponent;
+import java.util.Collections;
+import java.util.List;
+
+/** @hide */
+@Keep
+public class StorageRegistrar implements ComponentRegistrar {
+  @Override
+  public List<Component<?>> getComponents() {
+    return Collections.singletonList(
+        LibraryVersionComponent.create("fire-gcs", BuildConfig.VERSION_NAME));
+  }
 }

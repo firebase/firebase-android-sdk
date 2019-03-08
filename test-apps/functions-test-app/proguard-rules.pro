@@ -2,3 +2,4 @@
 
 -keep class android.support.test.espresso.IdlingResource { *; }
 -keep class android.support.test.espresso.IdlingRegistry { *; }
+

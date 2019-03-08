@@ -14,17 +14,6 @@
 
 apply plugin: 'com.android.library'
 
-
-tasks.withType(org.gradle.api.tasks.testing.Test) {
-    testLogging {
-        exceptionFormat = 'full'
-        showStandardStreams = true
-        showCauses = true
-        showExceptions =true
-        showStackTraces = true
-    }
-}
-
 android {
     adbOptions {
         timeOutInMs 60 * 1000
@@ -66,6 +55,8 @@ android {
                 srcDirs "src/test/resources"
             }
         }
+
+        testOptions.unitTests.includeAndroidResources = true
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -88,4 +79,6 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.21.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'com.android.support.test:rules:1.0.2'
 }

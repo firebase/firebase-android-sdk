@@ -25,7 +25,9 @@ import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -119,6 +121,25 @@ public final class TransformMutation extends Mutation {
     ObjectValue newData = transformObject(doc.getData(), transformResults);
     return new Document(
         getKey(), doc.getVersion(), newData, Document.DocumentState.LOCAL_MUTATIONS);
+  }
+
+  @Override
+  public FieldMask getFieldMask() {
+    Set<FieldPath> fieldMask = new HashSet<>();
+    for (FieldTransform transform : fieldTransforms) {
+      fieldMask.add(transform.getFieldPath());
+    }
+    return FieldMask.fromSet(fieldMask);
+  }
+
+  @Override
+  public boolean isIdempotent() {
+    for (FieldTransform transform : fieldTransforms) {
+      if (!transform.isIdempotent()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**

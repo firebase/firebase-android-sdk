@@ -709,7 +709,10 @@ public class MapperTest {
 
   private enum ComplexEnum {
     One("one"),
-    Two("two");
+    Two("two"),
+
+    @PropertyName("Three")
+    THREE("three");
 
     private final String value;
 
@@ -722,12 +725,24 @@ public class MapperTest {
     }
   }
 
+  private enum PathologicalEnum {
+    @PropertyName("Two")
+    One,
+
+    @PropertyName("One")
+    Two
+  }
+
   private static class EnumBean {
     public SimpleEnum enumField;
 
     private SimpleEnum enumValue;
 
     public ComplexEnum complexEnum;
+
+    public ComplexEnum enumUsingPropertyName;
+
+    public PathologicalEnum pathologicalEnum;
 
     public SimpleEnum getEnumValue() {
       return enumValue;
@@ -1192,6 +1207,53 @@ public class MapperTest {
         deserialize("{'xmlandURL1': 'foo', 'XMLAndURL2': 'bar'}", XMLAndURLBean.class);
     assertEquals("foo", bean.XMLAndURL1);
     assertEquals("bar", bean.XMLAndURL2);
+  }
+
+  /** Based on https://github.com/firebase/firebase-android-sdk/issues/252. */
+  private static class AllCapsDefaultHandlingBean {
+    private String UUID;
+
+    public String getUUID() {
+      return UUID;
+    }
+
+    public void setUUID(String value) {
+      UUID = value;
+    }
+  }
+
+  @Test
+  public void allCapsGetterSerializesToLowercaseByDefault() {
+    AllCapsDefaultHandlingBean bean = new AllCapsDefaultHandlingBean();
+    bean.setUUID("value");
+    assertJson("{'uuid': 'value'}", serialize(bean));
+    AllCapsDefaultHandlingBean deserialized =
+        deserialize("{'uuid': 'value'}", AllCapsDefaultHandlingBean.class);
+    assertEquals("value", deserialized.getUUID());
+  }
+
+  private static class AllCapsWithPropertyName {
+    private String UUID;
+
+    @PropertyName("UUID")
+    public String getUUID() {
+      return UUID;
+    }
+
+    @PropertyName("UUID")
+    public void setUUID(String value) {
+      UUID = value;
+    }
+  }
+
+  @Test
+  public void allCapsWithPropertyNameSerializesToUppercase() {
+    AllCapsWithPropertyName bean = new AllCapsWithPropertyName();
+    bean.setUUID("value");
+    assertJson("{'UUID': 'value'}", serialize(bean));
+    AllCapsWithPropertyName deserialized =
+        deserialize("{'UUID': 'value'}", AllCapsWithPropertyName.class);
+    assertEquals("value", deserialized.getUUID());
   }
 
   @Test
@@ -1974,18 +2036,24 @@ public class MapperTest {
     EnumBean bean = new EnumBean();
     bean.enumField = SimpleEnum.Bar;
     bean.complexEnum = ComplexEnum.One;
+    bean.enumUsingPropertyName = ComplexEnum.THREE;
+    bean.pathologicalEnum = PathologicalEnum.One;
     bean.setEnumValue(SimpleEnum.Foo);
-
-    assertJson("{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}", serialize(bean));
+    assertJson(
+        "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'enumUsingPropertyName': 'Three', 'pathologicalEnum': 'Two'}",
+        serialize(bean));
   }
 
   @Test
   public void enumsAreParsed() {
-    String json = "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}";
+    String json =
+        "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'enumUsingPropertyName': 'Three', 'pathologicalEnum': 'Two'}";
     EnumBean bean = deserialize(json, EnumBean.class);
     assertEquals(bean.enumField, SimpleEnum.Bar);
     assertEquals(bean.enumValue, SimpleEnum.Foo);
     assertEquals(bean.complexEnum, ComplexEnum.One);
+    assertEquals(bean.enumUsingPropertyName, ComplexEnum.THREE);
+    assertEquals(bean.pathologicalEnum, PathologicalEnum.One);
   }
 
   @Test
