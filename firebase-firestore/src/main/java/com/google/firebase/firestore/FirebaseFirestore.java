@@ -317,6 +317,21 @@ public class FirebaseFirestore {
     return new WriteBatch(this);
   }
 
+  /**
+   * Executes a batchFunction on a newly created {@link WriteBatch} and then commits all of the
+   * writes made by the batchFunction as a single atomic unit.
+   *
+   * @param batchFunction The function to execute within the batch context.
+   * @return A Task that will be resolved when the batch has been committed.
+   */
+  @NonNull
+  @PublicApi
+  public Task<Void> runBatch(@NonNull WriteBatch.Function batchFunction) {
+    WriteBatch batch = batch();
+    batchFunction.apply(batch);
+    return batch.commit();
+  }
+
   @VisibleForTesting
   Task<Void> shutdown() {
     if (client == null) {

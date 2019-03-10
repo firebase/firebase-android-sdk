@@ -71,6 +71,7 @@ android {
         test {
             java {
                 srcDir 'src/testUtil/java'
+                srcDir 'src/roboUtil/java'
             }
         }
         androidTest {
@@ -105,7 +106,7 @@ dependencies {
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
 
     implementation 'com.squareup.okhttp:okhttp:2.7.5'
-    implementation ('com.google.firebase:firebase-auth-interop:16.0.1') {
+    implementation('com.google.firebase:firebase-auth-interop:16.0.1') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
