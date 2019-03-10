@@ -284,7 +284,7 @@ public class DocumentReference {
    */
   @NonNull
   @PublicApi
-  public Task<DocumentSnapshot> get(Source source) {
+  public Task<DocumentSnapshot> get(@NonNull Source source) {
     if (source == Source.CACHE) {
       return firestore
           .getClient()

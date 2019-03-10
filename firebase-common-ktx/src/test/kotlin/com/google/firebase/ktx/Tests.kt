@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.ktx;
+package com.google.firebase.ktx
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp

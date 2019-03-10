@@ -291,4 +291,19 @@ public class WriteBatchTest {
     DocumentSnapshot snap = waitFor(doc.get());
     assertEquals(values, snap.getData());
   }
+
+  @Test
+  public void testRunBatch() {
+    DocumentReference doc = testDocument();
+    waitFor(doc.set(map("foo", "bar")));
+    waitFor(
+        doc.getFirestore()
+            .runBatch(
+                batch -> {
+                  batch.update(doc, map("baz", 42));
+                }));
+    DocumentSnapshot snapshot = waitFor(doc.get());
+    assertTrue(snapshot.exists());
+    assertEquals(map("foo", "bar", "baz", 42L), snapshot.getData());
+  }
 }

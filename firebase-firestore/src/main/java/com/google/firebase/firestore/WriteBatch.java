@@ -212,4 +212,15 @@ public class WriteBatch {
           "A write batch can no longer be used after commit() has been called.");
     }
   }
+
+  /**
+   * An interface for providing code to be executed within a {@link WriteBatch} context.
+   *
+   * @see FirebaseFirestore#runBatch(WriteBatch.Function)
+   */
+  @PublicApi
+  public interface Function {
+    @PublicApi
+    void apply(@NonNull WriteBatch batch);
+  }
 }
