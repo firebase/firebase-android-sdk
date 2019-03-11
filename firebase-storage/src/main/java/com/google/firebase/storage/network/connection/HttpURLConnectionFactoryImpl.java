@@ -16,11 +16,13 @@ package com.google.firebase.storage.network.connection;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 /** for test purposes only. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class HttpURLConnectionFactoryImpl implements HttpURLConnectionFactory {
   @Override
   @Nullable

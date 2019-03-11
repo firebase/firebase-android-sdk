@@ -17,10 +17,12 @@ package com.google.firebase.storage.network;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
 import org.json.JSONObject;
 
 /** Represents a request to update metadata on a GCS blob. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class UpdateMetadataNetworkRequest extends NetworkRequest {
   private final JSONObject metadata;
 

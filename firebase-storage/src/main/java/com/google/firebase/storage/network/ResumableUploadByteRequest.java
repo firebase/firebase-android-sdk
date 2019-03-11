@@ -17,10 +17,12 @@ package com.google.firebase.storage.network;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import android.text.TextUtils;
 import com.google.firebase.FirebaseApp;
 
 /** A request to upload a single chunk of a large blob. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ResumableUploadByteRequest extends ResumableNetworkRequest {
   private final String uploadURL;
   private final byte[] chunk;

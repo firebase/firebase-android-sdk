@@ -16,10 +16,12 @@ package com.google.firebase.storage.network;
 
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.annotation.RestrictTo;
 import android.text.TextUtils;
 import com.google.firebase.FirebaseApp;
 
 /** Queries the current status of a resumable upload session. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ResumableUploadQueryRequest extends ResumableNetworkRequest {
   private final String uploadURL;
 

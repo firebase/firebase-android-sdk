@@ -16,11 +16,13 @@ package com.google.firebase.storage.network;
 
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
 import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 
 /** A network request that returns bytes of a gcs object. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class GetNetworkRequest extends NetworkRequest {
   @SuppressWarnings("unused")
   private static final String TAG = "GetNetworkRequest";

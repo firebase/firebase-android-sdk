@@ -16,9 +16,11 @@ package com.google.firebase.storage.network;
 
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
 
 /** A network request that returns metadata on a gcs object. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class GetMetadataNetworkRequest extends NetworkRequest {
   public GetMetadataNetworkRequest(@NonNull Uri gsUri, @NonNull FirebaseApp app) {
     super(gsUri, app);

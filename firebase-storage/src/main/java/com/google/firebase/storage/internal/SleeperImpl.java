@@ -14,7 +14,10 @@
 
 package com.google.firebase.storage.internal;
 
+import android.support.annotation.RestrictTo;
+
 /** For testing only. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SleeperImpl implements Sleeper {
   @Override
   public void sleep(int milliseconds) throws InterruptedException {

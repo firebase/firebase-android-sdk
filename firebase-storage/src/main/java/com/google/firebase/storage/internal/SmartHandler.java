@@ -18,6 +18,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.storage.StorageTaskScheduler;
 import java.util.concurrent.Executor;
@@ -28,6 +29,7 @@ import java.util.concurrent.Executor;
  * @hide
  */
 @SuppressWarnings("JavaDoc")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SmartHandler {
   private final Handler handler;
   private final Executor executor;

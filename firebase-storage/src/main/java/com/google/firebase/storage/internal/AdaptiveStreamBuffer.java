@@ -14,6 +14,7 @@
 
 package com.google.firebase.storage.internal;
 
+import android.support.annotation.RestrictTo;
 import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +25,7 @@ import java.io.InputStream;
  *
  * <p>This class is not thread-safe.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AdaptiveStreamBuffer {
   private static final String TAG = "AdaptiveStreamBuffer";
   private static final Runtime runtime = Runtime.getRuntime();
