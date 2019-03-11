@@ -115,7 +115,7 @@ inline fun <reified T> DocumentSnapshot.getField(
  * @param T The type of the object to create.
  * @return The contents of the document in an object of type T.
  */
-inline fun <reified T> QueryDocumentSnapshot.toObject(): T = toObject(T::class.java)
+inline fun <reified T : Any> QueryDocumentSnapshot.toObject(): T = toObject(T::class.java)
 
 /**
  * Returns the contents of the document converted to a POJO.
@@ -125,7 +125,7 @@ inline fun <reified T> QueryDocumentSnapshot.toObject(): T = toObject(T::class.j
  *     been set to their final value.
  * @return The contents of the document in an object of type T.
  */
-inline fun <reified T> QueryDocumentSnapshot.toObject(serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior): T =
+inline fun <reified T : Any> QueryDocumentSnapshot.toObject(serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior): T =
         toObject(T::class.java, serverTimestampBehavior)
 
 /**
@@ -134,7 +134,7 @@ inline fun <reified T> QueryDocumentSnapshot.toObject(serverTimestampBehavior: D
  *
  * @param T The POJO type used to convert the documents in the list.
  */
-inline fun <reified T> QuerySnapshot.toObjects(): List<T> = toObjects(T::class.java)
+inline fun <reified T : Any> QuerySnapshot.toObjects(): List<T> = toObjects(T::class.java)
 
 /**
  * Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as
@@ -144,7 +144,7 @@ inline fun <reified T> QuerySnapshot.toObjects(): List<T> = toObjects(T::class.j
  * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
  *     been set to their final value.
  */
-inline fun <reified T> QuerySnapshot.toObjects(serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior): List<T> =
+inline fun <reified T : Any> QuerySnapshot.toObjects(serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior): List<T> =
         toObjects(T::class.java, serverTimestampBehavior)
 
 internal const val LIBRARY_NAME: String = "fire-fst-ktx"
