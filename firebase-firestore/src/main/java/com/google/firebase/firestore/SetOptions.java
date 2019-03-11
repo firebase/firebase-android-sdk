@@ -46,7 +46,7 @@ public final class SetOptions {
   }
 
   /** @hide */
-  public boolean isMerge() {
+  boolean isMerge() {
     return merge;
   }
 
