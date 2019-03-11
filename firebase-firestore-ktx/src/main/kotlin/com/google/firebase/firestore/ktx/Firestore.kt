@@ -115,7 +115,7 @@ inline fun <reified T> DocumentSnapshot.getField(
  * @param T The type of the object to create.
  * @return The contents of the document in an object of type T.
  */
-inline fun <reified T: Any> QueryDocumentSnapshot.toObject(): T = toObject(T::class.java)
+inline fun <reified T> QueryDocumentSnapshot.toObject(): T = toObject(T::class.java)
 
 /**
  * Returns the contents of the document converted to a POJO.
