@@ -37,7 +37,7 @@ fun Firebase.firestore(app: FirebaseApp): FirebaseFirestore = FirebaseFirestore.
 /**
  * Returns the contents of the document converted to a POJO or null if the document doesn't exist.
  *
- * @param T The Java class to create.
+ * @param T The type of the object to create.
  * @return The contents of the document in an object of type T or null if the document doesn't
  *     exist.
  */
@@ -46,7 +46,7 @@ inline fun <reified T> DocumentSnapshot.toObject(): T? = toObject(T::class.java)
 /**
  * Returns the contents of the document converted to a POJO or null if the document doesn't exist.
  *
- * @param T The Java class to create.
+ * @param T The type of the object to create.
  * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
  *     been set to their final value.
  * @return The contents of the document in an object of type T or null if the document doesn't
@@ -62,7 +62,7 @@ inline fun <reified T> DocumentSnapshot.toObject(
  * exist.
  *
  * @param field The path to the field.
- * @param T The Java class to convert the field value to.
+ * @param T The type to convert the field value to.
  * @return The value at the given field or null.
  */
 inline fun <reified T> DocumentSnapshot.getField(field: String): T? = get(field, T::class.java)
@@ -72,7 +72,7 @@ inline fun <reified T> DocumentSnapshot.getField(field: String): T? = get(field,
  * exist.
  *
  * @param field The path to the field.
- * @param T The Java class to convert the field value to.
+ * @param T The type to convert the field value to.
  * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
  *     been set to their final value.
  * @return The value at the given field or null.
@@ -88,7 +88,7 @@ inline fun <reified T> DocumentSnapshot.getField(
  * exist.
  *
  * @param fieldPath The path to the field.
- * @param T The Java class to convert the field value to.
+ * @param T The type to convert the field value to.
  * @return The value at the given field or null.
  */
 inline fun <reified T> DocumentSnapshot.getField(fieldPath: FieldPath): T? = get(fieldPath, T::class.java)
@@ -98,7 +98,7 @@ inline fun <reified T> DocumentSnapshot.getField(fieldPath: FieldPath): T? = get
  * exist.
  *
  * @param fieldPath The path to the field.
- * @param T The Java class to convert the field value to.
+ * @param T The type to convert the field value to.
  * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
  *     been set to their final value.
  * @return The value at the given field or null.
@@ -112,15 +112,15 @@ inline fun <reified T> DocumentSnapshot.getField(
 /**
  * Returns the contents of the document converted to a POJO.
  *
- * @param T The Java class to create.
+ * @param T The type of the object to create.
  * @return The contents of the document in an object of type T.
  */
-inline fun <reified T> QueryDocumentSnapshot.toObject(): T = toObject(T::class.java)
+inline fun <reified T: Any> QueryDocumentSnapshot.toObject(): T = toObject(T::class.java)
 
 /**
  * Returns the contents of the document converted to a POJO.
  *
- * @param T The Java class to create.
+ * @param T The type of the object to create.
  * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
  *     been set to their final value.
  * @return The contents of the document in an object of type T.
