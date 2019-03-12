@@ -15,6 +15,7 @@
 package com.google.firebase.storage;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.RestrictTo;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
@@ -34,6 +35,7 @@ import com.google.firebase.storage.network.NetworkRequest;
   private TaskCompletionSource<Void> mPendingResult;
   private ExponentialBackoffSender mSender;
 
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public DeleteStorageTask(
       @NonNull StorageReference storageRef, @NonNull TaskCompletionSource<Void> pendingResult) {
     Preconditions.checkNotNull(storageRef);
