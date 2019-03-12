@@ -15,6 +15,7 @@
 package com.google.firebase.database;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.RestrictTo;
 import com.google.firebase.annotations.PublicApi;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -120,6 +121,7 @@ public class DatabaseError {
    * @param status The status string
    * @return An error corresponding the to the status
    */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public static DatabaseError fromStatus(String status) {
     return fromStatus(status, null);
   }
@@ -132,6 +134,7 @@ public class DatabaseError {
    * @param reason The reason for the error
    * @return An error corresponding the to the status
    */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public static DatabaseError fromStatus(String status, String reason) {
     return fromStatus(status, reason, null);
   }
@@ -143,6 +146,7 @@ public class DatabaseError {
    * @param code The error code
    * @return An error corresponding the to the code
    */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public static DatabaseError fromCode(int code) {
     if (!errorReasons.containsKey(code)) {
       throw new IllegalArgumentException("Invalid Firebase Database error code: " + code);
@@ -160,6 +164,7 @@ public class DatabaseError {
    * @param details Additional details or null
    * @return An error corresponding the to the status
    */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public static DatabaseError fromStatus(String status, String reason, String details) {
     Integer code = errorCodes.get(status.toLowerCase());
     if (code == null) {

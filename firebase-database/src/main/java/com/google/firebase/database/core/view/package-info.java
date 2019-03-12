@@ -13,4 +13,7 @@
 // limitations under the License.
 
 /** @hide */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 package com.google.firebase.database.core.view;
+
+import android.support.annotation.RestrictTo;
