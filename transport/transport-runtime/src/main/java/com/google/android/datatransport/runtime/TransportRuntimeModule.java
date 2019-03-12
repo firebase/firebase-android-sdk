@@ -27,7 +27,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 @Module
-public class TransportRuntimeModule {
+class TransportRuntimeModule {
   @Provides
   Executor executor() {
     return Executors.newSingleThreadExecutor();
@@ -43,11 +43,6 @@ public class TransportRuntimeModule {
   @Uptime
   Clock uptimeClock() {
     return new UptimeClock();
-  }
-
-  @Provides
-  BackendRegistry backendRegistry() {
-    return new BackendRegistry();
   }
 
   @Provides
