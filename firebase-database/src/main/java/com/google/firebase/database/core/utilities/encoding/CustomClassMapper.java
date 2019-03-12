@@ -122,9 +122,12 @@ public class CustomClassMapper {
         throw new DatabaseException("Shorts are not supported, please use int or long");
       } else if (o instanceof Byte) {
         throw new DatabaseException("Bytes are not supported, please use int or long");
-      } else {
-        // Long, Integer
+      } else if (o instanceof Long || o instanceof Integer) {
         return o;
+      } else {
+        throw new DatabaseException(
+            o.getClass().getSimpleName()
+                + " is not supported, please use int, long, float or double");
       }
     } else if (o instanceof String) {
       return o;
@@ -285,7 +288,8 @@ public class CustomClassMapper {
     } else if (Character.class.isAssignableFrom(clazz) || char.class.isAssignableFrom(clazz)) {
       throw new DatabaseException("Deserializing to char is not supported");
     } else {
-      throw new IllegalArgumentException("Unknown primitive type: " + clazz);
+      throw new DatabaseException(
+          String.format("Deserializing to %s is not supported", clazz.getSimpleName()));
     }
   }
 

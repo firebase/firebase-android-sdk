@@ -26,7 +26,9 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import org.junit.After;
 import org.junit.Test;
@@ -164,6 +166,22 @@ public class POJOTest {
     }
   }
 
+  public static class InvalidPOJO {
+    BigInteger bigInteger;
+
+    public InvalidPOJO() {
+      this.bigInteger = new BigInteger("0");
+    }
+
+    public BigInteger getBigInteger() {
+      return bigInteger;
+    }
+
+    public void setBigInteger(BigInteger bigInteger) {
+      this.bigInteger = bigInteger;
+    }
+  }
+
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();
@@ -252,5 +270,26 @@ public class POJOTest {
     expectError(
         () -> reference.set(new POJO(), SetOptions.mergeFields("str", "missing")),
         "Field 'missing' is specified in your field mask but not in your input data.");
+  }
+
+  @Test
+  public void testCantWriteBigInteger() {
+    DocumentReference ref = testDocument();
+
+    expectError(
+        () -> ref.set(new InvalidPOJO()),
+        "Could not serialize object. BigInteger is not supported, please use int, long, float or double (found in field 'bigInteger')");
+  }
+
+  @Test
+  public void testCantReadBigInteger() {
+    DocumentReference ref = testDocument();
+
+    waitFor(ref.set(Collections.singletonMap("bigInteger", 0)));
+    DocumentSnapshot snap = waitFor(ref.get());
+
+    expectError(
+        () -> snap.toObject(InvalidPOJO.class),
+        "Could not deserialize object. Deserializing to BigInteger is not supported (found in field 'bigInteger')");
   }
 }
