@@ -18,7 +18,6 @@ import android.net.Uri;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.RestrictTo;
 import android.text.TextUtils;
 import android.util.Log;
 import com.google.android.gms.common.internal.Objects;
@@ -42,7 +41,6 @@ import java.util.concurrent.TimeoutException;
  * @hide
  */
 @SuppressWarnings("JavaDoc")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Util {
   public static final int NETWORK_UNAVAILABLE = -2;
   public static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";

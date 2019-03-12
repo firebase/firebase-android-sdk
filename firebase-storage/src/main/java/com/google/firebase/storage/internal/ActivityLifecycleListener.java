@@ -17,7 +17,6 @@ package com.google.firebase.storage.internal;
 import android.app.Activity;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
-import android.support.annotation.RestrictTo;
 import android.util.Log;
 import com.google.android.gms.common.api.internal.LifecycleActivity;
 import com.google.android.gms.common.api.internal.LifecycleCallback;
@@ -34,7 +33,6 @@ import java.util.Map;
  * @hide
  */
 @SuppressWarnings("JavaDoc")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ActivityLifecycleListener {
 
   private static final ActivityLifecycleListener instance = new ActivityLifecycleListener();

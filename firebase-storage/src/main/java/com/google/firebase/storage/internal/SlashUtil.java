@@ -17,7 +17,6 @@ package com.google.firebase.storage.internal;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.RestrictTo;
 import android.text.TextUtils;
 import com.google.android.gms.common.internal.Preconditions;
 import java.io.UnsupportedEncodingException;
@@ -27,7 +26,6 @@ import java.io.UnsupportedEncodingException;
  *
  * @hide
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SlashUtil {
 
   /**

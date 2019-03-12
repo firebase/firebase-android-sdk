@@ -15,7 +15,6 @@
 package com.google.firebase.storage.internal;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.RestrictTo;
 import android.util.Log;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.Clock;
@@ -29,7 +28,6 @@ import java.util.Random;
  * if the network is unavailable in the client and instead uses simple polling. In both cases, the
  * retry time is capped by a setting which if exceeded will result in the task failing.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ExponentialBackoffSender {
   private static final String TAG = "ExponenentialBackoff";
 

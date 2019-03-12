@@ -22,7 +22,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.RestrictTo;
 import android.text.TextUtils;
 import android.util.Log;
 import com.google.android.gms.common.internal.Preconditions;
@@ -52,7 +51,6 @@ import org.json.JSONObject;
 
 /** Encapsulates a single network request and response */
 @SuppressWarnings("unused")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class NetworkRequest {
   private static final String TAG = "NetworkRequest";
 

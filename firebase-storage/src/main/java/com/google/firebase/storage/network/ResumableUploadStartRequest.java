@@ -17,7 +17,6 @@ package com.google.firebase.storage.network;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.RestrictTo;
 import android.text.TextUtils;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.internal.SlashUtil;
@@ -27,7 +26,6 @@ import java.util.List;
 import org.json.JSONObject;
 
 /** Starts a resumable upload session with GCS. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ResumableUploadStartRequest extends ResumableNetworkRequest {
   private final JSONObject metadata;
   private final String contentType;

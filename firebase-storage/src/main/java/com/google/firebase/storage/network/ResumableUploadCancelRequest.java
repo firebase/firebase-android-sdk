@@ -16,13 +16,11 @@ package com.google.firebase.storage.network;
 
 import android.net.Uri;
 import android.support.annotation.NonNull;
-import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import com.google.firebase.FirebaseApp;
 
 /** Cancels an upload request in progress. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ResumableUploadCancelRequest extends ResumableNetworkRequest {
   @VisibleForTesting public static boolean CANCEL_CALLED = false;
 
