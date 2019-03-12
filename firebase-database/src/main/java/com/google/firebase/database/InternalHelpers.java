@@ -14,6 +14,7 @@
 
 package com.google.firebase.database;
 
+import android.support.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
@@ -27,6 +28,7 @@ import com.google.firebase.database.snapshot.Node;
  *
  * @hide
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class InternalHelpers {
 
   /** So Repo, etc. can create DatabaseReference instances. */
