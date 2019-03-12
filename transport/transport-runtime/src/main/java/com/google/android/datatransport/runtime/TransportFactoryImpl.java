@@ -22,7 +22,7 @@ public final class TransportFactoryImpl implements TransportFactory {
   private String backendName;
   private final TransportInternal transportInternal;
 
-  public TransportFactoryImpl(String backendName, TransportInternal transportInternal) {
+  TransportFactoryImpl(String backendName, TransportInternal transportInternal) {
     this.backendName = backendName;
     this.transportInternal = transportInternal;
   }
