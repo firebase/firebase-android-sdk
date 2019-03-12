@@ -65,8 +65,7 @@ public class Query {
   final FirebaseFirestore firestore;
 
   /** An enum for the direction of a sort. */
-  // TODO: Remove this annotation once our proguard issues are sorted out.
-  @Keep
+  @PublicApi
   public enum Direction {
     ASCENDING,
     DESCENDING

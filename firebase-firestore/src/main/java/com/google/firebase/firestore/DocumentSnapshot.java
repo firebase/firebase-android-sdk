@@ -298,6 +298,7 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
+  @PublicApi
   public <T> T get(@NonNull String field, @NonNull Class<T> valueType) {
     return get(FieldPath.fromDotSeparatedPath(field), valueType, ServerTimestampBehavior.DEFAULT);
   }
@@ -313,6 +314,7 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
+  @PublicApi
   public <T> T get(
       @NonNull String field,
       @NonNull Class<T> valueType,
@@ -329,6 +331,7 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
+  @PublicApi
   public <T> T get(@NonNull FieldPath fieldPath, @NonNull Class<T> valueType) {
     return get(fieldPath, valueType, ServerTimestampBehavior.DEFAULT);
   }
@@ -344,6 +347,7 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
+  @PublicApi
   public <T> T get(
       @NonNull FieldPath fieldPath,
       @NonNull Class<T> valueType,

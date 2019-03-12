@@ -8,6 +8,9 @@
 - [changed] Prepared the persistence layer to support collection group queries.
   While this feature is not yet available, all schema changes are included
   in this release.
+- [changed] Added `@RestrictTo` annotations to discourage the use of APIs that
+  are not public. This affects internal APIs that were previously obfuscated
+  and are not mentioned in our documentation.
 
 # 18.0.1
 - [fixed] Fixed an issue where Firestore would crash if handling write batches
