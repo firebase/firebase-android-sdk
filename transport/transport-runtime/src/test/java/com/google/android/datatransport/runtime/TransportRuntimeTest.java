@@ -84,7 +84,7 @@ public class TransportRuntimeTest {
                         .toBuilder()
                         .addMetadata(TEST_KEY, TEST_VALUE)
                         .build());
-    TransportFactory factory = new TransportFactoryImpl(mockBackendName, runtime);
+    TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent = Event.ofTelemetry("TelemetryData");

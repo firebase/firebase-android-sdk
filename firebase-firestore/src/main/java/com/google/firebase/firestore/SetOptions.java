@@ -47,8 +47,7 @@ public final class SetOptions {
   }
 
   /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-  public boolean isMerge() {
+  boolean isMerge() {
     return merge;
   }
 

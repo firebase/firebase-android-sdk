@@ -21,7 +21,6 @@ import static java.util.Collections.singletonList;
 
 import android.app.Activity;
 import android.support.annotation.NonNull;
-import android.support.annotation.RestrictTo;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -72,8 +71,7 @@ public class DocumentReference {
   }
 
   /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-  public static DocumentReference forPath(ResourcePath path, FirebaseFirestore firestore) {
+  static DocumentReference forPath(ResourcePath path, FirebaseFirestore firestore) {
     if (path.length() % 2 != 0) {
       throw new IllegalArgumentException(
           "Invalid document reference. Document references must have an even number "

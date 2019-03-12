@@ -16,12 +16,16 @@ package com.google.android.datatransport.runtime;
 
 import java.util.HashMap;
 import java.util.Map;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /** Container for registered {@link TransportBackend}s. */
 @Singleton
 public class BackendRegistry {
   private final Map<String, TransportBackend> backends = new HashMap<>();
+
+  @Inject
+  public BackendRegistry() {}
 
   void register(String name, TransportBackend backend) {
     synchronized (backends) {
