@@ -37,6 +37,7 @@ dependencies {
     annotationProcessor 'com.google.dagger:dagger-compiler:2.13'
 
     testImplementation 'junit:junit:4.12'
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:core:1.1.0'
     testImplementation 'org.robolectric:robolectric:4.1'
     testImplementation 'org.mockito:mockito-core:2.21.0'
