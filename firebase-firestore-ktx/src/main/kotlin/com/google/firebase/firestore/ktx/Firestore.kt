@@ -34,10 +34,24 @@ val Firebase.firestore
 /** Returns the [FirebaseFirestore] instance of a given [FirebaseApp]. */
 fun Firebase.firestore(app: FirebaseApp): FirebaseFirestore = FirebaseFirestore.getInstance(app)
 
-/** Returns the contents of the document converted to a POJO or null if the document doesn't exist. */
+/**
+ * Returns the contents of the document converted to a POJO or null if the document doesn't exist.
+ *
+ * @param T The type of the object to create.
+ * @return The contents of the document in an object of type T or null if the document doesn't
+ *     exist.
+ */
 inline fun <reified T> DocumentSnapshot.toObject(): T? = toObject(T::class.java)
 
-/** Returns the contents of the document converted to a POJO or null if the document doesn't exist. */
+/**
+ * Returns the contents of the document converted to a POJO or null if the document doesn't exist.
+ *
+ * @param T The type of the object to create.
+ * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+ *     been set to their final value.
+ * @return The contents of the document in an object of type T or null if the document doesn't
+ *     exist.
+ */
 inline fun <reified T> DocumentSnapshot.toObject(
     serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
 ): T? =
@@ -46,12 +60,22 @@ inline fun <reified T> DocumentSnapshot.toObject(
 /**
  * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
  * exist.
+ *
+ * @param field The path to the field.
+ * @param T The type to convert the field value to.
+ * @return The value at the given field or null.
  */
 inline fun <reified T> DocumentSnapshot.getField(field: String): T? = get(field, T::class.java)
 
 /**
  * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
  * exist.
+ *
+ * @param field The path to the field.
+ * @param T The type to convert the field value to.
+ * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+ *     been set to their final value.
+ * @return The value at the given field or null.
  */
 inline fun <reified T> DocumentSnapshot.getField(
     field: String,
@@ -62,40 +86,68 @@ inline fun <reified T> DocumentSnapshot.getField(
 /**
  * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
  * exist.
+ *
+ * @param fieldPath The path to the field.
+ * @param T The type to convert the field value to.
+ * @return The value at the given field or null.
  */
-inline fun <reified T> DocumentSnapshot.getField(field: FieldPath): T? = get(field, T::class.java)
+inline fun <reified T> DocumentSnapshot.getField(fieldPath: FieldPath): T? = get(fieldPath, T::class.java)
 
 /**
  * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
  * exist.
+ *
+ * @param fieldPath The path to the field.
+ * @param T The type to convert the field value to.
+ * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+ *     been set to their final value.
+ * @return The value at the given field or null.
  */
 inline fun <reified T> DocumentSnapshot.getField(
-    field: FieldPath,
+    fieldPath: FieldPath,
     serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
 ): T? =
-        get(field, T::class.java, serverTimestampBehavior)
+        get(fieldPath, T::class.java, serverTimestampBehavior)
 
-/** Returns the contents of the document converted to a POJO. */
-inline fun <reified T> QueryDocumentSnapshot.toObject(): T = toObject(T::class.java)
+/**
+ * Returns the contents of the document converted to a POJO.
+ *
+ * @param T The type of the object to create.
+ * @return The contents of the document in an object of type T.
+ */
+inline fun <reified T : Any> QueryDocumentSnapshot.toObject(): T = toObject(T::class.java)
 
-/** Returns the contents of the document converted to a POJO. */
-inline fun <reified T> QueryDocumentSnapshot.toObject(severTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior): T =
-        toObject(T::class.java, severTimestampBehavior)
+/**
+ * Returns the contents of the document converted to a POJO.
+ *
+ * @param T The type of the object to create.
+ * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+ *     been set to their final value.
+ * @return The contents of the document in an object of type T.
+ */
+inline fun <reified T : Any> QueryDocumentSnapshot.toObject(serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior): T =
+        toObject(T::class.java, serverTimestampBehavior)
 
 /**
  * Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as
  * a list.
+ *
+ * @param T The POJO type used to convert the documents in the list.
  */
-inline fun <reified T> QuerySnapshot.toObjects(): List<T> = toObjects(T::class.java)
+inline fun <reified T : Any> QuerySnapshot.toObjects(): List<T> = toObjects(T::class.java)
 
 /**
  * Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as
  * a list.
+ *
+ * @param T The POJO type used to convert the documents in the list.
+ * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+ *     been set to their final value.
  */
-inline fun <reified T> QuerySnapshot.toObjects(severTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior): List<T> =
-        toObjects(T::class.java, severTimestampBehavior)
+inline fun <reified T : Any> QuerySnapshot.toObjects(serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior): List<T> =
+        toObjects(T::class.java, serverTimestampBehavior)
 
-internal val LIBRARY_NAME: String = "fire-fst-ktx"
+internal const val LIBRARY_NAME: String = "fire-fst-ktx"
 
 /**
  * @hide
