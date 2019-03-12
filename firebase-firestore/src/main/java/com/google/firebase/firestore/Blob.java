@@ -16,7 +16,6 @@ package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RestrictTo;
