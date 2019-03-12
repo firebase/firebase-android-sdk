@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.support.annotation.RestrictTo;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue.ArrayRemoveFieldValue;
 import com.google.firebase.firestore.FieldValue.ArrayUnionFieldValue;
@@ -63,6 +64,7 @@ import javax.annotation.Nullable;
  *
  * @hide
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class UserDataConverter {
 
   private final DatabaseId databaseId;
