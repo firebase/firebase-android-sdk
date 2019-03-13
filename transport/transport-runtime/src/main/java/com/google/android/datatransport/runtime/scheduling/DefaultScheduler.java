@@ -14,11 +14,14 @@
 
 package com.google.android.datatransport.runtime.scheduling;
 
+import com.google.android.datatransport.Event;
 import com.google.android.datatransport.runtime.BackendRegistry;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportBackend;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
+import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
@@ -33,14 +36,16 @@ public class DefaultScheduler implements Scheduler {
   private final WorkScheduler workScheduler;
   private final Executor executor;
   private final BackendRegistry backendRegistry;
+  private final EventStore eventStore;
   private static final Logger LOGGER = Logger.getLogger(TransportRuntime.class.getName());
 
   @Inject
   public DefaultScheduler(
-      Executor executor, BackendRegistry backendRegistry, WorkScheduler workScheduler) {
+      Executor executor, BackendRegistry backendRegistry, WorkScheduler workScheduler, EventStore eventStore) {
     this.executor = executor;
     this.backendRegistry = backendRegistry;
     this.workScheduler = workScheduler;
+    this.eventStore = eventStore;
   }
 
   @Override
@@ -53,8 +58,7 @@ public class DefaultScheduler implements Scheduler {
             return;
           }
           EventInternal decoratedEvent = transportBackend.decorate(event);
-          // TODO update the database with the decoratedEvent
-          transportBackend.send(Collections.singleton(decoratedEvent));
+          eventStore.persist(backendName, decoratedEvent);
           workScheduler.schedule();
         });
   }

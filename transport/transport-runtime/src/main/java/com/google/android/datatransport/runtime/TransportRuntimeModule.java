@@ -63,8 +63,8 @@ class TransportRuntimeModule {
   }
 
   @Provides
-  Scheduler scheduler(Executor executor, BackendRegistry registry, WorkScheduler workScheduler) {
-    return new DefaultScheduler(executor, registry, workScheduler);
+  Scheduler scheduler(Executor executor, BackendRegistry registry, WorkScheduler workScheduler, EventStore eventStore) {
+    return new DefaultScheduler(executor, registry, workScheduler, eventStore);
   }
 
   @Singleton
