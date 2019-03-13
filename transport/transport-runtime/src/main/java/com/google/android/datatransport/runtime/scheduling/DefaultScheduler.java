@@ -19,11 +19,9 @@ import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportBackend;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
-
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
-
 import javax.inject.Inject;
 
 /**
@@ -39,7 +37,7 @@ public class DefaultScheduler implements Scheduler {
 
   @Inject
   public DefaultScheduler(
-          Executor executor, BackendRegistry backendRegistry, WorkScheduler workScheduler) {
+      Executor executor, BackendRegistry backendRegistry, WorkScheduler workScheduler) {
     this.executor = executor;
     this.backendRegistry = backendRegistry;
     this.workScheduler = workScheduler;
@@ -48,16 +46,16 @@ public class DefaultScheduler implements Scheduler {
   @Override
   public void schedule(String backendName, EventInternal event) {
     executor.execute(
-            () -> {
-              TransportBackend transportBackend = backendRegistry.get(backendName);
-              if (transportBackend == null) {
-                LOGGER.warning(String.format("Logger backend '%s' is not registered", backendName));
-                return;
-              }
-              EventInternal decoratedEvent = transportBackend.decorate(event);
-              // TODO update the database with the decoratedEvent
-              transportBackend.send(Collections.singleton(decoratedEvent));
-              workScheduler.schedule();
-            });
+        () -> {
+          TransportBackend transportBackend = backendRegistry.get(backendName);
+          if (transportBackend == null) {
+            LOGGER.warning(String.format("Logger backend '%s' is not registered", backendName));
+            return;
+          }
+          EventInternal decoratedEvent = transportBackend.decorate(event);
+          // TODO update the database with the decoratedEvent
+          transportBackend.send(Collections.singleton(decoratedEvent));
+          workScheduler.schedule();
+        });
   }
 }

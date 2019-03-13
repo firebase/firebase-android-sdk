@@ -15,5 +15,5 @@
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 public interface WorkScheduler {
-    void schedule();
+  void schedule();
 }

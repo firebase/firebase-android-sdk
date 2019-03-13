@@ -16,68 +16,61 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling.servic
 
 import android.app.job.JobParameters;
 import android.app.job.JobService;
-import android.content.Intent;
 import android.os.Build;
-import android.webkit.JavascriptInterface;
-
-import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.runtime.BackendRegistry;
 import com.google.android.datatransport.runtime.BackendResponse;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportBackend;
 import com.google.android.datatransport.runtime.TransportRuntime;
-import com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
-
+import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.inject.Inject;
 
-/**
- * JobService to be scheduled by the JobScheduler.
- * start another service
- */
+/** JobService to be scheduled by the JobScheduler. start another service */
 @android.support.annotation.RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JobInfoSchedulerService extends JobService {
-    private static final String TAG = "SyncService";
+  private static final String TAG = "SyncService";
 
-    @Inject
-    private BackendRegistry backendRegistry;
-    @Inject
-    private WorkScheduler workScheduler;
+  @Inject BackendRegistry backendRegistry;
+  @Inject WorkScheduler workScheduler;
+  @Inject EventStore eventStore;
 
-    @Override
-    public void onCreate() {
-        TransportRuntime.initialize(getApplicationContext());
-        TransportRuntime.getInstance().injectService(this);
-        super.onCreate();
+  @Override
+  public void onCreate() {
+    TransportRuntime.initialize(getApplicationContext());
+    TransportRuntime.getInstance().injectService(this);
+    super.onCreate();
+  }
+
+  @Override
+  public boolean onStartJob(JobParameters params) {
+    for (String backendName : backendRegistry.getAllBackendNames()) {
+      TransportBackend backend = backendRegistry.get(backendName);
+      List<EventInternal> eventInternals = new ArrayList<>();
+      Iterable<PersistedEvent> persistedEvents = eventStore.loadAll(backendName);
+      // Load all the backends to an iterable of event internals.
+      for (PersistedEvent persistedEvent : persistedEvents) {
+        eventInternals.add(persistedEvent.getEvent());
+      }
+      BackendResponse response = backend.send(eventInternals);
+      if (response.getStatus() == BackendResponse.Status.OK) {
+        eventStore.recordSuccess(persistedEvents);
+        eventStore.recordNextCallTime(backendName, response.getNextRequestWaitMillis());
+      } else if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
+        eventStore.recordFailure(persistedEvents);
+      } else {
+        eventStore.recordSuccess(persistedEvents);
+      }
     }
+    workScheduler.schedule();
+    return true;
+  }
 
-    @Override
-    public boolean onStartJob(JobParameters params) {
-        for(String backendName: backendRegistry.getAllBackendNames()) {
-            TransportBackend backend = backendRegistry.get(backendName);
-            List<EventInternal> eventInternals = new ArrayList<>();
-            // Load all the backends to an iterable of event internals.
-            BackendResponse response = backend.send(eventInternals);
-            if(response.getStatus() == BackendResponse.Status.OK) {
-                // call success method of the database with the persisted events.
-            }
-            else if(response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
-               // call failure
-            }
-            else  {
-                // call success
-            }
-        }
-        workScheduler.schedule();
-        return true;
-    }
-
-    @Override
-    public boolean onStopJob(JobParameters params) {
-        return false;
-    }
-
+  @Override
+  public boolean onStopJob(JobParameters params) {
+    return false;
+  }
 }

@@ -92,6 +92,11 @@ public class TransportRuntime implements TransportInternal {
     backendRegistry.register(name, backend);
   }
 
+  /** Returns a {@link TransportFactory} for a given {@code backendName}. */
+  public TransportFactory newFactory(String backendName) {
+    return new TransportFactoryImpl(backendName, this);
+  }
+
   @Override
   public void send(SendRequest request) {
     scheduler.schedule(request.getBackendName(), convert(request));

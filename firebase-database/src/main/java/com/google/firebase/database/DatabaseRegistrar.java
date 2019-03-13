@@ -15,6 +15,7 @@
 package com.google.firebase.database;
 
 import android.support.annotation.Keep;
+import android.support.annotation.RestrictTo;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
@@ -23,6 +24,7 @@ import java.util.List;
 
 /** @hide */
 @Keep
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DatabaseRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {

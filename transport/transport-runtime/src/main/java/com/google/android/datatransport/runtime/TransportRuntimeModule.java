@@ -16,13 +16,13 @@ package com.google.android.datatransport.runtime;
 
 import android.content.Context;
 import android.os.Build;
-
 import com.google.android.datatransport.runtime.scheduling.DefaultScheduler;
-import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
+import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Uptime;
 import com.google.android.datatransport.runtime.time.UptimeClock;
@@ -32,35 +32,31 @@ import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import javax.inject.Singleton;
 
 @Module
-public class TransportRuntimeModule {
+class TransportRuntimeModule {
   @Provides
-  Executor executor() {
+  static Executor executor() {
     return Executors.newSingleThreadExecutor();
   }
 
   @Provides
   @WallTime
-  Clock eventClock() {
+  static Clock eventClock() {
     return new WallTimeClock();
   }
 
   @Provides
   @Uptime
-  Clock uptimeClock() {
+  static Clock uptimeClock() {
     return new UptimeClock();
   }
 
   @Provides
-  BackendRegistry backendRegistry() {
-    return new BackendRegistry();
-  }
-
-  @Provides
-  WorkScheduler workScheduler(Context context) {
+  WorkScheduler workScheduler(Context context, EventStore eventStore, @WallTime Clock eventClock) {
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      return new JobInfoScheduler(context);
+      return new JobInfoScheduler(context, eventStore, eventClock);
     } else {
       return new AlarmManagerScheduler(context);
     }
@@ -69,5 +65,11 @@ public class TransportRuntimeModule {
   @Provides
   Scheduler scheduler(Executor executor, BackendRegistry registry, WorkScheduler workScheduler) {
     return new DefaultScheduler(executor, registry, workScheduler);
+  }
+
+  @Singleton
+  @Provides
+  static EventStore eventStore() {
+    return new InMemoryEventStore();
   }
 }

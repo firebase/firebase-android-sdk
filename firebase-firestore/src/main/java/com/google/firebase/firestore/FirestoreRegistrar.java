@@ -16,6 +16,7 @@ package com.google.firebase.firestore;
 
 import android.content.Context;
 import android.support.annotation.Keep;
+import android.support.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
@@ -31,6 +32,7 @@ import java.util.List;
  * @hide
  */
 @Keep
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FirestoreRegistrar implements ComponentRegistrar {
   @Override
   @Keep

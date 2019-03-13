@@ -18,14 +18,14 @@ import android.content.Context;
 
 public class AlarmManagerScheduler implements WorkScheduler {
 
-    private final Context context;
+  private final Context context;
 
-    public AlarmManagerScheduler(Context applicationContext) {
-        this.context = applicationContext;
-    }
+  public AlarmManagerScheduler(Context applicationContext) {
+    this.context = applicationContext;
+  }
 
-    @Override
-    public void schedule() {
-        // Do nothing
-    }
+  @Override
+  public void schedule() {
+    // Do nothing
+  }
 }

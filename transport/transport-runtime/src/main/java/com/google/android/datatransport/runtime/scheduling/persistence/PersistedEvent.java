@@ -12,8 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** @hide */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-package com.google.firebase.firestore.util;
+package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import android.support.annotation.RestrictTo;
+import com.google.android.datatransport.runtime.EventInternal;
+import com.google.auto.value.AutoValue;
+
+/** Holds an {@link EventInternal} with additional information. */
+@AutoValue
+public abstract class PersistedEvent {
+  public abstract long getId();
+
+  public abstract String getBackendName();
+
+  public abstract EventInternal getEvent();
+
+  public static PersistedEvent create(long id, String backendName, EventInternal object) {
+    return new AutoValue_PersistedEvent(id, backendName, object);
+  }
+}

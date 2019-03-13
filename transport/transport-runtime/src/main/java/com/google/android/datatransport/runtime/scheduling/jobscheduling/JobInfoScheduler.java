@@ -14,18 +14,64 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
+import android.annotation.TargetApi;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.Context;
+import android.os.Build;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.service.JobInfoSchedulerService;
+import com.google.android.datatransport.runtime.scheduling.persistence.BackendNextCallTime;
+import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.time.Clock;
+import java.util.Iterator;
 
 public class JobInfoScheduler implements WorkScheduler {
 
-    private final Context context;
+  private final Context context;
 
-    public JobInfoScheduler(Context applicationContext) {
-        this.context = applicationContext;
+  private final int UNIQUE_JOB_ID = 101;
+
+  private final int STANDARD_DELTA = 30000; // 30 seconds
+
+  private final EventStore eventStore;
+
+  private Clock clock;
+
+  public JobInfoScheduler(Context applicationContext, EventStore eventStore, Clock clock) {
+    this.context = applicationContext;
+    this.eventStore = eventStore;
+    this.clock = clock;
+  }
+
+  @TargetApi(Build.VERSION_CODES.M)
+  @android.support.annotation.RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+  @Override
+  public void schedule() {
+    long nextBackendCallDelta;
+    ComponentName serviceComponent = new ComponentName(context, JobInfoSchedulerService.class);
+    JobScheduler jobScheduler = context.getSystemService(JobScheduler.class);
+    if (jobScheduler != null) {
+      jobScheduler.cancel(UNIQUE_JOB_ID);
+
+      Iterator itr = eventStore.getBackendNextCallTimes().iterator();
+      if (itr != null && itr.hasNext()) {
+        long minBackendCallTime = ((BackendNextCallTime) itr.next()).getTimestampMs();
+        while (itr.hasNext()) {
+          long backendWaitTime = ((BackendNextCallTime) itr.next()).getTimestampMs();
+          if (backendWaitTime < minBackendCallTime) {
+            minBackendCallTime = backendWaitTime;
+          }
+        }
+        nextBackendCallDelta = minBackendCallTime - clock.getTime();
+      } else {
+        return;
+      }
+
+      JobInfo.Builder builder = new JobInfo.Builder(UNIQUE_JOB_ID, serviceComponent);
+      builder.setMinimumLatency(nextBackendCallDelta); // wait at least
+      builder.setOverrideDeadline(nextBackendCallDelta + STANDARD_DELTA); // maximum delay
+      jobScheduler.schedule(builder.build());
     }
-
-    @Override
-    public void schedule() {
-
-    }
+  }
 }

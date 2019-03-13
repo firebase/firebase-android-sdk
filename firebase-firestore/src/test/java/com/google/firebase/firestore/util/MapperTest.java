@@ -1442,7 +1442,9 @@ public class MapperTest {
   public void serializeFloatBean() {
     FloatBean bean = new FloatBean();
     bean.value = 0.5f;
-    assertJson("{'value': 0.5}", serialize(bean));
+
+    // We don't use assertJson as it converts all floating point numbers to Double.
+    assertEquals(map("value", 0.5f), serialize(bean));
   }
 
   @Test
@@ -1696,7 +1698,7 @@ public class MapperTest {
     ShortBean bean = new ShortBean();
     bean.value = 1;
     assertExceptionContains(
-        "Shorts are not supported, please use int or long (found in field 'value')",
+        "Numbers of type Short are not supported, please use an int, long, float or double (found in field 'value')",
         () -> serialize(bean));
   }
 
@@ -1705,7 +1707,7 @@ public class MapperTest {
     ByteBean bean = new ByteBean();
     bean.value = 1;
     assertExceptionContains(
-        "Bytes are not supported, please use int or long (found in field 'value')",
+        "Numbers of type Byte are not supported, please use an int, long, float or double (found in field 'value')",
         () -> serialize(bean));
   }
 
@@ -1714,7 +1716,7 @@ public class MapperTest {
     CharBean bean = new CharBean();
     bean.value = 1;
     assertExceptionContains(
-        "Characters are not supported, please use Strings. (found in field 'value')",
+        "Characters are not supported, please use Strings (found in field 'value')",
         () -> serialize(bean));
   }
 
@@ -1741,21 +1743,21 @@ public class MapperTest {
   @Test
   public void shortsCantBeDeserialized() {
     assertExceptionContains(
-        "Deserializing to shorts is not supported (found in field 'value')",
+        "Deserializing values to short is not supported (found in field 'value')",
         () -> deserialize("{'value': 1}", ShortBean.class));
   }
 
   @Test
   public void bytesCantBeDeserialized() {
     assertExceptionContains(
-        "Deserializing to bytes is not supported (found in field 'value')",
+        "Deserializing values to byte is not supported (found in field 'value')",
         () -> deserialize("{'value': 1}", ByteBean.class));
   }
 
   @Test
   public void charsCantBeDeserialized() {
     assertExceptionContains(
-        "Deserializing to chars is not supported (found in field 'value')",
+        "Deserializing values to char is not supported (found in field 'value')",
         () -> deserialize("{'value': '1'}", CharBean.class));
   }
 
@@ -1862,21 +1864,21 @@ public class MapperTest {
   @Test
   public void passingInCharacterTopLevelThrows() {
     assertExceptionContains(
-        "Deserializing to chars is not supported",
+        "Deserializing values to Character is not supported",
         () -> CustomClassMapper.convertToCustomClass('1', Character.class));
   }
 
   @Test
   public void passingInShortTopLevelThrows() {
     assertExceptionContains(
-        "Deserializing to shorts is not supported",
+        "Deserializing values to Short is not supported",
         () -> CustomClassMapper.convertToCustomClass(1, Short.class));
   }
 
   @Test
   public void passingInByteTopLevelThrows() {
     assertExceptionContains(
-        "Deserializing to bytes is not supported",
+        "Deserializing values to Byte is not supported",
         () -> CustomClassMapper.convertToCustomClass(1, Byte.class));
   }
 
@@ -2220,8 +2222,8 @@ public class MapperTest {
       fail("should have thrown");
     } catch (RuntimeException e) {
       assertEquals(
-          "Could not serialize object. Shorts are not supported, please use int or "
-              + "long (found in field 'value.inner.value.short')",
+          "Could not serialize object. Numbers of type Short are not supported, please use an int, "
+              + "long, float or double (found in field 'value.inner.value.short')",
           e.getMessage());
     }
   }
@@ -2235,7 +2237,7 @@ public class MapperTest {
       fail("should have thrown");
     } catch (RuntimeException e) {
       assertEquals(
-          "Could not deserialize object. Deserializing to shorts is not supported "
+          "Could not deserialize object. Deserializing values to short is not supported "
               + "(found in field 'value')",
           e.getMessage());
     }
