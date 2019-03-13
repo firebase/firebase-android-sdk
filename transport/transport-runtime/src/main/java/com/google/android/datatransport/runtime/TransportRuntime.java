@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime;
 import android.content.Context;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.service.JobInfoSchedulerService;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Uptime;
 import com.google.android.datatransport.runtime.time.WallTime;
@@ -80,6 +81,10 @@ public class TransportRuntime implements TransportInternal {
       throw new IllegalStateException("Not initialized!");
     }
     return localRef.getTransportRuntime();
+  }
+
+  public void injectService(JobInfoSchedulerService service) {
+    INSTANCE.injectJobInfoSchedulerService(service);
   }
 
   /** Register a {@link TransportBackend}. */

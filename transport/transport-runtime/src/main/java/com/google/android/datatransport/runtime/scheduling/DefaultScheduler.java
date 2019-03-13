@@ -14,15 +14,50 @@
 
 package com.google.android.datatransport.runtime.scheduling;
 
+import com.google.android.datatransport.runtime.BackendRegistry;
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportBackend;
+import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
+
+import java.util.Collections;
+import java.util.concurrent.Executor;
+import java.util.logging.Logger;
+
+import javax.inject.Inject;
 
 /**
  * Placeholder for the eventual scheduler that will support persistence, retries, respect network
  * conditions and QoS.
  */
 public class DefaultScheduler implements Scheduler {
+
+  private final WorkScheduler workScheduler;
+  private final Executor executor;
+  private final BackendRegistry backendRegistry;
+  private static final Logger LOGGER = Logger.getLogger(TransportRuntime.class.getName());
+
+  @Inject
+  public DefaultScheduler(
+          Executor executor, BackendRegistry backendRegistry, WorkScheduler workScheduler) {
+    this.executor = executor;
+    this.backendRegistry = backendRegistry;
+    this.workScheduler = workScheduler;
+  }
+
   @Override
   public void schedule(String backendName, EventInternal event) {
-    // TODO: implement.
+    executor.execute(
+            () -> {
+              TransportBackend transportBackend = backendRegistry.get(backendName);
+              if (transportBackend == null) {
+                LOGGER.warning(String.format("Logger backend '%s' is not registered", backendName));
+                return;
+              }
+              EventInternal decoratedEvent = transportBackend.decorate(event);
+              // TODO update the database with the decoratedEvent
+              transportBackend.send(Collections.singleton(decoratedEvent));
+              workScheduler.schedule();
+            });
   }
 }

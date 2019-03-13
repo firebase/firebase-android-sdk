@@ -15,6 +15,11 @@
 package com.google.android.datatransport.runtime;
 
 import android.content.Context;
+
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoScheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.service.JobInfoSchedulerService;
+
 import dagger.BindsInstance;
 import dagger.Component;
 import javax.inject.Singleton;
@@ -23,6 +28,8 @@ import javax.inject.Singleton;
 @Singleton
 interface TransportRuntimeComponent {
   TransportRuntime getTransportRuntime();
+
+  void injectJobInfoSchedulerService(JobInfoSchedulerService jobInfoSchedulerService);
 
   @Component.Builder
   interface Builder {

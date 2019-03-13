@@ -14,8 +14,15 @@
 
 package com.google.android.datatransport.runtime;
 
+import android.content.Context;
+import android.os.Build;
+
+import com.google.android.datatransport.runtime.scheduling.DefaultScheduler;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerScheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoScheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Uptime;
 import com.google.android.datatransport.runtime.time.UptimeClock;
@@ -51,7 +58,16 @@ public class TransportRuntimeModule {
   }
 
   @Provides
-  Scheduler scheduler(Executor executor, BackendRegistry registry) {
-    return new ImmediateScheduler(executor, registry);
+  WorkScheduler workScheduler(Context context) {
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      return new JobInfoScheduler(context);
+    } else {
+      return new AlarmManagerScheduler(context);
+    }
+  }
+
+  @Provides
+  Scheduler scheduler(Executor executor, BackendRegistry registry, WorkScheduler workScheduler) {
+    return new DefaultScheduler(executor, registry, workScheduler);
   }
 }
