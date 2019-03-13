@@ -122,8 +122,9 @@ public class CustomClassMapper {
         return o;
       } else {
         throw new DatabaseException(
-            o.getClass().getSimpleName()
-                + " is not supported, please use an int, long, float or double");
+            String.format(
+                "Numbers of type %s are not supported, please use an int, long, float or double",
+                o.getClass().getSimpleName()));
       }
     } else if (o instanceof String) {
       return o;
@@ -279,7 +280,7 @@ public class CustomClassMapper {
       return (T) (Float) convertDouble(o).floatValue();
     } else {
       throw new DatabaseException(
-          String.format("Deserializing to %s is not supported", clazz.getSimpleName()));
+          String.format("Deserializing values to %s is not supported", clazz.getSimpleName()));
     }
   }
 

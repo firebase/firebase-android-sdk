@@ -119,7 +119,7 @@ public class CustomClassMapper {
         throw serializeError(
             path,
             String.format(
-                "%s is not supported, please use an int, long, float or double",
+                "Numbers of type %s are not supported, please use an int, long, float or double",
                 o.getClass().getSimpleName()));
       }
     } else if (o instanceof String) {
@@ -314,7 +314,8 @@ public class CustomClassMapper {
       return (T) (Float) convertDouble(o, path).floatValue();
     } else {
       throw deserializeError(
-          path, String.format("Deserializing to %s is not supported", clazz.getSimpleName()));
+          path,
+          String.format("Deserializing values to %s is not supported", clazz.getSimpleName()));
     }
   }
 
