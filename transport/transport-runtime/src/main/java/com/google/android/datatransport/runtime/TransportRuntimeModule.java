@@ -16,6 +16,8 @@ package com.google.android.datatransport.runtime;
 
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
+import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Uptime;
 import com.google.android.datatransport.runtime.time.UptimeClock;
@@ -25,28 +27,35 @@ import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import javax.inject.Singleton;
 
 @Module
 class TransportRuntimeModule {
   @Provides
-  Executor executor() {
+  static Executor executor() {
     return Executors.newSingleThreadExecutor();
   }
 
   @Provides
   @WallTime
-  Clock eventClock() {
+  static Clock eventClock() {
     return new WallTimeClock();
   }
 
   @Provides
   @Uptime
-  Clock uptimeClock() {
+  static Clock uptimeClock() {
     return new UptimeClock();
   }
 
   @Provides
-  Scheduler scheduler(Executor executor, BackendRegistry registry) {
+  static Scheduler scheduler(Executor executor, BackendRegistry registry) {
     return new ImmediateScheduler(executor, registry);
+  }
+
+  @Provides
+  @Singleton
+  static EventStore eventStore() {
+    return new InMemoryEventStore();
   }
 }
