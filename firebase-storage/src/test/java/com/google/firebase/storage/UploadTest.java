@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.RuntimeExecutionException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.UploadTask.TaskSnapshot;
 import com.google.firebase.storage.internal.MockClockHelper;
 import com.google.firebase.storage.internal.RobolectricThreadFix;
@@ -71,15 +72,19 @@ public class UploadTest {
 
   @Rule public TemporaryFolder folder = new TemporaryFolder();
 
+  private FirebaseApp app;
+
   @Before
   public void setUp() throws Exception {
     RobolectricThreadFix.install();
-    TestUtil.setup();
+    MockClockHelper.install();
+    app = TestUtil.createApp();
   }
 
   @After
   public void tearDown() {
-    TestUtil.unInit();
+    FirebaseStorageComponent component = app.get(FirebaseStorageComponent.class);
+    component.clearInstancesForTesting();
   }
 
   @Test

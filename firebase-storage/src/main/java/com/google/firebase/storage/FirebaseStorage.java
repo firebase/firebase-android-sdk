@@ -14,6 +14,8 @@
 
 package com.google.firebase.storage;
 
+import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
+
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -21,14 +23,11 @@ import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.util.Log;
 import com.google.android.gms.common.internal.Preconditions;
-import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.Util;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * FirebaseStorage is a service that supports uploading and downloading large objects to Google
@@ -44,8 +43,6 @@ import java.util.Map;
 @PublicApi
 public class FirebaseStorage {
   private static final String TAG = "FirebaseStorage";
-  private static final Map<String /* App name */, Map<String /* StorageBucket */, FirebaseStorage>>
-      mStorageMap = new HashMap<>();
   private static final String STORAGE_URI_PARSE_EXCEPTION = "The storage Uri could not be parsed.";
   private static final String STORAGE_BUCKET_WITH_PATH_EXCEPTION =
       "The storage Uri cannot contain a path element.";
@@ -60,6 +57,11 @@ public class FirebaseStorage {
     mApp = app;
   }
 
+  @NonNull
+  static FirebaseStorage newInstance(@Nullable String bucketName, @NonNull FirebaseApp app) {
+    return new FirebaseStorage(bucketName, app);
+  }
+
   private static FirebaseStorage getInstanceImpl(@NonNull FirebaseApp app, @Nullable Uri url) {
     String bucketName = url != null ? url.getHost() : null;
 
@@ -67,19 +69,10 @@ public class FirebaseStorage {
       throw new IllegalArgumentException(STORAGE_BUCKET_WITH_PATH_EXCEPTION);
     }
 
-    synchronized (mStorageMap) {
-      Map<String, FirebaseStorage> storageBuckets = mStorageMap.get(app.getName());
-      if (storageBuckets == null) {
-        storageBuckets = new HashMap<>();
-        mStorageMap.put(app.getName(), storageBuckets);
-      }
-      FirebaseStorage storage = storageBuckets.get(bucketName);
-      if (storage == null) {
-        storage = new FirebaseStorage(bucketName, app);
-        storageBuckets.put(bucketName, storage);
-      }
-      return storage;
-    }
+    checkNotNull(app, "Provided FirebaseApp must not be null.");
+    FirebaseStorageComponent component = app.get(FirebaseStorageComponent.class);
+    checkNotNull(component, "Firestore component is not present.");
+    return component.get(bucketName);
   }
 
   /**
@@ -151,6 +144,8 @@ public class FirebaseStorage {
   public static FirebaseStorage getInstance(@NonNull FirebaseApp app, @NonNull String url) {
     // noinspection ConstantConditions
     Preconditions.checkArgument(app != null, "Null is not a valid value for the FirebaseApp.");
+    Preconditions.checkArgument(
+        url != null, "Null is not a valid value for the Firebase Storage URL.");
 
     if (!url.toLowerCase().startsWith("gs://")) {
       throw new IllegalArgumentException(
@@ -162,14 +157,6 @@ public class FirebaseStorage {
     } catch (UnsupportedEncodingException e) {
       Log.e(TAG, "Unable to parse url:" + url, e);
       throw new IllegalArgumentException(STORAGE_URI_PARSE_EXCEPTION);
-    }
-  }
-
-  /** @hide */
-  @VisibleForTesting
-  static void clearInstancesForTest() {
-    synchronized (mStorageMap) {
-      mStorageMap.clear();
     }
   }
 
@@ -316,7 +303,7 @@ public class FirebaseStorage {
   @NonNull
   private StorageReference getReference(@NonNull Uri uri) {
     // ensure that the authority represents the correct bucket.
-    Preconditions.checkNotNull(uri, "uri must not be null");
+    checkNotNull(uri, "uri must not be null");
     String bucketName = getBucketName();
     Preconditions.checkArgument(
         TextUtils.isEmpty(bucketName) || uri.getAuthority().equalsIgnoreCase(bucketName),

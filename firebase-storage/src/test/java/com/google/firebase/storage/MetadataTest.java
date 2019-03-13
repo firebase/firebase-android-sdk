@@ -16,6 +16,8 @@ package com.google.firebase.storage;
 
 import android.os.Build;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.storage.internal.MockClockHelper;
 import com.google.firebase.storage.internal.RobolectricThreadFix;
 import com.google.firebase.storage.network.MockConnectionFactory;
 import com.google.firebase.storage.network.NetworkLayerMock;
@@ -38,15 +40,19 @@ public class MetadataTest {
   @Rule public RetryRule retryRule = new RetryRule(3);
   @Rule public FirebaseAppRule firebaseAppRule = new FirebaseAppRule();
 
+  private FirebaseApp app;
+
   @Before
   public void setUp() throws Exception {
     RobolectricThreadFix.install();
-    TestUtil.setup();
+    MockClockHelper.install();
+    app = TestUtil.createApp();
   }
 
   @After
   public void tearDown() {
-    TestUtil.unInit();
+    FirebaseStorageComponent component = app.get(FirebaseStorageComponent.class);
+    component.clearInstancesForTesting();
   }
 
   @SuppressWarnings("ConstantConditions")
