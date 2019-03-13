@@ -16,9 +16,9 @@ package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
@@ -38,8 +38,8 @@ public class Blob implements Comparable<Blob> {
    * @param bytes The bytes to use for this Blob instance.
    * @return The new Blob instance
    */
-  @Keep
   @NonNull
+  @PublicApi
   public static Blob fromBytes(@NonNull byte[] bytes) {
     checkNotNull(bytes, "Provided bytes array must not be null.");
     return new Blob(ByteString.copyFrom(bytes));
@@ -47,14 +47,15 @@ public class Blob implements Comparable<Blob> {
 
   /** @hide */
   @NonNull
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public static Blob fromByteString(@NonNull ByteString bytes) {
     checkNotNull(bytes, "Provided ByteString must not be null.");
     return new Blob(bytes);
   }
 
   /** @return The bytes of this blob as a new byte[] array. */
-  @Keep
   @NonNull
+  @PublicApi
   public byte[] toBytes() {
     return bytes.toByteArray();
   }
@@ -67,6 +68,7 @@ public class Blob implements Comparable<Blob> {
 
   /** @hide */
   @NonNull
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public ByteString toByteString() {
     return bytes;
   }

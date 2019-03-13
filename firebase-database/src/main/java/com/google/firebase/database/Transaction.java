@@ -16,6 +16,7 @@ package com.google.firebase.database;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.database.snapshot.Node;
 
@@ -67,6 +68,7 @@ public class Transaction {
      * @hide
      * @return The data
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public Node getNode() {
       return data;
     }

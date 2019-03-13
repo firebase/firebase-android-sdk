@@ -18,6 +18,7 @@ import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import com.google.android.gms.common.internal.Objects;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.database.core.ChildEventRegistration;
@@ -701,6 +702,7 @@ public class Query {
    * @hide
    * @return The path to this location
    */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public Path getPath() {
     return path;
   }
@@ -711,6 +713,7 @@ public class Query {
    * @hide
    * @return The repo
    */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public Repo getRepo() {
     return repo;
   }
@@ -721,6 +724,7 @@ public class Query {
    * @hide
    * @return The constraints
    */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public QuerySpec getSpec() {
     return new QuerySpec(path, params);
   }

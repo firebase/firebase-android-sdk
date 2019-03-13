@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import java.util.HashSet;
@@ -46,12 +47,13 @@ public final class SetOptions {
   }
 
   /** @hide */
-  public boolean isMerge() {
+  boolean isMerge() {
     return merge;
   }
 
   /** @hide */
   @Nullable
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public FieldMask getFieldMask() {
     return fieldMask;
   }
