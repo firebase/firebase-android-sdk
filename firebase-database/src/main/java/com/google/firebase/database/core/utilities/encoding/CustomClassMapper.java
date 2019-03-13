@@ -118,13 +118,13 @@ public class CustomClassMapper {
           return ((Number) o).longValue();
         }
         return doubleValue;
-      } else if (o instanceof Short) {
-        throw new DatabaseException("Shorts are not supported, please use int or long");
-      } else if (o instanceof Byte) {
-        throw new DatabaseException("Bytes are not supported, please use int or long");
-      } else {
-        // Long, Integer
+      } else if (o instanceof Long || o instanceof Integer) {
         return o;
+      } else {
+        throw new DatabaseException(
+            String.format(
+                "Numbers of type %s are not supported, please use an int, long, float or double",
+                o.getClass().getSimpleName()));
       }
     } else if (o instanceof String) {
       return o;
@@ -278,14 +278,9 @@ public class CustomClassMapper {
       return (T) convertLong(o);
     } else if (Float.class.isAssignableFrom(clazz) || float.class.isAssignableFrom(clazz)) {
       return (T) (Float) convertDouble(o).floatValue();
-    } else if (Short.class.isAssignableFrom(clazz) || short.class.isAssignableFrom(clazz)) {
-      throw new DatabaseException("Deserializing to shorts is not supported");
-    } else if (Byte.class.isAssignableFrom(clazz) || byte.class.isAssignableFrom(clazz)) {
-      throw new DatabaseException("Deserializing to bytes is not supported");
-    } else if (Character.class.isAssignableFrom(clazz) || char.class.isAssignableFrom(clazz)) {
-      throw new DatabaseException("Deserializing to char is not supported");
     } else {
-      throw new IllegalArgumentException("Unknown primitive type: " + clazz);
+      throw new DatabaseException(
+          String.format("Deserializing values to %s is not supported", clazz.getSimpleName()));
     }
   }
 
