@@ -113,26 +113,21 @@ public class CustomClassMapper {
     if (o == null) {
       return null;
     } else if (o instanceof Number) {
-      if (o instanceof Float) {
-        return ((Float) o).doubleValue();
-      } else if (o instanceof Short) {
-        throw serializeError(path, "Shorts are not supported, please use int or long");
-      } else if (o instanceof Byte) {
-        throw serializeError(path, "Bytes are not supported, please use int or long");
-      } else if (o instanceof Long || o instanceof Integer || o instanceof Double) {
+      if (o instanceof Long || o instanceof Integer || o instanceof Double || o instanceof Float) {
         return o;
       } else {
         throw serializeError(
             path,
-            o.getClass().getSimpleName()
-                + " is not supported, please use int, long, float or double");
+            String.format(
+                "%s is not supported, please use an int, long, float or double",
+                o.getClass().getSimpleName()));
       }
     } else if (o instanceof String) {
       return o;
     } else if (o instanceof Boolean) {
       return o;
     } else if (o instanceof Character) {
-      throw serializeError(path, "Characters are not supported, please use Strings.");
+      throw serializeError(path, "Characters are not supported, please use Strings");
     } else if (o instanceof Map) {
       Map<String, Object> result = new HashMap<>();
       for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) o).entrySet()) {
@@ -317,12 +312,6 @@ public class CustomClassMapper {
       return (T) convertLong(o, path);
     } else if (Float.class.isAssignableFrom(clazz) || float.class.isAssignableFrom(clazz)) {
       return (T) (Float) convertDouble(o, path).floatValue();
-    } else if (Short.class.isAssignableFrom(clazz) || short.class.isAssignableFrom(clazz)) {
-      throw deserializeError(path, "Deserializing to shorts is not supported");
-    } else if (Byte.class.isAssignableFrom(clazz) || byte.class.isAssignableFrom(clazz)) {
-      throw deserializeError(path, "Deserializing to bytes is not supported");
-    } else if (Character.class.isAssignableFrom(clazz) || char.class.isAssignableFrom(clazz)) {
-      throw deserializeError(path, "Deserializing to chars is not supported");
     } else {
       throw deserializeError(
           path, String.format("Deserializing to %s is not supported", clazz.getSimpleName()));
