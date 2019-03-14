@@ -28,6 +28,11 @@ public class InMemoryEventStore implements EventStore {
   private final Map<String, Map<Long, EventInternal>> store = new HashMap<>();
 
   @Override
+  public synchronized <T> T atomically(AtomicFunction<T> function) {
+    return function.execute();
+  }
+
+  @Override
   public synchronized PersistedEvent persist(String backendName, EventInternal event) {
     long newId = idCounter.incrementAndGet();
     getOrCreateBackendStore(backendName).put(newId, event);
@@ -49,7 +54,7 @@ public class InMemoryEventStore implements EventStore {
   }
 
   @Override
-  public void recordSuccess(Iterable<PersistedEvent> events) {
+  public synchronized void recordSuccess(Iterable<PersistedEvent> events) {
     for (PersistedEvent event : events) {
       Map<Long, EventInternal> backendStore = store.get(event.getBackendName());
       if (backendStore == null) {
@@ -60,17 +65,22 @@ public class InMemoryEventStore implements EventStore {
   }
 
   @Override
-  public Iterable<BackendNextCallTime> getBackendNextCallTimes() {
-    List<BackendNextCallTime> result = new ArrayList<>();
-    for (String backend : store.keySet()) {
-      result.add(BackendNextCallTime.create(backend, 0));
-    }
-    return result;
+  public Long getNextCallTime(String backendName) {
+    return null;
   }
 
   @Override
-  public synchronized void recordNextCallTime(String backendName, long timestampMs) {
+  public void recordNextCallTime(String backendName, long timestampMs) {
     // noop
+  }
+
+  @Override
+  public synchronized boolean hasPendingEventsFor(String backendName) {
+    Map<Long, EventInternal> backendStore = store.get(backendName);
+    if (backendStore == null) {
+      return false;
+    }
+    return !backendStore.isEmpty();
   }
 
   @Override

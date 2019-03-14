@@ -30,6 +30,7 @@ android {
 dependencies {
     implementation project(':transport:transport-api')
     implementation 'com.google.dagger:dagger:2.13'
+    implementation 'com.android.support:support-annotations:28.0.0'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.2"
 

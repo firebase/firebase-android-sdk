@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import android.support.annotation.Nullable;
 import com.google.android.datatransport.runtime.EventInternal;
 
 /**
@@ -22,6 +23,23 @@ import com.google.android.datatransport.runtime.EventInternal;
  * <p>Responsible for storing events and backend-specific metadata.
  */
 public interface EventStore {
+  interface AtomicFunction<T> {
+    T execute();
+  }
+
+  /**
+   * All operations against the {@link EventStore} will be done as one atomic unit of work.
+   *
+   * <p>Example usage:
+   *
+   * <pre>{@code
+   * store.atomically(() -> {
+   *   store.persist("foo", event);
+   *   store.recordSuccess(Collections.singleton(event));
+   * });
+   * }</pre>
+   */
+  <T> T atomically(AtomicFunction<T> function);
 
   /** Persist a new event. */
   PersistedEvent persist(String backendName, EventInternal event);
@@ -32,11 +50,15 @@ public interface EventStore {
   /** Communicate to the store that events have been sent successfully. */
   void recordSuccess(Iterable<PersistedEvent> events);
 
-  /** Return a collection of timestamps when the backends are allowed to be called next time. */
-  Iterable<BackendNextCallTime> getBackendNextCallTimes();
+  /** Returns the timestamp when the backend is allowed to be called next time or null. */
+  @Nullable
+  Long getNextCallTime(String backendName);
 
   /** Record the timestamp when the backend is allowed to be called next time. */
   void recordNextCallTime(String backendName, long timestampMs);
+
+  /** Returns true if the store contains any pending events for a give backend. */
+  boolean hasPendingEventsFor(String backendName);
 
   /** Load all pending events for a given backend. */
   Iterable<PersistedEvent> loadAll(String backendName);
