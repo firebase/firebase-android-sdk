@@ -14,18 +14,18 @@
 
 package com.google.firebase.database.core.persistence;
 
-import static com.google.firebase.database.TestHelpers.childKeySet;
-import static com.google.firebase.database.TestHelpers.defaultQueryAt;
-import static com.google.firebase.database.TestHelpers.failOnFirstUncaughtException;
-import static com.google.firebase.database.TestHelpers.fromSingleQuotedString;
-import static com.google.firebase.database.TestHelpers.goOffline;
-import static com.google.firebase.database.TestHelpers.goOnline;
-import static com.google.firebase.database.TestHelpers.newFrozenTestConfig;
-import static com.google.firebase.database.TestHelpers.path;
-import static com.google.firebase.database.TestHelpers.rootWithConfig;
-import static com.google.firebase.database.TestHelpers.setForcedPersistentCache;
-import static com.google.firebase.database.TestHelpers.waitFor;
-import static com.google.firebase.database.TestHelpers.waitForQueue;
+import static com.google.firebase.database.IntegrationTestHelpers.childKeySet;
+import static com.google.firebase.database.IntegrationTestHelpers.defaultQueryAt;
+import static com.google.firebase.database.IntegrationTestHelpers.failOnFirstUncaughtException;
+import static com.google.firebase.database.IntegrationTestHelpers.fromSingleQuotedString;
+import static com.google.firebase.database.IntegrationTestHelpers.goOffline;
+import static com.google.firebase.database.IntegrationTestHelpers.goOnline;
+import static com.google.firebase.database.IntegrationTestHelpers.newFrozenTestConfig;
+import static com.google.firebase.database.IntegrationTestHelpers.path;
+import static com.google.firebase.database.IntegrationTestHelpers.rootWithConfig;
+import static com.google.firebase.database.IntegrationTestHelpers.setForcedPersistentCache;
+import static com.google.firebase.database.IntegrationTestHelpers.waitFor;
+import static com.google.firebase.database.IntegrationTestHelpers.waitForQueue;
 import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;

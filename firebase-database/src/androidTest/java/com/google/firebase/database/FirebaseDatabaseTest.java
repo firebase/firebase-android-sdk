@@ -14,7 +14,7 @@
 
 package com.google.firebase.database;
 
-import static com.google.firebase.database.TestHelpers.fromSingleQuotedString;
+import static com.google.firebase.database.IntegrationTestHelpers.fromSingleQuotedString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
@@ -46,12 +46,12 @@ public class FirebaseDatabaseTest {
 
   @Before
   public void setup() {
-    TestHelpers.ensureAppInitialized();
+    IntegrationTestHelpers.ensureAppInitialized();
   }
 
   @After
   public void tearDown() {
-    TestHelpers.failOnFirstUncaughtException();
+    IntegrationTestHelpers.failOnFirstUncaughtException();
   }
 
   @Test
@@ -158,7 +158,7 @@ public class FirebaseDatabaseTest {
 
   @Test
   public void persistenceSettings() {
-    DatabaseConfig config = TestHelpers.newTestConfig();
+    DatabaseConfig config = IntegrationTestHelpers.newTestConfig();
 
     try {
       config.setPersistenceCacheSizeBytes(1 * 1024 * 1024 - 1);
@@ -250,11 +250,11 @@ public class FirebaseDatabaseTest {
   }
 
   private static DatabaseReference rootRefWithEngine(MockPersistenceStorageEngine engine) {
-    DatabaseConfig config = TestHelpers.newTestConfig();
+    DatabaseConfig config = IntegrationTestHelpers.newTestConfig();
     PersistenceManager persistenceManager =
         new DefaultPersistenceManager(config, engine, CachePolicy.NONE);
-    TestHelpers.setForcedPersistentCache(config, persistenceManager);
-    return TestHelpers.rootWithConfig(config);
+    IntegrationTestHelpers.setForcedPersistentCache(config, persistenceManager);
+    return IntegrationTestHelpers.rootWithConfig(config);
   }
 
   @Test
@@ -270,12 +270,12 @@ public class FirebaseDatabaseTest {
     ref.push().setValue("test-value-3");
     ref.push().setValue("test-value-4");
 
-    TestHelpers.waitForQueue(ref);
+    IntegrationTestHelpers.waitForQueue(ref);
     Assert.assertEquals(4, engine.loadUserWrites().size());
 
     app.purgeOutstandingWrites();
 
-    TestHelpers.waitForQueue(ref);
+    IntegrationTestHelpers.waitForQueue(ref);
     Assert.assertEquals(0, engine.loadUserWrites().size());
   }
 
@@ -332,12 +332,12 @@ public class FirebaseDatabaseTest {
               }
             });
 
-    TestHelpers.waitForQueue(ref);
+    IntegrationTestHelpers.waitForQueue(ref);
     Assert.assertEquals(4, engine.loadUserWrites().size());
 
     app.purgeOutstandingWrites();
 
-    TestHelpers.waitForEvents(ref);
+    IntegrationTestHelpers.waitForEvents(ref);
     assertEquals(Arrays.asList("1", "2", "3", "4"), order);
   }
 
@@ -374,11 +374,11 @@ public class FirebaseDatabaseTest {
               }
             });
 
-    TestHelpers.waitForEvents(ref);
+    IntegrationTestHelpers.waitForEvents(ref);
 
     app.purgeOutstandingWrites();
 
-    TestHelpers.waitForEvents(ref);
+    IntegrationTestHelpers.waitForEvents(ref);
     assertEquals(Arrays.asList("1", "2"), order);
   }
 
@@ -484,7 +484,7 @@ public class FirebaseDatabaseTest {
 
     app.purgeOutstandingWrites();
 
-    TestHelpers.waitForEvents(ref);
+    IntegrationTestHelpers.waitForEvents(ref);
 
     assertEquals(Arrays.asList("foo-1", "bar", "foo-2"), cancelOrder);
 
@@ -494,7 +494,7 @@ public class FirebaseDatabaseTest {
 
     app.goOnline();
     // Make sure we're back online and reconnected again
-    TestHelpers.waitForEvents(ref);
+    IntegrationTestHelpers.waitForEvents(ref);
 
     // No events should be reraised...
     assertEquals(expectedFooValues, fooValues);
@@ -522,7 +522,7 @@ public class FirebaseDatabaseTest {
         });
 
     // Make sure the first value event is fired
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
 
     app.goOffline();
 
@@ -558,7 +558,7 @@ public class FirebaseDatabaseTest {
 
     ref.getDatabase().purgeOutstandingWrites();
 
-    TestHelpers.waitForEvents(ref);
+    IntegrationTestHelpers.waitForEvents(ref);
 
     // The order should really be cancel-1 then cancel-2, but too difficult to implement currently.
     assertEquals(

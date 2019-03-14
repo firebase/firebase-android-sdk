@@ -53,18 +53,18 @@ public class DataTest {
 
   @After
   public void tearDown() {
-    TestHelpers.failOnFirstUncaughtException();
+    IntegrationTestHelpers.failOnFirstUncaughtException();
   }
 
   @Test
   public void basicInstantiation() throws DatabaseException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     assertTrue(ref != null);
   }
 
   @Test
   public void writeData() throws DatabaseException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     // just make sure it doesn't throw
     ref.setValue(42);
     assertTrue(true);
@@ -74,7 +74,7 @@ public class DataTest {
   public void readAndWrite()
       throws DatabaseException, ExecutionException, InterruptedException, TimeoutException,
           TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     ReadFuture future = ReadFuture.untilNonNull(ref);
 
     ref.setValue(42);
@@ -90,7 +90,7 @@ public class DataTest {
     innerExpected.put("bar", 5L);
     expected.put("foo", innerExpected);
 
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ReadFuture future = ReadFuture.untilNonNull(ref);
 
@@ -104,7 +104,7 @@ public class DataTest {
   @Test
   public void writeDataAndWaitForServerConfirmation()
       throws DatabaseException, TimeoutException, InterruptedException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     ref.setValue(42);
 
     ReadFuture future = new ReadFuture(ref);
@@ -117,7 +117,7 @@ public class DataTest {
   public void writeAValueReconnectRead()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -136,7 +136,7 @@ public class DataTest {
   public void writeABunchOfDataReconnectRead()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -167,7 +167,7 @@ public class DataTest {
   @Test
   public void writeLeafNodeOverwriteParentNodeWaitForEvents()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     EventHelper helper =
         new EventHelper()
@@ -189,7 +189,7 @@ public class DataTest {
   @Test
   public void writeLeafNodeOverwriteAtParentMultipleTimesWaitForExpectedEvents()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final AtomicInteger bbCount = new AtomicInteger(0);
     ValueEventListener listener =
@@ -233,7 +233,7 @@ public class DataTest {
   @Test
   public void writeParentNodeOverwriteAtLeafNodeWaitForEvents()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     EventHelper helper =
         new EventHelper()
@@ -256,7 +256,7 @@ public class DataTest {
   public void writeLeafNodeRemoveParentWaitForEvents()
       throws DatabaseException, InterruptedException, TimeoutException, TestFailure,
           ExecutionException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -307,8 +307,8 @@ public class DataTest {
     readHelper.cleanup();
 
     // Make sure we actually have null there now
-    assertNull(TestHelpers.getSnap(reader).getValue());
-    assertNull(TestHelpers.getSnap(writer).getValue());
+    assertNull(IntegrationTestHelpers.getSnap(reader).getValue());
+    assertNull(IntegrationTestHelpers.getSnap(writer).getValue());
 
     ReadFuture readFuture = ReadFuture.untilNonNull(reader);
 
@@ -332,7 +332,7 @@ public class DataTest {
   public void writeLeafNodeRemoveLeafNodeWaitForEvents()
       throws DatabaseException, InterruptedException, TimeoutException, TestFailure,
           ExecutionException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -382,16 +382,16 @@ public class DataTest {
     writeHelper.cleanup();
     readHelper.cleanup();
 
-    DataSnapshot readerSnap = TestHelpers.getSnap(reader);
+    DataSnapshot readerSnap = IntegrationTestHelpers.getSnap(reader);
     assertNull(readerSnap.getValue());
 
-    DataSnapshot writerSnap = TestHelpers.getSnap(writer);
+    DataSnapshot writerSnap = IntegrationTestHelpers.getSnap(writer);
     assertNull(writerSnap.getValue());
 
-    readerSnap = TestHelpers.getSnap(reader.child("a/aa"));
+    readerSnap = IntegrationTestHelpers.getSnap(reader.child("a/aa"));
     assertNull(readerSnap.getValue());
 
-    writerSnap = TestHelpers.getSnap(writer.child("a/aa"));
+    writerSnap = IntegrationTestHelpers.getSnap(writer.child("a/aa"));
     assertNull(writerSnap.getValue());
 
     ReadFuture readFuture = ReadFuture.untilNonNull(reader);
@@ -414,7 +414,7 @@ public class DataTest {
   @Test
   public void writeMultipleLeafNodesRemoveOneLeafNodeWaitForEvents()
       throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -470,8 +470,8 @@ public class DataTest {
     assertTrue(writeHelper.waitForEvents());
     assertTrue(readHelper.waitForEvents());
 
-    DataSnapshot readerSnap = TestHelpers.getSnap(reader);
-    DataSnapshot writerSnap = TestHelpers.getSnap(writer);
+    DataSnapshot readerSnap = IntegrationTestHelpers.getSnap(reader);
+    DataSnapshot writerSnap = IntegrationTestHelpers.getSnap(writer);
     Map<String, Object> expected =
         new MapBuilder().put("a", new MapBuilder().put("bb", 24L).build()).build();
     DeepEquals.assertEquals(expected, readerSnap.getValue());
@@ -483,7 +483,7 @@ public class DataTest {
 
   @Test
   public void verifyCantNameNodesStartingWithAPeriod() throws DatabaseException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     try {
       ref.child(".foo");
       fail("Should fail");
@@ -504,14 +504,14 @@ public class DataTest {
 
   @Test
   public void numericKeysGetTurnedIntoArrays() throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     ref.child("0").setValue("alpha");
     ref.child("1").setValue("bravo");
     ref.child("2").setValue("charlie");
     ref.child("3").setValue("delta");
     ref.child("4").setValue("echo");
 
-    DataSnapshot snap = TestHelpers.getSnap(ref);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref);
     List<Object> expected = new ArrayList<Object>();
     expected.addAll(Arrays.asList((Object) "alpha", "bravo", "charlie", "delta", "echo"));
     DeepEquals.assertEquals(expected, snap.getValue());
@@ -520,7 +520,7 @@ public class DataTest {
   @Test
   public void canWriteFullJSONObjectsWithSetAndGetThemBack()
       throws DatabaseException, TimeoutException, InterruptedException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> expected =
         new MapBuilder()
@@ -560,7 +560,7 @@ public class DataTest {
   public void removeCallbackIsHit()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     WriteFuture writeFuture = new WriteFuture(ref, 42);
     writeFuture.timedGet();
@@ -593,7 +593,7 @@ public class DataTest {
   @Test
   public void removeCallbackIsHitForNodesThatAreAlreadyRemoved()
       throws DatabaseException, InterruptedException {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore callbackHit = new Semaphore(0);
     ref.removeValue(
@@ -620,7 +620,7 @@ public class DataTest {
   @Test
   public void usingNumbersAsKeysDoesntCreateHugeSparseArrays()
       throws DatabaseException, TimeoutException, InterruptedException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     ref.child("3024").setValue(5);
     ReadFuture future = new ReadFuture(ref);
 
@@ -632,7 +632,7 @@ public class DataTest {
   public void onceWithCallbackHitsServerToGetData()
       throws DatabaseException, InterruptedException, ExecutionException, TimeoutException,
           TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(3);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(3);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
     DatabaseReference reader2 = refs.get(2);
@@ -652,7 +652,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
     new WriteFuture(writer, 42).timedGet();
 
     reader2.addListenerForSingleValueEvent(
@@ -669,7 +669,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   // NOTE: skipping forEach abort test. Not relevant, we return an iterable that can be stopped any
@@ -679,7 +679,7 @@ public class DataTest {
   public void setAndThenListenForValueEvents()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     new WriteFuture(ref, "cabbage").timedGet();
     EventRecord event = new ReadFuture(ref).timedGet().get(0);
@@ -690,7 +690,7 @@ public class DataTest {
   @Test
   public void hasChildrenWorksCorrectly()
       throws DatabaseException, TimeoutException, InterruptedException, TestFailure {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref.setValue(
         new MapBuilder()
@@ -734,7 +734,7 @@ public class DataTest {
   public void setANodeWithChildrenToAPrimitiveThenBack()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     final DatabaseReference writer = refs.get(1);
 
@@ -790,7 +790,7 @@ public class DataTest {
   public void writeLeafNodeRemoveItTryToAddChildToRemovedNode()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -807,7 +807,7 @@ public class DataTest {
   public void listenForValueThenWriteOnANodeWithExistingData()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -826,7 +826,7 @@ public class DataTest {
 
   @Test
   public void setPriorityOnNonexistentNodeFails() throws DatabaseException, InterruptedException {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore semaphore = new Semaphore(0);
     ref.setPriority(
@@ -845,7 +845,7 @@ public class DataTest {
 
   @Test
   public void setPriorityOnExistingNodeSucceeds() throws DatabaseException, InterruptedException {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref.setValue("hello!");
     final Semaphore semaphore = new Semaphore(0);
@@ -867,7 +867,7 @@ public class DataTest {
   public void setWithPrioritySetsPriorityAndValue()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
 
@@ -893,7 +893,7 @@ public class DataTest {
   public void setOverwritesPriorityOfTopLevelNodesAndSubnodes()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
 
@@ -912,7 +912,7 @@ public class DataTest {
   public void setWithPriorityOfALeafSavesCorrectly()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
 
@@ -927,7 +927,7 @@ public class DataTest {
   public void setPriorityOfAnObjectSavesCorrectly()
       throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
           TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
 
@@ -943,7 +943,7 @@ public class DataTest {
   @Test
   public void getPriorityReturnsTheCorrectType()
       throws DatabaseException, TimeoutException, InterruptedException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ReadFuture readFuture = ReadFuture.untilCountAfterNull(ref, 7);
 
@@ -970,7 +970,7 @@ public class DataTest {
       throws DatabaseException, InterruptedException, TimeoutException, TestFailure {
     final long intMaxPlusOne = 2147483648L;
 
-    DatabaseReference node = TestHelpers.getRandomNode();
+    DatabaseReference node = IntegrationTestHelpers.getRandomNode();
 
     Object[] writtenValues = {
       intMaxPlusOne,
@@ -1002,7 +1002,7 @@ public class DataTest {
   @Test
   public void exportFormatIncludesPriorities()
       throws DatabaseException, TimeoutException, InterruptedException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> expected =
         new MapBuilder()
@@ -1023,7 +1023,7 @@ public class DataTest {
   @Test
   public void priorityIsOverwrittenByServerPriority()
       throws DatabaseException, TimeoutException, InterruptedException, TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     final DatabaseReference ref2 = refs.get(1);
 
@@ -1060,7 +1060,7 @@ public class DataTest {
   public void largeNumericPrioritiesWork()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException,
           ExecutionException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
 
@@ -1075,7 +1075,7 @@ public class DataTest {
   public void urlEncodingAndDecodingWorks()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseConfig ctx = TestHelpers.getContext(0);
+    DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
     DatabaseReference ref =
         new DatabaseReference(
@@ -1087,7 +1087,7 @@ public class DataTest {
 
     String child = "" + new Random().nextInt(100000000);
     new WriteFuture(ref.child(child), "testdata").timedGet();
-    DataSnapshot snap = TestHelpers.getSnap(ref.child(child));
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref.child(child));
     assertEquals("testdata", snap.getValue());
   }
 
@@ -1095,7 +1095,7 @@ public class DataTest {
   public void nameWorksForRootAndNonRootLocations()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseConfig ctx = TestHelpers.getContext(0);
+    DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
     DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getNamespace(), ctx);
     assertNull(ref.getKey());
@@ -1107,13 +1107,13 @@ public class DataTest {
   public void nameAndRefWorkForSnapshots()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseConfig ctx = TestHelpers.getContext(0);
+    DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
     DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getNamespace(), ctx);
     // Clear any data there
     new WriteFuture(ref, new MapBuilder().put("foo", 10).build()).timedGet();
 
-    DataSnapshot snap = TestHelpers.getSnap(ref);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref);
     assertNull(snap.getKey());
     assertEquals(ref.toString(), snap.getRef().toString());
     DataSnapshot childSnap = snap.child("a");
@@ -1126,7 +1126,7 @@ public class DataTest {
 
   @Test
   public void parentWorksForRootAndNonRootLocations() throws DatabaseException {
-    DatabaseConfig ctx = TestHelpers.getContext(0);
+    DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
     DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getNamespace(), ctx);
     assertNull(ref.getParent());
@@ -1138,7 +1138,7 @@ public class DataTest {
 
   @Test
   public void rootWorksForRootAndNonRootLocations() throws DatabaseException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref = ref.getRoot();
     assertEquals(IntegrationTestValues.getNamespace(), ref.toString());
@@ -1154,7 +1154,7 @@ public class DataTest {
   public void setAChildAndListenAtTheRoot()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
 
@@ -1166,12 +1166,12 @@ public class DataTest {
 
   @Test
   public void accessingInvalidPathsShouldThrow() throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
-    DatabaseConfig ctx = TestHelpers.getContext(0);
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
     List<String> badPaths = Arrays.asList(".test", "test.", "fo$o", "[what", "ever]", "ha#sh");
 
-    DataSnapshot snap = TestHelpers.getSnap(ref);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref);
 
     for (String path : badPaths) {
       try {
@@ -1213,7 +1213,7 @@ public class DataTest {
 
   @Test
   public void invalidKeysThrowErrors() throws DatabaseException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     List<String> badKeys =
         Arrays.asList(
@@ -1249,7 +1249,7 @@ public class DataTest {
 
   @Test
   public void invalidUpdateThrowErrors() throws DatabaseException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     List<Map<String, Object>> badUpdates =
         Arrays.asList(
@@ -1281,11 +1281,11 @@ public class DataTest {
   @Test
   public void asciiControlCharactersIllegal()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference node = TestHelpers.getRandomNode();
+    DatabaseReference node = IntegrationTestHelpers.getRandomNode();
     // Test all controls characters PLUS 0x7F (127).
     for (int i = 0; i <= 32; i++) {
       String ch = new String(Character.toChars(i < 32 ? i : 127));
-      HashMap obj = TestHelpers.buildObjFromPath(new Path(ch), "test_value");
+      HashMap obj = IntegrationTestHelpers.buildObjFromPath(new Path(ch), "test_value");
       try {
         node.setValue(obj);
         fail("Ascii control character should not be allowed in path.");
@@ -1298,7 +1298,7 @@ public class DataTest {
   @Test
   public void invalidDoubleValues()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference node = TestHelpers.getRandomNode();
+    DatabaseReference node = IntegrationTestHelpers.getRandomNode();
     Object[] invalidValues =
         new Object[] {
           Double.NEGATIVE_INFINITY,
@@ -1328,10 +1328,10 @@ public class DataTest {
 
     List<String> goodKeys =
         Arrays.asList(
-            TestHelpers.repeatedString("k", maxPathLengthBytes - 1),
-            TestHelpers.repeatedString(fire, maxPathLengthBytes / 4 - 1),
-            TestHelpers.repeatedString(base, maxPathLengthBytes / 3 - 1),
-            TestHelpers.repeatedString("key/", maxPathDepth - 1) + "key");
+            IntegrationTestHelpers.repeatedString("k", maxPathLengthBytes - 1),
+            IntegrationTestHelpers.repeatedString(fire, maxPathLengthBytes / 4 - 1),
+            IntegrationTestHelpers.repeatedString(base, maxPathLengthBytes / 3 - 1),
+            IntegrationTestHelpers.repeatedString("key/", maxPathDepth - 1) + "key");
 
     class BadGroup {
       String expectedError;
@@ -1348,25 +1348,26 @@ public class DataTest {
             new BadGroup(
                 "key path longer than 768 bytes",
                 Arrays.asList(
-                    TestHelpers.repeatedString("k", maxPathLengthBytes),
-                    TestHelpers.repeatedString(fire, maxPathLengthBytes / 4),
-                    TestHelpers.repeatedString(base, maxPathLengthBytes / 3),
-                    TestHelpers.repeatedString("j", maxPathLengthBytes / 2)
+                    IntegrationTestHelpers.repeatedString("k", maxPathLengthBytes),
+                    IntegrationTestHelpers.repeatedString(fire, maxPathLengthBytes / 4),
+                    IntegrationTestHelpers.repeatedString(base, maxPathLengthBytes / 3),
+                    IntegrationTestHelpers.repeatedString("j", maxPathLengthBytes / 2)
                         + '/'
-                        + TestHelpers.repeatedString("k", maxPathLengthBytes / 2))),
+                        + IntegrationTestHelpers.repeatedString("k", maxPathLengthBytes / 2))),
             new BadGroup(
                 "Path specified exceeds the maximum depth",
-                Arrays.asList(TestHelpers.repeatedString("key/", maxPathDepth) + "key")));
+                Arrays.asList(
+                    IntegrationTestHelpers.repeatedString("key/", maxPathDepth) + "key")));
 
-    DatabaseReference node = TestHelpers.getRandomNode().getRoot();
+    DatabaseReference node = IntegrationTestHelpers.getRandomNode().getRoot();
 
     // Ensure "good keys" work from the root.
     for (String key : goodKeys) {
       Path path = new Path(key);
-      HashMap obj = TestHelpers.buildObjFromPath(path, "test_value");
+      HashMap obj = IntegrationTestHelpers.buildObjFromPath(path, "test_value");
       node.setValue(obj);
       ReadFuture future = ReadFuture.untilNonNull(node);
-      assertEquals("test_value", TestHelpers.applyPath(future.waitForLastValue(), path));
+      assertEquals("test_value", IntegrationTestHelpers.applyPath(future.waitForLastValue(), path));
 
       node.child(key).setValue("another_value");
       future = ReadFuture.untilNonNull(node.child(key));
@@ -1374,13 +1375,13 @@ public class DataTest {
 
       node.updateChildren(obj);
       future = ReadFuture.untilNonNull(node);
-      assertEquals("test_value", TestHelpers.applyPath(future.waitForLastValue(), path));
+      assertEquals("test_value", IntegrationTestHelpers.applyPath(future.waitForLastValue(), path));
     }
 
     // Ensure "good keys" fail when created from child node (relative paths too long).
-    DatabaseReference nodeChild = TestHelpers.getRandomNode();
+    DatabaseReference nodeChild = IntegrationTestHelpers.getRandomNode();
     for (String key : goodKeys) {
-      HashMap obj = TestHelpers.buildObjFromPath(new Path(key), "test_value");
+      HashMap obj = IntegrationTestHelpers.buildObjFromPath(new Path(key), "test_value");
       try {
         nodeChild.setValue(obj);
         fail("Too-long path for setValue should throw exception.");
@@ -1410,43 +1411,43 @@ public class DataTest {
 
     for (BadGroup badGroup : badGroups) {
       for (String key : badGroup.keys) {
-        HashMap obj = TestHelpers.buildObjFromPath(new Path(key), "test_value");
+        HashMap obj = IntegrationTestHelpers.buildObjFromPath(new Path(key), "test_value");
         try {
           node.setValue(obj);
           fail("Expected setValue(bad key) to throw exception: " + key);
         } catch (DatabaseException e) {
-          TestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
+          IntegrationTestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
         }
         try {
           node.child(key).setValue("another_value");
           fail("Expected child(\"" + key + "\").setValue() to throw exception: " + key);
         } catch (DatabaseException e) {
-          TestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
+          IntegrationTestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
         }
         try {
           node.updateChildren(obj);
           fail("Expected updateChildrean(bad key) to throw exception: " + key);
         } catch (DatabaseException e) {
-          TestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
+          IntegrationTestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
         }
         try {
           Map<String, Object> deepUpdate = new MapBuilder().put(key, "test_value").build();
           node.updateChildren(deepUpdate);
           fail("Expected updateChildrean(bad deep update key) to throw exception: " + key);
         } catch (DatabaseException e) {
-          TestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
+          IntegrationTestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
         }
         try {
           node.onDisconnect().setValue(obj);
           fail("Expected onDisconnect.setValue(bad key) to throw exception: " + key);
         } catch (DatabaseException e) {
-          TestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
+          IntegrationTestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
         }
         try {
           node.onDisconnect().updateChildren(obj);
           fail("Expected onDisconnect.updateChildren(bad key) to throw exception: " + key);
         } catch (DatabaseException e) {
-          TestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
+          IntegrationTestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
         }
         try {
           Map<String, Object> deepUpdate = new MapBuilder().put(key, "test_value").build();
@@ -1455,7 +1456,7 @@ public class DataTest {
               "Expected onDisconnect.updateChildren(bad deep update key) to throw exception: "
                   + key);
         } catch (DatabaseException e) {
-          TestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
+          IntegrationTestHelpers.assertContains(e.getMessage(), badGroup.expectedError);
         }
       }
     }
@@ -1465,8 +1466,8 @@ public class DataTest {
   public void namespaceAreCaseInsensitive()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseConfig ctx1 = TestHelpers.getContext(0);
-    DatabaseConfig ctx2 = TestHelpers.getContext(1);
+    DatabaseConfig ctx1 = IntegrationTestHelpers.getContext(0);
+    DatabaseConfig ctx2 = IntegrationTestHelpers.getContext(1);
 
     String child = "" + new Random().nextInt(100000000);
     DatabaseReference ref1 =
@@ -1482,13 +1483,13 @@ public class DataTest {
             ctx2);
 
     new WriteFuture(ref1, "testdata").timedGet();
-    DataSnapshot snap = TestHelpers.getSnap(ref2);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref2);
     assertEquals("testdata", snap.getValue());
   }
 
   @Test
   public void namespacesAreCaseInsensitiveInToString() throws DatabaseException {
-    DatabaseConfig ctx = TestHelpers.getContext(0);
+    DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     DatabaseReference ref1 = new DatabaseReference(IntegrationTestValues.getNamespace(), ctx);
     DatabaseReference ref2 =
         new DatabaseReference(
@@ -1507,11 +1508,11 @@ public class DataTest {
   public void setANodeWithAQuotedKey()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> expected = new MapBuilder().put("\"herp\"", 1234L).build();
     new WriteFuture(ref, expected).timedGet();
-    DataSnapshot snap = TestHelpers.getSnap(ref);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref);
     DeepEquals.assertEquals(expected, snap.getValue());
   }
 
@@ -1519,7 +1520,7 @@ public class DataTest {
   public void setAChildWithAQuote()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ReadFuture readFuture = new ReadFuture(ref);
     new WriteFuture(ref.child("\""), 1).timedGet();
@@ -1530,7 +1531,7 @@ public class DataTest {
   @Test
   public void emptyChildrenGetValueEventBeforeParent()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     EventHelper helper =
         new EventHelper()
@@ -1550,7 +1551,7 @@ public class DataTest {
   public void onAfterSetWaitsForLatestData()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
 
@@ -1565,7 +1566,7 @@ public class DataTest {
   public void onceWaitsForLatestDataEachTime()
       throws DatabaseException, InterruptedException, TestFailure, ExecutionException,
           TimeoutException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
 
@@ -1584,7 +1585,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     new WriteFuture(ref2, 5).timedGet();
     ref1.addListenerForSingleValueEvent(
@@ -1601,7 +1602,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     new WriteFuture(ref2, 42).timedGet();
 
@@ -1619,17 +1620,17 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void memoryFreeingOnUnlistenDoesNotCorruptData()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException,
           ExecutionException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
-    DatabaseReference other = TestHelpers.getRandomNode();
+    DatabaseReference other = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore semaphore = new Semaphore(0);
     final AtomicBoolean hasRun = new AtomicBoolean(false);
@@ -1650,7 +1651,7 @@ public class DataTest {
               }
             });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     new WriteFuture(ref1, "test").timedGet();
     ref1.removeEventListener(listener);
@@ -1669,7 +1670,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     ref2.addListenerForSingleValueEvent(
         new ValueEventListener() {
@@ -1685,13 +1686,13 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void updateRaisesCorrectLocalEvents()
       throws DatabaseException, InterruptedException, TestFailure, TimeoutException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ReadFuture readFuture = ReadFuture.untilCountAfterNull(ref, 2);
 
@@ -1721,7 +1722,7 @@ public class DataTest {
   public void updateRaisesCorrectRemoteEvents()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -1742,7 +1743,7 @@ public class DataTest {
     helper.waitForEvents();
     helper.cleanup();
 
-    DataSnapshot snap = TestHelpers.getSnap(reader);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(reader);
     Map<String, Object> expected =
         new MapBuilder().put("a", 4L).put("b", 2L).put("c", 3L).put("d", 1L).build();
     Object result = snap.getValue();
@@ -1753,7 +1754,7 @@ public class DataTest {
   public void updateRaisesChildEventsOnNewListener()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     EventHelper helper =
         new EventHelper()
             .addValueExpectation(ref.child("a"))
@@ -1775,7 +1776,7 @@ public class DataTest {
   public void updateAfterSetLeafNodeWorks()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore semaphore = new Semaphore(0);
     final Map<String, Object> expected = new MapBuilder().put("a", 1L).put("b", 2L).build();
 
@@ -1794,14 +1795,14 @@ public class DataTest {
     ref.setValue(42);
     ref.updateChildren(expected);
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void updateChangesAreStoredCorrectlyByTheServer()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -1820,9 +1821,9 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
-    DataSnapshot snap = TestHelpers.getSnap(reader);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(reader);
     Map<String, Object> expected =
         new MapBuilder().put("a", 42L).put("b", 2L).put("c", 3L).put("d", 4L).build();
     Object result = snap.getValue();
@@ -1832,7 +1833,7 @@ public class DataTest {
   @Test
   public void updateDoesntAffectPriorityLocally()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ReadFuture readFuture = ReadFuture.untilCountAfterNull(ref, 2);
 
@@ -1852,14 +1853,14 @@ public class DataTest {
   public void updateDoesntAffectPriorityRemotely()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
     new WriteFuture(writer, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).build(), "testpri")
         .timedGet();
 
-    DataSnapshot snap = TestHelpers.getSnap(reader);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(reader);
     assertEquals("testpri", snap.getPriority());
 
     final Semaphore semaphore = new Semaphore(0);
@@ -1873,15 +1874,15 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
-    snap = TestHelpers.getSnap(reader);
+    IntegrationTestHelpers.waitFor(semaphore);
+    snap = IntegrationTestHelpers.getSnap(reader);
     assertEquals("testpri", snap.getPriority());
   }
 
   @Test
   public void updateReplacesChildren()
       throws DatabaseException, InterruptedException, TestFailure, TimeoutException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -1902,9 +1903,9 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
-    DataSnapshot snap = TestHelpers.getSnap(reader);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(reader);
     DeepEquals.assertEquals(expected, snap.getValue());
 
     snap = readFuture.timedGet().get(1).getSnapshot();
@@ -1914,7 +1915,7 @@ public class DataTest {
   @Test
   public void deepUpdateWorks()
       throws DatabaseException, InterruptedException, TestFailure, TimeoutException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -1942,9 +1943,9 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
-    DataSnapshot snap = TestHelpers.getSnap(reader);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(reader);
     DeepEquals.assertEquals(expected, snap.getValue());
     assertEquals(3.0, snap.getPriority());
 
@@ -1952,7 +1953,7 @@ public class DataTest {
     DeepEquals.assertEquals(expected, snap.getValue());
     assertEquals(3.0, snap.getPriority());
 
-    snap = TestHelpers.getSnap(reader.child("a/ab"));
+    snap = IntegrationTestHelpers.getSnap(reader.child("a/ab"));
     assertEquals(2.0, snap.getPriority());
   }
 
@@ -1960,7 +1961,7 @@ public class DataTest {
 
   @Test
   public void updateWithNoChangesWorks() throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore semaphore = new Semaphore(0);
     ref.updateChildren(
@@ -1973,7 +1974,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   // TODO: consider implementing update stress test
@@ -1983,7 +1984,7 @@ public class DataTest {
   public void updateFiresCorrectEventWhenAChildIsDeleted()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -2003,7 +2004,7 @@ public class DataTest {
               }
             });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     writer.updateChildren(new MapBuilder().put("a", null).build());
     DataSnapshot snap = writerFuture.timedGet().get(1).getSnapshot();
@@ -2020,7 +2021,7 @@ public class DataTest {
   public void updateFiresCorrectEventOnNewChildren()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -2051,8 +2052,8 @@ public class DataTest {
               }
             });
 
-    TestHelpers.waitFor(readerInitializedSemaphore);
-    TestHelpers.waitFor(writerInitializedSemaphore);
+    IntegrationTestHelpers.waitFor(readerInitializedSemaphore);
+    IntegrationTestHelpers.waitFor(writerInitializedSemaphore);
 
     writer.updateChildren(new MapBuilder().put("a", 42).build());
     DataSnapshot snap = writerFuture.timedGet().get(1).getSnapshot();
@@ -2069,7 +2070,7 @@ public class DataTest {
   public void updateFiresCorrectEventWhenAllChildrenAreDeleted()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -2089,7 +2090,7 @@ public class DataTest {
               }
             });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     writer.updateChildren(new MapBuilder().put("a", null).build());
     DataSnapshot snap = writerFuture.timedGet().get(1).getSnapshot();
@@ -2105,7 +2106,7 @@ public class DataTest {
   public void updateFiresCorrectEventOnChangedChildren()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -2125,7 +2126,7 @@ public class DataTest {
               }
             });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     writer.updateChildren(new MapBuilder().put("a", 11).build());
     DataSnapshot snap = writerFuture.timedGet().get(1).getSnapshot();
@@ -2140,7 +2141,7 @@ public class DataTest {
 
   @Test
   public void updateOfPriorityWorks() throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -2164,9 +2165,9 @@ public class DataTest {
             semaphore.release(1);
           }
         });
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
-    DataSnapshot snap = TestHelpers.getSnap(reader);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(reader);
     assertEquals(6L, snap.child("a").getValue());
     assertEquals("pri2", snap.getPriority());
     assertEquals("pri3", snap.child("b").getPriority());
@@ -2182,7 +2183,7 @@ public class DataTest {
   @Test
   public void parentDeleteShadowsChildListeners()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference deleter = refs.get(1);
 
@@ -2213,7 +2214,7 @@ public class DataTest {
                 });
     writer.child(childName).setValue("foo");
     // Make sure we get the data in the listener before we delete it
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     deleter.removeValue(
         new DatabaseReference.CompletionListener() {
@@ -2223,7 +2224,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
     assertTrue(called.get());
     deleter.child(childName).removeEventListener(listener);
   }
@@ -2231,7 +2232,7 @@ public class DataTest {
   @Test
   public void parentDeleteShadowsNonDefaultChildListeners()
       throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference deleter = refs.get(1);
 
@@ -2286,7 +2287,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
     assertTrue(queryCalled.get());
     assertTrue(deepChildCalled.get());
     deleter.child(childName).startAt(null, "b").removeEventListener(queryListener);
@@ -2296,7 +2297,7 @@ public class DataTest {
   @Test
   public void testServerValuesSetWithPriorityRemoteEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -2315,7 +2316,7 @@ public class DataTest {
             });
 
     // Wait for initial (null) value.
-    TestHelpers.waitFor(valSemaphore, 1);
+    IntegrationTestHelpers.waitFor(valSemaphore, 1);
 
     Map<String, Object> initialValues =
         new MapBuilder()
@@ -2337,7 +2338,7 @@ public class DataTest {
             opSemaphore.release();
           }
         });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     EventRecord readerEventRecord = readerFuture.timedGet().get(1);
     DataSnapshot snap = readerEventRecord.getSnapshot();
@@ -2353,7 +2354,7 @@ public class DataTest {
   @Test
   public void testServerValuesSetPriorityRemoteEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -2395,7 +2396,7 @@ public class DataTest {
             opSemaphore.release();
           }
         });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("a")
@@ -2407,9 +2408,9 @@ public class DataTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
 
     assert (Math.abs(System.currentTimeMillis() - priority.get()) < 2000);
   }
@@ -2417,7 +2418,7 @@ public class DataTest {
   @Test
   public void testServerValuesUpdateRemoteEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -2435,7 +2436,7 @@ public class DataTest {
             });
 
     // Wait for initial (null) value.
-    TestHelpers.waitFor(valSemaphore, 1);
+    IntegrationTestHelpers.waitFor(valSemaphore, 1);
 
     writer
         .child("a/b/d")
@@ -2448,7 +2449,7 @@ public class DataTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     Map<String, Object> updatedValue =
         new MapBuilder()
@@ -2471,7 +2472,7 @@ public class DataTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     EventRecord readerEventRecord = readerFuture.timedGet().get(2);
     DataSnapshot snap = readerEventRecord.getSnapshot();
@@ -2485,7 +2486,7 @@ public class DataTest {
   @Test
   public void testServerValuesSetWithPriorityLocalEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
 
     final Semaphore opSemaphore = new Semaphore(0);
@@ -2503,7 +2504,7 @@ public class DataTest {
             });
 
     // Wait for initial (null) value.
-    TestHelpers.waitFor(valSemaphore, 1);
+    IntegrationTestHelpers.waitFor(valSemaphore, 1);
 
     Map<String, Object> initialValues =
         new MapBuilder()
@@ -2525,7 +2526,7 @@ public class DataTest {
             opSemaphore.release();
           }
         });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     EventRecord readerEventRecord = writerFuture.timedGet().get(1);
     DataSnapshot snap = readerEventRecord.getSnapshot();
@@ -2541,7 +2542,7 @@ public class DataTest {
   @Test
   public void testServerValuesSetPriorityLocalEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
 
     final Semaphore opSemaphore = new Semaphore(0);
@@ -2582,7 +2583,7 @@ public class DataTest {
             opSemaphore.release();
           }
         });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("a")
@@ -2594,9 +2595,9 @@ public class DataTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
 
     assert (Math.abs(System.currentTimeMillis() - priority.get()) < 2000);
   }
@@ -2604,7 +2605,7 @@ public class DataTest {
   @Test
   public void testServerValuesUpdateLocalEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
 
     final Semaphore opSemaphore = new Semaphore(0);
@@ -2621,7 +2622,7 @@ public class DataTest {
             });
 
     // Wait for initial (null) value.
-    TestHelpers.waitFor(valSemaphore, 1);
+    IntegrationTestHelpers.waitFor(valSemaphore, 1);
 
     writer
         .child("a/b/d")
@@ -2634,7 +2635,7 @@ public class DataTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     Map<String, Object> updatedValue =
         new MapBuilder()
@@ -2656,7 +2657,7 @@ public class DataTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     EventRecord readerEventRecord = writerFuture.timedGet().get(3);
     DataSnapshot snap = readerEventRecord.getSnapshot();
@@ -2670,7 +2671,7 @@ public class DataTest {
   @Test
   public void testServerValuesTransactionLocalEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(0);
 
@@ -2699,8 +2700,8 @@ public class DataTest {
             });
 
     // Wait for local (null) events.
-    TestHelpers.waitFor(valSemaphore1);
-    TestHelpers.waitFor(valSemaphore2);
+    IntegrationTestHelpers.waitFor(valSemaphore1);
+    IntegrationTestHelpers.waitFor(valSemaphore2);
 
     writer.runTransaction(
         new Transaction.Handler() {
@@ -2723,8 +2724,8 @@ public class DataTest {
         });
 
     // Wait for local events.
-    TestHelpers.waitFor(valSemaphore1);
-    TestHelpers.waitFor(valSemaphore2);
+    IntegrationTestHelpers.waitFor(valSemaphore1);
+    IntegrationTestHelpers.waitFor(valSemaphore2);
 
     EventRecord writerEventRecord = writerFuture.timedGet().get(1);
     DataSnapshot snap1 = writerEventRecord.getSnapshot();
@@ -2741,7 +2742,7 @@ public class DataTest {
 
   @Test
   public void testUpdateAfterChildSet() throws DatabaseException, InterruptedException {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore doneSemaphore = new Semaphore(0);
 
     Map<String, Object> initial = new MapBuilder().put("a", "a").build();
@@ -2774,7 +2775,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(doneSemaphore);
+    IntegrationTestHelpers.waitFor(doneSemaphore);
   }
 
   @Test
@@ -2786,20 +2787,20 @@ public class DataTest {
       msg += i;
     }
 
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     new WriteFuture(ref, msg).timedGet();
 
-    DataSnapshot snap = TestHelpers.getSnap(ref);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref);
     assertEquals(msg, snap.getValue());
   }
 
   @Test
   public void testDeltaSyncNoDataUpdatesAfterReconnect() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     // Create a fresh connection so we can be sure we won't get any other data updates for stuff.
-    DatabaseConfig ctx = TestHelpers.newTestConfig();
+    DatabaseConfig ctx = IntegrationTestHelpers.newTestConfig();
     final DatabaseReference ref2 = new DatabaseReference(ref.toString(), ctx);
 
     final Map data =
@@ -2833,7 +2834,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(gotData);
+    IntegrationTestHelpers.waitFor(gotData);
 
     final Semaphore done = new Semaphore(0);
     assertEquals(1, ref2.repo.dataUpdateCount);
@@ -2869,15 +2870,15 @@ public class DataTest {
               public void onCancelled(DatabaseError error) {}
             });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 
   @Test
   public void testDeltaSyncWithQueryNoDataUpdatesAfterReconnect() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     // Create a fresh connection so we can be sure we won't get any other data updates for stuff.
-    DatabaseConfig ctx = TestHelpers.newTestConfig();
+    DatabaseConfig ctx = IntegrationTestHelpers.newTestConfig();
     final DatabaseReference ref2 = new DatabaseReference(ref.toString(), ctx);
 
     final Map data =
@@ -2918,7 +2919,7 @@ public class DataTest {
           }
         });
 
-    TestHelpers.waitFor(gotData);
+    IntegrationTestHelpers.waitFor(gotData);
 
     final Semaphore done = new Semaphore(0);
     assertEquals(1, ref2.repo.dataUpdateCount);
@@ -2954,13 +2955,13 @@ public class DataTest {
               public void onCancelled(DatabaseError error) {}
             });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 
   @Test
   public void testDeltaSyncWithUnfilteredQuery()
       throws InterruptedException, ExecutionException, TestFailure, TimeoutException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writeRef = refs.get(0), readRef = refs.get(1);
 
     // List must be large enough to trigger delta sync.
@@ -2990,7 +2991,7 @@ public class DataTest {
               public void onCancelled(DatabaseError error) {}
             });
 
-    TestHelpers.waitFor(readSemaphore);
+    IntegrationTestHelpers.waitFor(readSemaphore);
     DeepEquals.assertEquals(longList, readSnapshots.get(0).getValue());
 
     // Add a new child while readRef is offline.
@@ -3004,7 +3005,7 @@ public class DataTest {
 
     // Go back online and make sure we get the new item.
     readRef.getDatabase().goOnline();
-    TestHelpers.waitFor(readSemaphore);
+    IntegrationTestHelpers.waitFor(readSemaphore);
     DeepEquals.assertEquals(longList, readSnapshots.get(1).getValue());
   }
 
@@ -3012,13 +3013,13 @@ public class DataTest {
   public void negativeIntegersDontCreateArrayValue()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     new WriteFuture(
             ref, new MapBuilder().put("-1", "minus-one").put("0", "zero").put("1", "one").build())
         .timedGet();
 
-    DataSnapshot snap = TestHelpers.getSnap(ref);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref);
     Map<String, Object> expected =
         new MapBuilder().put("-1", "minus-one").put("0", "zero").put("1", "one").build();
     Object result = snap.getValue();
@@ -3028,7 +3029,7 @@ public class DataTest {
   @Test
   public void testLocalServerValuesEventuallyButNotImmediatelyMatchServer()
       throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -3068,7 +3069,7 @@ public class DataTest {
 
     writer.setValue(ServerValue.TIMESTAMP, ServerValue.TIMESTAMP);
 
-    TestHelpers.waitFor(completionSemaphore, 3);
+    IntegrationTestHelpers.waitFor(completionSemaphore, 3);
 
     assertEquals(readSnaps.size(), 1);
     assertEquals(writeSnaps.size(), 2);
@@ -3100,7 +3101,7 @@ public class DataTest {
     nestedBean.name = "nested-bean";
     bean.nestedBean = nestedBean;
 
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     new WriteFuture(ref, bean).timedGet();
 
     final Semaphore done = new Semaphore(0);
@@ -3119,7 +3120,7 @@ public class DataTest {
           public void onCancelled(DatabaseError error) {}
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 
   @Test
@@ -3132,7 +3133,7 @@ public class DataTest {
     DumbBean bean2 = new DumbBean();
     bean2.name = "bean2";
 
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore writeComplete = new Semaphore(0);
     ref.updateChildren(
@@ -3143,7 +3144,7 @@ public class DataTest {
             writeComplete.release();
           }
         });
-    TestHelpers.waitFor(writeComplete);
+    IntegrationTestHelpers.waitFor(writeComplete);
 
     final Semaphore done = new Semaphore(0);
     ref.addListenerForSingleValueEvent(
@@ -3161,7 +3162,7 @@ public class DataTest {
           public void onCancelled(DatabaseError error) {}
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 
   @Test
@@ -3174,7 +3175,7 @@ public class DataTest {
     DumbBean bean2 = new DumbBean();
     bean2.name = "bean2";
 
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore writeComplete = new Semaphore(0);
     ref.updateChildren(
@@ -3185,7 +3186,7 @@ public class DataTest {
             writeComplete.release();
           }
         });
-    TestHelpers.waitFor(writeComplete);
+    IntegrationTestHelpers.waitFor(writeComplete);
 
     final Semaphore done = new Semaphore(0);
     ref.addListenerForSingleValueEvent(
@@ -3201,6 +3202,6 @@ public class DataTest {
           public void onCancelled(DatabaseError error) {}
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 }

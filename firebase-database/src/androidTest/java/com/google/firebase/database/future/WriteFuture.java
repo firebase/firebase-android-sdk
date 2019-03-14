@@ -17,8 +17,8 @@ package com.google.firebase.database.future;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.IntegrationTestHelpers;
 import com.google.firebase.database.TestFailure;
-import com.google.firebase.database.TestHelpers;
 import com.google.firebase.database.TestValues;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -106,7 +106,7 @@ public class WriteFuture implements Future<DatabaseError> {
       throws InterruptedException, ExecutionException, TimeoutException {
     boolean success = semaphore.tryAcquire(1, timeout, unit);
     if (!success) {
-      TestHelpers.failOnFirstUncaughtException();
+      IntegrationTestHelpers.failOnFirstUncaughtException();
       throw new TimeoutException();
     }
     return error;

@@ -14,10 +14,10 @@
 
 package com.google.firebase.database.core.persistence;
 
-import static com.google.firebase.database.TestHelpers.asSet;
-import static com.google.firebase.database.TestHelpers.leafNodeOfSize;
-import static com.google.firebase.database.TestHelpers.node;
-import static com.google.firebase.database.TestHelpers.path;
+import static com.google.firebase.database.IntegrationTestHelpers.asSet;
+import static com.google.firebase.database.IntegrationTestHelpers.leafNodeOfSize;
+import static com.google.firebase.database.IntegrationTestHelpers.node;
+import static com.google.firebase.database.IntegrationTestHelpers.path;
 import static org.junit.Assert.assertEquals;
 
 import android.support.test.InstrumentationRegistry;

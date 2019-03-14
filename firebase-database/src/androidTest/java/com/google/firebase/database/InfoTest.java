@@ -35,11 +35,11 @@ public class InfoTest {
 
   @After
   public void tearDown() {
-    TestHelpers.failOnFirstUncaughtException();
+    IntegrationTestHelpers.failOnFirstUncaughtException();
   }
 
   private DatabaseReference getRootNode() throws DatabaseException {
-    return TestHelpers.getRandomNode().getRoot();
+    return IntegrationTestHelpers.getRandomNode().getRoot();
   }
 
   @Test
@@ -50,7 +50,7 @@ public class InfoTest {
     assertEquals(
         IntegrationTestValues.getNamespace() + "/.info/foo", root.child(".info/foo").toString());
 
-    DatabaseConfig ctx = TestHelpers.getContext(0);
+    DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     DatabaseReference ref =
         new DatabaseReference(IntegrationTestValues.getNamespace() + "/.info", ctx);
     assertEquals(IntegrationTestValues.getNamespace() + "/.info", ref.toString());
@@ -132,7 +132,7 @@ public class InfoTest {
   @Test
   public void testManualConnectionManagementWorks()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     // Wait until we're connected to the database
     ReadFuture.untilEquals(ref.getRoot().child(".info/connected"), true).timedGet();
@@ -167,7 +167,7 @@ public class InfoTest {
     // Wait until we're connected
     ReadFuture.untilEquals(ref.child(".info/connected"), true).timedGet();
 
-    DatabaseConfig ctx = TestHelpers.getContext(0);
+    DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.interrupt(ctx);
 
     DataSnapshot snap =
