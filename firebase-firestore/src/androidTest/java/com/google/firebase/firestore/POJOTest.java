@@ -301,19 +301,19 @@ public class POJOTest {
     pojo.bigIntegerValue = new BigInteger("0");
     expectedErrorMessages.put(
         pojo,
-        "Could not serialize object. BigInteger is not supported, please use an int, long, float or double (found in field 'bigIntegerValue')");
+        "Could not serialize object. Numbers of type BigInteger are not supported, please use an int, long, float or double (found in field 'bigIntegerValue')");
 
     pojo = new InvalidPOJO();
     pojo.byteValue = 0;
     expectedErrorMessages.put(
         pojo,
-        "Could not serialize object. Byte is not supported, please use an int, long, float or double (found in field 'byteValue')");
+        "Could not serialize object. Numbers of type Byte are not supported, please use an int, long, float or double (found in field 'byteValue')");
 
     pojo = new InvalidPOJO();
     pojo.shortValue = 0;
     expectedErrorMessages.put(
         pojo,
-        "Could not serialize object. Short is not supported, please use an int, long, float or double (found in field 'shortValue')");
+        "Could not serialize object. Numbers of type Short are not supported, please use an int, long, float or double (found in field 'shortValue')");
 
     for (Map.Entry<InvalidPOJO, String> testCase : expectedErrorMessages.entrySet()) {
       expectError(() -> ref.set(testCase.getKey()), testCase.getValue());
@@ -337,14 +337,14 @@ public class POJOTest {
 
     expectError(
         () -> snap.get("bigIntegerValue", InvalidPOJO.class),
-        "Could not deserialize object. Deserializing to BigInteger is not supported (found in field 'bigIntegerValue')");
+        "Could not deserialize object. Deserializing values to BigInteger is not supported (found in field 'bigIntegerValue')");
 
     expectError(
         () -> snap.get("byteValue", InvalidPOJO.class),
-        "Could not deserialize object. Deserializing to Byte is not supported (found in field 'byteValue')");
+        "Could not deserialize object. Deserializing values to Byte is not supported (found in field 'byteValue')");
 
     expectError(
         () -> snap.get("shortValue", InvalidPOJO.class),
-        "Could not deserialize object. Deserializing to Short is not supported (found in field 'shortValue')");
+        "Could not deserialize object. Deserializing values to Short is not supported (found in field 'shortValue')");
   }
 }
