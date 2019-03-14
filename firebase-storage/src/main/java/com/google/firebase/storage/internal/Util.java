@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.GetTokenResult;
+import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.network.NetworkRequest;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
@@ -144,12 +145,17 @@ public class Util {
   }
 
   @Nullable
-  public static String getCurrentAuthToken(FirebaseApp app) {
-    Task<GetTokenResult> pendingResult = app.getToken(false);
-    GetTokenResult result;
+  public static String getCurrentAuthToken(@Nullable InternalAuthProvider authProvider) {
     try {
-      result = Tasks.await(pendingResult, MAXIMUM_TOKEN_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
-      String token = result.getToken();
+      String token = null;
+
+      if (authProvider != null) {
+        Task<GetTokenResult> pendingResult = authProvider.getAccessToken(false);
+        GetTokenResult result =
+            Tasks.await(pendingResult, MAXIMUM_TOKEN_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
+        token = result.getToken();
+      }
+
       if (!TextUtils.isEmpty(token)) {
         return token;
       } else {

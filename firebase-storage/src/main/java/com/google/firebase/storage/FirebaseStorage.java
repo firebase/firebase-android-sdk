@@ -26,6 +26,7 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.annotations.PublicApi;
+import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.internal.Util;
 import java.io.UnsupportedEncodingException;
 
@@ -47,19 +48,19 @@ public class FirebaseStorage {
   private static final String STORAGE_BUCKET_WITH_PATH_EXCEPTION =
       "The storage Uri cannot contain a path element.";
   @NonNull private final FirebaseApp mApp;
+  @Nullable private final InternalAuthProvider mAuthProvider;
   @Nullable private final String mBucketName;
   private long sMaxUploadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxDownloadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxQueryRetry = 2 * DateUtils.MINUTE_IN_MILLIS; //  2 * 60 * 1000
 
-  private FirebaseStorage(@Nullable String bucketName, @NonNull FirebaseApp app) {
+  FirebaseStorage(
+      @Nullable String bucketName,
+      @NonNull FirebaseApp app,
+      @Nullable InternalAuthProvider authProvider) {
     mBucketName = bucketName;
     mApp = app;
-  }
-
-  @NonNull
-  static FirebaseStorage newInstance(@Nullable String bucketName, @NonNull FirebaseApp app) {
-    return new FirebaseStorage(bucketName, app);
+    mAuthProvider = authProvider;
   }
 
   private static FirebaseStorage getInstanceImpl(@NonNull FirebaseApp app, @Nullable Uri url) {
@@ -71,7 +72,7 @@ public class FirebaseStorage {
 
     checkNotNull(app, "Provided FirebaseApp must not be null.");
     FirebaseStorageComponent component = app.get(FirebaseStorageComponent.class);
-    checkNotNull(component, "Firestore component is not present.");
+    checkNotNull(component, "Firebase Storage component is not present.");
     return component.get(bucketName);
   }
 
@@ -317,5 +318,10 @@ public class FirebaseStorage {
   @PublicApi
   public FirebaseApp getApp() {
     return mApp;
+  }
+
+  @Nullable
+  InternalAuthProvider getAuthProvider() {
+    return mAuthProvider;
   }
 }

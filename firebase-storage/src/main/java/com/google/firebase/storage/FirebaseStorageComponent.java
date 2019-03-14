@@ -18,31 +18,33 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.internal.InternalAuthProvider;
 import java.util.HashMap;
 import java.util.Map;
 
 class FirebaseStorageComponent {
-  /** A static map from storage buckets to FirebaseStorage instances. */
-  private static final Map<String, FirebaseStorage> instances = new HashMap<>();
+  /** A map from storage buckets to Firebase Storage instances. */
+  private final Map<String, FirebaseStorage> instances = new HashMap<>();
 
   private final FirebaseApp app;
+  @Nullable private final InternalAuthProvider authProvider;
 
-  FirebaseStorageComponent(@NonNull FirebaseApp app) {
+  FirebaseStorageComponent(@NonNull FirebaseApp app, @Nullable InternalAuthProvider authProvider) {
     this.app = app;
+    this.authProvider = authProvider;
   }
 
-  /** Provides instances of Firestore for given database names. */
+  /** Provides instances of Firebase Storage for given database names. */
   @NonNull
   synchronized FirebaseStorage get(@Nullable String bucketName) {
     FirebaseStorage storage = instances.get(bucketName);
     if (storage == null) {
-      storage = FirebaseStorage.newInstance(bucketName, app);
+      storage = new FirebaseStorage(bucketName, app, authProvider);
       instances.put(bucketName, storage);
     }
     return storage;
   }
 
-  /** @hide */
   @VisibleForTesting
   synchronized void clearInstancesForTesting() {
     instances.clear();
