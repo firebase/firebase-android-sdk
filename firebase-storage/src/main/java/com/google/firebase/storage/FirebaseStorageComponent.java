@@ -34,7 +34,7 @@ class FirebaseStorageComponent {
     this.authProvider = authProvider;
   }
 
-  /** Provides instances of Firebase Storage for given database names. */
+  /** Provides instances of Firebase Storage for given bucket names. */
   @NonNull
   synchronized FirebaseStorage get(@Nullable String bucketName) {
     FirebaseStorage storage = instances.get(bucketName);
