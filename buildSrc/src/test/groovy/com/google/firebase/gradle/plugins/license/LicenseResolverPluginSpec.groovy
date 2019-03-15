@@ -57,7 +57,7 @@ class LicenseResolverPluginSpec extends Specification {
         thirdPartyDir.mkdirs()
 
         copy {
-           from "src/test/fixtures/"
+           from "src/test/fixtures/copyrights.json"
            into thirdPartyDir
         }
 
