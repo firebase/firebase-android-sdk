@@ -14,7 +14,7 @@
 
 package com.google.firebase.database.connection;
 
-import com.google.firebase.database.TestHelpers;
+import com.google.firebase.database.IntegrationTestHelpers;
 import com.google.firebase.database.core.CoreTestHelpers;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
@@ -40,7 +40,7 @@ public class ListenAggregator {
             semaphore.release(1);
           }
         });
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
     conns.get(0);
     List<List<String>> pathList = new ArrayList<>();
     List<Map<String, Object>> queryParamList = new ArrayList<>();

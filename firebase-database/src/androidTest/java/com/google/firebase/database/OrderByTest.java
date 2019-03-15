@@ -38,10 +38,10 @@ public class OrderByTest {
   @Test
   public void snapshotsAreIteratedInOrder()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> initial =
-        TestHelpers.fromJsonString(
+        IntegrationTestHelpers.fromJsonString(
             "{"
                 + "\"alex\": {\"nuggets\": 60},"
                 + "\"greg\": {\"nuggets\": 52},"
@@ -90,7 +90,7 @@ public class OrderByTest {
     Assert.assertEquals(expectedPrevNames, childPrevNames);
 
     // cleanup
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
     ref.removeEventListener(testListener);
     ref.removeEventListener(valueListener);
   }
@@ -98,10 +98,10 @@ public class OrderByTest {
   @Test
   public void canUseDeepPathsForIndex()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> initial =
-        TestHelpers.fromJsonString(
+        IntegrationTestHelpers.fromJsonString(
             "{"
                 + "\"alex\": {\"deep\": {\"nuggets\": 60}},"
                 + "\"greg\": {\"deep\": {\"nuggets\": 52}},"
@@ -145,7 +145,7 @@ public class OrderByTest {
               }
             });
 
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
 
     Assert.assertEquals(expectedOrder, valueOrder);
     Assert.assertEquals(expectedOrder, childOrder);
@@ -159,10 +159,10 @@ public class OrderByTest {
   @Test
   public void snapshotsAreIteratedInOrderForValueIndex()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> initial =
-        TestHelpers.fromJsonString(
+        IntegrationTestHelpers.fromJsonString(
             "{"
                 + "\"alex\": 60,"
                 + "\"greg\": 52,"
@@ -211,16 +211,16 @@ public class OrderByTest {
     Assert.assertEquals(expectedPrevNames, childPrevNames);
 
     // cleanup
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
     ref.removeEventListener(testListener);
     ref.removeEventListener(valueListener);
   }
 
   @Test
   public void childMovedEventsAreFired() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     Map<String, Object> initial =
-        TestHelpers.fromJsonString(
+        IntegrationTestHelpers.fromJsonString(
             "{"
                 + "\"alex\": {\"nuggets\": 60},"
                 + "\"greg\": {\"nuggets\": 52},"
@@ -254,7 +254,7 @@ public class OrderByTest {
     ref.setValue(initial);
     ref.child("greg/nuggets").setValue(57);
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     Assert.assertEquals("greg", snapshot[0].getKey());
     Assert.assertEquals("rob", prevName[0]);
@@ -262,13 +262,13 @@ public class OrderByTest {
     expectedValue.put("nuggets", 57L);
     Assert.assertEquals(expectedValue, snapshot[0].getValue());
 
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
     ref.removeEventListener(testListener);
   }
 
   @Test
   public void callbackRemovalWorks() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final int[] reads = new int[1];
     final Semaphore semaphore = new Semaphore(0);
@@ -333,30 +333,30 @@ public class OrderByTest {
             });
 
     // wait for initial null events.
-    TestHelpers.waitFor(semaphore, 4);
+    IntegrationTestHelpers.waitFor(semaphore, 4);
     Assert.assertEquals(4, reads[0]);
 
     ref.setValue(1);
 
-    TestHelpers.waitFor(semaphore, 4);
+    IntegrationTestHelpers.waitFor(semaphore, 4);
     Assert.assertEquals(8, reads[0]);
 
     ref.removeEventListener(fooListener);
     ref.setValue(2);
 
-    TestHelpers.waitFor(semaphore, 3);
+    IntegrationTestHelpers.waitFor(semaphore, 3);
     Assert.assertEquals(11, reads[0]);
 
     // Should be a no-op resulting in 3 more reads
     ref.orderByChild("foo").removeEventListener(bazListener);
     ref.setValue(3);
 
-    TestHelpers.waitFor(semaphore, 3);
+    IntegrationTestHelpers.waitFor(semaphore, 3);
     Assert.assertEquals(14, reads[0]);
 
     ref.orderByChild("bar").removeEventListener(barListener);
     ref.setValue(4);
-    TestHelpers.waitFor(semaphore, 2);
+    IntegrationTestHelpers.waitFor(semaphore, 2);
     Assert.assertEquals(16, reads[0]);
 
     // Now, remove everything
@@ -365,13 +365,13 @@ public class OrderByTest {
     ref.setValue(5);
 
     // No more reads
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
     Assert.assertEquals(16, reads[0]);
   }
 
   @Test
   public void childAddedEventsAreInCorrectOrder() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> initial =
         new MapBuilder()
@@ -395,7 +395,7 @@ public class OrderByTest {
                 });
 
     ref.setValue(initial);
-    TestHelpers.waitFor(semaphore, 2);
+    IntegrationTestHelpers.waitFor(semaphore, 2);
     Assert.assertEquals(Arrays.asList("c", "a"), snapshotNames);
     Assert.assertEquals(Arrays.asList(null, "c"), prevNames);
 
@@ -404,7 +404,7 @@ public class OrderByTest {
     updates.put("d", new MapBuilder().put("value", 2).build());
     ref.updateChildren(updates);
 
-    TestHelpers.waitFor(semaphore, 2);
+    IntegrationTestHelpers.waitFor(semaphore, 2);
     Assert.assertEquals(Arrays.asList("c", "a", "d", "b"), snapshotNames);
     Assert.assertEquals(Arrays.asList(null, "c", null, "c"), prevNames);
     ref.removeEventListener(testListener);
@@ -413,7 +413,7 @@ public class OrderByTest {
   @Test
   public void updatesForUnindexedQuery()
       throws InterruptedException, ExecutionException, TestFailure, TimeoutException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -444,7 +444,7 @@ public class OrderByTest {
               }
             });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     Assert.assertEquals(1, snapshots.size());
 
@@ -455,7 +455,7 @@ public class OrderByTest {
 
     // update child which should trigger value event
     writer.child("one/index").setValue(4);
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     Assert.assertEquals(2, snapshots.size());
     Map<String, Object> expected2 = new HashMap<String, Object>();
@@ -464,7 +464,7 @@ public class OrderByTest {
     Assert.assertEquals(expected2, snapshots.get(1).getValue());
 
     // cleanup
-    TestHelpers.waitForRoundtrip(reader);
+    IntegrationTestHelpers.waitForRoundtrip(reader);
     reader.removeEventListener(listener);
   }
 
@@ -472,7 +472,7 @@ public class OrderByTest {
   public void queriesWorkOnLeafNodes()
       throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
           TimeoutException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore semaphore = new Semaphore(0);
     new WriteFuture(ref, "leaf-node").timedGet();
 
@@ -493,20 +493,20 @@ public class OrderByTest {
               }
             });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     Assert.assertEquals(1, snapshots.size());
     Assert.assertNull(snapshots.get(0).getValue());
 
     // cleanup
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
     ref.removeEventListener(listener);
   }
 
   @Test
   public void serverRespectsKeyIndex()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -539,7 +539,7 @@ public class OrderByTest {
               }
             });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     Assert.assertEquals(expectedChildren, actualChildren);
 
@@ -549,10 +549,10 @@ public class OrderByTest {
 
   @Test
   public void startAtAndEndAtWorkOnValueIndex() throws Throwable {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> initial =
-        TestHelpers.fromJsonString(
+        IntegrationTestHelpers.fromJsonString(
             "{"
                 + "\"alex\": 60,"
                 + "\"greg\": 52,"
@@ -601,14 +601,14 @@ public class OrderByTest {
     Assert.assertEquals(expectedPrevNames, childPrevNames);
 
     // cleanup
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
     ref.removeEventListener(testListener);
     ref.removeEventListener(valueListener);
   }
 
   @Test
   public void removingDefaultListenerRemovesNonDefaultListenWithLoadsAllData() throws Throwable {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Object initialData = new MapBuilder().put("key", "value").build();
     new WriteFuture(ref, initialData).timedGet();

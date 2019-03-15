@@ -187,23 +187,23 @@ public class MutableDataTest {
 
     List<String> goodKeys =
         Arrays.asList(
-            TestHelpers.repeatedString("k", maxPathLengthBytes - 1),
-            TestHelpers.repeatedString(fire, maxPathLengthBytes / 4 - 1),
-            TestHelpers.repeatedString(base, maxPathLengthBytes / 3 - 1),
-            TestHelpers.repeatedString("key/", maxPathDepth - 1) + "key");
+            UnitTestHelpers.repeatedString("k", maxPathLengthBytes - 1),
+            UnitTestHelpers.repeatedString(fire, maxPathLengthBytes / 4 - 1),
+            UnitTestHelpers.repeatedString(base, maxPathLengthBytes / 3 - 1),
+            UnitTestHelpers.repeatedString("key/", maxPathDepth - 1) + "key");
 
     List<String> badKeys =
         Arrays.asList(
-            TestHelpers.repeatedString("k", maxPathLengthBytes),
-            TestHelpers.repeatedString(fire, maxPathLengthBytes / 4),
-            TestHelpers.repeatedString(base, maxPathLengthBytes / 3),
-            TestHelpers.repeatedString("key/", maxPathDepth) + "key");
+            UnitTestHelpers.repeatedString("k", maxPathLengthBytes),
+            UnitTestHelpers.repeatedString(fire, maxPathLengthBytes / 4),
+            UnitTestHelpers.repeatedString(base, maxPathLengthBytes / 3),
+            UnitTestHelpers.repeatedString("key/", maxPathDepth) + "key");
 
     // Large but legal paths should all work for manipulating MutableData.
     for (String key : goodKeys) {
       Path path = new Path(key);
-      MutableData data = dataFor(TestHelpers.buildObjFromPath(path, "test_value"));
-      assertEquals("test_value", TestHelpers.applyPath(data.getValue(), path));
+      MutableData data = dataFor(UnitTestHelpers.buildObjFromPath(path, "test_value"));
+      assertEquals("test_value", UnitTestHelpers.applyPath(data.getValue(), path));
 
       data = dataForPath("scalar_value", key);
       assertEquals("scalar_value", data.getValue());
@@ -212,7 +212,7 @@ public class MutableDataTest {
     for (String key : badKeys) {
       Path path = new Path(key);
       try {
-        dataFor(TestHelpers.buildObjFromPath(path, "test_value"));
+        dataFor(UnitTestHelpers.buildObjFromPath(path, "test_value"));
         fail("Invalid path did not throw exception.");
       } catch (DatabaseException e) {
         // expected

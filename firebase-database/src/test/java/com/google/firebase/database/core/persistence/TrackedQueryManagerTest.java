@@ -14,10 +14,10 @@
 
 package com.google.firebase.database.core.persistence;
 
-import static com.google.firebase.database.TestHelpers.asSet;
-import static com.google.firebase.database.TestHelpers.ck;
-import static com.google.firebase.database.TestHelpers.defaultQueryAt;
-import static com.google.firebase.database.TestHelpers.path;
+import static com.google.firebase.database.UnitTestHelpers.asSet;
+import static com.google.firebase.database.UnitTestHelpers.ck;
+import static com.google.firebase.database.UnitTestHelpers.defaultQueryAt;
+import static com.google.firebase.database.UnitTestHelpers.path;
 import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
