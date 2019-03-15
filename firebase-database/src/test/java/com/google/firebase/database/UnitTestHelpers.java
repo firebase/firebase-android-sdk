@@ -14,32 +14,22 @@
 
 package com.google.firebase.database;
 
-import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.support.test.InstrumentationRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.database.core.CompoundWrite;
 import com.google.firebase.database.core.Context;
 import com.google.firebase.database.core.CoreTestHelpers;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.EventTarget;
 import com.google.firebase.database.core.Path;
-import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.core.utilities.DefaultRunLoop;
 import com.google.firebase.database.core.view.QuerySpec;
-import com.google.firebase.database.future.WriteFuture;
 import com.google.firebase.database.snapshot.ChildKey;
-import com.google.firebase.database.snapshot.Node;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -48,7 +38,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -58,87 +47,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.robolectric.RuntimeEnvironment;
 
-public class TestHelpers {
+public class UnitTestHelpers {
 
   private static List<DatabaseConfig> contexts = new ArrayList<DatabaseConfig>();
-  private static String testSecret = null;
   private static boolean appInitialized = false;
-
-  public static Path path(String path) {
-    return new Path(path);
-  }
-
-  public static ChildKey childKey(String key) {
-    return ChildKey.fromString(key);
-  }
-
-  public static Map<String, Object> mapFromJsonString(String json) {
-    try {
-      ObjectMapper mapper = new ObjectMapper();
-      return mapper.readValue(json, new TypeReference<Map<String, Object>>() {});
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static Object objectFromJsonString(String json) {
-    try {
-      ObjectMapper mapper = new ObjectMapper();
-      return mapper.readValue(json, new TypeReference<Object>() {});
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static Map<String, Object> mapFromSingleQuotedString(String json) {
-    return mapFromJsonString(json.replace("'", "\""));
-  }
-
-  public static Object objectFromSingleQuotedString(String json) {
-    return objectFromJsonString(json.replace("'", "\""));
-  }
-
-  public static Node node(String json) {
-    return NodeFromJSON(objectFromSingleQuotedString(json));
-  }
-
-  public static Node leafNodeOfSize(int size) {
-    StringBuilder builder = new StringBuilder();
-    String pattern = "abdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    int patternLength = pattern.length();
-    for (int i = 0; i < size - patternLength; i = i + patternLength) { // 10 MB String
-      builder.append(pattern);
-    }
-    int remainingLength = size - builder.length();
-    builder.append(pattern.substring(0, remainingLength));
-    assert builder.length() == size : "The string size did not match the expected size";
-    return NodeFromJSON(builder.toString());
-  }
-
-  public static CompoundWrite compoundWrite(String json) {
-    return CompoundWrite.fromValue(mapFromSingleQuotedString(json));
-  }
-
-  public static QuerySpec defaultQueryAt(String path) {
-    return QuerySpec.defaultQueryAtPath(new Path(path));
-  }
-
-  public static <T> Set<T> asSet(List<T> list) {
-    return new HashSet<T>(list);
-  }
-
-  public static <T> Set<T> asSet(T... objects) {
-    return new HashSet<T>(Arrays.asList(objects));
-  }
-
-  public static Set<ChildKey> childKeySet(String... keys) {
-    Set<ChildKey> childKeys = new HashSet<ChildKey>();
-    for (String key : keys) {
-      childKeys.add(ChildKey.fromString(key));
-    }
-    return childKeys;
-  }
 
   private static class TestEventTarget implements EventTarget {
     AtomicReference<Throwable> caughtException = new AtomicReference<Throwable>(null);
@@ -218,24 +132,8 @@ public class TestHelpers {
     return contexts.get(i);
   }
 
-  public static DatabaseReference rootWithNewContext() throws DatabaseException {
-    return rootWithConfig(newTestConfig());
-  }
-
-  public static DatabaseReference rootWithConfig(DatabaseConfig config) {
-    return new DatabaseReference(IntegrationTestValues.getNamespace(), config);
-  }
-
   public static DatabaseReference getRandomNode() throws DatabaseException {
     return getRandomNode(1).get(0);
-  }
-
-  public static void goOffline(DatabaseConfig cfg) {
-    DatabaseReference.goOffline(cfg);
-  }
-
-  public static void goOnline(DatabaseConfig cfg) {
-    DatabaseReference.goOnline(cfg);
   }
 
   public static List<DatabaseReference> getRandomNode(int count) throws DatabaseException {
@@ -244,8 +142,7 @@ public class TestHelpers {
     List<DatabaseReference> results = new ArrayList<DatabaseReference>(count);
     String name = null;
     for (int i = 0; i < count; ++i) {
-      DatabaseReference ref =
-          new DatabaseReference(IntegrationTestValues.getNamespace(), contexts.get(i));
+      DatabaseReference ref = new DatabaseReference(TestValues.TEST_NAMESPACE, contexts.get(i));
       if (name == null) {
         name = ref.push().getKey();
       }
@@ -261,7 +158,7 @@ public class TestHelpers {
   }
 
   public static DatabaseConfig newTestConfig() {
-    TestHelpers.ensureAppInitialized();
+    UnitTestHelpers.ensureAppInitialized();
 
     TestRunLoop runLoop = new TestRunLoop();
     DatabaseConfig config = new DatabaseConfig();
@@ -278,17 +175,6 @@ public class TestHelpers {
     return runLoop.getExecutorService();
   }
 
-  public static void setForcedPersistentCache(Context ctx, PersistenceManager manager) {
-    try {
-      Method method =
-          Context.class.getDeclaredMethod("forcePersistenceManager", PersistenceManager.class);
-      method.setAccessible(true);
-      method.invoke(ctx, manager);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   public static void setLogger(
       DatabaseConfig ctx, com.google.firebase.database.logging.Logger logger) {
     ctx.setLogger(logger);
@@ -300,27 +186,12 @@ public class TestHelpers {
     }
   }
 
-  public static String getTestSecret() {
-    if (testSecret == null) {
-      try {
-        InputStream response =
-            new URL(IntegrationTestValues.getNamespace() + "/.nsadmin/.json?key=1234").openStream();
-        TypeReference<Map<String, Object>> t = new TypeReference<Map<String, Object>>() {};
-        Map<String, Object> data = new ObjectMapper().readValue(response, t);
-        testSecret = (String) ((List) data.get("secrets")).get(0);
-      } catch (Throwable e) {
-        fail("Could not get test secret.");
-      }
-    }
-    return testSecret;
-  }
-
   public static void waitFor(Semaphore semaphore) throws InterruptedException {
     waitFor(semaphore, 1);
   }
 
   public static void waitFor(Semaphore semaphore, int count) throws InterruptedException {
-    waitFor(semaphore, count, IntegrationTestValues.getTimeout(), TimeUnit.MILLISECONDS);
+    waitFor(semaphore, count, TestValues.TEST_TIMEOUT, TimeUnit.MILLISECONDS);
   }
 
   public static void waitFor(Semaphore semaphore, int count, long timeout, TimeUnit unit)
@@ -328,62 +199,6 @@ public class TestHelpers {
     boolean success = semaphore.tryAcquire(count, timeout, unit);
     failOnFirstUncaughtException();
     assertTrue("Operation timed out", success);
-  }
-
-  public static DataSnapshot getSnap(Query ref) throws InterruptedException {
-
-    final Semaphore semaphore = new Semaphore(0);
-
-    // Hack to get around final reference issue
-    final List<DataSnapshot> snapshotList = new ArrayList<DataSnapshot>(1);
-
-    ref.addListenerForSingleValueEvent(
-        new ValueEventListener() {
-          @Override
-          public void onDataChange(DataSnapshot snapshot) {
-            snapshotList.add(snapshot);
-            semaphore.release(1);
-          }
-
-          @Override
-          public void onCancelled(DatabaseError error) {
-            semaphore.release(1);
-          }
-        });
-
-    semaphore.tryAcquire(1, IntegrationTestValues.getTimeout(), TimeUnit.MILLISECONDS);
-    return snapshotList.get(0);
-  }
-
-  public static void assertSuccessfulAuth(
-      DatabaseReference ref, TestTokenProvider provider, String credential) {
-    DatabaseReference authRef = ref.getRoot().child(".info/authenticated");
-    final Semaphore semaphore = new Semaphore(0);
-    final List<Boolean> authStates = new ArrayList<>();
-    ValueEventListener listener =
-        authRef.addValueEventListener(
-            new ValueEventListener() {
-              @Override
-              public void onDataChange(DataSnapshot snapshot) {
-                authStates.add(snapshot.getValue(Boolean.class));
-                semaphore.release();
-              }
-
-              @Override
-              public void onCancelled(DatabaseError error) {
-                throw new RuntimeException("Should not happen");
-              }
-            });
-
-    provider.setToken(credential);
-
-    try {
-      TestHelpers.waitFor(semaphore, 2);
-      assertEquals(Arrays.asList(false, true), authStates);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-    authRef.removeEventListener(listener);
   }
 
   public static Map<String, Object> fromJsonString(String json) {
@@ -397,51 +212,6 @@ public class TestHelpers {
 
   public static Map<String, Object> fromSingleQuotedString(String json) {
     return fromJsonString(json.replace("'", "\""));
-  }
-
-  public static void waitForRoundtrip(DatabaseReference reader) {
-    try {
-      new WriteFuture(reader.getRoot().child(UUID.randomUUID().toString()), null, null).timedGet();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static void waitForQueue(DatabaseReference ref) {
-    try {
-      final Semaphore semaphore = new Semaphore(0);
-      ref.getRepo()
-          .scheduleNow(
-              new Runnable() {
-                @Override
-                public void run() {
-                  semaphore.release();
-                }
-              });
-      semaphore.acquire();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static void waitForEvents(DatabaseReference ref) {
-    try {
-      // Make sure queue is done and all events are queued
-      TestHelpers.waitForQueue(ref);
-      // Next, all events were queued, make sure all events are done raised
-      final Semaphore semaphore = new Semaphore(0);
-      ref.getRepo()
-          .postEvent(
-              new Runnable() {
-                @Override
-                public void run() {
-                  semaphore.release();
-                }
-              });
-      semaphore.acquire();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 
   public static String repeatedString(String s, int n) {
@@ -486,30 +256,43 @@ public class TestHelpers {
     assertTrue("'" + str + "' does not contain '" + substr + "'.", str.contains(substr));
   }
 
+  public static ChildKey ck(String childKey) {
+    return ChildKey.fromString(childKey);
+  }
+
+  public static Path path(String path) {
+    return new Path(path);
+  }
+
+  public static QuerySpec defaultQueryAt(String path) {
+    return QuerySpec.defaultQueryAtPath(new Path(path));
+  }
+
+  public static <T> Set<T> asSet(List<T> list) {
+    return new HashSet<T>(list);
+  }
+
+  public static <T> Set<T> asSet(T... objects) {
+    return new HashSet<T>(Arrays.asList(objects));
+  }
+
+  public static Set<ChildKey> childKeySet(String... stringKeys) {
+    HashSet<ChildKey> childKeys = new HashSet<ChildKey>();
+    for (String k : stringKeys) {
+      childKeys.add(ChildKey.fromString(k));
+    }
+    return childKeys;
+  }
+
   public static void ensureAppInitialized() {
     if (!appInitialized) {
       appInitialized = true;
-      android.content.Context context = InstrumentationRegistry.getTargetContext();
       FirebaseApp.initializeApp(
-          context,
+          RuntimeEnvironment.application.getApplicationContext(),
           new FirebaseOptions.Builder()
-              .setApiKey(context.getResources().getString(R.string.google_api_key))
-              .setApplicationId("sdflhkj")
-              .setDatabaseUrl(IntegrationTestValues.getNamespace())
-              .build());
-    }
-  }
-
-  public static void ensureConstantsInitialized() {
-    if (!appInitialized) {
-      appInitialized = true;
-      android.content.Context context = InstrumentationRegistry.getTargetContext();
-      FirebaseApp.initializeApp(
-          context,
-          new FirebaseOptions.Builder()
-              .setApiKey("jank")
-              .setApplicationId("jank")
-              .setDatabaseUrl(IntegrationTestValues.getNamespace())
+              .setApiKey("apiKey")
+              .setApplicationId("appId")
+              .setDatabaseUrl(TestValues.TEST_NAMESPACE)
               .build());
     }
   }

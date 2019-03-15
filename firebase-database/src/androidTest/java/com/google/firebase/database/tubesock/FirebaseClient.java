@@ -14,7 +14,7 @@
 
 package com.google.firebase.database.tubesock;
 
-import com.google.firebase.database.TestHelpers;
+import com.google.firebase.database.IntegrationTestHelpers;
 import java.net.URI;
 import java.util.concurrent.Semaphore;
 
@@ -55,7 +55,7 @@ public class FirebaseClient {
   public void start() throws WebSocketException, InterruptedException {
     semaphore = new Semaphore(0);
     URI uri = URI.create("wss://gsoltis.firebaseio-demo.com/.ws?v=5");
-    client = new WebSocket(TestHelpers.getContext(0).getConnectionContext(), uri);
+    client = new WebSocket(IntegrationTestHelpers.getContext(0).getConnectionContext(), uri);
     client.setEventHandler(new Handler());
     client.connect();
     semaphore.acquire(1);
