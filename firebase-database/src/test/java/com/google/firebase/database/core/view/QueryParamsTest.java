@@ -14,7 +14,7 @@
 
 package com.google.firebase.database.core.view;
 
-import static com.google.firebase.database.TestHelpers.ck;
+import static com.google.firebase.database.UnitTestHelpers.ck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
