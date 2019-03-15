@@ -11,55 +11,25 @@
    },
    "com.android.support":{  
       "support-core-ui":{  
-         "26.1.0":"Copyright (C) 2011 The Android Open Source Project"
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
       },
       "support-media-compat":{  
-         "26.1.0":"Copyright (C) 2011 The Android Open Source Project"
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
       },
       "support-annotations":{  
-         "26.1.0":"Copyright (C) 2011 The Android Open Source Project"
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
       },
       "support-fragment":{  
-         "26.1.0":"Copyright (C) 2011 The Android Open Source Project"
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
       },
       "support-compat":{  
-         "26.1.0":"Copyright (C) 2011 The Android Open Source Project"
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
       },
       "support-v4":{  
-         "26.1.0":"Copyright (C) 2011 The Android Open Source Project"
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
       },
       "support-core-utils":{  
-         "26.1.0":"Copyright (C) 2011 The Android Open Source Project"
-      }
-   },
-   "com.google.firebase":{  
-      "firebase-auth-interop":{  
-         "16.0.1":""
-      },
-      "firebase-iid":{  
-         "17.0.3":""
-      },
-      "firebase-iid-interop":{  
-         "16.0.1":""
-      }
-   },
-   "com.google.android.gms":{  
-      "play-services-base":{  
-         "16.0.1":"Copyright (c) Google LLC 2019"
-      },
-      "play-services-basement":{  
-         "16.0.1":"Copyright (c) Google LLC 2019"
-      },
-      "play-services-stats":{  
-         "16.0.1":"Copyright (c) Google LLC 2019"
-      },
-      "play-services-tasks":{  
-         "16.0.1":"Copyright (c) Google LLC 2019"
-      }
-   },
-   "android.arch.core":{  
-      "common":{  
-         "1.0.0":""
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
       }
    },
    "android.arch.lifecycle":{  
