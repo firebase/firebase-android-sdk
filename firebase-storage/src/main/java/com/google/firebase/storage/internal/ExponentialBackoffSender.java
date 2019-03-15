@@ -16,6 +16,7 @@ package com.google.firebase.storage.internal;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.Clock;
@@ -39,12 +40,12 @@ public class ExponentialBackoffSender {
   /*package*/ static Sleeper sleeper = new SleeperImpl();
   /*package*/ static Clock clock = DefaultClock.getInstance();
   private final Context context;
-  private final InternalAuthProvider authProvider;
+  @Nullable private final InternalAuthProvider authProvider;
   private long retryTime;
   private volatile boolean canceled;
 
   public ExponentialBackoffSender(
-      Context context, InternalAuthProvider authProvider, long retryTime) {
+      Context context, @Nullable InternalAuthProvider authProvider, long retryTime) {
     this.context = context;
     this.authProvider = authProvider;
     this.retryTime = retryTime;

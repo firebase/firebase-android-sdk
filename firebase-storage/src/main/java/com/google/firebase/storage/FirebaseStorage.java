@@ -14,8 +14,6 @@
 
 package com.google.firebase.storage;
 
-import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
-
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -27,6 +25,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.storage.internal.Util;
 import java.io.UnsupportedEncodingException;
 
@@ -48,7 +47,7 @@ public class FirebaseStorage {
   private static final String STORAGE_BUCKET_WITH_PATH_EXCEPTION =
       "The storage Uri cannot contain a path element.";
   @NonNull private final FirebaseApp mApp;
-  @Nullable private final InternalAuthProvider mAuthProvider;
+  @Nullable private final Provider<InternalAuthProvider> mAuthProvider;
   @Nullable private final String mBucketName;
   private long sMaxUploadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxDownloadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
@@ -57,7 +56,7 @@ public class FirebaseStorage {
   FirebaseStorage(
       @Nullable String bucketName,
       @NonNull FirebaseApp app,
-      @Nullable InternalAuthProvider authProvider) {
+      @Nullable Provider<InternalAuthProvider> authProvider) {
     mBucketName = bucketName;
     mApp = app;
     mAuthProvider = authProvider;
@@ -70,9 +69,9 @@ public class FirebaseStorage {
       throw new IllegalArgumentException(STORAGE_BUCKET_WITH_PATH_EXCEPTION);
     }
 
-    checkNotNull(app, "Provided FirebaseApp must not be null.");
+    Preconditions.checkNotNull(app, "Provided FirebaseApp must not be null.");
     FirebaseStorageComponent component = app.get(FirebaseStorageComponent.class);
-    checkNotNull(component, "Firebase Storage component is not present.");
+    Preconditions.checkNotNull(component, "Firebase Storage component is not present.");
     return component.get(bucketName);
   }
 
@@ -304,7 +303,7 @@ public class FirebaseStorage {
   @NonNull
   private StorageReference getReference(@NonNull Uri uri) {
     // ensure that the authority represents the correct bucket.
-    checkNotNull(uri, "uri must not be null");
+    Preconditions.checkNotNull(uri, "uri must not be null");
     String bucketName = getBucketName();
     Preconditions.checkArgument(
         TextUtils.isEmpty(bucketName) || uri.getAuthority().equalsIgnoreCase(bucketName),
@@ -322,6 +321,6 @@ public class FirebaseStorage {
 
   @Nullable
   InternalAuthProvider getAuthProvider() {
-    return mAuthProvider;
+    return mAuthProvider != null ? mAuthProvider.get() : null;
   }
 }

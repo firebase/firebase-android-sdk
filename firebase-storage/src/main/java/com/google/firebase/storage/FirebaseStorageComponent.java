@@ -19,6 +19,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.inject.Provider;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,9 +28,10 @@ class FirebaseStorageComponent {
   private final Map<String, FirebaseStorage> instances = new HashMap<>();
 
   private final FirebaseApp app;
-  @Nullable private final InternalAuthProvider authProvider;
+  @Nullable private final Provider<InternalAuthProvider> authProvider;
 
-  FirebaseStorageComponent(@NonNull FirebaseApp app, @Nullable InternalAuthProvider authProvider) {
+  FirebaseStorageComponent(
+      @NonNull FirebaseApp app, @Nullable Provider<InternalAuthProvider> authProvider) {
     this.app = app;
     this.authProvider = authProvider;
   }

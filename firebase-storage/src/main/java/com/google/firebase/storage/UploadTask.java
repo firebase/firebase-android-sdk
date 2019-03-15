@@ -62,7 +62,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   private final AdaptiveStreamBuffer mStreamBuffer;
   // Active, current mutable state.
   private final AtomicLong mBytesUploaded = new AtomicLong(0);
-  @Nullable final InternalAuthProvider mAuthProvider;
+  @Nullable private final InternalAuthProvider mAuthProvider;
   private int mCurrentChunkSize = PREFERRED_CHUNK_SIZE;
   private ExponentialBackoffSender mSender;
   private boolean mIsStreamOwned;

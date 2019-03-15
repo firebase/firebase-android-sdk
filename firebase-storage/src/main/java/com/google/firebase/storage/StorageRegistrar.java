@@ -35,11 +35,11 @@ public class StorageRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseStorageComponent.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.optional(InternalAuthProvider.class))
+            .add(Dependency.optionalProvider(InternalAuthProvider.class))
             .factory(
                 c ->
                     new FirebaseStorageComponent(
-                        c.get(FirebaseApp.class), c.get(InternalAuthProvider.class)))
+                        c.get(FirebaseApp.class), c.getProvider(InternalAuthProvider.class)))
             .build(),
         LibraryVersionComponent.create("fire-gcs", BuildConfig.VERSION_NAME));
   }
