@@ -122,7 +122,7 @@ class GenerateLicensesTask extends DefaultTask {
     }
 
     private List<ProjectLicense> extractLicensesFromReport() {
-        def copyrights = new JsonSlurper().parseText(new File("/Users/ashwinraghav/firebase-android-sdk/copyrights.json").text)
+        def copyrights = new JsonSlurper().parseText(new File(project.rootDir,"third_party/copyrights.json").text)
 
         new JsonSlurper().parseText(licenseReportFile.text).
                 collect { report ->
@@ -131,14 +131,9 @@ class GenerateLicensesTask extends DefaultTask {
                     String artifact = parts[1]
                     String version = parts[2]
 
-
                     if(copyrights."$groupId"?."$artifact"?."$version" == null) {
                         println "Did not find copyright entry for $report.dependency. Did you forget to add one?"
                     }
-//                    else {
-//                        println report.dependency
-//                        println copyrights[groupId][artifact][version]
-//                    }
 
                     new ProjectLicense(name: report.project,
                             licenseUris: report.licenses.collect { URI.create(it.license_url) },

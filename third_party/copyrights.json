@@ -32,11 +32,11 @@
          "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
       }
    },
-   "android.arch.core" : {
+   "android.arch.core":{
 	 "common" : {
 		"1.0.0":"Copyright (C) 2018 The Android Open Source Project"
 	}
-   }
+   },
    "android.arch.lifecycle":{  
       "common":{  
          "1.0.0":"Copyright (C) 2018 The Android Open Source Project"
