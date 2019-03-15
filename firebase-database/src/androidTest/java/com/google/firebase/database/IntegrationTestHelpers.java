@@ -18,11 +18,10 @@ import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.support.test.InstrumentationRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
+import com.google.firebase.database.android.AndroidAuthTokenProvider;
 import com.google.firebase.database.core.CompoundWrite;
 import com.google.firebase.database.core.Context;
 import com.google.firebase.database.core.CoreTestHelpers;
@@ -256,15 +255,13 @@ public class IntegrationTestHelpers {
   }
 
   public static DatabaseConfig newTestConfig() {
-    IntegrationTestHelpers.ensureAppInitialized();
-
     TestRunLoop runLoop = new TestRunLoop();
     DatabaseConfig config = new DatabaseConfig();
     config.setLogLevel(Logger.Level.DEBUG);
     config.setEventTarget(new TestEventTarget());
     config.setRunLoop(runLoop);
     config.setFirebaseApp(FirebaseApp.getInstance());
-    config.setAuthTokenProvider(new TestTokenProvider(runLoop.getExecutorService()));
+    config.setAuthTokenProvider(AndroidAuthTokenProvider.forUnauthenticatedAccess());
     return config;
   }
 
@@ -448,19 +445,5 @@ public class IntegrationTestHelpers {
 
   public static void assertContains(String str, String substr) {
     assertTrue("'" + str + "' does not contain '" + substr + "'.", str.contains(substr));
-  }
-
-  public static void ensureAppInitialized() {
-    if (!appInitialized) {
-      appInitialized = true;
-      android.content.Context context = InstrumentationRegistry.getTargetContext();
-      FirebaseApp.initializeApp(
-          context,
-          new FirebaseOptions.Builder()
-              .setApiKey(context.getResources().getString(R.string.google_api_key))
-              .setApplicationId("sdflhkj")
-              .setDatabaseUrl(IntegrationTestValues.getNamespace())
-              .build());
-    }
   }
 }

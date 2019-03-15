@@ -21,7 +21,6 @@ import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.logging.Logger;
 import java.io.File;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 
 public interface Platform {
   public Logger newLogger(Context ctx, Logger.Level level, List<String> components);
@@ -29,8 +28,6 @@ public interface Platform {
   public EventTarget newEventTarget(Context ctx);
 
   public RunLoop newRunLoop(Context ctx);
-
-  public AuthTokenProvider newAuthTokenProvider(ScheduledExecutorService executorService);
 
   public PersistentConnection newPersistentConnection(
       Context context,
