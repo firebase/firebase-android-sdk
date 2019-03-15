@@ -53,6 +53,14 @@ class LicenseResolverPluginSpec extends Specification {
             implementation 'com.squareup.okhttp:okhttp:2.7.5'
         }
 
+        def thirdPartyDir = new File(rootDir, "third_party/")
+        thirdPartyDir.mkdirs()
+
+        copy {
+           from "src/test/fixtures/"
+           into thirdPartyDir
+        }
+
         thirdPartyLicenses {
             add 'customLib1', "file:///${new File("src/test/fixtures/license.txt").absolutePath}"
             add 'customLib2', "http://www.apache.org/licenses/LICENSE-2.0.txt"
@@ -100,6 +108,9 @@ class LicenseResolverPluginSpec extends Specification {
 
         and: "license txt file contains license"
         txt.contains("Apache License")
+
+        and: "license txt file contains copyright"
+        txt.contains("Copyright 2013 Square")
 
         and: "license index leads us directly to the license"
         txt
