@@ -35,7 +35,7 @@ sourceSets {
 
 dependencies {
     implementation 'org.jsoup:jsoup:1.11.2'
-    implementation "com.jaredsburrows:gradle-license-plugin:0.8.1"
+    implementation "com.jaredsburrows:gradle-license-plugin:0.8.42"
     implementation 'digital.wup:android-maven-publish:3.6.2'
 
     implementation 'io.opencensus:opencensus-api:0.18.0'

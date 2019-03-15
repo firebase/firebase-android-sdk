@@ -38,7 +38,7 @@ interface RemoteLicenseFetcher extends Serializable {
     String get() {
       def doc = Jsoup.connect(ANDROID_SDK_TERMS_URI.toString()).get()
 
-      TEXT_FORMATTER.getPlainText(doc.select('#body-content > div.jd-descr > div')[0])
+      TEXT_FORMATTER.getPlainText(doc.select('#gc-wrapper > div > devsite-content > article > article > div.devsite-article-body.clearfix > div')[0])
     }
   }
 

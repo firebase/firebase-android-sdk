@@ -16,6 +16,7 @@ package com.google.firebase.gradle.plugins.license
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.*
@@ -86,6 +87,13 @@ class GenerateLicensesTask extends DefaultTask {
                 writer.print line1
                 writeOffset += line1.length()
 
+                writer.println ""
+                writeOffset += NEW_LINE_LENGTH
+
+                //Write copyright
+                writer.print projectLicense.copyright
+                writeOffset += projectLicense.copyright.length()
+
                 long licenseByteLength = 0
                 writer.println ""
                 licenseByteLength += NEW_LINE_LENGTH
@@ -106,6 +114,7 @@ class GenerateLicensesTask extends DefaultTask {
                         : projectLicense.name.toLowerCase()
                 ["$key": [length: licenseByteLength,
                           start : writeOffset - licenseByteLength]]
+
             })
         }
 
@@ -113,11 +122,27 @@ class GenerateLicensesTask extends DefaultTask {
     }
 
     private List<ProjectLicense> extractLicensesFromReport() {
+        def copyrights = new JsonSlurper().parseText(new File("/Users/ashwinraghav/workspace/firebase-android-release/copyrights.json").text)
+
         new JsonSlurper().parseText(licenseReportFile.text).
                 collect { report ->
+                    String[] parts = report.dependency.split(":")
+                    String groupId = parts[0]
+                    String artifact = parts[1]
+                    String version = parts[2]
+
+                    if(copyrights."$groupId"?."$artifact"?."$version" == null) {
+                        println "Did not find copyright entry for $report.dependency. Did you forget to add one?"
+                    }
+//                    else {
+//                        println report.dependency
+//                        println copyrights[groupId][artifact][version]
+//                    }
+
                     new ProjectLicense(name: report.project,
                             licenseUris: report.licenses.collect { URI.create(it.license_url) },
-                            isExplicit: false)
+                            isExplicit: false,
+                            copyright: copyrights[groupId][artifact][version])
                 }
     }
 }
