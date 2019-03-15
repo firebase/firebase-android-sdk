@@ -25,6 +25,13 @@ android {
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
     }
+    sourceSets {
+        androidTest {
+            aidl {
+                srcDir 'src/androidTest/aidl'
+            }
+        }
+    }
 }
 
 dependencies {
@@ -42,4 +49,10 @@ dependencies {
     testImplementation 'androidx.test:core:1.1.0'
     testImplementation 'org.robolectric:robolectric:4.1'
     testImplementation 'org.mockito:mockito-core:2.21.0'
+
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test:rules:1.0.2'
+    androidTestImplementation 'org.mockito:mockito-core:2.21.0'
 }

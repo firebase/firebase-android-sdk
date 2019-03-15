@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.time.UptimeClock;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Test;
@@ -41,7 +42,8 @@ public class SQLiteEventStoreTest {
           .addMetadata("key2", "value2")
           .build();
 
-  private final SQLiteEventStore store = new SQLiteEventStore(RuntimeEnvironment.application);
+  private final SQLiteEventStore store =
+      new SQLiteEventStore(RuntimeEnvironment.application, new UptimeClock());
 
   @Test
   public void persist_correctlyRoundTrips() {

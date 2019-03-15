@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,10 +18,20 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteDatabaseLockedException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Build;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
+import android.support.annotation.VisibleForTesting;
+import android.support.annotation.WorkerThread;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
+import com.google.android.datatransport.runtime.time.Clock;
+import com.google.android.datatransport.runtime.time.Monotonic;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,20 +41,29 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** {@link EventStore} implementation backed by a SQLite database. */
-public class SQLiteEventStore implements EventStore {
+@Singleton
+@WorkerThread
+public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   static final int MAX_RETRIES = 10;
 
   private static final Priority[] ALL_PRIORITIES = Priority.values();
 
+  @VisibleForTesting
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  public static final int LOCK_RETRY_BACK_OFF = 50;
+
   private final OpenHelper openHelper;
+  private final Clock monotonicClock;
   private SQLiteDatabase db;
 
   @Inject
-  SQLiteEventStore(Context applicationContext) {
+  SQLiteEventStore(Context applicationContext, @Monotonic Clock clock) {
     this.openHelper = new OpenHelper(applicationContext);
+    this.monotonicClock = clock;
   }
 
   private SQLiteDatabase getDb() {
@@ -52,11 +71,6 @@ public class SQLiteEventStore implements EventStore {
       db = openHelper.getWritableDatabase();
     }
     return db;
-  }
-
-  @Override
-  public <T> T atomically(AtomicFunction<T> function) {
-    return inTransaction(db -> function.execute());
   }
 
   @Override
@@ -168,77 +182,121 @@ public class SQLiteEventStore implements EventStore {
   public Iterable<PersistedEvent> loadAll(String backendName) {
     return inTransaction(
         db -> {
-          List<PersistedEvent> events = new ArrayList<>();
-          try (Cursor cursor =
-              db.query(
-                  "events",
-                  new String[] {
-                    "_id", "transport_name", "priority", "timestamp_ms", "uptime_ms", "payload"
-                  },
-                  "backend_id = ?",
-                  new String[] {backendName},
-                  null,
-                  null,
-                  null)) {
-            while (cursor.moveToNext()) {
-              long id = cursor.getLong(0);
-              EventInternal event =
-                  EventInternal.builder()
-                      .setTransportName(cursor.getString(1))
-                      .setPriority(toPriority(cursor.getInt(2)))
-                      .setEventMillis(cursor.getLong(3))
-                      .setUptimeMillis(cursor.getLong(4))
-                      .setPayload(cursor.getBlob(5))
-                      .build();
-              events.add(PersistedEvent.create(id, backendName, event));
-            }
-          }
-
-          Map<Long, Set<Metadata>> metadataIndex = new HashMap<>();
-          StringBuilder whereClause = new StringBuilder("event_id IN (");
-          for (int i = 0; i < events.size(); i++) {
-            whereClause.append(events.get(i).getId());
-            if (i < events.size() - 1) {
-              whereClause.append(',');
-            }
-          }
-          whereClause.append(')');
-
-          try (Cursor cursor =
-              db.query(
-                  "event_metadata",
-                  new String[] {"event_id", "name", "value"},
-                  whereClause.toString(),
-                  null,
-                  null,
-                  null,
-                  null)) {
-            while (cursor.moveToNext()) {
-              long eventId = cursor.getLong(0);
-              Set<Metadata> currentSet = metadataIndex.get(eventId);
-              if (currentSet == null) {
-                currentSet = new HashSet<>();
-                metadataIndex.put(eventId, currentSet);
-              }
-              currentSet.add(new Metadata(cursor.getString(1), cursor.getString(2)));
-            }
-          }
-          ListIterator<PersistedEvent> iterator = events.listIterator();
-          while (iterator.hasNext()) {
-            PersistedEvent current = iterator.next();
-            if (!metadataIndex.containsKey(current.getId())) {
-              continue;
-            }
-            EventInternal.Builder newEvent = current.getEvent().toBuilder();
-
-            for (Metadata metadata : metadataIndex.get(current.getId())) {
-              newEvent.addMetadata(metadata.key, metadata.value);
-            }
-            iterator.set(
-                PersistedEvent.create(current.getId(), current.getBackendName(), newEvent.build()));
-          }
-          return events;
+          List<PersistedEvent> events = loadEvents(db, backendName);
+          return join(events, loadMetadata(db, events));
         });
+  }
+
+  /** Loads all events for a backend. */
+  private List<PersistedEvent> loadEvents(SQLiteDatabase db, String backendName) {
+    List<PersistedEvent> events = new ArrayList<>();
+    try (Cursor cursor =
+        db.query(
+            "events",
+            new String[] {
+              "_id", "transport_name", "priority", "timestamp_ms", "uptime_ms", "payload"
+            },
+            "backend_id = ?",
+            new String[] {backendName},
+            null,
+            null,
+            null)) {
+      while (cursor.moveToNext()) {
+        long id = cursor.getLong(0);
+        EventInternal event =
+            EventInternal.builder()
+                .setTransportName(cursor.getString(1))
+                .setPriority(toPriority(cursor.getInt(2)))
+                .setEventMillis(cursor.getLong(3))
+                .setUptimeMillis(cursor.getLong(4))
+                .setPayload(cursor.getBlob(5))
+                .build();
+        events.add(PersistedEvent.create(id, backendName, event));
+      }
+    }
+    return events;
+  }
+
+  /** Loads metadata pairs for given events. */
+  private Map<Long, Set<Metadata>> loadMetadata(SQLiteDatabase db, List<PersistedEvent> events) {
+    Map<Long, Set<Metadata>> metadataIndex = new HashMap<>();
+    StringBuilder whereClause = new StringBuilder("event_id IN (");
+    for (int i = 0; i < events.size(); i++) {
+      whereClause.append(events.get(i).getId());
+      if (i < events.size() - 1) {
+        whereClause.append(',');
+      }
+    }
+    whereClause.append(')');
+
+    try (Cursor cursor =
+        db.query(
+            "event_metadata",
+            new String[] {"event_id", "name", "value"},
+            whereClause.toString(),
+            null,
+            null,
+            null,
+            null)) {
+      while (cursor.moveToNext()) {
+        long eventId = cursor.getLong(0);
+        Set<Metadata> currentSet = metadataIndex.get(eventId);
+        if (currentSet == null) {
+          currentSet = new HashSet<>();
+          metadataIndex.put(eventId, currentSet);
+        }
+        currentSet.add(new Metadata(cursor.getString(1), cursor.getString(2)));
+      }
+    }
+    return metadataIndex;
+  }
+
+  /** Populate metadata into the events. */
+  private List<PersistedEvent> join(
+      List<PersistedEvent> events, Map<Long, Set<Metadata>> metadataIndex) {
+    ListIterator<PersistedEvent> iterator = events.listIterator();
+    while (iterator.hasNext()) {
+      PersistedEvent current = iterator.next();
+      if (!metadataIndex.containsKey(current.getId())) {
+        continue;
+      }
+      EventInternal.Builder newEvent = current.getEvent().toBuilder();
+
+      for (Metadata metadata : metadataIndex.get(current.getId())) {
+        newEvent.addMetadata(metadata.key, metadata.value);
+      }
+      iterator.set(
+          PersistedEvent.create(current.getId(), current.getBackendName(), newEvent.build()));
+    }
+    return events;
+  }
+
+  /** Tries to start a transaction until it succeeds or times out. */
+  private void ensureBeginTransaction(SQLiteDatabase db, long lockTimeoutMs) {
+    long startTime = monotonicClock.getTime();
+    do {
+      try {
+        db.beginTransaction();
+        return;
+      } catch (SQLiteDatabaseLockedException ex) {
+        SystemClock.sleep(LOCK_RETRY_BACK_OFF);
+      }
+    } while (monotonicClock.getTime() < startTime + lockTimeoutMs);
+
+    throw new SynchronizationException("Timed out while trying to acquire the lock.");
+  }
+
+  @Override
+  public <T> T runCriticalSection(long lockTimeoutMs, CriticalSection<T> criticalSection) {
+    SQLiteDatabase db = getDb();
+    ensureBeginTransaction(db, lockTimeoutMs);
+    try {
+      T result = criticalSection.execute();
+      db.setTransactionSuccessful();
+      return result;
+    } finally {
+      db.endTransaction();
+    }
   }
 
   interface TransactionFn<T> {
@@ -275,6 +333,8 @@ public class SQLiteEventStore implements EventStore {
   }
 
   private static class OpenHelper extends SQLiteOpenHelper {
+    // TODO: when we do schema upgrades in the future we need to make sure both downgrades and
+    // upgrades work as expected, e.g. `up+down+up` is equivalent to `up`.
     private static int SCHEMA_VERSION = 1;
     private static String DB_NAME = "com.google.android.datatransport.events";
     private static String CREATE_EVENTS_SQL =
@@ -315,11 +375,12 @@ public class SQLiteEventStore implements EventStore {
       // Note that this is only called automatically by the SQLiteOpenHelper base class on Jelly
       // Bean and above.
       configured = true;
-      // Threads/processes that access the database concurrently will not fail immediately, but
-      // instead block with timeout. Since data access will only happen from one thread, this will
-      // only happen for multi-process apps.
-      Cursor cursor = db.rawQuery("PRAGMA busy_timeout = 5000", new String[0]);
-      cursor.close();
+
+      db.rawQuery("PRAGMA busy_timeout=0;", new String[0]).close();
+
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+        db.setForeignKeyConstraintsEnabled(true);
+      }
     }
 
     private void ensureConfigured(SQLiteDatabase db) {

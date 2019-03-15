@@ -28,11 +28,6 @@ public class InMemoryEventStore implements EventStore {
   private final Map<String, Map<Long, EventInternal>> store = new HashMap<>();
 
   @Override
-  public synchronized <T> T atomically(AtomicFunction<T> function) {
-    return function.execute();
-  }
-
-  @Override
   public synchronized PersistedEvent persist(String backendName, EventInternal event) {
     long newId = idCounter.incrementAndGet();
     getOrCreateBackendStore(backendName).put(newId, event);

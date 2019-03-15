@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import android.support.annotation.Nullable;
+import android.support.annotation.WorkerThread;
 import com.google.android.datatransport.runtime.EventInternal;
 
 /**
@@ -22,24 +23,8 @@ import com.google.android.datatransport.runtime.EventInternal;
  *
  * <p>Responsible for storing events and backend-specific metadata.
  */
+@WorkerThread
 public interface EventStore {
-  interface AtomicFunction<T> {
-    T execute();
-  }
-
-  /**
-   * All operations against the {@link EventStore} will be done as one atomic unit of work.
-   *
-   * <p>Example usage:
-   *
-   * <pre>{@code
-   * store.atomically(() -> {
-   *   store.persist("foo", event);
-   *   store.recordSuccess(Collections.singleton(event));
-   * });
-   * }</pre>
-   */
-  <T> T atomically(AtomicFunction<T> function);
 
   /** Persist a new event. */
   PersistedEvent persist(String backendName, EventInternal event);
