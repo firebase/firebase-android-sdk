@@ -30,7 +30,6 @@ import java.util.List;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageRegistrar implements ComponentRegistrar {
   @Override
-  @Keep
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseStorageComponent.class)
