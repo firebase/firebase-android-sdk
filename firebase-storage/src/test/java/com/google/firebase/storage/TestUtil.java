@@ -17,7 +17,6 @@ package com.google.firebase.storage;
 import android.support.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.storage.internal.MockClockHelper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,24 +27,19 @@ import org.robolectric.RuntimeEnvironment;
 
 /** Test helpers. */
 public class TestUtil {
-  static void setup() throws Exception {
-    FirebaseApp.initializeApp(
+
+  static FirebaseApp createApp() {
+    return FirebaseApp.initializeApp(
         RuntimeEnvironment.application.getApplicationContext(),
         new FirebaseOptions.Builder()
             .setApiKey("AIzaSyCkEhVjf3pduRDt6d1yKOMitrUEke8agEM")
             .setApplicationId("fooey")
             .setStorageBucket("project-5516366556574091405.appspot.com")
             .build());
-    // point to staging.
+    // Point to staging:
     // NetworkRequest.sNetworkRequestUrl = "https://staging-firebasestorage.sandbox.googleapis"
     // + ".com/v0";
     // NetworkRequest.sUploadUrl = "https://staging-firebasestorage.sandbox.googleapis.com/v0/b/";
-
-    MockClockHelper.install();
-  }
-
-  static void unInit() {
-    FirebaseStorage.clearInstancesForTest();
   }
 
   static void verifyTaskStateChanges(

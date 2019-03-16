@@ -42,10 +42,13 @@ import com.google.firebase.storage.network.NetworkRequest;
     Preconditions.checkNotNull(pendingResult);
     this.mStorageRef = storageRef;
     this.mPendingResult = pendingResult;
+
+    FirebaseStorage storage = mStorageRef.getStorage();
     mSender =
         new ExponentialBackoffSender(
-            mStorageRef.getStorage().getApp(),
-            mStorageRef.getStorage().getMaxOperationRetryTimeMillis());
+            storage.getApp().getApplicationContext(),
+            storage.getAuthProvider(),
+            storage.getMaxDownloadRetryTimeMillis());
   }
 
   @Override
