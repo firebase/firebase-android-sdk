@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -2027,7 +2028,8 @@ public class TransactionTest {
           }
 
           @Override
-          public void addTokenChangeListener(TokenChangeListener listener) {}
+          public void addTokenChangeListener(
+              ExecutorService executorService, TokenChangeListener listener) {}
 
           @Override
           public void removeTokenChangeListener(TokenChangeListener listener) {}
