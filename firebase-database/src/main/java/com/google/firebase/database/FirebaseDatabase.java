@@ -14,6 +14,8 @@
 
 package com.google.firebase.database;
 
+import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
+
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import com.google.firebase.FirebaseApp;
@@ -27,8 +29,6 @@ import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.core.utilities.ParsedUrl;
 import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * The entry point for accessing a Firebase Database. You can get an instance by calling {@link
@@ -39,17 +39,6 @@ import java.util.Map;
 public class FirebaseDatabase {
 
   private static final String SDK_VERSION = "3.0.0";
-
-  /**
-   * A static map of FirebaseApp and RepoInfo to FirebaseDatabase instance. To ensure thread-
-   * safety, it should only be accessed in getInstance(), which is a synchronized method.
-   *
-   * <p>TODO: This serves a duplicate purpose as RepoManager. We should clean up. TODO: We should
-   * maybe be conscious of leaks and make this a weak map or similar but we have a lot of work to do
-   * to allow FirebaseDatabase/Repo etc. to be GC'd.
-   */
-  private static final Map<String /* App name */, Map<RepoInfo, FirebaseDatabase>>
-      databaseInstances = new HashMap<>();
 
   private final FirebaseApp app;
   private final RepoInfo repoInfo;
@@ -116,13 +105,6 @@ public class FirebaseDatabase {
               + "FirebaseApp or from your getInstance() call.");
     }
 
-    Map<RepoInfo, FirebaseDatabase> instances = databaseInstances.get(app.getName());
-
-    if (instances == null) {
-      instances = new HashMap<>();
-      databaseInstances.put(app.getName(), instances);
-    }
-
     ParsedUrl parsedUrl = Utilities.parseUrl(url);
     if (!parsedUrl.path.isEmpty()) {
       throw new DatabaseException(
@@ -133,23 +115,10 @@ public class FirebaseDatabase {
               + parsedUrl.path.toString());
     }
 
-    FirebaseDatabase database = instances.get(parsedUrl.repoInfo);
-
-    if (database == null) {
-      DatabaseConfig config = new DatabaseConfig();
-      // If this is the default app, don't set the session persistence key so that we use our
-      // default ("default") instead of the FirebaseApp default ("[DEFAULT]") so that we
-      // preserve the default location used by the legacy Firebase SDK.
-      if (!app.isDefaultApp()) {
-        config.setSessionPersistenceKey(app.getName());
-      }
-      config.setFirebaseApp(app);
-
-      database = new FirebaseDatabase(app, parsedUrl.repoInfo, config);
-      instances.put(parsedUrl.repoInfo, database);
-    }
-
-    return database;
+    checkNotNull(app, "Provided FirebaseApp must not be null.");
+    FirebaseDatabaseComponent component = app.get(FirebaseDatabaseComponent.class);
+    checkNotNull(component, "Firebase Database component is not present.");
+    return component.get(parsedUrl.repoInfo);
   }
 
   /** This exists so Repo can create FirebaseDatabase objects to keep legacy tests working. */
@@ -160,7 +129,7 @@ public class FirebaseDatabase {
     return db;
   }
 
-  private FirebaseDatabase(FirebaseApp app, RepoInfo repoInfo, DatabaseConfig config) {
+  FirebaseDatabase(FirebaseApp app, RepoInfo repoInfo, DatabaseConfig config) {
     this.app = app;
     this.repoInfo = repoInfo;
     this.config = config;

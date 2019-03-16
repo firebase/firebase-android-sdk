@@ -26,7 +26,6 @@ import com.google.firebase.database.connection.ConnectionContext;
 import com.google.firebase.database.connection.HostInfo;
 import com.google.firebase.database.connection.PersistentConnection;
 import com.google.firebase.database.connection.PersistentConnectionImpl;
-import com.google.firebase.database.core.AuthTokenProvider;
 import com.google.firebase.database.core.EventTarget;
 import com.google.firebase.database.core.Platform;
 import com.google.firebase.database.core.RunLoop;
@@ -42,7 +41,6 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class AndroidPlatform implements Platform {
 
@@ -105,11 +103,6 @@ public class AndroidPlatform implements Platform {
         getExecutorService().shutdownNow();
       }
     };
-  }
-
-  @Override
-  public AuthTokenProvider newAuthTokenProvider(ScheduledExecutorService executorService) {
-    return new AndroidAuthTokenProvider(firebaseApp, executorService);
   }
 
   @Override

@@ -35,7 +35,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,11 +42,6 @@ import org.junit.Test;
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class FirebaseDatabaseTest {
   @Rule public RetryRule retryRule = new RetryRule(3);
-
-  @Before
-  public void setup() {
-    IntegrationTestHelpers.ensureAppInitialized();
-  }
 
   @After
   public void tearDown() {

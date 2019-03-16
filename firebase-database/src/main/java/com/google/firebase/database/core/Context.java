@@ -14,6 +14,7 @@
 
 package com.google.firebase.database.core;
 
+import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.FirebaseDatabase;
@@ -139,7 +140,7 @@ public class Context {
   public ConnectionContext getConnectionContext() {
     return new ConnectionContext(
         this.getLogger(),
-        wrapAuthTokenProvider(this.getAuthTokenProvider()),
+        wrapAuthTokenProvider(this.getAuthTokenProvider(), this.getExecutorService()),
         this.getExecutorService(),
         this.isPersistenceEnabled(),
         FirebaseDatabase.getSdkVersion(),
@@ -242,9 +243,8 @@ public class Context {
   }
 
   private void ensureAuthTokenProvider() {
-    if (authTokenProvider == null) {
-      authTokenProvider = getPlatform().newAuthTokenProvider(this.getExecutorService());
-    }
+    Preconditions.checkNotNull(
+        authTokenProvider, "You must register an authTokenProvider before initializing Context.");
   }
 
   private void ensureSessionIdentifier() {
@@ -266,25 +266,21 @@ public class Context {
   }
 
   private static ConnectionAuthTokenProvider wrapAuthTokenProvider(
-      final AuthTokenProvider provider) {
-    return new ConnectionAuthTokenProvider() {
-      @Override
-      public void getToken(boolean forceRefresh, final GetTokenCallback callback) {
+      final AuthTokenProvider provider, ScheduledExecutorService executorService) {
+    return (forceRefresh, callback) ->
         provider.getToken(
             forceRefresh,
             new AuthTokenProvider.GetTokenCompletionListener() {
               @Override
               public void onSuccess(String token) {
-                callback.onSuccess(token);
+                executorService.execute(() -> callback.onSuccess(token));
               }
 
               @Override
               public void onError(String error) {
-                callback.onError(error);
+                executorService.execute(() -> callback.onError(error));
               }
             });
-      }
-    };
   }
 
   public File getSSLCacheDirectory() {
