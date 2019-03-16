@@ -30,7 +30,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -43,22 +42,25 @@ public class PathingTest {
   @Rule public RetryRule retryRule = new RetryRule(3);
   @Rule public FirebaseAppRule firebaseAppRule = new FirebaseAppRule();
 
+  FirebaseApp app;
+
   @Before
   public void setUp() throws Exception {
     RobolectricThreadFix.install();
-    FirebaseApp.initializeApp(
-        RuntimeEnvironment.application.getApplicationContext(),
-        new FirebaseOptions.Builder()
-            .setApiKey("AIzaSyCkEhVjf3pduRDt6d1yKOMitrUEke8agEM")
-            .setApplicationId("fooey")
-            .build());
     MockClockHelper.install();
-    MockitoAnnotations.initMocks(this);
+    app =
+        FirebaseApp.initializeApp(
+            RuntimeEnvironment.application.getApplicationContext(),
+            new FirebaseOptions.Builder()
+                .setApiKey("AIzaSyCkEhVjf3pduRDt6d1yKOMitrUEke8agEM")
+                .setApplicationId("fooey")
+                .build());
   }
 
   @After
   public void tearDown() {
-    TestUtil.unInit();
+    FirebaseStorageComponent component = app.get(FirebaseStorageComponent.class);
+    component.clearInstancesForTesting();
   }
 
   @Test

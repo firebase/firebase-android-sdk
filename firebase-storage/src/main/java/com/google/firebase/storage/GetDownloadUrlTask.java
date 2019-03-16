@@ -44,10 +44,13 @@ class GetDownloadUrlTask implements Runnable {
 
     this.storageRef = storageRef;
     this.pendingResult = pendingResult;
+
+    FirebaseStorage storage = this.storageRef.getStorage();
     sender =
         new ExponentialBackoffSender(
-            this.storageRef.getApp(),
-            this.storageRef.getStorage().getMaxOperationRetryTimeMillis());
+            storage.getApp().getApplicationContext(),
+            storage.getAuthProvider(),
+            storage.getMaxOperationRetryTimeMillis());
   }
 
   private Uri extractDownloadUrl(JSONObject response) {
