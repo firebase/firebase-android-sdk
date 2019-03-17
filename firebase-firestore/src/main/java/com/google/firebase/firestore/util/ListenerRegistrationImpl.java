@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import android.app.Activity;
 import android.support.v4.app.FragmentActivity;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.core.ExecutorEventListener;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.ViewSnapshot;
