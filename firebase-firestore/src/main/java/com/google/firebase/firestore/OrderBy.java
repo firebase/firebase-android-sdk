@@ -12,16 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.core;
+package com.google.firebase.firestore;
 
+import android.support.annotation.NonNull;
+
+import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.util.Assert;
 
 /** Represents a sort order for a Firestore Query */
+@PublicApi
 public class OrderBy {
   /** The direction of the ordering */
+  /** @hide **/
   public enum Direction {
     ASCENDING(1),
     DESCENDING(-1);
@@ -45,19 +50,28 @@ public class OrderBy {
     return direction;
   }
 
+  @NonNull
+  @PublicApi
+  public Query.Direction getSortDirection() {
+    return direction == Direction.ASCENDING ?
+            Query.Direction.ASCENDING : Query.Direction.DESCENDING;
+  }
+
+  @PublicApi
   public FieldPath getField() {
     return field;
   }
 
   private final Direction direction;
-  final FieldPath field;
+  private final FieldPath field;
 
   private OrderBy(Direction direction, FieldPath field) {
     this.direction = direction;
     this.field = field;
   }
 
-  int compare(Document d1, Document d2) {
+  /** @hide **/
+  public int compare(Document d1, Document d2) {
     if (field.equals(FieldPath.KEY_PATH)) {
       return direction.getComparisonModifier() * d1.getKey().compareTo(d2.getKey());
     } else {

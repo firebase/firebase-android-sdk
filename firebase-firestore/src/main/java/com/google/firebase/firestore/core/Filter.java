@@ -19,28 +19,10 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.DoubleValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.NullValue;
+import com.google.firebase.firestore.Filter.Operator;
 
 /** Interface used for all query filters. */
 public abstract class Filter {
-  public enum Operator {
-    LESS_THAN("<"),
-    LESS_THAN_OR_EQUAL("<="),
-    EQUAL("=="),
-    GREATER_THAN(">"),
-    GREATER_THAN_OR_EQUAL(">="),
-    ARRAY_CONTAINS("array_contains");
-
-    private final String text;
-
-    Operator(String text) {
-      this.text = text;
-    }
-
-    @Override
-    public String toString() {
-      return text;
-    }
-  }
 
   /**
    * Gets a Filter instance for the provided path, operator, and value.
@@ -50,14 +32,14 @@ public abstract class Filter {
    */
   public static Filter create(FieldPath path, Operator operator, FieldValue value) {
     if (value.equals(NullValue.nullValue())) {
-      if (operator != Filter.Operator.EQUAL) {
+      if (operator != Operator.EQUAL) {
         throw new IllegalArgumentException(
             "Invalid Query. You can only perform equality comparisons on null (via "
                 + "whereEqualTo()).");
       }
       return new NullFilter(path);
     } else if (value.equals(DoubleValue.NaN)) {
-      if (operator != Filter.Operator.EQUAL) {
+      if (operator != Operator.EQUAL) {
         throw new IllegalArgumentException(
             "Invalid Query. You can only perform equality comparisons on NaN (via "
                 + "whereEqualTo()).");

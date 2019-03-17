@@ -28,8 +28,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.Filter;
-import com.google.firebase.firestore.core.Filter.Operator;
-import com.google.firebase.firestore.core.OrderBy;
+import com.google.firebase.firestore.Filter.Operator;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.RelationFilter;
 import com.google.firebase.firestore.core.ViewSnapshot;
@@ -915,6 +914,47 @@ public class Query {
     QueryListener queryListener = firestore.getClient().listen(query, options, wrappedListener);
     return new ListenerRegistrationImpl(
         firestore.getClient(), queryListener, activity, wrappedListener);
+  }
+
+  @PublicApi
+  public String getPath() {
+    return query.getPath().canonicalString();
+  }
+
+  @PublicApi
+  public List<com.google.firebase.firestore.Filter> getFilters() {
+    com.google.firebase.firestore.Filter newFilter;
+    List<com.google.firebase.firestore.Filter> filters = new ArrayList<>();
+    for (Filter filter : query.getFilters()) {
+      newFilter = new com.google.firebase.firestore.Filter(filter);
+      filters.add(newFilter);
+    }
+    return filters;
+  }
+
+  @PublicApi
+  public List<OrderBy> getExplicitOrderBy() {
+    return query.getExplicitOrderBy();
+  }
+
+  @PublicApi
+  public boolean hasLimit() {
+    return query.hasLimit();
+  }
+
+  @PublicApi
+  public long getLimit() {
+    return query.getLimit();
+  }
+
+  @PublicApi
+  public @Nullable String getStartAt() {
+    return query.getStartAt().getFieldValue();
+  }
+
+  @PublicApi
+  public @Nullable String getEndAt() {
+    return query.getEndAt().getFieldValue();
   }
 
   @Override

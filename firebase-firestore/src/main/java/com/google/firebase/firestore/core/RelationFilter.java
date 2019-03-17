@@ -22,6 +22,7 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.util.Assert;
+import com.google.firebase.firestore.Filter.Operator;
 
 /** Represents a filter to be applied to query. */
 public class RelationFilter extends Filter {
