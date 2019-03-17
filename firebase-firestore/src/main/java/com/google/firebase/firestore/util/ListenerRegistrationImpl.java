@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import android.app.Activity;
 import android.support.v4.app.FragmentActivity;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.core.ExecutorEventListener;
+import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.ViewSnapshot;
@@ -57,7 +57,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   private final QueryListener queryListener;
 
   /** The event listener for the query that raises events asynchronously. */
-  private final ExecutorEventListener<ViewSnapshot> asyncEventListener;
+  private final AsyncEventListener<ViewSnapshot> asyncEventListener;
 
   static class CallbackList {
     void run() {
@@ -200,7 +200,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
       FirestoreClient client,
       QueryListener queryListener,
       @Nullable Activity activity,
-      ExecutorEventListener<ViewSnapshot> asyncEventListener) {
+      AsyncEventListener<ViewSnapshot> asyncEventListener) {
     this.client = client;
     this.queryListener = queryListener;
     this.asyncEventListener = asyncEventListener;

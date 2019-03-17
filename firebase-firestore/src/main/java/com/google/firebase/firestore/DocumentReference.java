@@ -26,8 +26,8 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
-import com.google.firebase.firestore.core.ExecutorEventListener;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
@@ -490,8 +490,8 @@ public class DocumentReference {
       ListenOptions options,
       @Nullable Activity activity,
       EventListener<DocumentSnapshot> listener) {
-    ExecutorEventListener<ViewSnapshot> wrappedListener =
-        new ExecutorEventListener<>(
+    AsyncEventListener<ViewSnapshot> wrappedListener =
+        new AsyncEventListener<>(
             executor,
             (snapshot, error) -> {
               if (snapshot != null) {

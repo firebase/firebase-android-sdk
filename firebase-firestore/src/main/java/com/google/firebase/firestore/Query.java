@@ -25,9 +25,9 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
-import com.google.firebase.firestore.core.ExecutorEventListener;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
@@ -899,8 +899,8 @@ public class Query {
       ListenOptions options,
       @Nullable Activity activity,
       EventListener<QuerySnapshot> listener) {
-    ExecutorEventListener<ViewSnapshot> wrappedListener =
-        new ExecutorEventListener<>(
+    AsyncEventListener<ViewSnapshot> wrappedListener =
+        new AsyncEventListener<>(
             executor,
             (@Nullable ViewSnapshot snapshot, @Nullable FirebaseFirestoreException error) -> {
               if (snapshot != null) {
