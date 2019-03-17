@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.util;
+package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.app.Activity;
 import android.support.v4.app.FragmentActivity;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.core.AsyncEventListener;
-import com.google.firebase.firestore.core.FirestoreClient;
-import com.google.firebase.firestore.core.QueryListener;
-import com.google.firebase.firestore.core.ViewSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
