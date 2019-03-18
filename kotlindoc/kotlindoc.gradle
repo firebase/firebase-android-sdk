@@ -1,0 +1,53 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.dokka-android'
+
+android {
+    compileSdkVersion project.targetSdkVersion
+    defaultConfig {
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
+    }
+}
+
+configurations {
+    dokkapath
+    dokkapath.description = "dokka project classpath"
+}
+
+def javaDeps = [
+        project(':firebase-common'),
+        project(':firebase-firestore'),
+]
+def kotlinDeps = [
+        project(':firebase-common-ktx'),
+        project(':firebase-firestore-ktx')
+]
+
+dependencies {
+    (javaDeps + kotlinDeps).each {
+        implementation it
+    }
+}
+
+dokka {
+    moduleName = "firebase-ktx"
+    outputDirectory = "$buildDir/dokka/dac"
+    outputFormat = "dac"
+    processConfigurations = []
+
+    javaDeps.each { Project p ->
+        sourceRoot {
+            path = "$p.buildDir/dokka-stubs"
+        }
+    }
+    afterEvaluate {
+        sourceDirs = files(kotlinDeps.collectMany {
+            it.android.sourceSets.main.java.srcDirs
+        })
+    }
+
+    externalDocumentationLink {
+        url = new URL('https://developer.android.com/reference/kotlin')
+    }
+}

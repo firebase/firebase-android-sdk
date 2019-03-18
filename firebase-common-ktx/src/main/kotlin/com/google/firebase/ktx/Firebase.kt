@@ -50,7 +50,7 @@ fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String
 val Firebase.options: FirebaseOptions
     get() = Firebase.app.options
 
-/** @hide */
+/** @suppress */
 @Keep
 class FirebaseCommonKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> {
