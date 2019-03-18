@@ -1,0 +1,65 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FieldValue - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="./index.html">FieldValue</a><br/>
+<br/>
+<h1>FieldValue</h1>
+<code><span class="keyword">abstract</span> <span class="keyword">class </span><span class="identifier">FieldValue</span></code>
+<p>Sentinel values that can be used when writing document fields with set() or update().</p>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="array-remove.html">arrayRemove</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">arrayRemove</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.FieldValue$arrayRemove(kotlin.Array((kotlin.Any)))/elements">elements</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FieldValue</span></a><span class="symbol">!</span></code>
+<p>Returns a special value that can be used with set() or update() that tells the server to remove the given elements from any array value that already exists on the server. All instances of each element specified will be removed from the array. If the field being modified is not already an array it will be overwritten with an empty array.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="array-union.html">arrayUnion</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">arrayUnion</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.FieldValue$arrayUnion(kotlin.Array((kotlin.Any)))/elements">elements</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FieldValue</span></a><span class="symbol">!</span></code>
+<p>Returns a special value that can be used with set() or update() that tells the server to union the given elements with any array value that already exists on the server. Each specified element that doesn't already exist in the array will be added to the end. If the field being modified is not already an array it will be overwritten with an array containing exactly the specified elements.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="delete.html">delete</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">delete</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FieldValue</span></a><span class="symbol">!</span></code>
+<p>Returns a sentinel for use with update() to mark a field for deletion.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="increment.html">increment</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">increment</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FieldValue$increment(kotlin.Long)/l">l</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FieldValue</span></a><span class="symbol">!</span></code><br/>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">increment</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FieldValue$increment(kotlin.Double)/l">l</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-double/index.html"><span class="identifier">Double</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FieldValue</span></a><span class="symbol">!</span></code>
+<p>Returns a special value that can be used with set() or update() that tells the server to increment the field's current value by the given value. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="server-timestamp.html">serverTimestamp</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">serverTimestamp</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FieldValue</span></a><span class="symbol">!</span></code>
+<p>Returns a sentinel for use with set() or update() to include a server-generated timestamp in the written data.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

@@ -1,0 +1,119 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>QuerySnapshot - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="./index.html">QuerySnapshot</a><br/>
+<br/>
+<h1>QuerySnapshot</h1>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">QuerySnapshot</span></code>
+<p>A QuerySnapshot contains the results of a query. It can contain zero or more DocumentSnapshot objects. </p>
+<p><strong>Subclassing Note</strong>: Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="equals.html">equals</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">equals</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.QuerySnapshot$equals(kotlin.Any)/other">other</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">?</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="get-document-changes.html">getDocumentChanges</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getDocumentChanges</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code>
+<p>Returns the list of documents that changed since the last snapshot. If it's the first snapshot all documents will be in the list as added changes. </p>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getDocumentChanges</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.QuerySnapshot$getDocumentChanges(com.google.firebase.firestore.MetadataChanges)/metadataChanges">metadataChanges</span><span class="symbol">:</span>&nbsp;<a href="../-metadata-changes/index.html"><span class="identifier">MetadataChanges</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code>
+<p>Returns the list of documents that changed since the last snapshot. If it's the first snapshot all documents will be in the list as added changes.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-documents.html">getDocuments</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getDocuments</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code>
+<p>Returns the documents in this QuerySnapshot as a List in order of the query.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-metadata.html">getMetadata</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getMetadata</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-snapshot-metadata/index.html"><span class="identifier">SnapshotMetadata</span></a><span class="symbol">!</span></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="get-query.html">getQuery</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getQuery</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-query/index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="hash-code.html">hashCode</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">hashCode</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="is-empty.html">isEmpty</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">isEmpty</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code>
+<p>Returns true if there are no documents in the QuerySnapshot.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="iterator.html">iterator</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">iterator</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Iterator</span><span class="symbol">!</span></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="size.html">size</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">size</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code>
+<p>Returns the number of documents in the QuerySnapshot.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="to-objects.html">toObjects</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">toObjects</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.QuerySnapshot$toObjects(java.lang.Class((com.google.firebase.firestore.QuerySnapshot.toObjects.T)))/clazz">clazz</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/java/lang/Class.html"><span class="identifier">Class</span></a><span class="symbol">&lt;</span><a href="to-objects.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code><br/>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">toObjects</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.QuerySnapshot$toObjects(java.lang.Class((com.google.firebase.firestore.QuerySnapshot.toObjects.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/clazz">clazz</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/java/lang/Class.html"><span class="identifier">Class</span></a><span class="symbol">&lt;</span><a href="to-objects.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.QuerySnapshot$toObjects(java.lang.Class((com.google.firebase.firestore.QuerySnapshot.toObjects.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="../-document-snapshot/-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code>
+<p>Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as a list.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3>Extension Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="../../com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-snapshot/to-objects.html">toObjects</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">&gt;</span> <a href="./index.html"><span class="identifier">QuerySnapshot</span></a><span class="symbol">.</span><span class="identifier">toObjects</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html"><span class="identifier">List</span></a><span class="symbol">&lt;</span><a href="../../com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-snapshot/to-objects.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span></code><br/>
+<code><span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">&gt;</span> <a href="./index.html"><span class="identifier">QuerySnapshot</span></a><span class="symbol">.</span><span class="identifier">toObjects</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.ktx$toObjects(com.google.firebase.firestore.QuerySnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="../-document-snapshot/-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html"><span class="identifier">List</span></a><span class="symbol">&lt;</span><a href="../../com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-snapshot/to-objects.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span></code>
+<p>Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as
+a list.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

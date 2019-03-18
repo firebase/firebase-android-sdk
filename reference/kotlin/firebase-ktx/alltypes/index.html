@@ -1,0 +1,290 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>alltypes - firebase-ktx</title>
+<link rel="stylesheet" href="../../style.css">
+</HEAD>
+<BODY>
+<h3>All Types</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-blob/index.html">com.google.firebase.firestore.Blob</a></td>
+<td>
+<p>Immutable class representing an array of bytes in Firestore.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-collection-reference/index.html">com.google.firebase.firestore.CollectionReference</a></td>
+<td>
+<p>A CollectionReference can be used for adding documents, getting document references, and querying for documents (using the methods inherited from Query). </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-document-change/index.html">com.google.firebase.firestore.DocumentChange</a></td>
+<td>
+<p>A DocumentChange represents a change to the documents matching a query. It contains the document affected and a the type of change that occurred (added, modified, or removed). </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-document-reference/index.html">com.google.firebase.firestore.DocumentReference</a></td>
+<td>
+<p>A DocumentReference refers to a document location in a Firestore database and can be used to write, read, or listen to the location. There may or may not exist a document at the referenced location. A DocumentReference can also be used to create a CollectionReference to a subcollection. </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore.ktx/com.google.firebase.firestore.-document-snapshot/index.html">com.google.firebase.firestore.DocumentSnapshot</a> (extensions in package com.google.firebase.firestore.ktx)</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-document-snapshot/index.html">com.google.firebase.firestore.DocumentSnapshot</a></td>
+<td>
+<p>A DocumentSnapshot contains data read from a document in your Firestore database. The data can be extracted with the getData() or get() methods. </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-event-listener/index.html">com.google.firebase.firestore.EventListener</a></td>
+<td>
+<p>An interface for event listeners.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-exclude/index.html">com.google.firebase.firestore.Exclude</a></td>
+<td>
+<p>Marks a field as excluded from the Database.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-field-path/index.html">com.google.firebase.firestore.FieldPath</a></td>
+<td>
+<p>A <code>FieldPath</code> refers to a field in a document. The path may consist of a single field name (referring to a top level field in the document), or a list of field names (referring to a nested field in the document).</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-field-value/index.html">com.google.firebase.firestore.FieldValue</a></td>
+<td>
+<p>Sentinel values that can be used when writing document fields with set() or update().</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.ktx/-firebase.html">com.google.firebase.ktx.Firebase</a></td>
+<td>
+<p>Single access point to all firebase sdks from Kotlin.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase/-firebase-app/index.html">com.google.firebase.FirebaseApp</a></td>
+<td>
+<p>The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most applications don't need to directly interact with FirebaseApp. </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.auth/-firebase-auth-exception/index.html">com.google.firebase.auth.FirebaseAuthException</a></td>
+<td>
+<p>Generic exception related to Firebase Authentication. Check the error code and message for more details.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-firebase-firestore/index.html">com.google.firebase.firestore.FirebaseFirestore</a></td>
+<td>
+<p>Represents a Firestore Database and is the entry point for all Firestore operations </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-firebase-firestore-exception/index.html">com.google.firebase.firestore.FirebaseFirestoreException</a></td>
+<td>
+<p>A class of exceptions thrown by Firestore</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore.ktx/-firebase-firestore-ktx-registrar/index.html">com.google.firebase.firestore.ktx.FirebaseFirestoreKtxRegistrar</a></td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-firebase-firestore-settings/index.html">com.google.firebase.firestore.FirebaseFirestoreSettings</a></td>
+<td>
+<p>Settings used to configure a FirebaseFirestore instance.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.provider/-firebase-init-provider/index.html">com.google.firebase.provider.FirebaseInitProvider</a></td>
+<td>
+<p>Initializes Firebase APIs at app startup time.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase/-firebase-network-exception/index.html">com.google.firebase.FirebaseNetworkException</a></td>
+<td>
+<p>Exception thrown when a request to a Firebase service has failed due to a network error. Inspect the device's network connectivity state or retry later to resolve.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase/-firebase-options/index.html">com.google.firebase.FirebaseOptions</a></td>
+<td>
+<p>Configurable Firebase options.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase/-firebase-too-many-requests-exception/index.html">com.google.firebase.FirebaseTooManyRequestsException</a></td>
+<td>
+<p>Exception thrown when a request to a Firebase service has been blocked due to having received too many consecutive requests from the same device. Retry the request later to resolve.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-geo-point/index.html">com.google.firebase.firestore.GeoPoint</a></td>
+<td>
+<p>Immutable class representing a GeoPoint in Firestore</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.auth/-get-token-result/index.html">com.google.firebase.auth.GetTokenResult</a></td>
+<td>
+<p>Result object that contains a Firebase Auth ID Token.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-ignore-extra-properties/index.html">com.google.firebase.firestore.IgnoreExtraProperties</a></td>
+<td>
+<p>Properties that don't map to class fields are ignored when serializing to a class annotated with this annotation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-listener-registration/index.html">com.google.firebase.firestore.ListenerRegistration</a></td>
+<td>
+<p>Represents a listener that can be removed by calling remove().</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-metadata-changes/index.html">com.google.firebase.firestore.MetadataChanges</a></td>
+<td>
+<p>Indicates whether metadata-only changes (i.e. only <code>DocumentSnapshot.getMetadata()</code> or <code>Query.getMetadata()</code> changed) should trigger snapshot events.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-property-name/index.html">com.google.firebase.firestore.PropertyName</a></td>
+<td>
+<p>Marks a field to be renamed when serialized.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-query/index.html">com.google.firebase.firestore.Query</a></td>
+<td>
+<p>A Query which you can read or listen to. You can also construct refined Query objects by adding filters and ordering. </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-document-snapshot/index.html">com.google.firebase.firestore.QueryDocumentSnapshot</a> (extensions in package com.google.firebase.firestore.ktx)</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-query-document-snapshot/index.html">com.google.firebase.firestore.QueryDocumentSnapshot</a></td>
+<td>
+<p>A QueryDocumentSnapshot contains data read from a document in your Firestore database as part of a query. The document is guaranteed to exist and its data can be extracted using the getData() or get() methods. </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-snapshot/index.html">com.google.firebase.firestore.QuerySnapshot</a> (extensions in package com.google.firebase.firestore.ktx)</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-query-snapshot/index.html">com.google.firebase.firestore.QuerySnapshot</a></td>
+<td>
+<p>A QuerySnapshot contains the results of a query. It can contain zero or more DocumentSnapshot objects. </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-server-timestamp/index.html">com.google.firebase.firestore.ServerTimestamp</a></td>
+<td>
+<p>Annotation used to mark a timestamp field to be populated with a server timestamp. If a POJO being written contains null for a @ServerTimestamp-annotated field, it will be replaced with a server-generated timestamp.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-set-options/index.html">com.google.firebase.firestore.SetOptions</a></td>
+<td>
+<p>An options object that configures the behavior of set() calls. By providing one of the SetOptions objects returned by <code><a href="../com.google.firebase.firestore/-set-options/merge.html">merge</a></code>, <code><a href="../com.google.firebase.firestore/-set-options/merge-fields.html">mergeFields</a></code> and <code><a href="../com.google.firebase.firestore/-set-options/merge-field-paths.html">mergeFieldPaths</a></code>, the set() calls in <code><a href="../com.google.firebase.firestore/-document-reference/index.html">DocumentReference</a></code>, <code><a href="../com.google.firebase.firestore/-write-batch/index.html">WriteBatch</a></code> and <code><a href="../com.google.firebase.firestore/-transaction/index.html">Transaction</a></code> can be configured to perform granular merges instead of overwriting the target documents in their entirety.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-snapshot-metadata/index.html">com.google.firebase.firestore.SnapshotMetadata</a></td>
+<td>
+<p>Metadata about a snapshot, describing the state of the snapshot. </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-source/index.html">com.google.firebase.firestore.Source</a></td>
+<td>
+<p>Configures the behavior of <code>get()</code> calls on <code><a href="../com.google.firebase.firestore/-document-reference/index.html">DocumentReference</a></code> and <code><a href="../com.google.firebase.firestore/-query/index.html">Query</a></code>. By providing a Source value, these methods can be configured to fetch results only from the server, only from the local cache, or attempt to fetch results from the server and fall back to the cache (which is the default).</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-throw-on-extra-properties/index.html">com.google.firebase.firestore.ThrowOnExtraProperties</a></td>
+<td>
+<p>Properties that don't map to class fields when serializing to a class annotated with this annotation cause an exception to be thrown.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase/-timestamp/index.html">com.google.firebase.Timestamp</a></td>
+<td>
+<p>A Timestamp represents a point in time independent of any time zone or calendar, represented as seconds and fractions of seconds at nanosecond resolution in UTC Epoch time. It is encoded using the Proleptic Gregorian Calendar which extends the Gregorian calendar backwards to year one. It is encoded assuming all minutes are 60 seconds long, i.e. leap seconds are "smeared" so that no leap second table is needed for interpretation. Range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z. By restricting to that range, we ensure that we can convert to and from RFC 3339 date strings.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-transaction/index.html">com.google.firebase.firestore.Transaction</a></td>
+<td>
+<p>A Transaction is passed to a Function to provide the methods to read and write data within the transaction context. </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-write-batch/index.html">com.google.firebase.firestore.WriteBatch</a></td>
+<td>
+<p>A write batch, used to perform multiple writes as a single atomic unit. </p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

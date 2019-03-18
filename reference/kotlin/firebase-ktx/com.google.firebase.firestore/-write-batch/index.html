@@ -1,0 +1,77 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>WriteBatch - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="./index.html">WriteBatch</a><br/>
+<br/>
+<h1>WriteBatch</h1>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">WriteBatch</span></code>
+<p>A write batch, used to perform multiple writes as a single atomic unit. </p>
+<p>A Batch object can be acquired by calling <code><a href="../-firebase-firestore/batch.html">FirebaseFirestore#batch()</a></code>. It provides methods for adding writes to the write batch. None of the writes will be committed (or visible locally) until <code><a href="commit.html">commit()</a></code> is called. </p>
+<p>Unlike transactions, write batches are persisted offline and therefore are preferable when you don't need to condition your writes on read data. </p>
+<p><strong>Subclassing Note</strong>: Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
+<h3>Types</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-function/index.html">Function</a></p>
+</td>
+<td>
+<code><span class="keyword">interface </span><span class="identifier">Function</span></code>
+<p>An interface for providing code to be executed within a <code><a href="./index.html">WriteBatch</a></code> context.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="commit.html">commit</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">commit</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Commits all of the writes in this write batch as a single atomic unit.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="delete.html">delete</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">delete</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$delete(com.google.firebase.firestore.DocumentReference)/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">WriteBatch</span></a><span class="symbol">!</span></code>
+<p>Deletes the document referred to by the provided DocumentReference.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="set.html">set</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">set</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$set(com.google.firebase.firestore.DocumentReference, kotlin.Any)/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$set(com.google.firebase.firestore.DocumentReference, kotlin.Any)/data">data</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">WriteBatch</span></a><span class="symbol">!</span></code>
+<p>Overwrites the document referred to by the provided DocumentReference. If the document does not yet exist, it will be created. If a document already exists, it will be overwritten.</p>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">set</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$set(com.google.firebase.firestore.DocumentReference, kotlin.Any, com.google.firebase.firestore.SetOptions)/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$set(com.google.firebase.firestore.DocumentReference, kotlin.Any, com.google.firebase.firestore.SetOptions)/data">data</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$set(com.google.firebase.firestore.DocumentReference, kotlin.Any, com.google.firebase.firestore.SetOptions)/options">options</span><span class="symbol">:</span>&nbsp;<a href="../-set-options/index.html"><span class="identifier">SetOptions</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">WriteBatch</span></a><span class="symbol">!</span></code>
+<p>Writes to the document referred to by the provided DocumentReference. If the document does not yet exist, it will be created. If you pass <code><a href="../-set-options/index.html">SetOptions</a></code>, the provided data can be merged into an existing document.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="update.html">update</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">update</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$update(com.google.firebase.firestore.DocumentReference, Map)/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$update(com.google.firebase.firestore.DocumentReference, Map)/data">data</span><span class="symbol">:</span>&nbsp;<span class="identifier">Map</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">WriteBatch</span></a><span class="symbol">!</span></code><br/>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">update</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$update(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$update(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$update(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.WriteBatch$update(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/moreFieldsAndValues">moreFieldsAndValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">WriteBatch</span></a><span class="symbol">!</span></code>
+<p>Updates fields in the document referred to by the provided DocumentReference. If no document exists yet, the update will fail.</p>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">update</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$update(com.google.firebase.firestore.DocumentReference, kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$update(com.google.firebase.firestore.DocumentReference, kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.WriteBatch$update(com.google.firebase.firestore.DocumentReference, kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.WriteBatch$update(com.google.firebase.firestore.DocumentReference, kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/moreFieldsAndValues">moreFieldsAndValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">WriteBatch</span></a><span class="symbol">!</span></code>
+<p>Updates field in the document referred to by the provided DocumentReference. If no document exists yet, the update will fail.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

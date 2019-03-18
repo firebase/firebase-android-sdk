@@ -1,0 +1,76 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>Transaction - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="./index.html">Transaction</a><br/>
+<br/>
+<h1>Transaction</h1>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">Transaction</span></code>
+<p>A Transaction is passed to a Function to provide the methods to read and write data within the transaction context. </p>
+<p><strong>Subclassing Note</strong>: Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
+<p><strong>See Also</strong><br/>
+<a href="../-firebase-firestore/run-transaction.html">FirebaseFirestore#runTransaction(Function)</a></p>
+<h3>Types</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-function/index.html">Function</a></p>
+</td>
+<td>
+<code><span class="keyword">interface </span><span class="identifier">Function</span><span class="symbol">&lt;</span><span class="identifier">TResult</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span></code>
+<p>An interface for providing code to be executed within a transaction context.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="delete.html">delete</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">delete</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Transaction$delete(com.google.firebase.firestore.DocumentReference)/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Transaction</span></a><span class="symbol">!</span></code>
+<p>Deletes the document referred to by the provided DocumentReference.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get.html">get</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Transaction$get(com.google.firebase.firestore.DocumentReference)/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span></code>
+<p>Reads the document referenced by this DocumentReference</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="set.html">set</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">set</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Transaction$set(com.google.firebase.firestore.DocumentReference, kotlin.Any)/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Transaction$set(com.google.firebase.firestore.DocumentReference, kotlin.Any)/data">data</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Transaction</span></a><span class="symbol">!</span></code>
+<p>Overwrites the document referred to by the provided DocumentReference. If the document does not yet exist, it will be created. If a document already exists, it will be overwritten.</p>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">set</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Transaction$set(com.google.firebase.firestore.DocumentReference, kotlin.Any, com.google.firebase.firestore.SetOptions)/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Transaction$set(com.google.firebase.firestore.DocumentReference, kotlin.Any, com.google.firebase.firestore.SetOptions)/data">data</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Transaction$set(com.google.firebase.firestore.DocumentReference, kotlin.Any, com.google.firebase.firestore.SetOptions)/options">options</span><span class="symbol">:</span>&nbsp;<a href="../-set-options/index.html"><span class="identifier">SetOptions</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Transaction</span></a><span class="symbol">!</span></code>
+<p>Writes to the document referred to by the provided DocumentReference. If the document does not yet exist, it will be created. If you pass <code><a href="../-set-options/index.html">SetOptions</a></code>, the provided data can be merged into an existing document.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="update.html">update</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">update</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Transaction$update(com.google.firebase.firestore.DocumentReference, Map)/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Transaction$update(com.google.firebase.firestore.DocumentReference, Map)/data">data</span><span class="symbol">:</span>&nbsp;<span class="identifier">Map</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Transaction</span></a><span class="symbol">!</span></code><br/>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">update</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Transaction$update(com.google.firebase.firestore.DocumentReference, kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Transaction$update(com.google.firebase.firestore.DocumentReference, kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Transaction$update(com.google.firebase.firestore.DocumentReference, kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.Transaction$update(com.google.firebase.firestore.DocumentReference, kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/moreFieldsAndValues">moreFieldsAndValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Transaction</span></a><span class="symbol">!</span></code><br/>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">update</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Transaction$update(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/documentRef">documentRef</span><span class="symbol">:</span>&nbsp;<a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Transaction$update(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Transaction$update(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.Transaction$update(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/moreFieldsAndValues">moreFieldsAndValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Transaction</span></a><span class="symbol">!</span></code>
+<p>Updates fields in the document referred to by the provided DocumentReference. If no document exists yet, the update will fail.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

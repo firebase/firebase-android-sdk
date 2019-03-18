@@ -1,0 +1,113 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FirebaseFirestoreSettings - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="./index.html">FirebaseFirestoreSettings</a><br/>
+<br/>
+<h1>FirebaseFirestoreSettings</h1>
+<code><span class="keyword">class </span><span class="identifier">FirebaseFirestoreSettings</span></code>
+<p>Settings used to configure a FirebaseFirestore instance.</p>
+<h3>Types</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-builder/index.html">Builder</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">Builder</span></code>
+<p>A Builder for creating <code><a href="./index.html">FirebaseFirestoreSettings</a></code>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3>Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-c-a-c-h-e_-s-i-z-e_-u-n-l-i-m-i-t-e-d.html">CACHE_SIZE_UNLIMITED</a></p>
+</td>
+<td>
+<code><span class="keyword">static</span> <span class="keyword">val </span><span class="identifier">CACHE_SIZE_UNLIMITED</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code>
+<p>Constant to use with <code><a href="-builder/set-cache-size-bytes.html">FirebaseFirestoreSettings.Builder#setCacheSizeBytes(long)</a></code> to disable garbage collection.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="are-timestamps-in-snapshots-enabled.html">areTimestampsInSnapshotsEnabled</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">areTimestampsInSnapshotsEnabled</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code>
+<p>Returns whether or not <code><a href="../-document-snapshot/index.html">DocumentSnapshots</a></code> return timestamp fields as <code><a href="../../com.google.firebase/-timestamp/index.html">Timestamps</a></code>.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="equals.html">equals</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">equals</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestoreSettings$equals(kotlin.Any)/other">other</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">?</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="get-cache-size-bytes.html">getCacheSizeBytes</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">getCacheSizeBytes</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code>
+<p>Returns the threshold for the cache size above which the SDK will attempt to collect the least recently used documents.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-host.html">getHost</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">getHost</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>Returns the host of the Firestore backend.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="hash-code.html">hashCode</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">hashCode</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="is-persistence-enabled.html">isPersistenceEnabled</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">isPersistenceEnabled</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code>
+<p>Returns whether or not to use local persistent storage.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="is-ssl-enabled.html">isSslEnabled</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">isSslEnabled</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code>
+<p>Returns whether or not to use SSL for communication.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="to-string.html">toString</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">toString</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

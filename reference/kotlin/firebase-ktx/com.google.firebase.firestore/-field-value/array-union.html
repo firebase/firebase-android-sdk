@@ -1,0 +1,20 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FieldValue.arrayUnion - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">FieldValue</a>&nbsp;/&nbsp;<a href="./array-union.html">arrayUnion</a><br/>
+<br/>
+<h1>arrayUnion</h1>
+<a name="com.google.firebase.firestore.FieldValue$arrayUnion(kotlin.Array((kotlin.Any)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">arrayUnion</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.FieldValue$arrayUnion(kotlin.Array((kotlin.Any)))/elements">elements</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">FieldValue</span></a><span class="symbol">!</span></code>
+<p>Returns a special value that can be used with set() or update() that tells the server to union the given elements with any array value that already exists on the server. Each specified element that doesn't already exist in the array will be added to the end. If the field being modified is not already an array it will be overwritten with an array containing exactly the specified elements.</p>
+<h3>Parameters</h3>
+<p><a name="elements"></a>
+<code>elements</code> - <span class="symbol">:</span> The elements to union into the array.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The FieldValue sentinel for use in a call to set() or update().</p>
+</BODY>
+</HTML>

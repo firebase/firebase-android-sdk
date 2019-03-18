@@ -1,0 +1,18 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FirebaseFirestoreSettings.Builder.setTimestampsInSnapshotsEnabled - firebase-ktx</title>
+<link rel="stylesheet" href="../../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="../index.html">FirebaseFirestoreSettings</a>&nbsp;/&nbsp;<a href="index.html">Builder</a>&nbsp;/&nbsp;<a href="./set-timestamps-in-snapshots-enabled.html">setTimestampsInSnapshotsEnabled</a><br/>
+<br/>
+<h1>setTimestampsInSnapshotsEnabled</h1>
+<a name="com.google.firebase.firestore.FirebaseFirestoreSettings.Builder$setTimestampsInSnapshotsEnabled(kotlin.Boolean)"></a>
+<code><span class="keyword">fun </span><span class="identifier">setTimestampsInSnapshotsEnabled</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestoreSettings.Builder$setTimestampsInSnapshotsEnabled(kotlin.Boolean)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">FirebaseFirestoreSettings.Builder</span></a><span class="symbol">!</span></code>
+<p>Specifies whether to use <code><a href="../../../com.google.firebase/-timestamp/index.html">Timestamps</a></code> for timestamp fields in <code><a href="../../-document-snapshot/index.html">DocumentSnapshots</a></code>. This is now enabled by default and should not be disabled. </p>
+<p>Previously, Firestore returned timestamp fields as <code><a href="https://developer.android.com/reference/java/util/Date.html">java.util.Date</a></code> but only supports millisecond precision, which leads to truncation and causes unexpected behavior when using a timestamp from a snapshot as a part of a subsequent query. </p>
+<p>So now Firestore returns <code><a href="../../../com.google.firebase/-timestamp/index.html">Timestamp</a></code> values instead of <code><a href="https://developer.android.com/reference/java/util/Date.html">java.util.Date</a></code>, avoiding this kind of problem. </p>
+<p>To opt into the old behavior of returning <code><a href="https://developer.android.com/reference/java/util/Date.html">Dates</a></code>, you can temporarily set <code><a href="../are-timestamps-in-snapshots-enabled.html">FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled</a></code> to false.</p>
+</BODY>
+</HTML>

@@ -1,0 +1,117 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FirebaseOptions - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase</a>&nbsp;/&nbsp;<a href="./index.html">FirebaseOptions</a><br/>
+<br/>
+<h1>FirebaseOptions</h1>
+<code><span class="keyword">class </span><span class="identifier">FirebaseOptions</span></code>
+<p>Configurable Firebase options.</p>
+<h3>Types</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-builder/index.html">Builder</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">Builder</span></code>
+<p>Builder for constructing FirebaseOptions.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="equals.html">equals</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">equals</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseOptions$equals(kotlin.Any)/other">other</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">?</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="from-resource.html">fromResource</a></p>
+</td>
+<td>
+<code><span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">fromResource</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseOptions$fromResource(Context)/context">context</span><span class="symbol">:</span>&nbsp;<span class="identifier">Context</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FirebaseOptions</span></a><span class="symbol">!</span></code>
+<p>Creates a new <code><a href="./index.html">FirebaseOptions</a></code> instance that is populated from string resouces.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-api-key.html">getApiKey</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">getApiKey</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>API key used for authenticating requests from your app, e.g. AIzaSyDdVgKwhZl0sTTTLZ7iTmt1r3N2cJLnaDk, used to identify your app to Google servers.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-application-id.html">getApplicationId</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">getApplicationId</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>The Google App ID that is used to uniquely identify an instance of an app.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-database-url.html">getDatabaseUrl</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">getDatabaseUrl</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>The database root URL, e.g. http://abc-xyz-123.firebaseio.com.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-gcm-sender-id.html">getGcmSenderId</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">getGcmSenderId</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>The Project Number from the Google Developer's console, for example 012345678901, used to configure Google Cloud Messaging.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-project-id.html">getProjectId</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">getProjectId</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>The Google Cloud project ID, e.g. my-project-1234</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-storage-bucket.html">getStorageBucket</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">getStorageBucket</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>The Google Cloud Storage bucket name, e.g. abc-xyz-123.storage.firebase.com.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="hash-code.html">hashCode</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">hashCode</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="to-string.html">toString</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">toString</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

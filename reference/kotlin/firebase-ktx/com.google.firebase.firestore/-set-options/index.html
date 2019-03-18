@@ -1,0 +1,61 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>SetOptions - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="./index.html">SetOptions</a><br/>
+<br/>
+<h1>SetOptions</h1>
+<code><span class="keyword">class </span><span class="identifier">SetOptions</span></code>
+<p>An options object that configures the behavior of set() calls. By providing one of the SetOptions objects returned by <code><a href="merge.html">merge</a></code>, <code><a href="merge-fields.html">mergeFields</a></code> and <code><a href="merge-field-paths.html">mergeFieldPaths</a></code>, the set() calls in <code><a href="../-document-reference/index.html">DocumentReference</a></code>, <code><a href="../-write-batch/index.html">WriteBatch</a></code> and <code><a href="../-transaction/index.html">Transaction</a></code> can be configured to perform granular merges instead of overwriting the target documents in their entirety.</p>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="equals.html">equals</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">equals</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.SetOptions$equals(kotlin.Any)/other">other</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">?</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="hash-code.html">hashCode</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">hashCode</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="merge.html">merge</a></p>
+</td>
+<td>
+<code><span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">merge</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">SetOptions</span></a><span class="symbol">!</span></code>
+<p>Changes the behavior of set() calls to only replace the values specified in its data argument. Fields omitted from the set() call will remain untouched.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="merge-field-paths.html">mergeFieldPaths</a></p>
+</td>
+<td>
+<code><span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">mergeFieldPaths</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.SetOptions$mergeFieldPaths(List)/fields">fields</span><span class="symbol">:</span>&nbsp;<span class="identifier">List</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">SetOptions</span></a><span class="symbol">!</span></code>
+<p>Changes the behavior of set() calls to only replace the fields under fieldPaths. Any field that is not specified in fieldPaths is ignored and remains untouched. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="merge-fields.html">mergeFields</a></p>
+</td>
+<td>
+<code><span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">mergeFields</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.SetOptions$mergeFields(List)/fields">fields</span><span class="symbol">:</span>&nbsp;<span class="identifier">List</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">SetOptions</span></a><span class="symbol">!</span></code><br/>
+<code><span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">mergeFields</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.SetOptions$mergeFields(kotlin.Array((kotlin.String)))/fields">fields</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">SetOptions</span></a><span class="symbol">!</span></code>
+<p>Changes the behavior of set() calls to only replace the fields under fieldPaths. Any field that is not specified in fieldPaths is ignored and remains untouched. </p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

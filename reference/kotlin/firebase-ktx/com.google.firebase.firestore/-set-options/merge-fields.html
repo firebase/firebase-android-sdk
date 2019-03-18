@@ -1,0 +1,26 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>SetOptions.mergeFields - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">SetOptions</a>&nbsp;/&nbsp;<a href="./merge-fields.html">mergeFields</a><br/>
+<br/>
+<h1>mergeFields</h1>
+<a name="com.google.firebase.firestore.SetOptions$mergeFields(List)"></a>
+<code><span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">mergeFields</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.SetOptions$mergeFields(List)/fields">fields</span><span class="symbol">:</span>&nbsp;<span class="identifier">List</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">SetOptions</span></a><span class="symbol">!</span></code>
+<p>Changes the behavior of set() calls to only replace the fields under fieldPaths. Any field that is not specified in fieldPaths is ignored and remains untouched. </p>
+<p>It is an error to pass a SetOptions object to a set() call that is missing a value for any of the fields specified here.</p>
+<h3>Parameters</h3>
+<p><a name="fields"></a>
+<code>fields</code> - <span class="symbol">:</span> The list of fields to merge. Fields can contain dots to reference nested fields within the document.</p>
+<a name="com.google.firebase.firestore.SetOptions$mergeFields(kotlin.Array((kotlin.String)))"></a>
+<code><span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">mergeFields</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.SetOptions$mergeFields(kotlin.Array((kotlin.String)))/fields">fields</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">SetOptions</span></a><span class="symbol">!</span></code>
+<p>Changes the behavior of set() calls to only replace the fields under fieldPaths. Any field that is not specified in fieldPaths is ignored and remains untouched. </p>
+<p>It is an error to pass a SetOptions object to a set() call that is missing a value for any of the fields specified here.</p>
+<h3>Parameters</h3>
+<p><a name="fields"></a>
+<code>fields</code> - <span class="symbol">:</span> The list of fields to merge. Fields can contain dots to reference nested fields within the document.</p>
+</BODY>
+</HTML>

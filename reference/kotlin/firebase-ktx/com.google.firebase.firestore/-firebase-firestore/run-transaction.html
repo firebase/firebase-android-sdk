@@ -1,0 +1,20 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FirebaseFirestore.runTransaction - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">FirebaseFirestore</a>&nbsp;/&nbsp;<a href="./run-transaction.html">runTransaction</a><br/>
+<br/>
+<h1>runTransaction</h1>
+<a name="com.google.firebase.firestore.FirebaseFirestore$runTransaction(com.google.firebase.firestore.Transaction.Function((com.google.firebase.firestore.FirebaseFirestore.runTransaction.TResult)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">TResult</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">runTransaction</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$runTransaction(com.google.firebase.firestore.Transaction.Function((com.google.firebase.firestore.FirebaseFirestore.runTransaction.TResult)))/updateFunction">updateFunction</span><span class="symbol">:</span>&nbsp;<a href="../-transaction/-function/index.html"><span class="identifier">Transaction.Function</span></a><span class="symbol">&lt;</span><a href="run-transaction.html#TResult"><span class="identifier">TResult</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Executes the given updateFunction and then attempts to commit the changes applied within the transaction. If any document read within the transaction has changed, the updateFunction will be retried. If it fails to commit after 5 attempts, the transaction will fail.</p>
+<h3>Parameters</h3>
+<p><a name="updateFunction"></a>
+<code>updateFunction</code> - <span class="symbol">:</span> The function to execute within the transaction context.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The task returned from the updateFunction.</p>
+</BODY>
+</HTML>

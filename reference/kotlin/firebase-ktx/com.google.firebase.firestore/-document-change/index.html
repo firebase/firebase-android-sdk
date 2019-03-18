@@ -1,0 +1,82 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>DocumentChange - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="./index.html">DocumentChange</a><br/>
+<br/>
+<h1>DocumentChange</h1>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">DocumentChange</span></code>
+<p>A DocumentChange represents a change to the documents matching a query. It contains the document affected and a the type of change that occurred (added, modified, or removed). </p>
+<p><strong>Subclassing Note</strong>: Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
+<h3>Types</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-type/index.html">Type</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">Type</span></code>
+<p>An enumeration of snapshot diff types.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="equals.html">equals</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">equals</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentChange$equals(kotlin.Any)/other">other</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">?</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="get-document.html">getDocument</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getDocument</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-query-document-snapshot/index.html"><span class="identifier">QueryDocumentSnapshot</span></a><span class="symbol">!</span></code>
+<p>Returns the newly added or modified document if this DocumentChange is for an updated document. Returns the deleted document if this document change represents a removal.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-new-index.html">getNewIndex</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getNewIndex</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code>
+<p>The index of the changed document in the result set immediately after this DocumentChange (i.e. supposing that all prior DocumentChange objects and the current DocumentChange object have been applied). Returns -1 for 'removed' events.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-old-index.html">getOldIndex</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getOldIndex</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code>
+<p>The index of the changed document in the result set immediately prior to this DocumentChange (i.e. supposing that all prior DocumentChange objects have been applied). Returns -1 for 'added' events.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-type.html">getType</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getType</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="-type/index.html"><span class="identifier">DocumentChange.Type</span></a><span class="symbol">!</span></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="hash-code.html">hashCode</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">hashCode</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

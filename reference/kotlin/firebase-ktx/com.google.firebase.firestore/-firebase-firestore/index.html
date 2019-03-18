@@ -1,0 +1,127 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FirebaseFirestore - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="./index.html">FirebaseFirestore</a><br/>
+<br/>
+<h1>FirebaseFirestore</h1>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">FirebaseFirestore</span></code>
+<p>Represents a Firestore Database and is the entry point for all Firestore operations </p>
+<p><strong>Subclassing Note</strong>: Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="batch.html">batch</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">batch</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-write-batch/index.html"><span class="identifier">WriteBatch</span></a><span class="symbol">!</span></code>
+<p>Creates a write batch, used for performing multiple writes as a single atomic operation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="collection.html">collection</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">collection</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$collection(kotlin.String)/collectionPath">collectionPath</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-collection-reference/index.html"><span class="identifier">CollectionReference</span></a><span class="symbol">!</span></code>
+<p>Gets a CollectionReference instance that refers to the collection at the specified path within the database.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="disable-network.html">disableNetwork</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">disableNetwork</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Disables network access for this instance. While the network is disabled, any snapshot listeners or get() calls will return results from cache, and any write operations will be queued until network usage is re-enabled via a call to enableNetwork().</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="document.html">document</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">document</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$document(kotlin.String)/documentPath">documentPath</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-document-reference/index.html"><span class="identifier">DocumentReference</span></a><span class="symbol">!</span></code>
+<p>Gets a `DocumentReference` instance that refers to the document at the specified path within the database.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="enable-network.html">enableNetwork</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">enableNetwork</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Re-enables network usage for this instance after a prior call to disableNetwork().</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-app.html">getApp</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getApp</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">FirebaseApp</span><span class="symbol">!</span></code>
+<p>Returns the FirebaseApp instance to which this FirebaseFirestore belongs.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-firestore-settings.html">getFirestoreSettings</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getFirestoreSettings</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-firebase-firestore-settings/index.html"><span class="identifier">FirebaseFirestoreSettings</span></a><span class="symbol">!</span></code>
+<p>Returns the settings used by this FirebaseFirestore object.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-instance.html">getInstance</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">getInstance</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FirebaseFirestore</span></a><span class="symbol">!</span></code><br/>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">getInstance</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$getInstance(FirebaseApp)/app">app</span><span class="symbol">:</span>&nbsp;<span class="identifier">FirebaseApp</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FirebaseFirestore</span></a><span class="symbol">!</span></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="run-batch.html">runBatch</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">runBatch</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$runBatch(com.google.firebase.firestore.WriteBatch.Function)/batchFunction">batchFunction</span><span class="symbol">:</span>&nbsp;<a href="../-write-batch/-function/index.html"><span class="identifier">WriteBatch.Function</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Executes a batchFunction on a newly created <code><a href="../-write-batch/index.html">WriteBatch</a></code> and then commits all of the writes made by the batchFunction as a single atomic unit.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="run-transaction.html">runTransaction</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">TResult</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">runTransaction</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$runTransaction(com.google.firebase.firestore.Transaction.Function((com.google.firebase.firestore.FirebaseFirestore.runTransaction.TResult)))/updateFunction">updateFunction</span><span class="symbol">:</span>&nbsp;<a href="../-transaction/-function/index.html"><span class="identifier">Transaction.Function</span></a><span class="symbol">&lt;</span><a href="run-transaction.html#TResult"><span class="identifier">TResult</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Executes the given updateFunction and then attempts to commit the changes applied within the transaction. If any document read within the transaction has changed, the updateFunction will be retried. If it fails to commit after 5 attempts, the transaction will fail.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="set-firestore-settings.html">setFirestoreSettings</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">setFirestoreSettings</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$setFirestoreSettings(com.google.firebase.firestore.FirebaseFirestoreSettings)/settings">settings</span><span class="symbol">:</span>&nbsp;<a href="../-firebase-firestore-settings/index.html"><span class="identifier">FirebaseFirestoreSettings</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code>
+<p>Sets any custom settings used to configure this FirebaseFirestore object. This method can only be called before calling any other methods on this object.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="set-logging-enabled.html">setLoggingEnabled</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">setLoggingEnabled</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$setLoggingEnabled(kotlin.Boolean)/loggingEnabled">loggingEnabled</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code>
+<p>Globally enables / disables Firestore logging for the SDK.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

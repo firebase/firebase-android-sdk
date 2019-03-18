@@ -1,0 +1,26 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>DocumentReference.get - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">DocumentReference</a>&nbsp;/&nbsp;<a href="./get.html">get</a><br/>
+<br/>
+<h1>get</h1>
+<a name="com.google.firebase.firestore.DocumentReference$get()"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Reads the document referenced by this DocumentReference.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A Task that will be resolved with the contents of the Document at this DocumentReference.</p>
+<a name="com.google.firebase.firestore.DocumentReference$get(com.google.firebase.firestore.Source)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$get(com.google.firebase.firestore.Source)/source">source</span><span class="symbol">:</span>&nbsp;<a href="../-source/index.html"><span class="identifier">Source</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Reads the document referenced by this DocumentReference. </p>
+<p>By default, <code>get()</code> attempts to provide up-to-date data when possible by waiting for data from the server, but it may return cached data or fail if you are offline and the server cannot be reached. This behavior can be altered via the <code><a href="../-source/index.html">Source</a></code> parameter.</p>
+<h3>Parameters</h3>
+<p><a name="source"></a>
+<code>source</code> - <span class="symbol">:</span> A value to configure the get behavior.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A Task that will be resolved with the contents of the Document at this DocumentReference.</p>
+</BODY>
+</HTML>

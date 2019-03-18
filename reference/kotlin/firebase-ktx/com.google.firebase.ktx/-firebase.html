@@ -1,0 +1,80 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>Firebase - firebase-ktx</title>
+<link rel="stylesheet" href="../../style.css">
+</HEAD>
+<BODY>
+<a href="../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="index.html">com.google.firebase.ktx</a>&nbsp;/&nbsp;<a href="./-firebase.html">Firebase</a><br/>
+<br/>
+<h1>Firebase</h1>
+<code><span class="keyword">object </span><span class="identifier">Firebase</span></code>
+<p>Single access point to all firebase sdks from Kotlin.</p>
+<h3>Extension Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="app.html">app</a></p>
+</td>
+<td>
+<code><span class="keyword">val </span><a href="./-firebase.html"><span class="identifier">Firebase</span></a><span class="symbol">.</span><span class="identifier">app</span><span class="symbol">: </span><a href="../com.google.firebase/-firebase-app/index.html"><span class="identifier">FirebaseApp</span></a></code>
+<p>Returns the default firebase app instance.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="../com.google.firebase.firestore.ktx/firestore.html">firestore</a></p>
+</td>
+<td>
+<code><span class="keyword">val </span><a href="./-firebase.html"><span class="identifier">Firebase</span></a><span class="symbol">.</span><span class="identifier">firestore</span><span class="symbol">: </span><a href="../com.google.firebase.firestore/-firebase-firestore/index.html"><span class="identifier">FirebaseFirestore</span></a></code>
+<p>Returns the <a href="../com.google.firebase.firestore/-firebase-firestore/index.html">FirebaseFirestore</a> instance of the default <a href="../com.google.firebase/-firebase-app/index.html">FirebaseApp</a>.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="options.html">options</a></p>
+</td>
+<td>
+<code><span class="keyword">val </span><a href="./-firebase.html"><span class="identifier">Firebase</span></a><span class="symbol">.</span><span class="identifier">options</span><span class="symbol">: </span><a href="../com.google.firebase/-firebase-options/index.html"><span class="identifier">FirebaseOptions</span></a></code>
+<p>Returns options of default FirebaseApp</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3>Extension Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="app.html">app</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><a href="./-firebase.html"><span class="identifier">Firebase</span></a><span class="symbol">.</span><span class="identifier">app</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.ktx$app(com.google.firebase.ktx.Firebase, kotlin.String)/name">name</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="../com.google.firebase/-firebase-app/index.html"><span class="identifier">FirebaseApp</span></a></code>
+<p>Returns a named firebase app instance.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="../com.google.firebase.firestore.ktx/firestore.html">firestore</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><a href="./-firebase.html"><span class="identifier">Firebase</span></a><span class="symbol">.</span><span class="identifier">firestore</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.ktx$firestore(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp)/app">app</span><span class="symbol">:</span>&nbsp;<a href="../com.google.firebase/-firebase-app/index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="../com.google.firebase.firestore/-firebase-firestore/index.html"><span class="identifier">FirebaseFirestore</span></a></code>
+<p>Returns the <a href="../com.google.firebase.firestore/-firebase-firestore/index.html">FirebaseFirestore</a> instance of a given <a href="../com.google.firebase/-firebase-app/index.html">FirebaseApp</a>.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="initialize.html">initialize</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><a href="./-firebase.html"><span class="identifier">Firebase</span></a><span class="symbol">.</span><span class="identifier">initialize</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.ktx$initialize(com.google.firebase.ktx.Firebase, android.content.Context)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="../com.google.firebase/-firebase-app/index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code><br/>
+<code><span class="keyword">fun </span><a href="./-firebase.html"><span class="identifier">Firebase</span></a><span class="symbol">.</span><span class="identifier">initialize</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.ktx$initialize(com.google.firebase.ktx.Firebase, android.content.Context, com.google.firebase.FirebaseOptions)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">, </span><span class="identifier" id="com.google.firebase.ktx$initialize(com.google.firebase.ktx.Firebase, android.content.Context, com.google.firebase.FirebaseOptions)/options">options</span><span class="symbol">:</span>&nbsp;<a href="../com.google.firebase/-firebase-options/index.html"><span class="identifier">FirebaseOptions</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="../com.google.firebase/-firebase-app/index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code><br/>
+<code><span class="keyword">fun </span><a href="./-firebase.html"><span class="identifier">Firebase</span></a><span class="symbol">.</span><span class="identifier">initialize</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.ktx$initialize(com.google.firebase.ktx.Firebase, android.content.Context, com.google.firebase.FirebaseOptions, kotlin.String)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">, </span><span class="identifier" id="com.google.firebase.ktx$initialize(com.google.firebase.ktx.Firebase, android.content.Context, com.google.firebase.FirebaseOptions, kotlin.String)/options">options</span><span class="symbol">:</span>&nbsp;<a href="../com.google.firebase/-firebase-options/index.html"><span class="identifier">FirebaseOptions</span></a><span class="symbol">, </span><span class="identifier" id="com.google.firebase.ktx$initialize(com.google.firebase.ktx.Firebase, android.content.Context, com.google.firebase.FirebaseOptions, kotlin.String)/name">name</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="../com.google.firebase/-firebase-app/index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code>
+<p>Initializes and returns a FirebaseApp.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

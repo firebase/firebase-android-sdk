@@ -1,0 +1,38 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FirebaseApp.initializeApp - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase</a>&nbsp;/&nbsp;<a href="index.html">FirebaseApp</a>&nbsp;/&nbsp;<a href="./initialize-app.html">initializeApp</a><br/>
+<br/>
+<h1>initializeApp</h1>
+<a name="com.google.firebase.FirebaseApp$initializeApp(android.content.Context)"></a>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">initializeApp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code>
+<p>Initializes the default FirebaseApp instance using string resource values - populated from google-services.json. It also initializes Firebase Analytics for the current process. </p>
+<p>This method is called at app startup time by . Call this method before any Firebase APIs in components outside the main process. </p>
+<p>The <code><a href="../-firebase-options/index.html">FirebaseOptions</a></code> values used by the default app instance are read from string resources. </p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> the default FirebaseApp, if either it has been initialized previously, or Firebase API keys are present in string resources. Returns null otherwise.</p>
+<a name="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions)"></a>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">initializeApp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions)/options">options</span><span class="symbol">:</span>&nbsp;<a href="../-firebase-options/index.html"><span class="identifier">FirebaseOptions</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code>
+<p>Initializes the default <code><a href="index.html">FirebaseApp</a></code> instance. Same as <code><a href="./initialize-app.html">initializeApp(Context,com.google.firebase.FirebaseOptions,String)</a></code>, but it uses <code><a href="-d-e-f-a-u-l-t_-a-p-p_-n-a-m-e.html">DEFAULT_APP_NAME</a></code> as name. </p>
+<p>It's only required to call this to initialize Firebase if it's <strong>not possible</strong> to do so automatically in <code><a href="../../com.google.firebase.provider/-firebase-init-provider/index.html">com.google.firebase.provider.FirebaseInitProvider</a></code>. Automatic initialization that way is the expected situation.</p>
+<a name="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions, kotlin.String)"></a>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">initializeApp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions, kotlin.String)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions, kotlin.String)/options">options</span><span class="symbol">:</span>&nbsp;<a href="../-firebase-options/index.html"><span class="identifier">FirebaseOptions</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions, kotlin.String)/name">name</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code>
+<p>A factory method to initialize a <code><a href="index.html">FirebaseApp</a></code>.</p>
+<h3>Parameters</h3>
+<p><a name="context"></a>
+<code>context</code> - <span class="symbol">:</span> represents the <code><a href="https://developer.android.com/reference/android/content/Context.html">Context</a></code></p>
+<p><a name="options"></a>
+<code>options</code> - <span class="symbol">:</span> represents the global <code><a href="../-firebase-options/index.html">FirebaseOptions</a></code></p>
+<p><a name="name"></a>
+<code>name</code> - <span class="symbol">:</span> unique name for the app. It is an error to initialize an app with an already existing name. Starting and ending whitespace characters in the name are ignored (trimmed).</p>
+<h3>Exceptions</h3>
+<p><a name="IllegalStateException"></a>
+<code>IllegalStateException</code> - if an app with the same name has already been initialized.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> an instance of <code><a href="index.html">FirebaseApp</a></code></p>
+</BODY>
+</HTML>

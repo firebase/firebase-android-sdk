@@ -1,0 +1,127 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>Timestamp - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase</a>&nbsp;/&nbsp;<a href="./index.html">Timestamp</a><br/>
+<br/>
+<h1>Timestamp</h1>
+<code><span class="keyword">class </span><span class="identifier">Timestamp</span></code>
+<p>A Timestamp represents a point in time independent of any time zone or calendar, represented as seconds and fractions of seconds at nanosecond resolution in UTC Epoch time. It is encoded using the Proleptic Gregorian Calendar which extends the Gregorian calendar backwards to year one. It is encoded assuming all minutes are 60 seconds long, i.e. leap seconds are "smeared" so that no leap second table is needed for interpretation. Range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z. By restricting to that range, we ensure that we can convert to and from RFC 3339 date strings.</p>
+<p><strong>See Also</strong><br/>
+&lt;a href="</p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-init-.html">&lt;init&gt;</a></p>
+</td>
+<td>
+<code><span class="identifier">Timestamp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.Timestamp$<init>(kotlin.Long, kotlin.Int)/seconds">seconds</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">, </span><span class="identifier" id="com.google.firebase.Timestamp$<init>(kotlin.Long, kotlin.Int)/nanoseconds">nanoseconds</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a><span class="symbol">)</span></code>
+<p>Creates a new timestamp.</p>
+<code><span class="identifier">Timestamp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.Timestamp$<init>(Parcel)/in">in</span><span class="symbol">:</span>&nbsp;<span class="identifier">Parcel</span><span class="symbol">!</span><span class="symbol">)</span></code><code><span class="identifier">Timestamp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.Timestamp$<init>(Date)/date">date</span><span class="symbol">:</span>&nbsp;<span class="identifier">Date</span><span class="symbol">!</span><span class="symbol">)</span></code>
+<p>Creates a new timestamp from the given date.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3>Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-c-r-e-a-t-o-r.html">CREATOR</a></p>
+</td>
+<td>
+<code><span class="keyword">static</span> <span class="keyword">val </span><span class="identifier">CREATOR</span><span class="symbol">: </span><span class="identifier">Creator</span><span class="symbol">!</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="compare-to.html">compareTo</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">compareTo</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.Timestamp$compareTo(com.google.firebase.Timestamp)/other">other</span><span class="symbol">:</span>&nbsp;<a href="./index.html"><span class="identifier">Timestamp</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="describe-contents.html">describeContents</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">describeContents</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="equals.html">equals</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">equals</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.Timestamp$equals(kotlin.Any)/other">other</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">?</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="get-nanoseconds.html">getNanoseconds</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">getNanoseconds</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code>
+<p>Returns the sub-second part of the timestamp, in nanoseconds.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-seconds.html">getSeconds</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">getSeconds</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code>
+<p>Returns the seconds part of the timestamp.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="hash-code.html">hashCode</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">hashCode</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="now.html">now</a></p>
+</td>
+<td>
+<code><span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">now</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Timestamp</span></a><span class="symbol">!</span></code>
+<p>Creates a new timestamp with the current date, with millisecond precision.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="to-date.html">toDate</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">toDate</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Date</span><span class="symbol">!</span></code>
+<p>Returns a new Date corresponding to this timestamp. This may lose precision.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="to-string.html">toString</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">toString</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="write-to-parcel.html">writeToParcel</a></p>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">writeToParcel</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.Timestamp$writeToParcel(Parcel, kotlin.Int)/dest">dest</span><span class="symbol">:</span>&nbsp;<span class="identifier">Parcel</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.Timestamp$writeToParcel(Parcel, kotlin.Int)/flags">flags</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

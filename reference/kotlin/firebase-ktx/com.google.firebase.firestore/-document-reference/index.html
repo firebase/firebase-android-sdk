@@ -1,0 +1,136 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>DocumentReference - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="./index.html">DocumentReference</a><br/>
+<br/>
+<h1>DocumentReference</h1>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">DocumentReference</span></code>
+<p>A DocumentReference refers to a document location in a Firestore database and can be used to write, read, or listen to the location. There may or may not exist a document at the referenced location. A DocumentReference can also be used to create a CollectionReference to a subcollection. </p>
+<p><strong>Subclassing Note</strong>: Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="add-snapshot-listener.html">addSnapshotListener</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code><br/>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(Executor, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/executor">executor</span><span class="symbol">:</span>&nbsp;<span class="identifier">Executor</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(Executor, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code>
+<p>Starts listening to the document referenced by this DocumentReference.</p>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(Activity, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/activity">activity</span><span class="symbol">:</span>&nbsp;<span class="identifier">Activity</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(Activity, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code>
+<p>Starts listening to the document referenced by this DocumentReference using an Activity-scoped listener. </p>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/metadataChanges">metadataChanges</span><span class="symbol">:</span>&nbsp;<a href="../-metadata-changes/index.html"><span class="identifier">MetadataChanges</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code><br/>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(Executor, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/executor">executor</span><span class="symbol">:</span>&nbsp;<span class="identifier">Executor</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(Executor, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/metadataChanges">metadataChanges</span><span class="symbol">:</span>&nbsp;<a href="../-metadata-changes/index.html"><span class="identifier">MetadataChanges</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(Executor, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code>
+<p>Starts listening to the document referenced by this DocumentReference with the given options.</p>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(Activity, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/activity">activity</span><span class="symbol">:</span>&nbsp;<span class="identifier">Activity</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(Activity, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/metadataChanges">metadataChanges</span><span class="symbol">:</span>&nbsp;<a href="../-metadata-changes/index.html"><span class="identifier">MetadataChanges</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$addSnapshotListener(Activity, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.DocumentSnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code>
+<p>Starts listening to the document referenced by this DocumentReference with the given options using an Activity-scoped listener. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="collection.html">collection</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">collection</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$collection(kotlin.String)/collectionPath">collectionPath</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-collection-reference/index.html"><span class="identifier">CollectionReference</span></a><span class="symbol">!</span></code>
+<p>Gets a CollectionReference instance that refers to the subcollection at the specified path relative to this document.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="delete.html">delete</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">delete</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Deletes the document referred to by this DocumentReference.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="equals.html">equals</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">equals</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$equals(kotlin.Any)/other">other</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">?</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="get.html">get</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Reads the document referenced by this DocumentReference.</p>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$get(com.google.firebase.firestore.Source)/source">source</span><span class="symbol">:</span>&nbsp;<a href="../-source/index.html"><span class="identifier">Source</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Reads the document referenced by this DocumentReference. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-firestore.html">getFirestore</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getFirestore</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-firebase-firestore/index.html"><span class="identifier">FirebaseFirestore</span></a><span class="symbol">!</span></code>
+<p>Gets the Firestore instance associated with this document reference.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-id.html">getId</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getId</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="get-parent.html">getParent</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getParent</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-collection-reference/index.html"><span class="identifier">CollectionReference</span></a><span class="symbol">!</span></code>
+<p>Gets a CollectionReference to the collection that contains this document.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-path.html">getPath</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getPath</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>Gets the path of this document (relative to the root of the database) as a slash-separated string.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="hash-code.html">hashCode</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">hashCode</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="set.html">set</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">set</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$set(kotlin.Any)/data">data</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Overwrites the document referred to by this DocumentReference. If the document does not yet exist, it will be created. If a document already exists, it will be overwritten.</p>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">set</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$set(kotlin.Any, com.google.firebase.firestore.SetOptions)/data">data</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$set(kotlin.Any, com.google.firebase.firestore.SetOptions)/options">options</span><span class="symbol">:</span>&nbsp;<a href="../-set-options/index.html"><span class="identifier">SetOptions</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Writes to the document referred to by this DocumentReference. If the document does not yet exist, it will be created. If you pass <code><a href="../-set-options/index.html">SetOptions</a></code>, the provided data can be merged into an existing document.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="update.html">update</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">update</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$update(Map)/data">data</span><span class="symbol">:</span>&nbsp;<span class="identifier">Map</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code><br/>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">update</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$update(kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$update(kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.DocumentReference$update(kotlin.String, kotlin.Any, kotlin.Array((kotlin.Any)))/moreFieldsAndValues">moreFieldsAndValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code><br/>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">update</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$update(com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$update(com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.DocumentReference$update(com.google.firebase.firestore.FieldPath, kotlin.Any, kotlin.Array((kotlin.Any)))/moreFieldsAndValues">moreFieldsAndValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Updates fields in the document referred to by this DocumentReference. If no document exists yet, the update will fail.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

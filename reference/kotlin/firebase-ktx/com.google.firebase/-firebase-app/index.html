@@ -1,0 +1,124 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FirebaseApp - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase</a>&nbsp;/&nbsp;<a href="./index.html">FirebaseApp</a><br/>
+<br/>
+<h1>FirebaseApp</h1>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">FirebaseApp</span></code>
+<p>The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most applications don't need to directly interact with FirebaseApp. </p>
+<p>For a vast majority of apps, <code><a href="../../com.google.firebase.provider/-firebase-init-provider/index.html">com.google.firebase.provider.FirebaseInitProvider</a></code> will handle the initialization of Firebase for the default project that it's configured to work with, via the data contained in the app's <code>google-services.json</code> file. This <code> ContentProvider</code> is merged into the app's manifest by default when building with Gradle, and it runs automatically at app launch. <strong>No additional lines of code are needed in this case.</strong> </p>
+<p>In the event that an app requires access to another Firebase project <strong>in addition to</strong> the default project, <code><a href="initialize-app.html">FirebaseApp#initializeApp(Context, FirebaseOptions,</a></code> must be used to create that relationship programmatically. The name parameter must be unique. To connect to the resources exposed by that project, use the <code><a href="./index.html">FirebaseApp</a></code> object returned by <code><a href="get-instance.html">FirebaseApp#getInstance(String)</a></code>, passing it the same name used with <code> initializeApp</code>. This object must be passed to the static accessor of the feature that provides the resource. For example, com.google.firebase.storage.FirebaseStorage#getInstance(FirebaseApp) is used to access the storage bucket provided by the additional project, whereas com.google.firebase.storage.FirebaseStorage#getInstance() is used to access the default project. </p>
+<p>Any <code>FirebaseApp</code> initialization must occur only in the main process of the app. Use of Firebase in processes other than the main process is not supported and will likely cause problems related to resource contention.</p>
+<h3>Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-d-e-f-a-u-l-t_-a-p-p_-n-a-m-e.html">DEFAULT_APP_NAME</a></p>
+</td>
+<td>
+<code><span class="keyword">static</span> <span class="keyword">val </span><span class="identifier">DEFAULT_APP_NAME</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="equals.html">equals</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">equals</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseApp$equals(kotlin.Any)/other">other</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">?</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="get-application-context.html">getApplicationContext</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getApplicationContext</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">!</span></code>
+<p>Returns the application <code><a href="https://developer.android.com/reference/android/content/Context.html">Context</a></code>.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-apps.html">getApps</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">getApps</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseApp$getApps(android.content.Context)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code>
+<p>Returns a mutable list of all FirebaseApps.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-instance.html">getInstance</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">getInstance</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code>
+<p>Returns the default (first initialized) instance of the <code><a href="./index.html">FirebaseApp</a></code>.</p>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">getInstance</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseApp$getInstance(kotlin.String)/name">name</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code>
+<p>Returns the instance identified by the unique name, or throws if it does not exist.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-name.html">getName</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getName</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>Returns the unique name of this app.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-options.html">getOptions</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getOptions</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-firebase-options/index.html"><span class="identifier">FirebaseOptions</span></a><span class="symbol">!</span></code>
+<p>Returns the specified <code><a href="../-firebase-options/index.html">FirebaseOptions</a></code>.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="hash-code.html">hashCode</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">hashCode</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="initialize-app.html">initializeApp</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">initializeApp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code>
+<p>Initializes the default FirebaseApp instance using string resource values - populated from google-services.json. It also initializes Firebase Analytics for the current process. </p>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">initializeApp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions)/options">options</span><span class="symbol">:</span>&nbsp;<a href="../-firebase-options/index.html"><span class="identifier">FirebaseOptions</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code>
+<p>Initializes the default <code><a href="./index.html">FirebaseApp</a></code> instance. Same as <code><a href="initialize-app.html">initializeApp(Context,com.google.firebase.FirebaseOptions,String)</a></code>, but it uses <code><a href="-d-e-f-a-u-l-t_-a-p-p_-n-a-m-e.html">DEFAULT_APP_NAME</a></code> as name. </p>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">initializeApp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions, kotlin.String)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/android/content/Context.html"><span class="identifier">Context</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions, kotlin.String)/options">options</span><span class="symbol">:</span>&nbsp;<a href="../-firebase-options/index.html"><span class="identifier">FirebaseOptions</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.FirebaseApp$initializeApp(android.content.Context, com.google.firebase.FirebaseOptions, kotlin.String)/name">name</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">FirebaseApp</span></a><span class="symbol">!</span></code>
+<p>A factory method to initialize a <code><a href="./index.html">FirebaseApp</a></code>.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="set-automatic-resource-management-enabled.html">setAutomaticResourceManagementEnabled</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">setAutomaticResourceManagementEnabled</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.FirebaseApp$setAutomaticResourceManagementEnabled(kotlin.Boolean)/enabled">enabled</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code>
+<p>If set to true it indicates that Firebase should close database connections automatically when the app is in the background. Disabled by default.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="to-string.html">toString</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">toString</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

@@ -1,0 +1,28 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>Query.startAt - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">Query</a>&nbsp;/&nbsp;<a href="./start-at.html">startAt</a><br/>
+<br/>
+<h1>startAt</h1>
+<a name="com.google.firebase.firestore.Query$startAt(com.google.firebase.firestore.DocumentSnapshot)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">startAt</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$startAt(com.google.firebase.firestore.DocumentSnapshot)/snapshot">snapshot</span><span class="symbol">:</span>&nbsp;<a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
+<p>Creates and returns a new Query that starts at the provided document (inclusive). The starting position is relative to the order of the query. The document must contain all of the fields provided in the orderBy of this query.</p>
+<h3>Parameters</h3>
+<p><a name="snapshot"></a>
+<code>snapshot</code> - <span class="symbol">:</span> The snapshot of the document to start at.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The created Query.</p>
+<a name="com.google.firebase.firestore.Query$startAt(kotlin.Array((kotlin.Any)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">startAt</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.Query$startAt(kotlin.Array((kotlin.Any)))/fieldValues">fieldValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
+<p>Creates and returns a new Query that starts at the provided fields relative to the order of the query. The order of the field values must match the order of the order by clauses of the query.</p>
+<h3>Parameters</h3>
+<p><a name="fieldValues"></a>
+<code>fieldValues</code> - <span class="symbol">:</span> The field values to start this query at, in order of the query's order by.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The created Query.</p>
+</BODY>
+</HTML>

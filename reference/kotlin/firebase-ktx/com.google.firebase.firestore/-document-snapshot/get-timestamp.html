@@ -1,0 +1,38 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>DocumentSnapshot.getTimestamp - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">DocumentSnapshot</a>&nbsp;/&nbsp;<a href="./get-timestamp.html">getTimestamp</a><br/>
+<br/>
+<h1>getTimestamp</h1>
+<a name="com.google.firebase.firestore.DocumentSnapshot$getTimestamp(kotlin.String)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getTimestamp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$getTimestamp(kotlin.String)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../../com.google.firebase/-timestamp/index.html"><span class="identifier">Timestamp</span></a><span class="symbol">!</span></code>
+<p>Returns the value of the field as a <code><a href="../../com.google.firebase/-timestamp/index.html">com.google.firebase.Timestamp</a></code>. </p>
+<p>This method ignores the global setting <code><a href="../-firebase-firestore-settings/are-timestamps-in-snapshots-enabled.html"> </a></code>.</p>
+<h3>Parameters</h3>
+<p><a name="field"></a>
+<code>field</code> - <span class="symbol">:</span> The path to the field.</p>
+<h3>Exceptions</h3>
+<p><a name="RuntimeException"></a>
+<code>RuntimeException</code> - if this is not a timestamp field.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The value of the field</p>
+<a name="com.google.firebase.firestore.DocumentSnapshot$getTimestamp(kotlin.String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getTimestamp</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$getTimestamp(kotlin.String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$getTimestamp(kotlin.String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../../com.google.firebase/-timestamp/index.html"><span class="identifier">Timestamp</span></a><span class="symbol">!</span></code>
+<p>Returns the value of the field as a <code><a href="../../com.google.firebase/-timestamp/index.html">com.google.firebase.Timestamp</a></code>. </p>
+<p>This method ignores the global setting <code><a href="../-firebase-firestore-settings/are-timestamps-in-snapshots-enabled.html"> </a></code>.</p>
+<h3>Parameters</h3>
+<p><a name="field"></a>
+<code>field</code> - <span class="symbol">:</span> The path to the field.</p>
+<p><a name="serverTimestampBehavior"></a>
+<code>serverTimestampBehavior</code> - <span class="symbol">:</span> Configures the behavior for server timestamps that have not yet been set to their final value.</p>
+<h3>Exceptions</h3>
+<p><a name="RuntimeException"></a>
+<code>RuntimeException</code> - if the value is not a timestamp field.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The value of the field</p>
+</BODY>
+</HTML>

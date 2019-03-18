@@ -1,0 +1,26 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>QuerySnapshot.getDocumentChanges - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">QuerySnapshot</a>&nbsp;/&nbsp;<a href="./get-document-changes.html">getDocumentChanges</a><br/>
+<br/>
+<h1>getDocumentChanges</h1>
+<a name="com.google.firebase.firestore.QuerySnapshot$getDocumentChanges()"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getDocumentChanges</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code>
+<p>Returns the list of documents that changed since the last snapshot. If it's the first snapshot all documents will be in the list as added changes. </p>
+<p>Documents with changes only to their metadata will not be included.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The list of document changes since the last snapshot.</p>
+<a name="com.google.firebase.firestore.QuerySnapshot$getDocumentChanges(com.google.firebase.firestore.MetadataChanges)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getDocumentChanges</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.QuerySnapshot$getDocumentChanges(com.google.firebase.firestore.MetadataChanges)/metadataChanges">metadataChanges</span><span class="symbol">:</span>&nbsp;<a href="../-metadata-changes/index.html"><span class="identifier">MetadataChanges</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code>
+<p>Returns the list of documents that changed since the last snapshot. If it's the first snapshot all documents will be in the list as added changes.</p>
+<h3>Parameters</h3>
+<p><a name="metadataChanges"></a>
+<code>metadataChanges</code> - <span class="symbol">:</span> Indicates whether metadata-only changes (i.e. only <code>Query.getMetadata()</code> changed) should be included.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The list of document changes since the last snapshot.</p>
+</BODY>
+</HTML>

@@ -1,0 +1,30 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>DocumentSnapshot.toObject - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">DocumentSnapshot</a>&nbsp;/&nbsp;<a href="./to-object.html">toObject</a><br/>
+<br/>
+<h1>toObject</h1>
+<a name="com.google.firebase.firestore.DocumentSnapshot$toObject(java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.toObject.T)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">toObject</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$toObject(java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.toObject.T)))/valueType">valueType</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/java/lang/Class.html"><span class="identifier">Class</span></a><span class="symbol">&lt;</span><a href="to-object.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="to-object.html#T"><span class="identifier">T</span></a></code>
+<p>Returns the contents of the document converted to a POJO or null if the document doesn't exist.</p>
+<h3>Parameters</h3>
+<p><a name="valueType"></a>
+<code>valueType</code> - <span class="symbol">:</span> The Java class to create</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The contents of the document in an object of type T or null if the document doesn't exist.</p>
+<a name="com.google.firebase.firestore.DocumentSnapshot$toObject(java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.toObject.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">toObject</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$toObject(java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.toObject.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/valueType">valueType</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/java/lang/Class.html"><span class="identifier">Class</span></a><span class="symbol">&lt;</span><a href="to-object.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$toObject(java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.toObject.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="to-object.html#T"><span class="identifier">T</span></a></code>
+<p>Returns the contents of the document converted to a POJO or null if the document doesn't exist.</p>
+<h3>Parameters</h3>
+<p><a name="valueType"></a>
+<code>valueType</code> - <span class="symbol">:</span> The Java class to create</p>
+<p><a name="serverTimestampBehavior"></a>
+<code>serverTimestampBehavior</code> - <span class="symbol">:</span> Configures the behavior for server timestamps that have not yet been set to their final value.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The contents of the document in an object of type T or null if the document doesn't exist.</p>
+</BODY>
+</HTML>

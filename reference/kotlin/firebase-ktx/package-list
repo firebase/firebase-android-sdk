@@ -1,0 +1,18 @@
+$dokka.format:html
+$dokka.linkExtension:html
+$dokka.location:com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-document-snapshot/get-field.html
+$dokka.location:com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-document-snapshot/get-field.html
+$dokka.location:com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, kotlin.String)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-document-snapshot/get-field.html
+$dokka.location:com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, kotlin.String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-document-snapshot/get-field.html
+$dokka.location:com.google.firebase.firestore.ktx$toObject(com.google.firebase.firestore.DocumentSnapshot)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-document-snapshot/to-object.html
+$dokka.location:com.google.firebase.firestore.ktx$toObject(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-document-snapshot/to-object.html
+$dokka.location:com.google.firebase.firestore.ktx$toObject(com.google.firebase.firestore.QueryDocumentSnapshot)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-document-snapshot/to-object.html
+$dokka.location:com.google.firebase.firestore.ktx$toObject(com.google.firebase.firestore.QueryDocumentSnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-document-snapshot/to-object.html
+$dokka.location:com.google.firebase.firestore.ktx$toObjects(com.google.firebase.firestore.QuerySnapshot)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-snapshot/to-objects.html
+$dokka.location:com.google.firebase.firestore.ktx$toObjects(com.google.firebase.firestore.QuerySnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-snapshot/to-objects.html
+com.google.firebase
+com.google.firebase.auth
+com.google.firebase.firestore
+com.google.firebase.firestore.ktx
+com.google.firebase.ktx
+com.google.firebase.provider

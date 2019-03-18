@@ -1,0 +1,76 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>Query.addSnapshotListener - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">Query</a>&nbsp;/&nbsp;<a href="./add-snapshot-listener.html">addSnapshotListener</a><br/>
+<br/>
+<h1>addSnapshotListener</h1>
+<a name="com.google.firebase.firestore.Query$addSnapshotListener(com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-query-snapshot/index.html"><span class="identifier">QuerySnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code>
+<p>Starts listening to this query.</p>
+<h3>Parameters</h3>
+<p><a name="listener"></a>
+<code>listener</code> - <span class="symbol">:</span> The event listener that will be called with the snapshots.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A registration object that can be used to remove the listener.</p>
+<a name="com.google.firebase.firestore.Query$addSnapshotListener(Executor, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(Executor, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/executor">executor</span><span class="symbol">:</span>&nbsp;<span class="identifier">Executor</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(Executor, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-query-snapshot/index.html"><span class="identifier">QuerySnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code>
+<p>Starts listening to this query.</p>
+<h3>Parameters</h3>
+<p><a name="executor"></a>
+<code>executor</code> - <span class="symbol">:</span> The executor to use to call the listener.</p>
+<p><a name="listener"></a>
+<code>listener</code> - <span class="symbol">:</span> The event listener that will be called with the snapshots.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A registration object that can be used to remove the listener.</p>
+<a name="com.google.firebase.firestore.Query$addSnapshotListener(Activity, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(Activity, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/activity">activity</span><span class="symbol">:</span>&nbsp;<span class="identifier">Activity</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(Activity, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-query-snapshot/index.html"><span class="identifier">QuerySnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code>
+<p>Starts listening to this query using an Activity-scoped listener. </p>
+<p>The listener will be automatically removed during Activity#onStop.</p>
+<h3>Parameters</h3>
+<p><a name="activity"></a>
+<code>activity</code> - <span class="symbol">:</span> The activity to scope the listener to.</p>
+<p><a name="listener"></a>
+<code>listener</code> - <span class="symbol">:</span> The event listener that will be called with the snapshots.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A registration object that can be used to remove the listener.</p>
+<a name="com.google.firebase.firestore.Query$addSnapshotListener(com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/metadataChanges">metadataChanges</span><span class="symbol">:</span>&nbsp;<a href="../-metadata-changes/index.html"><span class="identifier">MetadataChanges</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-query-snapshot/index.html"><span class="identifier">QuerySnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code>
+<p>Starts listening to this query with the given options.</p>
+<h3>Parameters</h3>
+<p><a name="metadataChanges"></a>
+<code>metadataChanges</code> - <span class="symbol">:</span> Indicates whether metadata-only changes (i.e. only <code>Query.getMetadata()</code> changed) should trigger snapshot events.</p>
+<p><a name="listener"></a>
+<code>listener</code> - <span class="symbol">:</span> The event listener that will be called with the snapshots.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A registration object that can be used to remove the listener.</p>
+<a name="com.google.firebase.firestore.Query$addSnapshotListener(Executor, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(Executor, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/executor">executor</span><span class="symbol">:</span>&nbsp;<span class="identifier">Executor</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(Executor, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/metadataChanges">metadataChanges</span><span class="symbol">:</span>&nbsp;<a href="../-metadata-changes/index.html"><span class="identifier">MetadataChanges</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(Executor, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-query-snapshot/index.html"><span class="identifier">QuerySnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code>
+<p>Starts listening to this query with the given options.</p>
+<h3>Parameters</h3>
+<p><a name="executor"></a>
+<code>executor</code> - <span class="symbol">:</span> The executor to use to call the listener.</p>
+<p><a name="metadataChanges"></a>
+<code>metadataChanges</code> - <span class="symbol">:</span> Indicates whether metadata-only changes (i.e. only <code>Query.getMetadata()</code> changed) should trigger snapshot events.</p>
+<p><a name="listener"></a>
+<code>listener</code> - <span class="symbol">:</span> The event listener that will be called with the snapshots.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A registration object that can be used to remove the listener.</p>
+<a name="com.google.firebase.firestore.Query$addSnapshotListener(Activity, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">addSnapshotListener</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(Activity, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/activity">activity</span><span class="symbol">:</span>&nbsp;<span class="identifier">Activity</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(Activity, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/metadataChanges">metadataChanges</span><span class="symbol">:</span>&nbsp;<a href="../-metadata-changes/index.html"><span class="identifier">MetadataChanges</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$addSnapshotListener(Activity, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener((com.google.firebase.firestore.QuerySnapshot)))/listener">listener</span><span class="symbol">:</span>&nbsp;<a href="../-event-listener/index.html"><span class="identifier">EventListener</span></a><span class="symbol">&lt;</span><a href="../-query-snapshot/index.html"><span class="identifier">QuerySnapshot</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-listener-registration/index.html"><span class="identifier">ListenerRegistration</span></a><span class="symbol">!</span></code>
+<p>Starts listening to this query with the given options, using an Activity-scoped listener. </p>
+<p>The listener will be automatically removed during Activity#onStop.</p>
+<h3>Parameters</h3>
+<p><a name="activity"></a>
+<code>activity</code> - <span class="symbol">:</span> The activity to scope the listener to.</p>
+<p><a name="metadataChanges"></a>
+<code>metadataChanges</code> - <span class="symbol">:</span> Indicates whether metadata-only changes (i.e. only <code>Query.getMetadata()</code> changed) should trigger snapshot events.</p>
+<p><a name="listener"></a>
+<code>listener</code> - <span class="symbol">:</span> The event listener that will be called with the snapshots.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A registration object that can be used to remove the listener.</p>
+</BODY>
+</HTML>

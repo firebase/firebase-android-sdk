@@ -1,0 +1,20 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FieldValue.arrayRemove - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">FieldValue</a>&nbsp;/&nbsp;<a href="./array-remove.html">arrayRemove</a><br/>
+<br/>
+<h1>arrayRemove</h1>
+<a name="com.google.firebase.firestore.FieldValue$arrayRemove(kotlin.Array((kotlin.Any)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">arrayRemove</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.FieldValue$arrayRemove(kotlin.Array((kotlin.Any)))/elements">elements</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">FieldValue</span></a><span class="symbol">!</span></code>
+<p>Returns a special value that can be used with set() or update() that tells the server to remove the given elements from any array value that already exists on the server. All instances of each element specified will be removed from the array. If the field being modified is not already an array it will be overwritten with an empty array.</p>
+<h3>Parameters</h3>
+<p><a name="elements"></a>
+<code>elements</code> - <span class="symbol">:</span> The elements to remove from the array.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The FieldValue sentinel for use in a call to set() or update().</p>
+</BODY>
+</HTML>

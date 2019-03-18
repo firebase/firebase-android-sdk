@@ -1,0 +1,29 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>toObjects - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore.ktx</a>&nbsp;/&nbsp;<a href="index.html">com.google.firebase.firestore.QuerySnapshot</a>&nbsp;/&nbsp;<a href="./to-objects.html">toObjects</a><br/>
+<br/>
+<h1>toObjects</h1>
+<a name="com.google.firebase.firestore.ktx$toObjects(com.google.firebase.firestore.QuerySnapshot)"></a>
+<code><span class="keyword">inline</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="keyword">reified</span>&nbsp;<span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">&gt;</span> <a href="../../com.google.firebase.firestore/-query-snapshot/index.html"><span class="identifier">QuerySnapshot</span></a><span class="symbol">.</span><span class="identifier">toObjects</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html"><span class="identifier">List</span></a><span class="symbol">&lt;</span><a href="to-objects.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span></code>
+<p>Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as
+a list.</p>
+<h3>Parameters</h3>
+<p><a name="T"></a>
+<code>T</code> - The POJO type used to convert the documents in the list.</p>
+<a name="com.google.firebase.firestore.ktx$toObjects(com.google.firebase.firestore.QuerySnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)"></a>
+<code><span class="keyword">inline</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="keyword">reified</span>&nbsp;<span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">&gt;</span> <a href="../../com.google.firebase.firestore/-query-snapshot/index.html"><span class="identifier">QuerySnapshot</span></a><span class="symbol">.</span><span class="identifier">toObjects</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.ktx$toObjects(com.google.firebase.firestore.QuerySnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="../../com.google.firebase.firestore/-document-snapshot/-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html"><span class="identifier">List</span></a><span class="symbol">&lt;</span><a href="to-objects.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span></code>
+<p>Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as
+a list.</p>
+<h3>Parameters</h3>
+<p><a name="T"></a>
+<code>T</code> - The POJO type used to convert the documents in the list.</p>
+<p><a name="serverTimestampBehavior"></a>
+<code>serverTimestampBehavior</code> - Configures the behavior for server timestamps that have not yet
+    been set to their final value.</p>
+</BODY>
+</HTML>

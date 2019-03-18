@@ -1,0 +1,62 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>getField - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore.ktx</a>&nbsp;/&nbsp;<a href="index.html">com.google.firebase.firestore.DocumentSnapshot</a>&nbsp;/&nbsp;<a href="./get-field.html">getField</a><br/>
+<br/>
+<h1>getField</h1>
+<a name="com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, kotlin.String)"></a>
+<code><span class="keyword">inline</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="keyword">reified</span>&nbsp;<span class="identifier">T</span><span class="symbol">&gt;</span> <a href="../../com.google.firebase.firestore/-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">.</span><span class="identifier">getField</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, kotlin.String)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="get-field.html#T"><span class="identifier">T</span></a><span class="symbol">?</span></code>
+<p>Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+exist.</p>
+<h3>Parameters</h3>
+<p><a name="field"></a>
+<code>field</code> - The path to the field.</p>
+<p><a name="T"></a>
+<code>T</code> - The type to convert the field value to.</p>
+<p><strong>Return</strong><br/>
+The value at the given field or null.</p>
+<a name="com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, kotlin.String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)"></a>
+<code><span class="keyword">inline</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="keyword">reified</span>&nbsp;<span class="identifier">T</span><span class="symbol">&gt;</span> <a href="../../com.google.firebase.firestore/-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">.</span><span class="identifier">getField</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, kotlin.String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, kotlin.String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="../../com.google.firebase.firestore/-document-snapshot/-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="get-field.html#T"><span class="identifier">T</span></a><span class="symbol">?</span></code>
+<p>Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+exist.</p>
+<h3>Parameters</h3>
+<p><a name="field"></a>
+<code>field</code> - The path to the field.</p>
+<p><a name="T"></a>
+<code>T</code> - The type to convert the field value to.</p>
+<p><a name="serverTimestampBehavior"></a>
+<code>serverTimestampBehavior</code> - Configures the behavior for server timestamps that have not yet
+    been set to their final value.</p>
+<p><strong>Return</strong><br/>
+The value at the given field or null.</p>
+<a name="com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath)"></a>
+<code><span class="keyword">inline</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="keyword">reified</span>&nbsp;<span class="identifier">T</span><span class="symbol">&gt;</span> <a href="../../com.google.firebase.firestore/-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">.</span><span class="identifier">getField</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../../com.google.firebase.firestore/-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="get-field.html#T"><span class="identifier">T</span></a><span class="symbol">?</span></code>
+<p>Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+exist.</p>
+<h3>Parameters</h3>
+<p><a name="fieldPath"></a>
+<code>fieldPath</code> - The path to the field.</p>
+<p><a name="T"></a>
+<code>T</code> - The type to convert the field value to.</p>
+<p><strong>Return</strong><br/>
+The value at the given field or null.</p>
+<a name="com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)"></a>
+<code><span class="keyword">inline</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="keyword">reified</span>&nbsp;<span class="identifier">T</span><span class="symbol">&gt;</span> <a href="../../com.google.firebase.firestore/-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">.</span><span class="identifier">getField</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../../com.google.firebase.firestore/-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.ktx$getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="../../com.google.firebase.firestore/-document-snapshot/-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="get-field.html#T"><span class="identifier">T</span></a><span class="symbol">?</span></code>
+<p>Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+exist.</p>
+<h3>Parameters</h3>
+<p><a name="fieldPath"></a>
+<code>fieldPath</code> - The path to the field.</p>
+<p><a name="T"></a>
+<code>T</code> - The type to convert the field value to.</p>
+<p><a name="serverTimestampBehavior"></a>
+<code>serverTimestampBehavior</code> - Configures the behavior for server timestamps that have not yet
+    been set to their final value.</p>
+<p><strong>Return</strong><br/>
+The value at the given field or null.</p>
+</BODY>
+</HTML>

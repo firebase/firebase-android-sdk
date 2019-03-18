@@ -1,0 +1,30 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>DocumentReference.set - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">DocumentReference</a>&nbsp;/&nbsp;<a href="./set.html">set</a><br/>
+<br/>
+<h1>set</h1>
+<a name="com.google.firebase.firestore.DocumentReference$set(kotlin.Any)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">set</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$set(kotlin.Any)/data">data</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Overwrites the document referred to by this DocumentReference. If the document does not yet exist, it will be created. If a document already exists, it will be overwritten.</p>
+<h3>Parameters</h3>
+<p><a name="data"></a>
+<code>data</code> - <span class="symbol">:</span> The data to write to the document (e.g. a Map or a POJO containing the desired document contents).</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A Task that will be resolved when the write finishes.</p>
+<a name="com.google.firebase.firestore.DocumentReference$set(kotlin.Any, com.google.firebase.firestore.SetOptions)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">set</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$set(kotlin.Any, com.google.firebase.firestore.SetOptions)/data">data</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentReference$set(kotlin.Any, com.google.firebase.firestore.SetOptions)/options">options</span><span class="symbol">:</span>&nbsp;<a href="../-set-options/index.html"><span class="identifier">SetOptions</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Writes to the document referred to by this DocumentReference. If the document does not yet exist, it will be created. If you pass <code><a href="../-set-options/index.html">SetOptions</a></code>, the provided data can be merged into an existing document.</p>
+<h3>Parameters</h3>
+<p><a name="data"></a>
+<code>data</code> - <span class="symbol">:</span> The data to write to the document (e.g. a Map or a POJO containing the desired document contents).</p>
+<p><a name="options"></a>
+<code>options</code> - <span class="symbol">:</span> An object to configure the set behavior.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A Task that will be resolved when the write finishes.</p>
+</BODY>
+</HTML>

@@ -1,0 +1,265 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>com.google.firebase.firestore - firebase-ktx</title>
+<link rel="stylesheet" href="../../style.css">
+</HEAD>
+<BODY>
+<a href="../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="./index.html">com.google.firebase.firestore</a><br/>
+<br/>
+<h2>Package com.google.firebase.firestore</h2>
+<h3>Types</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-blob/index.html">Blob</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">Blob</span></code>
+<p>Immutable class representing an array of bytes in Firestore.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-collection-reference/index.html">CollectionReference</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">CollectionReference</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="-query/index.html"><span class="identifier">Query</span></a></code>
+<p>A CollectionReference can be used for adding documents, getting document references, and querying for documents (using the methods inherited from Query). </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-document-change/index.html">DocumentChange</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">DocumentChange</span></code>
+<p>A DocumentChange represents a change to the documents matching a query. It contains the document affected and a the type of change that occurred (added, modified, or removed). </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-document-reference/index.html">DocumentReference</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">DocumentReference</span></code>
+<p>A DocumentReference refers to a document location in a Firestore database and can be used to write, read, or listen to the location. There may or may not exist a document at the referenced location. A DocumentReference can also be used to create a CollectionReference to a subcollection. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-document-snapshot/index.html">DocumentSnapshot</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">DocumentSnapshot</span></code>
+<p>A DocumentSnapshot contains data read from a document in your Firestore database. The data can be extracted with the getData() or get() methods. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-event-listener/index.html">EventListener</a></p>
+</td>
+<td>
+<code><span class="keyword">interface </span><span class="identifier">EventListener</span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span></code>
+<p>An interface for event listeners.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-field-path/index.html">FieldPath</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">FieldPath</span></code>
+<p>A <code>FieldPath</code> refers to a field in a document. The path may consist of a single field name (referring to a top level field in the document), or a list of field names (referring to a nested field in the document).</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-field-value/index.html">FieldValue</a></p>
+</td>
+<td>
+<code><span class="keyword">abstract</span> <span class="keyword">class </span><span class="identifier">FieldValue</span></code>
+<p>Sentinel values that can be used when writing document fields with set() or update().</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-firebase-firestore/index.html">FirebaseFirestore</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">FirebaseFirestore</span></code>
+<p>Represents a Firestore Database and is the entry point for all Firestore operations </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-firebase-firestore-exception/index.html">FirebaseFirestoreException</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">FirebaseFirestoreException</span></code>
+<p>A class of exceptions thrown by Firestore</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-firebase-firestore-settings/index.html">FirebaseFirestoreSettings</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">FirebaseFirestoreSettings</span></code>
+<p>Settings used to configure a FirebaseFirestore instance.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-geo-point/index.html">GeoPoint</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">GeoPoint</span></code>
+<p>Immutable class representing a GeoPoint in Firestore</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-listener-registration/index.html">ListenerRegistration</a></p>
+</td>
+<td>
+<code><span class="keyword">interface </span><span class="identifier">ListenerRegistration</span></code>
+<p>Represents a listener that can be removed by calling remove().</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-metadata-changes/index.html">MetadataChanges</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">MetadataChanges</span></code>
+<p>Indicates whether metadata-only changes (i.e. only <code>DocumentSnapshot.getMetadata()</code> or <code>Query.getMetadata()</code> changed) should trigger snapshot events.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-query/index.html">Query</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">Query</span></code>
+<p>A Query which you can read or listen to. You can also construct refined Query objects by adding filters and ordering. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-query-document-snapshot/index.html">QueryDocumentSnapshot</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">QueryDocumentSnapshot</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a></code>
+<p>A QueryDocumentSnapshot contains data read from a document in your Firestore database as part of a query. The document is guaranteed to exist and its data can be extracted using the getData() or get() methods. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-query-snapshot/index.html">QuerySnapshot</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">QuerySnapshot</span></code>
+<p>A QuerySnapshot contains the results of a query. It can contain zero or more DocumentSnapshot objects. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-set-options/index.html">SetOptions</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">SetOptions</span></code>
+<p>An options object that configures the behavior of set() calls. By providing one of the SetOptions objects returned by <code><a href="-set-options/merge.html">merge</a></code>, <code><a href="-set-options/merge-fields.html">mergeFields</a></code> and <code><a href="-set-options/merge-field-paths.html">mergeFieldPaths</a></code>, the set() calls in <code><a href="-document-reference/index.html">DocumentReference</a></code>, <code><a href="-write-batch/index.html">WriteBatch</a></code> and <code><a href="-transaction/index.html">Transaction</a></code> can be configured to perform granular merges instead of overwriting the target documents in their entirety.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-snapshot-metadata/index.html">SnapshotMetadata</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">SnapshotMetadata</span></code>
+<p>Metadata about a snapshot, describing the state of the snapshot. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-source/index.html">Source</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">Source</span></code>
+<p>Configures the behavior of <code>get()</code> calls on <code><a href="-document-reference/index.html">DocumentReference</a></code> and <code><a href="-query/index.html">Query</a></code>. By providing a Source value, these methods can be configured to fetch results only from the server, only from the local cache, or attempt to fetch results from the server and fall back to the cache (which is the default).</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-transaction/index.html">Transaction</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">Transaction</span></code>
+<p>A Transaction is passed to a Function to provide the methods to read and write data within the transaction context. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-write-batch/index.html">WriteBatch</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">WriteBatch</span></code>
+<p>A write batch, used to perform multiple writes as a single atomic unit. </p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3>Annotations</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-exclude/index.html">Exclude</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">Exclude</span></code>
+<p>Marks a field as excluded from the Database.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-ignore-extra-properties/index.html">IgnoreExtraProperties</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">IgnoreExtraProperties</span></code>
+<p>Properties that don't map to class fields are ignored when serializing to a class annotated with this annotation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-property-name/index.html">PropertyName</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">PropertyName</span></code>
+<p>Marks a field to be renamed when serialized.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-server-timestamp/index.html">ServerTimestamp</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">ServerTimestamp</span></code>
+<p>Annotation used to mark a timestamp field to be populated with a server timestamp. If a POJO being written contains null for a @ServerTimestamp-annotated field, it will be replaced with a server-generated timestamp.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-throw-on-extra-properties/index.html">ThrowOnExtraProperties</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">ThrowOnExtraProperties</span></code>
+<p>Properties that don't map to class fields when serializing to a class annotated with this annotation cause an exception to be thrown.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

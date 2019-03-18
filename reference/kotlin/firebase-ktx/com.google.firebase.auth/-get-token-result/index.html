@@ -1,0 +1,73 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>GetTokenResult - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.auth</a>&nbsp;/&nbsp;<a href="./index.html">GetTokenResult</a><br/>
+<br/>
+<h1>GetTokenResult</h1>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">GetTokenResult</span></code>
+<p>Result object that contains a Firebase Auth ID Token.</p>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="get-auth-timestamp.html">getAuthTimestamp</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getAuthTimestamp</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code>
+<p>Returns the authentication timestamp in milliseconds since epoch. This is the time the user authenticated (signed in) and not the time the token was refreshed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-claims.html">getClaims</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getClaims</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Map</span><span class="symbol">!</span></code>
+<p>Returns the entire payload claims of the ID token including the standard reserved claims as well as the custom claims (set by developer via Admin SDK). Developers should verify the ID token and parse claims from its payload on the backend and never trust this value on the client. Returns an empty map if no claims are present.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-expiration-timestamp.html">getExpirationTimestamp</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getExpirationTimestamp</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code>
+<p>Returns the time in milliseconds since epoch at which this ID token will expire</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-issued-at-timestamp.html">getIssuedAtTimestamp</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getIssuedAtTimestamp</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code>
+<p>Returns the issued at timestamp in milliseconds since epoch. This is the time the ID token was last refreshed and not the authentication timestamp.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-sign-in-provider.html">getSignInProvider</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getSignInProvider</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>Returns the sign-in provider through which the ID token was obtained (anonymous, custom, phone, password, etc). Note, this does not map to provider IDs. For example, anonymous and custom authentications are not considered providers. We chose the name here to map the name used in the ID token.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-token.html">getToken</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getToken</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code>
+<p>Firebase Auth ID Token. Useful for authenticating calls against your own backend. Verify the integrity and validity of the token in your server either by using our server SDKs or following the documentation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

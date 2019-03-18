@@ -1,0 +1,62 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>com.google.firebase - firebase-ktx</title>
+<link rel="stylesheet" href="../../style.css">
+</HEAD>
+<BODY>
+<a href="../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="./index.html">com.google.firebase</a><br/>
+<br/>
+<h2>Package com.google.firebase</h2>
+<h3>Types</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-firebase-app/index.html">FirebaseApp</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">FirebaseApp</span></code>
+<p>The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most applications don't need to directly interact with FirebaseApp. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-firebase-network-exception/index.html">FirebaseNetworkException</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">FirebaseNetworkException</span></code>
+<p>Exception thrown when a request to a Firebase service has failed due to a network error. Inspect the device's network connectivity state or retry later to resolve.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-firebase-options/index.html">FirebaseOptions</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">FirebaseOptions</span></code>
+<p>Configurable Firebase options.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-firebase-too-many-requests-exception/index.html">FirebaseTooManyRequestsException</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">FirebaseTooManyRequestsException</span></code>
+<p>Exception thrown when a request to a Firebase service has been blocked due to having received too many consecutive requests from the same device. Retry the request later to resolve.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="-timestamp/index.html">Timestamp</a></p>
+</td>
+<td>
+<code><span class="keyword">class </span><span class="identifier">Timestamp</span></code>
+<p>A Timestamp represents a point in time independent of any time zone or calendar, represented as seconds and fractions of seconds at nanosecond resolution in UTC Epoch time. It is encoded using the Proleptic Gregorian Calendar which extends the Gregorian calendar backwards to year one. It is encoded assuming all minutes are 60 seconds long, i.e. leap seconds are "smeared" so that no leap second table is needed for interpretation. Range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z. By restricting to that range, we ensure that we can convert to and from RFC 3339 date strings.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

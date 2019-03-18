@@ -1,0 +1,18 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FirebaseFirestoreSettings.Builder.setCacheSizeBytes - firebase-ktx</title>
+<link rel="stylesheet" href="../../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="../index.html">FirebaseFirestoreSettings</a>&nbsp;/&nbsp;<a href="index.html">Builder</a>&nbsp;/&nbsp;<a href="./set-cache-size-bytes.html">setCacheSizeBytes</a><br/>
+<br/>
+<h1>setCacheSizeBytes</h1>
+<a name="com.google.firebase.firestore.FirebaseFirestoreSettings.Builder$setCacheSizeBytes(kotlin.Long)"></a>
+<code><span class="keyword">fun </span><span class="identifier">setCacheSizeBytes</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestoreSettings.Builder$setCacheSizeBytes(kotlin.Long)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">FirebaseFirestoreSettings.Builder</span></a><span class="symbol">!</span></code>
+<p>Sets an approximate cache size threshold for the on-disk data. If the cache grows beyond this size, Firestore will start removing data that hasn't been recently used. The size is not a guarantee that the cache will stay below that size, only that if the cache exceeds the given size, cleanup will be attempted. </p>
+<p>By default, collection is disabled (the value is set to <code><a href="../-c-a-c-h-e_-s-i-z-e_-u-n-l-i-m-i-t-e-d.html"> </a></code>). In a future release, collection will be enabled by default, with a default cache size of 100 MB. The minimum value is 1 MB.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A settings object on which the cache size is configured as specified by the given <code>value</code>.</p>
+</BODY>
+</HTML>

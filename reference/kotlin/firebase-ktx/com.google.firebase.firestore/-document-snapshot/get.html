@@ -1,0 +1,92 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>DocumentSnapshot.get - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">DocumentSnapshot</a>&nbsp;/&nbsp;<a href="./get.html">get</a><br/>
+<br/>
+<h1>get</h1>
+<a name="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span></code>
+<p>Returns the value at the field or null if the field doesn't exist.</p>
+<h3>Parameters</h3>
+<p><a name="field"></a>
+<code>field</code> - <span class="symbol">:</span> The path to the field</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The value at the given field or null.</p>
+<a name="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span></code>
+<p>Returns the value at the field or null if the field doesn't exist.</p>
+<h3>Parameters</h3>
+<p><a name="field"></a>
+<code>field</code> - <span class="symbol">:</span> The path to the field</p>
+<p><a name="serverTimestampBehavior"></a>
+<code>serverTimestampBehavior</code> - <span class="symbol">:</span> Configures the behavior for server timestamps that have not yet been set to their final value.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The value at the given field or null.</p>
+<a name="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span></code>
+<p>Returns the value at the field or null if the field or document doesn't exist.</p>
+<h3>Parameters</h3>
+<p><a name="fieldPath"></a>
+<code>fieldPath</code> - <span class="symbol">:</span> The path to the field</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The value at the given field or null.</p>
+<a name="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span></code>
+<p>Returns the value at the field or null if the field or document doesn't exist.</p>
+<h3>Parameters</h3>
+<p><a name="fieldPath"></a>
+<code>fieldPath</code> - <span class="symbol">:</span> The path to the field</p>
+<p><a name="serverTimestampBehavior"></a>
+<code>serverTimestampBehavior</code> - <span class="symbol">:</span> Configures the behavior for server timestamps that have not yet been set to their final value.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The value at the given field or null.</p>
+<a name="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)))/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)))/valueType">valueType</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/java/lang/Class.html"><span class="identifier">Class</span></a><span class="symbol">&lt;</span><a href="get.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="get.html#T"><span class="identifier">T</span></a></code>
+<p>Returns the value at the field, converted to a POJO, or null if the field or document doesn't exist.</p>
+<h3>Parameters</h3>
+<p><a name="field"></a>
+<code>field</code> - <span class="symbol">:</span> The path to the field</p>
+<p><a name="valueType"></a>
+<code>valueType</code> - <span class="symbol">:</span> The Java class to convert the field value to.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The value at the given field or null.</p>
+<a name="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/valueType">valueType</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/java/lang/Class.html"><span class="identifier">Class</span></a><span class="symbol">&lt;</span><a href="get.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(kotlin.String, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="get.html#T"><span class="identifier">T</span></a></code>
+<p>Returns the value at the field, converted to a POJO, or null if the field or document doesn't exist.</p>
+<h3>Parameters</h3>
+<p><a name="field"></a>
+<code>field</code> - <span class="symbol">:</span> The path to the field</p>
+<p><a name="valueType"></a>
+<code>valueType</code> - <span class="symbol">:</span> The Java class to convert the field value to.</p>
+<p><a name="serverTimestampBehavior"></a>
+<code>serverTimestampBehavior</code> - <span class="symbol">:</span> Configures the behavior for server timestamps that have not yet been set to their final value.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The value at the given field or null.</p>
+<a name="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)))"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)))/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)))/valueType">valueType</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/java/lang/Class.html"><span class="identifier">Class</span></a><span class="symbol">&lt;</span><a href="get.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="get.html#T"><span class="identifier">T</span></a></code>
+<p>Returns the value at the field, converted to a POJO, or null if the field or document doesn't exist.</p>
+<h3>Parameters</h3>
+<p><a name="fieldPath"></a>
+<code>fieldPath</code> - <span class="symbol">:</span> The path to the field</p>
+<p><a name="valueType"></a>
+<code>valueType</code> - <span class="symbol">:</span> The Java class to convert the field value to.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The value at the given field or null.</p>
+<a name="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/valueType">valueType</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/java/lang/Class.html"><span class="identifier">Class</span></a><span class="symbol">&lt;</span><a href="get.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.DocumentSnapshot$get(com.google.firebase.firestore.FieldPath, java.lang.Class((com.google.firebase.firestore.DocumentSnapshot.get.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="get.html#T"><span class="identifier">T</span></a></code>
+<p>Returns the value at the field, converted to a POJO, or null if the field or document doesn't exist.</p>
+<h3>Parameters</h3>
+<p><a name="fieldPath"></a>
+<code>fieldPath</code> - <span class="symbol">:</span> The path to the field</p>
+<p><a name="valueType"></a>
+<code>valueType</code> - <span class="symbol">:</span> The Java class to convert the field value to.</p>
+<p><a name="serverTimestampBehavior"></a>
+<code>serverTimestampBehavior</code> - <span class="symbol">:</span> Configures the behavior for server timestamps that have not yet been set to their final value.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The value at the given field or null.</p>
+</BODY>
+</HTML>

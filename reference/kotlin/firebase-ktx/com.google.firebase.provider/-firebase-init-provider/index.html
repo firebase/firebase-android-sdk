@@ -1,0 +1,82 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FirebaseInitProvider - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.provider</a>&nbsp;/&nbsp;<a href="./index.html">FirebaseInitProvider</a><br/>
+<br/>
+<h1>FirebaseInitProvider</h1>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">FirebaseInitProvider</span></code>
+<p>Initializes Firebase APIs at app startup time.</p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="-init-.html">&lt;init&gt;</a></p>
+</td>
+<td>
+<code><span class="identifier">FirebaseInitProvider</span><span class="symbol">(</span><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="attach-info.html">attachInfo</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">attachInfo</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$attachInfo(Context, ProviderInfo)/context">context</span><span class="symbol">:</span>&nbsp;<span class="identifier">Context</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$attachInfo(Context, ProviderInfo)/info">info</span><span class="symbol">:</span>&nbsp;<span class="identifier">ProviderInfo</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="delete.html">delete</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">delete</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$delete(Uri, kotlin.String, kotlin.Array((kotlin.String)))/uri">uri</span><span class="symbol">:</span>&nbsp;<span class="identifier">Uri</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$delete(Uri, kotlin.String, kotlin.Array((kotlin.String)))/selection">selection</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$delete(Uri, kotlin.String, kotlin.Array((kotlin.String)))/selectionArgs">selectionArgs</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html"><span class="identifier">Array</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="get-type.html">getType</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getType</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$getType(Uri)/uri">uri</span><span class="symbol">:</span>&nbsp;<span class="identifier">Uri</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="insert.html">insert</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">insert</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$insert(Uri, ContentValues)/uri">uri</span><span class="symbol">:</span>&nbsp;<span class="identifier">Uri</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$insert(Uri, ContentValues)/values">values</span><span class="symbol">:</span>&nbsp;<span class="identifier">ContentValues</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Uri</span><span class="symbol">!</span></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="on-create.html">onCreate</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">onCreate</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code>
+<p>Called before Application#onCreate().</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="query.html">query</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">query</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$query(Uri, kotlin.Array((kotlin.String)), kotlin.String, kotlin.Array((kotlin.String)), kotlin.String)/uri">uri</span><span class="symbol">:</span>&nbsp;<span class="identifier">Uri</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$query(Uri, kotlin.Array((kotlin.String)), kotlin.String, kotlin.Array((kotlin.String)), kotlin.String)/projection">projection</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html"><span class="identifier">Array</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$query(Uri, kotlin.Array((kotlin.String)), kotlin.String, kotlin.Array((kotlin.String)), kotlin.String)/selection">selection</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$query(Uri, kotlin.Array((kotlin.String)), kotlin.String, kotlin.Array((kotlin.String)), kotlin.String)/selectionArgs">selectionArgs</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html"><span class="identifier">Array</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$query(Uri, kotlin.Array((kotlin.String)), kotlin.String, kotlin.Array((kotlin.String)), kotlin.String)/sortOrder">sortOrder</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Cursor</span><span class="symbol">!</span></code></td>
+</tr>
+<tr>
+<td>
+<p><a href="update.html">update</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">update</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$update(Uri, ContentValues, kotlin.String, kotlin.Array((kotlin.String)))/uri">uri</span><span class="symbol">:</span>&nbsp;<span class="identifier">Uri</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$update(Uri, ContentValues, kotlin.String, kotlin.Array((kotlin.String)))/values">values</span><span class="symbol">:</span>&nbsp;<span class="identifier">ContentValues</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$update(Uri, ContentValues, kotlin.String, kotlin.Array((kotlin.String)))/selection">selection</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.provider.FirebaseInitProvider$update(Uri, ContentValues, kotlin.String, kotlin.Array((kotlin.String)))/selectionArgs">selectionArgs</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html"><span class="identifier">Array</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

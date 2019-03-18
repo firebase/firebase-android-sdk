@@ -1,0 +1,25 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FieldValue.increment - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">FieldValue</a>&nbsp;/&nbsp;<a href="./increment.html">increment</a><br/>
+<br/>
+<h1>increment</h1>
+<a name="com.google.firebase.firestore.FieldValue$increment(kotlin.Long)"></a>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">increment</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FieldValue$increment(kotlin.Long)/l">l</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">FieldValue</span></a><span class="symbol">!</span></code>
+<p>Returns a special value that can be used with set() or update() that tells the server to increment the field's current value by the given value. </p>
+<p>If the current field value is an integer, possible integer overflows are resolved to Long.MAX_VALUE or Long.MIN_VALUE. If the current field value is a double, both values will be interpreted as doubles and the arithmetic will follow IEEE 754 semantics. </p>
+<p>If the current field is not an integer or double, or if the field does not yet exist, the transformation will set the field to the given value.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The FieldValue sentinel for use in a call to set() or update().</p>
+<a name="com.google.firebase.firestore.FieldValue$increment(kotlin.Double)"></a>
+<code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">increment</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FieldValue$increment(kotlin.Double)/l">l</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-double/index.html"><span class="identifier">Double</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="index.html"><span class="identifier">FieldValue</span></a><span class="symbol">!</span></code>
+<p>Returns a special value that can be used with set() or update() that tells the server to increment the field's current value by the given value. </p>
+<p>If the current value is an integer or a double, both the current and the given value will be interpreted as doubles and all arithmetic will follow IEEE 754 semantics. Otherwise, the transformation will set the field to the given value.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> The FieldValue sentinel for use in a call to set() or update().</p>
+</BODY>
+</HTML>
