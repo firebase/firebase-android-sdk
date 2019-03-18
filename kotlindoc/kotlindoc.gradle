@@ -1,0 +1,59 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'org.jetbrains.dokka-android' version '0.9.18'
+}
+
+android {
+    compileSdkVersion project.targetSdkVersion
+    defaultConfig {
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
+    }
+}
+
+configurations {
+    dokkapath
+    dokkapath.description = "dokka project classpath"
+}
+
+def ALL_SUPPORTED_PROJECTS = [
+        ':firebase-common',
+        ':firebase-config',
+        ':firebase-firestore',
+        ':firebase-functions',
+        ':firebase-storage',
+]
+
+
+def PROJECTS_TO_DOCUMENT = (project.findProperty('kotlindocProjects')?.split(',') ?: ALL_SUPPORTED_PROJECTS).collect {
+    project(it)
+}
+
+def javaDeps = PROJECTS_TO_DOCUMENT
+def kotlinDeps = javaDeps.collect {
+    project("$it.path:ktx")
+}
+
+dokka {
+    moduleName = "firebase-ktx"
+    outputDirectory = "$buildDir/dokka/html"
+    outputFormat = "html"
+    processConfigurations = []
+
+    javaDeps.each { Project p ->
+        dependsOn "$p.path:docStubs"
+        sourceRoot {
+            path = "$p.buildDir/doc-stubs"
+        }
+    }
+    afterEvaluate {
+        sourceDirs = files(kotlinDeps.collect {
+            "$it.projectDir/src/main/kotlin"
+        })
+    }
+
+    externalDocumentationLink {
+        url = new URL('https://developer.android.com/reference/kotlin')
+    }
+}
