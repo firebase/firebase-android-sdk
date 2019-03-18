@@ -28,7 +28,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /** Returns the [FirebaseFirestore] instance of the default [FirebaseApp]. */
-val Firebase.firestore
+val Firebase.firestore: FirebaseFirestore
     get() = FirebaseFirestore.getInstance()
 
 /** Returns the [FirebaseFirestore] instance of a given [FirebaseApp]. */
@@ -149,9 +149,7 @@ inline fun <reified T : Any> QuerySnapshot.toObjects(serverTimestampBehavior: Do
 
 internal const val LIBRARY_NAME: String = "fire-fst-ktx"
 
-/**
- * @hide
- */
+/** @suppress */
 @Keep
 class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> =
