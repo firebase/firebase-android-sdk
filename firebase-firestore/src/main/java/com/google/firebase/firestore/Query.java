@@ -901,6 +901,7 @@ public class Query {
       @Nullable Activity activity,
       EventListener<QuerySnapshot> userListener) {
 
+    // Convert from ViewSnapshots to QuerySnapshots.
     EventListener<ViewSnapshot> viewListener =
         (@Nullable ViewSnapshot snapshot, @Nullable FirebaseFirestoreException error) -> {
           if (error != null) {
@@ -914,6 +915,7 @@ public class Query {
           userListener.onEvent(querySnapshot, null);
         };
 
+    // Call the viewListener on the userExecutor.
     AsyncEventListener<ViewSnapshot> asyncListener =
         new AsyncEventListener<>(executor, viewListener);
 

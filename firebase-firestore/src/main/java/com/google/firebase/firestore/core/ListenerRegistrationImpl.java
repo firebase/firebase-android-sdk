@@ -27,7 +27,6 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
   /** The event listener for the query that raises events asynchronously. */
   private final AsyncEventListener<ViewSnapshot> asyncEventListener;
 
-  /** Creates a new ListenerRegistration. Is activity-scoped if and only if activity is non-null. */
   public ListenerRegistrationImpl(
       FirestoreClient client,
       QueryListener queryListener,
