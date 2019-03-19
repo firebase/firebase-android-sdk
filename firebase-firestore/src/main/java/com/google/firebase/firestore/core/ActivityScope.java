@@ -12,22 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.util;
+package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.app.Activity;
 import android.support.v4.app.FragmentActivity;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.core.FirestoreClient;
-import com.google.firebase.firestore.core.QueryListener;
-import com.google.firebase.firestore.core.ViewSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
 
 /**
- * Implements the ListenerRegistration interface by removing a query from the listener.
+ * Scopes the lifetime of a ListenerRegistration to an Activity.
  *
  * <p>Regarding activity-scoped listeners, Android provides lifecycle callbacks (eg onStop()) that
  * custom `Activity`s can implement via subclassing. But we can't take advantage of that, since we
@@ -48,17 +45,9 @@ import javax.annotation.Nullable;
  *       for lifecycle callbacks instead of creating/attaching a Fragment.
  * </ol>
  */
-public class ListenerRegistrationImpl implements ListenerRegistration {
+public class ActivityScope {
 
-  private final FirestoreClient client;
-
-  /** The internal query listener object that is used to unlisten from the query. */
-  private final QueryListener queryListener;
-
-  /** The event listener for the query that raises events asynchronously. */
-  private final ExecutorEventListener<ViewSnapshot> asyncEventListener;
-
-  static class CallbackList {
+  private static class CallbackList {
     void run() {
       for (Runnable callback : callbacks) {
         if (callback != null) {
@@ -142,7 +131,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
    * everything in this function is deprecated.
    */
   @SuppressWarnings("deprecation")
-  private void onActivityStopCallOnce(Activity activity, Runnable callback) {
+  private static void onActivityStopCallOnce(Activity activity, Runnable callback) {
     hardAssert(
         !(activity instanceof FragmentActivity),
         "onActivityStopCallOnce must be called with a *non*-FragmentActivity Activity.");
@@ -170,7 +159,7 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
         });
   }
 
-  private void onFragmentActivityStopCallOnce(FragmentActivity activity, Runnable callback) {
+  private static void onFragmentActivityStopCallOnce(FragmentActivity activity, Runnable callback) {
     activity.runOnUiThread(
         () -> {
           StopListenerSupportFragment fragment =
@@ -194,28 +183,16 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
         });
   }
 
-  /** Creates a new ListenerRegistration. Is activity-scoped if and only if activity is non-null. */
-  public ListenerRegistrationImpl(
-      FirestoreClient client,
-      QueryListener queryListener,
-      @Nullable Activity activity,
-      ExecutorEventListener<ViewSnapshot> asyncEventListener) {
-    this.client = client;
-    this.queryListener = queryListener;
-    this.asyncEventListener = asyncEventListener;
-
+  /** Binds the given registration to the lifetime of the activity. */
+  public static ListenerRegistration bind(
+      @Nullable Activity activity, ListenerRegistration registration) {
     if (activity != null) {
       if (activity instanceof FragmentActivity) {
-        onFragmentActivityStopCallOnce((FragmentActivity) activity, this::remove);
+        onFragmentActivityStopCallOnce((FragmentActivity) activity, registration::remove);
       } else {
-        onActivityStopCallOnce(activity, this::remove);
+        onActivityStopCallOnce(activity, registration::remove);
       }
     }
-  }
-
-  @Override
-  public void remove() {
-    asyncEventListener.mute();
-    client.stopListening(queryListener);
+    return registration;
   }
 }
