@@ -68,7 +68,13 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   private SQLiteDatabase getDb() {
     if (db == null) {
-      db = openHelper.getWritableDatabase();
+      db =
+          retryIfDbLocked(
+              1000,
+              openHelper::getWritableDatabase,
+              ex -> {
+                throw new SynchronizationException("Timed out while trying to open db.", ex);
+              });
     }
     return db;
   }
@@ -271,19 +277,40 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     return events;
   }
 
-  /** Tries to start a transaction until it succeeds or times out. */
-  private void ensureBeginTransaction(SQLiteDatabase db, long lockTimeoutMs) {
+  private <T> T retryIfDbLocked(
+      long lockTimeoutMs, Producer<T> retriable, Function<Throwable, T> failureHandler) {
     long startTime = monotonicClock.getTime();
     do {
       try {
-        db.beginTransaction();
-        return;
+        return retriable.produce();
       } catch (SQLiteDatabaseLockedException ex) {
+        if (monotonicClock.getTime() >= startTime + lockTimeoutMs) {
+          return failureHandler.apply(ex);
+        }
         SystemClock.sleep(LOCK_RETRY_BACK_OFF);
       }
-    } while (monotonicClock.getTime() < startTime + lockTimeoutMs);
+    } while (true);
+  }
 
-    throw new SynchronizationException("Timed out while trying to acquire the lock.");
+  interface Producer<T> {
+    T produce();
+  }
+
+  interface Function<T, U> {
+    U apply(T input);
+  }
+
+  /** Tries to start a transaction until it succeeds or times out. */
+  private void ensureBeginTransaction(SQLiteDatabase db, long lockTimeoutMs) {
+    retryIfDbLocked(
+        lockTimeoutMs,
+        () -> {
+          db.beginTransaction();
+          return null;
+        },
+        ex -> {
+          throw new SynchronizationException("Timed out while trying to acquire the lock.", ex);
+        });
   }
 
   @Override

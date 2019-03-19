@@ -52,7 +52,7 @@ class RemoteLockRpc extends IRemoteLockRpc.Stub {
             sectionEnteredLocker.setResult(false);
           }
         });
-    Boolean result = sectionEnteredLocker.await(1000000L);
+    Boolean result = sectionEnteredLocker.await();
     return result == null ? false : result;
   }
 

@@ -14,52 +14,29 @@
 
 package com.google.android.datatransport.runtime.scheduling;
 
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 
 /** Simple locking mechanism that supports results to the waiting/blocked side. */
 class Locker<T> {
-  private final Semaphore semaphore;
-  private T result;
+  private final BlockingQueue<T> queue;
 
   Locker() {
-    semaphore = new Semaphore(1, true);
-    acquire();
+    queue = new SynchronousQueue<>(true);
   }
 
   T await() {
-    acquire();
-    T r = result;
-    result = null;
-    return r;
-  }
-
-  T await(long timeoutMs) {
-    if (tryAcquire(timeoutMs)) {
-      T r = result;
-      result = null;
-      return r;
-    }
-    return null;
-  }
-
-  void setResult(T result) {
-    this.result = result;
-    semaphore.release();
-  }
-
-  private void acquire() {
     try {
-      semaphore.acquire();
+      return queue.take();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);
     }
   }
 
-  private boolean tryAcquire(long timeoutMs) {
+  void setResult(T result) {
     try {
-      return semaphore.tryAcquire(timeoutMs, TimeUnit.MILLISECONDS);
+      queue.put(result);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);

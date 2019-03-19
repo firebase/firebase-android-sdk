@@ -49,17 +49,42 @@ public class MultiProcessSynchronizationGuardTest {
   }
 
   @Test
-  public void locking_whenLocalProcessLockedFirst_shouldWorkAsExpected() throws RemoteException {
-    doTest(process1, process2);
+  public void locking_whenDbConnectionsNotOpenAndLocalProcessLockedFirst_shouldWorkAsExpected()
+      throws RemoteException {
+    doTest_whenConnectionsNotOpen(process1, process2);
   }
 
   @Test
-  public void locking_whenRemoteProcessLockedFirst_shouldWorkAsExpected() throws RemoteException {
-    doTest(process2, process1);
+  public void locking_whenDbConnectionsNotOpenAndRemoteProcessLockedFirst_shouldWorkAsExpected()
+      throws RemoteException {
+    doTest_whenConnectionsNotOpen(process2, process1);
   }
 
-  private static void doTest(IRemoteLockRpc process1, IRemoteLockRpc process2)
+  @Test
+  public void locking_whenDbConnectionsAreOpenAndLocalProcessLockedFirst_shouldWorkAsExpected()
       throws RemoteException {
+    doTest_whenConnectionsAreOpen(process1, process2);
+  }
+
+  @Test
+  public void locking_whenDbConnectionsAreOpenAndRemoteProcessLockedFirst_shouldWorkAsExpected()
+      throws RemoteException {
+    doTest_whenConnectionsAreOpen(process2, process1);
+  }
+
+  private static void doTest_whenConnectionsNotOpen(
+      IRemoteLockRpc process1, IRemoteLockRpc process2) throws RemoteException {
+    lockAndRunOrFail(process1, () -> assertCanLock(process2, false));
+
+    assertCanLock(process2, true);
+  }
+
+  private static void doTest_whenConnectionsAreOpen(
+      IRemoteLockRpc process1, IRemoteLockRpc process2) throws RemoteException {
+    // initialize db connections before contending for lock.
+    assertCanLock(process1, true);
+    assertCanLock(process2, true);
+
     lockAndRunOrFail(process1, () -> assertCanLock(process2, false));
 
     assertCanLock(process2, true);
