@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.util;
+package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -23,13 +23,13 @@ import javax.annotation.Nullable;
  * A wrapper event listener that uses an Executor to dispatch events. Exposes a mute() call to
  * immediately silence the event listener when events are dispatched on different threads.
  */
-public class ExecutorEventListener<T> implements EventListener<T> {
+public class AsyncEventListener<T> implements EventListener<T> {
   private final Executor executor;
   private final EventListener<T> eventListener;
 
   private volatile boolean muted = false;
 
-  public ExecutorEventListener(Executor executor, EventListener<T> eventListener) {
+  public AsyncEventListener(Executor executor, EventListener<T> eventListener) {
     this.executor = executor;
     this.eventListener = eventListener;
   }
