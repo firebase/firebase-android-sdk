@@ -183,6 +183,7 @@ public class FirebaseApp {
   @PublicApi
   public Context getApplicationContext() {
     checkNotDeleted();
+    System.err.println("YOLO");
     return applicationContext;
   }
 
