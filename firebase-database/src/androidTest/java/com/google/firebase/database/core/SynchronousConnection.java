@@ -14,7 +14,7 @@
 
 package com.google.firebase.database.core;
 
-import static com.google.firebase.database.TestHelpers.newFrozenTestConfig;
+import static com.google.firebase.database.IntegrationTestHelpers.newFrozenTestConfig;
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 import com.google.firebase.database.DatabaseError;

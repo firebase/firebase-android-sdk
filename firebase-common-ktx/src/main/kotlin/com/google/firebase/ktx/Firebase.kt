@@ -36,21 +36,21 @@ val Firebase.app: FirebaseApp
 fun Firebase.app(name: String): FirebaseApp = FirebaseApp.getInstance(name)
 
 /** Initializes and returns a FirebaseApp. */
-fun Firebase.initialize(context: Context) = FirebaseApp.initializeApp(context)
+fun Firebase.initialize(context: Context): FirebaseApp? = FirebaseApp.initializeApp(context)
 
 /** Initializes and returns a FirebaseApp. */
-fun Firebase.initialize(context: Context, options: FirebaseOptions) =
+fun Firebase.initialize(context: Context, options: FirebaseOptions): FirebaseApp =
         FirebaseApp.initializeApp(context, options)
 
 /** Initializes and returns a FirebaseApp. */
-fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String) =
+fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String): FirebaseApp =
         FirebaseApp.initializeApp(context, options, name)
 
 /** Returns options of default FirebaseApp */
 val Firebase.options: FirebaseOptions
     get() = Firebase.app.options
 
-/** @hide */
+/** @suppress */
 @Keep
 class FirebaseCommonKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> {

@@ -45,7 +45,7 @@ public class RealtimeTest {
 
   @After
   public void tearDown() {
-    TestHelpers.failOnFirstUncaughtException();
+    IntegrationTestHelpers.failOnFirstUncaughtException();
   }
 
   @Test
@@ -66,10 +66,10 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectSetWorks()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.resume(ctx);
 
     final Semaphore opSemaphore = new Semaphore(0);
@@ -99,7 +99,7 @@ public class RealtimeTest {
             });
 
     // Wait for initial (null) value on both reader and writer.
-    TestHelpers.waitFor(valSemaphore, 2);
+    IntegrationTestHelpers.waitFor(valSemaphore, 2);
 
     Object expected = "dummy";
     writer
@@ -115,7 +115,7 @@ public class RealtimeTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     EventRecord writerEventRecord = writerFuture.timedGet().get(1);
     EventRecord readerEventRecord = readerFuture.timedGet().get(1);
@@ -129,10 +129,10 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectSetWithPriorityWorks()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.resume(ctx);
 
     final Semaphore opSemaphore = new Semaphore(0);
@@ -162,7 +162,7 @@ public class RealtimeTest {
             });
 
     // Wait for initial (null) value on both reader and writer.
-    TestHelpers.waitFor(valSemaphore, 2);
+    IntegrationTestHelpers.waitFor(valSemaphore, 2);
 
     Object expected = true;
     String expectedPriority = "12345";
@@ -180,7 +180,7 @@ public class RealtimeTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     EventRecord writerEventRecord = writerFuture.timedGet().get(1);
     EventRecord readerEventRecord = readerFuture.timedGet().get(1);
@@ -197,10 +197,10 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectRemoveWorks()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.resume(ctx);
 
     final Semaphore opSemaphore = new Semaphore(0);
@@ -228,7 +228,7 @@ public class RealtimeTest {
             });
 
     // Wait for initial (null) value on both reader and writer.
-    TestHelpers.waitFor(valSemaphore, 2);
+    IntegrationTestHelpers.waitFor(valSemaphore, 2);
 
     writer
         .child("foo")
@@ -240,7 +240,7 @@ public class RealtimeTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("foo")
@@ -253,7 +253,7 @@ public class RealtimeTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     EventRecord writerEventRecord = writerFuture.timedGet().get(2);
     EventRecord readerEventRecord = readerFuture.timedGet().get(2);
@@ -268,10 +268,10 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectUpdateWorks()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.resume(ctx);
 
     final Semaphore opSemaphore = new Semaphore(0);
@@ -299,7 +299,7 @@ public class RealtimeTest {
             });
 
     // Wait for initial (null) value on both reader and writer.
-    TestHelpers.waitFor(valSemaphore, 2);
+    IntegrationTestHelpers.waitFor(valSemaphore, 2);
 
     Map<String, Object> initialValues = new MapBuilder().put("bar", "a").put("baz", "b").build();
     writer
@@ -312,7 +312,7 @@ public class RealtimeTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     Map<String, Object> updatedValues = new MapBuilder().put("baz", "c").put("bat", "d").build();
     writer
@@ -328,7 +328,7 @@ public class RealtimeTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     EventRecord writerEventRecord = writerFuture.timedGet().get(3);
     EventRecord readerEventRecord = readerFuture.timedGet().get(2);
@@ -346,9 +346,9 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectTriggersSingleLocalValueEventForWriter()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.resume(ctx);
 
     final AtomicInteger callbackCount = new AtomicInteger(0);
@@ -364,7 +364,7 @@ public class RealtimeTest {
                 return events.size() == 2;
               }
             });
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
 
     final Semaphore opSemaphore = new Semaphore(0);
     writer
@@ -378,7 +378,7 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("foo")
@@ -391,7 +391,7 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("foo/baz")
@@ -403,12 +403,12 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     RepoManager.interrupt(ctx);
     ;
 
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
     EventRecord writerEventRecord = writerFuture.timedGet().get(1);
 
     RepoManager.resume(ctx);
@@ -425,10 +425,10 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectTriggersSingleLocalValueEventForReader()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.resume(ctx);
 
     final AtomicInteger callbackCount = new AtomicInteger(0);
@@ -444,7 +444,7 @@ public class RealtimeTest {
                 return events.size() == 2;
               }
             });
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
 
     final Semaphore opSemaphore = new Semaphore(0);
     writer
@@ -458,7 +458,7 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("foo")
@@ -471,7 +471,7 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("foo/baz")
@@ -483,12 +483,12 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     RepoManager.interrupt(ctx);
     ;
 
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
     EventRecord readerEventRecord = readerFuture.timedGet().get(1);
 
     RepoManager.resume(ctx);
@@ -505,9 +505,9 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectTriggersSingleLocalValueEventForWriterWithQuery()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.resume(ctx);
     ;
 
@@ -524,7 +524,7 @@ public class RealtimeTest {
                 return events.size() == 2;
               }
             });
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
 
     final Semaphore opSemaphore = new Semaphore(0);
     writer
@@ -538,7 +538,7 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("foo")
@@ -551,7 +551,7 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("foo/baz")
@@ -563,12 +563,12 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     RepoManager.interrupt(ctx);
     ;
 
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
     EventRecord writerEventRecord = writerFuture.timedGet().get(1);
 
     RepoManager.resume(ctx);
@@ -585,10 +585,10 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectTriggersSingleLocalValueEventForReaderWithQuery()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
     final AtomicInteger callbackCount = new AtomicInteger(0);
     final Semaphore valSemaphore = new Semaphore(0);
@@ -603,7 +603,7 @@ public class RealtimeTest {
                 return events.size() == 2;
               }
             });
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
 
     final Semaphore opSemaphore = new Semaphore(0);
     writer
@@ -617,7 +617,7 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("foo")
@@ -630,7 +630,7 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("foo/baz")
@@ -642,12 +642,12 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     RepoManager.interrupt(ctx);
     ;
 
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
     EventRecord readerEventRecord = readerFuture.timedGet().get(1);
 
     RepoManager.resume(ctx);
@@ -664,10 +664,10 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectDeepMergeTriggersOnlyOneValueEventForReaderWithQuery()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
     final AtomicInteger callbackCount = new AtomicInteger(0);
     final Semaphore valSemaphore = new Semaphore(0);
@@ -682,7 +682,7 @@ public class RealtimeTest {
                 return events.size() == 3;
               }
             });
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
 
     final Semaphore opSemaphore = new Semaphore(0);
     Map<String, Object> initialValues =
@@ -704,8 +704,8 @@ public class RealtimeTest {
             opSemaphore.release(1);
           }
         });
-    TestHelpers.waitFor(valSemaphore);
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("b/c")
@@ -718,7 +718,7 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("b/d")
@@ -730,11 +730,11 @@ public class RealtimeTest {
                 opSemaphore.release(1);
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     RepoManager.interrupt(ctx);
 
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
     EventRecord readerEventRecord = readerFuture.timedGet().get(2);
 
     RepoManager.resume(ctx);
@@ -756,10 +756,10 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectCancelWorks()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.resume(ctx);
     ;
 
@@ -788,7 +788,7 @@ public class RealtimeTest {
             });
 
     // Wait for initial (null) value on both reader and writer.
-    TestHelpers.waitFor(valSemaphore, 2);
+    IntegrationTestHelpers.waitFor(valSemaphore, 2);
 
     Map<String, Object> initialValues = new MapBuilder().put("bar", "a").put("baz", "b").build();
     writer
@@ -801,7 +801,7 @@ public class RealtimeTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     Map<String, Object> updatedValues = new MapBuilder().put("baz", "c").put("bat", "d").build();
     writer
@@ -815,7 +815,7 @@ public class RealtimeTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     writer
         .child("foo/bat")
@@ -829,7 +829,7 @@ public class RealtimeTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     EventRecord writerEventRecord = writerFuture.timedGet().get(2);
     EventRecord readerEventRecord = readerFuture.timedGet().get(2);
@@ -846,9 +846,9 @@ public class RealtimeTest {
   @Test
   public void testOnDisconnectWithServerValuesWorks()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.resume(ctx);
 
     final Semaphore opSemaphore = new Semaphore(0);
@@ -866,7 +866,7 @@ public class RealtimeTest {
             });
 
     // Wait for initial (null) value.
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
 
     Map<String, Object> initialValues =
         new MapBuilder()
@@ -891,7 +891,7 @@ public class RealtimeTest {
                 opSemaphore.release();
               }
             });
-    TestHelpers.waitFor(opSemaphore);
+    IntegrationTestHelpers.waitFor(opSemaphore);
 
     EventRecord readerEventRecord = writerFuture.timedGet().get(1);
     DataSnapshot snap = readerEventRecord.getSnapshot();
@@ -913,7 +913,7 @@ public class RealtimeTest {
   @Ignore
   public void testShutdown()
       throws InterruptedException, ExecutionException, TestFailure, TimeoutException {
-    DatabaseConfig config = TestHelpers.newTestConfig();
+    DatabaseConfig config = IntegrationTestHelpers.newTestConfig();
     config.setLogLevel(Logger.Level.DEBUG);
     DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getNamespace(), config);
 
@@ -949,16 +949,16 @@ public class RealtimeTest {
             });
 
     // Wait for us to be connected so we send the buffered put
-    TestHelpers.waitFor(ready);
+    IntegrationTestHelpers.waitFor(ready);
 
-    DataSnapshot snap = TestHelpers.getSnap(pushed);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(pushed);
     assertEquals("foo", snap.getValue(String.class));
   }
 
   @Test
   public void testWritesToSameLocationWhileOfflineAreInOrder()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     DatabaseReference.goOffline();
     for (int i = 0; i < 100; i++) {
@@ -984,14 +984,14 @@ public class RealtimeTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void testOnDisconnectIsNotRerunOnReconnect()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
-    final DatabaseConfig ctx = TestHelpers.getContext(0);
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     RepoManager.resume(ctx);
 
     final Semaphore semaphore = new Semaphore(0);
@@ -1018,7 +1018,7 @@ public class RealtimeTest {
     RepoManager.resume(ctx);
 
     // Should be complete initially
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
     // One onComplete called
     assertEquals(1, counter[0]);
 
@@ -1027,8 +1027,8 @@ public class RealtimeTest {
     RepoManager.resume(ctx);
 
     // Make sure we sent all outstanding onDisconnects
-    TestHelpers.waitForRoundtrip(ref);
-    TestHelpers.waitForRoundtrip(
+    IntegrationTestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(
         ref); // Two are needed because writes are restored first, then onDisconnects
     assertEquals(1, counter[0]); // No onComplete should have triggered
   }
@@ -1037,7 +1037,7 @@ public class RealtimeTest {
   @Test
   public void testServerValuesEventualConsistencyBetweenLocalAndRemote() throws DatabaseException,
       InterruptedException {
-      List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+      List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
       DatabaseReference writer = refs.get(0);
       DatabaseReference reader = refs.get(1);
 
@@ -1087,7 +1087,7 @@ public class RealtimeTest {
           }
       });
 
-      TestHelpers.waitFor(valMatchSemaphore);
+      IntegrationTestHelpers.waitFor(valMatchSemaphore);
 
       ctx.resume();
   }*/

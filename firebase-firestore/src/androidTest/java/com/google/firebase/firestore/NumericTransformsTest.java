@@ -1,0 +1,158 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.firebase.firestore;
+
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.firestore.testutil.EventAccumulator;
+import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public class NumericTransformsTest {
+  private static final double DOUBLE_EPSILON = 0.000001;
+
+  // A document reference to read and write to.
+  private DocumentReference docRef;
+
+  // Accumulator used to capture events during the test.
+  private EventAccumulator<DocumentSnapshot> accumulator;
+
+  // Listener registration for a listener maintained during the course of the test.
+  private ListenerRegistration listenerRegistration;
+
+  @Before
+  public void setUp() {
+    docRef = testDocument();
+    accumulator = new EventAccumulator<>();
+    listenerRegistration =
+        docRef.addSnapshotListener(MetadataChanges.INCLUDE, accumulator.listener());
+
+    // Wait for initial null snapshot to avoid potential races.
+    DocumentSnapshot initialSnapshot = accumulator.await();
+    assertFalse(initialSnapshot.exists());
+  }
+
+  @After
+  public void tearDown() {
+    listenerRegistration.remove();
+    IntegrationTestUtil.tearDown();
+  }
+
+  /** Writes some initialData and consumes the events generated. */
+  private void writeInitialData(Map<String, Object> initialData) {
+    waitFor(docRef.set(initialData));
+    accumulator.awaitRemoteEvent();
+  }
+
+  private void expectLocalAndRemoteValue(double expectedSum) {
+    DocumentSnapshot snap = accumulator.awaitLocalEvent();
+    assertEquals(expectedSum, snap.getDouble("sum"), DOUBLE_EPSILON);
+    snap = accumulator.awaitRemoteEvent();
+    assertEquals(expectedSum, snap.getDouble("sum"), DOUBLE_EPSILON);
+  }
+
+  private void expectLocalAndRemoteValue(long expectedSum) {
+    DocumentSnapshot snap = accumulator.awaitLocalEvent();
+    assertEquals(expectedSum, (long) snap.getLong("sum"));
+    snap = accumulator.awaitRemoteEvent();
+    assertEquals(expectedSum, (long) snap.getLong("sum"));
+  }
+
+  @Test
+  public void createDocumentWithIncrement() {
+    waitFor(docRef.set(map("sum", FieldValue.increment(1337))));
+    expectLocalAndRemoteValue(1337L);
+  }
+
+  @Test
+  public void mergeOnNonExistingDocumentWithIncrement() {
+    waitFor(docRef.set(map("sum", FieldValue.increment(1337)), SetOptions.merge()));
+    expectLocalAndRemoteValue(1337L);
+  }
+
+  @Test
+  public void integerIncrementWithExistingInteger() {
+    writeInitialData(map("sum", 1337L));
+    waitFor(docRef.update("sum", FieldValue.increment(1)));
+    expectLocalAndRemoteValue(1338L);
+  }
+
+  @Test
+  public void doubleIncrementWithExistingDouble() {
+    writeInitialData(map("sum", 13.37D));
+    waitFor(docRef.update("sum", FieldValue.increment(0.1)));
+    expectLocalAndRemoteValue(13.47D);
+  }
+
+  @Test
+  public void integerIncrementWithExistingDouble() {
+    writeInitialData(map("sum", 13.37D));
+    waitFor(docRef.update("sum", FieldValue.increment(1)));
+    expectLocalAndRemoteValue(14.37D);
+  }
+
+  @Test
+  public void doubleIncrementWithExistingInteger() {
+    writeInitialData(map("sum", 1337L));
+    waitFor(docRef.update("sum", FieldValue.increment(0.1)));
+    expectLocalAndRemoteValue(1337.1D);
+  }
+
+  @Test
+  public void integerIncrementWithExistingString() {
+    writeInitialData(map("sum", "overwrite"));
+    waitFor(docRef.update("sum", FieldValue.increment(1337)));
+    expectLocalAndRemoteValue(1337L);
+  }
+
+  @Test
+  public void doubleIncrementWithExistingString() {
+    writeInitialData(map("sum", "overwrite"));
+    waitFor(docRef.update("sum", FieldValue.increment(13.37)));
+    expectLocalAndRemoteValue(13.37D);
+  }
+
+  @Test
+  public void multipleDoubleIncrements() throws ExecutionException, InterruptedException {
+    writeInitialData(map("sum", 0.0D));
+
+    Tasks.await(docRef.getFirestore().disableNetwork());
+
+    docRef.update("sum", FieldValue.increment(0.1D));
+    docRef.update("sum", FieldValue.increment(0.01D));
+    docRef.update("sum", FieldValue.increment(0.001D));
+
+    DocumentSnapshot snap = accumulator.awaitLocalEvent();
+    assertEquals(0.1D, snap.getDouble("sum"), DOUBLE_EPSILON);
+    snap = accumulator.awaitLocalEvent();
+    assertEquals(0.11D, snap.getDouble("sum"), DOUBLE_EPSILON);
+    snap = accumulator.awaitLocalEvent();
+    assertEquals(0.111D, snap.getDouble("sum"), DOUBLE_EPSILON);
+
+    Tasks.await(docRef.getFirestore().enableNetwork());
+
+    snap = accumulator.awaitRemoteEvent();
+    assertEquals(0.111D, snap.getDouble("sum"), DOUBLE_EPSILON);
+  }
+}

@@ -43,13 +43,13 @@ public class EventTest {
 
   @After
   public void tearDown() {
-    TestHelpers.failOnFirstUncaughtException();
+    IntegrationTestHelpers.failOnFirstUncaughtException();
   }
   // NOTE: skipping test on valid types.
 
   @Test
   public void writeLeafNodeExpectValue() throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -70,7 +70,7 @@ public class EventTest {
 
   @Test
   public void writeNestedLeafNodeWaitForEvents() throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     EventHelper helper =
         new EventHelper()
             .addChildExpectation(ref, Event.EventType.CHILD_ADDED, "foo")
@@ -86,7 +86,7 @@ public class EventTest {
 
   @Test
   public void writeTwoLeafNodeThenChangeThem() throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -129,7 +129,7 @@ public class EventTest {
 
   @Test
   public void writeFloatValueThenChangeToInteger() throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference node = refs.get(0);
 
     EventHelper readHelper =
@@ -145,14 +145,14 @@ public class EventTest {
     node.setValue((float) 1337.0); // This does not fire events.
     node.setValue(1337.1);
 
-    TestHelpers.waitForRoundtrip(node);
+    IntegrationTestHelpers.waitForRoundtrip(node);
     assertTrue(readHelper.waitForEvents());
     ZombieVerifier.verifyRepoZombies(refs);
   }
 
   @Test
   public void writeDoubleValueThenChangeToInteger() throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference node = refs.get(0);
 
     EventHelper readHelper =
@@ -167,7 +167,7 @@ public class EventTest {
     node.setValue(1337); // This does not fire events.
     node.setValue(1337.1);
 
-    TestHelpers.waitForRoundtrip(node);
+    IntegrationTestHelpers.waitForRoundtrip(node);
     assertTrue(readHelper.waitForEvents());
     ZombieVerifier.verifyRepoZombies(refs);
   }
@@ -175,7 +175,7 @@ public class EventTest {
   @Test
   public void writeDoubleValueThenChangeToIntegerWithDifferentPriority()
       throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference node = refs.get(0);
 
     EventHelper readHelper =
@@ -189,14 +189,14 @@ public class EventTest {
     node.setValue(1337.0);
     node.setValue(1337, 1337);
 
-    TestHelpers.waitForRoundtrip(node);
+    IntegrationTestHelpers.waitForRoundtrip(node);
     assertTrue(readHelper.waitForEvents());
     ZombieVerifier.verifyRepoZombies(refs);
   }
 
   @Test
   public void writeIntegerValueThenChangeToDouble() throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference node = refs.get(0);
 
     EventHelper readHelper =
@@ -211,7 +211,7 @@ public class EventTest {
     node.setValue(1337.0); // This does not fire events.
     node.setValue(1337.1);
 
-    TestHelpers.waitForRoundtrip(node);
+    IntegrationTestHelpers.waitForRoundtrip(node);
     assertTrue(readHelper.waitForEvents());
     ZombieVerifier.verifyRepoZombies(refs);
   }
@@ -219,7 +219,7 @@ public class EventTest {
   @Test
   public void writeIntegerValueThenChangeToDoubleWithDifferentPriority()
       throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference node = refs.get(0);
 
     EventHelper readHelper =
@@ -233,14 +233,14 @@ public class EventTest {
     node.setValue(1337);
     node.setValue(1337.0, 1337);
 
-    TestHelpers.waitForRoundtrip(node);
+    IntegrationTestHelpers.waitForRoundtrip(node);
     assertTrue(readHelper.waitForEvents());
     ZombieVerifier.verifyRepoZombies(refs);
   }
 
   @Test
   public void writeLargeLongValueThenIncrement() throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(1);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference node = refs.get(0);
 
     EventHelper readHelper =
@@ -253,14 +253,14 @@ public class EventTest {
     node.setValue(Long.MAX_VALUE);
     node.setValue(Long.MAX_VALUE * 2.0);
 
-    TestHelpers.waitForRoundtrip(node);
+    IntegrationTestHelpers.waitForRoundtrip(node);
     assertTrue(readHelper.waitForEvents());
     ZombieVerifier.verifyRepoZombies(refs);
   }
 
   @Test
   public void setMultipleEventListenersOnSameNode() throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -285,7 +285,7 @@ public class EventTest {
   @Test
   public void setDataMultipleTimesEnsureValueIsCalledAppropriately()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ReadFuture readFuture = ReadFuture.untilEquals(ref, 2L, /*ignoreFirstNull=*/ true);
     ZombieVerifier.verifyRepoZombies(ref);
@@ -306,7 +306,7 @@ public class EventTest {
   public void unsubscribeEventsAndConfirmEventsNoLongerFire()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final AtomicInteger callbackCount = new AtomicInteger(0);
 
@@ -331,7 +331,7 @@ public class EventTest {
       ref.setValue(i);
     }
 
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
     ref.removeEventListener(listener);
     ZombieVerifier.verifyRepoZombies(ref);
 
@@ -349,7 +349,7 @@ public class EventTest {
   @Test
   public void subscribeThenUnsubscribeWithoutProblems()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ValueEventListener listener =
         new ValueEventListener() {
@@ -375,7 +375,7 @@ public class EventTest {
   @Test
   public void subscribeThenUnsubscribeWithoutProblemsWithLimit()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ValueEventListener listener =
         new ValueEventListener() {
@@ -401,7 +401,7 @@ public class EventTest {
   @Test
   public void writeChunkOfJSONButGetMoreGranularEventsForIndividualChanges()
       throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
     DatabaseReference writer = refs.get(1);
 
@@ -493,18 +493,18 @@ public class EventTest {
     ZombieVerifier.verifyRepoZombies(refs);
 
     writer.setValue(new MapBuilder().put("a", 10).put("b", 20).build());
-    TestHelpers.waitFor(writerReady, 2);
-    TestHelpers.waitFor(readerReady, 2);
+    IntegrationTestHelpers.waitFor(writerReady, 2);
+    IntegrationTestHelpers.waitFor(readerReady, 2);
 
     writer.setValue(new MapBuilder().put("a", 10).put("b", 30).build());
-    TestHelpers.waitFor(writerReady);
-    TestHelpers.waitFor(readerReady);
+    IntegrationTestHelpers.waitFor(writerReady);
+    IntegrationTestHelpers.waitFor(readerReady);
   }
 
   @Test
   public void valueIsTriggeredForEmptyNodes()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     DataSnapshot snap = new ReadFuture(ref).timedGet().get(0).getSnapshot();
     ZombieVerifier.verifyRepoZombies(ref);
@@ -514,7 +514,7 @@ public class EventTest {
   @Test
   public void correctEventsAreRaisedWhenALeafNodeTurnsIntoAnInternalNode()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ReadFuture readFuture = ReadFuture.untilCountAfterNull(ref, 4);
 
@@ -538,7 +538,7 @@ public class EventTest {
   public void canRegisterTheSameCallbackMultipleTimesNeedToUnregisterItMultipleTimes()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final AtomicInteger callbackCount = new AtomicInteger(0);
     ValueEventListener listener =
@@ -583,7 +583,7 @@ public class EventTest {
   @Test
   public void unregisterSameCallbackTooManyTimesSilentlyDoesNothing()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ValueEventListener listener =
         ref.addValueEventListener(
@@ -609,7 +609,7 @@ public class EventTest {
   @Test
   public void removesHappenImmediately()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore blockSem = new Semaphore(0);
     final Semaphore endingSemaphore = new Semaphore(0);
 
@@ -621,7 +621,7 @@ public class EventTest {
             if (snapshot.getValue() != null) {
               assertTrue(called.compareAndSet(false, true));
               try {
-                TestHelpers.waitFor(blockSem);
+                IntegrationTestHelpers.waitFor(blockSem);
               } catch (InterruptedException e) {
                 e.printStackTrace();
               }
@@ -644,17 +644,17 @@ public class EventTest {
     ZombieVerifier.verifyRepoZombies(ref);
 
     ref.setValue(42);
-    TestHelpers.waitForQueue(ref);
+    IntegrationTestHelpers.waitForQueue(ref);
     ref.setValue(84);
     blockSem.release();
     new WriteFuture(ref, null).timedGet();
-    TestHelpers.waitFor(endingSemaphore);
+    IntegrationTestHelpers.waitFor(endingSemaphore);
   }
 
   @Test
   public void removesHappenImmediatelyOnOuterRef()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore gotInitialEvent = new Semaphore(0);
     final Semaphore blockSem = new Semaphore(0);
     final Semaphore endingSemaphore = new Semaphore(0);
@@ -669,7 +669,7 @@ public class EventTest {
                 if (snapshot.getValue() != null) {
                   assertTrue(called.compareAndSet(false, true));
                   try {
-                    TestHelpers.waitFor(blockSem);
+                    IntegrationTestHelpers.waitFor(blockSem);
                   } catch (InterruptedException e) {
                     e.printStackTrace();
                   }
@@ -691,20 +691,20 @@ public class EventTest {
             });
     ZombieVerifier.verifyRepoZombies(ref);
 
-    TestHelpers.waitFor(gotInitialEvent);
+    IntegrationTestHelpers.waitFor(gotInitialEvent);
 
     ref.child("a").setValue(42);
-    TestHelpers.waitForQueue(ref);
+    IntegrationTestHelpers.waitForQueue(ref);
     ref.child("b").setValue(84);
     blockSem.release();
     new WriteFuture(ref, null).timedGet();
-    TestHelpers.waitFor(endingSemaphore);
+    IntegrationTestHelpers.waitFor(endingSemaphore);
   }
 
   @Test
   public void removesHappenImmediatelyOnMultipleRef()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore gotInitialEvent = new Semaphore(0);
     final Semaphore blockSem = new Semaphore(0);
     final Semaphore endingSemaphore = new Semaphore(0);
@@ -718,7 +718,7 @@ public class EventTest {
             if (snapshot.getValue() != null) {
               assertTrue(called.compareAndSet(false, true));
               try {
-                TestHelpers.waitFor(blockSem);
+                IntegrationTestHelpers.waitFor(blockSem);
               } catch (InterruptedException e) {
                 e.printStackTrace();
               }
@@ -743,19 +743,19 @@ public class EventTest {
     ref.limitToFirst(5).addValueEventListener(listener);
     ZombieVerifier.verifyRepoZombies(ref);
 
-    TestHelpers.waitFor(gotInitialEvent, 2);
+    IntegrationTestHelpers.waitFor(gotInitialEvent, 2);
     ref.child("a").setValue(42);
-    TestHelpers.waitForQueue(ref);
+    IntegrationTestHelpers.waitForQueue(ref);
     ref.child("b").setValue(84);
     blockSem.release();
     new WriteFuture(ref, null).timedGet();
-    TestHelpers.waitFor(endingSemaphore);
+    IntegrationTestHelpers.waitFor(endingSemaphore);
   }
 
   @Test
   public void removesHappenImmediatelyChild()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore blockSem = new Semaphore(0);
     final Semaphore endingSemaphore = new Semaphore(0);
 
@@ -767,7 +767,7 @@ public class EventTest {
             if (snapshot.getValue() != null) {
               assertTrue(called.compareAndSet(false, true));
               try {
-                TestHelpers.waitFor(blockSem);
+                IntegrationTestHelpers.waitFor(blockSem);
               } catch (InterruptedException e) {
                 e.printStackTrace();
               }
@@ -798,18 +798,18 @@ public class EventTest {
     ZombieVerifier.verifyRepoZombies(ref);
 
     ref.child("a").setValue(42);
-    TestHelpers.waitForQueue(ref);
+    IntegrationTestHelpers.waitForQueue(ref);
     ref.child("b").setValue(84);
     blockSem.release();
     new WriteFuture(ref, null).timedGet();
-    TestHelpers.waitFor(endingSemaphore);
+    IntegrationTestHelpers.waitFor(endingSemaphore);
   }
 
   @Test
   public void onceFiresExactlyOnce()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final AtomicBoolean called = new AtomicBoolean(false);
     ref.addListenerForSingleValueEvent(
@@ -838,7 +838,7 @@ public class EventTest {
   @Test
   public void valueOnEmptyChildFires()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     DataSnapshot snap = new ReadFuture(ref.child("test")).timedGet().get(0).getSnapshot();
     assertNull(snap.getValue());
@@ -848,7 +848,7 @@ public class EventTest {
   @Test
   public void valueOnEmptyChildFiresImmediatelyEvenAfterParentIsSynced()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     // Sync parent
     new ReadFuture(ref).timedGet();
@@ -862,7 +862,7 @@ public class EventTest {
   public void childEventsAreRaised()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> firstValue =
         new MapBuilder()
@@ -948,7 +948,7 @@ public class EventTest {
   public void childEventsAreRaisedWithAQuery()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> firstValue =
         new MapBuilder()
@@ -1034,7 +1034,7 @@ public class EventTest {
   @Test
   public void priorityChangeShouldRaiseChildMovedAndChildChangedAndValueOnParentAndChild()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     EventHelper helper =
         new EventHelper()
@@ -1047,7 +1047,7 @@ public class EventTest {
             .startListening(true);
 
     ref.child("bar").setValue(42, 10);
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
     ref.child("foo").setValue(42, 20);
 
     assertTrue(helper.waitForEvents());
@@ -1067,7 +1067,7 @@ public class EventTest {
   @Test
   public void priorityChangeShouldRaiseChildMovedAndChildChangedAndValueOnParentAndChild2()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     EventHelper helper =
         new EventHelper()

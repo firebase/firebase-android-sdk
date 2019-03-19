@@ -15,18 +15,31 @@
 package com.google.firebase.database;
 
 import android.support.annotation.Keep;
+import android.support.annotation.RestrictTo;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
+import com.google.firebase.components.Dependency;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 /** @hide */
 @Keep
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DatabaseRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
-    return Collections.singletonList(
+    return Arrays.asList(
+        Component.builder(FirebaseDatabaseComponent.class)
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.optional(InternalAuthProvider.class))
+            .factory(
+                c ->
+                    new FirebaseDatabaseComponent(
+                        c.get(FirebaseApp.class), c.get(InternalAuthProvider.class)))
+            .build(),
         LibraryVersionComponent.create("fire-rtdb", BuildConfig.VERSION_NAME));
   }
 }

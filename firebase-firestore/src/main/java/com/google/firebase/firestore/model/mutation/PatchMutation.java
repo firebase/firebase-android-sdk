@@ -130,6 +130,12 @@ public final class PatchMutation extends Mutation {
     return new Document(getKey(), version, newData, Document.DocumentState.LOCAL_MUTATIONS);
   }
 
+  @Nullable
+  @Override
+  public FieldMask getFieldMask() {
+    return mask;
+  }
+
   /**
    * Patches the data of document if available or creates a new document. Note that this does not
    * check whether or not the precondition of this patch holds.
@@ -156,5 +162,10 @@ public final class PatchMutation extends Mutation {
       }
     }
     return obj;
+  }
+
+  @Override
+  public boolean isIdempotent() {
+    return true;
   }
 }

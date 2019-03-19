@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import java.util.HashSet;
@@ -46,12 +47,13 @@ public final class SetOptions {
   }
 
   /** @hide */
-  public boolean isMerge() {
+  boolean isMerge() {
     return merge;
   }
 
   /** @hide */
   @Nullable
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public FieldMask getFieldMask() {
     return fieldMask;
   }
@@ -78,7 +80,7 @@ public final class SetOptions {
    */
   @NonNull
   @PublicApi
-  public static SetOptions mergeFields(List<String> fields) {
+  public static SetOptions mergeFields(@NonNull List<String> fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
     for (String field : fields) {
@@ -121,7 +123,7 @@ public final class SetOptions {
    */
   @NonNull
   @PublicApi
-  public static SetOptions mergeFieldPaths(List<FieldPath> fields) {
+  public static SetOptions mergeFieldPaths(@NonNull List<FieldPath> fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
     for (FieldPath field : fields) {

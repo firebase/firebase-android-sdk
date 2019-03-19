@@ -34,7 +34,7 @@ public class DataSnapshotTest {
 
   @Before
   public void setUp() {
-    TestHelpers.ensureAppInitialized();
+    UnitTestHelpers.ensureAppInitialized();
   }
 
   private DataSnapshot snapFor(Object data, DatabaseReference ref) {
@@ -44,7 +44,7 @@ public class DataSnapshotTest {
 
   @Test
   public void basicIterationWorks() {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = UnitTestHelpers.getRandomNode();
     DataSnapshot snap1 = snapFor(null, ref);
 
     assertFalse(snap1.hasChildren());
@@ -71,7 +71,7 @@ public class DataSnapshotTest {
   @Test
   @SuppressWarnings("rawtypes")
   public void existsWorks() {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = UnitTestHelpers.getRandomNode();
     DataSnapshot snap;
 
     snap = snapFor(new HashMap(), ref);

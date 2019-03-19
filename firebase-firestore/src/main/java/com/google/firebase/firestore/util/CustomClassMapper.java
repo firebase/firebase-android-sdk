@@ -113,22 +113,21 @@ public class CustomClassMapper {
     if (o == null) {
       return null;
     } else if (o instanceof Number) {
-      if (o instanceof Float) {
-        return ((Float) o).doubleValue();
-      } else if (o instanceof Short) {
-        throw serializeError(path, "Shorts are not supported, please use int or long");
-      } else if (o instanceof Byte) {
-        throw serializeError(path, "Bytes are not supported, please use int or long");
-      } else {
-        // Long, Integer, Double
+      if (o instanceof Long || o instanceof Integer || o instanceof Double || o instanceof Float) {
         return o;
+      } else {
+        throw serializeError(
+            path,
+            String.format(
+                "Numbers of type %s are not supported, please use an int, long, float or double",
+                o.getClass().getSimpleName()));
       }
     } else if (o instanceof String) {
       return o;
     } else if (o instanceof Boolean) {
       return o;
     } else if (o instanceof Character) {
-      throw serializeError(path, "Characters are not supported, please use Strings.");
+      throw serializeError(path, "Characters are not supported, please use Strings");
     } else if (o instanceof Map) {
       Map<String, Object> result = new HashMap<>();
       for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) o).entrySet()) {
@@ -156,7 +155,13 @@ public class CustomClassMapper {
     } else if (o.getClass().isArray()) {
       throw serializeError(path, "Serializing Arrays is not supported, please use Lists instead");
     } else if (o instanceof Enum) {
-      return ((Enum<?>) o).name();
+      String enumName = ((Enum<?>) o).name();
+      try {
+        Field enumField = o.getClass().getField(enumName);
+        return BeanMapper.propertyName(enumField);
+      } catch (NoSuchFieldException ex) {
+        return enumName;
+      }
     } else if (o instanceof Date
         || o instanceof Timestamp
         || o instanceof GeoPoint
@@ -307,14 +312,10 @@ public class CustomClassMapper {
       return (T) convertLong(o, path);
     } else if (Float.class.isAssignableFrom(clazz) || float.class.isAssignableFrom(clazz)) {
       return (T) (Float) convertDouble(o, path).floatValue();
-    } else if (Short.class.isAssignableFrom(clazz) || short.class.isAssignableFrom(clazz)) {
-      throw deserializeError(path, "Deserializing to shorts is not supported");
-    } else if (Byte.class.isAssignableFrom(clazz) || byte.class.isAssignableFrom(clazz)) {
-      throw deserializeError(path, "Deserializing to bytes is not supported");
-    } else if (Character.class.isAssignableFrom(clazz) || char.class.isAssignableFrom(clazz)) {
-      throw deserializeError(path, "Deserializing to chars is not supported");
     } else {
-      throw new IllegalArgumentException("Unknown primitive type: " + clazz);
+      throw deserializeError(
+          path,
+          String.format("Deserializing values to %s is not supported", clazz.getSimpleName()));
     }
   }
 
@@ -324,6 +325,19 @@ public class CustomClassMapper {
       String value = (String) object;
       // We cast to Class without generics here since we can't prove the bound
       // T extends Enum<T> statically
+
+      // try to use PropertyName if exist
+      Field[] enumFields = clazz.getFields();
+      for (Field field : enumFields) {
+        if (field.isEnumConstant()) {
+          String propertyName = BeanMapper.propertyName(field);
+          if (value.equals(propertyName)) {
+            value = field.getName();
+            break;
+          }
+        }
+      }
+
       try {
         return (T) Enum.valueOf((Class) clazz, value);
       } catch (IllegalArgumentException e) {

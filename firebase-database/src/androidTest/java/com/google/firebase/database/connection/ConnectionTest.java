@@ -17,9 +17,9 @@ package com.google.firebase.database.connection;
 import static org.junit.Assert.assertFalse;
 
 import android.support.test.runner.AndroidJUnit4;
+import com.google.firebase.database.IntegrationTestHelpers;
 import com.google.firebase.database.IntegrationTestValues;
 import com.google.firebase.database.RetryRule;
-import com.google.firebase.database.TestHelpers;
 import com.google.firebase.database.core.DatabaseConfig;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -65,9 +65,9 @@ public class ConnectionTest {
             IntegrationTestValues.getProjectId() + "." + IntegrationTestValues.getServer(),
             IntegrationTestValues.getProjectId(),
             /*secure=*/ true);
-    DatabaseConfig config = TestHelpers.newFrozenTestConfig();
+    DatabaseConfig config = IntegrationTestHelpers.newFrozenTestConfig();
     Connection conn = new Connection(config.getConnectionContext(), info, null, del, null);
     conn.open();
-    TestHelpers.waitFor(valSemaphore);
+    IntegrationTestHelpers.waitFor(valSemaphore);
   }
 }

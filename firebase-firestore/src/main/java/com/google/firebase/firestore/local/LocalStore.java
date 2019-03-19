@@ -28,13 +28,18 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
+import com.google.firebase.firestore.model.mutation.PatchMutation;
+import com.google.firebase.firestore.model.mutation.Precondition;
+import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -128,7 +133,8 @@ public final class LocalStore {
     targetIdGenerator = TargetIdGenerator.forQueryCache(queryCache.getHighestTargetId());
     mutationQueue = persistence.getMutationQueue(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
-    localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue);
+    localDocuments =
+        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
     // TODO: Use IndexedQueryEngine as appropriate.
     queryEngine = new SimpleQueryEngine(localDocuments);
 
@@ -162,7 +168,8 @@ public final class LocalStore {
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
 
     // Recreate our LocalDocumentsView using the new MutationQueue.
-    localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue);
+    localDocuments =
+        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
     // TODO: Use IndexedQueryEngine as appropriate.
     queryEngine = new SimpleQueryEngine(localDocuments);
 
@@ -183,16 +190,55 @@ public final class LocalStore {
   /** Accepts locally generated Mutations and commits them to storage. */
   public LocalWriteResult writeLocally(List<Mutation> mutations) {
     Timestamp localWriteTime = Timestamp.now();
-    // TODO: Call queryEngine.handleDocumentChange() appropriately.
-    MutationBatch batch =
-        persistence.runTransaction(
-            "Locally write mutations",
-            () -> mutationQueue.addMutationBatch(localWriteTime, mutations));
 
-    Set<DocumentKey> keys = batch.getKeys();
-    ImmutableSortedMap<DocumentKey, MaybeDocument> changedDocuments =
-        localDocuments.getDocuments(keys);
-    return new LocalWriteResult(batch.getBatchId(), changedDocuments);
+    // TODO: Call queryEngine.handleDocumentChange() appropriately.
+
+    Set<DocumentKey> keys = new HashSet<>();
+    for (Mutation mutation : mutations) {
+      keys.add(mutation.getKey());
+    }
+
+    return persistence.runTransaction(
+        "Locally write mutations",
+        () -> {
+          // Load and apply all existing mutations. This lets us compute the current base state for
+          // all non-idempotent transforms before applying any additional user-provided writes.
+          ImmutableSortedMap<DocumentKey, MaybeDocument> existingDocuments =
+              localDocuments.getDocuments(keys);
+
+          // For non-idempotent mutations (such as `FieldValue.increment()`), we record the base
+          // state in a separate patch mutation. This is later used to guarantee consistent values
+          // and prevents flicker even if the backend sends us an update that already includes our
+          // transform.
+          List<Mutation> baseMutations = new ArrayList<>();
+          for (Mutation mutation : mutations) {
+            MaybeDocument maybeDocument = existingDocuments.get(mutation.getKey());
+            if (!mutation.isIdempotent()) {
+              // Theoretically, we should only include non-idempotent fields in this field mask as
+              // this mask is used to populate the base state for all DocumentTransforms.  By
+              // including all fields, we incorrectly prevent rebasing of idempotent transforms
+              // (such as `arrayUnion()`) when any non-idempotent transforms are present.
+              FieldMask fieldMask = mutation.getFieldMask();
+              if (fieldMask != null) {
+                ObjectValue baseValues =
+                    (maybeDocument instanceof Document)
+                        ? fieldMask.applyTo(((Document) maybeDocument).getData())
+                        : ObjectValue.emptyObject();
+                // NOTE: The base state should only be applied if there's some existing
+                // document to override, so use a Precondition of exists=true
+                baseMutations.add(
+                    new PatchMutation(
+                        mutation.getKey(), baseValues, fieldMask, Precondition.exists(true)));
+              }
+            }
+          }
+
+          MutationBatch batch =
+              mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
+          ImmutableSortedMap<DocumentKey, MaybeDocument> changedDocuments =
+              batch.applyToLocalDocumentSet(existingDocuments);
+          return new LocalWriteResult(batch.getBatchId(), changedDocuments);
+        });
   }
 
   /**

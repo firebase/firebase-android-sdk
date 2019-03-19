@@ -33,6 +33,7 @@ import com.google.firebase.database.connection.RequestResultCallback;
 import com.google.firebase.database.core.persistence.NoopPersistenceManager;
 import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.core.utilities.DefaultClock;
+import com.google.firebase.database.core.utilities.DefaultRunLoop;
 import com.google.firebase.database.core.utilities.OffsetClock;
 import com.google.firebase.database.core.utilities.Tree;
 import com.google.firebase.database.core.view.Event;
@@ -107,6 +108,7 @@ public class Repo implements PersistentConnection.Delegate {
     this.ctx
         .getAuthTokenProvider()
         .addTokenChangeListener(
+            ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
             new AuthTokenProvider.TokenChangeListener() {
               // TODO: Remove this once AndroidAuthTokenProvider is updated to call the
               // other overload.

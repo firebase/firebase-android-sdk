@@ -78,6 +78,7 @@ public final class SQLitePersistence extends Persistence {
   private SQLiteDatabase db;
   private boolean started;
   private final SQLiteQueryCache queryCache;
+  private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
   private final SQLiteTransactionListener transactionListener =
@@ -106,6 +107,7 @@ public final class SQLitePersistence extends Persistence {
     this.opener = new OpenHelper(context, databaseName);
     this.serializer = serializer;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
+    this.indexManager = new SQLiteIndexManager(this);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
   }
@@ -158,6 +160,11 @@ public final class SQLitePersistence extends Persistence {
   @Override
   SQLiteQueryCache getQueryCache() {
     return queryCache;
+  }
+
+  @Override
+  IndexManager getIndexManager() {
+    return indexManager;
   }
 
   @Override

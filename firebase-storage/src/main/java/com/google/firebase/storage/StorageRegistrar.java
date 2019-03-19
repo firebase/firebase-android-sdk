@@ -15,18 +15,31 @@
 package com.google.firebase.storage;
 
 import android.support.annotation.Keep;
+import android.support.annotation.RestrictTo;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
+import com.google.firebase.components.Dependency;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 /** @hide */
 @Keep
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
-    return Collections.singletonList(
+    return Arrays.asList(
+        Component.builder(FirebaseStorageComponent.class)
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.optionalProvider(InternalAuthProvider.class))
+            .factory(
+                c ->
+                    new FirebaseStorageComponent(
+                        c.get(FirebaseApp.class), c.getProvider(InternalAuthProvider.class)))
+            .build(),
         LibraryVersionComponent.create("fire-gcs", BuildConfig.VERSION_NAME));
   }
 }

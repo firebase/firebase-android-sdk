@@ -39,9 +39,13 @@ class UpdateMetadataTask implements Runnable {
     this.mStorageRef = storageRef;
     this.mPendingResult = pendingResult;
     mNewMetadata = newMetadata;
+
+    FirebaseStorage storage = mStorageRef.getStorage();
     mSender =
         new ExponentialBackoffSender(
-            mStorageRef.getApp(), mStorageRef.getStorage().getMaxOperationRetryTimeMillis());
+            storage.getApp().getApplicationContext(),
+            storage.getAuthProvider(),
+            storage.getMaxOperationRetryTimeMillis());
   }
 
   @Override

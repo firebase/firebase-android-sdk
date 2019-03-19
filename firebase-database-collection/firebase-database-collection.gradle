@@ -17,13 +17,17 @@ apply plugin: 'com.android.library'
 android {
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 9
+        targetSdkVersion project.targetSdkVersion
+        minSdkVersion project.minSdkVersion
     }
 }
 
 dependencies {
+    implementation "com.google.android.gms:play-services-base:$playServicesVersion"
+
     testImplementation 'junit:junit:4.12'
     testImplementation 'net.java:quickcheck:0.6'
+
     testAnnotationProcessor 'net.java:quickcheck-src-generator:0.6'
     testAnnotationProcessor 'net.java.quickcheck:quickcheck-src-generator:0.6'
 }

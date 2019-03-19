@@ -42,9 +42,13 @@ class GetMetadataTask implements Runnable {
 
     this.mStorageRef = storageRef;
     this.mPendingResult = pendingResult;
+
+    FirebaseStorage storage = mStorageRef.getStorage();
     mSender =
         new ExponentialBackoffSender(
-            mStorageRef.getApp(), mStorageRef.getStorage().getMaxOperationRetryTimeMillis());
+            storage.getApp().getApplicationContext(),
+            storage.getAuthProvider(),
+            storage.getMaxDownloadRetryTimeMillis());
   }
 
   @Override

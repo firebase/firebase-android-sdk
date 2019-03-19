@@ -15,15 +15,13 @@
 package com.google.firebase.database;
 
 import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.support.test.InstrumentationRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
+import com.google.firebase.database.android.AndroidAuthTokenProvider;
 import com.google.firebase.database.core.CompoundWrite;
 import com.google.firebase.database.core.Context;
 import com.google.firebase.database.core.CoreTestHelpers;
@@ -59,7 +57,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class TestHelpers {
+public class IntegrationTestHelpers {
 
   private static List<DatabaseConfig> contexts = new ArrayList<DatabaseConfig>();
   private static String testSecret = null;
@@ -218,10 +216,6 @@ public class TestHelpers {
     return contexts.get(i);
   }
 
-  public static DatabaseReference rootWithNewContext() throws DatabaseException {
-    return rootWithConfig(newTestConfig());
-  }
-
   public static DatabaseReference rootWithConfig(DatabaseConfig config) {
     return new DatabaseReference(IntegrationTestValues.getNamespace(), config);
   }
@@ -261,15 +255,13 @@ public class TestHelpers {
   }
 
   public static DatabaseConfig newTestConfig() {
-    TestHelpers.ensureAppInitialized();
-
     TestRunLoop runLoop = new TestRunLoop();
     DatabaseConfig config = new DatabaseConfig();
     config.setLogLevel(Logger.Level.DEBUG);
     config.setEventTarget(new TestEventTarget());
     config.setRunLoop(runLoop);
     config.setFirebaseApp(FirebaseApp.getInstance());
-    config.setAuthTokenProvider(new TestTokenProvider(runLoop.getExecutorService()));
+    config.setAuthTokenProvider(AndroidAuthTokenProvider.forUnauthenticatedAccess());
     return config;
   }
 
@@ -355,37 +347,6 @@ public class TestHelpers {
     return snapshotList.get(0);
   }
 
-  public static void assertSuccessfulAuth(
-      DatabaseReference ref, TestTokenProvider provider, String credential) {
-    DatabaseReference authRef = ref.getRoot().child(".info/authenticated");
-    final Semaphore semaphore = new Semaphore(0);
-    final List<Boolean> authStates = new ArrayList<>();
-    ValueEventListener listener =
-        authRef.addValueEventListener(
-            new ValueEventListener() {
-              @Override
-              public void onDataChange(DataSnapshot snapshot) {
-                authStates.add(snapshot.getValue(Boolean.class));
-                semaphore.release();
-              }
-
-              @Override
-              public void onCancelled(DatabaseError error) {
-                throw new RuntimeException("Should not happen");
-              }
-            });
-
-    provider.setToken(credential);
-
-    try {
-      TestHelpers.waitFor(semaphore, 2);
-      assertEquals(Arrays.asList(false, true), authStates);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-    authRef.removeEventListener(listener);
-  }
-
   public static Map<String, Object> fromJsonString(String json) {
     try {
       ObjectMapper mapper = new ObjectMapper();
@@ -427,7 +388,7 @@ public class TestHelpers {
   public static void waitForEvents(DatabaseReference ref) {
     try {
       // Make sure queue is done and all events are queued
-      TestHelpers.waitForQueue(ref);
+      IntegrationTestHelpers.waitForQueue(ref);
       // Next, all events were queued, make sure all events are done raised
       final Semaphore semaphore = new Semaphore(0);
       ref.getRepo()
@@ -484,33 +445,5 @@ public class TestHelpers {
 
   public static void assertContains(String str, String substr) {
     assertTrue("'" + str + "' does not contain '" + substr + "'.", str.contains(substr));
-  }
-
-  public static void ensureAppInitialized() {
-    if (!appInitialized) {
-      appInitialized = true;
-      android.content.Context context = InstrumentationRegistry.getTargetContext();
-      FirebaseApp.initializeApp(
-          context,
-          new FirebaseOptions.Builder()
-              .setApiKey(context.getResources().getString(R.string.google_api_key))
-              .setApplicationId("sdflhkj")
-              .setDatabaseUrl(IntegrationTestValues.getNamespace())
-              .build());
-    }
-  }
-
-  public static void ensureConstantsInitialized() {
-    if (!appInitialized) {
-      appInitialized = true;
-      android.content.Context context = InstrumentationRegistry.getTargetContext();
-      FirebaseApp.initializeApp(
-          context,
-          new FirebaseOptions.Builder()
-              .setApiKey("jank")
-              .setApplicationId("jank")
-              .setDatabaseUrl(IntegrationTestValues.getNamespace())
-              .build());
-    }
   }
 }

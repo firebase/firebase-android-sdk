@@ -21,6 +21,7 @@ import static com.google.errorprone.matchers.Matchers.enclosingMethod;
 import static com.google.errorprone.matchers.Matchers.hasAnnotation;
 import static com.google.errorprone.matchers.Matchers.instanceMethod;
 import static com.google.errorprone.matchers.Matchers.isStatic;
+import static com.google.errorprone.matchers.Matchers.methodHasVisibility;
 import static com.google.errorprone.matchers.Matchers.methodInvocation;
 import static com.google.errorprone.matchers.Matchers.methodIsNamed;
 import static com.google.errorprone.matchers.Matchers.methodReturns;
@@ -34,6 +35,7 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.AbstractTypeMatcher;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
+import com.google.errorprone.matchers.MethodVisibility;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
@@ -52,7 +54,6 @@ import com.sun.tools.javac.code.Type;
         "Use of FirebaseApp#get(Class) is discouraged, and is only acceptable"
             + " in SDK#getInstance(...) methods. Instead declare dependencies explicitly in"
             + " your ComponentRegistrar and inject.",
-    category = BugPattern.Category.INJECT,
     severity = BugPattern.SeverityLevel.ERROR)
 @AutoService(BugChecker.class)
 public class ComponentsAppGetCheck extends BugChecker
@@ -86,11 +87,34 @@ public class ComponentsAppGetCheck extends BugChecker
                   isSupertypeOf(
                       state -> ASTHelpers.getType(state.findEnclosing(ClassTree.class))))));
 
+  /**
+   * This matches methods of the forms:
+   *
+   * <pre>{@code
+   * class Foo {
+   *     private static Foo getInstanceImpl(/* any number of parameters * /);
+   * }
+   *
+   * class Foo extends/implements Bar {
+   *     private static Bar getInstanceImpl(/* any number of parameters * /);
+   * }
+   * }</pre>
+   */
+  private static final Matcher<ExpressionTree> WITHIN_GET_INSTANCE_IMPL =
+      enclosingMethod(
+          allOf(
+              isStatic(),
+              methodHasVisibility(MethodVisibility.Visibility.PRIVATE),
+              methodIsNamed("getInstanceImpl"),
+              methodReturns(
+                  isSupertypeOf(
+                      state -> ASTHelpers.getType(state.findEnclosing(ClassTree.class))))));
+
   private static final Matcher<ExpressionTree> WITHIN_JUNIT_TEST =
       enclosingClass(hasAnnotation("org.junit.runner.RunWith"));
 
   private static final Matcher<ExpressionTree> ALLOWED_USAGES =
-      anyOf(WITHIN_GET_INSTANCE, WITHIN_JUNIT_TEST);
+      anyOf(WITHIN_GET_INSTANCE, WITHIN_GET_INSTANCE_IMPL, WITHIN_JUNIT_TEST);
 
   @Override
   public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {

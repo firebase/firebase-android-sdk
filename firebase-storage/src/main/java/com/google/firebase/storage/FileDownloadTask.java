@@ -49,10 +49,13 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
   /*package*/ FileDownloadTask(@NonNull StorageReference storageRef, @NonNull Uri destinationFile) {
     mStorageRef = storageRef;
     mDestinationFile = destinationFile;
+
+    FirebaseStorage storage = mStorageRef.getStorage();
     mSender =
         new ExponentialBackoffSender(
-            mStorageRef.getStorage().getApp(),
-            mStorageRef.getStorage().getMaxDownloadRetryTimeMillis());
+            storage.getApp().getApplicationContext(),
+            storage.getAuthProvider(),
+            storage.getMaxDownloadRetryTimeMillis());
   }
 
   /** @return the number of bytes downloaded so far into the file. */

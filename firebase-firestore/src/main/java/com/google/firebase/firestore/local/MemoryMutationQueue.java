@@ -127,7 +127,8 @@ final class MemoryMutationQueue implements MutationQueue {
   }
 
   @Override
-  public MutationBatch addMutationBatch(Timestamp localWriteTime, List<Mutation> mutations) {
+  public MutationBatch addMutationBatch(
+      Timestamp localWriteTime, List<Mutation> baseMutations, List<Mutation> mutations) {
     hardAssert(!mutations.isEmpty(), "Mutation batches should not be empty");
 
     int batchId = nextBatchId;
@@ -140,13 +141,17 @@ final class MemoryMutationQueue implements MutationQueue {
           prior.getBatchId() < batchId, "Mutation batchIds must be monotonically increasing order");
     }
 
-    MutationBatch batch = new MutationBatch(batchId, localWriteTime, mutations);
+    MutationBatch batch = new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
     queue.add(batch);
 
-    // Track references by document key.
+    // Track references by document key and index collection parents.
     for (Mutation mutation : mutations) {
       batchesByDocumentKey =
           batchesByDocumentKey.insert(new DocumentReference(mutation.getKey(), batchId));
+
+      persistence
+          .getIndexManager()
+          .addToCollectionParentIndex(mutation.getKey().getPath().popLast());
     }
 
     return batch;
@@ -224,6 +229,10 @@ final class MemoryMutationQueue implements MutationQueue {
 
   @Override
   public List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
+    hardAssert(
+        !query.isCollectionGroupQuery(),
+        "CollectionGroup queries should be handled in LocalDocumentsView");
+
     // Use the query path as a prefix for testing if a document matches the query.
     ResourcePath prefix = query.getPath();
     int immediateChildrenPathLength = prefix.length() + 1;

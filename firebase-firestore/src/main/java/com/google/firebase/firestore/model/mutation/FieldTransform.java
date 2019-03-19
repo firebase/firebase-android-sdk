@@ -58,4 +58,8 @@ public final class FieldTransform {
     result = 31 * result + operation.hashCode();
     return result;
   }
+
+  public boolean isIdempotent() {
+    return operation.isIdempotent();
+  }
 }

@@ -14,12 +14,14 @@
 
 package com.google.firebase.storage.internal;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.network.NetworkRequest;
 import java.util.Random;
 
@@ -34,15 +36,18 @@ public class ExponentialBackoffSender {
   public static final int RND_MAX = 250;
   private static final int NETWORK_STATUS_POLL_INTERVAL = 1000;
   private static final int MAXIMUM_WAIT_TIME_MILLI = 30000;
+  private static final Random random = new Random();
   /*package*/ static Sleeper sleeper = new SleeperImpl();
   /*package*/ static Clock clock = DefaultClock.getInstance();
-  private static Random random = new Random();
-  private FirebaseApp app;
+  private final Context context;
+  @Nullable private final InternalAuthProvider authProvider;
   private long retryTime;
   private volatile boolean canceled;
 
-  public ExponentialBackoffSender(FirebaseApp app, long retryTime) {
-    this.app = app;
+  public ExponentialBackoffSender(
+      Context context, @Nullable InternalAuthProvider authProvider, long retryTime) {
+    this.context = context;
+    this.authProvider = authProvider;
     this.retryTime = retryTime;
   }
 
@@ -62,9 +67,9 @@ public class ExponentialBackoffSender {
     Preconditions.checkNotNull(request);
     long deadLine = clock.elapsedRealtime() + retryTime;
     if (closeRequest) {
-      request.performRequest(Util.getCurrentAuthToken(app), app.getApplicationContext());
+      request.performRequest(Util.getCurrentAuthToken(authProvider), context);
     } else {
-      request.performRequestStart(Util.getCurrentAuthToken(app));
+      request.performRequestStart(Util.getCurrentAuthToken(authProvider));
     }
 
     int currentSleepTime = NETWORK_STATUS_POLL_INTERVAL;
@@ -95,9 +100,9 @@ public class ExponentialBackoffSender {
       }
       request.reset();
       if (closeRequest) {
-        request.performRequest(Util.getCurrentAuthToken(app), app.getApplicationContext());
+        request.performRequest(Util.getCurrentAuthToken(authProvider), context);
       } else {
-        request.performRequestStart(Util.getCurrentAuthToken(app));
+        request.performRequestStart(Util.getCurrentAuthToken(authProvider));
       }
     }
   }

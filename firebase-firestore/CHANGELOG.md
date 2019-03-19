@@ -1,7 +1,18 @@
 # Unreleased
+- [feature] Added `FieldValue.increment()`, which can be used in `update()`
+  and `set(..., SetOptions.merge())` to increment or decrement numeric field
+  values safely without transactions.
 - [fixed] Fixed calculation of SQLite database size on Android 9 Pie devices.
   Previous method could be off by a few MBs on these devices, potentially
   delaying garbage collection.
+- [changed] Prepared the persistence layer to support collection group queries.
+  While this feature is not yet available, all schema changes are included
+  in this release.
+- [changed] Added `@RestrictTo` annotations to discourage the use of APIs that
+  are not public. This affects internal APIs that were previously obfuscated
+  and are not mentioned in our documentation.
+- [changed] Improved error messages for certain Number types that are not
+  supported by our serialization layer (#272).
 
 # 18.0.1
 - [fixed] Fixed an issue where Firestore would crash if handling write batches

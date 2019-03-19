@@ -235,6 +235,30 @@ public class FirebaseFirestore {
     return DocumentReference.forPath(ResourcePath.fromString(documentPath), this);
   }
 
+  // TODO(b/116617988): Expose API publicly once backend support is ready (and add to CHANGELOG.md).
+  /**
+   * Creates and returns a new @link{Query} that includes all documents in the database that are
+   * contained in a collection or subcollection with the given @code{collectionId}.
+   *
+   * @param collectionId Identifies the collections to query over. Every collection or subcollection
+   *     with this ID as the last segment of its path will be included. Cannot contain a slash.
+   * @return The created Query.
+   */
+  @NonNull
+  // @PublicApi
+  /* public */ Query collectionGroup(@NonNull String collectionId) {
+    checkNotNull(collectionId, "Provided collection ID must not be null.");
+    if (collectionId.contains("/")) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Invalid collectionId '%s'. Collection IDs must not contain '/'.", collectionId));
+    }
+
+    ensureClientConfigured();
+    return new Query(
+        new com.google.firebase.firestore.core.Query(ResourcePath.EMPTY, collectionId), this);
+  }
+
   /**
    * Executes the given updateFunction and then attempts to commit the changes applied within the
    * transaction. If any document read within the transaction has changed, the updateFunction will
@@ -291,6 +315,21 @@ public class FirebaseFirestore {
     ensureClientConfigured();
 
     return new WriteBatch(this);
+  }
+
+  /**
+   * Executes a batchFunction on a newly created {@link WriteBatch} and then commits all of the
+   * writes made by the batchFunction as a single atomic unit.
+   *
+   * @param batchFunction The function to execute within the batch context.
+   * @return A Task that will be resolved when the batch has been committed.
+   */
+  @NonNull
+  @PublicApi
+  public Task<Void> runBatch(@NonNull WriteBatch.Function batchFunction) {
+    WriteBatch batch = batch();
+    batchFunction.apply(batch);
+    return batch.commit();
   }
 
   @VisibleForTesting

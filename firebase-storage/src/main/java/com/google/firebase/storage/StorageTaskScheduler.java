@@ -15,6 +15,7 @@
 package com.google.firebase.storage;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.RestrictTo;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -29,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @hide
  */
 @SuppressWarnings("JavaDoc")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageTaskScheduler {
   public static StorageTaskScheduler sInstance = new StorageTaskScheduler();
 

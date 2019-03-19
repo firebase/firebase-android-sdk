@@ -53,9 +53,13 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
 
   /*package*/ StreamDownloadTask(@NonNull StorageReference storageRef) {
     mStorageRef = storageRef;
+
+    FirebaseStorage storage = mStorageRef.getStorage();
     mSender =
         new ExponentialBackoffSender(
-            mStorageRef.getApp(), mStorageRef.getStorage().getMaxDownloadRetryTimeMillis());
+            storage.getApp().getApplicationContext(),
+            storage.getAuthProvider(),
+            storage.getMaxDownloadRetryTimeMillis());
   }
 
   /**
