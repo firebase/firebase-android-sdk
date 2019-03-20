@@ -21,12 +21,18 @@ import android.util.Log;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import java.util.concurrent.Executors;
 
-/** Service instance that runs in the main process of the Android application. */
-public class LocalBinderService extends Service {
+/** Base class fore the rpc test service. */
+public abstract class TestService extends Service {
   @Override
   public IBinder onBind(Intent intent) {
     Log.i("TransportService", "My Pid: " + android.os.Process.myPid());
     TransportRuntime.initialize(getApplicationContext());
     return new RemoteLockRpc(Executors.newCachedThreadPool());
   }
+
+  /** Service instance that runs in the main process of the Android application. */
+  public static class Local extends TestService {}
+
+  /** Service instance that runs in a dedicated process of the Android application. */
+  public static class Remote extends TestService {}
 }

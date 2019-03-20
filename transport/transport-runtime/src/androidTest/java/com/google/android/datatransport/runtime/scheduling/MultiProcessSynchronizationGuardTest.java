@@ -25,7 +25,7 @@ import android.os.SystemClock;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ServiceTestRule;
 import android.support.test.runner.AndroidJUnit4;
-import com.google.android.datatransport.runtime.IRemoteLockRpc;
+import com.google.android.datatransport.runtime.ITestRemoteLockRpc;
 import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
 import java.util.concurrent.TimeoutException;
 import org.junit.Before;
@@ -36,14 +36,14 @@ import org.junit.runner.RunWith;
 public class MultiProcessSynchronizationGuardTest {
   private ServiceTestRule rule = new ServiceTestRule();
 
-  private IRemoteLockRpc process1;
-  private IRemoteLockRpc process2;
+  private ITestRemoteLockRpc process1;
+  private ITestRemoteLockRpc process2;
 
   @Before
   public void setUp() throws TimeoutException, RemoteException {
-    process1 = bindTestingRpc(LocalBinderService.class);
+    process1 = bindTestingRpc(TestService.Local.class);
 
-    process2 = bindTestingRpc(RemoteBinderService.class);
+    process2 = bindTestingRpc(TestService.Remote.class);
 
     assertThat(process1.getPid()).isNotEqualTo(process2.getPid());
   }
@@ -73,14 +73,14 @@ public class MultiProcessSynchronizationGuardTest {
   }
 
   private static void doTest_whenConnectionsNotOpen(
-      IRemoteLockRpc process1, IRemoteLockRpc process2) throws RemoteException {
+      ITestRemoteLockRpc process1, ITestRemoteLockRpc process2) throws RemoteException {
     lockAndRunOrFail(process1, () -> assertCanLock(process2, false));
 
     assertCanLock(process2, true);
   }
 
   private static void doTest_whenConnectionsAreOpen(
-      IRemoteLockRpc process1, IRemoteLockRpc process2) throws RemoteException {
+      ITestRemoteLockRpc process1, ITestRemoteLockRpc process2) throws RemoteException {
     // initialize db connections before contending for lock.
     assertCanLock(process1, true);
     assertCanLock(process2, true);
@@ -90,7 +90,7 @@ public class MultiProcessSynchronizationGuardTest {
     assertCanLock(process2, true);
   }
 
-  private static void lockAndRunOrFail(IRemoteLockRpc rpc, ThrowingRunnable runnable)
+  private static void lockAndRunOrFail(ITestRemoteLockRpc rpc, ThrowingRunnable runnable)
       throws RemoteException {
     assertThat(rpc.tryAcquireLock(0)).isTrue();
     try {
@@ -100,7 +100,7 @@ public class MultiProcessSynchronizationGuardTest {
     }
   }
 
-  private static void assertCanLock(IRemoteLockRpc rpc, boolean can) throws RemoteException {
+  private static void assertCanLock(ITestRemoteLockRpc rpc, boolean can) throws RemoteException {
     boolean locked = rpc.tryAcquireLock(0);
 
     try {
@@ -118,18 +118,18 @@ public class MultiProcessSynchronizationGuardTest {
     void run() throws RemoteException;
   }
 
-  private IRemoteLockRpc bindTestingRpc(Class<? extends Service> serviceClass)
+  private ITestRemoteLockRpc bindTestingRpc(Class<? extends Service> serviceClass)
       throws TimeoutException {
-    IRemoteLockRpc rpc =
-        IRemoteLockRpc.Stub.asInterface(
+    ITestRemoteLockRpc rpc =
+        ITestRemoteLockRpc.Stub.asInterface(
             rule.bindService(new Intent(InstrumentationRegistry.getTargetContext(), serviceClass)));
     return new WaitingRpc(rpc);
   }
 
-  class WaitingRpc implements IRemoteLockRpc {
-    private final IRemoteLockRpc delegate;
+  class WaitingRpc implements ITestRemoteLockRpc {
+    private final ITestRemoteLockRpc delegate;
 
-    WaitingRpc(IRemoteLockRpc delegate) {
+    WaitingRpc(ITestRemoteLockRpc delegate) {
       this.delegate = delegate;
     }
 

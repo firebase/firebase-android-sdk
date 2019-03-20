@@ -15,16 +15,16 @@
 package com.google.android.datatransport.runtime.scheduling;
 
 import android.os.Process;
-import com.google.android.datatransport.runtime.IRemoteLockRpc;
+import com.google.android.datatransport.runtime.ITestRemoteLockRpc;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import java.util.concurrent.Executor;
 
 /**
- * Implementation of {@link IRemoteLockRpc} that uses {@link
+ * Implementation of {@link ITestRemoteLockRpc} that uses {@link
  * com.google.android.datatransport.runtime.synchronization.SynchronizationGuard}.
  */
-class RemoteLockRpc extends IRemoteLockRpc.Stub {
+class RemoteLockRpc extends ITestRemoteLockRpc.Stub {
   private final Executor executor;
   private final Locker<Boolean> acquireReleaseLocker = new Locker<>();
 

@@ -1,7 +1,7 @@
 package com.google.android.datatransport.runtime;
 
 /** RPC for manipulating SynchronizationGuard locking across process boundary. */
-interface IRemoteLockRpc {
+interface ITestRemoteLockRpc {
 
     /** Try to acuire lock or timeout. */
     boolean tryAcquireLock(long lockTimeoutMs);

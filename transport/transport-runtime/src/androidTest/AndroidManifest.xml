@@ -4,10 +4,10 @@
     <!--<uses-sdk android:minSdkVersion="14"/>-->
     <application>
         <service
-            android:name="com.google.android.datatransport.runtime.scheduling.LocalBinderService"
+            android:name="com.google.android.datatransport.runtime.scheduling.TestService$Local"
             android:exported="false" />
         <service
-            android:name="com.google.android.datatransport.runtime.scheduling.RemoteBinderService"
+            android:name="com.google.android.datatransport.runtime.scheduling.TestService$Remote"
             android:exported="false" android:process=".another" />
     </application>
 </manifest>
