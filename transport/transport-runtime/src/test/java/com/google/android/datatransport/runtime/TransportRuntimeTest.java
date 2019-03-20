@@ -26,11 +26,13 @@ import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.BackendRequest;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.util.Collections;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
@@ -42,6 +44,7 @@ public class TransportRuntimeTest {
   private static final String TEST_VALUE = "test-value";
   private TransportInternal transportInternalMock = mock(TransportInternal.class);
   private TransportBackend mockBackend = mock(TransportBackend.class);
+  private BackendRegistry mockRegistry = mock(BackendRegistry.class);
 
   @Test
   public void testTransportInternalSend() {
@@ -62,18 +65,17 @@ public class TransportRuntimeTest {
   }
 
   @Test
-  public void testTransportRuntimeRegistration() {
+  public void testTransportRuntimeBackendDiscovery() {
     int eventMillis = 3;
     int uptimeMillis = 1;
     String mockBackendName = "backend";
     String testTransport = "testTransport";
-    BackendRegistry registry = new BackendRegistry();
+
     TransportRuntime runtime =
         new TransportRuntime(
-            registry,
             () -> eventMillis,
             () -> uptimeMillis,
-            new ImmediateScheduler(Runnable::run, registry),
+            new ImmediateScheduler(Runnable::run, mockRegistry),
             new SynchronizationGuard() {
               @Override
               public <T> T runCriticalSection(
@@ -82,9 +84,8 @@ public class TransportRuntimeTest {
               }
             },
             new Uploader());
-    Assert.assertNotNull(runtime);
-    runtime.register(mockBackendName, mockBackend);
 
+    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     when(mockBackend.decorate(any()))
         .thenAnswer(
             (Answer<EventInternal>)

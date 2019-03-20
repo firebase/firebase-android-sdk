@@ -26,10 +26,10 @@ import static org.junit.Assert.assertEquals;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.cct.proto.LogResponse;
-import com.google.android.datatransport.runtime.BackendRequest;
-import com.google.android.datatransport.runtime.BackendResponse;
-import com.google.android.datatransport.runtime.BackendResponse.Status;
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.backends.BackendRequest;
+import com.google.android.datatransport.runtime.backends.BackendResponse;
+import com.google.android.datatransport.runtime.backends.BackendResponse.Status;
 import java.util.Collections;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,11 +37,11 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
-public class GoogleTransportBackendTest {
+public class CctTransportBackendTest {
 
   private static String TEST_ENDPOINT = "http://localhost:8999/api";
-  private static GoogleTransportBackend BACKEND =
-      new GoogleTransportBackend(TEST_ENDPOINT, () -> 3, () -> 1);
+  private static CctTransportBackend BACKEND =
+      new CctTransportBackend(TEST_ENDPOINT, () -> 3, () -> 1);
   private static String TRANSPORT_NAME = "3";
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(8999);

@@ -16,6 +16,7 @@ package com.google.android.datatransport.runtime;
 
 import android.content.Context;
 import android.os.Build;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerScheduler;

@@ -14,10 +14,10 @@
 
 package com.google.android.datatransport.runtime.scheduling;
 
-import com.google.android.datatransport.runtime.BackendRegistry;
 import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportBackend;
 import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
