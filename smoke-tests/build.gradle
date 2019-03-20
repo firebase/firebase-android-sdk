@@ -37,7 +37,6 @@ android {
   defaultConfig {
     minSdkVersion 16
     multiDexEnabled true
-//    applicationId "com.google.firebase.testing.common"
     testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
   }
 
@@ -45,18 +44,14 @@ android {
 
   productFlavors {
     database {
-      //applicationId "com.google.firebase.testing.database"
-//      applicationId "com.google.firebase.testapps.database"
       dimension "systemUnderTest"
     }
 
     firestore {
-//      applicationId "com.google.firebase.testing.firestore"
       dimension "systemUnderTest"
     }
 
     storage {
-//      applicationId "com.google.firebase.testing.storage"
       dimension "systemUnderTest"
     }
   }
@@ -68,6 +63,10 @@ repositories {
 }
 
 dependencies {
+  // Generally, depencies need to be placed under the test variants, such as androidTestDatabase.
+  // However, to ensure we don't have build conflicts and test errors, we also need to put the same
+  // dependencies on the "app" variants.
+
   // Common
   implementation "com.android.support.test:runner:1.0.2"
   implementation "com.google.android.gms:play-services-tasks:16.0.1"
