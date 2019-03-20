@@ -111,19 +111,15 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   @Override
   public void recordFailure(Iterable<PersistedEvent> events) {
-    StringBuilder query =
-        new StringBuilder("UPDATE events SET num_attempts = num_attempts + 1 WHERE _id in (");
-    Iterator<PersistedEvent> iterator = events.iterator();
-    while (iterator.hasNext()) {
-      query.append(iterator.next().getId());
-      if (iterator.hasNext()) {
-        query.append(',');
-      }
+    if (!events.iterator().hasNext()) {
+      return;
     }
-    query.append(')');
+    String query =
+        "UPDATE events SET num_attempts = num_attempts + 1 WHERE _id in " + toIdList(events);
+
     inTransaction(
         db -> {
-          db.compileStatement(query.toString()).execute();
+          db.compileStatement(query).execute();
           db.compileStatement("DELETE FROM events WHERE num_attempts >= " + MAX_RETRIES).execute();
           return null;
         });
@@ -131,16 +127,25 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   @Override
   public void recordSuccess(Iterable<PersistedEvent> events) {
-    StringBuilder query = new StringBuilder("DELETE FROM events WHERE _id in (");
+    if (!events.iterator().hasNext()) {
+      return;
+    }
+
+    String query = "DELETE FROM events WHERE _id in " + toIdList(events);
+    getDb().compileStatement(query).execute();
+  }
+
+  private static String toIdList(Iterable<PersistedEvent> events) {
+    StringBuilder idList = new StringBuilder("(");
     Iterator<PersistedEvent> iterator = events.iterator();
     while (iterator.hasNext()) {
-      query.append(iterator.next().getId());
+      idList.append(iterator.next().getId());
       if (iterator.hasNext()) {
-        query.append(',');
+        idList.append(',');
       }
     }
-    query.append(')');
-    getDb().compileStatement(query.toString()).execute();
+    idList.append(')');
+    return idList.toString();
   }
 
   @Override
@@ -326,15 +331,11 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     }
   }
 
-  interface TransactionFn<T> {
-    T execute(SQLiteDatabase db);
-  }
-
-  private <T> T inTransaction(TransactionFn<T> function) {
+  private <T> T inTransaction(Function<SQLiteDatabase, T> function) {
     SQLiteDatabase db = getDb();
     db.beginTransaction();
     try {
-      T result = function.execute(db);
+      T result = function.apply(db);
       db.setTransactionSuccessful();
       return result;
     } finally {
