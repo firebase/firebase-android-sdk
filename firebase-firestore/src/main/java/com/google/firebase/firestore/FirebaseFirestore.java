@@ -318,11 +318,11 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Executes a batchFunction on a newly created {@link WriteBatch} and then commits all of the
-   * writes made by the batchFunction as a single atomic unit.
+   * Executes a <code>batchFunction</code> on a newly created {@link WriteBatch}, then commits all
+   * of the writes made by the <code>batchFunction</code> as a single atomic unit.
    *
    * @param batchFunction The function to execute within the batch context.
-   * @return A Task that will be resolved when the batch has been committed.
+   * @return A Task that resolves when the batch has been committed.
    */
   @NonNull
   @PublicApi
@@ -347,9 +347,9 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Re-enables network usage for this instance after a prior call to disableNetwork().
+   * Re-enables network usage for this instance after a prior call to <code>disableNetwork()</code>.
    *
-   * @return A Task that will be completed once networking is enabled.
+   * @return A Task that resolves when networking is enabled.
    */
   @PublicApi
   public Task<Void> enableNetwork() {
@@ -359,10 +359,10 @@ public class FirebaseFirestore {
 
   /**
    * Disables network access for this instance. While the network is disabled, any snapshot
-   * listeners or get() calls will return results from cache, and any write operations will be
-   * queued until network usage is re-enabled via a call to enableNetwork().
+   * listeners or <code>get()</code> calls will return results from cache, and any write operations
+   * will be queued until network usage is re-enabled via a call to <code>enableNetwork()</code>.
    *
-   * @return A Task that will be completed once networking is disabled.
+   * @return A Task that resolves when networking is disabled.
    */
   @PublicApi
   public Task<Void> disableNetwork() {
