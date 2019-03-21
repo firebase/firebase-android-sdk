@@ -55,7 +55,7 @@ public class JobInfoScheduler implements WorkScheduler {
       jobScheduler.cancel(UNIQUE_JOB_ID);
 
       Iterator itr = eventStore.getBackendNextCallTimes().iterator();
-      if (itr != null && itr.hasNext()) {
+      if (itr.hasNext()) {
         long minBackendCallTime = ((BackendNextCallTime) itr.next()).getTimestampMs();
         while (itr.hasNext()) {
           long backendWaitTime = ((BackendNextCallTime) itr.next()).getTimestampMs();
