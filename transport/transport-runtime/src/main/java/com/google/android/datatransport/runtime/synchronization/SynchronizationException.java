@@ -12,18 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.scheduling.persistence;
+package com.google.android.datatransport.runtime.synchronization;
 
-import com.google.auto.value.AutoValue;
-
-/** Holds the next time a backend can be called. */
-@AutoValue
-public abstract class BackendNextCallTime {
-  public abstract String getBackendName();
-
-  public abstract long getTimestampMs();
-
-  public static BackendNextCallTime create(String backendName, long timestampMs) {
-    return new AutoValue_BackendNextCallTime(backendName, timestampMs);
+/** Exception thrown by {@link SynchronizationGuard} upon failure. */
+public class SynchronizationException extends RuntimeException {
+  public SynchronizationException(String message, Throwable cause) {
+    super(message, cause);
   }
 }

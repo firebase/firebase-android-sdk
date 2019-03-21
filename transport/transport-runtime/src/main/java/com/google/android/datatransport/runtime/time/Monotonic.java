@@ -20,4 +20,4 @@ import javax.inject.Qualifier;
 
 @Retention(RetentionPolicy.SOURCE)
 @Qualifier
-public @interface Uptime {}
+public @interface Monotonic {}
