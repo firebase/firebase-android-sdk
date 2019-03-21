@@ -17,20 +17,21 @@ package com.google.android.datatransport.runtime;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
+import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
-import com.google.android.datatransport.runtime.time.Uptime;
+import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import com.google.android.datatransport.runtime.time.WallTime;
 import com.google.android.datatransport.runtime.time.WallTimeClock;
+import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import javax.inject.Singleton;
 
 @Module
-class TransportRuntimeModule {
+abstract class TransportRuntimeModule {
   @Provides
   static Executor executor() {
     return Executors.newSingleThreadExecutor();
@@ -43,7 +44,7 @@ class TransportRuntimeModule {
   }
 
   @Provides
-  @Uptime
+  @Monotonic
   static Clock uptimeClock() {
     return new UptimeClock();
   }
@@ -53,9 +54,9 @@ class TransportRuntimeModule {
     return new ImmediateScheduler(executor, registry);
   }
 
-  @Provides
-  @Singleton
-  static EventStore eventStore() {
-    return new InMemoryEventStore();
-  }
+  @Binds
+  abstract EventStore eventStore(SQLiteEventStore store);
+
+  @Binds
+  abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
 }

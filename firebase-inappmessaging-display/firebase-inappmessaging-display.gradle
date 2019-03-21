@@ -1,3 +1,5 @@
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+
 // Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +15,7 @@
 // limitations under the License.
 
 apply plugin: "com.android.library"
+apply plugin: FirebaseTestLabPlugin
 
 android {
     compileSdkVersion project.targetSdkVersion

@@ -27,6 +27,7 @@ import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.util.Collections;
 import org.junit.Assert;
 import org.junit.Test;
@@ -71,7 +72,14 @@ public class TransportRuntimeTest {
             registry,
             () -> eventMillis,
             () -> uptimeMillis,
-            new ImmediateScheduler(Runnable::run, registry));
+            new ImmediateScheduler(Runnable::run, registry),
+            new SynchronizationGuard() {
+              @Override
+              public <T> T runCriticalSection(
+                  long lockTimeoutMs, CriticalSection<T> criticalSection) {
+                return criticalSection.execute();
+              }
+            });
     Assert.assertNotNull(runtime);
     runtime.register(mockBackendName, mockBackend);
 

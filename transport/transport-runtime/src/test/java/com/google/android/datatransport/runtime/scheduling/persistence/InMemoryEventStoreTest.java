@@ -42,7 +42,6 @@ public class InMemoryEventStoreTest {
 
   @Test
   public void test_emptyStore_shouldReturnNothingUponLoadAll() {
-    assertThat(store.getBackendNextCallTimes()).isEmpty();
     assertThat(store.loadAll("foo")).isEmpty();
   }
 
@@ -51,8 +50,6 @@ public class InMemoryEventStoreTest {
     store.persist(BACKEND_NAME, TEST_EVENT);
 
     assertThat(store.loadAll(BACKEND_NAME)).containsExactly(TEST_PERSISTED_EVENT);
-    assertThat(store.getBackendNextCallTimes())
-        .containsExactly(BackendNextCallTime.create(BACKEND_NAME, 0));
   }
 
   @Test

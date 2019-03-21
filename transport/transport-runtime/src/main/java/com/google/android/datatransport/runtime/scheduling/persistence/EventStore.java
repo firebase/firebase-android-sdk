@@ -14,6 +14,8 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import android.support.annotation.Nullable;
+import android.support.annotation.WorkerThread;
 import com.google.android.datatransport.runtime.EventInternal;
 
 /**
@@ -21,6 +23,7 @@ import com.google.android.datatransport.runtime.EventInternal;
  *
  * <p>Responsible for storing events and backend-specific metadata.
  */
+@WorkerThread
 public interface EventStore {
 
   /** Persist a new event. */
@@ -32,11 +35,15 @@ public interface EventStore {
   /** Communicate to the store that events have been sent successfully. */
   void recordSuccess(Iterable<PersistedEvent> events);
 
-  /** Return a collection of timestamps when the backends are allowed to be called next time. */
-  Iterable<BackendNextCallTime> getBackendNextCallTimes();
+  /** Returns the timestamp when the backend is allowed to be called next time or null. */
+  @Nullable
+  Long getNextCallTime(String backendName);
 
   /** Record the timestamp when the backend is allowed to be called next time. */
   void recordNextCallTime(String backendName, long timestampMs);
+
+  /** Returns true if the store contains any pending events for a give backend. */
+  boolean hasPendingEventsFor(String backendName);
 
   /** Load all pending events for a given backend. */
   Iterable<PersistedEvent> loadAll(String backendName);

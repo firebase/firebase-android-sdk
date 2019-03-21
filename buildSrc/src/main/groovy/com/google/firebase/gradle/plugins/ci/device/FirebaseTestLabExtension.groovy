@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.scheduling.persistence;
+package com.google.firebase.gradle.plugins.ci.device;
 
-import com.google.auto.value.AutoValue;
-
-/** Holds the next time a backend can be called. */
-@AutoValue
-public abstract class BackendNextCallTime {
-  public abstract String getBackendName();
-
-  public abstract long getTimestampMs();
-
-  public static BackendNextCallTime create(String backendName, long timestampMs) {
-    return new AutoValue_BackendNextCallTime(backendName, timestampMs);
-  }
+class FirebaseTestLabExtension {
+    List<String> devices = ['model=Pixel2,version=27,locale=en,orientation=portrait']
 }
