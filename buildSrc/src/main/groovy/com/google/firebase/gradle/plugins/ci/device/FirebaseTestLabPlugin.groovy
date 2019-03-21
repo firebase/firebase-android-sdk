@@ -22,7 +22,6 @@ class FirebaseTestLabPlugin implements Plugin<Project>{
     @Override
     void apply(Project project) {
         def extension = project.extensions.create('firebaseTestLab', FirebaseTestLabExtension.class)
-        LibraryExtension e = project.android
-        e.testServer(new FirebaseTestServer(project, extension))
+        project.android.testServer(new FirebaseTestServer(project, extension))
     }
 }
