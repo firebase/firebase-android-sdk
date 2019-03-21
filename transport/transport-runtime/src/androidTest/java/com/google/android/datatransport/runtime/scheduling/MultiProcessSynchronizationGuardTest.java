@@ -137,7 +137,7 @@ public class MultiProcessSynchronizationGuardTest {
     public boolean tryAcquireLock(long timeout) throws RemoteException {
       boolean result = delegate.tryAcquireLock(timeout);
       if (!result) {
-        SystemClock.sleep(SQLiteEventStore.LOCK_RETRY_BACK_OFF * 2);
+        SystemClock.sleep(SQLiteEventStore.LOCK_RETRY_BACK_OFF_MILLIS * 2);
       }
       return result;
     }

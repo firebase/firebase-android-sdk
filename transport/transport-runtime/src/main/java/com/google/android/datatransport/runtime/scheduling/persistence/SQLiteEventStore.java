@@ -54,7 +54,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  public static final int LOCK_RETRY_BACK_OFF = 50;
+  public static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
 
   private final OpenHelper openHelper;
   private final Clock monotonicClock;
@@ -292,7 +292,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         if (monotonicClock.getTime() >= startTime + lockTimeoutMs) {
           return failureHandler.apply(ex);
         }
-        SystemClock.sleep(LOCK_RETRY_BACK_OFF);
+        SystemClock.sleep(LOCK_RETRY_BACK_OFF_MILLIS);
       }
     } while (true);
   }
