@@ -13,6 +13,7 @@
 // limitations under the License.
 
 apply plugin: 'com.android.library'
+apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 android {
     compileSdkVersion 28
@@ -32,6 +33,17 @@ android {
             }
         }
     }
+}
+
+firebaseTestLab {
+    devices = [
+            'model=Pixel2,version=28,locale=en,orientation=portrait',
+            'model=Pixel2,version=27,locale=en,orientation=portrait',
+            'model=victara,version=19,locale=en,orientation=portrait',
+            'model=Nexus4,version=22,locale=en,orientation=portrait',
+            'model=Nexus7,version=21,locale=en,orientation=portrait',
+            'model=Nexus4,version=19,locale=en,orientation=portrait',
+    ]
 }
 
 dependencies {
