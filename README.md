@@ -89,11 +89,39 @@ If you don't have a suitable testing project already:
   * Download the resulting `google-services.json` file and put it in the root of
     your checkout.
 
-#### Running Integration Tests
+#### Running Integration Tests on Local Emulator
 
 Integration tests can be executed on the command line by running
 ```bash
 ./gradlew :<firebase-project>:connectedCheck
+```
+
+#### Running Integration Tests on Firebase Test Lab
+
+> You need additional setup for this to work:
+>
+> * `gcloud` needs to be [installed](https://cloud.google.com/sdk/install) on local machine
+> * `gcloud` needs to be configured with a project that has billing enabled
+> * `gcloud` needs to be authenticated with credentials that have 'Firebase Test Lab Admin' role
+
+Integration tests can be executed on the command line by running
+```bash
+./gradlew :<firebase-project>:deviceCheck
+```
+
+This will execute tests on devices that are configured per project, if nothing is configured for the
+project, the tests will run on `model=Pixel2,version=27,locale=en,orientation=portrait`.
+
+Projects can be configured in the following way:
+
+```
+firebaseTestLab {
+  // to get a list of available devices execute `gcloud firebase test android models list`
+  devices = [
+    '<device1>',
+    '<device2>',
+  ]
+}
 ```
 
 ## Annotations
