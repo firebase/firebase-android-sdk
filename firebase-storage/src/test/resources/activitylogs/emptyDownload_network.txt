@@ -1,0 +1,52 @@
+
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/image.jpg?alt=media
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Accept-Ranges:[bytes]
+ Alt-Svc:[quic=":443"; ma=2592000; v="36,35,34,33,32"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[0]
+ Content-Type:[image/jpeg]
+ Date:[Wed, 28 Sep 2016 19:19:28 GMT]
+ ETag:["d41d8cd98f00b204e9800998ecf8427e"]
+ Expires:[Wed, 28 Sep 2016 19:19:28 GMT]
+ Last-Modified:[Wed, 28 Sep 2016 19:08:03 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1475090368081]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Transport:[http/1.1]
+ X-Android-Sent-Millis:[1475090367759]
+ x-goog-generation:[1475089684086000]
+ x-goog-hash:[crc32c=AAAAAA==][md5=1B2M2Y8AsgTpgAmY7PhCfg==]
+ x-goog-meta-firebaseStorageDownloadTokens:[ddaf6eaf-2ba9-497a-b418-8043eee4c5e0]
+ x-goog-meta-myData:[myFoo]
+ x-goog-metageneration:[1]
+ x-goog-storage-class:[STANDARD]
+ x-goog-stored-content-encoding:[identity]
+ x-goog-stored-content-length:[0]
+ X-Google-Backends:[/bns/pc/borg/pc/bns/cloud-storage/prod-cloud-storage-frontend.frontend/93,/bns/pa/borg/pa/bns/apps-upload/apps-upload.uploader/514.externalbe1,acsfob7:443]
+ X-Google-Cache-Control:[no-cache, no-store, max-age=0, must-revalidate]
+ X-Google-DOS-Service-Trace:[main:apps-upload-embargo,main:apps-upload-cloud-storage-unified]
+ X-Google-GFE-Backend-Request-Info:[eid=wBfsV9xaw4yIAtOhuagF]
+ X-Google-GFE-Cloud-Project-Number:[196403931065]
+ X-Google-GFE-Request-Trace:[acsfob7:443,/bns/ph/borg/ph/bns/apps-upload/apps-upload.uploader/191,acsfob7:443,/bns/pa/borg/pa/bns/apps-upload/apps-upload.uploader/514.externalbe1,acsfob7:443]
+ X-Google-GFE-Response-Code-Details-Trace:[response_code_set_by_backend]
+ X-Google-GFE-Service-Trace:[apps-upload-embargo,apps-upload-cloud-storage]
+ X-Google-Netmon-Label:[/bns/pa/borg/pa/bns/apps-upload/apps-upload.uploader/514]
+ X-Google-Service:[apps-upload-cloud-storage]
+ X-Google-Shellfish-Status:[CIgCQEY]
+ x-google-storage-location:[US]
+ X-GUploader-Customer:[cloud-storage]
+ X-GUploader-Request-Result:[success]
+ X-GUploader-Upload-Result:[success]
+ X-GUploader-UploadID:[AEnB2UpNWABI-qqh91ffQfdqDcj5kPrXS5pR7ZDQej0pljdf2M8NkRqMVTaVCTJa-VNwWB7uEb5OMx7KJiUm6xIpXlzDXv75uW1kZNzh1vwfrhAh14Dy8sA]
+getInputStream:
+disconnect:

@@ -32,9 +32,9 @@ public class TestUtil {
     return FirebaseApp.initializeApp(
         RuntimeEnvironment.application.getApplicationContext(),
         new FirebaseOptions.Builder()
-            .setApiKey("AIzaSyCkEhVjf3pduRDt6d1yKOMitrUEke8agEM")
+            .setApiKey("fooey")
             .setApplicationId("fooey")
-            .setStorageBucket("project-5516366556574091405.appspot.com")
+            .setStorageBucket("fooey.appspot.com")
             .build());
     // Point to staging:
     // NetworkRequest.sNetworkRequestUrl = "https://staging-firebasestorage.sandbox.googleapis"
@@ -47,19 +47,19 @@ public class TestUtil {
     ClassLoader classLoader = TestUtil.class.getClassLoader();
 
     System.out.println("Verifying task file.");
-    String filename = "assets/" + testName + "_task.txt";
+    String filename = "activitylogs/" + testName + "_task.txt";
     InputStream inputStream = classLoader.getResourceAsStream(filename);
     verifyTaskStateChanges(inputStream, response.mainTask.toString());
 
     System.out.println("Verifying background file.");
-    filename = "assets/" + testName + "_background.txt";
+    filename = "activitylogs/" + testName + "_background.txt";
     inputStream = classLoader.getResourceAsStream(filename);
     verifyTaskStateChanges(inputStream, response.backgroundTask.toString());
   }
 
   static void verifyTaskStateChanges(String testName, String contents) {
     ClassLoader classLoader = TestUtil.class.getClassLoader();
-    String filename = "assets/" + testName + "_task.txt";
+    String filename = "activitylogs/" + testName + "_task.txt";
 
     InputStream inputStream = classLoader.getResourceAsStream(filename);
     verifyTaskStateChanges(inputStream, contents);
