@@ -64,6 +64,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
+def a = ""
 
 dependencies {
     implementation project(':firebase-common')

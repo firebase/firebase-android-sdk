@@ -15,6 +15,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.google.protobuf'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+def a = ""
 
 protobuf {
     // Configure the protoc executable
