@@ -37,6 +37,7 @@ android {
     sourceSets {
         androidTest {
             java {
+                srcDir 'src/androidTest'
                 srcDir 'src/testUtil'
                 //We need this since FirebaseApp rule is externalized
                 //TODO(ashwinraghav) b/113079738
@@ -46,7 +47,7 @@ android {
 
         test {
             java {
-                srcDir 'src/testUtil'
+                srcDir 'src/testUtil/java'
                 //We need this since FirebaseApp rule is externalized
                 //TODO(ashwinraghav) b/113079738
                 srcDir '../firebase-common/src/testUtil'
@@ -85,3 +86,11 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.android.support.test:rules:1.0.2'
 }
+
+// ==========================================================================
+// Copy from here down if you want to use the google-services plugin in your
+// androidTest integration tests.
+// ==========================================================================
+ext.packageName = "com.google.firebase.storage"
+apply from: '../gradle/googleServices.gradle'
+

@@ -1,0 +1,87 @@
+
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=empty.dat&uploadType=resumable
+setRequestMethod:POST
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:X-Goog-Upload-Protocol,resumable
+setRequestProperty:X-Goog-Upload-Header-Content-Type,image/jpeg
+setRequestProperty:X-Goog-Upload-Command,start
+setRequestProperty:Content-Type,application/json
+setDoOutput:true
+setRequestProperty:Content-Length,59
+setUseCaches:false
+setDoInput:true
+getOutputStream:
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Alt-Svc:[quic=":443"; ma=2592000; v="36,35,34,33,32"]
+ Content-Length:[0]
+ Content-Type:[text/html; charset=UTF-8]
+ Date:[Wed, 28 Sep 2016 19:19:22 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1475090362888]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Transport:[http/1.1]
+ X-Android-Sent-Millis:[1475090362795]
+ X-Goog-Upload-Chunk-Granularity:[262144]
+ X-Goog-Upload-Control-URL:[https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=empty.dat&uploadType=resumable&upload_id=AEnB2UrqnSN4o_1udf4woZJtcBnFYdk4HGtGVpDAohk7PIyvyTuMS_7-ZxFh56zKcqtmC2v9oD-dTzWpEX7SJlFs10X5sPMw5A&upload_protocol=resumable]
+ X-Goog-Upload-Status:[active]
+ X-Goog-Upload-URL:[https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=empty.dat&uploadType=resumable&upload_id=AEnB2UrqnSN4o_1udf4woZJtcBnFYdk4HGtGVpDAohk7PIyvyTuMS_7-ZxFh56zKcqtmC2v9oD-dTzWpEX7SJlFs10X5sPMw5A&upload_protocol=resumable]
+ X-Google-Backends:[/bns/ph/borg/ph/bns/apps-upload/apps-upload.uploader/307,acsfob7:443]
+ X-Google-DOS-Service-Trace:[main:apps-upload-embargo]
+ X-Google-GFE-Backend-Request-Info:[eid=uhfsV7vJM4vQtgad6ZjADA]
+ X-Google-GFE-Request-Trace:[acsfob7:443,/bns/ph/borg/ph/bns/apps-upload/apps-upload.uploader/307,acsfob7:443]
+ X-Google-GFE-Response-Code-Details-Trace:[response_code_set_by_backend]
+ X-Google-GFE-Service-Trace:[apps-upload-embargo]
+ X-Google-Netmon-Label:[/bns/ph/borg/ph/bns/apps-upload/apps-upload.uploader/307]
+ X-Google-Service:[apps-upload-embargo]
+ X-Google-Shellfish-Status:[CIgCQEY]
+ X-GUploader-Customer:[firebase-storage]
+ X-GUploader-Request-Result:[success]
+ X-GUploader-UploadID:[AEnB2UrqnSN4o_1udf4woZJtcBnFYdk4HGtGVpDAohk7PIyvyTuMS_7-ZxFh56zKcqtmC2v9oD-dTzWpEX7SJlFs10X5sPMw5A]
+getInputStream:
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=empty.dat&uploadType=resumable&upload_id=AEnB2UrqnSN4o_1udf4woZJtcBnFYdk4HGtGVpDAohk7PIyvyTuMS_7-ZxFh56zKcqtmC2v9oD-dTzWpEX7SJlFs10X5sPMw5A&upload_protocol=resumable
+setRequestMethod:POST
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:X-Goog-Upload-Offset,0
+setRequestProperty:X-Goog-Upload-Protocol,resumable
+setRequestProperty:X-Goog-Upload-Command,finalize
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="36,35,34,33,32"]
+ Content-Length:[534]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Wed, 28 Sep 2016 19:19:23 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1475090363308]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Transport:[http/1.1]
+ X-Android-Sent-Millis:[1475090362925]
+ X-Content-Type-Options:[nosniff]
+ X-Goog-Upload-Status:[final]
+ X-Google-Backends:[/bns/ph/borg/ph/bns/apps-upload/apps-upload.uploader/944,acsfob7:443]
+ X-Google-DOS-Service-Trace:[main:apps-upload-embargo]
+ X-Google-GFE-Backend-Request-Info:[eid=uhfsV_XHO57RtgbJkLLQBw]
+ X-Google-GFE-Request-Trace:[acsfob7:443,/bns/ph/borg/ph/bns/apps-upload/apps-upload.uploader/944,acsfob7:443]
+ X-Google-GFE-Response-Code-Details-Trace:[response_code_set_by_backend]
+ X-Google-GFE-Service-Trace:[apps-upload-embargo]
+ X-Google-Netmon-Label:[/bns/ph/borg/ph/bns/apps-upload/apps-upload.uploader/944]
+ X-Google-Service:[apps-upload-embargo]
+ X-Google-Shellfish-Status:[CIgCQEY]
+ X-GUploader-Customer:[firebase-storage]
+ X-GUploader-Request-Result:[success]
+ X-GUploader-Upload-Result:[success]
+ X-GUploader-UploadID:[AEnB2UrqnSN4o_1udf4woZJtcBnFYdk4HGtGVpDAohk7PIyvyTuMS_7-ZxFh56zKcqtmC2v9oD-dTzWpEX7SJlFs10X5sPMw5A]
+getInputStream:ewogICJuYW1lIjogImVtcHR5LmRhdCIsCiAgImJ1Y2tldCI6ICJwcm9qZWN0LTU1MTYzNjY1NTY1NzQwOTE0MDUuYXBwc3BvdC5jb20iLAogICJnZW5lcmF0aW9uIjogIjE0NzUwOTAzNjMyMTAwMDAiLAogICJtZXRhZ2VuZXJhdGlvbiI6ICIxIiwKICAiY29udGVudFR5cGUiOiAiaW1hZ2UvanBlZyIsCiAgInRpbWVDcmVhdGVkIjogIjIwMTYtMDktMjhUMTk6MTk6MjMuMTA2WiIsCiAgInVwZGF0ZWQiOiAiMjAxNi0wOS0yOFQxOToxOToyMy4xMDZaIiwKICAic3RvcmFnZUNsYXNzIjogIlNUQU5EQVJEIiwKICAic2l6ZSI6ICIwIiwKICAibWQ1SGFzaCI6ICIxQjJNMlk4QXNnVHBnQW1ZN1BoQ2ZnPT0iLAogICJjb250ZW50RW5jb2RpbmciOiAiaWRlbnRpdHkiLAogICJjcmMzMmMiOiAiQUFBQUFBPT0iLAogICJldGFnIjogIkNKQ3k4ZWpqc3M4Q0VBRT0iLAogICJkb3dubG9hZFRva2VucyI6ICI5OGM2NjU0ZC1lMWYzLTQ1NTUtYTc1YS0yYmY5Y2Y1ZmY3ZDAiLAogICJtZXRhZGF0YSI6IHsKICAgICJteURhdGEiOiAibXlGb28iCiAgfQp9
+disconnect:
