@@ -370,7 +370,7 @@ public class MainActivity extends AppCompatActivity {
                           Preconditions.checkNotNull(bytes);
                           Log.i(TAG, "Downloaded " + bytes.length + " bytes.");
                         },
-                        "12kbdownload.jpg",
+                        "12kb.dat",
                         -1),
                 null,
                 null));
@@ -572,16 +572,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     final Uri sourceUri = Uri.fromFile(file);
-    runTaskTest(
-        testName,
-        () -> {
-          try {
-            return TestUploadHelper.fileUpload(sourceUri, filename);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-          return null;
-        });
+    runTaskTest(testName, () -> TestUploadHelper.fileUpload(sourceUri, filename));
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")

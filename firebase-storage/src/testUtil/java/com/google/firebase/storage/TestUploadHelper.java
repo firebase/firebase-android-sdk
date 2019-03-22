@@ -137,9 +137,7 @@ public class TestUploadHelper {
   public static Task<StringBuilder> uploadWithSpace() {
     final StringBuilder builder = new StringBuilder();
     StorageReference storage =
-        FirebaseStorage.getInstance()
-            .getReferenceFromUrl("gs://fooey.appspot.com")
-            .child("hello world.txt");
+        FirebaseStorage.getInstance().getReference().child("hello world.txt");
     String foo = "This is a test!!!";
     byte[] bytes = foo.getBytes(Charset.forName("UTF-8"));
     StorageMetadata metadata = new StorageMetadata.Builder().setContentType("text/plain").build();
@@ -269,16 +267,15 @@ public class TestUploadHelper {
     return task.continueWith(ignored -> builder);
   }
 
-  public static Task<StringBuilder> fileUpload(final Uri sourcefile, final String filename)
-      throws InterruptedException {
+  public static Task<StringBuilder> fileUpload(final Uri sourcefile, final String filename) {
     final StringBuilder builder = new StringBuilder();
 
-    return fileUploadImpl(builder, sourcefile, "gs://fooey.appspot.com/" + filename);
+    return fileUploadImpl(builder, sourcefile, filename);
   }
 
   private static Task<StringBuilder> fileUploadImpl(
       final StringBuilder builder, final Uri sourcefile, String destinationName) {
-    StorageReference storage = FirebaseStorage.getInstance().getReferenceFromUrl(destinationName);
+    StorageReference storage = FirebaseStorage.getInstance().getReference(destinationName);
     StorageMetadata metadata =
         new StorageMetadata.Builder()
             .setContentType("image/jpeg")
@@ -689,13 +686,13 @@ public class TestUploadHelper {
     List<UploadTask> globalUploadTasks = reference.getActiveUploadTasks();
     Preconditions.checkState(
         globalUploadTasks.size() == expectedTasks,
-        "Expected active upload task to contain %d item(s), but contained %d item(s)",
+        "Expected active upload task to contain %s item(s), but contained %s item(s)",
         globalUploadTasks.size());
     List<UploadTask> uploadTasksAtParent =
         StorageTaskManager.getInstance().getUploadTasksUnder(reference.getParent());
     Preconditions.checkState(
         uploadTasksAtParent.size() == expectedTasks,
-        "Expected active upload task at location %d to contain %d item(s), but contained %d item(s)",
+        "Expected active upload task at location %s to contain %s item(s), but contained %s item(s)",
         reference.getParent(),
         uploadTasksAtParent.size());
   }

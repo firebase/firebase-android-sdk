@@ -68,8 +68,11 @@ public class TestDownloadHelper {
                 while (stream.read() != -1) {
                   // do nothing
                 }
-                Preconditions.checkState(totalByteCountBeginning == state.getTotalByteCount());
-                Preconditions.checkState(mBytes.length == state.getTotalByteCount());
+
+                if (state.getTotalByteCount() != -1) {
+                  Preconditions.checkState(totalByteCountBeginning == state.getTotalByteCount());
+                  Preconditions.checkState(mBytes.length == state.getTotalByteCount());
+                }
               } finally {
                 // Closing stream
                 stream.close();
@@ -263,13 +266,13 @@ public class TestDownloadHelper {
     List<FileDownloadTask> globalDownloadTasks = reference.getActiveDownloadTasks();
     Preconditions.checkState(
         globalDownloadTasks.size() == expectedTasks,
-        "Expected active download task to contain %d item(s), but contained %d item(s)",
+        "Expected active download task to contain %s item(s), but contained %s item(s)",
         globalDownloadTasks.size());
     List<FileDownloadTask> downloadTasksAtParent =
         StorageTaskManager.getInstance().getDownloadTasksUnder(reference.getParent());
     Preconditions.checkState(
         downloadTasksAtParent.size() == expectedTasks,
-        "Expected active download task at location %d to contain %d item(s), but contained %d item(s)",
+        "Expected active download task at location %s to contain %s item(s), but contained %s item(s)",
         reference.getParent(),
         downloadTasksAtParent.size());
   }
