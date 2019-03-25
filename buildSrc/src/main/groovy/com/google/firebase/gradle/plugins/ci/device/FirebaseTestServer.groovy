@@ -15,6 +15,7 @@
 package com.google.firebase.gradle.plugins.ci.device
 
 import com.android.builder.testing.api.TestServer
+import java.nio.file.Paths
 import org.gradle.api.Project
 
 
@@ -22,10 +23,12 @@ class FirebaseTestServer extends TestServer {
     private static final String BUCKET_NAME = 'android-ci'
     final Project project
     final FirebaseTestLabExtension extension
+    final Random random
 
     FirebaseTestServer(Project project, FirebaseTestLabExtension extension) {
         this.project = project
         this.extension = extension
+        this.random = new Random(System.currentTimeMillis())
     }
 
     @Override
@@ -42,17 +45,30 @@ class FirebaseTestServer extends TestServer {
 
         def devicesCmd = extension.devices.collectMany { ['--device', it] }
 
+        def resultsArgs = getResultUploadArgs()
+
         project.exec {
-            commandLine('gcloud','firebase','test','android','run',
-              '--type', 'instrumentation',
-              "--results-bucket=$BUCKET_NAME", "--app=$testedApkPath", "--test=$testApk",
-              '--no-auto-google-login', '--no-record-video', '--no-performance-metrics', '-q',
-              *devicesCmd)
+            commandLine('gcloud', 'firebase', 'test', 'android', 'run',
+                    '--type=instrumentation',
+                    "--app=$testedApkPath", "--test=$testApk",
+                    '--no-auto-google-login', '--no-record-video', '--no-performance-metrics', '-q',
+                    *resultsArgs, *devicesCmd)
         }
     }
 
     @Override
     boolean isConfigured() {
         return true
+    }
+
+    private List<String> getResultUploadArgs() {
+        Optional<String> resultsBucket = Optional.ofNullable(System.getenv('FTL_RESULTS_BUCKET'))
+        Optional<String> resultsDir = Optional.ofNullable(System.getenv('FTL_RESULTS_DIR'))
+
+        List<String> args = ['--results-bucket', resultsBucket.orElse('android-ci')]
+        if (resultsDir.isPresent()) {
+            args += ['--results-dir', Paths.get(resultsDir.get(), "${project.path}_${random.nextLong()}")]
+        }
+        return args
     }
 }
