@@ -40,7 +40,7 @@ public class AlarmManagerSchedulerService extends BroadcastReceiver {
         TransportRuntime.initialize(context);
         TransportRuntime.getInstance().injectMembers(this);
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "");
+        PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SyncManager");
         wl.acquire(20000);
         String backendName = intent.getData().getQueryParameter(SchedulerUtil.BACKEND_NAME_CONSTANT);
         int numberOfAttempts = intent.getExtras().getInt(SchedulerUtil.NUMBER_OF_ATTEMPTS_CONSTANT);

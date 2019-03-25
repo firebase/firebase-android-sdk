@@ -55,7 +55,7 @@ abstract class TransportRuntimeModule {
   }
 
   @Provides
-  WorkScheduler workScheduler(Context context, EventStore eventStore, @WallTime Clock eventClock) {
+  static WorkScheduler workScheduler(Context context, EventStore eventStore, @WallTime Clock eventClock) {
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       return new JobInfoScheduler(context, eventStore, eventClock);
     } else {
@@ -64,7 +64,7 @@ abstract class TransportRuntimeModule {
   }
 
   @Provides
-  Scheduler scheduler(Executor executor, BackendRegistry registry, WorkScheduler workScheduler, EventStore eventStore) {
+  static Scheduler scheduler(Executor executor, BackendRegistry registry, WorkScheduler workScheduler, EventStore eventStore) {
     return new DefaultScheduler(executor, registry, workScheduler, eventStore);
   }
 
