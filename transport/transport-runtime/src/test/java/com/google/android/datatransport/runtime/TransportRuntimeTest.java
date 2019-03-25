@@ -27,6 +27,7 @@ import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.util.Collections;
 import org.junit.Assert;
@@ -79,7 +80,8 @@ public class TransportRuntimeTest {
                   long lockTimeoutMs, CriticalSection<T> criticalSection) {
                 return criticalSection.execute();
               }
-            });
+            },
+            new Uploader(null, null, null, null));
     Assert.assertNotNull(runtime);
     runtime.register(mockBackendName, mockBackend);
 

@@ -14,18 +14,18 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
-public class SchedulerUtil {
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import com.google.android.datatransport.runtime.TransportRuntime;
 
-  public static final String NUMBER_OF_ATTEMPTS_CONSTANT = "numberOfAttempts";
+public class AlarmManagerSchedulerService extends BroadcastReceiver {
 
-  public static final String BACKEND_NAME_CONSTANT = "backendName";
-
-  public static final String APPLICATION_BUNDLE_ID = "appBundleId";
-
-  static long getScheduleDelay(long backendTimeDiff, int delta, int numberOfAttempts) {
-    if (numberOfAttempts > 3) {
-      return 1000000000;
-    }
-    return Math.max((long) (Math.pow(delta / 1000, numberOfAttempts)) * 1000, backendTimeDiff);
+  @Override
+  public void onReceive(Context context, Intent intent) {
+    String backendName = intent.getData().getQueryParameter(SchedulerUtil.BACKEND_NAME_CONSTANT);
+    int numberOfAttempts = intent.getExtras().getInt(SchedulerUtil.NUMBER_OF_ATTEMPTS_CONSTANT);
+    TransportRuntime.initialize(context);
+    TransportRuntime.getInstance().getUploader().upload(backendName, numberOfAttempts);
   }
 }

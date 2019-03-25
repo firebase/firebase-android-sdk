@@ -12,47 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.scheduling.jobscheduling.service;
+package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import android.app.job.JobParameters;
 import android.app.job.JobService;
-import android.content.Context;
 import android.os.Build;
-import com.google.android.datatransport.runtime.BackendRegistry;
 import com.google.android.datatransport.runtime.TransportRuntime;
-import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerUtil;
-import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
-import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import javax.inject.Inject;
 
 /** JobService to be scheduled by the JobScheduler. start another service */
 @android.support.annotation.RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JobInfoSchedulerService extends JobService {
-  private static final String TAG = "SyncService";
-
-  @Inject BackendRegistry backendRegistry;
-  @Inject WorkScheduler workScheduler;
-  @Inject EventStore eventStore;
-  @Inject Context context;
-
-  @Override
-  public void onCreate() {
-    super.onCreate();
-    TransportRuntime.initialize(getApplicationContext());
-    TransportRuntime.getInstance().injectMembers(this);
-  }
 
   @Override
   public boolean onStartJob(JobParameters params) {
     String backendName = params.getExtras().getString(SchedulerUtil.BACKEND_NAME_CONSTANT);
     long numberOfAttempts = params.getExtras().getLong(SchedulerUtil.NUMBER_OF_ATTEMPTS_CONSTANT);
-
-    // If there is no network available reschedule.
-    if(!ServiceUtil.isNetworkAvailable(context)) {
-        workScheduler.schedule(backendName, (int)numberOfAttempts+1);
-        return true;
-    }
-    ServiceUtil.logAndUpdateState(backendRegistry, workScheduler, backendName, eventStore, (int)numberOfAttempts);
+    TransportRuntime.initialize(getApplicationContext());
+    TransportRuntime.getInstance().getUploader().upload(backendName, (int) numberOfAttempts);
     return true;
   }
 

@@ -20,6 +20,7 @@ import com.google.android.datatransport.runtime.scheduling.DefaultScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoScheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
@@ -55,7 +56,17 @@ abstract class TransportRuntimeModule {
   }
 
   @Provides
-  static WorkScheduler workScheduler(Context context, EventStore eventStore, @WallTime Clock eventClock) {
+  static Uploader uploader(
+      Context context,
+      BackendRegistry backendRegistry,
+      EventStore eventStore,
+      WorkScheduler workScheduler) {
+    return new Uploader(context, backendRegistry, eventStore, workScheduler);
+  }
+
+  @Provides
+  static WorkScheduler workScheduler(
+      Context context, EventStore eventStore, @WallTime Clock eventClock) {
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       return new JobInfoScheduler(context, eventStore, eventClock);
     } else {
@@ -64,7 +75,11 @@ abstract class TransportRuntimeModule {
   }
 
   @Provides
-  static Scheduler scheduler(Executor executor, BackendRegistry registry, WorkScheduler workScheduler, EventStore eventStore) {
+  static Scheduler scheduler(
+      Executor executor,
+      BackendRegistry registry,
+      WorkScheduler workScheduler,
+      EventStore eventStore) {
     return new DefaultScheduler(executor, registry, workScheduler, eventStore);
   }
 
@@ -73,5 +88,4 @@ abstract class TransportRuntimeModule {
 
   @Binds
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
-
 }

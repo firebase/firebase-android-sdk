@@ -14,15 +14,12 @@
 
 package com.google.android.datatransport.runtime.scheduling;
 
-import com.google.android.datatransport.Event;
 import com.google.android.datatransport.runtime.BackendRegistry;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportBackend;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-
-import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -41,7 +38,10 @@ public class DefaultScheduler implements Scheduler {
 
   @Inject
   public DefaultScheduler(
-      Executor executor, BackendRegistry backendRegistry, WorkScheduler workScheduler, EventStore eventStore) {
+      Executor executor,
+      BackendRegistry backendRegistry,
+      WorkScheduler workScheduler,
+      EventStore eventStore) {
     this.executor = executor;
     this.backendRegistry = backendRegistry;
     this.workScheduler = workScheduler;

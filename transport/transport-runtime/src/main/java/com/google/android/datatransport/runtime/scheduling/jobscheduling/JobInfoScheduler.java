@@ -18,27 +18,23 @@ import android.annotation.TargetApi;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
-import java.util.zip.Adler32;
 import android.content.Context;
 import android.os.Build;
 import android.os.PersistableBundle;
 import android.support.annotation.RequiresApi;
-
-import com.google.android.datatransport.runtime.scheduling.jobscheduling.service.JobInfoSchedulerService;
-import com.google.android.datatransport.runtime.scheduling.jobscheduling.service.ServiceUtil;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.time.Clock;
+import java.util.zip.Adler32;
 
 public class JobInfoScheduler implements WorkScheduler {
 
   private final Context context;
 
-  public final static String NUMBER_OF_ATTEMPTS_CONSTANT = "numberOfAttempts";
+  public static final String NUMBER_OF_ATTEMPTS_CONSTANT = "numberOfAttempts";
 
-  public final static String BACKEND_NAME_CONSTANT = "backendName";
+  public static final String BACKEND_NAME_CONSTANT = "backendName";
 
   private final EventStore eventStore;
-
 
   private Clock clock;
 
@@ -56,7 +52,7 @@ public class JobInfoScheduler implements WorkScheduler {
 
   @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   private boolean isJobServiceOn(JobScheduler scheduler, int jobId) {
-    for (JobInfo jobInfo: scheduler.getAllPendingJobs()) {
+    for (JobInfo jobInfo : scheduler.getAllPendingJobs()) {
       if (jobInfo.getId() == jobId) {
         return true;
       }
@@ -72,15 +68,17 @@ public class JobInfoScheduler implements WorkScheduler {
     JobScheduler jobScheduler = context.getSystemService(JobScheduler.class);
     int jobId = getJobId(backendName);
     // Check if there exists a job scheduled for this backend name.
-    if(isJobServiceOn(jobScheduler, jobId)) return;
+    if (isJobServiceOn(jobScheduler, jobId)) return;
     // Obtain the next available call time for the backend.
-    long timeDiff = eventStore.getNextCallTime(backendName)-clock.getTime();
+    long timeDiff = eventStore.getNextCallTime(backendName) - clock.getTime();
     // Schedule the build.
     PersistableBundle bundle = new PersistableBundle();
     bundle.putLong(NUMBER_OF_ATTEMPTS_CONSTANT, numberOfAttempts);
     bundle.putString(BACKEND_NAME_CONSTANT, backendName);
     JobInfo.Builder builder = new JobInfo.Builder(jobId, serviceComponent);
-    builder.setMinimumLatency(clock.getTime() +  SchedulerUtil.getScheduleDelay(timeDiff, 5000, numberOfAttempts)); // wait at least
+    builder.setMinimumLatency(
+        clock.getTime()
+            + SchedulerUtil.getScheduleDelay(timeDiff, 5000, numberOfAttempts)); // wait at least
     builder.setExtras(bundle);
     builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
     jobScheduler.schedule(builder.build());
