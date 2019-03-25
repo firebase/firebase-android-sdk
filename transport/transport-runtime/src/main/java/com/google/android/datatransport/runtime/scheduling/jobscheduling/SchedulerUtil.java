@@ -25,8 +25,8 @@ public class SchedulerUtil {
 
     static long getScheduleDelay(long backendTimeDiff, int delta, int numberOfAttempts) {
         if(numberOfAttempts > 3) {
-            return 0;
+            return 1000000000;
         }
-        return Math.min((long)(Math.pow(delta/1000, numberOfAttempts))*1000, backendTimeDiff);
+        return Math.max((long)(Math.pow(delta/1000, numberOfAttempts))*1000, backendTimeDiff);
     }
 }
