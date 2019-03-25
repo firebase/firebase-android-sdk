@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import java.util.concurrent.ExecutorService;
+
 /** */
 public interface AuthTokenProvider {
   /** */
@@ -61,7 +63,8 @@ public interface AuthTokenProvider {
    *
    * @param listener Listener to be added.
    */
-  public void addTokenChangeListener(TokenChangeListener listener);
+  public void addTokenChangeListener(
+      final ExecutorService executorService, TokenChangeListener listener);
 
   /**
    * Removes a previously-registered TokenChangeListener.

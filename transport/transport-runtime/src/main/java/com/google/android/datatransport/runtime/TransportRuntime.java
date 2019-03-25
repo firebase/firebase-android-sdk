@@ -15,11 +15,14 @@
 package com.google.android.datatransport.runtime;
 
 import android.content.Context;
+import android.support.annotation.RestrictTo;
+import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.service.JobInfoSchedulerService;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
-import com.google.android.datatransport.runtime.time.Uptime;
+import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -40,17 +43,20 @@ public class TransportRuntime implements TransportInternal {
   private final Clock eventClock;
   private final Clock uptimeClock;
   private final Scheduler scheduler;
+  private final SynchronizationGuard guard;
 
   @Inject
   TransportRuntime(
       BackendRegistry backendRegistry,
       @WallTime Clock eventClock,
-      @Uptime Clock uptimeClock,
-      Scheduler scheduler) {
+      @Monotonic Clock uptimeClock,
+      Scheduler scheduler,
+      SynchronizationGuard guard) {
     this.backendRegistry = backendRegistry;
     this.eventClock = eventClock;
     this.uptimeClock = uptimeClock;
     this.scheduler = scheduler;
+    this.guard = guard;
   }
 
   /**
@@ -83,8 +89,8 @@ public class TransportRuntime implements TransportInternal {
     return localRef.getTransportRuntime();
   }
 
-  public void injectService(JobInfoSchedulerService service) {
-    INSTANCE.injectJobInfoSchedulerService(service);
+  public void injectMembers(Object object) {
+    INSTANCE.injectMembers(object);
   }
 
   /** Register a {@link TransportBackend}. */
@@ -110,5 +116,11 @@ public class TransportRuntime implements TransportInternal {
         .setPriority(request.getEvent().getPriority())
         .setPayload(request.getPayload())
         .build();
+  }
+
+  @VisibleForTesting
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  public SynchronizationGuard getSynchronizationGuard() {
+    return guard;
   }
 }

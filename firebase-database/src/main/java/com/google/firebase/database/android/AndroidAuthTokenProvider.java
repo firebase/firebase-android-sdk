@@ -15,89 +15,79 @@
 package com.google.firebase.database.android;
 
 import android.support.annotation.NonNull;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApiNotAvailableException;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseApp.IdTokenListener;
 import com.google.firebase.auth.GetTokenResult;
+import com.google.firebase.auth.internal.IdTokenListener;
+import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.database.core.AuthTokenProvider;
-import com.google.firebase.internal.InternalTokenResult;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ExecutorService;
 
-public class AndroidAuthTokenProvider implements AuthTokenProvider {
-  private final ScheduledExecutorService executorService;
-  private final FirebaseApp firebaseApp;
+public abstract class AndroidAuthTokenProvider implements AuthTokenProvider {
 
-  public AndroidAuthTokenProvider(
-      @NonNull FirebaseApp firebaseApp, @NonNull ScheduledExecutorService executorService) {
-    this.firebaseApp = firebaseApp;
-    this.executorService = executorService;
-  }
-
-  @Override
-  public void getToken(boolean forceRefresh, @NonNull final GetTokenCompletionListener listener) {
-    Task<GetTokenResult> getTokenResult = firebaseApp.getToken(forceRefresh);
-
-    getTokenResult
-        .addOnSuccessListener(
-            executorService,
-            new OnSuccessListener<GetTokenResult>() {
-              @Override
-              public void onSuccess(GetTokenResult result) {
-                listener.onSuccess(result.getToken());
-              }
-            })
-        .addOnFailureListener(
-            executorService,
-            new OnFailureListener() {
-              @Override
-              public void onFailure(@NonNull Exception e) {
-                if (isUnauthenticatedUsage(e)) {
-                  listener.onSuccess(null);
-                } else {
-                  // TODO: Figure out how to plumb errors through in a sane
-                  // way.
-                  listener.onError(e.getMessage());
-                }
-              }
-
-              private boolean isUnauthenticatedUsage(Exception e) {
-                if (e instanceof FirebaseApiNotAvailableException
-                    || e instanceof FirebaseNoSignedInUserException) {
-                  return true;
-                }
-
-                return false;
-              }
-            });
-  }
-
-  @Override
-  public void addTokenChangeListener(final TokenChangeListener tokenListener) {
-    IdTokenListener idTokenListener = produceIdTokenListener(tokenListener);
-    firebaseApp.addIdTokenListener(idTokenListener);
-  }
-
-  private IdTokenListener produceIdTokenListener(final TokenChangeListener tokenListener) {
-    return new FirebaseApp.IdTokenListener() {
+  public static AuthTokenProvider forAuthenticatedAccess(
+      @NonNull final InternalAuthProvider authProvider) {
+    return new AuthTokenProvider() {
       @Override
-      public void onIdTokenChanged(@NonNull final InternalTokenResult tokenResult) {
-        executorService.execute(
-            new Runnable() {
-              @Override
-              public void run() {
-                tokenListener.onTokenChange(/* nullable */ tokenResult.getToken());
-              }
-            });
+      public void getToken(
+          boolean forceRefresh, @NonNull final GetTokenCompletionListener listener) {
+        Task<GetTokenResult> getTokenResult = authProvider.getAccessToken(forceRefresh);
+
+        getTokenResult
+            .addOnSuccessListener(result -> listener.onSuccess(result.getToken()))
+            .addOnFailureListener(
+                e -> {
+                  if (isUnauthenticatedUsage(e)) {
+                    listener.onSuccess(null);
+                  } else {
+                    // TODO: Figure out how to plumb errors through in a sane way.
+                    listener.onError(e.getMessage());
+                  }
+                });
+      }
+
+      @Override
+      public void addTokenChangeListener(
+          final ExecutorService executorService, final TokenChangeListener tokenListener) {
+        IdTokenListener idTokenListener =
+            tokenResult ->
+                executorService.execute(
+                    () -> tokenListener.onTokenChange(/* nullable */ tokenResult.getToken()));
+        authProvider.addIdTokenListener(idTokenListener);
+      }
+
+      @Override
+      public void removeTokenChangeListener(TokenChangeListener tokenListener) {
+        // TODO Implement removeIdTokenListener.
       }
     };
   }
 
-  @Override
-  public void removeTokenChangeListener(TokenChangeListener tokenListener) {
-    // TODO Implement removeIdTokenListener.
+  public static AuthTokenProvider forUnauthenticatedAccess() {
+    return new AuthTokenProvider() {
+      @Override
+      public void getToken(boolean forceRefresh, GetTokenCompletionListener listener) {
+        listener.onSuccess(null);
+      }
+
+      @Override
+      public void addTokenChangeListener(
+          ExecutorService executorService, TokenChangeListener listener) {
+        executorService.execute(() -> listener.onTokenChange(null));
+      }
+
+      @Override
+      public void removeTokenChangeListener(TokenChangeListener listener) {}
+    };
+  }
+
+  private static boolean isUnauthenticatedUsage(Exception e) {
+    if (e instanceof FirebaseApiNotAvailableException
+        || e instanceof FirebaseNoSignedInUserException) {
+      return true;
+    }
+
+    return false;
   }
 }

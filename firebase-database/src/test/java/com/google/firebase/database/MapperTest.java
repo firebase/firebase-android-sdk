@@ -14,7 +14,7 @@
 
 package com.google.firebase.database;
 
-import static com.google.firebase.database.TestHelpers.fromSingleQuotedString;
+import static com.google.firebase.database.UnitTestHelpers.fromSingleQuotedString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;

@@ -17,9 +17,9 @@ package com.google.firebase.database.future;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.EventRecord;
+import com.google.firebase.database.IntegrationTestHelpers;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.TestFailure;
-import com.google.firebase.database.TestHelpers;
 import com.google.firebase.database.TestValues;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.core.view.Event;
@@ -200,7 +200,7 @@ public class ReadFuture implements Future<List<EventRecord>> {
   public void timedWait(long timeout, TimeUnit timeoutUnit)
       throws InterruptedException, TimeoutException, TestFailure {
     if (!semaphore.tryAcquire(1, timeout, timeoutUnit)) {
-      TestHelpers.failOnFirstUncaughtException();
+      IntegrationTestHelpers.failOnFirstUncaughtException();
       throw new TimeoutException();
     }
     if (exception != null) {

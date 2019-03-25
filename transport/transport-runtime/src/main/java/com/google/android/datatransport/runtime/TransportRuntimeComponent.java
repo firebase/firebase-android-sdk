@@ -25,7 +25,7 @@ import javax.inject.Singleton;
 interface TransportRuntimeComponent {
   TransportRuntime getTransportRuntime();
 
-  void injectJobInfoSchedulerService(JobInfoSchedulerService jobInfoSchedulerService);
+  void injectMembers(Object object);
 
   @Component.Builder
   interface Builder {

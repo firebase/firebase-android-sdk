@@ -14,7 +14,6 @@
 
 package com.google.firebase.database;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -22,20 +21,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.database.android.AndroidAuthTokenProvider;
 import com.google.firebase.database.core.Context;
 import com.google.firebase.database.core.CoreTestHelpers;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.EventTarget;
 import com.google.firebase.database.core.Path;
-import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.core.utilities.DefaultRunLoop;
 import com.google.firebase.database.core.view.QuerySpec;
-import com.google.firebase.database.future.WriteFuture;
 import com.google.firebase.database.snapshot.ChildKey;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,7 +39,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -56,10 +50,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.robolectric.RuntimeEnvironment;
 
-public class TestHelpers {
+public class UnitTestHelpers {
 
   private static List<DatabaseConfig> contexts = new ArrayList<DatabaseConfig>();
-  private static String testSecret = null;
   private static boolean appInitialized = false;
 
   private static class TestEventTarget implements EventTarget {
@@ -140,24 +133,8 @@ public class TestHelpers {
     return contexts.get(i);
   }
 
-  public static DatabaseReference rootWithNewContext() throws DatabaseException {
-    return rootWithConfig(newTestConfig());
-  }
-
-  public static DatabaseReference rootWithConfig(DatabaseConfig config) {
-    return new DatabaseReference(TestValues.TEST_NAMESPACE, config);
-  }
-
   public static DatabaseReference getRandomNode() throws DatabaseException {
     return getRandomNode(1).get(0);
-  }
-
-  public static void goOffline(DatabaseConfig cfg) {
-    DatabaseReference.goOffline(cfg);
-  }
-
-  public static void goOnline(DatabaseConfig cfg) {
-    DatabaseReference.goOnline(cfg);
   }
 
   public static List<DatabaseReference> getRandomNode(int count) throws DatabaseException {
@@ -182,7 +159,7 @@ public class TestHelpers {
   }
 
   public static DatabaseConfig newTestConfig() {
-    TestHelpers.ensureAppInitialized();
+    UnitTestHelpers.ensureAppInitialized();
 
     TestRunLoop runLoop = new TestRunLoop();
     DatabaseConfig config = new DatabaseConfig();
@@ -190,24 +167,13 @@ public class TestHelpers {
     config.setEventTarget(new TestEventTarget());
     config.setRunLoop(runLoop);
     config.setFirebaseApp(FirebaseApp.getInstance());
-    config.setAuthTokenProvider(new TestTokenProvider(runLoop.getExecutorService()));
+    config.setAuthTokenProvider(AndroidAuthTokenProvider.forUnauthenticatedAccess());
     return config;
   }
 
   public static ScheduledExecutorService getExecutorService(DatabaseConfig config) {
     DefaultRunLoop runLoop = (DefaultRunLoop) config.getRunLoop();
     return runLoop.getExecutorService();
-  }
-
-  public static void setForcedPersistentCache(Context ctx, PersistenceManager manager) {
-    try {
-      Method method =
-          Context.class.getDeclaredMethod("forcePersistenceManager", PersistenceManager.class);
-      method.setAccessible(true);
-      method.invoke(ctx, manager);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 
   public static void setLogger(
@@ -219,21 +185,6 @@ public class TestHelpers {
     for (int i = contexts.size(); i < count; ++i) {
       contexts.add(newTestConfig());
     }
-  }
-
-  public static String getTestSecret() {
-    if (testSecret == null) {
-      try {
-        InputStream response =
-            new URL(TestValues.TEST_NAMESPACE + "/.nsadmin/.json?key=1234").openStream();
-        TypeReference<Map<String, Object>> t = new TypeReference<Map<String, Object>>() {};
-        Map<String, Object> data = new ObjectMapper().readValue(response, t);
-        testSecret = (String) ((List) data.get("secrets")).get(0);
-      } catch (Throwable e) {
-        fail("Could not get test secret.");
-      }
-    }
-    return testSecret;
   }
 
   public static void waitFor(Semaphore semaphore) throws InterruptedException {
@@ -251,62 +202,6 @@ public class TestHelpers {
     assertTrue("Operation timed out", success);
   }
 
-  public static DataSnapshot getSnap(Query ref) throws InterruptedException {
-
-    final Semaphore semaphore = new Semaphore(0);
-
-    // Hack to get around final reference issue
-    final List<DataSnapshot> snapshotList = new ArrayList<DataSnapshot>(1);
-
-    ref.addListenerForSingleValueEvent(
-        new ValueEventListener() {
-          @Override
-          public void onDataChange(DataSnapshot snapshot) {
-            snapshotList.add(snapshot);
-            semaphore.release(1);
-          }
-
-          @Override
-          public void onCancelled(DatabaseError error) {
-            semaphore.release(1);
-          }
-        });
-
-    semaphore.tryAcquire(1, TestValues.TEST_TIMEOUT, TimeUnit.MILLISECONDS);
-    return snapshotList.get(0);
-  }
-
-  public static void assertSuccessfulAuth(
-      DatabaseReference ref, TestTokenProvider provider, String credential) {
-    DatabaseReference authRef = ref.getRoot().child(".info/authenticated");
-    final Semaphore semaphore = new Semaphore(0);
-    final List<Boolean> authStates = new ArrayList<>();
-    ValueEventListener listener =
-        authRef.addValueEventListener(
-            new ValueEventListener() {
-              @Override
-              public void onDataChange(DataSnapshot snapshot) {
-                authStates.add(snapshot.getValue(Boolean.class));
-                semaphore.release();
-              }
-
-              @Override
-              public void onCancelled(DatabaseError error) {
-                throw new RuntimeException("Should not happen");
-              }
-            });
-
-    provider.setToken(credential);
-
-    try {
-      TestHelpers.waitFor(semaphore, 2);
-      assertEquals(Arrays.asList(false, true), authStates);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-    authRef.removeEventListener(listener);
-  }
-
   public static Map<String, Object> fromJsonString(String json) {
     try {
       ObjectMapper mapper = new ObjectMapper();
@@ -318,51 +213,6 @@ public class TestHelpers {
 
   public static Map<String, Object> fromSingleQuotedString(String json) {
     return fromJsonString(json.replace("'", "\""));
-  }
-
-  public static void waitForRoundtrip(DatabaseReference reader) {
-    try {
-      new WriteFuture(reader.getRoot().child(UUID.randomUUID().toString()), null, null).timedGet();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static void waitForQueue(DatabaseReference ref) {
-    try {
-      final Semaphore semaphore = new Semaphore(0);
-      ref.getRepo()
-          .scheduleNow(
-              new Runnable() {
-                @Override
-                public void run() {
-                  semaphore.release();
-                }
-              });
-      semaphore.acquire();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static void waitForEvents(DatabaseReference ref) {
-    try {
-      // Make sure queue is done and all events are queued
-      TestHelpers.waitForQueue(ref);
-      // Next, all events were queued, make sure all events are done raised
-      final Semaphore semaphore = new Semaphore(0);
-      ref.getRepo()
-          .postEvent(
-              new Runnable() {
-                @Override
-                public void run() {
-                  semaphore.release();
-                }
-              });
-      semaphore.acquire();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 
   public static String repeatedString(String s, int n) {

@@ -55,7 +55,7 @@ public class PerformanceBenchmarks {
 
   // @Test
   public void queryPerformance() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     System.err.println("Setting up...");
 
@@ -144,7 +144,7 @@ public class PerformanceBenchmarks {
 
   // @Test
   public void largeValuePerformance() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final int approximateObjectSize = 2 * 1024 * 1024;
     final int topLevelChildren = 200;
@@ -211,7 +211,7 @@ public class PerformanceBenchmarks {
 
   // @Test
   public void childObserverPerformance() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final int numberOfChildren = 50000;
 

@@ -26,6 +26,7 @@ import android.util.Log;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.annotations.PublicApi;
+import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.internal.AdaptiveStreamBuffer;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
 import com.google.firebase.storage.internal.Util;
@@ -61,6 +62,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   private final AdaptiveStreamBuffer mStreamBuffer;
   // Active, current mutable state.
   private final AtomicLong mBytesUploaded = new AtomicLong(0);
+  @Nullable private final InternalAuthProvider mAuthProvider;
   private int mCurrentChunkSize = PREFERRED_CHUNK_SIZE;
   private ExponentialBackoffSender mSender;
   private boolean mIsStreamOwned;
@@ -74,29 +76,42 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   UploadTask(StorageReference targetRef, StorageMetadata metadata, byte[] bytes) {
     Preconditions.checkNotNull(targetRef);
     Preconditions.checkNotNull(bytes);
+
+    FirebaseStorage storage = targetRef.getStorage();
+
     this.mTotalByteCount = bytes.length;
     this.mStorageRef = targetRef;
     this.mMetadata = metadata;
+    this.mAuthProvider = storage.getAuthProvider();
     this.mUri = null;
     this.mStreamBuffer =
         new AdaptiveStreamBuffer(new ByteArrayInputStream(bytes), PREFERRED_CHUNK_SIZE);
     this.mIsStreamOwned = true;
+
     mSender =
         new ExponentialBackoffSender(
-            mStorageRef.getApp(), mStorageRef.getStorage().getMaxUploadRetryTimeMillis());
+            storage.getApp().getApplicationContext(),
+            storage.getAuthProvider(),
+            storage.getMaxDownloadRetryTimeMillis());
   }
 
   UploadTask(
       StorageReference targetRef, StorageMetadata metadata, Uri file, Uri existingUploadUri) {
     Preconditions.checkNotNull(targetRef);
     Preconditions.checkNotNull(file);
+
+    FirebaseStorage storage = targetRef.getStorage();
+
     this.mStorageRef = targetRef;
     this.mMetadata = metadata;
+    this.mAuthProvider = storage.getAuthProvider();
     this.mUri = file;
     InputStream inputStream = null;
     mSender =
         new ExponentialBackoffSender(
-            mStorageRef.getApp(), mStorageRef.getStorage().getMaxUploadRetryTimeMillis());
+            mStorageRef.getApp().getApplicationContext(),
+            mAuthProvider,
+            storage.getMaxUploadRetryTimeMillis());
     long size = -1;
     try {
       ContentResolver resolver =
@@ -144,15 +159,20 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     Preconditions.checkNotNull(targetRef);
     Preconditions.checkNotNull(stream);
 
+    FirebaseStorage storage = targetRef.getStorage();
+
     this.mTotalByteCount = -1;
     this.mStorageRef = targetRef;
     this.mMetadata = metadata;
+    this.mAuthProvider = storage.getAuthProvider();
     this.mStreamBuffer = new AdaptiveStreamBuffer(stream, PREFERRED_CHUNK_SIZE);
     this.mIsStreamOwned = false;
     this.mUri = null;
     mSender =
         new ExponentialBackoffSender(
-            mStorageRef.getApp(), mStorageRef.getStorage().getMaxUploadRetryTimeMillis());
+            mStorageRef.getApp().getApplicationContext(),
+            mAuthProvider,
+            mStorageRef.getStorage().getMaxUploadRetryTimeMillis());
   }
 
   /** @return the target of the upload. */
@@ -448,8 +468,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
 
   private boolean send(NetworkRequest request) {
     request.performRequest(
-        Util.getCurrentAuthToken(mStorageRef.getApp()),
-        mStorageRef.getApp().getApplicationContext());
+        Util.getCurrentAuthToken(mAuthProvider), mStorageRef.getApp().getApplicationContext());
     return processResultValid(request);
   }
 
@@ -485,7 +504,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
                 @Override
                 public void run() {
                   finalCancelRequest.performRequest(
-                      Util.getCurrentAuthToken(mStorageRef.getApp()),
+                      Util.getCurrentAuthToken(mAuthProvider),
                       mStorageRef.getApp().getApplicationContext());
                 }
               });

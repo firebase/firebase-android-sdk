@@ -42,20 +42,20 @@ public class OrderTest {
   @Before
   public void setUp()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode().getRoot();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode().getRoot();
 
     ReadFuture.untilEquals(ref.child(".info/connected"), true).timedGet();
   }
 
   @After
   public void tearDown() {
-    TestHelpers.failOnFirstUncaughtException();
+    IntegrationTestHelpers.failOnFirstUncaughtException();
   }
 
   @Test
   public void pushABunchOfDataAndEnumerateItBack()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     for (int i = 0; i < 10; ++i) {
       ref.push().setValue(i);
@@ -75,7 +75,7 @@ public class OrderTest {
   @Test
   public void pushABunchOfDataThenWriteEnsureOrderIsCorrect()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     List<DatabaseReference> paths = new ArrayList<DatabaseReference>(20);
     // Generate children quickly to try to get a few in the same millisecond
@@ -102,7 +102,7 @@ public class OrderTest {
   public void pushABunchOfDataReconnectReadItBack()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
 
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
@@ -112,7 +112,7 @@ public class OrderTest {
     }
     new WriteFuture(writer.push(), 9).timedGet();
 
-    DataSnapshot snap = TestHelpers.getSnap(writer);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(writer);
     long i = 0;
     for (DataSnapshot child : snap.getChildren()) {
       assertEquals(i, child.getValue());
@@ -120,7 +120,7 @@ public class OrderTest {
     }
     assertEquals(10L, i);
 
-    snap = TestHelpers.getSnap(reader);
+    snap = IntegrationTestHelpers.getSnap(reader);
     i = 0;
     for (DataSnapshot child : snap.getChildren()) {
       assertEquals(i, child.getValue());
@@ -133,7 +133,7 @@ public class OrderTest {
   public void pushABunchOfDataWithExplicitPriorityReconnectReadBackInOrder()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
 
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
@@ -143,7 +143,7 @@ public class OrderTest {
     }
     new WriteFuture(writer.push(), 9, 1).timedGet();
 
-    DataSnapshot snap = TestHelpers.getSnap(writer);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(writer);
     long i = 9;
     for (DataSnapshot child : snap.getChildren()) {
       assertEquals(i, child.getValue());
@@ -151,7 +151,7 @@ public class OrderTest {
     }
     assertEquals(-1L, i);
 
-    snap = TestHelpers.getSnap(reader);
+    snap = IntegrationTestHelpers.getSnap(reader);
     i = 9;
     for (DataSnapshot child : snap.getChildren()) {
       assertEquals(i, child.getValue());
@@ -164,7 +164,7 @@ public class OrderTest {
   public void pushDataWithExponentialPriorityAndCheckOrder()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
 
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
@@ -175,7 +175,7 @@ public class OrderTest {
     new WriteFuture(writer.push(), 9, 111111111111111111111111111111.0 / Math.pow(10, 9))
         .timedGet();
 
-    DataSnapshot snap = TestHelpers.getSnap(writer);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(writer);
     long i = 9;
     for (DataSnapshot child : snap.getChildren()) {
       assertEquals(i, child.getValue());
@@ -183,7 +183,7 @@ public class OrderTest {
     }
     assertEquals(-1L, i);
 
-    snap = TestHelpers.getSnap(reader);
+    snap = IntegrationTestHelpers.getSnap(reader);
     i = 9;
     for (DataSnapshot child : snap.getChildren()) {
       assertEquals(i, child.getValue());
@@ -195,12 +195,12 @@ public class OrderTest {
   @Test
   public void verifyNodesWithoutValuesAreNotEnumerated()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref.child("foo");
     ref.child("bar").setValue("test");
 
-    DataSnapshot snap = TestHelpers.getSnap(ref);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref);
     int i = 0;
     for (DataSnapshot child : snap.getChildren()) {
       i++;
@@ -212,7 +212,7 @@ public class OrderTest {
   @Test
   public void receiveChildMovedEventWhenPriorityChanges()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     EventHelper helper =
         new EventHelper()
@@ -237,12 +237,12 @@ public class OrderTest {
 
   @Test
   public void canResetPriorityToNull() throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref.child("a").setValue("a", 1);
     ref.child("b").setValue("b", 2);
 
-    TestHelpers.waitForRoundtrip(ref);
+    IntegrationTestHelpers.waitForRoundtrip(ref);
     EventHelper helper =
         new EventHelper()
             .addChildExpectation(ref, Event.EventType.CHILD_ADDED, "a")
@@ -261,7 +261,7 @@ public class OrderTest {
     ref.child("b").setPriority(null);
     assertTrue(helper.waitForEvents());
 
-    DataSnapshot snap = TestHelpers.getSnap(ref);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref);
     assertNull(snap.child("b").getPriority());
     helper.cleanup();
   }
@@ -269,7 +269,7 @@ public class OrderTest {
   @Test
   public void insertingANodeUnderALeafPreservesItsPriority()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ReadFuture readFuture = ReadFuture.untilCountAfterNull(ref, 2);
 
@@ -284,7 +284,7 @@ public class OrderTest {
   public void verifyOrderOfMixedNumbersStringAndNoPriorities()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -334,14 +334,14 @@ public class OrderTest {
             "alpha41",
             "alpha42"));
     List<String> actual = new ArrayList<String>(expected.size());
-    DataSnapshot snap = TestHelpers.getSnap(writer);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(writer);
     for (DataSnapshot child : snap.getChildren()) {
       actual.add(child.getKey());
     }
     DeepEquals.assertEquals(expected, actual);
 
     actual.clear();
-    snap = TestHelpers.getSnap(reader);
+    snap = IntegrationTestHelpers.getSnap(reader);
     for (DataSnapshot child : snap.getChildren()) {
       actual.add(child.getKey());
     }
@@ -352,7 +352,7 @@ public class OrderTest {
   public void verifyOrderOfIntegerKeys()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
 
     writer.child("foo").setValue(0);
@@ -369,7 +369,7 @@ public class OrderTest {
     List<String> expected = new ArrayList<String>();
     expected.addAll(Arrays.asList("0", "3", "03", "003", "5", "9", "20", "100", "bar", "foo"));
     List<String> actual = new ArrayList<String>(expected.size());
-    DataSnapshot snap = TestHelpers.getSnap(writer);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(writer);
     for (DataSnapshot child : snap.getChildren()) {
       actual.add(child.getKey());
     }
@@ -380,7 +380,7 @@ public class OrderTest {
   public void verifyOrderOfLargeIntegerKeys()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
 
     writer.child("2000000000").setValue(0);
@@ -389,7 +389,7 @@ public class OrderTest {
     List<String> expected = new ArrayList<String>();
     expected.addAll(Arrays.asList("-2000000000", "2000000000"));
     List<String> actual = new ArrayList<String>(expected.size());
-    DataSnapshot snap = TestHelpers.getSnap(writer);
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(writer);
     for (DataSnapshot child : snap.getChildren()) {
       actual.add(child.getKey());
     }
@@ -399,7 +399,7 @@ public class OrderTest {
   @Test
   public void ensurePrevNameIsCorrectOnChildAddedEvent()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final List<String> results = new ArrayList<String>();
     final Semaphore semaphore = new Semaphore(0);
@@ -434,7 +434,7 @@ public class OrderTest {
 
     ref.setValue(new MapBuilder().put("a", 1).put("b", 2).put("c", 3).build());
 
-    TestHelpers.waitFor(semaphore, 3);
+    IntegrationTestHelpers.waitFor(semaphore, 3);
     List<String> expected = new ArrayList<String>();
     expected.addAll(Arrays.asList("a", null, "b", "a", "c", "b"));
     DeepEquals.assertEquals(expected, results);
@@ -444,7 +444,7 @@ public class OrderTest {
   @Test
   public void ensurePrevNameIsCorrectWhenAddingNewNodes()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final List<String> results = new ArrayList<String>();
     final Semaphore semaphore = new Semaphore(0);
@@ -482,7 +482,7 @@ public class OrderTest {
     ref.child("a").setValue(1);
     ref.child("e").setValue(5);
 
-    TestHelpers.waitFor(semaphore, 5);
+    IntegrationTestHelpers.waitFor(semaphore, 5);
     List<String> expected = new ArrayList<String>();
     expected.addAll(Arrays.asList("b", null, "c", "b", "d", "c", "a", null, "e", "d"));
     DeepEquals.assertEquals(expected, results);
@@ -492,7 +492,7 @@ public class OrderTest {
   @Test
   public void ensurePrevNameIsCorrectWhenAddingNewNodesWithJSON()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final List<String> results = new ArrayList<String>();
     final Semaphore semaphore = new Semaphore(0);
@@ -531,7 +531,7 @@ public class OrderTest {
     ref.setValue(
         new MapBuilder().put("a", 1).put("b", 2).put("c", 3).put("d", 4).put("e", 5).build());
 
-    TestHelpers.waitFor(semaphore, 5);
+    IntegrationTestHelpers.waitFor(semaphore, 5);
     List<String> expected = new ArrayList<String>();
     expected.addAll(Arrays.asList("b", null, "c", "b", "d", "c", "a", null, "e", "d"));
     DeepEquals.assertEquals(expected, results);
@@ -541,7 +541,7 @@ public class OrderTest {
   @Test
   public void ensurePrevNameIsCorrectWhenMovingNodes()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final List<String> results = new ArrayList<String>();
     final Semaphore semaphore = new Semaphore(0);
@@ -585,7 +585,7 @@ public class OrderTest {
 
     ref.child("c").setPriority(0.5);
 
-    TestHelpers.waitFor(semaphore, 6);
+    IntegrationTestHelpers.waitFor(semaphore, 6);
 
     List<String> expected = new ArrayList<String>();
     expected.add("MOVED:d/null");
@@ -601,7 +601,7 @@ public class OrderTest {
   @Test
   public void ensurePrevNameIsCorrectWhenMovingNodesBySettingWholeJSON()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final List<String> results = new ArrayList<String>();
     final Semaphore semaphore = new Semaphore(0);
@@ -666,7 +666,7 @@ public class OrderTest {
             .put("a", new MapBuilder().put(".value", "a").put(".priority", 4).build())
             .build());
 
-    TestHelpers.waitFor(semaphore, 6);
+    IntegrationTestHelpers.waitFor(semaphore, 6);
 
     List<String> expected = new ArrayList<String>();
     expected.add("MOVED:d/null");
@@ -683,7 +683,7 @@ public class OrderTest {
   public void case595ShouldNotGetChildMovedWhenDeletingPrioritizedGrandChild()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ChildEventListener listener =
         ref.addChildEventListener(
@@ -723,7 +723,7 @@ public class OrderTest {
   @Test
   public void canSetValuePriorityToZero()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ReadFuture readFuture = new ReadFuture(ref);
     ref.setValue("test", 0);
@@ -736,7 +736,7 @@ public class OrderTest {
   @Test
   public void canSetObjectPriorityToZero()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ReadFuture readFuture = new ReadFuture(ref);
     ref.setValue(new MapBuilder().put("x", "test").put("y", 7).build(), 0);
@@ -749,7 +749,7 @@ public class OrderTest {
   @Test
   public void case2003ShouldGetChildMovedForAnyPriorityChangeRegardlessOfOrder()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final List<String> results = new ArrayList<String>();
     final Semaphore semaphore = new Semaphore(0);
@@ -791,7 +791,7 @@ public class OrderTest {
             .build());
 
     ref.child("b").setPriority(1.5);
-    TestHelpers.waitFor(semaphore, 2);
+    IntegrationTestHelpers.waitFor(semaphore, 2);
 
     assertEquals(2, results.size());
     assertEquals(Arrays.asList("MOVED:b/a", "CHANGED:b/a"), results);
@@ -801,7 +801,7 @@ public class OrderTest {
   @Test
   public void case2003ShouldGetChildMovedForAnyPriorityChangeRegardlessOfOrder2()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final List<String> results = new ArrayList<String>();
     final Semaphore semaphore = new Semaphore(0);
@@ -852,7 +852,7 @@ public class OrderTest {
             .put("d", new MapBuilder().put(".value", "d").put(".priority", 3).build())
             .build());
 
-    TestHelpers.waitFor(semaphore, 2);
+    IntegrationTestHelpers.waitFor(semaphore, 2);
 
     assertEquals(2, results.size());
     assertEquals(Arrays.asList("MOVED:b/a", "CHANGED:b/a"), results);

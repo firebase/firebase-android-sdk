@@ -25,10 +25,13 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.core.ActivityScope;
+import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.RelationFilter;
@@ -39,9 +42,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.util.ExecutorEventListener;
 import com.google.firebase.firestore.util.Executors;
-import com.google.firebase.firestore.util.ListenerRegistrationImpl;
 import com.google.firebase.firestore.util.Util;
 import java.util.ArrayList;
 import java.util.List;
@@ -891,30 +892,37 @@ public class Query {
    * @param executor The executor to use to call the listener.
    * @param options The options to use for this listen.
    * @param activity Optional activity this listener is scoped to.
-   * @param listener The event listener that will be called with the snapshots.
+   * @param userListener The user-supplied event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */
   private ListenerRegistration addSnapshotListenerInternal(
       Executor executor,
       ListenOptions options,
       @Nullable Activity activity,
-      EventListener<QuerySnapshot> listener) {
-    ExecutorEventListener<ViewSnapshot> wrappedListener =
-        new ExecutorEventListener<>(
-            executor,
-            (@Nullable ViewSnapshot snapshot, @Nullable FirebaseFirestoreException error) -> {
-              if (snapshot != null) {
-                QuerySnapshot querySnapshot = new QuerySnapshot(this, snapshot, firestore);
-                listener.onEvent(querySnapshot, null);
-              } else {
-                hardAssert(error != null, "Got event without value or error set");
-                listener.onEvent(null, error);
-              }
-            });
+      EventListener<QuerySnapshot> userListener) {
 
-    QueryListener queryListener = firestore.getClient().listen(query, options, wrappedListener);
-    return new ListenerRegistrationImpl(
-        firestore.getClient(), queryListener, activity, wrappedListener);
+    // Convert from ViewSnapshots to QuerySnapshots.
+    EventListener<ViewSnapshot> viewListener =
+        (@Nullable ViewSnapshot snapshot, @Nullable FirebaseFirestoreException error) -> {
+          if (error != null) {
+            userListener.onEvent(null, error);
+            return;
+          }
+
+          hardAssert(snapshot != null, "Got event without value or error set");
+
+          QuerySnapshot querySnapshot = new QuerySnapshot(this, snapshot, firestore);
+          userListener.onEvent(querySnapshot, null);
+        };
+
+    // Call the viewListener on the userExecutor.
+    AsyncEventListener<ViewSnapshot> asyncListener =
+        new AsyncEventListener<>(executor, viewListener);
+
+    QueryListener queryListener = firestore.getClient().listen(query, options, asyncListener);
+    return ActivityScope.bind(
+        activity,
+        new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener));
   }
 
   @Override

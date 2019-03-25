@@ -14,7 +14,7 @@
 
 package com.google.firebase.database.tubesock;
 
-import com.google.firebase.database.TestHelpers;
+import com.google.firebase.database.IntegrationTestHelpers;
 import java.net.URI;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,7 +53,8 @@ public class UpdateClient {
     URI uri = URI.create("ws://localhost:9001/updateReports?agent=tubesock");
     completed = new AtomicBoolean(false);
     completionLatch = semaphore;
-    WebSocket client = new WebSocket(TestHelpers.getContext(0).getConnectionContext(), uri);
+    WebSocket client =
+        new WebSocket(IntegrationTestHelpers.getContext(0).getConnectionContext(), uri);
     client.setEventHandler(new Handler());
     client.connect();
     semaphore.acquire(1);

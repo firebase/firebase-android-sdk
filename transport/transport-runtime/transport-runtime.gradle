@@ -13,6 +13,7 @@
 // limitations under the License.
 
 apply plugin: 'com.android.library'
+apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 android {
     compileSdkVersion 28
@@ -25,6 +26,24 @@ android {
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
     }
+    sourceSets {
+        androidTest {
+            aidl {
+                srcDir 'src/androidTest/aidl'
+            }
+        }
+    }
+}
+
+firebaseTestLab {
+    devices = [
+            'model=Pixel2,version=28,locale=en,orientation=portrait',
+            'model=Pixel2,version=27,locale=en,orientation=portrait',
+            'model=victara,version=19,locale=en,orientation=portrait',
+            'model=Nexus4,version=22,locale=en,orientation=portrait',
+            'model=Nexus7,version=21,locale=en,orientation=portrait',
+            'model=Nexus4,version=19,locale=en,orientation=portrait',
+    ]
 }
 
 dependencies {
@@ -43,8 +62,9 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:4.1'
     testImplementation 'org.mockito:mockito-core:2.21.0'
 
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'androidx.test:core:1.1.0'
-
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    androidTestImplementation 'com.android.support.test:rules:1.0.2'
+    androidTestImplementation 'org.mockito:mockito-core:2.21.0'
 }

@@ -16,17 +16,13 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling.servic
 
 import android.app.job.JobParameters;
 import android.app.job.JobService;
+import android.content.Context;
 import android.os.Build;
 import com.google.android.datatransport.runtime.BackendRegistry;
-import com.google.android.datatransport.runtime.BackendResponse;
-import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportBackend;
 import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerUtil;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
-import java.util.ArrayList;
-import java.util.List;
 import javax.inject.Inject;
 
 /** JobService to be scheduled by the JobScheduler. start another service */
@@ -37,35 +33,26 @@ public class JobInfoSchedulerService extends JobService {
   @Inject BackendRegistry backendRegistry;
   @Inject WorkScheduler workScheduler;
   @Inject EventStore eventStore;
+  @Inject Context context;
 
   @Override
   public void onCreate() {
-    TransportRuntime.initialize(getApplicationContext());
-    TransportRuntime.getInstance().injectService(this);
     super.onCreate();
+    TransportRuntime.initialize(getApplicationContext());
+    TransportRuntime.getInstance().injectMembers(this);
   }
 
   @Override
   public boolean onStartJob(JobParameters params) {
-    for (String backendName : backendRegistry.getAllBackendNames()) {
-      TransportBackend backend = backendRegistry.get(backendName);
-      List<EventInternal> eventInternals = new ArrayList<>();
-      Iterable<PersistedEvent> persistedEvents = eventStore.loadAll(backendName);
-      // Load all the backends to an iterable of event internals.
-      for (PersistedEvent persistedEvent : persistedEvents) {
-        eventInternals.add(persistedEvent.getEvent());
-      }
-      BackendResponse response = backend.send(eventInternals);
-      if (response.getStatus() == BackendResponse.Status.OK) {
-        eventStore.recordSuccess(persistedEvents);
-        eventStore.recordNextCallTime(backendName, response.getNextRequestWaitMillis());
-      } else if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
-        eventStore.recordFailure(persistedEvents);
-      } else {
-        eventStore.recordSuccess(persistedEvents);
-      }
+    String backendName = params.getExtras().getString(SchedulerUtil.BACKEND_NAME_CONSTANT);
+    long numberOfAttempts = params.getExtras().getLong(SchedulerUtil.NUMBER_OF_ATTEMPTS_CONSTANT);
+
+    // If there is no network available reschedule.
+    if(!ServiceUtil.isNetworkAvailable(context)) {
+        workScheduler.schedule(backendName, (int)numberOfAttempts+1);
+        return true;
     }
-    workScheduler.schedule();
+    ServiceUtil.logAndUpdateState(backendRegistry, workScheduler, backendName, eventStore, (int)numberOfAttempts);
     return true;
   }
 

@@ -59,7 +59,7 @@ public class DefaultScheduler implements Scheduler {
           }
           EventInternal decoratedEvent = transportBackend.decorate(event);
           eventStore.persist(backendName, decoratedEvent);
-          workScheduler.schedule();
+          workScheduler.schedule(backendName, 0);
         });
   }
 }
