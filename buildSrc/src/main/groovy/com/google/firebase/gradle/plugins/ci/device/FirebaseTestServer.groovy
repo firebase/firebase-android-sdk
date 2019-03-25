@@ -15,12 +15,14 @@
 package com.google.firebase.gradle.plugins.ci.device
 
 import com.android.builder.testing.api.TestServer
+import com.google.firebase.gradle.plugins.ci.Environment
+
 import java.nio.file.Paths
 import org.gradle.api.Project
 
 
 class FirebaseTestServer extends TestServer {
-    private static final String BUCKET_NAME = 'android-ci'
+    private static final String DEFAULT_BUCKET_NAME = 'android-ci'
     final Project project
     final FirebaseTestLabExtension extension
     final Random random
@@ -62,10 +64,10 @@ class FirebaseTestServer extends TestServer {
     }
 
     private List<String> getResultUploadArgs() {
-        Optional<String> resultsBucket = Optional.ofNullable(System.getenv('FTL_RESULTS_BUCKET'))
-        Optional<String> resultsDir = Optional.ofNullable(System.getenv('FTL_RESULTS_DIR'))
+        Optional<String> resultsBucket = Optional.ofNullable(System.getenv('FTL_RESULTS_BUCKET')).map(Environment.&expand)
+        Optional<String> resultsDir = Optional.ofNullable(System.getenv('FTL_RESULTS_DIR')).map(Environment.&expand)
 
-        List<String> args = ['--results-bucket', resultsBucket.orElse('android-ci')]
+        List<String> args = ['--results-bucket', resultsBucket.orElse(DEFAULT_BUCKET_NAME)]
         if (resultsDir.isPresent()) {
             args += ['--results-dir', Paths.get(resultsDir.get(), "${project.path}_${random.nextLong()}")]
         }
