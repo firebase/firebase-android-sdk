@@ -22,7 +22,6 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.testing.common.MainThread;
 import com.google.firebase.testing.common.TaskChannel;
 import java.nio.charset.StandardCharsets;
 import org.junit.Test;
@@ -33,9 +32,7 @@ public final class StorageTest {
 
   @Test
   public void getSet() throws Exception {
-    TaskChannel<byte[]> channel = new TaskChannel<>();
-
-    MainThread.run(() -> test_GetSet(channel));
+    TaskChannel channel = TaskChannel.runWithTaskChannel(c -> test_GetSet(c));
 
     byte[] bytes = channel.waitForSuccess();
     String text = new String(bytes, StandardCharsets.UTF_8);

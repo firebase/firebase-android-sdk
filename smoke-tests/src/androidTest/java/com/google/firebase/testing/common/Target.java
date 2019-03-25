@@ -14,26 +14,13 @@
 
 package com.google.firebase.testing.common;
 
-import android.os.Handler;
-import android.os.Looper;
-
 /**
- * Convenience class for interacting with Android.
+ * A test target.
  *
- * <p>For now, this only consists of the {@link #run} method.
+ * <p>This interface is similar to {@link Runnable}, but this interface's {@link #run} method takes
+ * an instance of {@link T} as input. This is intended to be a channel.
  */
-public final class MainThread {
+public interface Target<T> {
 
-  private static Handler handler = null;
-
-  private MainThread() {}
-
-  /** Runs the {@link Runnable} on the main thread. */
-  public static void run(Runnable r) {
-    if (handler == null) {
-      handler = new Handler(Looper.getMainLooper());
-    }
-
-    handler.post(r);
-  }
+  void run(T channel);
 }

@@ -16,6 +16,8 @@ package com.google.firebase.testing.firestore;
 
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.testing.common.AbstractChannel;
+import com.google.firebase.testing.common.Target;
 import com.google.firebase.testing.common.TaskChannel;
 
 /**
@@ -26,6 +28,11 @@ import com.google.firebase.testing.common.TaskChannel;
  * {@link TaskChannel}, so it can also used with any of the task-producing methods of Firestore.
  */
 public final class FirestoreChannel extends TaskChannel<DocumentSnapshot> {
+
+  /** Runs the test on the main thread and returns the corresponding channel. */
+  public static FirestoreChannel runWithFirestoreChannel(Target<FirestoreChannel> test) {
+    return AbstractChannel.runTarget(test, new FirestoreChannel());
+  }
 
   /**
    * Adds a listener to the document that sends the results back to the testing thread.

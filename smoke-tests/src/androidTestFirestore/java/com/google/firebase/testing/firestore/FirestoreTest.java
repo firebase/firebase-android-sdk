@@ -22,7 +22,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
-import com.google.firebase.testing.common.MainThread;
 import java.util.HashMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,9 +31,8 @@ public final class FirestoreTest {
 
   @Test
   public void listenForUpdate() throws Exception {
-    FirestoreChannel channel = new FirestoreChannel();
-
-    MainThread.run(() -> test_ListenForUpdate(channel));
+    FirestoreChannel channel =
+        FirestoreChannel.runWithFirestoreChannel(c -> test_ListenForUpdate(c));
 
     DocumentSnapshot snapshot = channel.waitForSuccess();
     assertThat(snapshot.getString("location")).isEqualTo("Google SVL");

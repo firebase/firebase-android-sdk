@@ -21,7 +21,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.testing.common.MainThread;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -30,9 +29,7 @@ public final class DatabaseTest {
 
   @Test
   public void listenForUpdate() throws Exception {
-    DatabaseChannel channel = new DatabaseChannel();
-
-    MainThread.run(() -> test_ListenForUpdate(channel));
+    DatabaseChannel channel = DatabaseChannel.runWithDatabaseChannel(c -> test_ListenForUpdate(c));
 
     DataSnapshot snapshot = channel.waitForSuccess();
     assertThat(snapshot.child("location").getValue()).isEqualTo("Google SVL");

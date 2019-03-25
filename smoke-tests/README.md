@@ -16,12 +16,13 @@ is a work in progress, and the following list shows what is complete:
 
 Tests on devices usually involve at least two threads: the main thread and the
 testing thread. Either thread should be sufficient for testing, but most users
-will likely invoke Firebase methods from the main thread. As a result, this
-framework provides a simple solution to easily share state between threads. Most
-tests will consist of two methods. Both may be present in the same file for
-simplicity and ease of understanding. One method will be executed by the test
-runner on the testing thread, while the other, is invoked via a lambda on the
-main thread:
+will likely invoke Firebase methods from the main thread. Integration tests
+already verify the use of the testing thread, so it is important to gain
+coverage from the main thread as well. Therefore, this framework provides a
+simple solution to easily share state between threads. Most tests will consist
+of two methods. Both may be present in the same file for simplicity and ease of
+understanding. One method will be executed by the test runner on the testing
+thread, while the other, is invoked via a lambda on the main thread:
 
 ```java
 @Test

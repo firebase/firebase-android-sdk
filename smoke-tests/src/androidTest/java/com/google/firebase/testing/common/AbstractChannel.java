@@ -14,9 +14,11 @@
 
 package com.google.firebase.testing.common;
 
-import java.util.concurrent.CountDownLatch;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.TimeoutException;
 
 /**
  * An abstract channel for sending test results across threads.
@@ -27,11 +29,21 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class AbstractChannel<T> {
 
-  private final CountDownLatch latch = new CountDownLatch(1);
-  private final ReentrantLock lock = new ReentrantLock();
+  private final TaskCompletionSource<T> implementation = new TaskCompletionSource<>();
 
-  private Exception error = null;
-  private T value = null;
+  /** Runs the test target on the main thread, trapping any exception into the channel. */
+  protected static <U extends AbstractChannel<R>, R> U runTarget(Target<U> target, U channel) {
+    MainThread.run(
+        () -> {
+          try {
+            target.run(channel);
+          } catch (Exception ex) {
+            channel.fail(ex);
+          }
+        });
+
+    return channel;
+  }
 
   /**
    * Sends a failure back to the testing thread.
@@ -42,19 +54,10 @@ public abstract class AbstractChannel<T> {
    * send only one value through the channel. This method is safe to invoke from any thread.
    */
   protected void fail(Exception err) {
-    // This is explicitly synchronized in case multiple threads are trying to send values.
-    try {
-      lock.lock();
+    boolean isSet = implementation.trySetException(err);
 
-      if (error == null) {
-        error = err;
-      } else {
-        error.addSuppressed(err);
-      }
-
-      latch.countDown();
-    } finally {
-      lock.unlock();
+    if (!isSet) {
+      implementation.getTask().getException().addSuppressed(err);
     }
   }
 
@@ -66,23 +69,7 @@ public abstract class AbstractChannel<T> {
    * any thread.
    */
   protected void succeed(T val) {
-    // This is explicitly synchronized in case multiple threads are trying to send values.
-    try {
-      lock.lock();
-
-      if (latch.getCount() == 0) {
-        // Only a single, successful value is supported. This throws the exception on both the
-        // testing thread and the main thread.
-        IllegalStateException error = new IllegalStateException("Result already completed");
-        fail(error);
-        throw error;
-      }
-
-      value = val;
-      latch.countDown();
-    } finally {
-      lock.unlock();
-    }
+    implementation.setResult(val);
   }
 
   /** Waits 30 seconds to receive the successful value. */
@@ -98,17 +85,13 @@ public abstract class AbstractChannel<T> {
    * thread.
    */
   public T waitForSuccess(long duration, TimeUnit unit) throws InterruptedException {
-    boolean completed = latch.await(duration, unit);
-
-    if (!completed) {
+    try {
+      return Tasks.await(implementation.getTask(), duration, unit);
+    } catch (ExecutionException ex) {
+      throw new AssertionError("Test completed with errors", ex.getCause());
+    } catch (TimeoutException ex) {
       String message = String.format("Test did not complete within %s %s", duration, unit);
-      throw new AssertionError(message, error);
+      throw new AssertionError(message);
     }
-
-    if (error != null) {
-      throw new AssertionError("Test completed with errors", error);
-    }
-
-    return value;
   }
 }

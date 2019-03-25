@@ -18,6 +18,8 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.testing.common.AbstractChannel;
+import com.google.firebase.testing.common.Target;
 import com.google.firebase.testing.common.TaskChannel;
 
 /**
@@ -28,6 +30,11 @@ import com.google.firebase.testing.common.TaskChannel;
  * {@link TaskChannel}, so it can also used with any of the task-producing methods of database.
  */
 public class DatabaseChannel extends TaskChannel<DataSnapshot> {
+
+  /** Runs the test on the main thread and returns the corresponding channel. */
+  public static DatabaseChannel runWithDatabaseChannel(Target<DatabaseChannel> test) {
+    return AbstractChannel.runTarget(test, new DatabaseChannel());
+  }
 
   /**
    * Adds a listener to the query that sends the results back to the testing thread.

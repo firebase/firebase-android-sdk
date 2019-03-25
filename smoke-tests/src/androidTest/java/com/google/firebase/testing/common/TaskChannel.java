@@ -25,6 +25,11 @@ import com.google.android.gms.tasks.Task;
  */
 public class TaskChannel<T> extends AbstractChannel<T> {
 
+  /** Runs the test on the main thread and returns the corresponding channel. */
+  public static <U> TaskChannel<U> runWithTaskChannel(Target<TaskChannel<U>> test) {
+    return AbstractChannel.runTarget(test, new TaskChannel<>());
+  }
+
   /**
    * Sends the outcome of a task over the channel.
    *
