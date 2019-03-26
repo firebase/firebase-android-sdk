@@ -437,7 +437,7 @@ public class Query {
     }
     if (query.getEndAt() != null) {
       throw new IllegalArgumentException(
-          "Invalid query. You must not call Query.endAt() or Query.endAfter() before "
+          "Invalid query. You must not call Query.endAt() or Query.endBefore() before "
               + "calling Query.orderBy().");
     }
     validateOrderByField(fieldPath);
