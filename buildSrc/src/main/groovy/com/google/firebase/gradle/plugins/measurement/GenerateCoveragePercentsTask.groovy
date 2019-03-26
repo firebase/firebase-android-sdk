@@ -39,6 +39,8 @@ public class GenerateCoveragePercentsTask extends DefaultTask {
 
     @TaskAction
     def generate() {
+        // We would not have a pull request number unless running on Prow.
+        // Using 777 as a place holder when running locally for purpose such as debugging.
         def pullRequestNumber = project.properties["pull_request"] ?: 777
         generateJson(pullRequestNumber, packages)
     }

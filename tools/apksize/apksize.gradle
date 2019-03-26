@@ -51,9 +51,10 @@ task uploadMeasurements(type: UploadMeasurementsTask) {
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }
 
+// TODO(yifany@): Move below 2 tasks out of apksize.gradle.
 task generateCoverageMeasurements(type: GenerateCoveragePercentsTask, group: 'Coverage') {
 
-    // TODO(yifany@): Way too cumbersome.
+    // TODO(yifany@): Find a more concise way to express dependencies.
     dependsOn ':firebase-common:checkCoverage'
     dependsOn ':firebase-database:checkCoverage'
     dependsOn ':firebase-database-collection:checkCoverage'
