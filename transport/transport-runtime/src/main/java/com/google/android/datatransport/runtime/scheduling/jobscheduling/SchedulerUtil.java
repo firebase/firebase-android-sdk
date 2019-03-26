@@ -16,11 +16,11 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 public class SchedulerUtil {
 
-  public static final String NUMBER_OF_ATTEMPTS_CONSTANT = "numberOfAttempts";
+  static final String ATTEMPT_NUMBER = "attemptNumber";
 
-  public static final String BACKEND_NAME_CONSTANT = "backendName";
+  static final String BACKEND_NAME = "backendName";
 
-  public static final String APPLICATION_BUNDLE_ID = "appBundleId";
+  static final String APPLICATION_BUNDLE_ID = "appBundleId";
 
   static long getScheduleDelay(long backendTimeDiff, int delta, int numberOfAttempts) {
     if (numberOfAttempts > 3) {

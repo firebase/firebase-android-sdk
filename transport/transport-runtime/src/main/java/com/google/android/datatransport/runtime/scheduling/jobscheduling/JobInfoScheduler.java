@@ -26,18 +26,17 @@ import com.google.android.datatransport.runtime.scheduling.persistence.EventStor
 import com.google.android.datatransport.runtime.time.Clock;
 import java.util.zip.Adler32;
 
+import javax.inject.Inject;
+
 public class JobInfoScheduler implements WorkScheduler {
 
   private final Context context;
 
-  public static final String NUMBER_OF_ATTEMPTS_CONSTANT = "numberOfAttempts";
-
-  public static final String BACKEND_NAME_CONSTANT = "backendName";
-
   private final EventStore eventStore;
 
-  private Clock clock;
+  private final Clock clock;
 
+  @Inject
   public JobInfoScheduler(Context applicationContext, EventStore eventStore, Clock clock) {
     this.context = applicationContext;
     this.eventStore = eventStore;
@@ -63,7 +62,7 @@ public class JobInfoScheduler implements WorkScheduler {
   @TargetApi(Build.VERSION_CODES.M)
   @android.support.annotation.RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   @Override
-  public void schedule(String backendName, int numberOfAttempts) {
+  public void schedule(String backendName, int attemptNumber) {
     ComponentName serviceComponent = new ComponentName(context, JobInfoSchedulerService.class);
     JobScheduler jobScheduler = context.getSystemService(JobScheduler.class);
     int jobId = getJobId(backendName);
@@ -73,12 +72,12 @@ public class JobInfoScheduler implements WorkScheduler {
     long timeDiff = eventStore.getNextCallTime(backendName) - clock.getTime();
     // Schedule the build.
     PersistableBundle bundle = new PersistableBundle();
-    bundle.putLong(NUMBER_OF_ATTEMPTS_CONSTANT, numberOfAttempts);
-    bundle.putString(BACKEND_NAME_CONSTANT, backendName);
+    bundle.putInt(SchedulerUtil.ATTEMPT_NUMBER, attemptNumber);
+    bundle.putString(SchedulerUtil.BACKEND_NAME, backendName);
     JobInfo.Builder builder = new JobInfo.Builder(jobId, serviceComponent);
     builder.setMinimumLatency(
         clock.getTime()
-            + SchedulerUtil.getScheduleDelay(timeDiff, 5000, numberOfAttempts)); // wait at least
+            + SchedulerUtil.getScheduleDelay(timeDiff, 5000, attemptNumber)); // wait at least
     builder.setExtras(bundle);
     builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
     jobScheduler.schedule(builder.build());

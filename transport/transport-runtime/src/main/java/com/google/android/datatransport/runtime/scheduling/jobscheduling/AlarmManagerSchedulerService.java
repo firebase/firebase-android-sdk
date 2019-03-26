@@ -23,9 +23,9 @@ public class AlarmManagerSchedulerService extends BroadcastReceiver {
 
   @Override
   public void onReceive(Context context, Intent intent) {
-    String backendName = intent.getData().getQueryParameter(SchedulerUtil.BACKEND_NAME_CONSTANT);
-    int numberOfAttempts = intent.getExtras().getInt(SchedulerUtil.NUMBER_OF_ATTEMPTS_CONSTANT);
+    String backendName = intent.getData().getQueryParameter(SchedulerUtil.BACKEND_NAME);
+    int attemptNumber = intent.getExtras().getInt(SchedulerUtil.ATTEMPT_NUMBER);
     TransportRuntime.initialize(context);
-    TransportRuntime.getInstance().getUploader().upload(backendName, numberOfAttempts);
+    TransportRuntime.getInstance().getUploader().upload(backendName, attemptNumber, () -> {});
   }
 }

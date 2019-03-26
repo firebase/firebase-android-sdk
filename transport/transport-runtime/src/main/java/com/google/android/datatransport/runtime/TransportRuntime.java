@@ -102,6 +102,7 @@ public class TransportRuntime implements TransportInternal {
     return new TransportFactoryImpl(backendName, this);
   }
 
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   public Uploader getUploader() {
     return uploader;
   }

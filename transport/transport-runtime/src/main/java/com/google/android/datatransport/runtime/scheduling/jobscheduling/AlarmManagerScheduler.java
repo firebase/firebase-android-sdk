@@ -23,14 +23,17 @@ import com.google.android.datatransport.runtime.BuildConfig;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 
+import javax.inject.Inject;
+
 public class AlarmManagerScheduler implements WorkScheduler {
 
   private final Context context;
 
   private final EventStore eventStore;
 
-  private Clock clock;
+  private final Clock clock;
 
+  @Inject
   public AlarmManagerScheduler(Context applicationContext, EventStore eventStore, Clock clock) {
     this.context = applicationContext;
     this.eventStore = eventStore;
@@ -42,15 +45,15 @@ public class AlarmManagerScheduler implements WorkScheduler {
   }
 
   @Override
-  public void schedule(String backendName, int numberOfAttempts) {
+  public void schedule(String backendName, int attemptNumber) {
     // Create Intent
     Uri.Builder intentDataBuilder = new Uri.Builder();
-    intentDataBuilder.appendQueryParameter(SchedulerUtil.BACKEND_NAME_CONSTANT, backendName);
+    intentDataBuilder.appendQueryParameter(SchedulerUtil.BACKEND_NAME, backendName);
     intentDataBuilder.appendQueryParameter(
         SchedulerUtil.APPLICATION_BUNDLE_ID, BuildConfig.APPLICATION_ID);
     Intent intent = new Intent(context, AlarmManagerScheduler.class);
     intent.setData(intentDataBuilder.build());
-    intent.putExtra(SchedulerUtil.NUMBER_OF_ATTEMPTS_CONSTANT, numberOfAttempts);
+    intent.putExtra(SchedulerUtil.ATTEMPT_NUMBER, attemptNumber);
 
     if (isJobServiceOn(intent)) return;
 
@@ -60,7 +63,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
     alarmManager.set(
         AlarmManager.RTC_WAKEUP,
-        SchedulerUtil.getScheduleDelay(timeDiff, 5000, numberOfAttempts),
+        SchedulerUtil.getScheduleDelay(timeDiff, 5000, attemptNumber + 1),
         pendingIntent);
   }
 }

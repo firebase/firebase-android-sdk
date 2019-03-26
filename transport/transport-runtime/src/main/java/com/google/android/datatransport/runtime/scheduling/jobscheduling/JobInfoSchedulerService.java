@@ -25,10 +25,12 @@ public class JobInfoSchedulerService extends JobService {
 
   @Override
   public boolean onStartJob(JobParameters params) {
-    String backendName = params.getExtras().getString(SchedulerUtil.BACKEND_NAME_CONSTANT);
-    long numberOfAttempts = params.getExtras().getLong(SchedulerUtil.NUMBER_OF_ATTEMPTS_CONSTANT);
+    String backendName = params.getExtras().getString(SchedulerUtil.BACKEND_NAME);
+    int attemptNumber = params.getExtras().getInt(SchedulerUtil.ATTEMPT_NUMBER);
     TransportRuntime.initialize(getApplicationContext());
-    TransportRuntime.getInstance().getUploader().upload(backendName, (int) numberOfAttempts);
+    TransportRuntime.getInstance()
+        .getUploader()
+        .upload(backendName, attemptNumber, () -> this.jobFinished(params, false));
     return true;
   }
 

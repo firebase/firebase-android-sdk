@@ -33,12 +33,6 @@ public class BackendRegistry {
     }
   }
 
-  public Iterable<String> getAllBackendNames() {
-    synchronized (backends) {
-      return backends.keySet();
-    }
-  }
-
   public TransportBackend get(String name) {
     synchronized (backends) {
       return backends.get(name);

@@ -17,33 +17,41 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.PowerManager;
 import com.google.android.datatransport.runtime.BackendRegistry;
 import com.google.android.datatransport.runtime.BackendResponse;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 import javax.inject.Inject;
 
 public class Uploader {
 
-  @Inject Context context;
-  @Inject BackendRegistry backendRegistry;
-  @Inject EventStore eventStore;
-  @Inject WorkScheduler workScheduler;
+  private final Context context;
+  private final BackendRegistry backendRegistry;
+  private final EventStore eventStore;
+  private final WorkScheduler workScheduler;
+  private final Executor executor;
+  private final SynchronizationGuard guard;
 
+  @Inject
   public Uploader(
       Context context,
       BackendRegistry backendRegistry,
       EventStore eventStore,
-      WorkScheduler workScheduler) {
+      WorkScheduler workScheduler,
+      Executor executor,
+      SynchronizationGuard guard) {
     this.context = context;
     this.backendRegistry = backendRegistry;
     this.eventStore = eventStore;
     this.workScheduler = workScheduler;
+    this.executor = executor;
+    this.guard = guard;
   }
 
   boolean isNetworkAvailable() {
@@ -53,22 +61,26 @@ public class Uploader {
     return activeNetworkInfo != null && activeNetworkInfo.isConnected();
   }
 
-  void upload(String backendName, int numberOfAttempts) {
-    PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-    PowerManager.WakeLock wl =
-        pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "transport:wakelocktag");
-    wl.acquire(20000);
-    if (!isNetworkAvailable()) {
-      workScheduler.schedule(backendName, numberOfAttempts + 1);
-      return;
-    }
-    logAndUpdateState(backendName, numberOfAttempts);
+  void upload(String backendName, int attemptNumber, Runnable callback) {
+    this.executor.execute(
+        () -> {
+          try {
+            if (!isNetworkAvailable()) {
+              workScheduler.schedule(backendName, attemptNumber + 1);
+            } else {
+              logAndUpdateState(backendName, attemptNumber);
+            }
+          } finally {
+            callback.run();
+          }
+        });
   }
 
-  void logAndUpdateState(String backendName, int numberOfAttempts) {
+  void logAndUpdateState(String backendName, int attemptNumber) {
     TransportBackend backend = backendRegistry.get(backendName);
     List<EventInternal> eventInternals = new ArrayList<>();
-    Iterable<PersistedEvent> persistedEvents = eventStore.loadAll(backendName);
+    Iterable<PersistedEvent> persistedEvents =
+        guard.runCriticalSection(10000, () -> eventStore.loadAll(backendName));
 
     // Donot make a call to the backend if the list is empty.
     if (!persistedEvents.iterator().hasNext()) {
@@ -79,14 +91,19 @@ public class Uploader {
       eventInternals.add(persistedEvent.getEvent());
     }
     BackendResponse response = backend.send(eventInternals);
-    if (response.getStatus() == BackendResponse.Status.OK) {
-      eventStore.recordSuccess(persistedEvents);
-      eventStore.recordNextCallTime(backendName, response.getNextRequestWaitMillis());
-    } else if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
-      eventStore.recordFailure(persistedEvents);
-      workScheduler.schedule(backendName, (int) numberOfAttempts + 1);
-    } else {
-      eventStore.recordSuccess(persistedEvents);
-    }
+    guard.runCriticalSection(
+        10000,
+        () -> {
+          if (response.getStatus() == BackendResponse.Status.OK) {
+            eventStore.recordSuccess(persistedEvents);
+            eventStore.recordNextCallTime(backendName, response.getNextRequestWaitMillis());
+          } else if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
+            eventStore.recordFailure(persistedEvents);
+            workScheduler.schedule(backendName, (int) attemptNumber + 1);
+          } else {
+            eventStore.recordSuccess(persistedEvents);
+          }
+          return null;
+        });
   }
 }

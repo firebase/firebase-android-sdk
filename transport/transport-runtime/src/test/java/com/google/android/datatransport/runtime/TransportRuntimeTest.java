@@ -81,7 +81,7 @@ public class TransportRuntimeTest {
                 return criticalSection.execute();
               }
             },
-            new Uploader(null, null, null, null));
+            new Uploader(null, null, null, null, null, null));
     Assert.assertNotNull(runtime);
     runtime.register(mockBackendName, mockBackend);
 

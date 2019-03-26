@@ -20,6 +20,7 @@ import com.google.android.datatransport.runtime.TransportBackend;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -34,6 +35,7 @@ public class DefaultScheduler implements Scheduler {
   private final Executor executor;
   private final BackendRegistry backendRegistry;
   private final EventStore eventStore;
+  private final SynchronizationGuard guard;
   private static final Logger LOGGER = Logger.getLogger(TransportRuntime.class.getName());
 
   @Inject
@@ -41,11 +43,13 @@ public class DefaultScheduler implements Scheduler {
       Executor executor,
       BackendRegistry backendRegistry,
       WorkScheduler workScheduler,
-      EventStore eventStore) {
+      EventStore eventStore,
+      SynchronizationGuard guard) {
     this.executor = executor;
     this.backendRegistry = backendRegistry;
     this.workScheduler = workScheduler;
     this.eventStore = eventStore;
+    this.guard = guard;
   }
 
   @Override
@@ -58,8 +62,13 @@ public class DefaultScheduler implements Scheduler {
             return;
           }
           EventInternal decoratedEvent = transportBackend.decorate(event);
-          eventStore.persist(backendName, decoratedEvent);
-          workScheduler.schedule(backendName, 0);
+          guard.runCriticalSection(
+              10000,
+              () -> {
+                eventStore.persist(backendName, decoratedEvent);
+                workScheduler.schedule(backendName, 0);
+                return null;
+              });
         });
   }
 }

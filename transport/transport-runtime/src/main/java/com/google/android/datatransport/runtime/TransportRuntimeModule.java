@@ -60,8 +60,10 @@ abstract class TransportRuntimeModule {
       Context context,
       BackendRegistry backendRegistry,
       EventStore eventStore,
-      WorkScheduler workScheduler) {
-    return new Uploader(context, backendRegistry, eventStore, workScheduler);
+      WorkScheduler workScheduler,
+      Executor executor,
+      SynchronizationGuard guard) {
+    return new Uploader(context, backendRegistry, eventStore, workScheduler, executor, guard);
   }
 
   @Provides
@@ -79,8 +81,9 @@ abstract class TransportRuntimeModule {
       Executor executor,
       BackendRegistry registry,
       WorkScheduler workScheduler,
-      EventStore eventStore) {
-    return new DefaultScheduler(executor, registry, workScheduler, eventStore);
+      EventStore eventStore,
+      SynchronizationGuard guard) {
+    return new DefaultScheduler(executor, registry, workScheduler, eventStore, guard);
   }
 
   @Binds
