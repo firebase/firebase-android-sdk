@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import com.google.firebase.gradle.plugins.measurement.GenerateCoveragePercentsTask
 import com.google.firebase.gradle.plugins.measurement.GenerateMeasurementsTask
 import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
 
@@ -47,6 +48,35 @@ task uploadMeasurements(type: UploadMeasurementsTask) {
     dependsOn generateMeasurements
 
     reportFile = file("$buildDir/size-report.json")
+    uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
+}
+
+task generateCoverageMeasurements(type: GenerateCoveragePercentsTask, group: 'Coverage') {
+
+    // TODO(yifany@): Way too cumbersome.
+    dependsOn ':firebase-common:checkCoverage'
+    dependsOn ':firebase-database:checkCoverage'
+    dependsOn ':firebase-database-collection:checkCoverage'
+    dependsOn ':firebase-firestore:checkCoverage'
+    dependsOn ':firebase-functions:checkCoverage'
+    dependsOn ':firebase-inappmessaging-display:checkCoverage'
+    dependsOn ':firebase-storage:checkCoverage'
+
+    packages = ["firebase-common",
+                "firebase-database",
+                "firebase-database-collection",
+                "firebase-firestore",
+                "firebase-functions",
+                "firebase-inappmessaging-display",
+                "firebase-storage"]
+
+    reportFile = file("$buildDir/coverage-report.json")
+}
+
+task uploadCoverageMeasurements(type: UploadMeasurementsTask, group: 'Coverage') {
+    dependsOn generateCoverageMeasurements
+
+    reportFile = file("$buildDir/coverage-report.json")
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }
 
