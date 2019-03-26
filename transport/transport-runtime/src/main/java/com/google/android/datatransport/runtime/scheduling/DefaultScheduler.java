@@ -31,12 +31,12 @@ import javax.inject.Inject;
  */
 public class DefaultScheduler implements Scheduler {
 
+  private static final Logger LOGGER = Logger.getLogger(TransportRuntime.class.getName());
   private final WorkScheduler workScheduler;
   private final Executor executor;
   private final BackendRegistry backendRegistry;
   private final EventStore eventStore;
   private final SynchronizationGuard guard;
-  private static final Logger LOGGER = Logger.getLogger(TransportRuntime.class.getName());
 
   @Inject
   public DefaultScheduler(

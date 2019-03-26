@@ -18,6 +18,6 @@
   <!--<uses-sdk android:minSdkVersion="14"/>-->
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
   <application>
-    <receiver android:process=":remote" android:name=".AlarmManagerSchedulerService"></receiver>
+    <receiver android:name=".AlarmManagerSchedulerService"></receiver>
   </application>
 </manifest>
