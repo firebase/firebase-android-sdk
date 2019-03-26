@@ -31,30 +31,6 @@ import javax.inject.Inject;
 
 public class Uploader {
 
-  private final Context context;
-  private final BackendRegistry backendRegistry;
-  private final EventStore eventStore;
-  private final WorkScheduler workScheduler;
-  private final Executor executor;
-  private final SynchronizationGuard guard;
-
-  @Inject
-  public Uploader(
-      Context context,
-      BackendRegistry backendRegistry,
-      EventStore eventStore,
-      WorkScheduler workScheduler,
-      Executor executor,
-      SynchronizationGuard guard) {
-    this.context = context;
-    this.backendRegistry = backendRegistry;
-    this.eventStore = eventStore;
-    this.workScheduler = workScheduler;
-    this.executor = executor;
-    this.guard = guard;
-  }
-
-
   void upload(String backendName, int attemptNumber, Runnable callback) {
   }
 

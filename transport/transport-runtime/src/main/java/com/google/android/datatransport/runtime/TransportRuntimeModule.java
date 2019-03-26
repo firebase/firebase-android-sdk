@@ -56,17 +56,6 @@ abstract class TransportRuntimeModule {
   }
 
   @Provides
-  static Uploader uploader(
-      Context context,
-      BackendRegistry backendRegistry,
-      EventStore eventStore,
-      WorkScheduler workScheduler,
-      Executor executor,
-      SynchronizationGuard guard) {
-    return new Uploader(context, backendRegistry, eventStore, workScheduler, executor, guard);
-  }
-
-  @Provides
   static WorkScheduler workScheduler(
       Context context, EventStore eventStore, @WallTime Clock eventClock) {
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
