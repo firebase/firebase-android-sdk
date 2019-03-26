@@ -54,56 +54,8 @@ public class Uploader {
     this.guard = guard;
   }
 
-  boolean isNetworkAvailable() {
-    ConnectivityManager connectivityManager =
-        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-    return activeNetworkInfo != null && activeNetworkInfo.isConnected();
-  }
 
   void upload(String backendName, int attemptNumber, Runnable callback) {
-    this.executor.execute(
-        () -> {
-          try {
-            if (!isNetworkAvailable()) {
-              workScheduler.schedule(backendName, attemptNumber + 1);
-            } else {
-              logAndUpdateState(backendName, attemptNumber);
-            }
-          } finally {
-            callback.run();
-          }
-        });
   }
 
-  void logAndUpdateState(String backendName, int attemptNumber) {
-    TransportBackend backend = backendRegistry.get(backendName);
-    List<EventInternal> eventInternals = new ArrayList<>();
-    Iterable<PersistedEvent> persistedEvents =
-        guard.runCriticalSection(10000, () -> eventStore.loadAll(backendName));
-
-    // Donot make a call to the backend if the list is empty.
-    if (!persistedEvents.iterator().hasNext()) {
-      return;
-    }
-    // Load all the backends to an iterable of event internals.
-    for (PersistedEvent persistedEvent : persistedEvents) {
-      eventInternals.add(persistedEvent.getEvent());
-    }
-    BackendResponse response = backend.send(eventInternals);
-    guard.runCriticalSection(
-        10000,
-        () -> {
-          if (response.getStatus() == BackendResponse.Status.OK) {
-            eventStore.recordSuccess(persistedEvents);
-            eventStore.recordNextCallTime(backendName, response.getNextRequestWaitMillis());
-          } else if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
-            eventStore.recordFailure(persistedEvents);
-            workScheduler.schedule(backendName, (int) attemptNumber + 1);
-          } else {
-            eventStore.recordSuccess(persistedEvents);
-          }
-          return null;
-        });
-  }
 }
