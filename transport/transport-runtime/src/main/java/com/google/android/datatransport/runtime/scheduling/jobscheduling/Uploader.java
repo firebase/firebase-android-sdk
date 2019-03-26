@@ -14,24 +14,12 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import com.google.android.datatransport.runtime.BackendRegistry;
-import com.google.android.datatransport.runtime.BackendResponse;
-import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportBackend;
-import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
-import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executor;
 import javax.inject.Inject;
 
 public class Uploader {
 
-  void upload(String backendName, int attemptNumber, Runnable callback) {
-  }
+  @Inject
+  public Uploader() {}
 
+  void upload(String backendName, int attemptNumber, Runnable callback) {}
 }

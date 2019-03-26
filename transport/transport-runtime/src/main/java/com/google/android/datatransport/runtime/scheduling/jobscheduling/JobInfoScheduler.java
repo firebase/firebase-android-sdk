@@ -25,7 +25,6 @@ import android.support.annotation.RequiresApi;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 import java.util.zip.Adler32;
-
 import javax.inject.Inject;
 
 public class JobInfoScheduler implements WorkScheduler {

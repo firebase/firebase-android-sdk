@@ -14,15 +14,9 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import com.google.android.datatransport.runtime.BuildConfig;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.time.Clock;
-
 import javax.inject.Inject;
 
 public class AlarmManagerScheduler implements WorkScheduler {
@@ -41,7 +35,5 @@ public class AlarmManagerScheduler implements WorkScheduler {
   }
 
   @Override
-  public void schedule(String backendName, int attemptNumber) {
-
-  }
+  public void schedule(String backendName, int attemptNumber) {}
 }
