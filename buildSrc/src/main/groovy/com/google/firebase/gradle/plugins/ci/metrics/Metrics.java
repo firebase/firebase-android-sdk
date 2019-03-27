@@ -14,7 +14,10 @@
 
 package com.google.firebase.gradle.plugins.ci.metrics;
 
+import java.util.function.Predicate;
 import org.gradle.api.Task;
+import org.gradle.api.logging.LogLevel;
+import org.gradle.api.logging.Logger;
 
 /** Provides methods for measuring various parts of the build. */
 interface Metrics {
@@ -23,4 +26,41 @@ interface Metrics {
 
   /** Measure task execution failure. */
   void measureFailure(Task task);
+
+  /**
+   * Creates a {@link Metrics} implementation that uses a {@code predicate} to determine whether to
+   * emit measurements for it.
+   */
+  static Metrics filtered(Metrics metrics, Predicate<Task> predicate) {
+    return new Metrics() {
+      @Override
+      public void measureSuccess(Task task, long elapsedTime) {
+        if (predicate.test(task)) {
+          metrics.measureSuccess(task, elapsedTime);
+        }
+      }
+
+      @Override
+      public void measureFailure(Task task) {
+        if (predicate.test(task)) {
+          metrics.measureFailure(task);
+        }
+      }
+    };
+  }
+
+  /** Creates a {@link Metrics} implementation that logs results at the specified level. */
+  static Metrics toLog(Logger toLogger, LogLevel level) {
+    return new Metrics() {
+      @Override
+      public void measureSuccess(Task task, long elapsedTime) {
+        toLogger.log(level, "[METRICS] Task {} took {}ms.", task.getPath(), elapsedTime);
+      }
+
+      @Override
+      public void measureFailure(Task task) {
+        toLogger.log(level, "[METRICS] Task {} failed.", task.getPath());
+      }
+    };
+  }
 }
