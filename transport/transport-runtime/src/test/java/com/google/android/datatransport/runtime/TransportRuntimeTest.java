@@ -109,7 +109,8 @@ public class TransportRuntimeTest {
     verify(mockBackend, times(1))
         .send(
             eq(
-                Collections.singleton(
-                    expectedEvent.toBuilder().addMetadata(TEST_KEY, TEST_VALUE).build())));
+                BackendRequest.create(
+                    Collections.singleton(
+                        expectedEvent.toBuilder().addMetadata(TEST_KEY, TEST_VALUE).build()))));
   }
 }
