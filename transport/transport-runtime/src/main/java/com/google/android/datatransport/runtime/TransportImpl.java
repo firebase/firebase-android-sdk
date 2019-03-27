@@ -19,9 +19,9 @@ import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 
 class TransportImpl<T> implements Transport<T> {
-  private String backendName;
-  private String name;
-  private Transformer<T, byte[]> transformer;
+  private final String backendName;
+  private final String name;
+  private final Transformer<T, byte[]> transformer;
   private final TransportInternal transportInternal;
 
   TransportImpl(

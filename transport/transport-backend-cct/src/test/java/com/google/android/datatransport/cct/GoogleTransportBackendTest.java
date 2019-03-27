@@ -26,6 +26,7 @@ import static org.junit.Assert.assertEquals;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.cct.proto.LogResponse;
+import com.google.android.datatransport.runtime.BackendRequest;
 import com.google.android.datatransport.runtime.BackendResponse;
 import com.google.android.datatransport.runtime.BackendResponse.Status;
 import com.google.android.datatransport.runtime.EventInternal;
@@ -45,16 +46,17 @@ public class GoogleTransportBackendTest {
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(8999);
 
-  private Iterable<EventInternal> getEventInternalIterable() {
-    return Collections.singleton(
-        BACKEND.decorate(
-            EventInternal.builder()
-                .setEventMillis(3)
-                .setUptimeMillis(1)
-                .setTransportName(TRANSPORT_NAME)
-                .setPriority(Priority.DEFAULT)
-                .setPayload("TelemetryData".getBytes())
-                .build()));
+  private BackendRequest getBackendRequest() {
+    return BackendRequest.create(
+        Collections.singleton(
+            BACKEND.decorate(
+                EventInternal.builder()
+                    .setEventMillis(3)
+                    .setUptimeMillis(1)
+                    .setTransportName(TRANSPORT_NAME)
+                    .setPriority(Priority.DEFAULT)
+                    .setPayload("TelemetryData".getBytes())
+                    .build())));
   }
 
   @Test
@@ -70,7 +72,7 @@ public class GoogleTransportBackendTest {
                             .setNextRequestWaitMillis(3)
                             .build()
                             .toByteArray())));
-    BackendResponse response = BACKEND.send(getEventInternalIterable());
+    BackendResponse response = BACKEND.send(getBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
@@ -81,7 +83,7 @@ public class GoogleTransportBackendTest {
   @Test
   public void testUnsuccessfulLoggingRequest() {
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(404)));
-    BackendResponse response = BACKEND.send(getEventInternalIterable());
+    BackendResponse response = BACKEND.send(getBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
@@ -92,7 +94,7 @@ public class GoogleTransportBackendTest {
   @Test
   public void testServerErrorLoggingRequest() {
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(500)));
-    BackendResponse response = BACKEND.send(getEventInternalIterable());
+    BackendResponse response = BACKEND.send(getBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
@@ -109,7 +111,7 @@ public class GoogleTransportBackendTest {
                     .withStatus(200)
                     .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
                     .withBody("{\"status\":\"Error\",\"message\":\"Endpoint not found\"}")));
-    BackendResponse response = BACKEND.send(getEventInternalIterable());
+    BackendResponse response = BACKEND.send(getBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
@@ -120,7 +122,7 @@ public class GoogleTransportBackendTest {
   @Test
   public void testNonHandledResponseCode() {
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(300)));
-    BackendResponse response = BACKEND.send(getEventInternalIterable());
+    BackendResponse response = BACKEND.send(getBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
