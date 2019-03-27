@@ -22,10 +22,12 @@ public class SchedulerUtil {
 
   static final String APPLICATION_BUNDLE_ID = "appBundleId";
 
-  static long getScheduleDelay(long backendTimeDiff, int delta, int numberOfAttempts) {
-    if (numberOfAttempts > 3) {
-      return 1000000000;
+  static final int MAX_ALLOWED_TIME = 100000000;
+
+  static long getScheduleDelay(long backendTimeDiff, int delta, int attemptNumber) {
+    if (attemptNumber > 11) {
+      return MAX_ALLOWED_TIME;
     }
-    return Math.max((long) (Math.pow(delta / 1000, numberOfAttempts)) * 1000, backendTimeDiff);
+    return Math.max((long) (Math.pow(2, attemptNumber)) * delta, backendTimeDiff);
   }
 }

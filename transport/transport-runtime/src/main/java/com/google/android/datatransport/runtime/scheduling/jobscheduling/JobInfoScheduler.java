@@ -14,7 +14,6 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
-import android.annotation.TargetApi;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
@@ -22,11 +21,13 @@ import android.content.Context;
 import android.os.Build;
 import android.os.PersistableBundle;
 import android.support.annotation.RequiresApi;
+import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 import java.util.zip.Adler32;
 import javax.inject.Inject;
 
+@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JobInfoScheduler implements WorkScheduler {
 
   private final Context context;
@@ -35,6 +36,8 @@ public class JobInfoScheduler implements WorkScheduler {
 
   private final Clock clock;
 
+  private final int DELTA = 30000; // 30 seconds delta
+
   @Inject
   public JobInfoScheduler(Context applicationContext, EventStore eventStore, Clock clock) {
     this.context = applicationContext;
@@ -42,13 +45,13 @@ public class JobInfoScheduler implements WorkScheduler {
     this.clock = clock;
   }
 
-  private int getJobId(String backendName) {
+  @VisibleForTesting
+  int getJobId(String backendName) {
     Adler32 checksum = new Adler32();
     checksum.update(backendName.getBytes());
     return (int) checksum.getValue();
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   private boolean isJobServiceOn(JobScheduler scheduler, int jobId) {
     for (JobInfo jobInfo : scheduler.getAllPendingJobs()) {
       if (jobInfo.getId() == jobId) {
@@ -58,12 +61,11 @@ public class JobInfoScheduler implements WorkScheduler {
     return false;
   }
 
-  @TargetApi(Build.VERSION_CODES.M)
-  @android.support.annotation.RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   @Override
   public void schedule(String backendName, int attemptNumber) {
     ComponentName serviceComponent = new ComponentName(context, JobInfoSchedulerService.class);
-    JobScheduler jobScheduler = context.getSystemService(JobScheduler.class);
+    JobScheduler jobScheduler =
+        (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
     int jobId = getJobId(backendName);
     // Check if there exists a job scheduled for this backend name.
     if (isJobServiceOn(jobScheduler, jobId)) return;
@@ -76,7 +78,7 @@ public class JobInfoScheduler implements WorkScheduler {
     JobInfo.Builder builder = new JobInfo.Builder(jobId, serviceComponent);
     builder.setMinimumLatency(
         clock.getTime()
-            + SchedulerUtil.getScheduleDelay(timeDiff, 5000, attemptNumber)); // wait at least
+            + SchedulerUtil.getScheduleDelay(timeDiff, DELTA, attemptNumber)); // wait at least
     builder.setExtras(bundle);
     builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
     jobScheduler.schedule(builder.build());
