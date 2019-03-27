@@ -74,6 +74,8 @@ public class JobInfoSchedulerTest {
           return null;
         }
       };
+  private final JobScheduler jobScheduler =
+            (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
   private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, () -> 0);
 
   @Test
@@ -81,8 +83,6 @@ public class JobInfoSchedulerTest {
     store.recordNextCallTime(BACKEND_NAME, 1000000);
     scheduler.schedule(BACKEND_NAME, 1);
     int jobId = scheduler.getJobId(BACKEND_NAME);
-    JobScheduler jobScheduler =
-        (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
@@ -98,8 +98,6 @@ public class JobInfoSchedulerTest {
     store.recordNextCallTime(BACKEND_NAME, 5);
     scheduler.schedule(BACKEND_NAME, 1);
     int jobId = scheduler.getJobId(BACKEND_NAME);
-    JobScheduler jobScheduler =
-        (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
@@ -107,7 +105,7 @@ public class JobInfoSchedulerTest {
     assertThat(jobInfo.getId()).isEqualTo(jobId);
     assertThat(bundle.get(SchedulerUtil.BACKEND_NAME)).isEqualTo(BACKEND_NAME);
     assertThat(bundle.get(SchedulerUtil.ATTEMPT_NUMBER)).isEqualTo(1);
-    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(5000);
+    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(60000); // 2^1*DELTA
   }
 
   @Test
@@ -115,8 +113,6 @@ public class JobInfoSchedulerTest {
     store.recordNextCallTime(BACKEND_NAME, 1000000);
     scheduler.schedule(BACKEND_NAME, 10);
     int jobId = scheduler.getJobId(BACKEND_NAME);
-    JobScheduler jobScheduler =
-        (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
@@ -133,8 +129,6 @@ public class JobInfoSchedulerTest {
     int jobId = scheduler.getJobId(BACKEND_NAME);
     // Schedule first job
     scheduler.schedule(BACKEND_NAME, 1);
-    JobScheduler jobScheduler =
-        (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     // Schedule another job
