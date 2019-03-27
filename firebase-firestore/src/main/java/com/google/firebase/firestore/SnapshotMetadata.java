@@ -48,8 +48,9 @@ public class SnapshotMetadata {
   /**
    * @return true if the snapshot was created from cached data rather than guaranteed up-to-date
    *     server data. If your listener has opted into metadata updates (via
-   *     {@code MetadataChanges.INCLUDE}) you will receive another snapshot with {@code isFomCache()} equal to
-   *     false once the client has received up-to-date data from the backend.
+   *     {@code MetadataChanges.INCLUDE}) you will receive another snapshot with
+   *     {@code isFomCache()} equal to false once the client has received up-to-date data
+   *     from the backend.
    */
   @PublicApi
   public boolean isFromCache() {
