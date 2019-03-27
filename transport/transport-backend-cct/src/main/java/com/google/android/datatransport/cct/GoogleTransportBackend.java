@@ -23,6 +23,7 @@ import com.google.android.datatransport.cct.proto.LogEvent;
 import com.google.android.datatransport.cct.proto.LogRequest;
 import com.google.android.datatransport.cct.proto.LogResponse;
 import com.google.android.datatransport.cct.proto.QosTierConfiguration;
+import com.google.android.datatransport.runtime.BackendRequest;
 import com.google.android.datatransport.runtime.BackendResponse;
 import com.google.android.datatransport.runtime.BackendResponse.Status;
 import com.google.android.datatransport.runtime.EventInternal;
@@ -105,9 +106,9 @@ public class GoogleTransportBackend implements TransportBackend {
         .build();
   }
 
-  private BatchedLogRequest getRequestBody(Iterable<EventInternal> eventInternals) {
+  private BatchedLogRequest getRequestBody(BackendRequest backendRequest) {
     HashMap<String, List<EventInternal>> eventInternalMap = new HashMap<>();
-    for (EventInternal eventInternal : eventInternals) {
+    for (EventInternal eventInternal : backendRequest.getEvents()) {
       String key = eventInternal.getTransportName();
       if (!eventInternalMap.containsKey(key)) {
         List<EventInternal> eventInternalList = new ArrayList<EventInternal>();
@@ -192,8 +193,8 @@ public class GoogleTransportBackend implements TransportBackend {
   }
 
   @Override
-  public BackendResponse send(Iterable<EventInternal> events) {
-    BatchedLogRequest requestBody = getRequestBody(events);
+  public BackendResponse send(BackendRequest request) {
+    BatchedLogRequest requestBody = getRequestBody(request);
     try {
       return doSend(requestBody);
     } catch (IOException e) {

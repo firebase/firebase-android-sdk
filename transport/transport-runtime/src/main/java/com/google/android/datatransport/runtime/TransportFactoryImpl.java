@@ -18,8 +18,8 @@ import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 
-public final class TransportFactoryImpl implements TransportFactory {
-  private String backendName;
+final class TransportFactoryImpl implements TransportFactory {
+  private final String backendName;
   private final TransportInternal transportInternal;
 
   TransportFactoryImpl(String backendName, TransportInternal transportInternal) {
