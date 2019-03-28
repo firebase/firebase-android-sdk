@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime;
 import android.content.Context;
 import android.os.Build;
 import com.google.android.datatransport.runtime.scheduling.DefaultScheduler;
+import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoScheduler;
@@ -71,7 +72,7 @@ abstract class TransportRuntimeModule {
       WorkScheduler workScheduler,
       EventStore eventStore,
       SynchronizationGuard guard) {
-    return new DefaultScheduler(executor, registry, workScheduler, eventStore, guard);
+    return new ImmediateScheduler(executor, registry);
   }
 
   @Binds
