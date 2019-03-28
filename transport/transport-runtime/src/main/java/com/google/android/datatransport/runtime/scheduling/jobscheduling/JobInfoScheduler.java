@@ -27,6 +27,12 @@ import com.google.android.datatransport.runtime.time.Clock;
 import java.util.zip.Adler32;
 import javax.inject.Inject;
 
+
+
+/**
+ *  Schedules the service {@link JobInfoSchedulerService} based on the backendname.
+ *  Used for Apis 21 and above.
+ */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JobInfoScheduler implements WorkScheduler {
 
@@ -61,6 +67,12 @@ public class JobInfoScheduler implements WorkScheduler {
     return false;
   }
 
+  /**
+   * Schedules the JobScheduler service.
+   *
+   * @param backendName The backend to where the events are logged.
+   * @param attemptNumber Number of times the JobScheduler has tried to log for this backend.
+   */
   @Override
   public void schedule(String backendName, int attemptNumber) {
     ComponentName serviceComponent = new ComponentName(context, JobInfoSchedulerService.class);

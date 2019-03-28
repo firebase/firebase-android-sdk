@@ -19,7 +19,7 @@ import android.app.job.JobService;
 import android.os.Build;
 import com.google.android.datatransport.runtime.TransportRuntime;
 
-/** JobService to be scheduled by the JobScheduler. start another service */
+/** The service responsible for uploading information to the backend.*/
 @android.support.annotation.RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JobInfoSchedulerService extends JobService {
 
