@@ -21,12 +21,8 @@ import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.Context;
 import android.os.PersistableBundle;
-import android.support.annotation.Nullable;
-import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.scheduling.InMemoryEventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
-import java.util.HashMap;
-import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -38,42 +34,7 @@ import org.robolectric.annotation.Config;
 public class JobInfoSchedulerTest {
   private final String BACKEND_NAME = "backend1";
   private final Context context = RuntimeEnvironment.application;
-  private final EventStore store =
-      new EventStore() {
-        private Map<String, Integer> backendCallTime = new HashMap<String, Integer>();
-
-        @Override
-        public PersistedEvent persist(String backendName, EventInternal event) {
-          return null;
-        }
-
-        @Override
-        public void recordFailure(Iterable<PersistedEvent> events) {}
-
-        @Override
-        public void recordSuccess(Iterable<PersistedEvent> events) {}
-
-        @Nullable
-        @Override
-        public Long getNextCallTime(String backendName) {
-          return (long) backendCallTime.get(backendName);
-        }
-
-        @Override
-        public void recordNextCallTime(String backendName, long timestampMs) {
-          backendCallTime.put(backendName, (int) timestampMs);
-        }
-
-        @Override
-        public boolean hasPendingEventsFor(String backendName) {
-          return false;
-        }
-
-        @Override
-        public Iterable<PersistedEvent> loadAll(String backendName) {
-          return null;
-        }
-      };
+  private final EventStore store = new InMemoryEventStore();
   private final JobScheduler jobScheduler =
       (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
   private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, () -> 0);

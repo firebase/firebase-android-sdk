@@ -17,10 +17,11 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import com.google.android.datatransport.runtime.TransportRuntime;
 
 /** The service responsible for uploading information to the backend. */
-@android.support.annotation.RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JobInfoSchedulerService extends JobService {
 
   @Override

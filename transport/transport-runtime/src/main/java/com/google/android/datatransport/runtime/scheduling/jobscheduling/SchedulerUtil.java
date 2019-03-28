@@ -15,7 +15,7 @@
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 /** Used by the schedulers for some basic constants and utility methods. */
-public class SchedulerUtil {
+final class SchedulerUtil {
 
   static final String ATTEMPT_NUMBER = "attemptNumber";
 
@@ -24,6 +24,8 @@ public class SchedulerUtil {
   static final String APPLICATION_BUNDLE_ID = "appBundleId";
 
   static final int MAX_ALLOWED_TIME = 100000000;
+
+  private SchedulerUtil() {};
 
   static long getScheduleDelay(long backendTimeDiff, int delta, int attemptNumber) {
     if (attemptNumber > 11) {

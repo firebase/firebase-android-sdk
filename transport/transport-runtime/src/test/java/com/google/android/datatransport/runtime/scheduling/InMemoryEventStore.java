@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.scheduling.persistence;
+package com.google.android.datatransport.runtime.scheduling;
 
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class InMemoryEventStore implements EventStore {
   private final AtomicLong idCounter = new AtomicLong();
   private final Map<String, Map<Long, EventInternal>> store = new HashMap<>();
+  private final Map<String, Long> backendCallTime = new HashMap<>();
 
   @Override
   public synchronized PersistedEvent persist(String backendName, EventInternal event) {
@@ -61,12 +64,12 @@ public class InMemoryEventStore implements EventStore {
 
   @Override
   public Long getNextCallTime(String backendName) {
-    return null;
+    return backendCallTime.get(backendName);
   }
 
   @Override
   public void recordNextCallTime(String backendName, long timestampMs) {
-    // noop
+    backendCallTime.put(backendName, timestampMs);
   }
 
   @Override
