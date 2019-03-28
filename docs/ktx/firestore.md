@@ -6,11 +6,26 @@ To use the Cloud Firestore Android SDK with Kotlin Extenstions, add the followin
 to your app's `build.gradle` file:
 
 ```groovy
-// This library transitively includes the Firestore Android SDK
-implementation 'com.google.firebase:firebase-firestore-ktx:18.1.0
+// See maven.google.com for the latest versions
+// This library transitively includes the firebase-firestore library
+implementation 'com.google.firebase:firebase-firestore-ktx:$VERSION'
 ```
 
 ## Features
+
+### Get an instance of FirebaseFirestore
+
+**Kotlin**
+```kotlin
+val firestore = FirebaseFirestore.getInstance()
+val anotherFirestore = FirebaseFirestore.getInstance(FirebaseApp.getInstance("myApp"))
+```
+
+**Kotlin + KTX**
+```kotlin
+val firestore = Firebase.firestore
+val anotherFirestore = Firebase.firestore(Firebase.app("myApp"))
+```
 
 ### Convert a DocumentSnapshot field to a POJO
 
@@ -24,18 +39,6 @@ val myObject = snapshot.get("fieldPath", MyClass::class.java)
 ```kotlin
 val snapshot: DocumentSnapshot = ...
 val myObject = snapshot.get<MyClass>("fieldPath")
-```
-
-### Get an instance of FirebaseFirestore
-
-**Kotlin**
-```kotlin
-val firestore = FirebaseFirestore.getInstance()
-```
-
-**Kotlin + KTX**
-```kotlin
-val firestore = Firebase.firestore
 ```
 
 ### Convert a DocumentSnapshot to a POJO
