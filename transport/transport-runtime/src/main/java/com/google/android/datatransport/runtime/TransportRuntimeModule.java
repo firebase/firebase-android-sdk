@@ -14,8 +14,13 @@
 
 package com.google.android.datatransport.runtime;
 
+import android.content.Context;
+import android.os.Build;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerScheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoScheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
@@ -50,7 +55,22 @@ abstract class TransportRuntimeModule {
   }
 
   @Provides
-  static Scheduler scheduler(Executor executor, BackendRegistry registry) {
+  static WorkScheduler workScheduler(
+      Context context, EventStore eventStore, @WallTime Clock eventClock) {
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      return new JobInfoScheduler(context, eventStore, eventClock);
+    } else {
+      return new AlarmManagerScheduler(context, eventStore, eventClock);
+    }
+  }
+
+  @Provides
+  static Scheduler scheduler(
+      Executor executor,
+      BackendRegistry registry,
+      WorkScheduler workScheduler,
+      EventStore eventStore,
+      SynchronizationGuard guard) {
     return new ImmediateScheduler(executor, registry);
   }
 
