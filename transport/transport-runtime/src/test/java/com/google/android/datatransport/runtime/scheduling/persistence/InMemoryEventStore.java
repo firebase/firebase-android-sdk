@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.scheduling;
+package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
