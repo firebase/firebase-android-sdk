@@ -14,9 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
-/**
- * Used by the schedulers for some basic constants and utility methods.
- */
+/** Used by the schedulers for some basic constants and utility methods. */
 public class SchedulerUtil {
 
   static final String ATTEMPT_NUMBER = "attemptNumber";

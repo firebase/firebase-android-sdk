@@ -75,7 +75,7 @@ public class JobInfoSchedulerTest {
         }
       };
   private final JobScheduler jobScheduler =
-            (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+      (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
   private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, () -> 0);
 
   @Test

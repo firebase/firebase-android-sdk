@@ -16,11 +16,7 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import javax.inject.Inject;
 
-
-
-/**
- * Handles upload of all the events corresponding to a backend.
- */
+/** Handles upload of all the events corresponding to a backend. */
 public class Uploader {
 
   @Inject

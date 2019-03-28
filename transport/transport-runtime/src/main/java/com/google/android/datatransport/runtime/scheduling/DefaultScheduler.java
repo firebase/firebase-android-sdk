@@ -26,8 +26,8 @@ import java.util.logging.Logger;
 import javax.inject.Inject;
 
 /**
- * Placeholder for the eventual scheduler that will support persistence, retries, respect network
- * conditions and QoS.
+ * Scheduler which persists the events, schedules the services which ultimately logs these events to
+ * the corresponding backends. This respects network conditions and QoS.
  */
 public class DefaultScheduler implements Scheduler {
 
@@ -53,6 +53,12 @@ public class DefaultScheduler implements Scheduler {
     this.guard = guard;
   }
 
+  /**
+   * Schedules the events to be eventually logged to the backend.
+   *
+   * @param backendName The backend to which the event needs to be logged.
+   * @param event The event itself which needs to be logged with additional information.
+   */
   @Override
   public void schedule(String backendName, EventInternal event) {
     executor.execute(

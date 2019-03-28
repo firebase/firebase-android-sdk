@@ -27,11 +27,9 @@ import com.google.android.datatransport.runtime.time.Clock;
 import java.util.zip.Adler32;
 import javax.inject.Inject;
 
-
-
 /**
- *  Schedules the service {@link JobInfoSchedulerService} based on the backendname.
- *  Used for Apis 21 and above.
+ * Schedules the service {@link JobInfoSchedulerService} based on the backendname. Used for Apis 21
+ * and above.
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JobInfoScheduler implements WorkScheduler {
