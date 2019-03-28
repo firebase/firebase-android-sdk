@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-To use the Cloud Firestore Android SDK with Kotlin Extenstions, add the following
+To use the Cloud Firestore Android SDK with Kotlin Extensions, add the following
 to your app's `build.gradle` file:
 
 ```groovy

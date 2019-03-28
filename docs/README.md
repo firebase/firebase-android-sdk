@@ -5,8 +5,7 @@ Android app. To get started, visit the [setup instructions][android-setup].
 
 ## Open Source
 
-The following Firebase SDKs for Android are developed in this
-repository:
+This repository includes the following Firebase SDKs for Android:
 
   * `firebase-common`
   * `firebase-database`
