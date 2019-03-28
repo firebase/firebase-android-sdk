@@ -13,6 +13,7 @@
 // limitations under the License.
 
 apply plugin: 'com.android.library'
+apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 android {
     adbOptions {

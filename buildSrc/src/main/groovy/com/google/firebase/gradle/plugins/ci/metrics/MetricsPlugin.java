@@ -16,26 +16,39 @@ package com.google.firebase.gradle.plugins.ci.metrics;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.execution.TaskExecutionGraph;
+import org.gradle.api.logging.LogLevel;
 
 /** Instruments Gradle to measure latency and success rate of all executed tasks. */
 public class MetricsPlugin implements Plugin<Project> {
   @Override
   public void apply(Project project) {
-    if (!isCollectionEnabled()) {
-      project.getLogger().lifecycle("Metrics collection is disabled.");
-      return;
-    }
-    project.getLogger().lifecycle("Metrics collection is enabled.");
 
-    Metrics metrics = new StackdriverMetrics(project.getGradle(), project.getLogger());
+    Metrics metrics = Metrics.filtered(initializeMetrics(project), MetricsPlugin::isTaskPublic);
 
     TaskExecutionGraph taskGraph = project.getGradle().getTaskGraph();
     taskGraph.addTaskExecutionListener(new MeasuringTaskExecutionListener(metrics, taskGraph));
   }
 
+  private static Metrics initializeMetrics(Project project) {
+    if (!isCollectionEnabled()) {
+      project.getLogger().lifecycle("Metrics collection is disabled. Logging to stdout...");
+      return Metrics.toLog(project.getLogger(), LogLevel.LIFECYCLE);
+    }
+    project.getLogger().lifecycle("Metrics collection is enabled.");
+    return new StackdriverMetrics(project.getGradle(), project.getLogger());
+  }
+
   private static boolean isCollectionEnabled() {
     String enabled = System.getenv("FIREBASE_ENABLE_METRICS");
     return enabled != null && enabled.equals("1");
+  }
+
+  /**
+   * Determines whether a given gradle {@link Task} is "public", e.g. visible with `gradle tasks`.
+   */
+  private static boolean isTaskPublic(Task task) {
+    return task.getGroup() != null;
   }
 }

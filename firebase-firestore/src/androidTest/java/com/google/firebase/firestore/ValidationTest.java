@@ -555,7 +555,7 @@ public class ValidationTest {
     expectError(() -> query.startAt(1).orderBy("bar"), reason);
     expectError(() -> query.startAfter(1).orderBy("bar"), reason);
     reason =
-        "Invalid query. You must not call Query.endAt() or Query.endAfter() "
+        "Invalid query. You must not call Query.endAt() or Query.endBefore() "
             + "before calling Query.orderBy().";
     expectError(() -> query.endAt(1).orderBy("bar"), reason);
     expectError(() -> query.endBefore(1).orderBy("bar"), reason);
