@@ -19,6 +19,7 @@ import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
@@ -43,6 +44,7 @@ public class TransportRuntime implements TransportInternal {
   private final Clock uptimeClock;
   private final Scheduler scheduler;
   private final SynchronizationGuard guard;
+  private final Uploader uploader;
 
   @Inject
   TransportRuntime(
@@ -50,12 +52,14 @@ public class TransportRuntime implements TransportInternal {
       @WallTime Clock eventClock,
       @Monotonic Clock uptimeClock,
       Scheduler scheduler,
-      SynchronizationGuard guard) {
+      SynchronizationGuard guard,
+      Uploader uploader) {
     this.backendRegistry = backendRegistry;
     this.eventClock = eventClock;
     this.uptimeClock = uptimeClock;
     this.scheduler = scheduler;
     this.guard = guard;
+    this.uploader = uploader;
   }
 
   /**
@@ -96,6 +100,11 @@ public class TransportRuntime implements TransportInternal {
   /** Returns a {@link TransportFactory} for a given {@code backendName}. */
   public TransportFactory newFactory(String backendName) {
     return new TransportFactoryImpl(backendName, this);
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public Uploader getUploader() {
+    return uploader;
   }
 
   @Override

@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class InMemoryEventStore implements EventStore {
   private final AtomicLong idCounter = new AtomicLong();
   private final Map<String, Map<Long, EventInternal>> store = new HashMap<>();
+  private final Map<String, Long> backendCallTime = new HashMap<>();
 
   @Override
   public synchronized PersistedEvent persist(String backendName, EventInternal event) {
@@ -61,12 +62,12 @@ public class InMemoryEventStore implements EventStore {
 
   @Override
   public Long getNextCallTime(String backendName) {
-    return null;
+    return backendCallTime.get(backendName);
   }
 
   @Override
   public void recordNextCallTime(String backendName, long timestampMs) {
-    // noop
+    backendCallTime.put(backendName, timestampMs);
   }
 
   @Override
