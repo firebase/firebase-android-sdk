@@ -54,6 +54,7 @@ public class UploaderTest {
   private BackendRegistry mockRegistry = mock(BackendRegistry.class);
   private TransportBackend mockBackend = mock(TransportBackend.class);
   private WorkScheduler mockScheduler = mock(WorkScheduler.class);
+  private Runnable mockRunnable = mock(Runnable.class);
   private Uploader uploader =
       spy(new Uploader(context, mockRegistry, store, mockScheduler, Runnable::run, guard));
   private static final EventInternal EVENT =
@@ -76,9 +77,10 @@ public class UploaderTest {
   @Test
   public void upload_noNetwork() {
     when(uploader.isNetworkAvailable()).thenReturn(Boolean.FALSE);
-    uploader.upload(BACKEND_NAME, 1, () -> {});
+    uploader.upload(BACKEND_NAME, 1, mockRunnable);
     // Scheduler must be called with the attempt number incremented.
     verify(mockScheduler, times(1)).schedule(BACKEND_NAME, 2);
+    verify(mockRunnable, times(1)).run();
   }
 
   @Test
@@ -86,8 +88,9 @@ public class UploaderTest {
     when(mockBackend.send(any()))
         .thenReturn(BackendResponse.create(BackendResponse.Status.OK, 1000));
     when(uploader.isNetworkAvailable()).thenReturn(Boolean.TRUE);
-    uploader.upload(BACKEND_NAME, 1, () -> {});
+    uploader.upload(BACKEND_NAME, 1, mockRunnable);
     verify(uploader, times(1)).logAndUpdateState(BACKEND_NAME, 1);
+    verify(mockRunnable, times(1)).run();
   }
 
   @Test
