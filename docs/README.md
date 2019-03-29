@@ -23,8 +23,8 @@ The following Firebase SDKs for Android have Kotlin extension libraries
 that allow you to write more idiomatic Kotlin code when using Firebase
 in your app:
 
-  * [`firebase-common`](./ktx/common.md)
-  * [`firebase-firestore`](./ktx/firestore.md)
+  * [`firebase-common`](ktx/common.md)
+  * [`firebase-firestore`](ktx/firestore.md)
 
 [android-setup]: https://firebase.google.com/docs/android/setup
 [main-readme]: https://github.com/firebase/firebase-android-sdk/blob/master/README.md
