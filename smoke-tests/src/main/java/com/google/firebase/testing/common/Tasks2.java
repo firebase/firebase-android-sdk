@@ -15,30 +15,28 @@
 package com.google.firebase.testing.common;
 
 import com.google.android.gms.tasks.Task;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import com.google.android.gms.tasks.Tasks;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
-/** Test utilities invoked from the application APK. */
-public final class TestUtil {
+/** Test utilities for asynchronous tasks. */
+public final class Tasks2 {
 
-  private static Method waitForSuccessImpl;
+  private static final long WAIT_DURATION = 30;
+  private static final TimeUnit WAIT_UNIT = TimeUnit.SECONDS;
 
-  private TestUtil() {}
+  private Tasks2() {}
 
-  @SuppressWarnings("unchecked")
+  /**
+   * Waits for the task to complete successfully.
+   *
+   * <p>This method will block the current thread and return the result of the task. It will rethrow
+   * any expection thrown by the task without wrapping.
+   */
   public static <T> T waitForSuccess(Task<T> task) throws Exception {
-    if (waitForSuccessImpl == null) {
-      try {
-        Class<?> impl = Class.forName("com.google.firebase.testing.common.TestApkUtil");
-        waitForSuccessImpl = impl.getMethod("waitForSuccess", Task.class);
-      } catch (Exception ex) {
-        throw new IllegalStateException("Error initializing test framework", ex);
-      }
-    }
-
     try {
-      return (T) waitForSuccessImpl.invoke(null, task);
-    } catch (InvocationTargetException ex) {
+      return Tasks.await(task, WAIT_DURATION, WAIT_UNIT);
+    } catch (ExecutionException ex) {
       Throwable t = ex.getCause();
       if (t instanceof Exception) {
         throw (Exception) t;
@@ -47,8 +45,6 @@ public final class TestUtil {
       }
 
       throw new IllegalStateException("Task threw unexpected Throwable", t);
-    } catch (Exception ex) {
-      throw new IllegalStateException("Error invoking test APK", ex);
     }
   }
 }

@@ -60,8 +60,6 @@ dependencies {
 
   implementation "com.google.firebase:firebase-common:16.0.7"
 
-  androidTestImplementation "androidx.test.espresso:espresso-core:3.1.0"
-  androidTestImplementation "androidx.test.espresso:espresso-idling-resource:3.1.0"
   androidTestImplementation "androidx.test:runner:1.1.0"
 
   // Firestore

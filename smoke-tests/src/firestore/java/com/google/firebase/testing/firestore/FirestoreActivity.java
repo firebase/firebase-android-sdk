@@ -27,7 +27,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.testing.common.SmokeTest;
-import com.google.firebase.testing.common.TestUtil;
+import com.google.firebase.testing.common.Tasks2;
 import java.util.HashMap;
 
 /** An empty activity with Firestore smoke tests. */
@@ -40,7 +40,7 @@ public final class FirestoreActivity extends Activity {
 
     auth.signOut();
     Task<?> signInTask = auth.signInWithEmailAndPassword("test@mailinator.com", "password");
-    TestUtil.waitForSuccess(signInTask);
+    Tasks2.waitForSuccess(signInTask);
 
     DocumentReference doc = firestore.collection("restaurants").document("Baadal");
     SnapshotListener listener = new SnapshotListener();
@@ -52,8 +52,8 @@ public final class FirestoreActivity extends Activity {
 
       Task<?> setTask = doc.set(new HashMap<>(data));
       Task<DocumentSnapshot> snapshotTask = listener.toTask();
-      TestUtil.waitForSuccess(setTask);
-      TestUtil.waitForSuccess(snapshotTask);
+      Tasks2.waitForSuccess(setTask);
+      Tasks2.waitForSuccess(snapshotTask);
 
       DocumentSnapshot result = snapshotTask.getResult();
       assertThat(result.getData()).isEqualTo(data);
