@@ -16,9 +16,11 @@
 package com.google.firebase.gradle.plugins.measurement
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.Project
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.testing.jacoco.tasks.JacocoReport
 
 
 public class GenerateCoveragePercentsTask extends DefaultTask {
@@ -26,57 +28,70 @@ public class GenerateCoveragePercentsTask extends DefaultTask {
     @OutputFile
     File reportFile
 
-    @Input
-    List<String> packages
-
     XmlSlurper parser
+
+    String coverageTaskName
 
     GenerateCoveragePercentsTask() {
         parser = new XmlSlurper()
         parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
         parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+
+        assert project.tasks.withType(JacocoReport).size() == 1 : 'Found multiple tasks which generate coverage reports.'
+        coverageTaskName = project.tasks.withType(JacocoReport)[0].name
     }
 
     @TaskAction
     def generate() {
-        // We would not have a pull request number unless running on Prow.
-        // Using 777 as a place holder when running locally for purpose such as debugging.
-        def pullRequestNumber = project.properties["pull_request"] ?: 777
-        generateJson(pullRequestNumber, packages)
+        if (project.hasProperty("pull_request")) {
+            def pullRequestNumber = project.properties["pull_request"]
+            generateJson(pullRequestNumber)
+        } else {
+            throw new IllegalStateException("Cannot find pull request number from project properties.")
+        }
     }
 
-    private def getCoveragePercentFromReport(path) {
-        println "Parsing coverage file: $path"
-        def report = parser.parse(path)
-        def name = report.@name
-
-        def lineCoverage = report.counter.find {it.@type == 'LINE'}
-        def covered = Double.parseDouble(lineCoverage.@covered.text())
-        def missed = Double.parseDouble(lineCoverage.@missed.text())
-        def percent = covered / (covered + missed)
-
-        return new Tuple(name, percent)
+    private def getCoveragePercentFromReport(_project) {
+        def path = "${_project.jacoco.reportsDir}/${coverageTaskName}/${coverageTaskName}.xml"
+        try {
+            def report = parser.parse(path)
+            def name = report.@name
+            def lineCoverage = report.counter.find { it.@type == 'LINE' }
+            if (lineCoverage) {
+                def covered = Double.parseDouble(lineCoverage.@covered.text())
+                def missed = Double.parseDouble(lineCoverage.@missed.text())
+                def percent = covered / (covered + missed)
+                return new Tuple(name, percent)
+            } else {
+                throw new IllegalStateException("Cannot find line coverage section in the report: $path.")
+            }
+        } catch (FileNotFoundException e) {
+            project.logger.warn("Cannot find coverage report for project: $_project.")
+            return new Tuple(_project.name, 0)
+        }
     }
 
-
-    private def generateJson(pullRequestNumber, packages) {
+    private def generateJson(pullRequestNumber) {
         def coverages = [:]
 
         // TODO(yifany@): Consolidate mappings with apksize and iOS.
         def sdkMap = [
-                'firebase-common':1,
-                'firebase-database':2,
-                'firebase-database-collection':3,
-                'firebase-firestore':4,
-                'firebase-functions':5,
-                'firebase-inappmessaging-display':6,
-                'firebase-storage':7
+                'firebase-common': 0,
+                'firebase-common-ktx': 1,
+                'firebase-database': 2,
+                'firebase-database-collection': 3,
+                'firebase-firestore': 4,
+                'firebase-firestore-ktx': 5,
+                'firebase-functions': 6,
+                'firebase-inappmessaging-display': 7,
+                'firebase-storage': 8
         ]
 
-        for (String p: packages) {
-            def path = p + '/build/reports/jacoco/checkCoverage/checkCoverage.xml'
-            def (name, percent) = getCoveragePercentFromReport(path)
-            coverages[sdkMap[name]] = percent
+        for (Project p: project.rootProject.subprojects) {
+            if (p.name.startsWith('firebase')) {
+                def (name, percent) = getCoveragePercentFromReport(p)
+                coverages[sdkMap[name]] = percent
+            }
         }
 
         def replacements = coverages.collect {
@@ -101,7 +116,7 @@ public class GenerateCoveragePercentsTask extends DefaultTask {
             }
         """
 
-        println(json)
+        project.logger.quiet(json)
 
         reportFile.withWriter {
             it.write(json)

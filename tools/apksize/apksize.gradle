@@ -53,23 +53,7 @@ task uploadMeasurements(type: UploadMeasurementsTask) {
 
 // TODO(yifany@): Move below 2 tasks out of apksize.gradle.
 task generateCoverageMeasurements(type: GenerateCoveragePercentsTask, group: 'Coverage') {
-
-    // TODO(yifany@): Find a more concise way to express dependencies.
-    dependsOn ':firebase-common:checkCoverage'
-    dependsOn ':firebase-database:checkCoverage'
-    dependsOn ':firebase-database-collection:checkCoverage'
-    dependsOn ':firebase-firestore:checkCoverage'
-    dependsOn ':firebase-functions:checkCoverage'
-    dependsOn ':firebase-inappmessaging-display:checkCoverage'
-    dependsOn ':firebase-storage:checkCoverage'
-
-    packages = ["firebase-common",
-                "firebase-database",
-                "firebase-database-collection",
-                "firebase-firestore",
-                "firebase-functions",
-                "firebase-inappmessaging-display",
-                "firebase-storage"]
+    dependsOn rootProject.allprojects.collect { it.tasks.withType(JacocoReport) }.flatten()
 
     reportFile = file("$buildDir/coverage-report.json")
 }
