@@ -80,7 +80,12 @@ public class JobInfoScheduler implements WorkScheduler {
     // Check if there exists a job scheduled for this backend name.
     if (isJobServiceOn(jobScheduler, jobId)) return;
     // Obtain the next available call time for the backend.
-    long timeDiff = eventStore.getNextCallTime(backendName) - clock.getTime();
+    Long backendTime = eventStore.getNextCallTime(backendName);
+
+    long timeDiff = 0;
+    if (backendTime != null) {
+      timeDiff = backendTime - clock.getTime();
+    }
     // Schedule the build.
     PersistableBundle bundle = new PersistableBundle();
     bundle.putInt(SchedulerUtil.ATTEMPT_NUMBER, attemptNumber);

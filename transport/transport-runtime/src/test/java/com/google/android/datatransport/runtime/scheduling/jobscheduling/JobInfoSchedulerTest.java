@@ -55,6 +55,20 @@ public class JobInfoSchedulerTest {
   }
 
   @Test
+  public void schedule_noTimeRecordedForBackend() {
+    scheduler.schedule(BACKEND_NAME, 1);
+    int jobId = scheduler.getJobId(BACKEND_NAME);
+    assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
+    assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
+    JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
+    PersistableBundle bundle = jobInfo.getExtras();
+    assertThat(jobInfo.getId()).isEqualTo(jobId);
+    assertThat(bundle.get(SchedulerUtil.BACKEND_NAME)).isEqualTo(BACKEND_NAME);
+    assertThat(bundle.get(SchedulerUtil.ATTEMPT_NUMBER)).isEqualTo(1);
+    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(60000); // 2^1*DELTA
+  }
+
+  @Test
   public void schedule_smallWaitTImeFirstAttempt() {
     store.recordNextCallTime(BACKEND_NAME, 5);
     scheduler.schedule(BACKEND_NAME, 1);
