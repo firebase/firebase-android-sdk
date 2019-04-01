@@ -18,7 +18,11 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
-/** Dummy services needed to be able to declare transport backends in AndroidManifest.xml files. */
+/**
+ * Dummy service needed to be able to declare transport backends in AndroidManifest.xml files.
+ *
+ * @see BackendRegistry
+ */
 public class TransportBackendDiscovery extends Service {
   @Override
   public IBinder onBind(Intent intent) {

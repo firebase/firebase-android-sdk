@@ -28,7 +28,21 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-/** Container for registered {@link TransportBackend}s. */
+/**
+ * Container for registered {@link TransportBackend}s.
+ *
+ * <p>This class is responsible for discovering transport backends via the following mechanism:
+ *
+ * <p>Backend libraries register themselves in their AndroidManifest.xml files via metadata
+ * key-value pairs on a dedicated {@link TransportBackendDiscovery} service. This service has no
+ * behavior and its sole purpose is to be a target for backend metadata. A few reasons it's done
+ * this way as opposed to using application's metadata:
+ *
+ * <ul>
+ *   <li>Minimize potential key-value clashes with other libraries
+ *   <li>Application metadata is copied to all android components: activities, services,
+ *       content-providers, etc. So the intent is to avoid this in order to improve efficiency.
+ */
 @Singleton
 public class BackendRegistry {
 
@@ -36,12 +50,12 @@ public class BackendRegistry {
   private static final String BACKEND_KEY_PREFIX = "backend:";
 
   private final Context applicationContext;
-  private final CreationContextFactory creationContext;
+  private final CreationContext creationContext;
   private final Map<String, TransportBackend> backends = new HashMap<>();
   private Map<String, String> backendProviders = null;
 
   @Inject
-  public BackendRegistry(Context applicationContext, CreationContextFactory creationContext) {
+  public BackendRegistry(Context applicationContext, CreationContext creationContext) {
     this.applicationContext = applicationContext;
     this.creationContext = creationContext;
   }
@@ -60,7 +74,7 @@ public class BackendRegistry {
       BackendFactory provider =
           (BackendFactory)
               Class.forName(backendProviderName).getDeclaredConstructor().newInstance();
-      TransportBackend newBackend = provider.create(creationContext.create(name));
+      TransportBackend newBackend = provider.create(creationContext);
       backends.put(name, newBackend);
       return newBackend;
     } catch (ClassNotFoundException e) {

@@ -25,9 +25,6 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class CreationContext {
 
-  /** Returns the backend name that runtime is requesting. */
-  public abstract String getBackendName();
-
   /** Returns a {@link Clock} that provides time as known by the device. */
   public abstract Clock getWallClock();
 
@@ -35,7 +32,7 @@ public abstract class CreationContext {
   public abstract Clock getMonotonicClock();
 
   /** Creates a new instance of {@link CreationContext}. */
-  public static CreationContext create(String backendName, Clock wallClock, Clock monotonicClock) {
-    return new AutoValue_CreationContext(backendName, wallClock, monotonicClock);
+  public static CreationContext create(Clock wallClock, Clock monotonicClock) {
+    return new AutoValue_CreationContext(wallClock, monotonicClock);
   }
 }

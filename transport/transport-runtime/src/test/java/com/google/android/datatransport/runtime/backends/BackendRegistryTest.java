@@ -25,8 +25,7 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class BackendRegistryTest {
 
-  private final CreationContextFactory creationContext =
-      new CreationContextFactory(() -> 1, () -> 2);
+  private final CreationContext creationContext = CreationContext.create(() -> 1, () -> 2);
   private BackendRegistry registry;
 
   @Before
