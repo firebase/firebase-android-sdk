@@ -101,12 +101,13 @@ configure(subprojects) {
         toolVersion = '0.8.3'
     }
     task(['type': JacocoReport, 'dependsOn': 'check', 'group': 'Coverage',
-          'description': 'Generates JaCoCo unit test coverage reports.'], 'checkCoverage') {
+          'description': 'Generates JaCoCo unit test coverage reports.'], checkCoverage) {
         def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**Manifest*.*']
         classDirectories = files([
-            fileTree(dir: "$buildDir/intermediates/javac/debug", excludes: excludes)
+            fileTree(dir: "$buildDir/intermediates/javac/debug", excludes: excludes),
+            fileTree(dir: "$buildDir/tmp/kotlin-classes/debug", excludes: excludes)
         ])
-        sourceDirectories = files(['src/main/java'])
+        sourceDirectories = files(['src/main/java', 'src/main/kotlin'])
         executionData = fileTree(dir: "$buildDir", includes: ['jacoco/*.exec'])
         reports {
             html.enabled true
