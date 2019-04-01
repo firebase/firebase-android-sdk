@@ -33,6 +33,7 @@ import javax.inject.Inject;
 /** Handles upload of all the events corresponding to a backend. */
 public class Uploader {
 
+  private final int LOCK_TIMEOUT = 10000;
   private final Context context;
   private final BackendRegistry backendRegistry;
   private final EventStore eventStore;
@@ -68,7 +69,12 @@ public class Uploader {
         () -> {
           try {
             if (!isNetworkAvailable()) {
-              workScheduler.schedule(backendName, attemptNumber + 1);
+              guard.runCriticalSection(
+                  LOCK_TIMEOUT,
+                  () -> {
+                    workScheduler.schedule(backendName, attemptNumber + 1);
+                    return null;
+                  });
             } else {
               logAndUpdateState(backendName, attemptNumber);
             }
@@ -82,7 +88,7 @@ public class Uploader {
     TransportBackend backend = backendRegistry.get(backendName);
     List<EventInternal> eventInternals = new ArrayList<>();
     Iterable<PersistedEvent> persistedEvents =
-        guard.runCriticalSection(10000, () -> eventStore.loadAll(backendName));
+        guard.runCriticalSection(LOCK_TIMEOUT, () -> eventStore.loadAll(backendName));
 
     // Donot make a call to the backend if the list is empty.
     if (!persistedEvents.iterator().hasNext()) {
@@ -94,7 +100,7 @@ public class Uploader {
     }
     BackendResponse response = backend.send(BackendRequest.create(eventInternals));
     guard.runCriticalSection(
-        10000,
+        LOCK_TIMEOUT,
         () -> {
           if (response.getStatus() == BackendResponse.Status.OK) {
             eventStore.recordSuccess(persistedEvents);
