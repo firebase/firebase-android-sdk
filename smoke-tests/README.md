@@ -15,11 +15,15 @@ is a work in progress, and the following list shows what is complete:
 # Project Structure
 
 This Gradle project is split into flavors for each Firebase product. Test code
-lives in these flavors. Each flavor has a single activity with the test methods.
-Test methods are annotated with `SmokeTest`. The Android plugin adds additional,
-compound flavors, such as `androidTestDatabase`. These should only contain a
-test class that extends `SmokeTestBase`. The are no formal test methods in these
-classes.
+lives in these flavors. Each flavor has one or more test classes in the app APK.
+These are regular JUnit tests.
+
+There is only one testing variant, `androidTest`. This contains the
+`SmokeTestSuite` JUnit test runner. This custom runner finds the test classes by
+searching for metadata in the application's Android manifest. Therefore, a
+metadata tag named `com.google.firebase.testing.classes` is needed in each
+application variant with a comma-separated list of test class names. The
+`androidTest` variant does not need to be modified by test authors.
 
 # Test Workflow
 
@@ -28,8 +32,7 @@ As we want to test building as a third-party consumer, the test code and
 Firebase dependencies all belong in the application APK. This can be optionally
 obfsucated like a real application.
 
-To simplify the tests, all test code is one source tree. The test source tree is
-presently required for bootstrapping the testing procedure and does not house
-anything related to the test methods. The test class reflectively finds and
-executes the test methods from the application APK. This may be simplified in
-the future.
+The Android instrumentation runner loads one test class, `SmokeTests`. This is
+executed by the `SmokeTestSuite`. `SmokeTests` is simply a placeholder class to
+bootstrap the logic contained in the suite runner, which then delegates to the
+test runners for the classes referenced by the Android manifest.

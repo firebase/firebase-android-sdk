@@ -14,12 +14,8 @@
 
 package com.google.firebase.testing.common;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.junit.runner.RunWith;
 
-/** Marks a method as a smoke test. */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface SmokeTest {}
+/** An empty class that serves as the entrypoint for the smoke tests. */
+@RunWith(SmokeTestSuite.class)
+public final class SmokeTests {}

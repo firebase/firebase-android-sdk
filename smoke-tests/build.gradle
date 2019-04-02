@@ -29,11 +29,6 @@ apply plugin: "com.android.application"
 android {
   compileSdkVersion 24
 
-  compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
-  }
-
   defaultConfig {
     minSdkVersion 16
     multiDexEnabled true
@@ -58,9 +53,11 @@ repositories {
 dependencies {
   // Common
 
-  implementation "com.google.firebase:firebase-common:16.0.7"
+  api "androidx.test:runner:1.1.0"
+  api "junit:junit:4.12"
 
-  androidTestImplementation "androidx.test:runner:1.1.0"
+  implementation "androidx.test:rules:1.1.0"
+  implementation "com.google.firebase:firebase-common:16.0.7"
 
   // Firestore
   firestoreImplementation "com.google.android.gms:play-services-tasks:16.0.1"
@@ -68,8 +65,6 @@ dependencies {
   firestoreImplementation "com.google.firebase:firebase-firestore:18.1.0"
   firestoreImplementation "com.google.truth:truth:0.43"
 
-  androidTestFirestoreImplementation "androidx.test:rules:1.1.0"
-  androidTestFirestoreImplementation "junit:junit:4.12"
 }
 
 apply plugin: "com.google.gms.google-services"

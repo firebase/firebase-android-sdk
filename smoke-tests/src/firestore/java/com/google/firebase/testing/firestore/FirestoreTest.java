@@ -17,6 +17,8 @@ package com.google.firebase.testing.firestore;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.app.Activity;
+import androidx.test.rule.ActivityTestRule;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.auth.FirebaseAuth;
@@ -26,14 +28,19 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.testing.common.SmokeTest;
 import com.google.firebase.testing.common.Tasks2;
 import java.util.HashMap;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-/** An empty activity with Firestore smoke tests. */
-public final class FirestoreActivity extends Activity {
+/** Firestore smoke tests. */
+@RunWith(AndroidJUnit4.class)
+public final class FirestoreTest {
 
-  @SmokeTest
+  @Rule public final ActivityTestRule<Activity> activity = new ActivityTestRule<>(Activity.class);
+
+  @Test
   public void listenForUpdate() throws Exception {
     FirebaseAuth auth = FirebaseAuth.getInstance();
     FirebaseFirestore firestore = FirebaseFirestore.getInstance();
