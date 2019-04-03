@@ -653,6 +653,11 @@ public class FirebaseApp {
     }
   }
 
+  /** Normalizes the app name. */
+  private static String normalize(@NonNull String name) {
+    return name.trim();
+  }
+
   /**
    * Calls getInstance(FirebaseApp) API entry points using reflection.
    *
