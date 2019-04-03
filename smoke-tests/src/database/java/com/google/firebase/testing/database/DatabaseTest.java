@@ -40,7 +40,7 @@ public final class DatabaseTest {
   @Rule public final ActivityTestRule<Activity> activity = new ActivityTestRule<>(Activity.class);
 
   @Test
-  public void listenForUpdate() throws Exception {
+  public void setValueShouldTriggerListenerWithNewlySetData() throws Exception {
     FirebaseAuth auth = FirebaseAuth.getInstance();
     FirebaseDatabase database = FirebaseDatabase.getInstance();
 

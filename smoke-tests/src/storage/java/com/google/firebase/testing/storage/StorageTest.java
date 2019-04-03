@@ -37,7 +37,7 @@ public final class StorageTest {
   @Rule public final ActivityTestRule<Activity> activity = new ActivityTestRule<>(Activity.class);
 
   @Test
-  public void getSet() throws Exception {
+  public void getShouldReturnNewlyPutData() throws Exception {
     FirebaseAuth auth = FirebaseAuth.getInstance();
     FirebaseStorage storage = FirebaseStorage.getInstance();
 
