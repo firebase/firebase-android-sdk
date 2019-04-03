@@ -191,8 +191,6 @@ public class FirebaseAppTest {
     assertThat(callbackCount.get()).isEqualTo(2);
   }
 
-
-
   @Test
   public void testGetInstanceErrorMessageContainsProcessName() {
     try {
@@ -386,7 +384,6 @@ public class FirebaseAppTest {
     assertThat(sdkVerifier.isAuthInitialized()).isTrue();
     assertThat(sdkVerifier.isAnalyticsInitialized()).isTrue();
   }
-
 
   /** Returns mock context that forwards calls to targetContext and localBroadcastManager. */
   private Context createForwardingMockContext() {
