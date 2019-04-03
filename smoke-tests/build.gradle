@@ -38,9 +38,19 @@ android {
   flavorDimensions "systemUnderTest"
 
   productFlavors {
+    database {
+      dimension "systemUnderTest"
+      applicationId "com.google.firebase.testing.database"
+    }
+
     firestore {
       dimension "systemUnderTest"
       applicationId "com.google.firebase.testing.firestore"
+    }
+
+    storage {
+      dimension "systemUnderTest"
+      applicationId "com.google.firebase.testing.storage"
     }
   }
 }
@@ -52,19 +62,24 @@ repositories {
 
 dependencies {
   // Common
-
   api "androidx.test:runner:1.1.0"
+  api "com.google.truth:truth:0.43"
   api "junit:junit:4.12"
 
   implementation "androidx.test:rules:1.1.0"
   implementation "com.google.firebase:firebase-common:16.0.7"
 
+  // Database
+  databaseImplementation "com.google.firebase:firebase-auth:16.1.0"
+  databaseImplementation "com.google.firebase:firebase-database:16.1.0"
+
   // Firestore
-  firestoreImplementation "com.google.android.gms:play-services-tasks:16.0.1"
   firestoreImplementation "com.google.firebase:firebase-auth:16.1.0"
   firestoreImplementation "com.google.firebase:firebase-firestore:18.1.0"
-  firestoreImplementation "com.google.truth:truth:0.43"
 
+  // Storage
+  storageImplementation "com.google.firebase:firebase-auth:16.1.0"
+  storageImplementation "com.google.firebase:firebase-storage:16.1.0"
 }
 
 apply plugin: "com.google.gms.google-services"
