@@ -21,6 +21,7 @@ import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.Context;
 import android.os.PersistableBundle;
+import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
 import org.junit.Test;
@@ -32,7 +33,9 @@ import org.robolectric.annotation.Config;
 @Config(sdk = {LOLLIPOP})
 @RunWith(RobolectricTestRunner.class)
 public class JobInfoSchedulerTest {
-  private final String BACKEND_NAME = "backend1";
+  private static final TransportContext TRANSPORT_CONTEXT =
+      TransportContext.builder().setBackendName("backend1").build();
+
   private final Context context = RuntimeEnvironment.application;
   private final EventStore store = new InMemoryEventStore();
   private final JobScheduler jobScheduler =
@@ -41,59 +44,62 @@ public class JobInfoSchedulerTest {
 
   @Test
   public void schedule_longWaitTimeFirstAttempt() {
-    store.recordNextCallTime(BACKEND_NAME, 1000000);
-    scheduler.schedule(BACKEND_NAME, 1);
-    int jobId = scheduler.getJobId(BACKEND_NAME);
+    store.recordNextCallTime(TRANSPORT_CONTEXT, 1000000);
+    scheduler.schedule(TRANSPORT_CONTEXT, 1);
+    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
     PersistableBundle bundle = jobInfo.getExtras();
     assertThat(jobInfo.getId()).isEqualTo(jobId);
-    assertThat(bundle.get(SchedulerUtil.BACKEND_NAME)).isEqualTo(BACKEND_NAME);
+    assertThat(bundle.get(SchedulerUtil.BACKEND_NAME))
+        .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
     assertThat(bundle.get(SchedulerUtil.ATTEMPT_NUMBER)).isEqualTo(1);
     assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(1000000);
   }
 
   @Test
   public void schedule_smallWaitTImeFirstAttempt() {
-    store.recordNextCallTime(BACKEND_NAME, 5);
-    scheduler.schedule(BACKEND_NAME, 1);
-    int jobId = scheduler.getJobId(BACKEND_NAME);
+    store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
+    scheduler.schedule(TRANSPORT_CONTEXT, 1);
+    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
     PersistableBundle bundle = jobInfo.getExtras();
     assertThat(jobInfo.getId()).isEqualTo(jobId);
-    assertThat(bundle.get(SchedulerUtil.BACKEND_NAME)).isEqualTo(BACKEND_NAME);
+    assertThat(bundle.get(SchedulerUtil.BACKEND_NAME))
+        .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
     assertThat(bundle.get(SchedulerUtil.ATTEMPT_NUMBER)).isEqualTo(1);
     assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(60000); // 2^1*DELTA
   }
 
   @Test
   public void schedule_longWaitTimeTenthAttempt() {
-    store.recordNextCallTime(BACKEND_NAME, 1000000);
-    scheduler.schedule(BACKEND_NAME, 10);
-    int jobId = scheduler.getJobId(BACKEND_NAME);
+    store.recordNextCallTime(TRANSPORT_CONTEXT, 1000000);
+    scheduler.schedule(TRANSPORT_CONTEXT, 10);
+    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
     PersistableBundle bundle = jobInfo.getExtras();
     assertThat(jobInfo.getId()).isEqualTo(jobId);
-    assertThat(bundle.get(SchedulerUtil.BACKEND_NAME)).isEqualTo(BACKEND_NAME);
+    assertThat(bundle.get(SchedulerUtil.BACKEND_NAME))
+        .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
     assertThat(bundle.get(SchedulerUtil.ATTEMPT_NUMBER)).isEqualTo(10);
     assertThat(jobInfo.getMinLatencyMillis()).isGreaterThan((long) 1000000);
   }
 
   @Test
   public void schedule_twoJobs() {
-    store.recordNextCallTime(BACKEND_NAME, 5);
-    int jobId = scheduler.getJobId(BACKEND_NAME);
+    store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
+    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
     // Schedule first job
-    scheduler.schedule(BACKEND_NAME, 1);
+    scheduler.schedule(TRANSPORT_CONTEXT, 1);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     // Schedule another job
-    scheduler.schedule(BACKEND_NAME, 2);
+    scheduler.schedule(TRANSPORT_CONTEXT, 2);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     // The job should be the first job.
@@ -101,6 +107,7 @@ public class JobInfoSchedulerTest {
     PersistableBundle bundle = jobInfo.getExtras();
     assertThat(jobInfo.getId()).isEqualTo(jobId);
     assertThat(bundle.get(SchedulerUtil.ATTEMPT_NUMBER)).isEqualTo(1);
-    assertThat(bundle.get(SchedulerUtil.BACKEND_NAME)).isEqualTo(BACKEND_NAME);
+    assertThat(bundle.get(SchedulerUtil.BACKEND_NAME))
+        .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
   }
 }

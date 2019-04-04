@@ -91,7 +91,8 @@ public class TransportRuntime implements TransportInternal {
 
   /** Returns a {@link TransportFactory} for a given {@code backendName}. */
   public TransportFactory newFactory(String backendName) {
-    return new TransportFactoryImpl(backendName, this);
+    return new TransportFactoryImpl(
+        TransportContext.builder().setBackendName(backendName).build(), this);
   }
 
   @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -101,7 +102,9 @@ public class TransportRuntime implements TransportInternal {
 
   @Override
   public void send(SendRequest request) {
-    scheduler.schedule(request.getBackendName(), convert(request));
+    scheduler.schedule(
+        request.getTransportContext().withPriority(request.getEvent().getPriority()),
+        convert(request));
   }
 
   private EventInternal convert(SendRequest request) {
@@ -109,7 +112,6 @@ public class TransportRuntime implements TransportInternal {
         .setEventMillis(eventClock.getTime())
         .setUptimeMillis(uptimeClock.getTime())
         .setTransportName(request.getTransportName())
-        .setPriority(request.getEvent().getPriority())
         .setPayload(request.getPayload())
         .build();
   }

@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,22 +26,23 @@ import java.util.concurrent.atomic.AtomicLong;
 /** In memory implementation used for development/testing. */
 public class InMemoryEventStore implements EventStore {
   private final AtomicLong idCounter = new AtomicLong();
-  private final Map<String, Map<Long, EventInternal>> store = new HashMap<>();
-  private final Map<String, Long> backendCallTime = new HashMap<>();
+  private final Map<TransportContext, Map<Long, EventInternal>> store = new HashMap<>();
+  private final Map<TransportContext, Long> backendCallTime = new HashMap<>();
 
   @Override
-  public synchronized PersistedEvent persist(String backendName, EventInternal event) {
+  public synchronized PersistedEvent persist(
+      TransportContext transportContext, EventInternal event) {
     long newId = idCounter.incrementAndGet();
-    getOrCreateBackendStore(backendName).put(newId, event);
+    getOrCreateBackendStore(transportContext).put(newId, event);
 
-    return PersistedEvent.create(newId, backendName, event);
+    return PersistedEvent.create(newId, transportContext, event);
   }
 
-  private Map<Long, EventInternal> getOrCreateBackendStore(String backendName) {
-    if (!store.containsKey(backendName)) {
-      store.put(backendName, new HashMap<>());
+  private Map<Long, EventInternal> getOrCreateBackendStore(TransportContext transportContext) {
+    if (!store.containsKey(transportContext)) {
+      store.put(transportContext, new HashMap<>());
     }
-    return store.get(backendName);
+    return store.get(transportContext);
   }
 
   @Override
@@ -52,7 +54,7 @@ public class InMemoryEventStore implements EventStore {
   @Override
   public synchronized void recordSuccess(Iterable<PersistedEvent> events) {
     for (PersistedEvent event : events) {
-      Map<Long, EventInternal> backendStore = store.get(event.getBackendName());
+      Map<Long, EventInternal> backendStore = store.get(event.getTransportContext());
       if (backendStore == null) {
         return;
       }
@@ -61,18 +63,18 @@ public class InMemoryEventStore implements EventStore {
   }
 
   @Override
-  public Long getNextCallTime(String backendName) {
-    return backendCallTime.get(backendName);
+  public Long getNextCallTime(TransportContext transportContext) {
+    return backendCallTime.get(transportContext);
   }
 
   @Override
-  public void recordNextCallTime(String backendName, long timestampMs) {
-    backendCallTime.put(backendName, timestampMs);
+  public void recordNextCallTime(TransportContext transportContext, long timestampMs) {
+    backendCallTime.put(transportContext, timestampMs);
   }
 
   @Override
-  public synchronized boolean hasPendingEventsFor(String backendName) {
-    Map<Long, EventInternal> backendStore = store.get(backendName);
+  public synchronized boolean hasPendingEventsFor(TransportContext transportContext) {
+    Map<Long, EventInternal> backendStore = store.get(transportContext);
     if (backendStore == null) {
       return false;
     }
@@ -80,14 +82,14 @@ public class InMemoryEventStore implements EventStore {
   }
 
   @Override
-  public synchronized Iterable<PersistedEvent> loadAll(String backendName) {
-    Map<Long, EventInternal> backendStore = store.get(backendName);
+  public synchronized Iterable<PersistedEvent> loadAll(TransportContext transportContext) {
+    Map<Long, EventInternal> backendStore = store.get(transportContext);
     if (backendStore == null) {
       return Collections.emptyList();
     }
     List<PersistedEvent> events = new ArrayList<>();
     for (Map.Entry<Long, EventInternal> entry : backendStore.entrySet()) {
-      events.add(PersistedEvent.create(entry.getKey(), backendName, entry.getValue()));
+      events.add(PersistedEvent.create(entry.getKey(), transportContext, entry.getValue()));
     }
     return events;
   }
