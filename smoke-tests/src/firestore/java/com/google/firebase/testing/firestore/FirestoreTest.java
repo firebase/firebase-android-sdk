@@ -29,6 +29,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.testing.common.Tasks2;
+import com.google.firebase.testing.common.TestId;
 import java.util.HashMap;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,7 +42,7 @@ public final class FirestoreTest {
   @Rule public final ActivityTestRule<Activity> activity = new ActivityTestRule<>(Activity.class);
 
   @Test
-  public void listenForUpdate() throws Exception {
+  public void setShouldTriggerListenerWithNewlySetData() throws Exception {
     FirebaseAuth auth = FirebaseAuth.getInstance();
     FirebaseFirestore firestore = FirebaseFirestore.getInstance();
 
@@ -49,7 +50,7 @@ public final class FirestoreTest {
     Task<?> signInTask = auth.signInWithEmailAndPassword("test@mailinator.com", "password");
     Tasks2.waitForSuccess(signInTask);
 
-    DocumentReference doc = firestore.collection("restaurants").document("Baadal");
+    DocumentReference doc = firestore.collection("restaurants").document(TestId.create());
     SnapshotListener listener = new SnapshotListener();
     ListenerRegistration registration = doc.addSnapshotListener(listener);
 
@@ -66,6 +67,7 @@ public final class FirestoreTest {
       assertThat(result.getData()).isEqualTo(data);
     } finally {
       registration.remove();
+      Tasks2.waitBestEffort(doc.delete());
     }
   }
 
