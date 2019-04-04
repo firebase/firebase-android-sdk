@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.android.datatransport.Event;
-import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
@@ -48,16 +47,17 @@ public class TransportRuntimeTest {
 
   @Test
   public void testTransportInternalSend() {
-    String mockBackendName = "backendMock";
+    TransportContext transportContext =
+        TransportContext.builder().setBackendName("backendMock").build();
     String testTransport = "testTransport";
-    TransportFactory factory = new TransportFactoryImpl(mockBackendName, transportInternalMock);
+    TransportFactory factory = new TransportFactoryImpl(transportContext, transportInternalMock);
     Event<String> event = Event.ofTelemetry("TelemetryData");
     Transformer<String, byte[]> transformer = String::getBytes;
     Transport<String> transport = factory.getTransport(testTransport, String.class, transformer);
     transport.send(event);
     SendRequest request =
         SendRequest.builder()
-            .setBackendName(mockBackendName)
+            .setTransportContext(transportContext)
             .setEvent(event, transformer)
             .setTransportName(testTransport)
             .build();
@@ -104,7 +104,6 @@ public class TransportRuntimeTest {
             .setEventMillis(eventMillis)
             .setUptimeMillis(uptimeMillis)
             .setTransportName(testTransport)
-            .setPriority(Priority.DEFAULT)
             .setPayload("TelemetryData".getBytes())
             .build();
     transport.send(stringEvent);

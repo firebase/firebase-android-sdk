@@ -24,7 +24,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.junit.Assert.assertEquals;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.cct.proto.LogResponse;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
@@ -42,7 +41,6 @@ public class CctTransportBackendTest {
   private static String TEST_ENDPOINT = "http://localhost:8999/api";
   private static CctTransportBackend BACKEND =
       new CctTransportBackend(TEST_ENDPOINT, () -> 3, () -> 1);
-  private static String TRANSPORT_NAME = "3";
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(8999);
 
@@ -53,8 +51,7 @@ public class CctTransportBackendTest {
                 EventInternal.builder()
                     .setEventMillis(3)
                     .setUptimeMillis(1)
-                    .setTransportName(TRANSPORT_NAME)
-                    .setPriority(Priority.DEFAULT)
+                    .setTransportName("3")
                     .setPayload("TelemetryData".getBytes())
                     .build())));
   }

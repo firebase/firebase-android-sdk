@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
 import com.google.auto.value.AutoValue;
 
 /** Holds an {@link EventInternal} with additional information. */
@@ -22,11 +23,12 @@ import com.google.auto.value.AutoValue;
 public abstract class PersistedEvent {
   public abstract long getId();
 
-  public abstract String getBackendName();
+  public abstract TransportContext getTransportContext();
 
   public abstract EventInternal getEvent();
 
-  public static PersistedEvent create(long id, String backendName, EventInternal object) {
-    return new AutoValue_PersistedEvent(id, backendName, object);
+  public static PersistedEvent create(
+      long id, TransportContext transportContext, EventInternal object) {
+    return new AutoValue_PersistedEvent(id, transportContext, object);
   }
 }
