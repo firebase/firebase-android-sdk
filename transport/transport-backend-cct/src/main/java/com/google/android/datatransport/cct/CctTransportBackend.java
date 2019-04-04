@@ -15,7 +15,6 @@
 package com.google.android.datatransport.cct;
 
 import android.os.Build;
-import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.cct.proto.AndroidClientInfo;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
 import com.google.android.datatransport.cct.proto.ClientInfo;
@@ -23,14 +22,12 @@ import com.google.android.datatransport.cct.proto.LogEvent;
 import com.google.android.datatransport.cct.proto.LogRequest;
 import com.google.android.datatransport.cct.proto.LogResponse;
 import com.google.android.datatransport.cct.proto.QosTierConfiguration;
-import com.google.android.datatransport.runtime.BackendRequest;
-import com.google.android.datatransport.runtime.BackendResponse;
-import com.google.android.datatransport.runtime.BackendResponse.Status;
 import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportBackend;
+import com.google.android.datatransport.runtime.backends.BackendRequest;
+import com.google.android.datatransport.runtime.backends.BackendResponse;
+import com.google.android.datatransport.runtime.backends.BackendResponse.Status;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.time.Clock;
-import com.google.android.datatransport.runtime.time.UptimeClock;
-import com.google.android.datatransport.runtime.time.WallTimeClock;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.ByteArrayOutputStream;
@@ -50,9 +47,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
-public class GoogleTransportBackend implements TransportBackend {
+final class CctTransportBackend implements TransportBackend {
 
-  private static final Logger LOGGER = Logger.getLogger(GoogleTransportBackend.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(CctTransportBackend.class.getName());
   private static final int CONNECTION_TIME_OUT = 30000;
   private static final int READ_TIME_OUT = 40000;
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
@@ -80,15 +77,10 @@ public class GoogleTransportBackend implements TransportBackend {
     }
   }
 
-  @VisibleForTesting
-  GoogleTransportBackend(String url, Clock wallTimeClock, Clock uptimeClock) {
+  CctTransportBackend(String url, Clock wallTimeClock, Clock uptimeClock) {
     this.endPoint = parseUrlOrThrow(url);
     this.uptimeClock = uptimeClock;
     this.wallTimeClock = wallTimeClock;
-  }
-
-  public GoogleTransportBackend() {
-    this("https://play.googleapis.com/log/batch", new WallTimeClock(), new UptimeClock());
   }
 
   @Override
