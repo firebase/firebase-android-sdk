@@ -24,6 +24,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.testing.common.Tasks2;
+import com.google.firebase.testing.common.TestId;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.junit.Rule;
@@ -45,17 +46,21 @@ public final class StorageTest {
     Task<?> signInTask = auth.signInWithEmailAndPassword("test@mailinator.com", "password");
     Tasks2.waitForSuccess(signInTask);
 
-    StorageReference blob = storage.getReference("restaurants/Baadal");
+    StorageReference blob = storage.getReference("restaurants").child(TestId.create());
 
     byte[] data = "Google NYC".getBytes(StandardCharsets.UTF_8);
 
-    Task<?> putTask = blob.putBytes(Arrays.copyOf(data, data.length));
-    Tasks2.waitForSuccess(putTask);
+    try {
+      Task<?> putTask = blob.putBytes(Arrays.copyOf(data, data.length));
+      Tasks2.waitForSuccess(putTask);
 
-    Task<byte[]> getTask = blob.getBytes(128);
-    Tasks2.waitForSuccess(getTask);
+      Task<byte[]> getTask = blob.getBytes(128);
+      Tasks2.waitForSuccess(getTask);
 
-    byte[] result = getTask.getResult();
-    assertThat(result).isEqualTo(data);
+      byte[] result = getTask.getResult();
+      assertThat(result).isEqualTo(data);
+    } finally {
+      Tasks2.waitBestEffort(blob.delete());
+    }
   }
 }

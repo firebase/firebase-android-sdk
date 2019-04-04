@@ -28,6 +28,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.testing.common.Tasks2;
+import com.google.firebase.testing.common.TestId;
 import java.util.HashMap;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,20 +49,24 @@ public final class DatabaseTest {
     Task<?> signInTask = auth.signInWithEmailAndPassword("test@mailinator.com", "password");
     Tasks2.waitForSuccess(signInTask);
 
-    DatabaseReference doc = database.getReference("restaurants").child("Baadal");
+    DatabaseReference doc = database.getReference("restaurants").child(TestId.create());
     SnapshotListener listener = new SnapshotListener();
     doc.addListenerForSingleValueEvent(listener);
 
     HashMap<String, Object> data = new HashMap<>();
     data.put("location", "Google NYC");
 
-    Task<?> setTask = doc.setValue(new HashMap<>(data));
-    Task<DataSnapshot> snapshotTask = listener.toTask();
-    Tasks2.waitForSuccess(setTask);
-    Tasks2.waitForSuccess(snapshotTask);
+    try {
+      Task<?> setTask = doc.setValue(new HashMap<>(data));
+      Task<DataSnapshot> snapshotTask = listener.toTask();
+      Tasks2.waitForSuccess(setTask);
+      Tasks2.waitForSuccess(snapshotTask);
 
-    DataSnapshot result = snapshotTask.getResult();
-    assertThat(result.getValue()).isEqualTo(data);
+      DataSnapshot result = snapshotTask.getResult();
+      assertThat(result.getValue()).isEqualTo(data);
+    } finally {
+      Tasks2.waitBestEffort(doc.removeValue());
+    }
   }
 
   private static class SnapshotListener implements ValueEventListener {
