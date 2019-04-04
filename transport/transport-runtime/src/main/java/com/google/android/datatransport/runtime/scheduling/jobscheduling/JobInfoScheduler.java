@@ -22,6 +22,7 @@ import android.os.Build;
 import android.os.PersistableBundle;
 import android.support.annotation.RequiresApi;
 import android.support.annotation.VisibleForTesting;
+import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 import java.util.zip.Adler32;
@@ -50,9 +51,9 @@ public class JobInfoScheduler implements WorkScheduler {
   }
 
   @VisibleForTesting
-  int getJobId(String backendName) {
+  int getJobId(TransportContext transportContext) {
     Adler32 checksum = new Adler32();
-    checksum.update(backendName.getBytes());
+    checksum.update(transportContext.getBackendName().getBytes());
     return (int) checksum.getValue();
   }
 
@@ -72,19 +73,19 @@ public class JobInfoScheduler implements WorkScheduler {
    * @param attemptNumber Number of times the JobScheduler has tried to log for this backend.
    */
   @Override
-  public void schedule(String backendName, int attemptNumber) {
+  public void schedule(TransportContext transportContext, int attemptNumber) {
     ComponentName serviceComponent = new ComponentName(context, JobInfoSchedulerService.class);
     JobScheduler jobScheduler =
         (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-    int jobId = getJobId(backendName);
+    int jobId = getJobId(transportContext);
     // Check if there exists a job scheduled for this backend name.
     if (isJobServiceOn(jobScheduler, jobId)) return;
     // Obtain the next available call time for the backend.
-    long timeDiff = eventStore.getNextCallTime(backendName) - clock.getTime();
+    long timeDiff = eventStore.getNextCallTime(transportContext) - clock.getTime();
     // Schedule the build.
     PersistableBundle bundle = new PersistableBundle();
     bundle.putInt(SchedulerUtil.ATTEMPT_NUMBER, attemptNumber);
-    bundle.putString(SchedulerUtil.BACKEND_NAME, backendName);
+    bundle.putString(SchedulerUtil.BACKEND_NAME, transportContext.getBackendName());
     JobInfo.Builder builder = new JobInfo.Builder(jobId, serviceComponent);
     builder.setMinimumLatency(
         clock.getTime()

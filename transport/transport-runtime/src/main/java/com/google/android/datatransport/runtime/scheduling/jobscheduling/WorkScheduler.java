@@ -14,7 +14,9 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
+import com.google.android.datatransport.runtime.TransportContext;
+
 /** Schedules the services to be able to eventually log events to their respective backends. */
 public interface WorkScheduler {
-  void schedule(String backendName, int attemptNumber);
+  void schedule(TransportContext transportContext, int attemptNumber);
 }

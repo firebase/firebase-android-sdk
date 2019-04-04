@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime.scheduling;
 
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
@@ -40,7 +41,7 @@ public class DefaultScheduler implements Scheduler {
   private final int LOCK_TIME_OUT = 10000; // 10 seconds lock timeout
 
   @Inject
-  public DefaultScheduler(
+  DefaultScheduler(
       Executor executor,
       BackendRegistry backendRegistry,
       WorkScheduler workScheduler,
@@ -54,26 +55,29 @@ public class DefaultScheduler implements Scheduler {
   }
 
   /**
-   * Schedules the events to be eventually logged to the backend.
+   * Schedules the events to be eventually sent to the backend.
    *
-   * @param backendName The backend to which the event needs to be logged.
+   * @param transportContext The transport context with which the event needs to be sent.
    * @param event The event itself which needs to be logged with additional information.
    */
   @Override
-  public void schedule(String backendName, EventInternal event) {
+  public void schedule(TransportContext transportContext, EventInternal event) {
     executor.execute(
         () -> {
-          TransportBackend transportBackend = backendRegistry.get(backendName);
+          TransportBackend transportBackend =
+              backendRegistry.get(transportContext.getBackendName());
           if (transportBackend == null) {
-            LOGGER.warning(String.format("Logger backend '%s' is not registered", backendName));
+            LOGGER.warning(
+                String.format(
+                    "Transport backend '%s' is not registered", transportContext.getBackendName()));
             return;
           }
           EventInternal decoratedEvent = transportBackend.decorate(event);
           guard.runCriticalSection(
               LOCK_TIME_OUT,
               () -> {
-                eventStore.persist(backendName, decoratedEvent);
-                workScheduler.schedule(backendName, 0);
+                eventStore.persist(transportContext, decoratedEvent);
+                workScheduler.schedule(transportContext, 0);
                 return null;
               });
         });

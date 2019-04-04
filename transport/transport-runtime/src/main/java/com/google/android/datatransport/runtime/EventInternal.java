@@ -14,7 +14,6 @@
 
 package com.google.android.datatransport.runtime;
 
-import com.google.android.datatransport.Priority;
 import com.google.auto.value.AutoValue;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,8 +25,6 @@ public abstract class EventInternal {
   public abstract String getTransportName();
 
   public abstract byte[] getPayload();
-
-  public abstract Priority getPriority();
 
   public abstract long getEventMillis();
 
@@ -43,7 +40,6 @@ public abstract class EventInternal {
     return new AutoValue_EventInternal.Builder()
         .setTransportName(getTransportName())
         .setPayload(getPayload())
-        .setPriority(getPriority())
         .setEventMillis(getEventMillis())
         .setUptimeMillis(getUptimeMillis())
         .setAutoMetadata(new HashMap<>(getAutoMetadata()));
@@ -58,8 +54,6 @@ public abstract class EventInternal {
     public abstract Builder setTransportName(String value);
 
     public abstract Builder setPayload(byte[] value);
-
-    public abstract Builder setPriority(Priority value);
 
     public abstract Builder setEventMillis(long value);
 
