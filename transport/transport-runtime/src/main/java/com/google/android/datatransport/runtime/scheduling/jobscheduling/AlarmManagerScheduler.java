@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import android.content.Context;
+import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 import javax.inject.Inject;
@@ -38,5 +39,5 @@ public class AlarmManagerScheduler implements WorkScheduler {
   }
 
   @Override
-  public void schedule(String backendName, int attemptNumber) {}
+  public void schedule(TransportContext transportContext, int attemptNumber) {}
 }

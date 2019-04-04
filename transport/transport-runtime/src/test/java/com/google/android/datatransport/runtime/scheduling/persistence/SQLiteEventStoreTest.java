@@ -16,8 +16,8 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,13 +28,13 @@ import org.robolectric.RuntimeEnvironment;
 
 @RunWith(RobolectricTestRunner.class)
 public class SQLiteEventStoreTest {
-
-  private static final String BACKEND_NAME = "backend1";
-  private static final String ANOTHER_BACKEND_NAME = "backend2";
+  private static final TransportContext TRANSPORT_CONTEXT =
+      TransportContext.builder().setBackendName("backend1").build();
+  private static final TransportContext ANOTHER_TRANSPORT_CONTEXT =
+      TransportContext.builder().setBackendName("backend2").build();
   private static final EventInternal EVENT =
       EventInternal.builder()
           .setTransportName("42")
-          .setPriority(Priority.DEFAULT)
           .setEventMillis(1)
           .setUptimeMillis(2)
           .setPayload("Hello".getBytes())
@@ -47,92 +47,92 @@ public class SQLiteEventStoreTest {
 
   @Test
   public void persist_correctlyRoundTrips() {
-    PersistedEvent newEvent = store.persist(BACKEND_NAME, EVENT);
-    Iterable<PersistedEvent> events = store.loadAll(BACKEND_NAME);
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, EVENT);
+    Iterable<PersistedEvent> events = store.loadAll(TRANSPORT_CONTEXT);
 
     assertThat(events).containsExactly(newEvent);
   }
 
   @Test
   public void recordSuccess_deletesEvents() {
-    PersistedEvent newEvent1 = store.persist(BACKEND_NAME, EVENT);
-    PersistedEvent newEvent2 = store.persist(BACKEND_NAME, EVENT);
+    PersistedEvent newEvent1 = store.persist(TRANSPORT_CONTEXT, EVENT);
+    PersistedEvent newEvent2 = store.persist(TRANSPORT_CONTEXT, EVENT);
 
     store.recordSuccess(Collections.singleton(newEvent1));
-    assertThat(store.loadAll(BACKEND_NAME)).containsExactly(newEvent2);
+    assertThat(store.loadAll(TRANSPORT_CONTEXT)).containsExactly(newEvent2);
     store.recordSuccess(Collections.singleton(newEvent2));
-    assertThat(store.loadAll(BACKEND_NAME)).isEmpty();
+    assertThat(store.loadAll(TRANSPORT_CONTEXT)).isEmpty();
   }
 
   @Test
   public void recordSuccess_withMultipleEvents_deletesEvents() {
-    PersistedEvent newEvent1 = store.persist(BACKEND_NAME, EVENT);
-    PersistedEvent newEvent2 = store.persist(BACKEND_NAME, EVENT);
+    PersistedEvent newEvent1 = store.persist(TRANSPORT_CONTEXT, EVENT);
+    PersistedEvent newEvent2 = store.persist(TRANSPORT_CONTEXT, EVENT);
 
     store.recordSuccess(Arrays.asList(newEvent1, newEvent2));
-    assertThat(store.loadAll(BACKEND_NAME)).isEmpty();
+    assertThat(store.loadAll(TRANSPORT_CONTEXT)).isEmpty();
   }
 
   @Test
   public void recordFailure_eventuallyDeletesEvents() {
-    PersistedEvent newEvent1 = store.persist(BACKEND_NAME, EVENT);
-    PersistedEvent newEvent2 = store.persist(BACKEND_NAME, EVENT);
+    PersistedEvent newEvent1 = store.persist(TRANSPORT_CONTEXT, EVENT);
+    PersistedEvent newEvent2 = store.persist(TRANSPORT_CONTEXT, EVENT);
 
     for (int i = 0; i < SQLiteEventStore.MAX_RETRIES; i++) {
-      Iterable<PersistedEvent> events = store.loadAll(BACKEND_NAME);
+      Iterable<PersistedEvent> events = store.loadAll(TRANSPORT_CONTEXT);
       assertThat(events).containsExactly(newEvent1, newEvent2);
       store.recordFailure(Collections.singleton(newEvent1));
     }
-    assertThat(store.loadAll(BACKEND_NAME)).containsExactly(newEvent2);
+    assertThat(store.loadAll(TRANSPORT_CONTEXT)).containsExactly(newEvent2);
   }
 
   @Test
   public void recordFailure_withMultipleEvents_eventuallyDeletesEvents() {
-    PersistedEvent newEvent1 = store.persist(BACKEND_NAME, EVENT);
-    PersistedEvent newEvent2 = store.persist(BACKEND_NAME, EVENT);
+    PersistedEvent newEvent1 = store.persist(TRANSPORT_CONTEXT, EVENT);
+    PersistedEvent newEvent2 = store.persist(TRANSPORT_CONTEXT, EVENT);
 
     for (int i = 0; i < SQLiteEventStore.MAX_RETRIES; i++) {
-      Iterable<PersistedEvent> events = store.loadAll(BACKEND_NAME);
+      Iterable<PersistedEvent> events = store.loadAll(TRANSPORT_CONTEXT);
       assertThat(events).containsExactly(newEvent1, newEvent2);
       store.recordFailure(Arrays.asList(newEvent1, newEvent2));
     }
-    assertThat(store.loadAll(BACKEND_NAME)).isEmpty();
+    assertThat(store.loadAll(TRANSPORT_CONTEXT)).isEmpty();
   }
 
   @Test
   public void getNextCallTime_doesNotReturnUnknownBackends() {
-    assertThat(store.getNextCallTime(BACKEND_NAME)).isNull();
+    assertThat(store.getNextCallTime(TRANSPORT_CONTEXT)).isNull();
   }
 
   @Test
   public void recordNextCallTime_correctlyRecordsTimestamp() {
-    store.recordNextCallTime(BACKEND_NAME, 1);
-    store.recordNextCallTime(ANOTHER_BACKEND_NAME, 2);
+    store.recordNextCallTime(TRANSPORT_CONTEXT, 1);
+    store.recordNextCallTime(ANOTHER_TRANSPORT_CONTEXT, 2);
 
-    assertThat(store.getNextCallTime(BACKEND_NAME)).isEqualTo(1);
-    assertThat(store.getNextCallTime(ANOTHER_BACKEND_NAME)).isEqualTo(2);
+    assertThat(store.getNextCallTime(TRANSPORT_CONTEXT)).isEqualTo(1);
+    assertThat(store.getNextCallTime(ANOTHER_TRANSPORT_CONTEXT)).isEqualTo(2);
   }
 
   @Test
   public void recordNextCallTime_correctlyUpdatesTimestamp() {
     long timestamp1 = 1;
     long timestamp2 = 2;
-    store.recordNextCallTime(BACKEND_NAME, timestamp1);
+    store.recordNextCallTime(TRANSPORT_CONTEXT, timestamp1);
 
-    assertThat(store.getNextCallTime(BACKEND_NAME)).isEqualTo(timestamp1);
+    assertThat(store.getNextCallTime(TRANSPORT_CONTEXT)).isEqualTo(timestamp1);
 
-    store.recordNextCallTime(BACKEND_NAME, timestamp2);
+    store.recordNextCallTime(TRANSPORT_CONTEXT, timestamp2);
 
-    assertThat(store.getNextCallTime(BACKEND_NAME)).isEqualTo(timestamp2);
+    assertThat(store.getNextCallTime(TRANSPORT_CONTEXT)).isEqualTo(timestamp2);
   }
 
   @Test
   public void hasPendingEventsFor_whenEventsExist_shouldReturnTrue() {
-    assertThat(store.hasPendingEventsFor(BACKEND_NAME)).isFalse();
+    assertThat(store.hasPendingEventsFor(TRANSPORT_CONTEXT)).isFalse();
 
-    store.persist(BACKEND_NAME, EVENT);
+    store.persist(TRANSPORT_CONTEXT, EVENT);
 
-    assertThat(store.hasPendingEventsFor(BACKEND_NAME)).isTrue();
-    assertThat(store.hasPendingEventsFor(ANOTHER_BACKEND_NAME)).isFalse();
+    assertThat(store.hasPendingEventsFor(TRANSPORT_CONTEXT)).isTrue();
+    assertThat(store.hasPendingEventsFor(ANOTHER_TRANSPORT_CONTEXT)).isFalse();
   }
 }
