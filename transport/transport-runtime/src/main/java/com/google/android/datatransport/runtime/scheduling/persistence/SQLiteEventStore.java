@@ -23,6 +23,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
 import android.os.SystemClock;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
 import android.support.annotation.WorkerThread;
 import com.google.android.datatransport.Priority;
@@ -54,8 +55,11 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   @VisibleForTesting public static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
 
+  private static final long MAX_DB_DISK_SIZE_IN_BYTES = 10 * 1024 * 1024;
+
   private final OpenHelper openHelper;
   private final Clock monotonicClock;
+  private long maxDbDiskSizeInBytes = MAX_DB_DISK_SIZE_IN_BYTES;
   private SQLiteDatabase db;
 
   @Inject
@@ -78,11 +82,19 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   @Override
+  @Nullable
   public PersistedEvent persist(TransportContext transportContext, EventInternal event) {
 
     long newRowId =
         inTransaction(
             db -> {
+              // drop new events until old ones are uploaded and removed.
+              // TODO(vkryachko): come up with a more sophisticated algorithm for limiting disk
+              // space.
+              if (isStorageAtLimit()) {
+                return -1L;
+              }
+
               long contextId = ensureTransportContext(db, transportContext);
               ContentValues values = new ContentValues();
               values.put("context_id", contextId);
@@ -104,6 +116,9 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
               return newEventId;
             });
 
+    if (newRowId < 1) {
+      return null;
+    }
     return PersistedEvent.create(newRowId, transportContext, event);
   }
 
@@ -409,6 +424,40 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
       return Priority.DEFAULT;
     }
     return ALL_PRIORITIES[value];
+  }
+
+  @VisibleForTesting
+  boolean isStorageAtLimit() {
+    long byteSize = getPageCount() * getPageSize();
+
+    return byteSize >= maxDbDiskSizeInBytes;
+  }
+
+  @VisibleForTesting
+  long getByteSize() {
+    return getPageCount() * getPageSize();
+  }
+
+  /** Gets the page size of the database. Typically 4096. */
+  private long getPageSize() {
+    return getDb().compileStatement("PRAGMA page_size").simpleQueryForLong();
+  }
+
+  /**
+   * Gets the number of pages in the database file. Multiplying this with the page size yields the
+   * approximate size of the database on disk (including the WAL, if relevant).
+   */
+  private long getPageCount() {
+    return getDb().compileStatement("PRAGMA page_count").simpleQueryForLong();
+  }
+
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  @VisibleForTesting
+  void setMaxDbSizeOnDisk(long byteSize) {
+    if (byteSize < 0) {
+      throw new IllegalArgumentException("Cannot set max size to a negative number of bytes");
+    }
+    maxDbDiskSizeInBytes = byteSize;
   }
 
   private static class OpenHelper extends SQLiteOpenHelper {

@@ -135,4 +135,13 @@ public class SQLiteEventStoreTest {
     assertThat(store.hasPendingEventsFor(TRANSPORT_CONTEXT)).isTrue();
     assertThat(store.hasPendingEventsFor(ANOTHER_TRANSPORT_CONTEXT)).isFalse();
   }
+
+  @Test
+  public void persist_whenDbSizeOnDiskIsAtLimit_shouldNotPersistNewEvents() {
+    store.setMaxDbSizeOnDisk(store.getByteSize());
+    assertThat(store.persist(TRANSPORT_CONTEXT, EVENT)).isNull();
+
+    store.setMaxDbSizeOnDisk(store.getByteSize() + 1);
+    assertThat(store.persist(TRANSPORT_CONTEXT, EVENT)).isNotNull();
+  }
 }

@@ -28,6 +28,7 @@ import com.google.android.datatransport.runtime.TransportContext;
 public interface EventStore {
 
   /** Persist a new event. */
+  @Nullable
   PersistedEvent persist(TransportContext transportContext, EventInternal event);
 
   /** Communicate to the store that events have failed to get sent. */
