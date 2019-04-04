@@ -23,11 +23,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import com.google.android.datatransport.Priority;
-import com.google.android.datatransport.runtime.BackendRegistry;
-import com.google.android.datatransport.runtime.BackendResponse;
 import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportBackend;
+import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.BackendResponse;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
@@ -49,6 +49,8 @@ public class UploaderTest {
         }
       };
   private final String BACKEND_NAME = "backend1";
+  private final TransportContext transportContext =
+      TransportContext.builder().setBackendName(BACKEND_NAME).build();
   private final Context context = RuntimeEnvironment.application;
   private final EventStore store = spy(new InMemoryEventStore());
   private BackendRegistry mockRegistry = mock(BackendRegistry.class);
@@ -60,7 +62,6 @@ public class UploaderTest {
   private static final EventInternal EVENT =
       EventInternal.builder()
           .setTransportName("42")
-          .setPriority(Priority.DEFAULT)
           .setEventMillis(1)
           .setUptimeMillis(2)
           .setPayload("Hello".getBytes())
@@ -71,7 +72,7 @@ public class UploaderTest {
   @Before
   public void setUp() {
     when(mockRegistry.get(BACKEND_NAME)).thenReturn(mockBackend);
-    store.persist(BACKEND_NAME, EVENT);
+    store.persist(transportContext, EVENT);
   }
 
   @Test
@@ -79,7 +80,7 @@ public class UploaderTest {
     when(uploader.isNetworkAvailable()).thenReturn(Boolean.FALSE);
     uploader.upload(BACKEND_NAME, 1, mockRunnable);
     // Scheduler must be called with the attempt number incremented.
-    verify(mockScheduler, times(1)).schedule(BACKEND_NAME, 2);
+    verify(mockScheduler, times(1)).schedule(transportContext, 2);
     verify(mockRunnable, times(1)).run();
   }
 
@@ -89,7 +90,7 @@ public class UploaderTest {
         .thenReturn(BackendResponse.create(BackendResponse.Status.OK, 1000));
     when(uploader.isNetworkAvailable()).thenReturn(Boolean.TRUE);
     uploader.upload(BACKEND_NAME, 1, mockRunnable);
-    verify(uploader, times(1)).logAndUpdateState(BACKEND_NAME, 1);
+    verify(uploader, times(1)).logAndUpdateState(transportContext, 1);
     verify(mockRunnable, times(1)).run();
   }
 
@@ -97,16 +98,16 @@ public class UploaderTest {
   public void logAndUpdateStatus_okResponse() {
     when(mockBackend.send(any()))
         .thenReturn(BackendResponse.create(BackendResponse.Status.OK, 1000));
-    uploader.logAndUpdateState(BACKEND_NAME, 1);
+    uploader.logAndUpdateState(transportContext, 1);
     verify(store, times(1)).recordSuccess(any());
-    verify(store, times(1)).recordNextCallTime(BACKEND_NAME, 1000);
+    verify(store, times(1)).recordNextCallTime(transportContext, 1000);
   }
 
   @Test
   public void logAndUpdateStatus_nontransientResponse() {
     when(mockBackend.send(any()))
         .thenReturn(BackendResponse.create(BackendResponse.Status.NONTRANSIENT_ERROR, -1));
-    uploader.logAndUpdateState(BACKEND_NAME, 1);
+    uploader.logAndUpdateState(transportContext, 1);
     verify(store, times(1)).recordSuccess(any());
   }
 
@@ -114,8 +115,8 @@ public class UploaderTest {
   public void logAndUpdateStatus_transientReponse() {
     when(mockBackend.send(any()))
         .thenReturn(BackendResponse.create(BackendResponse.Status.TRANSIENT_ERROR, -1));
-    uploader.logAndUpdateState(BACKEND_NAME, 1);
+    uploader.logAndUpdateState(transportContext, 1);
     verify(store, times(1)).recordFailure(any());
-    verify(mockScheduler, times(1)).schedule(BACKEND_NAME, 2);
+    verify(mockScheduler, times(1)).schedule(transportContext, 2);
   }
 }

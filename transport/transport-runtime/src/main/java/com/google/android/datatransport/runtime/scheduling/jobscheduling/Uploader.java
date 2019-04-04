@@ -17,11 +17,12 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import com.google.android.datatransport.runtime.BackendRegistry;
-import com.google.android.datatransport.runtime.BackendRequest;
-import com.google.android.datatransport.runtime.BackendResponse;
 import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportBackend;
+import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.BackendRequest;
+import com.google.android.datatransport.runtime.backends.BackendResponse;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
@@ -68,15 +69,17 @@ public class Uploader {
     this.executor.execute(
         () -> {
           try {
+            TransportContext transportContext =
+                TransportContext.builder().setBackendName(backendName).build();
             if (!isNetworkAvailable()) {
               guard.runCriticalSection(
                   LOCK_TIMEOUT,
                   () -> {
-                    workScheduler.schedule(backendName, attemptNumber + 1);
+                    workScheduler.schedule(transportContext, attemptNumber + 1);
                     return null;
                   });
             } else {
-              logAndUpdateState(backendName, attemptNumber);
+              logAndUpdateState(transportContext, attemptNumber);
             }
           } finally {
             callback.run();
@@ -84,11 +87,11 @@ public class Uploader {
         });
   }
 
-  void logAndUpdateState(String backendName, int attemptNumber) {
-    TransportBackend backend = backendRegistry.get(backendName);
+  void logAndUpdateState(TransportContext transportContext, int attemptNumber) {
+    TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
     List<EventInternal> eventInternals = new ArrayList<>();
     Iterable<PersistedEvent> persistedEvents =
-        guard.runCriticalSection(LOCK_TIMEOUT, () -> eventStore.loadAll(backendName));
+        guard.runCriticalSection(LOCK_TIMEOUT, () -> eventStore.loadAll(transportContext));
 
     // Donot make a call to the backend if the list is empty.
     if (!persistedEvents.iterator().hasNext()) {
@@ -104,10 +107,10 @@ public class Uploader {
         () -> {
           if (response.getStatus() == BackendResponse.Status.OK) {
             eventStore.recordSuccess(persistedEvents);
-            eventStore.recordNextCallTime(backendName, response.getNextRequestWaitMillis());
+            eventStore.recordNextCallTime(transportContext, response.getNextRequestWaitMillis());
           } else if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
             eventStore.recordFailure(persistedEvents);
-            workScheduler.schedule(backendName, (int) attemptNumber + 1);
+            workScheduler.schedule(transportContext, (int) attemptNumber + 1);
           } else {
             eventStore.recordSuccess(persistedEvents);
           }

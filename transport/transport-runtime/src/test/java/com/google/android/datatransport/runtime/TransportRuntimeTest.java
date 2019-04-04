@@ -84,8 +84,6 @@ public class TransportRuntimeTest {
               }
             },
             new Uploader(null, null, null, null, null, null));
-    Assert.assertNotNull(runtime);
-    runtime.register(mockBackendName, mockBackend);
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     when(mockBackend.decorate(any()))
         .thenAnswer(
