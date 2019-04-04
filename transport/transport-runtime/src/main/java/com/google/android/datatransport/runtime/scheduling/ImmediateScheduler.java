@@ -14,11 +14,11 @@
 
 package com.google.android.datatransport.runtime.scheduling;
 
-import com.google.android.datatransport.runtime.BackendRegistry;
-import com.google.android.datatransport.runtime.BackendRequest;
 import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportBackend;
 import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.BackendRequest;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;

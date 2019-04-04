@@ -17,15 +17,38 @@ package com.google.firebase.testing.common;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 
 /** Test utilities for asynchronous tasks. */
 public final class Tasks2 {
 
+  private static final long BEST_EFFORT_DURATION = 10;
   private static final long WAIT_DURATION = 30;
   private static final TimeUnit WAIT_UNIT = TimeUnit.SECONDS;
 
   private Tasks2() {}
+
+  /**
+   * Waits for the task to complete.
+   *
+   * <p>The primary use case for this method is to perform test clean-up in a {@code finally} block.
+   * Clean-up is inherently a best-effort task, because it might not succeed when the test is
+   * broken.
+   *
+   * <p>This method will block the current thread for a short period of time. Unlike the other
+   * methods in this class, this method is not biased towards success or failure. This method does
+   * not throw any exceptions.
+   */
+  public static void waitBestEffort(Task<?> task) {
+    try {
+      Tasks.await(task, BEST_EFFORT_DURATION, WAIT_UNIT);
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException | TimeoutException ex) {
+      // Ignore.
+    }
+  }
 
   /**
    * Waits for the task to complete successfully.

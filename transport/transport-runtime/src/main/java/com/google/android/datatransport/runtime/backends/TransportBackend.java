@@ -12,18 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime;
+package com.google.android.datatransport.runtime.backends;
 
-import com.google.auto.value.AutoValue;
+import com.google.android.datatransport.runtime.EventInternal;
 
-/** Encapsulates a send request made to an individual {@link TransportBackend}. */
-@AutoValue
-public abstract class BackendRequest {
-  /** Events to be sent to the backend. */
-  public abstract Iterable<EventInternal> getEvents();
+public interface TransportBackend {
+  EventInternal decorate(EventInternal event);
 
-  /** Creates a new instance of the request. */
-  public static BackendRequest create(Iterable<EventInternal> events) {
-    return new AutoValue_BackendRequest(events);
-  }
+  BackendResponse send(BackendRequest backendRequest);
 }

@@ -76,6 +76,7 @@ dependencies {
     //Android compatible version of Apache httpclient.
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
     testImplementation 'org.robolectric:robolectric:4.2'
+    testImplementation 'junit:junit:4.13-beta-2'
 
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     implementation 'com.android.support:support-annotations:28.0.0'

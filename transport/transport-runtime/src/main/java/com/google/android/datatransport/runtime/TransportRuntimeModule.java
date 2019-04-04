@@ -16,6 +16,8 @@ package com.google.android.datatransport.runtime;
 
 import android.content.Context;
 import android.os.Build;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.CreationContext;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerScheduler;
@@ -35,6 +37,7 @@ import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import javax.inject.Singleton;
 
 @Module
 abstract class TransportRuntimeModule {
@@ -91,4 +94,11 @@ abstract class TransportRuntimeModule {
 
   @Binds
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
+
+  @Provides
+  @Singleton
+  static CreationContext creationContext(
+      @WallTime Clock wallClock, @Monotonic Clock monotonicClock) {
+    return CreationContext.create(wallClock, monotonicClock);
+  }
 }

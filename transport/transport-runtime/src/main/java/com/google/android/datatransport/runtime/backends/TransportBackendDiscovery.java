@@ -12,10 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime;
+package com.google.android.datatransport.runtime.backends;
 
-public interface TransportBackend {
-  EventInternal decorate(EventInternal event);
+import android.app.Service;
+import android.content.Intent;
+import android.os.IBinder;
 
-  BackendResponse send(BackendRequest backendRequest);
+/**
+ * Dummy service needed to be able to declare transport backends in AndroidManifest.xml files.
+ *
+ * @see BackendRegistry
+ */
+public class TransportBackendDiscovery extends Service {
+  @Override
+  public IBinder onBind(Intent intent) {
+    return null;
+  }
 }

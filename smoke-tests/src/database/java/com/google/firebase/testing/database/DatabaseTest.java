@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.testing.firestore;
+package com.google.firebase.testing.database;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -22,12 +22,11 @@ import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.testing.common.Tasks2;
 import com.google.firebase.testing.common.TestId;
 import java.util.HashMap;
@@ -35,55 +34,55 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Firestore smoke tests. */
+/** Database smoke tests. */
 @RunWith(AndroidJUnit4.class)
-public final class FirestoreTest {
+public final class DatabaseTest {
 
   @Rule public final ActivityTestRule<Activity> activity = new ActivityTestRule<>(Activity.class);
 
   @Test
-  public void setShouldTriggerListenerWithNewlySetData() throws Exception {
+  public void setValueShouldTriggerListenerWithNewlySetData() throws Exception {
     FirebaseAuth auth = FirebaseAuth.getInstance();
-    FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
 
     auth.signOut();
     Task<?> signInTask = auth.signInWithEmailAndPassword("test@mailinator.com", "password");
     Tasks2.waitForSuccess(signInTask);
 
-    DocumentReference doc = firestore.collection("restaurants").document(TestId.create());
+    DatabaseReference doc = database.getReference("restaurants").child(TestId.create());
     SnapshotListener listener = new SnapshotListener();
-    ListenerRegistration registration = doc.addSnapshotListener(listener);
+    doc.addListenerForSingleValueEvent(listener);
+
+    HashMap<String, Object> data = new HashMap<>();
+    data.put("location", "Google NYC");
 
     try {
-      HashMap<String, Object> data = new HashMap<>();
-      data.put("location", "Google NYC");
-
-      Task<?> setTask = doc.set(new HashMap<>(data));
-      Task<DocumentSnapshot> snapshotTask = listener.toTask();
+      Task<?> setTask = doc.setValue(new HashMap<>(data));
+      Task<DataSnapshot> snapshotTask = listener.toTask();
       Tasks2.waitForSuccess(setTask);
       Tasks2.waitForSuccess(snapshotTask);
 
-      DocumentSnapshot result = snapshotTask.getResult();
-      assertThat(result.getData()).isEqualTo(data);
+      DataSnapshot result = snapshotTask.getResult();
+      assertThat(result.getValue()).isEqualTo(data);
     } finally {
-      registration.remove();
-      Tasks2.waitBestEffort(doc.delete());
+      Tasks2.waitBestEffort(doc.removeValue());
     }
   }
 
-  private static class SnapshotListener implements EventListener<DocumentSnapshot> {
-    private final TaskCompletionSource<DocumentSnapshot> taskFactory = new TaskCompletionSource<>();
+  private static class SnapshotListener implements ValueEventListener {
+    private final TaskCompletionSource<DataSnapshot> taskFactory = new TaskCompletionSource<>();
 
     @Override
-    public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException error) {
-      if (error != null) {
-        taskFactory.trySetException(error);
-      } else if (snapshot.exists()) {
-        taskFactory.trySetResult(snapshot);
-      }
+    public void onCancelled(DatabaseError error) {
+      taskFactory.trySetException(error.toException());
     }
 
-    public Task<DocumentSnapshot> toTask() {
+    @Override
+    public void onDataChange(DataSnapshot snapshot) {
+      taskFactory.trySetResult(snapshot);
+    }
+
+    public Task<DataSnapshot> toTask() {
       return taskFactory.getTask();
     }
   }

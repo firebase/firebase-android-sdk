@@ -39,7 +39,6 @@ public class TransportRuntime implements TransportInternal {
 
   private static volatile TransportRuntimeComponent INSTANCE = null;
 
-  private final BackendRegistry backendRegistry;
   private final Clock eventClock;
   private final Clock uptimeClock;
   private final Scheduler scheduler;
@@ -48,13 +47,11 @@ public class TransportRuntime implements TransportInternal {
 
   @Inject
   TransportRuntime(
-      BackendRegistry backendRegistry,
       @WallTime Clock eventClock,
       @Monotonic Clock uptimeClock,
       Scheduler scheduler,
       SynchronizationGuard guard,
       Uploader uploader) {
-    this.backendRegistry = backendRegistry;
     this.eventClock = eventClock;
     this.uptimeClock = uptimeClock;
     this.scheduler = scheduler;
@@ -90,11 +87,6 @@ public class TransportRuntime implements TransportInternal {
       throw new IllegalStateException("Not initialized!");
     }
     return localRef.getTransportRuntime();
-  }
-
-  /** Register a {@link TransportBackend}. */
-  public void register(String name, TransportBackend backend) {
-    backendRegistry.register(name, backend);
   }
 
   /** Returns a {@link TransportFactory} for a given {@code backendName}. */
