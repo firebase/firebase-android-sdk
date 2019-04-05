@@ -20,6 +20,11 @@
 
     <application>
         <service
+            android:name=".scheduling.jobscheduling.JobInfoSchedulerService"
+            android:label="JobScheduler Service"
+            android:permission="android.permission.BIND_JOB_SERVICE" >
+        </service>
+        <service
             android:name=".backends.TransportBackendDiscovery"
             android:exported="false" />
     </application>

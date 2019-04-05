@@ -31,8 +31,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** Handles upload of all the events corresponding to a backend. */
+@Singleton
 public class Uploader {
 
   private final int LOCK_TIMEOUT = 10000;

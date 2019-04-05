@@ -55,7 +55,7 @@ public class JobInfoSchedulerTest {
     assertThat(bundle.get(SchedulerUtil.BACKEND_NAME))
         .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
     assertThat(bundle.get(SchedulerUtil.ATTEMPT_NUMBER)).isEqualTo(1);
-    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(1000000);
+    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(999999);
   }
 
   @Test
