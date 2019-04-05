@@ -35,7 +35,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /** Handles upload of all the events corresponding to a backend. */
-@Singleton
 public class Uploader {
 
   private final int LOCK_TIMEOUT = 10000;
@@ -43,7 +42,7 @@ public class Uploader {
   private final BackendRegistry backendRegistry;
   private final EventStore eventStore;
   private final WorkScheduler workScheduler;
-  private final Executor executor;
+  @Singleton private final Executor executor;
   private final SynchronizationGuard guard;
   private final Clock clock;
 
