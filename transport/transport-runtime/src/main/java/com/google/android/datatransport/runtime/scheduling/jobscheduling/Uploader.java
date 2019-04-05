@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
-import javax.inject.Singleton;
 
 /** Handles upload of all the events corresponding to a backend. */
 public class Uploader {
@@ -42,7 +41,7 @@ public class Uploader {
   private final BackendRegistry backendRegistry;
   private final EventStore eventStore;
   private final WorkScheduler workScheduler;
-  @Singleton private final Executor executor;
+  private final Executor executor;
   private final SynchronizationGuard guard;
   private final Clock clock;
 
