@@ -27,6 +27,7 @@ import com.google.android.datatransport.runtime.scheduling.persistence.EventStor
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
+import com.google.android.datatransport.runtime.time.WallTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -54,7 +55,7 @@ public class Uploader {
       WorkScheduler workScheduler,
       Executor executor,
       SynchronizationGuard guard,
-      Clock clock) {
+      @WallTime Clock clock) {
     this.context = context;
     this.backendRegistry = backendRegistry;
     this.eventStore = eventStore;

@@ -68,7 +68,6 @@ abstract class TransportRuntimeModule {
     }
   }
 
-
   static Uploader uploader(
       Context context,
       BackendRegistry backendRegistry,
