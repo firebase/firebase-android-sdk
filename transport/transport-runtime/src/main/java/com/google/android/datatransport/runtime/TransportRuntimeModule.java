@@ -75,8 +75,10 @@ abstract class TransportRuntimeModule {
       EventStore eventStore,
       WorkScheduler workScheduler,
       Executor executor,
-      SynchronizationGuard guard) {
-    return new Uploader(context, backendRegistry, eventStore, workScheduler, executor, guard);
+      SynchronizationGuard guard,
+      @WallTime Clock eventClock) {
+    return new Uploader(
+        context, backendRegistry, eventStore, workScheduler, executor, guard, eventClock);
   }
 
   @Provides

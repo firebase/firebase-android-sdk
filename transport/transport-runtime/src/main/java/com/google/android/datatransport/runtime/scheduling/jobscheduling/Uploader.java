@@ -26,6 +26,7 @@ import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
+import com.google.android.datatransport.runtime.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -41,6 +42,7 @@ public class Uploader {
   private final WorkScheduler workScheduler;
   private final Executor executor;
   private final SynchronizationGuard guard;
+  private final Clock clock;
 
   @Inject
   public Uploader(
@@ -49,13 +51,15 @@ public class Uploader {
       EventStore eventStore,
       WorkScheduler workScheduler,
       Executor executor,
-      SynchronizationGuard guard) {
+      SynchronizationGuard guard,
+      Clock clock) {
     this.context = context;
     this.backendRegistry = backendRegistry;
     this.eventStore = eventStore;
     this.workScheduler = workScheduler;
     this.executor = executor;
     this.guard = guard;
+    this.clock = clock;
   }
 
   boolean isNetworkAvailable() {
@@ -107,7 +111,8 @@ public class Uploader {
         () -> {
           if (response.getStatus() == BackendResponse.Status.OK) {
             eventStore.recordSuccess(persistedEvents);
-            eventStore.recordNextCallTime(transportContext, response.getNextRequestWaitMillis());
+            eventStore.recordNextCallTime(
+                transportContext, clock.getTime() + response.getNextRequestWaitMillis());
           } else if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
             eventStore.recordFailure(persistedEvents);
             workScheduler.schedule(transportContext, (int) attemptNumber + 1);

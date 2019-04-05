@@ -93,8 +93,7 @@ public class JobInfoScheduler implements WorkScheduler {
     bundle.putString(SchedulerUtil.BACKEND_NAME, transportContext.getBackendName());
     JobInfo.Builder builder = new JobInfo.Builder(jobId, serviceComponent);
     builder.setMinimumLatency(
-        clock.getTime()
-            + SchedulerUtil.getScheduleDelay(timeDiff, DELTA, attemptNumber)); // wait at least
+        SchedulerUtil.getScheduleDelay(timeDiff, DELTA, attemptNumber)); // wait at least
     builder.setExtras(bundle);
     builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
     jobScheduler.schedule(builder.build());

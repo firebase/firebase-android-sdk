@@ -58,7 +58,7 @@ public class UploaderTest {
   private WorkScheduler mockScheduler = mock(WorkScheduler.class);
   private Runnable mockRunnable = mock(Runnable.class);
   private Uploader uploader =
-      spy(new Uploader(context, mockRegistry, store, mockScheduler, Runnable::run, guard));
+      spy(new Uploader(context, mockRegistry, store, mockScheduler, Runnable::run, guard, () -> 2));
   private static final EventInternal EVENT =
       EventInternal.builder()
           .setTransportName("42")
@@ -100,7 +100,7 @@ public class UploaderTest {
         .thenReturn(BackendResponse.create(BackendResponse.Status.OK, 1000));
     uploader.logAndUpdateState(transportContext, 1);
     verify(store, times(1)).recordSuccess(any());
-    verify(store, times(1)).recordNextCallTime(transportContext, 1000);
+    verify(store, times(1)).recordNextCallTime(transportContext, 1002);
   }
 
   @Test
