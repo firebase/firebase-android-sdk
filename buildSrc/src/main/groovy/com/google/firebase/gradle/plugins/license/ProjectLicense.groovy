@@ -18,4 +18,5 @@ class ProjectLicense implements Serializable {
     String name
     List<URI> licenseUris
     boolean isExplicit = true
+    String copyright
 }

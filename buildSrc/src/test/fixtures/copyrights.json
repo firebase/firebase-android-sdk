@@ -1,0 +1,11 @@
+{  
+   "com.squareup.okio":{  
+      "okio":{  
+         "1.15.0":"Copyright 2013 Square, Inc."
+      }
+   },
+   "com.squareup.okhttp3":{  
+      "okhttp":{  
+         "2.7.5":"Copyright 2013 Square, Inc."
+      }
+   }}

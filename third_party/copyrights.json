@@ -1,0 +1,48 @@
+{  
+   "com.squareup.okio":{  
+      "okio":{  
+         "1.15.0":"Copyright 2013 Square, Inc."
+      }
+   },
+   "com.squareup.okhttp3":{  
+      "okhttp":{  
+         "3.12.1":"Copyright 2013 Square, Inc."
+      }
+   },
+   "com.android.support":{  
+      "support-core-ui":{  
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
+      },
+      "support-media-compat":{  
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
+      },
+      "support-annotations":{  
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
+      },
+      "support-fragment":{  
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
+      },
+      "support-compat":{  
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
+      },
+      "support-v4":{  
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
+      },
+      "support-core-utils":{  
+         "26.1.0":"Copyright (C) 2018 The Android Open Source Project"
+      }
+   },
+   "android.arch.core":{
+	 "common" : {
+		"1.0.0":"Copyright (C) 2018 The Android Open Source Project"
+	}
+   },
+   "android.arch.lifecycle":{  
+      "common":{  
+         "1.0.0":"Copyright (C) 2018 The Android Open Source Project"
+      },
+      "runtime":{  
+         "1.0.0":"Copyright (C) 2018 The Android Open Source Project"
+      }
+   }
+}
