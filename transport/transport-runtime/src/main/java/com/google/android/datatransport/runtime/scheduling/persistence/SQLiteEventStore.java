@@ -23,7 +23,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
 import android.os.SystemClock;
 import android.support.annotation.Nullable;
-import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
 import android.support.annotation.WorkerThread;
 import com.google.android.datatransport.Priority;
@@ -55,17 +54,22 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   @VisibleForTesting public static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
 
-  private static final long MAX_DB_DISK_SIZE_IN_BYTES = 10 * 1024 * 1024;
-
   private final OpenHelper openHelper;
   private final Clock monotonicClock;
-  private long maxDbDiskSizeInBytes = MAX_DB_DISK_SIZE_IN_BYTES;
+  private final long maxDbDiskSizeInBytes;
   private SQLiteDatabase db;
 
   @Inject
-  SQLiteEventStore(Context applicationContext, @Monotonic Clock clock) {
+  SQLiteEventStore(
+      Context applicationContext, @Monotonic Clock clock, @MaxStorageSize long maxStorageSize) {
+    if (maxStorageSize < 0) {
+      throw new IllegalArgumentException(
+          "Cannot set max storage size to a negative number of bytes");
+    }
+
     this.openHelper = new OpenHelper(applicationContext);
     this.monotonicClock = clock;
+    this.maxDbDiskSizeInBytes = maxStorageSize;
   }
 
   private SQLiteDatabase getDb() {
@@ -449,15 +453,6 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
    */
   private long getPageCount() {
     return getDb().compileStatement("PRAGMA page_count").simpleQueryForLong();
-  }
-
-  @RestrictTo(RestrictTo.Scope.TESTS)
-  @VisibleForTesting
-  void setMaxDbSizeOnDisk(long byteSize) {
-    if (byteSize < 0) {
-      throw new IllegalArgumentException("Cannot set max size to a negative number of bytes");
-    }
-    maxDbDiskSizeInBytes = byteSize;
   }
 
   private static class OpenHelper extends SQLiteOpenHelper {
