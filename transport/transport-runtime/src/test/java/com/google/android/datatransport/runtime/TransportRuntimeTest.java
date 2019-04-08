@@ -83,8 +83,7 @@ public class TransportRuntimeTest {
                 return criticalSection.execute();
               }
             },
-            new Uploader());
-
+            new Uploader(null, null, null, null, null, null, () -> 2));
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     when(mockBackend.decorate(any()))
         .thenAnswer(

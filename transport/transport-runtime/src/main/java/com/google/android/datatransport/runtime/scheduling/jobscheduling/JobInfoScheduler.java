@@ -81,15 +81,19 @@ public class JobInfoScheduler implements WorkScheduler {
     // Check if there exists a job scheduled for this backend name.
     if (isJobServiceOn(jobScheduler, jobId)) return;
     // Obtain the next available call time for the backend.
-    long timeDiff = eventStore.getNextCallTime(transportContext) - clock.getTime();
+    Long backendTime = eventStore.getNextCallTime(transportContext);
+
+    long timeDiff = 0;
+    if (backendTime != null) {
+      timeDiff = backendTime - clock.getTime();
+    }
     // Schedule the build.
     PersistableBundle bundle = new PersistableBundle();
     bundle.putInt(SchedulerUtil.ATTEMPT_NUMBER, attemptNumber);
     bundle.putString(SchedulerUtil.BACKEND_NAME, transportContext.getBackendName());
     JobInfo.Builder builder = new JobInfo.Builder(jobId, serviceComponent);
     builder.setMinimumLatency(
-        clock.getTime()
-            + SchedulerUtil.getScheduleDelay(timeDiff, DELTA, attemptNumber)); // wait at least
+        SchedulerUtil.getScheduleDelay(timeDiff, DELTA, attemptNumber)); // wait at least
     builder.setExtras(bundle);
     builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
     jobScheduler.schedule(builder.build());
