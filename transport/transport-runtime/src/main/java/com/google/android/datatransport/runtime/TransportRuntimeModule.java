@@ -40,6 +40,7 @@ import javax.inject.Singleton;
 
 @Module
 abstract class TransportRuntimeModule {
+  @Singleton
   @Provides
   static Executor executor() {
     return Executors.newSingleThreadExecutor();

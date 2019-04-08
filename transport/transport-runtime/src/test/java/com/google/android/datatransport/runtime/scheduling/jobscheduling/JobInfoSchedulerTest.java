@@ -40,7 +40,7 @@ public class JobInfoSchedulerTest {
   private final EventStore store = new InMemoryEventStore();
   private final JobScheduler jobScheduler =
       (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-  private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, () -> 0);
+  private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, () -> 1);
 
   @Test
   public void schedule_longWaitTimeFirstAttempt() {
@@ -55,7 +55,22 @@ public class JobInfoSchedulerTest {
     assertThat(bundle.get(SchedulerUtil.BACKEND_NAME))
         .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
     assertThat(bundle.get(SchedulerUtil.ATTEMPT_NUMBER)).isEqualTo(1);
-    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(1000000);
+    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(999999);
+  }
+
+  @Test
+  public void schedule_noTimeRecordedForBackend() {
+    scheduler.schedule(TRANSPORT_CONTEXT, 1);
+    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
+    assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
+    assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
+    JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
+    PersistableBundle bundle = jobInfo.getExtras();
+    assertThat(jobInfo.getId()).isEqualTo(jobId);
+    assertThat(bundle.get(SchedulerUtil.BACKEND_NAME))
+        .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
+    assertThat(bundle.get(SchedulerUtil.ATTEMPT_NUMBER)).isEqualTo(1);
+    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(60000); // 2^1*DELTA
   }
 
   @Test
