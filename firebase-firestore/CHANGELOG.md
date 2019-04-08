@@ -1,18 +1,27 @@
 # Unreleased
-- [feature] Added `FieldValue.increment()`, which can be used in `update()`
-  and `set(..., SetOptions.merge())` to increment or decrement numeric field
-  values safely without transactions.
-- [fixed] Fixed calculation of SQLite database size on Android 9 Pie devices.
-  Previous method could be off by a few MBs on these devices, potentially
-  delaying garbage collection.
+
+# 18.2.0
+- [feature] Added `FieldValue.increment()`, which can be used in `update()` and
+  `set(..., SetOptions.merge())` to increment or decrement numeric field values
+  safely without transactions.
+- [feature] Added functional interface `FirebaseFirestore.runBatch()`, similar
+  to `FirebaseFirestore.runTransaction()`, which allows a developer to focus on
+  the mutations of the batch rather than on creating and committing the batch.
 - [changed] Prepared the persistence layer to support collection group queries.
-  While this feature is not yet available, all schema changes are included
-  in this release.
+  While this feature is not yet available, all schema changes are included in
+  this release.
 - [changed] Added `@RestrictTo` annotations to discourage the use of APIs that
-  are not public. This affects internal APIs that were previously obfuscated
-  and are not mentioned in our documentation.
+  are not public. This affects internal APIs that were previously obfuscated and
+  are not mentioned in our documentation.
 - [changed] Improved error messages for certain Number types that are not
   supported by our serialization layer (#272).
+
+# 18.1.0
+- [changed] Internal changes to ensure functionality alignment with other SDK
+  releases.
+- [fixed] Fixed calculation of SQLite database size on Android 9 Pie devices.
+  On these devices, the previous method sometimes incorrectly calculated the
+  size by a few MBs, potentially delaying garbage collection.
 
 # 18.0.1
 - [fixed] Fixed an issue where Firestore would crash if handling write batches
