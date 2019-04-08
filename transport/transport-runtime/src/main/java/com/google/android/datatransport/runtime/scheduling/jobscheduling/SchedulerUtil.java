@@ -31,6 +31,6 @@ final class SchedulerUtil {
     if (attemptNumber > 11) {
       return MAX_ALLOWED_TIME;
     }
-    return Math.max((long) (Math.pow(2, attemptNumber)) * delta, backendTimeDiff);
+    return Math.max(((long) (Math.pow(2, attemptNumber))) * delta, backendTimeDiff);
   }
 }
