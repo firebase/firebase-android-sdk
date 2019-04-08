@@ -14,7 +14,7 @@
 
 package com.google.firebase.database;
 
-import static com.google.firebase.database.TestHelpers.fromSingleQuotedString;
+import static com.google.firebase.database.IntegrationTestHelpers.fromSingleQuotedString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -51,13 +52,13 @@ public class TransactionTest {
 
   @After
   public void tearDown() {
-    TestHelpers.failOnFirstUncaughtException();
+    IntegrationTestHelpers.failOnFirstUncaughtException();
   }
 
   @Test
   public void newValueIsImmediatelyVisible()
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref.child("foo")
         .runTransaction(
@@ -88,7 +89,7 @@ public class TransactionTest {
 
   @Test
   public void eventIsRaisedForNewValue() throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     EventHelper helper = new EventHelper().addValueExpectation(ref).startListening();
 
@@ -116,7 +117,7 @@ public class TransactionTest {
   @Test
   public void nonAbortedTransactionSetsCommittedToTrueInCallback()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore semaphore = new Semaphore(0);
     ref.runTransaction(
@@ -143,13 +144,13 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void abortedTransactionSetsCommittedToFalseInCallback()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore semaphore = new Semaphore(0);
     ref.runTransaction(
@@ -168,14 +169,14 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void setDataReconnectDoTransactionThatAbortsVerifyCorrectEvents()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
 
     new WriteFuture(refs.get(0), 42).timedGet();
 
@@ -243,7 +244,7 @@ public class TransactionTest {
   @Test
   public void useTransactionToCreateANodeMakeSureOneEventReceived()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final AtomicInteger events = new AtomicInteger(0);
     ref.addValueEventListener(
@@ -285,7 +286,7 @@ public class TransactionTest {
             }
           }
         });
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
     assertEquals(1, events.get());
   }
 
@@ -293,7 +294,7 @@ public class TransactionTest {
   public void useTransactionToUpdateOneOfTwoExistingChildNodes()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -336,13 +337,13 @@ public class TransactionTest {
         });
 
     assertTrue(helper.waitForEvents());
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void transactionIsOnlyCalledOnceWhenInitializingAnEmptyNode()
       throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final AtomicInteger called = new AtomicInteger(0);
     final Semaphore semaphore = new Semaphore(0);
@@ -370,14 +371,14 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
     assertEquals(1, called.get());
   }
 
   @Test
   public void secondTransactionGetsRunImmediatelyOnPreviousOutputAndOnlyRunsOnce()
       throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref = refs.get(0);
 
     final AtomicBoolean firstRun = new AtomicBoolean(false);
@@ -425,10 +426,10 @@ public class TransactionTest {
             second.release(1);
           }
         });
-    TestHelpers.waitFor(first);
-    TestHelpers.waitFor(second);
+    IntegrationTestHelpers.waitFor(first);
+    IntegrationTestHelpers.waitFor(second);
 
-    DataSnapshot snap = TestHelpers.getSnap(refs.get(1));
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(refs.get(1));
     assertEquals(84L, snap.getValue());
   }
 
@@ -445,7 +446,7 @@ public class TransactionTest {
     // - Transaction #3 should be re-run after #2 is reverted, and then be sent to the server and
     //   succeed.
 
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore semaphore = new Semaphore(0);
     final List<DataSnapshot> nodeSnaps = new ArrayList<DataSnapshot>();
@@ -484,7 +485,7 @@ public class TransactionTest {
               }
             });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     final AtomicBoolean firstRun = new AtomicBoolean(false);
     ref.child("foo")
@@ -560,7 +561,7 @@ public class TransactionTest {
     // so we're left with the last value event
     ref.child("foo").setValue(0);
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     assertTrue(firstDone.get());
     assertTrue(secondDone.get());
@@ -572,7 +573,7 @@ public class TransactionTest {
   @Test
   public void transactionSetSetShouldWork() throws InterruptedException {
     final Semaphore semaphore = new Semaphore(0);
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     ref.runTransaction(
         new Transaction.Handler() {
           @Override
@@ -592,12 +593,12 @@ public class TransactionTest {
 
     ref.setValue("foo");
     ref.setValue("bar");
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void priorityIsNotPreservedWhenSettingData() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore semaphore = new Semaphore(0);
 
     final List<DataSnapshot> snaps = new ArrayList<DataSnapshot>();
@@ -631,7 +632,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     assertEquals(2, snaps.size());
     assertNull(snaps.get(1).getPriority());
@@ -642,7 +643,7 @@ public class TransactionTest {
   @Test
   public void resultingSnapshotIsPassedToOnComplete() throws InterruptedException {
     final Semaphore semaphore = new Semaphore(0);
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
 
@@ -673,7 +674,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     // Do it again for the aborted case
     ref1.runTransaction(
@@ -692,7 +693,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     // Now on a fresh connection...
     ref2.runTransaction(
@@ -715,13 +716,13 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void transactionsAbortAfter25Retries() throws InterruptedException {
     final Semaphore semaphore = new Semaphore(0);
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     ref.setHijackHash(true);
     final AtomicInteger retries = new AtomicInteger(0);
     ref.runTransaction(
@@ -742,7 +743,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
     assertEquals(25, retries.get());
     ref.setHijackHash(false);
   }
@@ -751,7 +752,7 @@ public class TransactionTest {
   public void setShouldCancelAlreadySentTransactionsThatComeBackAsDatastale()
       throws TestFailure, ExecutionException, TimeoutException, InterruptedException {
     final Semaphore semaphore = new Semaphore(0);
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     new WriteFuture(ref, 5).timedGet();
 
@@ -782,7 +783,7 @@ public class TransactionTest {
               ref.getRepo().setHijackHash(false);
             }
           });
-      TestHelpers.waitFor(semaphore);
+      IntegrationTestHelpers.waitFor(semaphore);
     } finally {
       ref.getRepo().setHijackHash(false);
     }
@@ -791,7 +792,7 @@ public class TransactionTest {
   @Test
   public void updateShouldNotCancelUnrelatedTransactions()
       throws TestFailure, ExecutionException, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore fooTransaction = new Semaphore(0);
     final Semaphore barTransaction = new Semaphore(0);
@@ -861,14 +862,14 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(barTransaction);
+    IntegrationTestHelpers.waitFor(barTransaction);
   }
 
   @Test
   public void transactionsWorkOnWackyUnicode()
       throws TestFailure, ExecutionException, TimeoutException, InterruptedException {
     final Semaphore semaphore = new Semaphore(0);
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     new WriteFuture(ref, "♜♞♝♛♚♝♞♜").timedGet();
 
@@ -892,12 +893,12 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void immediatelyAbortingATransactionWorks() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore semaphore = new Semaphore(0);
 
     ref.runTransaction(
@@ -914,14 +915,14 @@ public class TransactionTest {
             semaphore.release(1);
           }
         });
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void addToAnArrayWithATransaction()
       throws TestFailure, ExecutionException, TimeoutException, InterruptedException {
     final Semaphore semaphore = new Semaphore(0);
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     new WriteFuture(ref, Arrays.asList("cat", "horse")).timedGet();
     ref.runTransaction(
@@ -952,14 +953,14 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void mergedTransactionsHaveCorrectSnapshotInOnComplete()
       throws TestFailure, ExecutionException, TimeoutException, InterruptedException {
     final Semaphore semaphore = new Semaphore(0);
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final String nodeName = ref.getKey();
     new WriteFuture(ref, new MapBuilder().put("a", 0).build()).timedGet();
@@ -1012,7 +1013,7 @@ public class TransactionTest {
                 semaphore.release(1);
               }
             });
-    TestHelpers.waitFor(semaphore, 2);
+    IntegrationTestHelpers.waitFor(semaphore, 2);
   }
 
   // Note: skipping tests for reentrant API calls
@@ -1021,9 +1022,9 @@ public class TransactionTest {
   public void pendingTransactionsAreCancelledOnDisconnect()
       throws TestFailure, ExecutionException, TimeoutException, InterruptedException {
     final Semaphore semaphore = new Semaphore(0);
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
-    DatabaseConfig ctx = TestHelpers.getContext(0);
+    DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
     new WriteFuture(ref, "initial").timedGet();
 
@@ -1045,7 +1046,7 @@ public class TransactionTest {
 
     RepoManager.interrupt(ctx);
     RepoManager.resume(ctx);
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
@@ -1053,7 +1054,7 @@ public class TransactionTest {
     final Semaphore semaphore = new Semaphore(0);
     final Semaphore completeSemaphore = new Semaphore(0);
     final List<DataSnapshot> results = new ArrayList<DataSnapshot>();
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref.addValueEventListener(
         new ValueEventListener() {
@@ -1071,7 +1072,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     ref.runTransaction(
         new Transaction.Handler() {
@@ -1085,7 +1086,7 @@ public class TransactionTest {
           @Override
           public void onComplete(DatabaseError error, boolean committed, DataSnapshot currentData) {
             try {
-              TestHelpers.waitFor(semaphore);
+              IntegrationTestHelpers.waitFor(semaphore);
               assertTrue(committed);
               completeSemaphore.release(1);
             } catch (InterruptedException e) {
@@ -1095,12 +1096,12 @@ public class TransactionTest {
         },
         false);
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
     assertEquals(1, results.size());
     assertNull(results.get(0).getValue());
     // Let the completion handler run
     semaphore.release(1);
-    TestHelpers.waitFor(completeSemaphore);
+    IntegrationTestHelpers.waitFor(completeSemaphore);
 
     assertEquals(2, results.size());
     assertEquals("hello!", results.get(1).getValue());
@@ -1109,7 +1110,7 @@ public class TransactionTest {
   @Test
   public void transactionWithoutLocalEvents2()
       throws InterruptedException, TestFailure, ExecutionException, TimeoutException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     final DatabaseReference ref1 = refs.get(0);
     DatabaseReference ref2 = refs.get(1);
 
@@ -1124,7 +1125,7 @@ public class TransactionTest {
             done.release();
           }
         });
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
 
     ref1.addValueEventListener(
         new ValueEventListener() {
@@ -1142,7 +1143,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
 
     final AtomicInteger retries = new AtomicInteger(0);
     ref1.runTransaction(
@@ -1173,7 +1174,7 @@ public class TransactionTest {
       new WriteFuture(ref2, i).timedGet();
     }
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
 
     assertTrue(retries.get() > 1);
     int size = events.size();
@@ -1187,10 +1188,10 @@ public class TransactionTest {
   @Test
   public void transactionRunsOnNullOnlyOnceAfterReconnectCase1981()
       throws TestFailure, ExecutionException, TimeoutException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     new WriteFuture(ref, 42).timedGet();
 
-    DatabaseConfig ctx = TestHelpers.newTestConfig();
+    DatabaseConfig ctx = IntegrationTestHelpers.newTestConfig();
     ctx.setLogLevel(Logger.Level.DEBUG);
     DatabaseReference newRef = new DatabaseReference(ref.toString(), ctx);
 
@@ -1223,12 +1224,12 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 
   @Test
   public void transactionRespectsPriority() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore done = new Semaphore(0);
     final List<DataSnapshot> values = new ArrayList<DataSnapshot>();
@@ -1261,7 +1262,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
 
     ref.runTransaction(
         new Transaction.Handler() {
@@ -1281,7 +1282,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
 
     assertEquals(5L, values.get(values.size() - 2).getValue());
     assertEquals(5.0, values.get(values.size() - 2).getPriority());
@@ -1291,7 +1292,7 @@ public class TransactionTest {
 
   @Test
   public void transactionRevertsDataWhenAddADeeperListen() throws InterruptedException {
-    final List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    final List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
 
     final Semaphore gotTest = new Semaphore(0);
     refs.get(0)
@@ -1335,12 +1336,12 @@ public class TransactionTest {
                         });
               }
             });
-    TestHelpers.waitFor(gotTest);
+    IntegrationTestHelpers.waitFor(gotTest);
   }
 
   @Test
   public void transactionWithNumericKeys() throws InterruptedException {
-    final DatabaseReference ref = TestHelpers.getRandomNode();
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore done = new Semaphore(0);
 
     Map<String, Object> initial =
@@ -1370,13 +1371,13 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 
   @Test
   public void canRemoveChildWithPriority0()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore done = new Semaphore(0);
 
     long value = 1378744239756L;
@@ -1399,12 +1400,12 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 
   @Test
   public void userCodeExceptionsAbortTheTransaction() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore done = new Semaphore(0);
 
@@ -1423,7 +1424,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
 
     // Now try it with a Throwable, rather than exception
     ref.runTransaction(
@@ -1441,13 +1442,13 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 
   // https://app.asana.com/0/5673976843758/9259161251948
   @Test
   public void bubbleAppTransactionBug() throws InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore done = new Semaphore(0);
     ref.child("a")
@@ -1519,13 +1520,13 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 
   @Test
   public void testLocalServerValuesEventuallyButNotImmediatelyMatchServerWithTxns()
       throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
 
@@ -1583,7 +1584,7 @@ public class TransactionTest {
     Thread.sleep(5);
     writer.getDatabase().goOnline();
 
-    TestHelpers.waitFor(completionSemaphore, 3);
+    IntegrationTestHelpers.waitFor(completionSemaphore, 3);
 
     assertEquals(readSnaps.size(), 1);
     assertEquals(writeSnaps.size(), 2);
@@ -1601,7 +1602,7 @@ public class TransactionTest {
 
   @Test
   public void testTransactionWithQueryListen() throws DatabaseException, InterruptedException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore semaphore = new Semaphore(0);
 
     ref.setValue(
@@ -1648,13 +1649,13 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void testTransactionDoesNotPickUpCachedDataFromPreviousOnce()
       throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     final DatabaseReference me = refs.get(0);
     final DatabaseReference other = refs.get(1);
 
@@ -1669,7 +1670,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     me.addListenerForSingleValueEvent(
         new ValueEventListener() {
@@ -1682,7 +1683,7 @@ public class TransactionTest {
           public void onCancelled(DatabaseError error) {}
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     other.setValue(
         null,
@@ -1693,7 +1694,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     me.runTransaction(
         new Transaction.Handler() {
@@ -1716,13 +1717,13 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void testTransactionDoesNotPickUpCachedDataFromPreviousTransaction()
       throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = TestHelpers.getRandomNode(2);
+    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     final DatabaseReference me = refs.get(0);
     final DatabaseReference other = refs.get(1);
 
@@ -1744,7 +1745,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     other.setValue(
         null,
@@ -1755,7 +1756,7 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     me.runTransaction(
         new Transaction.Handler() {
@@ -1778,13 +1779,13 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
   public void transactionOnQueriedLocationDoesntRunInitiallyOnNull()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     DatabaseReference child = ref.push();
     final Map<String, Object> initialData = new MapBuilder().put("a", 1L).put("b", 2L).build();
     new WriteFuture(child, initialData).timedGet();
@@ -1825,7 +1826,7 @@ public class TransactionTest {
                   public void onChildRemoved(DataSnapshot snapshot) {}
                 });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     // cleanup
     ref.removeEventListener(listener);
@@ -1834,7 +1835,7 @@ public class TransactionTest {
   @Test
   public void transactionsRaiseCorrectChildChangedEventsOnQueries()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     Map<String, Object> value =
         new MapBuilder().put("foo", new MapBuilder().put("value", 1).build()).build();
@@ -1879,7 +1880,7 @@ public class TransactionTest {
             },
             false);
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
 
     Assert.assertEquals(2, snapshots.size());
     DataSnapshot addedSnapshot = snapshots.get(0);
@@ -1896,11 +1897,11 @@ public class TransactionTest {
   @Test
   public void transactionsUseLocalMerges()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore semaphore = new Semaphore(0);
     // Go offline to ensure the update doesn't complete before the transaction runs.
-    TestHelpers.goOffline(TestHelpers.getContext(0));
+    IntegrationTestHelpers.goOffline(IntegrationTestHelpers.getContext(0));
     ref.updateChildren(new MapBuilder().put("foo", "bar").build());
     ref.child("foo")
         .runTransaction(
@@ -1921,8 +1922,8 @@ public class TransactionTest {
               }
             });
 
-    TestHelpers.goOnline(TestHelpers.getContext(0));
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.goOnline(IntegrationTestHelpers.getContext(0));
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   // See https://app.asana.com/0/15566422264127/23303789496881
@@ -1930,7 +1931,7 @@ public class TransactionTest {
   public void outOfOrderRemoveWritesAreHandledCorrectly()
       throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
           TimeoutException {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref.setValue(new MapBuilder().put("foo", "bar").build());
     ref.runTransaction(
@@ -1968,12 +1969,12 @@ public class TransactionTest {
           }
         });
 
-    TestHelpers.waitFor(done);
+    IntegrationTestHelpers.waitFor(done);
   }
 
   @Test
   public void returningNullReturnsNullPointerExceptionError() throws Throwable {
-    DatabaseReference ref = TestHelpers.getRandomNode();
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore semaphore = new Semaphore(0);
 
@@ -1993,7 +1994,7 @@ public class TransactionTest {
               }
             });
 
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
@@ -2001,7 +2002,7 @@ public class TransactionTest {
     // Hack: To trigger us to disconnect before restoring state, we inject a bad auth token.
     // In real-world usage the much more common case is that we get redirected to a different
     // server, but that's harder to manufacture from a test.
-    final DatabaseConfig cfg = TestHelpers.newTestConfig();
+    final DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
     cfg.setAuthTokenProvider(
         new AuthTokenProvider() {
           private int count = 0;
@@ -2009,7 +2010,7 @@ public class TransactionTest {
           @Override
           public void getToken(boolean forceRefresh, final GetTokenCompletionListener listener) {
             // Return "bad-token" once to trigger a disconnect, and then a null token.
-            TestHelpers.getExecutorService(cfg)
+            IntegrationTestHelpers.getExecutorService(cfg)
                 .schedule(
                     new Runnable() {
                       @Override
@@ -2027,14 +2028,15 @@ public class TransactionTest {
           }
 
           @Override
-          public void addTokenChangeListener(TokenChangeListener listener) {}
+          public void addTokenChangeListener(
+              ExecutorService executorService, TokenChangeListener listener) {}
 
           @Override
           public void removeTokenChangeListener(TokenChangeListener listener) {}
         });
 
     // Queue a transaction offline.
-    DatabaseReference ref = TestHelpers.rootWithConfig(cfg);
+    DatabaseReference ref = IntegrationTestHelpers.rootWithConfig(cfg);
     ref.getDatabase().goOffline();
     final Semaphore semaphore = new Semaphore(0);
     ref.push()
@@ -2057,6 +2059,6 @@ public class TransactionTest {
             });
 
     ref.getDatabase().goOnline();
-    TestHelpers.waitFor(semaphore);
+    IntegrationTestHelpers.waitFor(semaphore);
   }
 }

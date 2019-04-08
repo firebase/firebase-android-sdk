@@ -499,14 +499,21 @@ public class ValidationTest {
 
   @Test
   public void queryOrderByKeyBoundsMustBeStringsWithoutSlashes() {
-    CollectionReference collection = testCollection();
-    Query query = collection.orderBy(FieldPath.documentId());
+    Query query = testFirestore().collection("collection").orderBy(FieldPath.documentId());
+    Query cgQuery = testFirestore().collectionGroup("collection").orderBy(FieldPath.documentId());
     expectError(
         () -> query.startAt(1),
         "Invalid query. Expected a string for document ID in startAt(), but got 1.");
     expectError(
         () -> query.startAt("foo/bar"),
-        "Invalid query. Document ID 'foo/bar' contains a slash in startAt().");
+        "Invalid query. When querying a collection and ordering by "
+            + "FieldPath.documentId(), the value passed to startAt() must be a plain "
+            + "document ID, but 'foo/bar' contains a slash.");
+    expectError(
+        () -> cgQuery.startAt("foo"),
+        "Invalid query. When querying a collection group and ordering by "
+            + "FieldPath.documentId(), the value passed to startAt() must result in a valid "
+            + "document path, but 'foo' is not because it contains an odd number of segments.");
   }
 
   @Test
@@ -548,7 +555,7 @@ public class ValidationTest {
     expectError(() -> query.startAt(1).orderBy("bar"), reason);
     expectError(() -> query.startAfter(1).orderBy("bar"), reason);
     reason =
-        "Invalid query. You must not call Query.endAt() or Query.endAfter() "
+        "Invalid query. You must not call Query.endAt() or Query.endBefore() "
             + "before calling Query.orderBy().";
     expectError(() -> query.endAt(1).orderBy("bar"), reason);
     expectError(() -> query.endBefore(1).orderBy("bar"), reason);
@@ -563,8 +570,8 @@ public class ValidationTest {
     expectError(() -> collection.whereGreaterThanOrEqualTo(FieldPath.documentId(), ""), reason);
 
     reason =
-        "Invalid query. When querying with FieldPath.documentId() you must provide "
-            + "a valid document ID, but 'foo/bar/baz' contains a '/' character.";
+        "Invalid query. When querying a collection by FieldPath.documentId() you must provide "
+            + "a plain document ID, but 'foo/bar/baz' contains a '/' character.";
     expectError(
         () -> collection.whereGreaterThanOrEqualTo(FieldPath.documentId(), "foo/bar/baz"), reason);
 
@@ -572,6 +579,17 @@ public class ValidationTest {
         "Invalid query. When querying with FieldPath.documentId() you must provide "
             + "a valid String or DocumentReference, but it was of type: java.lang.Integer";
     expectError(() -> collection.whereGreaterThanOrEqualTo(FieldPath.documentId(), 1), reason);
+
+    reason =
+        "Invalid query. When querying a collection group by FieldPath.documentId(), the value "
+            + "provided must result in a valid document path, but 'foo' is not because it has "
+            + "an odd number of segments (1).";
+    expectError(
+        () ->
+            testFirestore()
+                .collectionGroup("collection")
+                .whereGreaterThanOrEqualTo(FieldPath.documentId(), "foo"),
+        reason);
 
     reason =
         "Invalid query. You can't perform array-contains queries on FieldPath.documentId() since "

@@ -41,7 +41,7 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @SuppressWarnings({"unused", "WeakerAccess", "SpellCheckingInspection"})
 public class MapperTest {
-  private static final double EPSILON = 0.00001f;
+  private static final double EPSILON = 0.0003;
 
   private static class StringBean {
     private String value;
@@ -709,7 +709,10 @@ public class MapperTest {
 
   private enum ComplexEnum {
     One("one"),
-    Two("two");
+    Two("two"),
+
+    @PropertyName("Three")
+    THREE("three");
 
     private final String value;
 
@@ -722,12 +725,24 @@ public class MapperTest {
     }
   }
 
+  private enum PathologicalEnum {
+    @PropertyName("Two")
+    One,
+
+    @PropertyName("One")
+    Two
+  }
+
   private static class EnumBean {
     public SimpleEnum enumField;
 
     private SimpleEnum enumValue;
 
     public ComplexEnum complexEnum;
+
+    public ComplexEnum enumUsingPropertyName;
+
+    public PathologicalEnum pathologicalEnum;
 
     public SimpleEnum getEnumValue() {
       return enumValue;
@@ -1194,6 +1209,53 @@ public class MapperTest {
     assertEquals("bar", bean.XMLAndURL2);
   }
 
+  /** Based on https://github.com/firebase/firebase-android-sdk/issues/252. */
+  private static class AllCapsDefaultHandlingBean {
+    private String UUID;
+
+    public String getUUID() {
+      return UUID;
+    }
+
+    public void setUUID(String value) {
+      UUID = value;
+    }
+  }
+
+  @Test
+  public void allCapsGetterSerializesToLowercaseByDefault() {
+    AllCapsDefaultHandlingBean bean = new AllCapsDefaultHandlingBean();
+    bean.setUUID("value");
+    assertJson("{'uuid': 'value'}", serialize(bean));
+    AllCapsDefaultHandlingBean deserialized =
+        deserialize("{'uuid': 'value'}", AllCapsDefaultHandlingBean.class);
+    assertEquals("value", deserialized.getUUID());
+  }
+
+  private static class AllCapsWithPropertyName {
+    private String UUID;
+
+    @PropertyName("UUID")
+    public String getUUID() {
+      return UUID;
+    }
+
+    @PropertyName("UUID")
+    public void setUUID(String value) {
+      UUID = value;
+    }
+  }
+
+  @Test
+  public void allCapsWithPropertyNameSerializesToUppercase() {
+    AllCapsWithPropertyName bean = new AllCapsWithPropertyName();
+    bean.setUUID("value");
+    assertJson("{'UUID': 'value'}", serialize(bean));
+    AllCapsWithPropertyName deserialized =
+        deserialize("{'UUID': 'value'}", AllCapsWithPropertyName.class);
+    assertEquals("value", deserialized.getUUID());
+  }
+
   @Test
   public void setterIsCalledWhenPresent() {
     SetterBean bean = deserialize("{'value': 'foo'}", SetterBean.class);
@@ -1380,7 +1442,9 @@ public class MapperTest {
   public void serializeFloatBean() {
     FloatBean bean = new FloatBean();
     bean.value = 0.5f;
-    assertJson("{'value': 0.5}", serialize(bean));
+
+    // We don't use assertJson as it converts all floating point numbers to Double.
+    assertEquals(map("value", 0.5f), serialize(bean));
   }
 
   @Test
@@ -1634,7 +1698,7 @@ public class MapperTest {
     ShortBean bean = new ShortBean();
     bean.value = 1;
     assertExceptionContains(
-        "Shorts are not supported, please use int or long (found in field 'value')",
+        "Numbers of type Short are not supported, please use an int, long, float or double (found in field 'value')",
         () -> serialize(bean));
   }
 
@@ -1643,7 +1707,7 @@ public class MapperTest {
     ByteBean bean = new ByteBean();
     bean.value = 1;
     assertExceptionContains(
-        "Bytes are not supported, please use int or long (found in field 'value')",
+        "Numbers of type Byte are not supported, please use an int, long, float or double (found in field 'value')",
         () -> serialize(bean));
   }
 
@@ -1652,7 +1716,7 @@ public class MapperTest {
     CharBean bean = new CharBean();
     bean.value = 1;
     assertExceptionContains(
-        "Characters are not supported, please use Strings. (found in field 'value')",
+        "Characters are not supported, please use Strings (found in field 'value')",
         () -> serialize(bean));
   }
 
@@ -1679,21 +1743,21 @@ public class MapperTest {
   @Test
   public void shortsCantBeDeserialized() {
     assertExceptionContains(
-        "Deserializing to shorts is not supported (found in field 'value')",
+        "Deserializing values to short is not supported (found in field 'value')",
         () -> deserialize("{'value': 1}", ShortBean.class));
   }
 
   @Test
   public void bytesCantBeDeserialized() {
     assertExceptionContains(
-        "Deserializing to bytes is not supported (found in field 'value')",
+        "Deserializing values to byte is not supported (found in field 'value')",
         () -> deserialize("{'value': 1}", ByteBean.class));
   }
 
   @Test
   public void charsCantBeDeserialized() {
     assertExceptionContains(
-        "Deserializing to chars is not supported (found in field 'value')",
+        "Deserializing values to char is not supported (found in field 'value')",
         () -> deserialize("{'value': '1'}", CharBean.class));
   }
 
@@ -1800,21 +1864,21 @@ public class MapperTest {
   @Test
   public void passingInCharacterTopLevelThrows() {
     assertExceptionContains(
-        "Deserializing to chars is not supported",
+        "Deserializing values to Character is not supported",
         () -> CustomClassMapper.convertToCustomClass('1', Character.class));
   }
 
   @Test
   public void passingInShortTopLevelThrows() {
     assertExceptionContains(
-        "Deserializing to shorts is not supported",
+        "Deserializing values to Short is not supported",
         () -> CustomClassMapper.convertToCustomClass(1, Short.class));
   }
 
   @Test
   public void passingInByteTopLevelThrows() {
     assertExceptionContains(
-        "Deserializing to bytes is not supported",
+        "Deserializing values to Byte is not supported",
         () -> CustomClassMapper.convertToCustomClass(1, Byte.class));
   }
 
@@ -1974,18 +2038,24 @@ public class MapperTest {
     EnumBean bean = new EnumBean();
     bean.enumField = SimpleEnum.Bar;
     bean.complexEnum = ComplexEnum.One;
+    bean.enumUsingPropertyName = ComplexEnum.THREE;
+    bean.pathologicalEnum = PathologicalEnum.One;
     bean.setEnumValue(SimpleEnum.Foo);
-
-    assertJson("{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}", serialize(bean));
+    assertJson(
+        "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'enumUsingPropertyName': 'Three', 'pathologicalEnum': 'Two'}",
+        serialize(bean));
   }
 
   @Test
   public void enumsAreParsed() {
-    String json = "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}";
+    String json =
+        "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'enumUsingPropertyName': 'Three', 'pathologicalEnum': 'Two'}";
     EnumBean bean = deserialize(json, EnumBean.class);
     assertEquals(bean.enumField, SimpleEnum.Bar);
     assertEquals(bean.enumValue, SimpleEnum.Foo);
     assertEquals(bean.complexEnum, ComplexEnum.One);
+    assertEquals(bean.enumUsingPropertyName, ComplexEnum.THREE);
+    assertEquals(bean.pathologicalEnum, PathologicalEnum.One);
   }
 
   @Test
@@ -2152,8 +2222,8 @@ public class MapperTest {
       fail("should have thrown");
     } catch (RuntimeException e) {
       assertEquals(
-          "Could not serialize object. Shorts are not supported, please use int or "
-              + "long (found in field 'value.inner.value.short')",
+          "Could not serialize object. Numbers of type Short are not supported, please use an int, "
+              + "long, float or double (found in field 'value.inner.value.short')",
           e.getMessage());
     }
   }
@@ -2167,7 +2237,7 @@ public class MapperTest {
       fail("should have thrown");
     } catch (RuntimeException e) {
       assertEquals(
-          "Could not deserialize object. Deserializing to shorts is not supported "
+          "Could not deserialize object. Deserializing values to short is not supported "
               + "(found in field 'value')",
           e.getMessage());
     }

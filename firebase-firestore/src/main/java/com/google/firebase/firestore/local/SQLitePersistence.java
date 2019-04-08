@@ -34,7 +34,6 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -77,9 +76,9 @@ public final class SQLitePersistence extends Persistence {
   private final OpenHelper opener;
   private final LocalSerializer serializer;
   private SQLiteDatabase db;
-  private File databasePath;
   private boolean started;
   private final SQLiteQueryCache queryCache;
+  private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
   private final SQLiteTransactionListener transactionListener =
@@ -106,9 +105,9 @@ public final class SQLitePersistence extends Persistence {
       LruGarbageCollector.Params params) {
     String databaseName = databaseName(persistenceKey, databaseId);
     this.opener = new OpenHelper(context, databaseName);
-    this.databasePath = context.getDatabasePath(databaseName);
     this.serializer = serializer;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
+    this.indexManager = new SQLiteIndexManager(this);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
   }
@@ -164,6 +163,11 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
+  IndexManager getIndexManager() {
+    return indexManager;
+  }
+
+  @Override
   RemoteDocumentCache getRemoteDocumentCache() {
     return remoteDocumentCache;
   }
@@ -199,7 +203,26 @@ public final class SQLitePersistence extends Persistence {
   }
 
   long getByteSize() {
-    return databasePath.length();
+    return getPageCount() * getPageSize();
+  }
+
+  /**
+   * Gets the page size of the database. Typically 4096.
+   *
+   * @see https://www.sqlite.org/pragma.html#pragma_page_size
+   */
+  private long getPageSize() {
+    return query("PRAGMA page_size").firstValue(row -> row.getLong(/*column=*/ 0));
+  }
+
+  /**
+   * Gets the number of pages in the database file. Multiplying this with the page size yields the
+   * approximate size of the database on disk (including the WAL, if relevant).
+   *
+   * @see https://www.sqlite.org/pragma.html#pragma_page_count.
+   */
+  private long getPageCount() {
+    return query("PRAGMA page_count").firstValue(row -> row.getLong(/*column=*/ 0));
   }
 
   /**

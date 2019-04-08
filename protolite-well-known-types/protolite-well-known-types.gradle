@@ -40,11 +40,10 @@ protobuf {
     }
 }
 android {
-    compileSdkVersion 28
-
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 28
+        targetSdkVersion project.targetSdkVersion
+        minSdkVersion project.minSdkVersion
         versionCode 1
         versionName '1.0'
     }

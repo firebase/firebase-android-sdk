@@ -14,8 +14,8 @@
 
 package com.google.firebase.database.core;
 
-import static com.google.firebase.database.TestHelpers.fromSingleQuotedString;
-import static com.google.firebase.database.TestHelpers.path;
+import static com.google.firebase.database.UnitTestHelpers.fromSingleQuotedString;
+import static com.google.firebase.database.UnitTestHelpers.path;
 import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
 import static org.junit.Assert.assertEquals;
 

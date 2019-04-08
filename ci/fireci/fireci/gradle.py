@@ -29,6 +29,7 @@ def P(name, value):
   return '-P{}={}'.format(name, value)
 
 
+@stats.measure_call('gradle')
 def run(*args, gradle_opts='', workdir=None):
   """Invokes gradle with specified args and gradle_opts."""
   new_env = dict(os.environ)

@@ -44,8 +44,8 @@ afterEvaluate {
 // somewhere in the task graph (for instance if you ran
 // ./gradlew test at the root project).
 def isTesting = getGradle().getStartParameter().getTaskNames().any({ String taskName ->
-    def hasProjectTestTask = taskName.contains("$name") &&  ['AndroidTest', 'connectedCheck'].any({ taskName.contains(it)})
-    return hasProjectTestTask || taskName.contains('connectedCheck')
+    def hasProjectTestTask = taskName.contains("$name") &&  ['AndroidTest', 'connectedCheck', 'deviceCheck'].any({ taskName.contains(it)})
+    return hasProjectTestTask || taskName.contains('connectedCheck') || taskName.contains('deviceCheck')
 })
 
 if (isTesting) {

@@ -15,7 +15,7 @@
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 
 buildscript {
-
+    ext.kotlinVersion = '1.3.20'
     repositories {
         google()
         jcenter()
@@ -34,8 +34,12 @@ buildscript {
         classpath 'com.google.gms:google-services:4.1.0'
         classpath 'me.tatarka:gradle-retrolambda:3.7.0'
         classpath 'digital.wup:android-maven-publish:3.6.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath 'org.jlleitschuh.gradle:ktlint-gradle:7.1.0'
     }
 }
+
+apply from: 'sdkProperties.gradle'
 
 ext {
     playServicesVersion = '16.0.1'
@@ -48,6 +52,7 @@ ext {
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
+apply plugin: com.google.firebase.gradle.plugins.ci.metrics.MetricsPlugin
 
 firebaseContinuousIntegration {
     ignorePaths = [
@@ -91,10 +96,34 @@ configure(subprojects) {
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
         exclude '**/package-info.java'
     }
+    apply plugin: 'jacoco'
+    jacoco {
+        toolVersion = '0.8.3'
+    }
+    task(['type': JacocoReport, 'dependsOn': 'check', 'group': 'Coverage',
+          'description': 'Generates JaCoCo unit test coverage reports.'], checkCoverage) {
+        def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**Manifest*.*']
+        classDirectories = files([
+            fileTree(dir: "$buildDir/intermediates/javac/debug", excludes: excludes),
+            fileTree(dir: "$buildDir/tmp/kotlin-classes/debug", excludes: excludes)
+        ])
+        sourceDirectories = files(['src/main/java', 'src/main/kotlin'])
+        executionData = fileTree(dir: "$buildDir", includes: ['jacoco/*.exec'])
+        reports {
+            html.enabled true
+            xml.enabled true
+            csv.enabled true
+        }
+    }
+    tasks.withType(Test) {
+        jacoco.includeNoLocationClasses true
+    }
 
     tasks.withType(JavaCompile) {
         options.errorprone.excludedPaths = '.*/build/generated/.*'
     }
+
+    apply plugin: "org.jlleitschuh.gradle.ktlint"
 
     // Adds firebase custom errorprone checks to the annotation processor classpath.
     configurations.whenObjectAdded {

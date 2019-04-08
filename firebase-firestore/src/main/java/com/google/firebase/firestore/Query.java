@@ -19,17 +19,19 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.app.Activity;
-import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.core.ActivityScope;
+import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.RelationFilter;
@@ -40,9 +42,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.util.ExecutorEventListener;
 import com.google.firebase.firestore.util.Executors;
-import com.google.firebase.firestore.util.ListenerRegistrationImpl;
 import com.google.firebase.firestore.util.Util;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,8 +65,7 @@ public class Query {
   final FirebaseFirestore firestore;
 
   /** An enum for the direction of a sort. */
-  // TODO: Remove this annotation once our proguard issues are sorted out.
-  @Keep
+  @PublicApi
   public enum Direction {
     ASCENDING,
     DESCENDING
@@ -324,20 +323,28 @@ public class Query {
       }
       if (value instanceof String) {
         String documentKey = (String) value;
-        if (documentKey.contains("/")) {
-          // TODO: Allow slashes once ancestor queries are supported
-          throw new IllegalArgumentException(
-              "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
-                  + "document ID, but '"
-                  + documentKey
-                  + "' contains a '/' character.");
-        } else if (documentKey.isEmpty()) {
+        if (documentKey.isEmpty()) {
           throw new IllegalArgumentException(
               "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
                   + "document ID, but it was an empty string.");
         }
-        ResourcePath path = this.query.getPath().append(documentKey);
-        hardAssert(path.length() % 2 == 0, "Path should be a document key");
+        if (!query.isCollectionGroupQuery() && documentKey.contains("/")) {
+          throw new IllegalArgumentException(
+              "Invalid query. When querying a collection by FieldPath.documentId() you must "
+                  + "provide a plain document ID, but '"
+                  + documentKey
+                  + "' contains a '/' character.");
+        }
+        ResourcePath path = query.getPath().append(ResourcePath.fromString(documentKey));
+        if (!DocumentKey.isDocumentKey(path)) {
+          throw new IllegalArgumentException(
+              "Invalid query. When querying a collection group by FieldPath.documentId(), the "
+                  + "value provided must result in a valid document path, but '"
+                  + path
+                  + "' is not because it has an odd number of segments ("
+                  + path.length()
+                  + ").");
+        }
         fieldValue =
             ReferenceValue.valueOf(this.getFirestore().getDatabaseId(), DocumentKey.fromPath(path));
       } else if (value instanceof DocumentReference) {
@@ -430,7 +437,7 @@ public class Query {
     }
     if (query.getEndAt() != null) {
       throw new IllegalArgumentException(
-          "Invalid query. You must not call Query.endAt() or Query.endAfter() before "
+          "Invalid query. You must not call Query.endAt() or Query.endBefore() before "
               + "calling Query.orderBy().");
     }
     validateOrderByField(fieldPath);
@@ -655,15 +662,26 @@ public class Query {
                   + ".");
         }
         String documentId = (String) rawValue;
-        if (documentId.contains("/")) {
+        if (!query.isCollectionGroupQuery() && documentId.contains("/")) {
           throw new IllegalArgumentException(
-              "Invalid query. Document ID '"
-                  + documentId
-                  + "' contains a slash in "
+              "Invalid query. When querying a collection and ordering by FieldPath.documentId(), "
+                  + "the value passed to "
                   + methodName
-                  + "().");
+                  + "() must be a plain document ID, but '"
+                  + documentId
+                  + "' contains a slash.");
         }
-        DocumentKey key = DocumentKey.fromPath(query.getPath().append(documentId));
+        ResourcePath path = query.getPath().append(ResourcePath.fromString(documentId));
+        if (!DocumentKey.isDocumentKey(path)) {
+          throw new IllegalArgumentException(
+              "Invalid query. When querying a collection group and ordering by "
+                  + "FieldPath.documentId(), the value passed to "
+                  + methodName
+                  + "() must result in a valid document path, but '"
+                  + path
+                  + "' is not because it contains an odd number of segments.");
+        }
+        DocumentKey key = DocumentKey.fromPath(path);
         components.add(ReferenceValue.valueOf(firestore.getDatabaseId(), key));
       } else {
         FieldValue wrapped = firestore.getDataConverter().parseQueryValue(rawValue);
@@ -874,30 +892,37 @@ public class Query {
    * @param executor The executor to use to call the listener.
    * @param options The options to use for this listen.
    * @param activity Optional activity this listener is scoped to.
-   * @param listener The event listener that will be called with the snapshots.
+   * @param userListener The user-supplied event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */
   private ListenerRegistration addSnapshotListenerInternal(
       Executor executor,
       ListenOptions options,
       @Nullable Activity activity,
-      EventListener<QuerySnapshot> listener) {
-    ExecutorEventListener<ViewSnapshot> wrappedListener =
-        new ExecutorEventListener<>(
-            executor,
-            (@Nullable ViewSnapshot snapshot, @Nullable FirebaseFirestoreException error) -> {
-              if (snapshot != null) {
-                QuerySnapshot querySnapshot = new QuerySnapshot(this, snapshot, firestore);
-                listener.onEvent(querySnapshot, null);
-              } else {
-                hardAssert(error != null, "Got event without value or error set");
-                listener.onEvent(null, error);
-              }
-            });
+      EventListener<QuerySnapshot> userListener) {
 
-    QueryListener queryListener = firestore.getClient().listen(query, options, wrappedListener);
-    return new ListenerRegistrationImpl(
-        firestore.getClient(), queryListener, activity, wrappedListener);
+    // Convert from ViewSnapshots to QuerySnapshots.
+    EventListener<ViewSnapshot> viewListener =
+        (@Nullable ViewSnapshot snapshot, @Nullable FirebaseFirestoreException error) -> {
+          if (error != null) {
+            userListener.onEvent(null, error);
+            return;
+          }
+
+          hardAssert(snapshot != null, "Got event without value or error set");
+
+          QuerySnapshot querySnapshot = new QuerySnapshot(this, snapshot, firestore);
+          userListener.onEvent(querySnapshot, null);
+        };
+
+    // Call the viewListener on the userExecutor.
+    AsyncEventListener<ViewSnapshot> asyncListener =
+        new AsyncEventListener<>(executor, viewListener);
+
+    QueryListener queryListener = firestore.getClient().listen(query, options, asyncListener);
+    return ActivityScope.bind(
+        activity,
+        new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener));
   }
 
   @Override

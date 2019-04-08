@@ -32,6 +32,7 @@ public final class MemoryPersistence extends Persistence {
   // LocalStore wrapping this Persistence instance and this will make the in-memory persistence
   // layer behave as if it were actually persisting values.
   private final Map<User, MemoryMutationQueue> mutationQueues;
+  private final MemoryIndexManager indexManager;
   private final MemoryQueryCache queryCache;
   private final MemoryRemoteDocumentCache remoteDocumentCache;
   private ReferenceDelegate referenceDelegate;
@@ -55,8 +56,9 @@ public final class MemoryPersistence extends Persistence {
   /** Use static helpers to instantiate */
   private MemoryPersistence() {
     mutationQueues = new HashMap<>();
+    indexManager = new MemoryIndexManager();
     queryCache = new MemoryQueryCache(this);
-    remoteDocumentCache = new MemoryRemoteDocumentCache();
+    remoteDocumentCache = new MemoryRemoteDocumentCache(this);
   }
 
   @Override
@@ -109,6 +111,11 @@ public final class MemoryPersistence extends Persistence {
   @Override
   MemoryRemoteDocumentCache getRemoteDocumentCache() {
     return remoteDocumentCache;
+  }
+
+  @Override
+  IndexManager getIndexManager() {
+    return indexManager;
   }
 
   @Override

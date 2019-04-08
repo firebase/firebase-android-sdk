@@ -22,6 +22,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 
@@ -54,6 +55,7 @@ public class FunctionsRegistrar implements ComponentRegistrar {
                         c.get(Context.class),
                         c.get(ContextProvider.class),
                         c.get(FirebaseOptions.class).getProjectId()))
-            .build());
+            .build(),
+        LibraryVersionComponent.create("fire-fn", BuildConfig.VERSION_NAME));
   }
 }

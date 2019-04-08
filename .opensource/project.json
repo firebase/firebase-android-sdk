@@ -4,13 +4,23 @@
     "platforms": [
         "Android"
     ],
-    "content": "README.md",
-    "pages": [
-        "firebase-common/README.md",
-        "firebase-firestore/README.md",
-        "protolite-well-known-types/README.md"
-    ],
+    "content": "docs/README.md",
+    "pages": {
+        "README.md": "Development Guide",
+        "docs/ktx/common.md": "Common KTX",
+        "docs/ktx/firestore.md": "Firestore KTX"
+    },
     "related": [
         "firebase/quickstart-android"
+    ],
+    "tabs": [
+        {
+            "title": "Main Reference",
+            "href": "https://firebase.google.com/docs/reference/android/"
+        },
+        {
+            "title": "KTX Reference",
+            "href": "https://firebase.github.io/firebase-android-sdk/reference/kotlin/firebase-ktx/"
+        }
     ]
 }

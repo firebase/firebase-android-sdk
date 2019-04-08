@@ -24,7 +24,7 @@ import android.support.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.firestore.core.Version;
+import com.google.firebase.firestore.BuildConfig;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.Callable;
@@ -369,7 +369,7 @@ public class AsyncQueue {
             OutOfMemoryError error =
                 new OutOfMemoryError(
                     "Firestore ("
-                        + Version.SDK_VERSION
+                        + BuildConfig.VERSION_NAME
                         + ") ran out of memory. "
                         + "Check your queries to make sure they are not loading an excessive "
                         + "amount of data.");
@@ -377,7 +377,7 @@ public class AsyncQueue {
             throw error;
           } else {
             throw new RuntimeException(
-                "Internal error in Firestore (" + Version.SDK_VERSION + ").", t);
+                "Internal error in Firestore (" + BuildConfig.VERSION_NAME + ").", t);
           }
         });
   }

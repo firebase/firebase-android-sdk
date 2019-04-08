@@ -13,29 +13,17 @@
 // limitations under the License.
 
 apply plugin: 'com.android.library'
-
-def androidVersion = 28
-
-
-tasks.withType(org.gradle.api.tasks.testing.Test) {
-    testLogging {
-        exceptionFormat = 'full'
-        showStandardStreams = true
-        showCauses = true
-        showExceptions =true
-        showStackTraces = true
-    }
-}
+apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
 
-    compileSdkVersion androidVersion
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        targetSdkVersion androidVersion
-        minSdkVersion 14
+        targetSdkVersion project.targetSdkVersion
+        minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -71,6 +59,8 @@ android {
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
     }
+
+    testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
@@ -80,6 +70,9 @@ dependencies {
     implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
     implementation "com.google.android.gms:play-services-base:$playServicesVersion"
     implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
+    implementation('com.google.firebase:firebase-auth-interop:16.0.1') {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
 
     androidTestImplementation "com.android.support:support-annotations:$supportAnnotationsVersion"
     androidTestImplementation 'com.android.support.test:rules:1.0.2'

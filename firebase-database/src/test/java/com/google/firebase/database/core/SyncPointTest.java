@@ -20,7 +20,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.InternalHelpers;
 import com.google.firebase.database.Query;
-import com.google.firebase.database.TestHelpers;
+import com.google.firebase.database.UnitTestHelpers;
 import com.google.firebase.database.annotations.NotNull;
 import com.google.firebase.database.connection.ListenHashProvider;
 import com.google.firebase.database.core.persistence.NoopPersistenceManager;
@@ -412,8 +412,8 @@ public class SyncPointTest {
 
   @SuppressWarnings("unchecked")
   private static void runTest(Map<String, Object> testSpec, String basePath) {
-    DatabaseConfig config = TestHelpers.newTestConfig();
-    TestHelpers.setLogger(config, new DefaultLogger(Logger.Level.DEBUG, null));
+    DatabaseConfig config = UnitTestHelpers.newTestConfig();
+    UnitTestHelpers.setLogger(config, new DefaultLogger(Logger.Level.DEBUG, null));
     LogWrapper logger = config.getLogger("SyncPointTest");
 
     logger.info("Running \"" + testSpec.get("name") + '"');
@@ -519,7 +519,7 @@ public class SyncPointTest {
 
   @After
   public void tearDown() {
-    TestHelpers.failOnFirstUncaughtException();
+    UnitTestHelpers.failOnFirstUncaughtException();
   }
 
   @SuppressWarnings("unchecked")

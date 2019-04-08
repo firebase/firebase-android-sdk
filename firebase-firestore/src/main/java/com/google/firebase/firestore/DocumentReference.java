@@ -26,7 +26,10 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.core.ActivityScope;
+import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
+import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
@@ -37,9 +40,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Assert;
-import com.google.firebase.firestore.util.ExecutorEventListener;
 import com.google.firebase.firestore.util.Executors;
-import com.google.firebase.firestore.util.ListenerRegistrationImpl;
 import com.google.firebase.firestore.util.Util;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -71,7 +72,7 @@ public class DocumentReference {
   }
 
   /** @hide */
-  public static DocumentReference forPath(ResourcePath path, FirebaseFirestore firestore) {
+  static DocumentReference forPath(ResourcePath path, FirebaseFirestore firestore) {
     if (path.length() % 2 != 0) {
       throw new IllegalArgumentException(
           "Invalid document reference. Document references must have an even number "
@@ -284,7 +285,7 @@ public class DocumentReference {
    */
   @NonNull
   @PublicApi
-  public Task<DocumentSnapshot> get(Source source) {
+  public Task<DocumentSnapshot> get(@NonNull Source source) {
     if (source == Source.CACHE) {
       return firestore
           .getClient()
@@ -311,6 +312,7 @@ public class DocumentReference {
     options.includeDocumentMetadataChanges = true;
     options.includeQueryMetadataChanges = true;
     options.waitForSyncWhenOnline = true;
+
     ListenerRegistration listenerRegistration =
         addSnapshotListenerInternal(
             // No need to schedule, we just set the task result directly
@@ -479,49 +481,58 @@ public class DocumentReference {
    *
    * <p>Will be Activity scoped if the activity parameter is non-null.
    *
-   * @param executor The executor to use to call the listener.
+   * @param userExecutor The executor to use to call the listener.
    * @param options The options to use for this listen.
    * @param activity Optional activity this listener is scoped to.
-   * @param listener The event listener that will be called with the snapshots.
+   * @param userListener The user-supplied event listener that will be called with document
+   *     snapshots.
    * @return A registration object that can be used to remove the listener.
    */
   private ListenerRegistration addSnapshotListenerInternal(
-      Executor executor,
+      Executor userExecutor,
       ListenOptions options,
       @Nullable Activity activity,
-      EventListener<DocumentSnapshot> listener) {
-    ExecutorEventListener<ViewSnapshot> wrappedListener =
-        new ExecutorEventListener<>(
-            executor,
-            (snapshot, error) -> {
-              if (snapshot != null) {
-                Assert.hardAssert(
-                    snapshot.getDocuments().size() <= 1,
-                    "Too many documents returned on a document query");
-                Document document = snapshot.getDocuments().getDocument(key);
-                DocumentSnapshot documentSnapshot;
-                if (document != null) {
-                  boolean hasPendingWrites = snapshot.getMutatedKeys().contains(document.getKey());
-                  documentSnapshot =
-                      DocumentSnapshot.fromDocument(
-                          firestore, document, snapshot.isFromCache(), hasPendingWrites);
-                } else {
-                  // We don't raise `hasPendingWrites` for deleted documents.
-                  boolean hasPendingWrites = false;
-                  documentSnapshot =
-                      DocumentSnapshot.fromNoDocument(
-                          firestore, key, snapshot.isFromCache(), hasPendingWrites);
-                }
-                listener.onEvent(documentSnapshot, null);
-              } else {
-                Assert.hardAssert(error != null, "Got event without value or error set");
-                listener.onEvent(null, error);
-              }
-            });
+      EventListener<DocumentSnapshot> userListener) {
+
+    // Convert from ViewSnapshots to DocumentSnapshots.
+    EventListener<ViewSnapshot> viewListener =
+        (snapshot, error) -> {
+          if (error != null) {
+            userListener.onEvent(null, error);
+            return;
+          }
+
+          Assert.hardAssert(snapshot != null, "Got event without value or error set");
+          Assert.hardAssert(
+              snapshot.getDocuments().size() <= 1,
+              "Too many documents returned on a document query");
+
+          Document document = snapshot.getDocuments().getDocument(key);
+          DocumentSnapshot documentSnapshot;
+          if (document != null) {
+            boolean hasPendingWrites = snapshot.getMutatedKeys().contains(document.getKey());
+            documentSnapshot =
+                DocumentSnapshot.fromDocument(
+                    firestore, document, snapshot.isFromCache(), hasPendingWrites);
+          } else {
+            // We don't raise `hasPendingWrites` for deleted documents.
+            documentSnapshot =
+                DocumentSnapshot.fromNoDocument(
+                    firestore, key, snapshot.isFromCache(), /* hasPendingWrites= */ false);
+          }
+          userListener.onEvent(documentSnapshot, null);
+        };
+
+    // Call the viewListener on the userExecutor.
+    AsyncEventListener<ViewSnapshot> asyncListener =
+        new AsyncEventListener<>(userExecutor, viewListener);
+
     com.google.firebase.firestore.core.Query query = asQuery();
-    QueryListener queryListener = firestore.getClient().listen(query, options, wrappedListener);
-    return new ListenerRegistrationImpl(
-        firestore.getClient(), queryListener, activity, wrappedListener);
+    QueryListener queryListener = firestore.getClient().listen(query, options, asyncListener);
+
+    return ActivityScope.bind(
+        activity,
+        new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener));
   }
 
   @Override

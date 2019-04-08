@@ -62,7 +62,7 @@ public class ValueExpectationHelper {
   }
 
   public void waitForEvents() throws InterruptedException {
-    TestHelpers.waitFor(semaphore, count);
+    IntegrationTestHelpers.waitFor(semaphore, count);
     Iterator<QueryAndListener> iter = expectations.iterator();
     while (iter.hasNext()) {
       QueryAndListener pair = iter.next();

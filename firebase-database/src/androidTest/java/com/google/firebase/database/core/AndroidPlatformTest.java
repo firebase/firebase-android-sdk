@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.support.test.runner.AndroidJUnit4;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.TestHelpers;
+import com.google.firebase.database.IntegrationTestHelpers;
 import org.junit.Test;
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)
@@ -27,7 +27,7 @@ public class AndroidPlatformTest {
 
   @Test
   public void userAgentHasCorrectParts() {
-    Context cfg = TestHelpers.getContext(0);
+    Context cfg = IntegrationTestHelpers.getContext(0);
     cfg.freeze();
     String userAgent = cfg.getUserAgent();
     String[] parts = userAgent.split("/");

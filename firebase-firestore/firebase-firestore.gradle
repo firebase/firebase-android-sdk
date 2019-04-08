@@ -14,8 +14,7 @@
 
 apply plugin: 'com.android.library'
 apply plugin: 'com.google.protobuf'
-
-def androidVersion = 28
+apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 protobuf {
     // Configure the protoc executable
@@ -53,10 +52,10 @@ android {
         timeOutInMs 60 * 1000
     }
 
-    compileSdkVersion androidVersion
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        targetSdkVersion androidVersion
-        minSdkVersion 14
+        targetSdkVersion project.targetSdkVersion
+        minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -73,6 +72,7 @@ android {
         test {
             java {
                 srcDir 'src/testUtil/java'
+                srcDir 'src/roboUtil/java'
             }
         }
         androidTest {
@@ -85,6 +85,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
@@ -106,7 +107,7 @@ dependencies {
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
 
     implementation 'com.squareup.okhttp:okhttp:2.7.5'
-    implementation ('com.google.firebase:firebase-auth-interop:16.0.1') {
+    implementation('com.google.firebase:firebase-auth-interop:16.0.1') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
