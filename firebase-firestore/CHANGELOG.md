@@ -13,6 +13,14 @@
   and are not mentioned in our documentation.
 - [changed] Improved error messages for certain Number types that are not
   supported by our serialization layer (#272).
+- [changed] The garbage collection process for on-disk persistence that
+  removes older documents is now enabled by default. The SDK will attempt to
+  periodically clean up older, unused documents once the on-disk cache passes a
+  threshold size (default: 100 MB). This threshold can be configured by setting
+  `FirebaseFirestoreSettings.Builder.setCacheSizeBytes`. It must be set to a
+  minimum of 1 MB. The garbage collection process can be disabled entirely by
+  setting `FirebaseFirestoreSettings.setCacheSizeBytes` to
+  `FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED`.
 
 # 18.0.1
 - [fixed] Fixed an issue where Firestore would crash if handling write batches
