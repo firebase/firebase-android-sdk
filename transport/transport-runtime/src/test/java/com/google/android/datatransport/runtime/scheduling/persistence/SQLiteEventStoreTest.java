@@ -42,8 +42,11 @@ public class SQLiteEventStoreTest {
           .addMetadata("key2", "value2")
           .build();
 
-  private final SQLiteEventStore store =
-      new SQLiteEventStore(RuntimeEnvironment.application, new UptimeClock());
+  private final SQLiteEventStore store = newStoreWithCapacity(10 * 1024 * 1024);
+
+  private static SQLiteEventStore newStoreWithCapacity(long capacity) {
+    return new SQLiteEventStore(RuntimeEnvironment.application, new UptimeClock(), capacity);
+  }
 
   @Test
   public void persist_correctlyRoundTrips() {
@@ -134,5 +137,14 @@ public class SQLiteEventStoreTest {
 
     assertThat(store.hasPendingEventsFor(TRANSPORT_CONTEXT)).isTrue();
     assertThat(store.hasPendingEventsFor(ANOTHER_TRANSPORT_CONTEXT)).isFalse();
+  }
+
+  @Test
+  public void persist_whenDbSizeOnDiskIsAtLimit_shouldNotPersistNewEvents() {
+    SQLiteEventStore storeUnderTest = newStoreWithCapacity(store.getByteSize());
+    assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNull();
+
+    storeUnderTest = newStoreWithCapacity(store.getByteSize() + 1);
+    assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNotNull();
   }
 }

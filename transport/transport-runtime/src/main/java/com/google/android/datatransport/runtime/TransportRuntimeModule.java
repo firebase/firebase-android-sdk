@@ -16,7 +16,6 @@ package com.google.android.datatransport.runtime;
 
 import android.content.Context;
 import android.os.Build;
-import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.CreationContext;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
@@ -24,6 +23,7 @@ import com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmMa
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.scheduling.persistence.MaxStorageSize;
 import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
@@ -40,6 +40,15 @@ import javax.inject.Singleton;
 
 @Module
 abstract class TransportRuntimeModule {
+
+  private static final long MAX_DB_STORAGE_SIZE_IN_BYTES = 10 * 1024 * 1024;
+
+  @Provides
+  @MaxStorageSize
+  static long maxStorageSize() {
+    return MAX_DB_STORAGE_SIZE_IN_BYTES;
+  }
+
   @Singleton
   @Provides
   static Executor executor() {
@@ -68,15 +77,8 @@ abstract class TransportRuntimeModule {
     }
   }
 
-  @Provides
-  static Scheduler scheduler(
-      Executor executor,
-      BackendRegistry registry,
-      WorkScheduler workScheduler,
-      EventStore eventStore,
-      SynchronizationGuard guard) {
-    return new ImmediateScheduler(executor, registry);
-  }
+  @Binds
+  abstract Scheduler scheduler(ImmediateScheduler scheduler);
 
   @Binds
   abstract EventStore eventStore(SQLiteEventStore store);

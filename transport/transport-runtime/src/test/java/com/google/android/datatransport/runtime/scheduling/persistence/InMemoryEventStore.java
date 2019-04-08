@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import android.support.annotation.Nullable;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import java.util.ArrayList;
@@ -30,8 +31,10 @@ public class InMemoryEventStore implements EventStore {
   private final Map<TransportContext, Long> backendCallTime = new HashMap<>();
 
   @Override
+  @Nullable
   public synchronized PersistedEvent persist(
       TransportContext transportContext, EventInternal event) {
+
     long newId = idCounter.incrementAndGet();
     getOrCreateBackendStore(transportContext).put(newId, event);
 
