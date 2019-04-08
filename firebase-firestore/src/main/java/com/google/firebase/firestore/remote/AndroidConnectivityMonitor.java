@@ -130,12 +130,16 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
       boolean wasConnected = isConnected;
       isConnected = networkInfo != null && networkInfo.isConnected();
       if (isConnected && !wasConnected) {
-        for (Consumer<NetworkStatus> callback : callbacks) {
-          callback.accept(NetworkStatus.REACHABLE);
+        synchronized (callbacks) {
+          for (Consumer<NetworkStatus> callback : callbacks) {
+            callback.accept(NetworkStatus.REACHABLE);
+          }
         }
       } else if (!isConnected && wasConnected) {
-        for (Consumer<NetworkStatus> callback : callbacks) {
-          callback.accept(NetworkStatus.UNREACHABLE);
+        synchronized (callbacks) {
+          for (Consumer<NetworkStatus> callback : callbacks) {
+            callback.accept(NetworkStatus.UNREACHABLE);
+          }
         }
       }
     }
