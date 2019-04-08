@@ -1,7 +1,15 @@
 # Unreleased
+- [feature] You can now query across all collections in your database with a
+  given collection ID using the `FirebaseFirestore.collectionGroup()` method.
+
+# 18.2.0
 - [feature] Added `FieldValue.increment()`, which can be used in `update()`
   and `set(..., SetOptions.merge())` to increment or decrement numeric field
   values safely without transactions.
+- [feature] Added functional interface `FirebaseFirestore.runBatch()`, similar
+  to `FirebaseFirestore.runTransaction()`, which allows a developer to focus
+  on the mutations of the batch rather than on creating and committing the
+  batch.
 - [fixed] Fixed calculation of SQLite database size on Android 9 Pie devices.
   Previous method could be off by a few MBs on these devices, potentially
   delaying garbage collection.
