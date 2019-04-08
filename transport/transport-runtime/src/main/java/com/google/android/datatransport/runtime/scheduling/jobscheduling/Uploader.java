@@ -96,7 +96,7 @@ public class Uploader {
     TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
     List<EventInternal> eventInternals = new ArrayList<>();
     Iterable<PersistedEvent> persistedEvents =
-        guard.runCriticalSection(LOCK_TIMEOUT, () -> eventStore.loadAll(transportContext));
+        guard.runCriticalSection(LOCK_TIMEOUT, () -> eventStore.loadBatch(transportContext));
 
     // Donot make a call to the backend if the list is empty.
     if (!persistedEvents.iterator().hasNext()) {
@@ -110,15 +110,18 @@ public class Uploader {
     guard.runCriticalSection(
         LOCK_TIMEOUT,
         () -> {
-          if (response.getStatus() == BackendResponse.Status.OK) {
-            eventStore.recordSuccess(persistedEvents);
-            eventStore.recordNextCallTime(
-                transportContext, clock.getTime() + response.getNextRequestWaitMillis());
-          } else if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
+          if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
             eventStore.recordFailure(persistedEvents);
-            workScheduler.schedule(transportContext, (int) attemptNumber + 1);
+            workScheduler.schedule(transportContext, attemptNumber + 1);
           } else {
             eventStore.recordSuccess(persistedEvents);
+            if (response.getStatus() == BackendResponse.Status.OK) {
+              eventStore.recordNextCallTime(
+                  transportContext, clock.getTime() + response.getNextRequestWaitMillis());
+            }
+            if (eventStore.hasPendingEventsFor(transportContext)) {
+              workScheduler.schedule(transportContext, 1);
+            }
           }
           return null;
         });

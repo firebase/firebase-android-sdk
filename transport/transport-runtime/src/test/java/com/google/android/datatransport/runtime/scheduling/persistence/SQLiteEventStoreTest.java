@@ -41,17 +41,18 @@ public class SQLiteEventStoreTest {
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();
+  private static final EventStoreConfig CONFIG = EventStoreConfig.create(10 * 1024 * 1024, 5);
 
-  private final SQLiteEventStore store = newStoreWithCapacity(10 * 1024 * 1024);
+  private final SQLiteEventStore store = newStoreWithConfig(CONFIG);
 
-  private static SQLiteEventStore newStoreWithCapacity(long capacity) {
-    return new SQLiteEventStore(RuntimeEnvironment.application, new UptimeClock(), capacity);
+  private static SQLiteEventStore newStoreWithConfig(EventStoreConfig config) {
+    return new SQLiteEventStore(RuntimeEnvironment.application, new UptimeClock(), config);
   }
 
   @Test
   public void persist_correctlyRoundTrips() {
     PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, EVENT);
-    Iterable<PersistedEvent> events = store.loadAll(TRANSPORT_CONTEXT);
+    Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
 
     assertThat(events).containsExactly(newEvent);
   }
@@ -62,9 +63,9 @@ public class SQLiteEventStoreTest {
     PersistedEvent newEvent2 = store.persist(TRANSPORT_CONTEXT, EVENT);
 
     store.recordSuccess(Collections.singleton(newEvent1));
-    assertThat(store.loadAll(TRANSPORT_CONTEXT)).containsExactly(newEvent2);
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).containsExactly(newEvent2);
     store.recordSuccess(Collections.singleton(newEvent2));
-    assertThat(store.loadAll(TRANSPORT_CONTEXT)).isEmpty();
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
 
   @Test
@@ -73,7 +74,7 @@ public class SQLiteEventStoreTest {
     PersistedEvent newEvent2 = store.persist(TRANSPORT_CONTEXT, EVENT);
 
     store.recordSuccess(Arrays.asList(newEvent1, newEvent2));
-    assertThat(store.loadAll(TRANSPORT_CONTEXT)).isEmpty();
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
 
   @Test
@@ -82,11 +83,11 @@ public class SQLiteEventStoreTest {
     PersistedEvent newEvent2 = store.persist(TRANSPORT_CONTEXT, EVENT);
 
     for (int i = 0; i < SQLiteEventStore.MAX_RETRIES; i++) {
-      Iterable<PersistedEvent> events = store.loadAll(TRANSPORT_CONTEXT);
+      Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
       assertThat(events).containsExactly(newEvent1, newEvent2);
       store.recordFailure(Collections.singleton(newEvent1));
     }
-    assertThat(store.loadAll(TRANSPORT_CONTEXT)).containsExactly(newEvent2);
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).containsExactly(newEvent2);
   }
 
   @Test
@@ -95,11 +96,11 @@ public class SQLiteEventStoreTest {
     PersistedEvent newEvent2 = store.persist(TRANSPORT_CONTEXT, EVENT);
 
     for (int i = 0; i < SQLiteEventStore.MAX_RETRIES; i++) {
-      Iterable<PersistedEvent> events = store.loadAll(TRANSPORT_CONTEXT);
+      Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
       assertThat(events).containsExactly(newEvent1, newEvent2);
       store.recordFailure(Arrays.asList(newEvent1, newEvent2));
     }
-    assertThat(store.loadAll(TRANSPORT_CONTEXT)).isEmpty();
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
 
   @Test
@@ -141,10 +142,23 @@ public class SQLiteEventStoreTest {
 
   @Test
   public void persist_whenDbSizeOnDiskIsAtLimit_shouldNotPersistNewEvents() {
-    SQLiteEventStore storeUnderTest = newStoreWithCapacity(store.getByteSize());
+    SQLiteEventStore storeUnderTest =
+        newStoreWithConfig(CONFIG.withMaxStorageSizeInBytes(store.getByteSize()));
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNull();
 
-    storeUnderTest = newStoreWithCapacity(store.getByteSize() + 1);
+    storeUnderTest = newStoreWithConfig(CONFIG.withMaxStorageSizeInBytes(store.getByteSize() + 1));
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNotNull();
+  }
+
+  @Test
+  public void loadBatch_shouldLoadNoMoreThanBatchSizeItems() {
+    for (int i = 0; i <= CONFIG.getLoadBatchSize(); i++) {
+      store.persist(TRANSPORT_CONTEXT, EVENT);
+    }
+    Iterable<PersistedEvent> persistedEvents = store.loadBatch(TRANSPORT_CONTEXT);
+    assertThat(persistedEvents).hasSize(CONFIG.getLoadBatchSize());
+
+    store.recordSuccess(persistedEvents);
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).hasSize(1);
   }
 }

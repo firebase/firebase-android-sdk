@@ -56,20 +56,15 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   private final OpenHelper openHelper;
   private final Clock monotonicClock;
-  private final long maxDbDiskSizeInBytes;
+  private final EventStoreConfig config;
   private SQLiteDatabase db;
 
   @Inject
-  SQLiteEventStore(
-      Context applicationContext, @Monotonic Clock clock, @MaxStorageSize long maxStorageSize) {
-    if (maxStorageSize < 0) {
-      throw new IllegalArgumentException(
-          "Cannot set max storage size to a negative number of bytes");
-    }
+  SQLiteEventStore(Context applicationContext, @Monotonic Clock clock, EventStoreConfig config) {
 
     this.openHelper = new OpenHelper(applicationContext);
     this.monotonicClock = clock;
-    this.maxDbDiskSizeInBytes = maxStorageSize;
+    this.config = config;
   }
 
   private SQLiteDatabase getDb() {
@@ -258,7 +253,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   @Override
-  public Iterable<PersistedEvent> loadAll(TransportContext transportContext) {
+  public Iterable<PersistedEvent> loadBatch(TransportContext transportContext) {
     return inTransaction(
         db -> {
           List<PersistedEvent> events = loadEvents(db, transportContext);
@@ -282,7 +277,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
             new String[] {contextId.toString()},
             null,
             null,
-            null)) {
+            null,
+            String.valueOf(config.getLoadBatchSize()))) {
       while (cursor.moveToNext()) {
         long id = cursor.getLong(0);
         EventInternal event =
@@ -434,7 +430,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   boolean isStorageAtLimit() {
     long byteSize = getPageCount() * getPageSize();
 
-    return byteSize >= maxDbDiskSizeInBytes;
+    return byteSize >= config.getMaxStorageSizeInBytes();
   }
 
   @VisibleForTesting
