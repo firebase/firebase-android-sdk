@@ -31,11 +31,7 @@ public final class FirebaseFirestoreSettings {
   @PublicApi public static final long CACHE_SIZE_UNLIMITED = -1;
 
   private static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1 MB
-  // TODO(b/121269744): Set this to be the default value after SDK is past version 1.0
-  // private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
-  // For now, we are rolling this out with collection disabled. Once the SDK has hit version 1.0,
-  // we will switch the default to the above value, 100 MB.
-  private static final long DEFAULT_CACHE_SIZE_BYTES = CACHE_SIZE_UNLIMITED;
+  private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
   private static final String DEFAULT_HOST = "firestore.googleapis.com";
   private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = true;
 
@@ -143,9 +139,7 @@ public final class FirebaseFirestoreSettings {
      * guarantee that the cache will stay below that size, only that if the cache exceeds the given
      * size, cleanup will be attempted.
      *
-     * <p>By default, collection is disabled (the value is set to {@link
-     * FirebaseFirestoreSettings#CACHE_SIZE_UNLIMITED}). In a future release, collection will be
-     * enabled by default, with a default cache size of 100 MB. The minimum value is 1 MB.
+     * <p>By default, collection is enabled with a cache size of 100 MB. The minimum value is 1 MB.
      *
      * @return A settings object on which the cache size is configured as specified by the given
      *     {@code value}.
