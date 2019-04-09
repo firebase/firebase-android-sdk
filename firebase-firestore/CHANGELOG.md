@@ -1,4 +1,6 @@
 # Unreleased
+- [feature] You can now query across all collections in your database with a
+  given collection ID using the `FirebaseFirestore.collectionGroup()` method.
 - [changed] The garbage collection process for on-disk persistence that
   removes older documents is now enabled by default. The SDK will attempt to
   periodically clean up older, unused documents once the on-disk cache passes a
