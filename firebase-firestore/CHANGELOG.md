@@ -1,4 +1,12 @@
 # Unreleased
+- [changed] The garbage collection process for on-disk persistence that
+  removes older documents is now enabled by default. The SDK will attempt to
+  periodically clean up older, unused documents once the on-disk cache passes a
+  threshold size (default: 100 MB). This threshold can be configured by setting
+  `FirebaseFirestoreSettings.Builder.setCacheSizeBytes`. It must be set to a
+  minimum of 1 MB. The garbage collection process can be disabled entirely by
+  setting `FirebaseFirestoreSettings.setCacheSizeBytes` to
+  `FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED`.
 
 # 18.2.0
 - [feature] Added `FieldValue.increment()`, which can be used in `update()` and
