@@ -235,7 +235,6 @@ public class FirebaseFirestore {
     return DocumentReference.forPath(ResourcePath.fromString(documentPath), this);
   }
 
-  // TODO(b/116617988): Expose API publicly once backend support is ready (and add to CHANGELOG.md).
   /**
    * Creates and returns a new @link{Query} that includes all documents in the database that are
    * contained in a collection or subcollection with the given @code{collectionId}.
@@ -245,8 +244,8 @@ public class FirebaseFirestore {
    * @return The created Query.
    */
   @NonNull
-  // @PublicApi
-  /* public */ Query collectionGroup(@NonNull String collectionId) {
+  @PublicApi
+  public Query collectionGroup(@NonNull String collectionId) {
     checkNotNull(collectionId, "Provided collection ID must not be null.");
     if (collectionId.contains("/")) {
       throw new IllegalArgumentException(
