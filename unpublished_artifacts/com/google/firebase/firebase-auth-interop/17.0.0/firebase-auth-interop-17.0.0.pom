@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.google.firebase</groupId>
+  <artifactId>firebase-auth-interop</artifactId>
+  <version>17.0.0</version>
+  <packaging>aar</packaging>
+  <dependencies>
+    <dependency>
+      <groupId>com.google.android.gms</groupId>
+      <artifactId>play-services-base</artifactId>
+      <version>16.0.1</version>
+      <scope>compile</scope>
+      <type>aar</type>
+    </dependency>
+    <dependency>
+      <groupId>com.google.android.gms</groupId>
+      <artifactId>play-services-basement</artifactId>
+      <version>16.1.0</version>
+      <scope>compile</scope>
+      <type>aar</type>
+    </dependency>
+    <dependency>
+      <groupId>com.google.android.gms</groupId>
+      <artifactId>play-services-tasks</artifactId>
+      <version>16.0.1</version>
+      <scope>compile</scope>
+      <type>aar</type>
+    </dependency>
+    <dependency>
+      <groupId>com.google.firebase</groupId>
+      <artifactId>firebase-common</artifactId>
+      <version>17.0.1</version>
+      <scope>compile</scope>
+      <type>aar</type>
+    </dependency>
+  </dependencies>
+  <name>firebase-auth-interop</name>
+  <licenses>
+    <license>
+      <name>Android Software Development Kit License</name>
+      <url>https://developer.android.com/studio/terms.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+</project>
