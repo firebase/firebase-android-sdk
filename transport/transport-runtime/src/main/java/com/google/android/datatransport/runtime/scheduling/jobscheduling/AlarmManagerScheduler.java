@@ -26,10 +26,9 @@ import com.google.android.datatransport.runtime.scheduling.persistence.EventStor
 import com.google.android.datatransport.runtime.time.Clock;
 import javax.inject.Inject;
 
-
 /**
- * Schedules the service {@link AlarmManagerSchedulerService} based on the backendname. Used for Apis 20
- * and below.
+ * Schedules the service {@link AlarmManagerSchedulerService} based on the backendname. Used for
+ * Apis 20 and below.
  */
 public class AlarmManagerScheduler implements WorkScheduler {
 

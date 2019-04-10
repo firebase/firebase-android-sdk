@@ -19,7 +19,6 @@ import android.content.Context;
 import android.content.Intent;
 import com.google.android.datatransport.runtime.TransportRuntime;
 
-
 /** The service responsible for uploading information to the backend. */
 public class AlarmManagerSchedulerService extends BroadcastReceiver {
 
