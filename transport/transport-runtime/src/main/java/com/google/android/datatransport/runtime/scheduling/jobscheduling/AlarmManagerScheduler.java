@@ -28,8 +28,8 @@ import com.google.android.datatransport.runtime.time.Clock;
 import javax.inject.Inject;
 
 /**
- * Schedules the service {@link AlarmManagerSchedulerService} based on the backendname. Used for
- * Apis 20 and below.
+ * Schedules the service {@link AlarmManagerSchedulerBroadcastReceiver} based on the backendname.
+ * Used for Apis 20 and below.
  */
 public class AlarmManagerScheduler implements WorkScheduler {
 
@@ -81,7 +81,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
     intentDataBuilder.appendQueryParameter(SchedulerUtil.BACKEND_NAME, backendName);
     intentDataBuilder.appendQueryParameter(
         SchedulerUtil.APPLICATION_BUNDLE_ID, BuildConfig.APPLICATION_ID);
-    Intent intent = new Intent(context, AlarmManagerScheduler.class);
+    Intent intent = new Intent(context, AlarmManagerSchedulerBroadcastReceiver.class);
     intent.setData(intentDataBuilder.build());
     intent.putExtra(SchedulerUtil.ATTEMPT_NUMBER, attemptNumber);
 

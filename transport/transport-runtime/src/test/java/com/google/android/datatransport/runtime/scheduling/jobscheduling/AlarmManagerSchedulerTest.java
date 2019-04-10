@@ -57,7 +57,7 @@ public class AlarmManagerSchedulerTest {
         SchedulerUtil.BACKEND_NAME, TRANSPORT_CONTEXT.getBackendName());
     intentDataBuilder.appendQueryParameter(
         SchedulerUtil.APPLICATION_BUNDLE_ID, BuildConfig.APPLICATION_ID);
-    Intent intent = new Intent(context, AlarmManagerScheduler.class);
+    Intent intent = new Intent(context, AlarmManagerSchedulerBroadcastReceiver.class);
     intent.setData(intentDataBuilder.build());
     return intent;
   }
