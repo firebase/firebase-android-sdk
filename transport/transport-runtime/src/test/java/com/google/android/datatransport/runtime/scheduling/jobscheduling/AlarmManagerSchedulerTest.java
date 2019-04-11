@@ -28,7 +28,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import com.google.android.datatransport.runtime.BuildConfig;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
@@ -56,7 +55,8 @@ public class AlarmManagerSchedulerTest {
     intentDataBuilder.appendQueryParameter(
         SchedulerUtil.BACKEND_NAME, TRANSPORT_CONTEXT.getBackendName());
     intentDataBuilder.appendQueryParameter(
-        SchedulerUtil.APPLICATION_BUNDLE_ID, BuildConfig.APPLICATION_ID);
+        SchedulerUtil.APPLICATION_BUNDLE_ID, context.getPackageName());
+
     Intent intent = new Intent(context, AlarmManagerSchedulerBroadcastReceiver.class);
     intent.setData(intentDataBuilder.build());
     return intent;
