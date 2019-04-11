@@ -21,7 +21,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
-import com.google.android.datatransport.runtime.BuildConfig;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.time.Clock;
@@ -80,7 +79,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
     Uri.Builder intentDataBuilder = new Uri.Builder();
     intentDataBuilder.appendQueryParameter(SchedulerUtil.BACKEND_NAME, backendName);
     intentDataBuilder.appendQueryParameter(
-        SchedulerUtil.APPLICATION_BUNDLE_ID, BuildConfig.APPLICATION_ID);
+        SchedulerUtil.APPLICATION_BUNDLE_ID, context.getPackageName());
     Intent intent = new Intent(context, AlarmManagerSchedulerBroadcastReceiver.class);
     intent.setData(intentDataBuilder.build());
     intent.putExtra(SchedulerUtil.ATTEMPT_NUMBER, attemptNumber);
