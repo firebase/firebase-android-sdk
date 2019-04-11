@@ -68,6 +68,8 @@ class ProjectLicense implements Serializable {
         }
     }
 
+    // some poms don't include their license directly but instead declare themselves as inheriting
+    // it from their parent pom.
     private static ProjectLicense determineParent(File baseDir, GPathResult parentNode) {
         if (!parentNode.childNodes()) {
             return null

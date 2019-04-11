@@ -46,6 +46,10 @@ class LicenseResolver {
     private static Set<ProjectLicense> determineExternalLicenses(Project project, Configuration configuration) {
         def conf = project.configurations.create('internalAllExternalArtifacts')
 
+        // here we are not adding Project-level dependencies to the configuration but instead
+        // recursively determine non-project dependencies. The reason for not including project
+        // dependencies is that it causes resolution to fail due to variant ambiguity. Instead
+        // project licenses are determined in a separate method.
         configuration.allDependencies.each {
             if (it instanceof ProjectDependency) {
                 conf.dependencies.addAll determineDependencies(it, configuration)

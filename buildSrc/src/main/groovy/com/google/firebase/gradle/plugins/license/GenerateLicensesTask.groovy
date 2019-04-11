@@ -49,6 +49,9 @@ class GenerateLicensesTask extends DefaultTask {
     GenerateLicensesTask(Configuration configuration, LicenseResolver licenseResolver) {
         this.inputConfiguration = configuration
         this.licenseResolver = licenseResolver
+
+        // it's impossible to tell if the configuration we depend on changed without resolving it, but
+        // the configuration is most likely not resolvable.
         outputs.upToDateWhen { false }
     }
 
