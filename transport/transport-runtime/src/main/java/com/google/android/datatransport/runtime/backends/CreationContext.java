@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime.backends;
 
+import android.content.Context;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.auto.value.AutoValue;
 
@@ -25,6 +26,9 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class CreationContext {
 
+  /** Returns the {@link Context application context}. */
+  public abstract Context getApplicationContext();
+
   /** Returns a {@link Clock} that provides time as known by the device. */
   public abstract Clock getWallClock();
 
@@ -32,7 +36,8 @@ public abstract class CreationContext {
   public abstract Clock getMonotonicClock();
 
   /** Creates a new instance of {@link CreationContext}. */
-  public static CreationContext create(Clock wallClock, Clock monotonicClock) {
-    return new AutoValue_CreationContext(wallClock, monotonicClock);
+  public static CreationContext create(
+      Context applicationContext, Clock wallClock, Clock monotonicClock) {
+    return new AutoValue_CreationContext(applicationContext, wallClock, monotonicClock);
   }
 }

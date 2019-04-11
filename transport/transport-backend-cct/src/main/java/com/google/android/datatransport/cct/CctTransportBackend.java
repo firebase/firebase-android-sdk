@@ -14,13 +14,19 @@
 
 package com.google.android.datatransport.cct;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
+import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.cct.proto.AndroidClientInfo;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
 import com.google.android.datatransport.cct.proto.ClientInfo;
 import com.google.android.datatransport.cct.proto.LogEvent;
 import com.google.android.datatransport.cct.proto.LogRequest;
 import com.google.android.datatransport.cct.proto.LogResponse;
+import com.google.android.datatransport.cct.proto.NetworkConnectionInfo;
+import com.google.android.datatransport.cct.proto.NetworkConnectionInfo.MobileSubtype;
 import com.google.android.datatransport.cct.proto.QosTierConfiguration;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
@@ -40,9 +46,11 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
@@ -50,21 +58,27 @@ import java.util.zip.GZIPOutputStream;
 final class CctTransportBackend implements TransportBackend {
 
   private static final Logger LOGGER = Logger.getLogger(CctTransportBackend.class.getName());
+
   private static final int CONNECTION_TIME_OUT = 30000;
   private static final int READ_TIME_OUT = 40000;
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
   private static final String PROTOBUF_CONTENT_TYPE = "application/x-protobuf";
-  private static final String SDK_VERSION_KEY = "SDK Version";
-  private static final String MODEL_KEY = "Model";
-  private static final String HARDWARE_KEY = "Hardware";
-  private static final String DEVICE_KEY = "Device";
-  private static final String PRODUCT_KEY = "Product";
-  private static final String OS_BUILD_KEY = "OS Build";
-  private static final String MANUFACTURER_KEY = "Manufacturer";
-  private static final String FINGERPRINT_KEY = "Fingerprint";
 
+  private static final String KEY_SDK_VERSION = "sdk-version";
+  private static final String KEY_MODEL = "model";
+  private static final String KEY_HARDWARE = "hardware";
+  private static final String KEY_DEVICE = "device";
+  private static final String KEY_PRODUCT = "product";
+  private static final String KEY_OS_BUILD = "os-uild";
+  private static final String KEY_MANUFACTURER = "manufacturer";
+  private static final String KEY_FINGERPRINT = "fingerprint";
+  private static final String KEY_NETWORK_TYPE = "net-type";
+  private static final String KEY_MOBILE_SUBTYPE = "mobile-subtype";
+  private static final String KEY_TIMEZONE_OFFSET = "tz-offset";
+
+  private final ConnectivityManager connectivityManager;
   private final URL endPoint;
   private final Clock uptimeClock;
   private final Clock wallTimeClock;
@@ -77,7 +91,10 @@ final class CctTransportBackend implements TransportBackend {
     }
   }
 
-  CctTransportBackend(String url, Clock wallTimeClock, Clock uptimeClock) {
+  CctTransportBackend(
+      Context applicationContext, String url, Clock wallTimeClock, Clock uptimeClock) {
+    this.connectivityManager =
+        (ConnectivityManager) applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE);
     this.endPoint = parseUrlOrThrow(url);
     this.uptimeClock = uptimeClock;
     this.wallTimeClock = wallTimeClock;
@@ -85,25 +102,38 @@ final class CctTransportBackend implements TransportBackend {
 
   @Override
   public EventInternal decorate(EventInternal eventInternal) {
+    NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+
     return eventInternal
         .toBuilder()
-        .addMetadata(SDK_VERSION_KEY, String.valueOf(Build.VERSION.SDK_INT))
-        .addMetadata(MODEL_KEY, Build.MODEL)
-        .addMetadata(HARDWARE_KEY, Build.HARDWARE)
-        .addMetadata(DEVICE_KEY, Build.DEVICE)
-        .addMetadata(PRODUCT_KEY, Build.PRODUCT)
-        .addMetadata(OS_BUILD_KEY, Build.ID)
-        .addMetadata(MANUFACTURER_KEY, Build.MANUFACTURER)
-        .addMetadata(FINGERPRINT_KEY, Build.FINGERPRINT)
+        .addMetadata(KEY_SDK_VERSION, Build.VERSION.SDK_INT)
+        .addMetadata(KEY_MODEL, Build.MODEL)
+        .addMetadata(KEY_HARDWARE, Build.HARDWARE)
+        .addMetadata(KEY_DEVICE, Build.DEVICE)
+        .addMetadata(KEY_PRODUCT, Build.PRODUCT)
+        .addMetadata(KEY_OS_BUILD, Build.ID)
+        .addMetadata(KEY_MANUFACTURER, Build.MANUFACTURER)
+        .addMetadata(KEY_FINGERPRINT, Build.FINGERPRINT)
+        .addMetadata(KEY_TIMEZONE_OFFSET, getTzOffset())
+        .addMetadata(KEY_NETWORK_TYPE, networkInfo.getType())
+        .addMetadata(KEY_MOBILE_SUBTYPE, toSubtypeValue(networkInfo.getSubtype()))
         .build();
+  }
+
+  private int toSubtypeValue(int subtype) {
+    if (subtype == -1) {
+      return MobileSubtype.COMBINED_VALUE;
+    }
+    return MobileSubtype.forNumber(subtype) != null ? subtype : 0;
   }
 
   private BatchedLogRequest getRequestBody(BackendRequest backendRequest) {
     HashMap<String, List<EventInternal>> eventInternalMap = new HashMap<>();
     for (EventInternal eventInternal : backendRequest.getEvents()) {
       String key = eventInternal.getTransportName();
+
       if (!eventInternalMap.containsKey(key)) {
-        List<EventInternal> eventInternalList = new ArrayList<EventInternal>();
+        List<EventInternal> eventInternalList = new ArrayList<>();
         eventInternalList.add(eventInternal);
         eventInternalMap.put(key, eventInternalList);
       } else {
@@ -112,7 +142,7 @@ final class CctTransportBackend implements TransportBackend {
     }
     BatchedLogRequest.Builder batchedRequestBuilder = BatchedLogRequest.newBuilder();
     for (Map.Entry<String, List<EventInternal>> entry : eventInternalMap.entrySet()) {
-      Map<String, String> metadata = entry.getValue().get(0).getMetadata();
+      EventInternal firstEvent = entry.getValue().get(0);
       LogRequest.Builder requestBuilder =
           LogRequest.newBuilder()
               .setLogSource(Integer.valueOf(entry.getKey()))
@@ -124,14 +154,14 @@ final class CctTransportBackend implements TransportBackend {
                       .setClientType(ClientInfo.ClientType.ANDROID)
                       .setAndroidClientInfo(
                           AndroidClientInfo.newBuilder()
-                              .setSdkVersion(Integer.valueOf(metadata.get(SDK_VERSION_KEY)))
-                              .setModel(metadata.get(MODEL_KEY))
-                              .setHardware(metadata.get(HARDWARE_KEY))
-                              .setDevice(metadata.get(DEVICE_KEY))
-                              .setProduct(metadata.get(PRODUCT_KEY))
-                              .setOsBuild(metadata.get(OS_BUILD_KEY))
-                              .setManufacturer(metadata.get(MANUFACTURER_KEY))
-                              .setFingerprint(metadata.get(FINGERPRINT_KEY))
+                              .setSdkVersion(firstEvent.getInteger(KEY_SDK_VERSION))
+                              .setModel(firstEvent.get(KEY_MODEL))
+                              .setHardware(firstEvent.get(KEY_HARDWARE))
+                              .setDevice(firstEvent.get(KEY_DEVICE))
+                              .setProduct(firstEvent.get(KEY_PRODUCT))
+                              .setOsBuild(firstEvent.get(KEY_OS_BUILD))
+                              .setManufacturer(firstEvent.get(KEY_MANUFACTURER))
+                              .setFingerprint(firstEvent.get(KEY_FINGERPRINT))
                               .build())
                       .build());
       for (EventInternal eventInternal : entry.getValue()) {
@@ -139,8 +169,12 @@ final class CctTransportBackend implements TransportBackend {
             LogEvent.newBuilder()
                 .setEventTimeMs(eventInternal.getEventMillis())
                 .setEventUptimeMs(eventInternal.getUptimeMillis())
-                // .setTimezoneOffsetSeconds(0) TODO set the time zone offset.
+                .setTimezoneOffsetSeconds(eventInternal.getLong(KEY_TIMEZONE_OFFSET))
                 .setSourceExtension(ByteString.copyFrom(eventInternal.getPayload()))
+                .setNetworkConnectionInfo(
+                    NetworkConnectionInfo.newBuilder()
+                        .setNetworkTypeValue(eventInternal.getInteger(KEY_NETWORK_TYPE))
+                        .setMobileSubtypeValue(eventInternal.getInteger(KEY_MOBILE_SUBTYPE)))
                 .build();
         requestBuilder.addLogEvent(event);
       }
@@ -150,7 +184,6 @@ final class CctTransportBackend implements TransportBackend {
   }
 
   private BackendResponse doSend(BatchedLogRequest requestBody) throws IOException {
-    long nextRequestMillis = -1;
     HttpURLConnection connection = (HttpURLConnection) endPoint.openConnection();
     connection.setConnectTimeout(CONNECTION_TIME_OUT);
     connection.setReadTimeout(READ_TIME_OUT);
@@ -167,6 +200,8 @@ final class CctTransportBackend implements TransportBackend {
       channel.write(ByteBuffer.wrap(output.toByteArray()));
       int responseCode = connection.getResponseCode();
       LOGGER.info("Status Code: " + responseCode);
+
+      long nextRequestMillis;
       try (InputStream inputStream = connection.getInputStream()) {
         try {
           nextRequestMillis = LogResponse.parseFrom(inputStream).getNextRequestWaitMillis();
@@ -193,5 +228,12 @@ final class CctTransportBackend implements TransportBackend {
       LOGGER.log(Level.SEVERE, "Could not make request to the backend", e);
       return BackendResponse.create(Status.TRANSIENT_ERROR, -1);
     }
+  }
+
+  @VisibleForTesting
+  static long getTzOffset() {
+    Calendar.getInstance();
+    TimeZone tz = TimeZone.getDefault();
+    return tz.getOffset(Calendar.getInstance().getTimeInMillis()) / 1000;
   }
 }
