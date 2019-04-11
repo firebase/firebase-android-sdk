@@ -15,20 +15,25 @@
 package com.google.firebase.gradle.plugins.license
 
 import groovy.json.JsonBuilder
-import groovy.json.JsonSlurper
+import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
+import javax.inject.Inject
+
+@CompileStatic
 class GenerateLicensesTask extends DefaultTask {
-    def NEW_LINE_LENGTH = "\n".getBytes().length;
+    private static final int NEW_LINE_LENGTH = "\n".getBytes().length
+
+    private final LicenseResolver licenseResolver
+    private final Configuration inputConfiguration
+
 
     @Input
     List<ProjectLicense> additionalLicenses
-
-    @InputFile
-    File licenseReportFile
 
     @InputDirectory
     File licenseDownloadDir
@@ -36,16 +41,31 @@ class GenerateLicensesTask extends DefaultTask {
     @OutputDirectory
     File outputDir
 
+    @Inject
+    GenerateLicensesTask(Configuration configuration) {
+        this(configuration, new LicenseResolver())
+    }
+
+    GenerateLicensesTask(Configuration configuration, LicenseResolver licenseResolver) {
+        this.inputConfiguration = configuration
+        this.licenseResolver = licenseResolver
+
+        // it's impossible to tell if the configuration we depend on changed without resolving it, but
+        // the configuration is most likely not resolvable.
+        outputs.upToDateWhen { false }
+    }
+
+
     @TaskAction
     void execute(IncrementalTaskInputs inputs) {
-        List<ProjectLicense> licenses = extractLicensesFromReport() + additionalLicenses
+        Set<ProjectLicense> licenses = licenseResolver.resolve(project, inputConfiguration) + additionalLicenses
 
-        Set<URI> licenseUris = licenses.collect { it.licenseUris }.flatten().toSet()
+        Set<URI> licenseUris = licenses.collectMany { it.licenseUris } as Set
 
         //Fetch local licenses into memory
         Map<URI, String> licenseCache = licenseUris.collectEntries {
 
-            final File file
+            File file
             if (it.getScheme() == "file") {
                 file = new File(it)
                 if (!file.exists()) {
@@ -89,7 +109,6 @@ class GenerateLicensesTask extends DefaultTask {
                 long licenseByteLength = 0
                 writer.println ""
                 licenseByteLength += NEW_LINE_LENGTH
-                println name
 
                 // Write all licenses for the project seperated by newlines
                 uris.each { uri ->
@@ -102,22 +121,11 @@ class GenerateLicensesTask extends DefaultTask {
 
                 writeOffset += licenseByteLength
 
-                String key = projectLicense.isExplicit ? projectLicense.name
-                        : projectLicense.name.toLowerCase()
-                ["$key": [length: licenseByteLength,
+                [(projectLicense.name): [length: licenseByteLength,
                           start : writeOffset - licenseByteLength]]
             })
         }
 
         jsonFile.withPrintWriter { writer -> writer.println(jsonBuilder.toString()) }
-    }
-
-    private List<ProjectLicense> extractLicensesFromReport() {
-        new JsonSlurper().parseText(licenseReportFile.text).
-                collect { report ->
-                    new ProjectLicense(name: report.project,
-                            licenseUris: report.licenses.collect { URI.create(it.license_url) },
-                            isExplicit: false)
-                }
     }
 }
