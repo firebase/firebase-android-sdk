@@ -15,7 +15,6 @@
 package com.google.android.datatransport.runtime.backends;
 
 import android.content.Context;
-
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
