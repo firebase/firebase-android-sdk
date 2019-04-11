@@ -36,6 +36,26 @@ public abstract class EventInternal {
     return Collections.unmodifiableMap(getAutoMetadata());
   }
 
+  public final String getOrDefault(String key, String defaultValue) {
+    String value = getAutoMetadata().get(key);
+    return value == null ? defaultValue : value;
+  }
+
+  public final int getInteger(String key) {
+    String value = getAutoMetadata().get(key);
+    return value == null ? 0 : Integer.valueOf(value);
+  }
+
+  public final long getLong(String key) {
+    String value = getAutoMetadata().get(key);
+    return value == null ? 0L : Long.valueOf(value);
+  }
+
+  public final String get(String key) {
+    String value = getAutoMetadata().get(key);
+    return value == null ? "" : value;
+  }
+
   public Builder toBuilder() {
     return new AutoValue_EventInternal.Builder()
         .setTransportName(getTransportName())
@@ -65,6 +85,16 @@ public abstract class EventInternal {
 
     public final Builder addMetadata(String key, String value) {
       getAutoMetadata().put(key, value);
+      return this;
+    }
+
+    public final Builder addMetadata(String key, long value) {
+      getAutoMetadata().put(key, String.valueOf(value));
+      return this;
+    }
+
+    public final Builder addMetadata(String key, int value) {
+      getAutoMetadata().put(key, String.valueOf(value));
       return this;
     }
 
