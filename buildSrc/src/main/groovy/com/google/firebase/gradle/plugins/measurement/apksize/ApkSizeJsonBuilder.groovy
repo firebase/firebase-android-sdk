@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-package com.google.firebase.gradle.plugins.measurement
+package com.google.firebase.gradle.plugins.measurement.apksize
 
 /** A helper class that generates the APK size measurement JSON report. */
 class ApkSizeJsonBuilder {

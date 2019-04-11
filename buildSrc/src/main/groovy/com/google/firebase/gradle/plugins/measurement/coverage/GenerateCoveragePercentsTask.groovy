@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-package com.google.firebase.gradle.plugins.measurement
+package com.google.firebase.gradle.plugins.measurement.coverage
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
