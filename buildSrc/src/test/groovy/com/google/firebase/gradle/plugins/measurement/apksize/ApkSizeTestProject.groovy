@@ -34,7 +34,7 @@ class ApkSizeTestProject extends ExternalResource {
         buildscript {
             repositories {
                 google()
-        jcenter()
+                jcenter()
             }
 
             dependencies {
@@ -53,46 +53,46 @@ class ApkSizeTestProject extends ExternalResource {
             compileSdkVersion 26
             defaultConfig {
                 minSdkVersion 26
-        targetSdkVersion 26
+                targetSdkVersion 26
             }
 
             flavorDimensions "apkSize"
 
             buildTypes {
                 aggressive {
-            debuggable false
-        }
+                    debuggable false
+                }
             }
 
             productFlavors {
                 horseshoe {
-            dimension "apkSize"
-            applicationId "com.google.testapk.horseshoe"
-        }
+                    dimension "apkSize"
+                    applicationId "com.google.testapk.horseshoe"
+                }
 
                 vanilla {
-            dimension "apkSize"
-            applicationId "com.google.testapk.vanilla"
-        }
+                    dimension "apkSize"
+                    applicationId "com.google.testapk.vanilla"
+                }
 
                 furball {
-            dimension "apkSize"
-            applicationId "com.google.testapk.furball"
-        }
+                    dimension "apkSize"
+                    applicationId "com.google.testapk.furball"
+                }
             }
 
             sourceSets {
                 horseshoe {
-            java.srcDirs = ["src/horseshoe/java"]
-        }
+                    java.srcDirs = ["src/horseshoe/java"]
+                }
 
                 vanilla {
-            java.srcDirs = ["src/vanilla/java"]
-        }
+                    java.srcDirs = ["src/vanilla/java"]
+                }
 
                 furball {
-            java.srcDirs = ["src/furball/java"]
-        }
+                    java.srcDirs = ["src/furball/java"]
+                }
             }
         }
 

@@ -17,13 +17,12 @@ package com.google.firebase.gradle.plugins.measurement.coverage
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 
-public class GenerateCoveragePercentsTask extends DefaultTask {
+public class GenerateMeasurementsTask extends DefaultTask {
 
     @OutputFile
     File reportFile
@@ -32,7 +31,7 @@ public class GenerateCoveragePercentsTask extends DefaultTask {
 
     String coverageTaskName
 
-    GenerateCoveragePercentsTask() {
+    GenerateMeasurementsTask() {
         parser = new XmlSlurper()
         parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
         parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)

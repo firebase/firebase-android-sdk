@@ -33,6 +33,9 @@ apply from: "src/functions/functions.gradle"
  * @param -Ppull_request the pull request number to be included in the report
  */
 task generateMeasurements(type: GenerateMeasurementsTask) {
+    description 'Builds all supported variants and calculates APK sizes.'
+    group 'ApkSize'
+
     sdkMapFile = file("sdks.csv")
     reportFile = file("$buildDir/size-report.json")
 }
@@ -44,6 +47,9 @@ task generateMeasurements(type: GenerateMeasurementsTask) {
  * @param -Ppull_request the pull request number to be included in the report
  */
 task uploadMeasurements(type: UploadMeasurementsTask) {
+    description 'Uploads APK size measurements to a database via the uploader tool.'
+    group 'ApkSize'
+
     dependsOn generateMeasurements
 
     reportFile = file("$buildDir/size-report.json")
