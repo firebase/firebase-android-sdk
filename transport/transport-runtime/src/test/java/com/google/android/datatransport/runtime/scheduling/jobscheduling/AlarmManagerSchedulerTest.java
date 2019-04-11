@@ -54,7 +54,6 @@ public class AlarmManagerSchedulerTest {
     Uri.Builder intentDataBuilder = new Uri.Builder();
     intentDataBuilder.appendQueryParameter(
         SchedulerUtil.BACKEND_NAME, TRANSPORT_CONTEXT.getBackendName());
-    assertThat(context.getPackageName()).isEqualTo("org.robolectric.default");
     intentDataBuilder.appendQueryParameter(
         SchedulerUtil.APPLICATION_BUNDLE_ID, context.getPackageName());
 
