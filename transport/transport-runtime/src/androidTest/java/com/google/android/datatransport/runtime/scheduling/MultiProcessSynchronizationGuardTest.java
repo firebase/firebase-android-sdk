@@ -126,7 +126,7 @@ public class MultiProcessSynchronizationGuardTest {
     return new WaitingRpc(rpc);
   }
 
-  class WaitingRpc implements ITestRemoteLockRpc {
+  static class WaitingRpc implements ITestRemoteLockRpc {
     private final ITestRemoteLockRpc delegate;
 
     WaitingRpc(ITestRemoteLockRpc delegate) {

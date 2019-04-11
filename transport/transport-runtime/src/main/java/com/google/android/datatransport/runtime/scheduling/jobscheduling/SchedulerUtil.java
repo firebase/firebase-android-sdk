@@ -25,12 +25,12 @@ final class SchedulerUtil {
 
   static final int MAX_ALLOWED_TIME = 100000000;
 
-  private SchedulerUtil() {};
+  private SchedulerUtil() {}
 
   static long getScheduleDelay(long backendTimeDiff, int delta, int attemptNumber) {
     if (attemptNumber > 11) {
       return MAX_ALLOWED_TIME;
     }
-    return Math.max(((long) (Math.pow(2, attemptNumber))) * delta, backendTimeDiff);
+    return Math.max(((long) Math.pow(2, attemptNumber)) * delta, backendTimeDiff);
   }
 }

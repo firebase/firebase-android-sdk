@@ -16,11 +16,9 @@ package com.google.android.datatransport.runtime;
 
 import android.content.Context;
 import android.support.annotation.RestrictTo;
-import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
-import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
@@ -34,7 +32,6 @@ import javax.inject.Singleton;
  * implementations delegate to this class.
  */
 @Singleton
-@SuppressWarnings("WeakerAccess")
 public class TransportRuntime implements TransportInternal {
 
   private static volatile TransportRuntimeComponent INSTANCE = null;
@@ -42,7 +39,6 @@ public class TransportRuntime implements TransportInternal {
   private final Clock eventClock;
   private final Clock uptimeClock;
   private final Scheduler scheduler;
-  private final SynchronizationGuard guard;
   private final Uploader uploader;
 
   @Inject
@@ -50,12 +46,10 @@ public class TransportRuntime implements TransportInternal {
       @WallTime Clock eventClock,
       @Monotonic Clock uptimeClock,
       Scheduler scheduler,
-      SynchronizationGuard guard,
       Uploader uploader) {
     this.eventClock = eventClock;
     this.uptimeClock = uptimeClock;
     this.scheduler = scheduler;
-    this.guard = guard;
     this.uploader = uploader;
   }
 
@@ -114,11 +108,5 @@ public class TransportRuntime implements TransportInternal {
         .setTransportName(request.getTransportName())
         .setPayload(request.getPayload())
         .build();
-  }
-
-  @VisibleForTesting
-  @RestrictTo(RestrictTo.Scope.TESTS)
-  public SynchronizationGuard getSynchronizationGuard() {
-    return guard;
   }
 }

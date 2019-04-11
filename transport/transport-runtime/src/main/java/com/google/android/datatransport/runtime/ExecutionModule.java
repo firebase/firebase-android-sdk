@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,9 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.time;
+package com.google.android.datatransport.runtime;
 
-import javax.inject.Qualifier;
+import dagger.Module;
+import dagger.Provides;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import javax.inject.Singleton;
 
-@Qualifier
-public @interface Monotonic {}
+@Module
+abstract class ExecutionModule {
+  @Singleton
+  @Provides
+  static Executor executor() {
+    return Executors.newSingleThreadExecutor();
+  }
+}
