@@ -14,6 +14,6 @@
 
 package com.google.android.datatransport.runtime;
 
-public interface TransportInternal {
+interface TransportInternal {
   void send(SendRequest request);
 }

@@ -16,8 +16,8 @@ package com.google.android.datatransport.runtime.scheduling;
 
 import android.os.Process;
 import com.google.android.datatransport.runtime.ITestRemoteLockRpc;
-import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.util.concurrent.Executor;
 
 /**
@@ -26,10 +26,12 @@ import java.util.concurrent.Executor;
  */
 class RemoteLockRpc extends ITestRemoteLockRpc.Stub {
   private final Executor executor;
+  private final SynchronizationGuard guard;
   private final Locker<Boolean> acquireReleaseLocker = new Locker<>();
 
-  RemoteLockRpc(Executor executor) {
+  RemoteLockRpc(Executor executor, SynchronizationGuard guard) {
     this.executor = executor;
+    this.guard = guard;
   }
 
   @Override
@@ -38,15 +40,13 @@ class RemoteLockRpc extends ITestRemoteLockRpc.Stub {
     executor.execute(
         () -> {
           try {
-            TransportRuntime.getInstance()
-                .getSynchronizationGuard()
-                .runCriticalSection(
-                    lockTimeoutMs,
-                    () -> {
-                      sectionEnteredLocker.setResult(true);
-                      acquireReleaseLocker.await();
-                      return null;
-                    });
+            guard.runCriticalSection(
+                lockTimeoutMs,
+                () -> {
+                  sectionEnteredLocker.setResult(true);
+                  acquireReleaseLocker.await();
+                  return null;
+                });
             acquireReleaseLocker.setResult(true);
           } catch (SynchronizationException ex) {
             sectionEnteredLocker.setResult(false);

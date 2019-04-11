@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,20 @@
 
 package com.google.android.datatransport.runtime.time;
 
-import javax.inject.Qualifier;
+import dagger.Module;
+import dagger.Provides;
 
-@Qualifier
-public @interface Monotonic {}
+@Module
+public abstract class TimeModule {
+  @Provides
+  @WallTime
+  static Clock eventClock() {
+    return new WallTimeClock();
+  }
+
+  @Provides
+  @Monotonic
+  static Clock uptimeClock() {
+    return new UptimeClock();
+  }
+}

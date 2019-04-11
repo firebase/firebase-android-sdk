@@ -18,7 +18,7 @@ import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 
-class TransportImpl<T> implements Transport<T> {
+final class TransportImpl<T> implements Transport<T> {
   private final TransportContext transportContext;
   private final String name;
   private final Transformer<T, byte[]> transformer;
