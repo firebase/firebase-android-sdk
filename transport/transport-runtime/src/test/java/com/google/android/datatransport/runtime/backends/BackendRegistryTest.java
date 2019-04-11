@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime.backends;
 import static com.google.common.truth.Truth.assertThat;
 
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.datatransport.runtime.time.TestClock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,7 +26,9 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class BackendRegistryTest {
 
-  private final CreationContext creationContext = CreationContext.create(() -> 1, () -> 2);
+  private final CreationContext creationContext =
+      CreationContext.create(
+          ApplicationProvider.getApplicationContext(), new TestClock(1), new TestClock(2));
   private BackendRegistry registry;
 
   @Before

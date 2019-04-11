@@ -27,7 +27,10 @@ public class CctBackendFactory implements BackendFactory {
   @Override
   public TransportBackend create(CreationContext creationContext) {
     return new CctTransportBackend(
-        URL, creationContext.getWallClock(), creationContext.getMonotonicClock());
+        creationContext.getApplicationContext(),
+        URL,
+        creationContext.getWallClock(),
+        creationContext.getMonotonicClock());
   }
 
   @VisibleForTesting
