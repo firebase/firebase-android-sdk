@@ -157,6 +157,8 @@ class ApkSizeTestProject extends ExternalResource {
 
         Files.createDirectories(dest)
         FileUtils.copyDirectory(src.toFile(), dest.toFile())
+
+        FileUtils.copyFileToDirectory(Paths.get('build.gradle').toFile(), buildSrc.toFile())
     }
 
     /** Creates the fake project files for the temporary project. */

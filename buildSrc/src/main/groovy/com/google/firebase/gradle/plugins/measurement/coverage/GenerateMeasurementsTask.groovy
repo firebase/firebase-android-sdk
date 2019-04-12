@@ -15,15 +15,22 @@
 
 package com.google.firebase.gradle.plugins.measurement.coverage
 
+import com.google.firebase.gradle.plugins.measurement.utils.enums.ColumnName
+import com.google.firebase.gradle.plugins.measurement.utils.enums.TableName
+import com.google.firebase.gradle.plugins.measurement.utils.reports.JsonReport
+import com.google.firebase.gradle.plugins.measurement.utils.reports.Table
+import com.google.firebase.gradle.plugins.measurement.utils.reports.TableReport
 import org.gradle.api.DefaultTask
-import org.gradle.api.Project
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
+/**
+ * Generates coverage measurements after unit tests.
+ */
+class GenerateMeasurementsTask extends DefaultTask {
 
-public class GenerateMeasurementsTask extends DefaultTask {
-
+    /** The file for storing the coverage report. */
     @OutputFile
     File reportFile
 
@@ -36,7 +43,8 @@ public class GenerateMeasurementsTask extends DefaultTask {
         parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
         parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
 
-        assert project.tasks.withType(JacocoReport).size() == 1 : 'Found multiple tasks which generate coverage reports.'
+        assert project.tasks.withType(JacocoReport).size() == 1:
+                'Found multiple tasks which generate coverage reports.'
         coverageTaskName = project.tasks.withType(JacocoReport)[0].name
     }
 
@@ -46,7 +54,7 @@ public class GenerateMeasurementsTask extends DefaultTask {
             def pullRequestNumber = project.properties["pull_request"]
             generateJson(pullRequestNumber)
         } else {
-            throw new IllegalStateException("Cannot find pull request number from project properties.")
+            generateTableReport()
         }
     }
 
@@ -70,56 +78,57 @@ public class GenerateMeasurementsTask extends DefaultTask {
         }
     }
 
-    private def generateJson(pullRequestNumber) {
+    private def calculateCoverages() {
         def coverages = [:]
-
-        // TODO(yifany@): Consolidate mappings with apksize and iOS.
-        def sdkMap = [
-                'firebase-common': 0,
-                'firebase-common-ktx': 1,
-                'firebase-database': 2,
-                'firebase-database-collection': 3,
-                'firebase-firestore': 4,
-                'firebase-firestore-ktx': 5,
-                'firebase-functions': 6,
-                'firebase-inappmessaging-display': 7,
-                'firebase-storage': 8
-        ]
-
-        for (Project p: project.rootProject.subprojects) {
+        for (p in project.rootProject.subprojects) {
             if (p.name.startsWith('firebase')) {
                 def (name, percent) = getCoveragePercentFromReport(p)
-                coverages[sdkMap[name]] = percent
+                coverages[name] = percent
             }
         }
+        return coverages
+    }
 
-        def replacements = coverages.collect {
-            "[$pullRequestNumber, $it.key, $it.value]"
-        }.join(", ")
+    private def generateJson(pullRequestNumber) {
+        // TODO(yifany@): Consolidate mappings with apksize and iOS.
+        def sdkMap = [
+                'firebase-common'                : 0,
+                'firebase-common-ktx'            : 1,
+                'firebase-database'              : 2,
+                'firebase-database-collection'   : 3,
+                'firebase-datatransport'         : 4,
+                'firebase-firestore'             : 5,
+                'firebase-firestore-ktx'         : 6,
+                'firebase-functions'             : 7,
+                'firebase-inappmessaging-display': 8,
+                'firebase-storage'               : 9
+        ]
 
-        // TODO(yifany@): Better way of formatting json. No hard code names.
-        def json = """
-            {
-                tables: [
-                    {
-                        table_name: "PullRequests",
-                        column_names: ["pull_request_id"],
-                        replace_measurements: [[$pullRequestNumber]],
-                    },
-                    {
-                        table_name: "Coverage2",
-                        column_names: ["pull_request_id", "sdk_id", "coverage_percent"],
-                        replace_measurements: [$replacements],
-                    },
-                ],
-            }
-        """
+        def coverages = calculateCoverages()
 
-        project.logger.quiet(json)
+        def pullRequestTable = new Table(tableName: TableName.PULL_REQUESTS,
+                columnNames: [ColumnName.PULL_REQUEST_ID],
+                replaceMeasurements: [[pullRequestNumber]])
+        def coverageTable = new Table(tableName: TableName.ANDROID_COVERAGE,
+                columnNames: [ColumnName.PULL_REQUEST_ID, ColumnName.SDK_ID, ColumnName.COVERAGE_PERCENT],
+                replaceMeasurements: coverages.collect {
+                    [pullRequestNumber, sdkMap[it.key], it.value]
+                })
+        def jsonReport = new JsonReport(tables: [pullRequestTable, coverageTable])
+
+        project.logger.quiet(jsonReport.toString())
 
         reportFile.withWriter {
-            it.write(json)
+            it.write(jsonReport.toString())
         }
+    }
+
+    private def generateTableReport() {
+        def coverages = calculateCoverages()
+        def tableReport = new TableReport(tableName: TableName.ANDROID_COVERAGE,
+                columnNames: [ColumnName.SUBPROJECT, ColumnName.COVERAGE_PERCENT])
+        coverages.each { k, v -> tableReport.addReplaceMeasurement([k, v]) }
+        project.logger.quiet(tableReport.toString())
     }
 
 }

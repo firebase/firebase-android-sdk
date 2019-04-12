@@ -50,6 +50,8 @@ dependencies {
 
     testImplementation 'commons-io:commons-io:2.6'
 
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'de.vandermeer:asciitable:0.3.2'
 }
 
 gradlePlugin {
