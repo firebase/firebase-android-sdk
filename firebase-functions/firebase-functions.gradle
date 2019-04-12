@@ -84,7 +84,7 @@ task stopFunctionsEmulator(type: Exec) {
 // This is neccesary because the connectedAndroidTest task doesn't exist yet. It is added later
 // by the android plugin.
 tasks.all { Task t ->
-    if (t.name == 'connectedAndroidTest' || t.name == 'connectedDebugAndroidTest') {
+    if (t.name == 'connectedAndroidTest' || t.name == 'connectedReleaseAndroidTest') {
         t.dependsOn(startFunctionsEmulator)
         t.finalizedBy(stopFunctionsEmulator)
     }
