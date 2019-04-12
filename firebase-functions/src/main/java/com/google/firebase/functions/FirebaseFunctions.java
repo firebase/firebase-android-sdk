@@ -14,12 +14,14 @@
 
 package com.google.firebase.functions;
 
+import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
+
 import android.content.Context;
 import android.os.Handler;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
-import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.security.ProviderInstaller;
 import com.google.android.gms.security.ProviderInstaller.ProviderInstallListener;
 import com.google.android.gms.tasks.Task;
@@ -72,14 +74,16 @@ public class FirebaseFunctions {
 
   // The format to use for constructing urls from region, projectId, and name.
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
+  private String authorizationHeader = "Authorization";
+  private String iidHeader = "Firebase-Instance-ID-Token";
 
   FirebaseFunctions(
       Context context, String projectId, String region, ContextProvider contextProvider) {
     this.client = new OkHttpClient();
     this.serializer = new Serializer();
-    this.contextProvider = Preconditions.checkNotNull(contextProvider);
-    this.projectId = Preconditions.checkNotNull(projectId);
-    this.region = Preconditions.checkNotNull(region);
+    this.contextProvider = checkNotNull(contextProvider);
+    this.projectId = checkNotNull(projectId);
+    this.region = checkNotNull(region);
 
     maybeInstallProviders(context);
   }
@@ -128,11 +132,11 @@ public class FirebaseFunctions {
    * @param region The region for the HTTPS trigger, such as "us-central1".
    */
   public static FirebaseFunctions getInstance(FirebaseApp app, String region) {
-    Preconditions.checkNotNull(app, "You must call FirebaseApp.initializeApp first.");
-    Preconditions.checkNotNull(region);
+    checkNotNull(app, "You must call FirebaseApp.initializeApp first.");
+    checkNotNull(region);
 
     FunctionsMultiResourceComponent component = app.get(FunctionsMultiResourceComponent.class);
-    Preconditions.checkNotNull(component, "Functions component does not exist.");
+    checkNotNull(component, "Functions component does not exist.");
 
     return component.get(region);
   }
@@ -191,6 +195,18 @@ public class FirebaseFunctions {
     urlFormat = origin + "/%2$s/%1$s/%3$s";
   }
 
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  @VisibleForTesting
+  void replaceAuthorizationHeaderForTest(String headerName) {
+    authorizationHeader = checkNotNull(headerName, "Null header name");
+  }
+
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  @VisibleForTesting
+  void replaceIidHeaderForTest(String headerName) {
+    iidHeader = checkNotNull(headerName, "Null header name");
+  }
+
   /**
    * Calls a Callable HTTPS trigger endpoint.
    *
@@ -238,10 +254,10 @@ public class FirebaseFunctions {
 
     Request.Builder request = new Request.Builder().url(url).post(requestBody);
     if (context.getAuthToken() != null) {
-      request = request.header("Authorization", "Bearer " + context.getAuthToken());
+      request = request.header(authorizationHeader, "Bearer " + context.getAuthToken());
     }
     if (context.getInstanceIdToken() != null) {
-      request = request.header("Firebase-Instance-ID-Token", context.getInstanceIdToken());
+      request = request.header(iidHeader, context.getInstanceIdToken());
     }
 
     OkHttpClient callClient = options.apply(client);
