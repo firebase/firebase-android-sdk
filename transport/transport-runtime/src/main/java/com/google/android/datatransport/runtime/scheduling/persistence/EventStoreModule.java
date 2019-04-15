@@ -22,11 +22,11 @@ import dagger.Provides;
 @Module
 public abstract class EventStoreModule {
   private static final long MAX_DB_STORAGE_SIZE_IN_BYTES = 10 * 1024 * 1024;
+  private static final int LOAD_BATCH_SIZE = 200;
 
   @Provides
-  @MaxStorageSize
-  static long maxStorageSize() {
-    return MAX_DB_STORAGE_SIZE_IN_BYTES;
+  static EventStoreConfig storeConfig() {
+    return EventStoreConfig.create(MAX_DB_STORAGE_SIZE_IN_BYTES, LOAD_BATCH_SIZE);
   }
 
   @Binds

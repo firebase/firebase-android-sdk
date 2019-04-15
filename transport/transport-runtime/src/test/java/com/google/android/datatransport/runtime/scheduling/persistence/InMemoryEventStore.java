@@ -85,7 +85,7 @@ public class InMemoryEventStore implements EventStore {
   }
 
   @Override
-  public synchronized Iterable<PersistedEvent> loadAll(TransportContext transportContext) {
+  public synchronized Iterable<PersistedEvent> loadBatch(TransportContext transportContext) {
     Map<Long, EventInternal> backendStore = store.get(transportContext);
     if (backendStore == null) {
       return Collections.emptyList();
