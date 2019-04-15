@@ -16,13 +16,18 @@ package com.google.firebase;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import com.google.firebase.internal.DataCollectionConfigStorage;
 import java.util.function.Consumer;
 import org.robolectric.RuntimeEnvironment;
 
-public final class DataCollectionTestUtil {
-  static final String APP_NAME = "someApp";
+final class DataCollectionTestUtil {
+  private static final String APP_NAME = "someApp";
+  private static final String APP_ID = "appId";
 
-  static final String FIREBASE_APP_PREFS = "com.google.firebase.common.prefs:";
+  private static final String FIREBASE_APP_PREFS = "com.google.firebase.common.prefs:";
+
+  private static final FirebaseOptions OPTIONS =
+      new FirebaseOptions.Builder().setApplicationId(APP_ID).build();
 
   private DataCollectionTestUtil() {}
 
@@ -33,9 +38,7 @@ public final class DataCollectionTestUtil {
   static void withApp(String name, Consumer<FirebaseApp> callable) {
     FirebaseApp app =
         FirebaseApp.initializeApp(
-            RuntimeEnvironment.application.getApplicationContext(),
-            new FirebaseOptions.Builder().setApplicationId("appId").build(),
-            name);
+            RuntimeEnvironment.application.getApplicationContext(), OPTIONS, name);
     try {
       callable.accept(app);
     } finally {
@@ -45,13 +48,14 @@ public final class DataCollectionTestUtil {
 
   static SharedPreferences getSharedPreferences() {
     return RuntimeEnvironment.application.getSharedPreferences(
-        FIREBASE_APP_PREFS + APP_NAME, Context.MODE_PRIVATE);
+        FIREBASE_APP_PREFS + FirebaseApp.getPersistenceKey(APP_NAME, OPTIONS),
+        Context.MODE_PRIVATE);
   }
 
   static void setSharedPreferencesTo(boolean enabled) {
     getSharedPreferences()
         .edit()
-        .putBoolean(FirebaseApp.DATA_COLLECTION_DEFAULT_ENABLED, enabled)
+        .putBoolean(DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED, enabled)
         .commit();
   }
 }
