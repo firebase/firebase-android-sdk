@@ -14,7 +14,7 @@
 
 package com.google.firebase.gradle.plugins.measurement.apksize
 
-import com.android.utils.FileUtils
+import org.apache.commons.io.FileUtils
 
 import java.nio.file.Files
 import java.nio.file.Path
