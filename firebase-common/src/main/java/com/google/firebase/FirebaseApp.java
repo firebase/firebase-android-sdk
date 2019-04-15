@@ -22,9 +22,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -50,8 +47,9 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentDiscovery;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
-import com.google.firebase.events.Event;
+import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
+import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.internal.DefaultIdTokenListenersCountChangedListener;
 import com.google.firebase.internal.InternalTokenProvider;
 import com.google.firebase.internal.InternalTokenResult;
@@ -106,11 +104,6 @@ public class FirebaseApp {
 
   public static final String DEFAULT_APP_NAME = "[DEFAULT]";
 
-  private static final String FIREBASE_APP_PREFS = "com.google.firebase.common.prefs:";
-
-  @VisibleForTesting
-  static final String DATA_COLLECTION_DEFAULT_ENABLED = "firebase_data_collection_default_enabled";
-
   private static final String MEASUREMENT_CLASSNAME =
       "com.google.android.gms.measurement.AppMeasurement";
   private static final String AUTH_CLASSNAME = "com.google.firebase.auth.FirebaseAuth";
@@ -160,14 +153,12 @@ public class FirebaseApp {
   private final String name;
   private final FirebaseOptions options;
   private final ComponentRuntime componentRuntime;
-  private final SharedPreferences sharedPreferences;
-  private final Publisher publisher;
 
   // Default disabled. We released Firebase publicly without this feature, so making it default
   // enabled is a backwards incompatible change.
   private final AtomicBoolean automaticResourceManagementEnabled = new AtomicBoolean(false);
   private final AtomicBoolean deleted = new AtomicBoolean();
-  private final AtomicBoolean dataCollectionDefaultEnabled;
+  private final Lazy<DataCollectionConfigStorage> dataCollectionConfigStorage;
 
   private final List<IdTokenListener> idTokenListeners = new CopyOnWriteArrayList<>();
   private final List<BackgroundStateChangeListener> backgroundStateChangeListeners =
@@ -502,7 +493,7 @@ public class FirebaseApp {
   @KeepForSdk
   public boolean isDataCollectionDefaultEnabled() {
     checkNotDeleted();
-    return dataCollectionDefaultEnabled.get();
+    return dataCollectionConfigStorage.get().isEnabled();
   }
 
   /**
@@ -516,12 +507,7 @@ public class FirebaseApp {
   @KeepForSdk
   public void setDataCollectionDefaultEnabled(boolean enabled) {
     checkNotDeleted();
-    if (dataCollectionDefaultEnabled.compareAndSet(!enabled, enabled)) {
-      sharedPreferences.edit().putBoolean(DATA_COLLECTION_DEFAULT_ENABLED, enabled).commit();
-
-      publisher.publish(
-          new Event<>(DataCollectionDefaultChange.class, new DataCollectionDefaultChange(enabled)));
-    }
+    dataCollectionConfigStorage.get().setEnabled(enabled);
   }
 
   /**
@@ -535,10 +521,6 @@ public class FirebaseApp {
     this.options = Preconditions.checkNotNull(options);
     idTokenListenersCountChangedListener = new DefaultIdTokenListenersCountChangedListener();
 
-    sharedPreferences =
-        applicationContext.getSharedPreferences(getSharedPrefsName(name), Context.MODE_PRIVATE);
-    dataCollectionDefaultEnabled = new AtomicBoolean(readAutoDataCollectionEnabled());
-
     List<ComponentRegistrar> registrars =
         ComponentDiscovery.forContext(applicationContext).discover();
     componentRuntime =
@@ -551,33 +533,13 @@ public class FirebaseApp {
             LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
             LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
             DefaultUserAgentPublisher.component());
-    publisher = componentRuntime.get(Publisher.class);
-  }
-
-  private static String getSharedPrefsName(String appName) {
-    return FIREBASE_APP_PREFS + appName;
-  }
-
-  private boolean readAutoDataCollectionEnabled() {
-    if (sharedPreferences.contains(DATA_COLLECTION_DEFAULT_ENABLED)) {
-      return sharedPreferences.getBoolean(DATA_COLLECTION_DEFAULT_ENABLED, true);
-    }
-    try {
-      PackageManager packageManager = applicationContext.getPackageManager();
-      if (packageManager != null) {
-        ApplicationInfo applicationInfo =
-            packageManager.getApplicationInfo(
-                applicationContext.getPackageName(), PackageManager.GET_META_DATA);
-        if (applicationInfo != null
-            && applicationInfo.metaData != null
-            && applicationInfo.metaData.containsKey(DATA_COLLECTION_DEFAULT_ENABLED)) {
-          return applicationInfo.metaData.getBoolean(DATA_COLLECTION_DEFAULT_ENABLED);
-        }
-      }
-    } catch (PackageManager.NameNotFoundException e) {
-      // This shouldn't happen since it's this app's package, but fall through to default if so.
-    }
-    return true;
+    dataCollectionConfigStorage =
+        new Lazy<>(
+            () ->
+                new DataCollectionConfigStorage(
+                    applicationContext,
+                    getPersistenceKey(),
+                    componentRuntime.get(Publisher.class)));
   }
 
   private void checkNotDeleted() {
