@@ -91,9 +91,6 @@ public class CallTest {
               HttpsCallableContext context = new HttpsCallableContext("token", null);
               return Tasks.forResult(context);
             });
-    // 'Authorization' is a special header that does not reach the function if it does not contain a
-    // valid token.
-    functions.replaceAuthorizationHeaderForTest("Test-Authorization");
 
     HttpsCallableReference function = functions.getHttpsCallable("tokenTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
@@ -114,9 +111,6 @@ public class CallTest {
               HttpsCallableContext context = new HttpsCallableContext(null, "iid");
               return Tasks.forResult(context);
             });
-    // 'Firebase-Instance-ID-Token' is a special header that does not reach the function if it does
-    // not contain a valid token.
-    functions.replaceIidHeaderForTest("Test-Firebase-Instance-ID-Token");
 
     HttpsCallableReference function = functions.getHttpsCallable("instanceIdTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());

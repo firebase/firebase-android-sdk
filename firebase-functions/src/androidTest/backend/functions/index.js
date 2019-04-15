@@ -47,13 +47,13 @@ exports.scalarTest = functions.https.onRequest((request, response) => {
 });
 
 exports.tokenTest = functions.https.onRequest((request, response) => {
-  assert.equal(request.get('Test-Authorization'), 'Bearer token');
+  assert.equal(request.get('Authorization'), 'Bearer token');
   assert.deepEqual(request.body, {data: {}});
   response.send({data: {}});
 });
 
 exports.instanceIdTest = functions.https.onRequest((request, response) => {
-  assert.equal(request.get('Test-Firebase-Instance-ID-Token'), 'iid');
+  assert.equal(request.get('Firebase-Instance-ID-Token'), 'iid');
   assert.deepEqual(request.body, {data: {}});
   response.send({data: {}});
 });
