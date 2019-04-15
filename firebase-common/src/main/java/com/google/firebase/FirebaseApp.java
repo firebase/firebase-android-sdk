@@ -55,16 +55,11 @@ import com.google.firebase.internal.InternalTokenProvider;
 import com.google.firebase.internal.InternalTokenResult;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -103,40 +98,6 @@ public class FirebaseApp {
   private static final String LOG_TAG = "FirebaseApp";
 
   public static final String DEFAULT_APP_NAME = "[DEFAULT]";
-
-  private static final String MEASUREMENT_CLASSNAME =
-      "com.google.android.gms.measurement.AppMeasurement";
-  private static final String AUTH_CLASSNAME = "com.google.firebase.auth.FirebaseAuth";
-  private static final String IID_CLASSNAME = "com.google.firebase.iid.FirebaseInstanceId";
-  private static final String CRASH_CLASSNAME = "com.google.firebase.crash.FirebaseCrash";
-
-  /**
-   * Firebase APIs in order of their initialization. To be initialized for each FirebaseApp
-   * instance.
-   */
-  private static final List<String> API_INITIALIZERS = Arrays.asList(AUTH_CLASSNAME, IID_CLASSNAME);
-
-  /**
-   * Default Firebase APIs requiring a FirebaseApp in order of their initialization.
-   *
-   * <p>These APIs are initialized for the default app.
-   */
-  private static final List<String> DEFAULT_APP_API_INITITALIZERS =
-      Collections.singletonList(CRASH_CLASSNAME);
-
-  /**
-   * Default Firebase APIs requiring a Context in order of their initialization.
-   *
-   * <p>These APIs are initialized for the default app.
-   */
-  private static final List<String> DEFAULT_CONTEXT_API_INITITALIZERS =
-      Arrays.asList(MEASUREMENT_CLASSNAME);
-
-  /** Firebase APIs that are initialized in direct boot mode. */
-  private static final List<String> DIRECT_BOOT_COMPATIBLE_API_INITIALIZERS = Arrays.asList();
-
-  /** Set of APIs that are part of Firebase Core and should always be initialized. */
-  private static final Set<String> CORE_CLASSES = Collections.emptySet();
 
   private static final Object LOCK = new Object();
 
@@ -739,65 +700,6 @@ public class FirebaseApp {
       UserUnlockReceiver.ensureReceiverRegistered(applicationContext);
     } else {
       componentRuntime.initializeEagerComponents(isDefaultApp());
-    }
-    initializeApis(FirebaseApp.class, this, API_INITIALIZERS, isDeviceProtectedStorage);
-    if (isDefaultApp()) {
-      initializeApis(
-          FirebaseApp.class, this, DEFAULT_APP_API_INITITALIZERS, isDeviceProtectedStorage);
-      initializeApis(
-          Context.class,
-          applicationContext,
-          DEFAULT_CONTEXT_API_INITITALIZERS,
-          isDeviceProtectedStorage);
-    }
-  }
-
-  /**
-   * Calls getInstance(FirebaseApp) API entry points using reflection.
-   *
-   * @param <T> Type parameter for the initializer method. Either {@link Context} or {@link
-   *     FirebaseApp}.
-   */
-  private <T> void initializeApis(
-      Class<T> parameterClass,
-      T parameter,
-      Iterable<String> apiInitClasses,
-      boolean isDeviceProtectedStorage) {
-    for (String apiInitClass : apiInitClasses) {
-      try {
-        if (!isDeviceProtectedStorage
-            || DIRECT_BOOT_COMPATIBLE_API_INITIALIZERS.contains(apiInitClass)) {
-          // If the device is in direct boot mode, do not initialize APIs that don't
-          // support it.
-          Class<?> initializerClass = Class.forName(apiInitClass);
-          Method initMethod = initializerClass.getMethod("getInstance", parameterClass);
-          int initMethodModifiers = initMethod.getModifiers();
-
-          if (Modifier.isPublic(initMethodModifiers) && Modifier.isStatic(initMethodModifiers)) {
-            initMethod.invoke(null /* static */, parameter);
-          }
-        }
-
-      } catch (ClassNotFoundException e) {
-        if (CORE_CLASSES.contains(apiInitClass)) {
-          throw new IllegalStateException(
-              apiInitClass
-                  + " is missing, "
-                  + "but is required. Check if it has been removed by Proguard.");
-        }
-        Log.d(LOG_TAG, apiInitClass + " is not linked. Skipping initialization.");
-      } catch (NoSuchMethodException e) {
-        // TODO: add doc link in error message.
-        throw new IllegalStateException(
-            apiInitClass
-                + "#getInstance has been removed by Proguard."
-                + " Add keep rule to prevent it.");
-      } catch (InvocationTargetException e) {
-        Log.wtf(LOG_TAG, "Firebase API initialization failure.", e);
-      } catch (IllegalAccessException e) {
-        // We check modifiers above, this shouldn't happen.
-        Log.wtf(LOG_TAG, "Failed to initialize " + apiInitClass, e);
-      }
     }
   }
 

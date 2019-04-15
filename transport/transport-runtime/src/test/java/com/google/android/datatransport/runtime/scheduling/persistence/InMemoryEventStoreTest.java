@@ -42,14 +42,14 @@ public class InMemoryEventStoreTest {
 
   @Test
   public void test_emptyStore_shouldReturnNothingUponLoadAll() {
-    assertThat(store.loadAll(TRANSPORT_CONTEXT)).isEmpty();
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
 
   @Test
   public void test_nonEmptyStore_shouldReturnItsStoredEvents() {
     store.persist(TRANSPORT_CONTEXT, TEST_EVENT);
 
-    assertThat(store.loadAll(TRANSPORT_CONTEXT)).containsExactly(TEST_PERSISTED_EVENT);
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).containsExactly(TEST_PERSISTED_EVENT);
   }
 
   @Test
@@ -58,7 +58,7 @@ public class InMemoryEventStoreTest {
 
     store.recordSuccess(Collections.singleton(TEST_PERSISTED_EVENT));
 
-    assertThat(store.loadAll(TRANSPORT_CONTEXT)).isEmpty();
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
 
   @Test
@@ -67,6 +67,6 @@ public class InMemoryEventStoreTest {
 
     store.recordFailure(Collections.singleton(TEST_PERSISTED_EVENT));
 
-    assertThat(store.loadAll(TRANSPORT_CONTEXT)).isEmpty();
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
 }

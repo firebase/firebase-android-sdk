@@ -48,5 +48,5 @@ public interface EventStore {
   boolean hasPendingEventsFor(TransportContext transportContext);
 
   /** Load all pending events for a given backend. */
-  Iterable<PersistedEvent> loadAll(TransportContext transportContext);
+  Iterable<PersistedEvent> loadBatch(TransportContext transportContext);
 }
