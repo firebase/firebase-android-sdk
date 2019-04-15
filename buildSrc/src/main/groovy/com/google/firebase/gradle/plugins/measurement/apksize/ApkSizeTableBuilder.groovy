@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-package com.google.firebase.gradle.plugins.measurement
+package com.google.firebase.gradle.plugins.measurement.apksize
 
 /** A helper class that generates the human-readable, APK size measurement table. */
 class ApkSizeTableBuilder {

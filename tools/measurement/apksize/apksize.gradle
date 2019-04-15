@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.gradle.plugins.measurement.GenerateCoveragePercentsTask
-import com.google.firebase.gradle.plugins.measurement.GenerateMeasurementsTask
+import com.google.firebase.gradle.plugins.measurement.apksize.GenerateMeasurementsTask
 import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
 
 apply plugin: "com.android.application"
@@ -51,23 +50,9 @@ task uploadMeasurements(type: UploadMeasurementsTask) {
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }
 
-// TODO(yifany@): Move below 2 tasks out of apksize.gradle.
-task generateCoverageMeasurements(type: GenerateCoveragePercentsTask, group: 'Coverage') {
-    dependsOn rootProject.allprojects.collect { it.tasks.withType(JacocoReport) }.flatten()
-
-    reportFile = file("$buildDir/coverage-report.json")
-}
-
-task uploadCoverageMeasurements(type: UploadMeasurementsTask, group: 'Coverage') {
-    dependsOn generateCoverageMeasurements
-
-    reportFile = file("$buildDir/coverage-report.json")
-    uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
-}
-
 // ==========================================================================
 // Copy from here down if you want to use the google-services plugin in your
 // androidTest integration tests.
 // ==========================================================================
 ext.packageName = "com.google.apksize"
-apply from: '../../gradle/googleServices.gradle'
+apply from: '../../../gradle/googleServices.gradle'
