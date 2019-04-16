@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <application>
-        <service android:name="com.google.firebase.components.ComponentDiscoveryService">
+        <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
             <meta-data android:name="com.google.firebase.components:com.google.firebase.firestore.FirestoreRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>

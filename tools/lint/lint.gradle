@@ -1,0 +1,21 @@
+plugins {
+  id 'org.jetbrains.kotlin.jvm'
+}
+
+def lintVersion = '26.3.2'
+
+dependencies {
+  compileOnly "com.android.tools.lint:lint-api:$lintVersion"
+  compileOnly "com.android.tools.lint:lint-checks:$lintVersion"
+
+  testImplementation "junit:junit:4.12"
+  testImplementation "com.android.tools.lint:lint:$lintVersion"
+  testImplementation "com.android.tools.lint:lint-tests:$lintVersion"
+  testImplementation "com.android.tools:testutils:$lintVersion"
+}
+
+jar {
+  manifest {
+    attributes('Lint-Registry-v2': 'com.google.firebase.lint.checks.CheckRegistry')
+  }
+}
