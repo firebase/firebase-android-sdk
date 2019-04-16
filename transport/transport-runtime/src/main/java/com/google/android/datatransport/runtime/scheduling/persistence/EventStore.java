@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
 
 /**
  * Persistence layer.
@@ -27,7 +28,8 @@ import com.google.android.datatransport.runtime.EventInternal;
 public interface EventStore {
 
   /** Persist a new event. */
-  PersistedEvent persist(String backendName, EventInternal event);
+  @Nullable
+  PersistedEvent persist(TransportContext transportContext, EventInternal event);
 
   /** Communicate to the store that events have failed to get sent. */
   void recordFailure(Iterable<PersistedEvent> events);
@@ -37,14 +39,14 @@ public interface EventStore {
 
   /** Returns the timestamp when the backend is allowed to be called next time or null. */
   @Nullable
-  Long getNextCallTime(String backendName);
+  Long getNextCallTime(TransportContext transportContext);
 
   /** Record the timestamp when the backend is allowed to be called next time. */
-  void recordNextCallTime(String backendName, long timestampMs);
+  void recordNextCallTime(TransportContext transportContext, long timestampMs);
 
   /** Returns true if the store contains any pending events for a give backend. */
-  boolean hasPendingEventsFor(String backendName);
+  boolean hasPendingEventsFor(TransportContext transportContext);
 
   /** Load all pending events for a given backend. */
-  Iterable<PersistedEvent> loadAll(String backendName);
+  Iterable<PersistedEvent> loadBatch(TransportContext transportContext);
 }

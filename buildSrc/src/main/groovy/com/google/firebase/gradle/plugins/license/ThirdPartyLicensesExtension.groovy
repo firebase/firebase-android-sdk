@@ -12,23 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.gradle.plugins.license;
+package com.google.firebase.gradle.plugins.license
 
 class ThirdPartyLicensesExtension {
-  private final File baseDir;
-  private final List<ProjectLicense> additionalLicenses = new ArrayList<>()
+    private final File baseDir
+    private final List<ProjectLicense> additionalLicenses = new ArrayList<>()
 
-  ThirdPartyLicensesExtension(File baseDir) {
-    this.baseDir = baseDir;
-  }
+    ThirdPartyLicensesExtension(File baseDir) {
+        this.baseDir = baseDir
+    }
 
-  /** Add a library with its licenses in passed-in files(relative to rootDir). */
-  void add(String name, String... licenseUris) throws IOException {
-    additionalLicenses.add(
-        new ProjectLicense(name: name, licenseUris: licenseUris.collect { URI.create(it) }))
-  }
+    /** Add a library with its licenses in passed-in files(relative to rootDir). */
+    void add(String name, String... licenseUris) throws IOException {
+        additionalLicenses.add(
+                new ProjectLicense(name: name, explicitLicenseUris: licenseUris.collect {
+                    URI.create(it)
+                }))
+    }
 
-  List<ProjectLicense> getLibraries() {
-    return additionalLicenses;
-  }
+    List<ProjectLicense> getLibraries() {
+        return additionalLicenses
+    }
 }

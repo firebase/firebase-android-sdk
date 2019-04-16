@@ -13,6 +13,7 @@
 // limitations under the License.
 
 apply plugin: 'com.android.library'
+apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 android {
     adbOptions {
@@ -54,7 +55,7 @@ dependencies {
     implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
     implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
 
-    api 'com.google.auto.value:auto-value-annotations:1.6'
+    api 'com.google.auto.value:auto-value-annotations:1.6.3'
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     testImplementation 'com.android.support.test:runner:1.0.2'

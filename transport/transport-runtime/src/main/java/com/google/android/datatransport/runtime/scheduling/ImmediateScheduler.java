@@ -14,10 +14,12 @@
 
 package com.google.android.datatransport.runtime.scheduling;
 
-import com.google.android.datatransport.runtime.BackendRegistry;
 import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportBackend;
+import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.BackendRequest;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
@@ -41,15 +43,17 @@ public class ImmediateScheduler implements Scheduler {
   }
 
   @Override
-  public void schedule(String backendName, EventInternal event) {
+  public void schedule(TransportContext transportContext, EventInternal event) {
     executor.execute(
         () -> {
-          TransportBackend backend = backendRegistry.get(backendName);
+          TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
           if (backend == null) {
-            LOGGER.warning(String.format("Transport backend '%s' is not registered", backendName));
+            LOGGER.warning(
+                String.format(
+                    "Transport backend '%s' is not registered", transportContext.getBackendName()));
             return;
           }
-          backend.send(Collections.singleton(backend.decorate(event)));
+          backend.send(BackendRequest.create(Collections.singleton(backend.decorate(event))));
         });
   }
 }

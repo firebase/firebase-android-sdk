@@ -16,8 +16,8 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
 import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,48 +25,48 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class InMemoryEventStoreTest {
-  private static final String BACKEND_NAME = "backend1";
+  private static final TransportContext TRANSPORT_CONTEXT =
+      TransportContext.builder().setBackendName("backend1").build();
 
   private static final EventInternal TEST_EVENT =
       EventInternal.builder()
           .setTransportName("transport")
-          .setPriority(Priority.DEFAULT)
           .setEventMillis(1)
           .setUptimeMillis(2)
           .setPayload("hello".getBytes())
           .build();
   private static final PersistedEvent TEST_PERSISTED_EVENT =
-      PersistedEvent.create(1, BACKEND_NAME, TEST_EVENT);
+      PersistedEvent.create(1, TRANSPORT_CONTEXT, TEST_EVENT);
 
   private final EventStore store = new InMemoryEventStore();
 
   @Test
   public void test_emptyStore_shouldReturnNothingUponLoadAll() {
-    assertThat(store.loadAll("foo")).isEmpty();
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
 
   @Test
   public void test_nonEmptyStore_shouldReturnItsStoredEvents() {
-    store.persist(BACKEND_NAME, TEST_EVENT);
+    store.persist(TRANSPORT_CONTEXT, TEST_EVENT);
 
-    assertThat(store.loadAll(BACKEND_NAME)).containsExactly(TEST_PERSISTED_EVENT);
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).containsExactly(TEST_PERSISTED_EVENT);
   }
 
   @Test
   public void recordSuccess_shouldRemoveEventsFromStorage() {
-    store.persist(BACKEND_NAME, TEST_EVENT);
+    store.persist(TRANSPORT_CONTEXT, TEST_EVENT);
 
     store.recordSuccess(Collections.singleton(TEST_PERSISTED_EVENT));
 
-    assertThat(store.loadAll(BACKEND_NAME)).isEmpty();
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
 
   @Test
   public void recordFailure_shouldRemoveEventsFromStorage() {
-    store.persist(BACKEND_NAME, TEST_EVENT);
+    store.persist(TRANSPORT_CONTEXT, TEST_EVENT);
 
     store.recordFailure(Collections.singleton(TEST_PERSISTED_EVENT));
 
-    assertThat(store.loadAll(BACKEND_NAME)).isEmpty();
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
 }

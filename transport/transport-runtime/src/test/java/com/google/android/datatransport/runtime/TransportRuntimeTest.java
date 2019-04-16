@@ -22,14 +22,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.android.datatransport.Event;
-import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.BackendRequest;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
-import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import java.util.Collections;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
@@ -41,19 +42,21 @@ public class TransportRuntimeTest {
   private static final String TEST_VALUE = "test-value";
   private TransportInternal transportInternalMock = mock(TransportInternal.class);
   private TransportBackend mockBackend = mock(TransportBackend.class);
+  private BackendRegistry mockRegistry = mock(BackendRegistry.class);
 
   @Test
   public void testTransportInternalSend() {
-    String mockBackendName = "backendMock";
+    TransportContext transportContext =
+        TransportContext.builder().setBackendName("backendMock").build();
     String testTransport = "testTransport";
-    TransportFactory factory = new TransportFactoryImpl(mockBackendName, transportInternalMock);
+    TransportFactory factory = new TransportFactoryImpl(transportContext, transportInternalMock);
     Event<String> event = Event.ofTelemetry("TelemetryData");
     Transformer<String, byte[]> transformer = String::getBytes;
     Transport<String> transport = factory.getTransport(testTransport, String.class, transformer);
     transport.send(event);
     SendRequest request =
         SendRequest.builder()
-            .setBackendName(mockBackendName)
+            .setTransportContext(transportContext)
             .setEvent(event, transformer)
             .setTransportName(testTransport)
             .build();
@@ -61,28 +64,19 @@ public class TransportRuntimeTest {
   }
 
   @Test
-  public void testTransportRuntimeRegistration() {
+  public void testTransportRuntimeBackendDiscovery() {
     int eventMillis = 3;
     int uptimeMillis = 1;
     String mockBackendName = "backend";
     String testTransport = "testTransport";
-    BackendRegistry registry = new BackendRegistry();
+
     TransportRuntime runtime =
         new TransportRuntime(
-            registry,
             () -> eventMillis,
             () -> uptimeMillis,
-            new ImmediateScheduler(Runnable::run, registry),
-            new SynchronizationGuard() {
-              @Override
-              public <T> T runCriticalSection(
-                  long lockTimeoutMs, CriticalSection<T> criticalSection) {
-                return criticalSection.execute();
-              }
-            });
-    Assert.assertNotNull(runtime);
-    runtime.register(mockBackendName, mockBackend);
-
+            new ImmediateScheduler(Runnable::run, mockRegistry),
+            new Uploader(null, null, null, null, null, null, () -> 2));
+    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     when(mockBackend.decorate(any()))
         .thenAnswer(
             (Answer<EventInternal>)
@@ -101,7 +95,6 @@ public class TransportRuntimeTest {
             .setEventMillis(eventMillis)
             .setUptimeMillis(uptimeMillis)
             .setTransportName(testTransport)
-            .setPriority(Priority.DEFAULT)
             .setPayload("TelemetryData".getBytes())
             .build();
     transport.send(stringEvent);
@@ -109,7 +102,8 @@ public class TransportRuntimeTest {
     verify(mockBackend, times(1))
         .send(
             eq(
-                Collections.singleton(
-                    expectedEvent.toBuilder().addMetadata(TEST_KEY, TEST_VALUE).build())));
+                BackendRequest.create(
+                    Collections.singleton(
+                        expectedEvent.toBuilder().addMetadata(TEST_KEY, TEST_VALUE).build()))));
   }
 }

@@ -14,6 +14,19 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.google.android.datatransport.runtime">
-  <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
-  <!--<uses-sdk android:minSdkVersion="14"/>-->
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
+    <!--<uses-sdk android:minSdkVersion="14"/>-->
+
+    <application>
+        <service
+            android:name=".scheduling.jobscheduling.JobInfoSchedulerService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false">
+        </service>
+        <receiver android:name=".scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"/>
+        <service
+            android:name=".backends.TransportBackendDiscovery"
+            android:exported="false" />
+    </application>
 </manifest>

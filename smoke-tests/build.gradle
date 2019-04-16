@@ -1,0 +1,85 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+buildscript {
+  repositories {
+    google()
+    jcenter()
+  }
+
+  dependencies {
+    classpath "com.android.tools.build:gradle:3.3.2"
+    classpath "com.google.gms:google-services:4.0.0"
+  }
+}
+
+apply plugin: "com.android.application"
+
+android {
+  compileSdkVersion 24
+
+  defaultConfig {
+    minSdkVersion 16
+    multiDexEnabled true
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+  }
+
+  flavorDimensions "systemUnderTest"
+
+  productFlavors {
+    database {
+      dimension "systemUnderTest"
+      applicationId "com.google.firebase.testing.database"
+    }
+
+    firestore {
+      dimension "systemUnderTest"
+      applicationId "com.google.firebase.testing.firestore"
+    }
+
+    storage {
+      dimension "systemUnderTest"
+      applicationId "com.google.firebase.testing.storage"
+    }
+  }
+}
+
+repositories {
+  google()
+  jcenter()
+}
+
+dependencies {
+  // Common
+  api "androidx.test:runner:1.1.0"
+  api "com.google.truth:truth:0.43"
+  api "junit:junit:4.12"
+
+  implementation "androidx.test:rules:1.1.0"
+  implementation "com.google.firebase:firebase-common:16.0.7"
+
+  // Database
+  databaseImplementation "com.google.firebase:firebase-auth:16.1.0"
+  databaseImplementation "com.google.firebase:firebase-database:16.1.0"
+
+  // Firestore
+  firestoreImplementation "com.google.firebase:firebase-auth:16.1.0"
+  firestoreImplementation "com.google.firebase:firebase-firestore:18.1.0"
+
+  // Storage
+  storageImplementation "com.google.firebase:firebase-auth:16.1.0"
+  storageImplementation "com.google.firebase:firebase-storage:16.1.0"
+}
+
+apply plugin: "com.google.gms.google-services"

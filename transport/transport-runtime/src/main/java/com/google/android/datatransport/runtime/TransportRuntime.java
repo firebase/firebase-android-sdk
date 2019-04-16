@@ -16,10 +16,9 @@ package com.google.android.datatransport.runtime;
 
 import android.content.Context;
 import android.support.annotation.RestrictTo;
-import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
-import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
@@ -33,29 +32,25 @@ import javax.inject.Singleton;
  * implementations delegate to this class.
  */
 @Singleton
-@SuppressWarnings("WeakerAccess")
 public class TransportRuntime implements TransportInternal {
 
   private static volatile TransportRuntimeComponent INSTANCE = null;
 
-  private final BackendRegistry backendRegistry;
   private final Clock eventClock;
   private final Clock uptimeClock;
   private final Scheduler scheduler;
-  private final SynchronizationGuard guard;
+  private final Uploader uploader;
 
   @Inject
   TransportRuntime(
-      BackendRegistry backendRegistry,
       @WallTime Clock eventClock,
       @Monotonic Clock uptimeClock,
       Scheduler scheduler,
-      SynchronizationGuard guard) {
-    this.backendRegistry = backendRegistry;
+      Uploader uploader) {
     this.eventClock = eventClock;
     this.uptimeClock = uptimeClock;
     this.scheduler = scheduler;
-    this.guard = guard;
+    this.uploader = uploader;
   }
 
   /**
@@ -88,19 +83,22 @@ public class TransportRuntime implements TransportInternal {
     return localRef.getTransportRuntime();
   }
 
-  /** Register a {@link TransportBackend}. */
-  public void register(String name, TransportBackend backend) {
-    backendRegistry.register(name, backend);
-  }
-
   /** Returns a {@link TransportFactory} for a given {@code backendName}. */
   public TransportFactory newFactory(String backendName) {
-    return new TransportFactoryImpl(backendName, this);
+    return new TransportFactoryImpl(
+        TransportContext.builder().setBackendName(backendName).build(), this);
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public Uploader getUploader() {
+    return uploader;
   }
 
   @Override
   public void send(SendRequest request) {
-    scheduler.schedule(request.getBackendName(), convert(request));
+    scheduler.schedule(
+        request.getTransportContext().withPriority(request.getEvent().getPriority()),
+        convert(request));
   }
 
   private EventInternal convert(SendRequest request) {
@@ -108,14 +106,7 @@ public class TransportRuntime implements TransportInternal {
         .setEventMillis(eventClock.getTime())
         .setUptimeMillis(uptimeClock.getTime())
         .setTransportName(request.getTransportName())
-        .setPriority(request.getEvent().getPriority())
         .setPayload(request.getPayload())
         .build();
-  }
-
-  @VisibleForTesting
-  @RestrictTo(RestrictTo.Scope.TESTS)
-  public SynchronizationGuard getSynchronizationGuard() {
-    return guard;
   }
 }

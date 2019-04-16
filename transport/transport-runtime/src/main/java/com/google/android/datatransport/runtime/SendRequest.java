@@ -19,8 +19,8 @@ import com.google.android.datatransport.Transformer;
 import com.google.auto.value.AutoValue;
 
 @AutoValue
-public abstract class SendRequest {
-  public abstract String getBackendName();
+abstract class SendRequest {
+  public abstract TransportContext getTransportContext();
 
   public abstract String getTransportName();
 
@@ -38,7 +38,7 @@ public abstract class SendRequest {
 
   @AutoValue.Builder
   public abstract static class Builder {
-    public abstract Builder setBackendName(String name);
+    public abstract Builder setTransportContext(TransportContext transportContext);
 
     public abstract Builder setTransportName(String name);
 

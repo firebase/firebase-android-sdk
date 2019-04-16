@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime.scheduling;
 
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
 
 /**
  * Responsible for scheduling an event to be transmitted to a backend.
@@ -23,5 +24,5 @@ import com.google.android.datatransport.runtime.EventInternal;
  * dependent.
  */
 public interface Scheduler {
-  void schedule(String backendName, EventInternal event);
+  void schedule(TransportContext transportContext, EventInternal event);
 }

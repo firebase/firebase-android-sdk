@@ -14,7 +14,12 @@
 
 package com.google.android.datatransport;
 
-/** Each factory is backed by a single transport backend. */
+/**
+ * Each factory is backed by a single transport backend.
+ *
+ * <p>Note: implementations <strong>must</strong> have a no-argument constructor, otherwise the
+ * runtime won't be able to instantiate them.
+ */
 public interface TransportFactory {
   /**
    * Returns a named transport instance that can be used to send values of type T.

@@ -80,7 +80,7 @@ class LicenseResolverPluginSpec extends Specification {
 
         def json = getLicenseJson()
         def txt = getLicenseText()
-        def picassoIndex = new JsonSlurper().parseText(json).picasso
+        def picassoIndex = new JsonSlurper().parseText(json).Picasso
         def customLibIndex1 = new JsonSlurper().parseText(json).customLib1
         def customLibIndex2 = new JsonSlurper().parseText(json).customLib2
 
@@ -137,15 +137,6 @@ class LicenseResolverPluginSpec extends Specification {
         result.output.count(
                 'Downloading license from http://www.apache.org/licenses/LICENSE-2.0.txt') == 1
 
-    }
-
-    def "License tasks honor gradle build cache"() {
-        when: "The build is run twice"
-        def result1 = build("generateLicenses")
-        def result2 = build("generateLicenses")
-
-        then: "The second deems the task UP-TO-DATE"
-        result2.output.contains("generateLicenses UP-TO-DATE")
     }
 
     def "License tasks throw a useful exception when license is not parsable"() {
