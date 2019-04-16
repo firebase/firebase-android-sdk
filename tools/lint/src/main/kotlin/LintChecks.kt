@@ -47,9 +47,17 @@ internal val EXPORTED_MISSING_ISSUE: Issue = Issue.create(
         Severity.ERROR,
         Implementation(ManifestElementHasNoExportedAttributeDetector::class.java, Scope.MANIFEST_SCOPE))
 
+enum class Component(val xmlName: String) {
+    ACTIVITY("activity"),
+    ACTIVITY_ALIAS("activity-alias"),
+    PROVIDER("provider"),
+    RECEIVER("receiver"),
+    SERVICE("service"),
+}
+
 class ManifestElementHasNoExportedAttributeDetector : Detector(), XmlScanner {
 
-    override fun getApplicableElements(): Collection<String>? = listOf("provider", "receiver", "service")
+    override fun getApplicableElements(): Collection<String>? = Component.values().map { it.xmlName }
 
     override fun visitElement(context: XmlContext, element: Element) {
         val value = element.getAttributeNS(SdkConstants.ANDROID_URI, "exported")

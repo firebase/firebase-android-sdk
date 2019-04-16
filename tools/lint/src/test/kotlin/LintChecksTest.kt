@@ -21,12 +21,6 @@ import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import java.lang.AssertionError
 
-enum class Component {
-    PROVIDER,
-    RECEIVER,
-    SERVICE,
-}
-
 internal fun manifestWith(cmp: Component, exported: Boolean? = null): String {
     val exportedStr = when (exported) {
         true, false -> "android:exported=\"$exported\""
@@ -38,7 +32,7 @@ internal fun manifestWith(cmp: Component, exported: Boolean? = null): String {
                 xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.example.lib">
               <application>
-                <${cmp.name.toLowerCase()} android:name="foo" $exportedStr/>
+                <${cmp.xmlName} android:name="foo" $exportedStr/>
             </application>
             </manifest>
             """.trimIndent()
@@ -53,67 +47,31 @@ fun TestLintResult.checkContains(expected: String) {
 }
 
 class Test : LintDetectorTest() {
-    fun testProvider_withNoExportedAttr() {
-        lint().files(
-                manifest(manifestWith(Component.PROVIDER)))
-                .run()
-                .checkContains("Error: Set android:exported attribute explicitly")
+    fun testComponents_withNoExportedAttr_shouldFail() {
+        Component.values().forEach {
+            lint().files(
+                    manifest(manifestWith(it)))
+                    .run()
+                    .checkContains("Error: Set android:exported attribute explicitly")
+        }
     }
 
-    fun testProvider_withExportedAttrTrue() {
-        lint().files(
-                manifest(manifestWith(Component.PROVIDER, true)))
-                .run()
-                .expectClean()
+    fun testComponents_withExportedAttrTrue_shouldSucceed() {
+        Component.values().forEach {
+            lint().files(
+                    manifest(manifestWith(it, true)))
+                    .run()
+                    .expectClean()
+        }
     }
 
-    fun testProvider_withExportedAttrFalse() {
-        lint().files(
-                manifest(manifestWith(Component.PROVIDER, false)))
-                .run()
-                .expectClean()
-    }
-
-    fun testReceiver_withNoExportedAttr() {
-        lint().files(
-                manifest(manifestWith(Component.RECEIVER)))
-                .run()
-                .checkContains("Error: Set android:exported attribute explicitly")
-    }
-
-    fun testReceiver_withExportedAttrTrue() {
-        lint().files(
-                manifest(manifestWith(Component.RECEIVER, true)))
-                .run()
-                .expectClean()
-    }
-
-    fun testReceiver_withExportedAttrFalse() {
-        lint().files(
-                manifest(manifestWith(Component.RECEIVER, false)))
-                .run()
-                .expectClean()
-    }
-
-    fun testService_withNoExportedAttr() {
-        lint().files(
-                manifest(manifestWith(Component.SERVICE)))
-                .run()
-                .checkContains("Error: Set android:exported attribute explicitly")
-    }
-
-    fun testService_withExportedAttrTrue() {
-        lint().files(
-                manifest(manifestWith(Component.SERVICE, true)))
-                .run()
-                .expectClean()
-    }
-
-    fun testService_withExportedAttrFalse() {
-        lint().files(
-                manifest(manifestWith(Component.SERVICE, false)))
-                .run()
-                .expectClean()
+    fun testComponents_withExportedAttrFalse_shouldSucceed() {
+        Component.values().forEach {
+            lint().files(
+                    manifest(manifestWith(it, false)))
+                    .run()
+                    .expectClean()
+        }
     }
 
     override fun getDetector(): Detector = ManifestElementHasNoExportedAttributeDetector()
