@@ -17,19 +17,19 @@ import com.google.firebase.gradle.plugins.measurement.coverage.GenerateMeasureme
 import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
 
 
-task generateMeasurements(type: GenerateMeasurementsTask) {
+task generateCoverageMeasurements(type: GenerateMeasurementsTask) {
     description 'Runs checkCoverage task in all projects and calculates coverage percents.'
-    group 'Coverage'
+    group 'Measurements'
 
     dependsOn rootProject.allprojects.collect { it.tasks.withType(JacocoReport) }.flatten()
     reportFile = file("$buildDir/coverage-report.json")
 }
 
-task uploadMeasurements(type: UploadMeasurementsTask) {
+task uploadCoverageMeasurements(type: UploadMeasurementsTask) {
     description 'Uploads coverage measurements to a database via the uploader tool.'
-    group 'Coverage'
+    group 'Measurements'
 
-    dependsOn generateMeasurements
+    dependsOn generateCoverageMeasurements
     reportFile = file("$buildDir/coverage-report.json")
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }
