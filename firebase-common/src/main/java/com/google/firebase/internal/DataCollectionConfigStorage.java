@@ -19,6 +19,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.support.annotation.VisibleForTesting;
+import android.support.v4.content.ContextCompat;
 import com.google.firebase.DataCollectionDefaultChange;
 import com.google.firebase.events.Event;
 import com.google.firebase.events.Publisher;
@@ -39,12 +40,19 @@ public class DataCollectionConfigStorage {
 
   public DataCollectionConfigStorage(
       Context applicationContext, String persistenceKey, Publisher publisher) {
-    this.applicationContext = applicationContext;
+    this.applicationContext = directBootSafe(applicationContext);
     this.sharedPreferences =
         applicationContext.getSharedPreferences(
             FIREBASE_APP_PREFS + persistenceKey, Context.MODE_PRIVATE);
     this.publisher = publisher;
     this.dataCollectionDefaultEnabled = new AtomicBoolean(readAutoDataCollectionEnabled());
+  }
+
+  private static Context directBootSafe(Context applicationContext) {
+    if (ContextCompat.isDeviceProtectedStorage(applicationContext)) {
+      return applicationContext;
+    }
+    return ContextCompat.createDeviceProtectedStorageContext(applicationContext);
   }
 
   public boolean isEnabled() {
