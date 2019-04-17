@@ -14,11 +14,14 @@
 
 package com.google.firebase.storage;
 
+import android.annotation.SuppressLint;
+
 import com.google.android.gms.common.internal.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 
 /** for test purposes only. */
+@SuppressLint("RestrictedApi")
 public class ControllableSchedulerHelper extends StorageTaskScheduler {
 
   final List<Runnable> pausedUploadRunnables = new ArrayList<>();
