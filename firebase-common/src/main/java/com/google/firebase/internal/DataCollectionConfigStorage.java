@@ -18,6 +18,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.support.annotation.VisibleForTesting;
 import android.support.v4.content.ContextCompat;
 import com.google.firebase.DataCollectionDefaultChange;
@@ -49,7 +50,8 @@ public class DataCollectionConfigStorage {
   }
 
   private static Context directBootSafe(Context applicationContext) {
-    if (ContextCompat.isDeviceProtectedStorage(applicationContext)) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N
+        || ContextCompat.isDeviceProtectedStorage(applicationContext)) {
       return applicationContext;
     }
     return ContextCompat.createDeviceProtectedStorageContext(applicationContext);
