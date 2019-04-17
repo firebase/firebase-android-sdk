@@ -131,6 +131,10 @@ configure(subprojects) {
             dependencies {
                 annotationProcessor project(':tools:errorprone')
             }
+        } else if (it.name == 'lintChecks' && project != project(':tools:lint')) {
+            dependencies {
+                lintChecks project(':tools:lint')
+            }
         }
     }
 }
