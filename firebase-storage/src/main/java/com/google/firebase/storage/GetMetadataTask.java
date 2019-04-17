@@ -25,7 +25,6 @@ import com.google.firebase.storage.network.NetworkRequest;
 import org.json.JSONException;
 
 /** A Task that retrieves metadata for a {@link StorageReference} object */
-@PublicApi
 class GetMetadataTask implements Runnable {
   private static final String TAG = "GetMetadataTask";
 

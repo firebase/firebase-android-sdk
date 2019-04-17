@@ -27,7 +27,6 @@ import com.google.firebase.storage.network.NetworkRequest;
 import org.json.JSONObject;
 
 /** A Task that retrieves the download URL for a {@link StorageReference} object */
-@PublicApi
 class GetDownloadUrlTask implements Runnable {
   private static final String TAG = "GetMetadataTask";
 
