@@ -12,27 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-buildscript {
-  repositories {
-    jcenter()
-    mavenLocal()
-    google()
-  }
-  dependencies {
-    classpath 'com.android.tools.build:gradle:3.2.1'
-    classpath 'com.google.gms:google-services:4.1.0'
-  }
-}
 
 apply plugin: "com.android.application"
-apply plugin: 'com.google.gms.google-services'
 
 android {
   compileSdkVersion project.targetSdkVersion
 
   defaultConfig {
     applicationId "com.example.flubber"
-    minSdkVersion project.minSdkVersion
+    minSdkVersion 16
     targetSdkVersion project.targetSdkVersion
     versionCode 1
     versionName "1.0"
