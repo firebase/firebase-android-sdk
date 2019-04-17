@@ -32,7 +32,10 @@ apply from: "src/functions/functions.gradle"
  *
  * @param -Ppull_request the pull request number to be included in the report
  */
-task generateMeasurements(type: GenerateMeasurementsTask) {
+task generateApkSizeMeasurements(type: GenerateMeasurementsTask) {
+    description 'Builds all supported variants and calculates APK sizes.'
+    group 'Measurements'
+
     sdkMapFile = file("sdks.csv")
     reportFile = file("$buildDir/size-report.json")
 }
@@ -43,8 +46,11 @@ task generateMeasurements(type: GenerateMeasurementsTask) {
  * @param -Pdatabase_config the file with the database configuration
  * @param -Ppull_request the pull request number to be included in the report
  */
-task uploadMeasurements(type: UploadMeasurementsTask) {
-    dependsOn generateMeasurements
+task uploadApkSizeMeasurements(type: UploadMeasurementsTask) {
+    description 'Uploads APK size measurements to a database via the uploader tool.'
+    group 'Measurements'
+
+    dependsOn generateApkSizeMeasurements
 
     reportFile = file("$buildDir/size-report.json")
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
