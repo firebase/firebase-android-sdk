@@ -21,8 +21,10 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentCallbacks2;
@@ -30,6 +32,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.UserManager;
 import android.support.annotation.NonNull;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
@@ -62,6 +65,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.stubbing.Answer;
 
 /** Unit tests for {@link com.google.firebase.FirebaseApp}. */
 // TODO(arondeak): uncomment lines when Firebase API targets are in integ.
@@ -78,7 +82,7 @@ public class FirebaseAppTest {
 
   @Rule public FirebaseAppRule firebaseAppRule = new FirebaseAppRule();
 
-  private final AtomicBoolean isDeviceProtectedStorage = new AtomicBoolean(false);
+  private final AtomicBoolean isUserUnlocked = new AtomicBoolean(true);
   private Context targetContext;
   private BackgroundDetector backgroundDetector;
   private LocalBroadcastManager localBroadcastManager;
@@ -396,7 +400,7 @@ public class FirebaseAppTest {
   public void testDirectBoot_shouldInitializeEagerComponentsOnDeviceUnlock() {
     Context mockContext = createForwardingMockContext();
 
-    isDeviceProtectedStorage.set(true);
+    isUserUnlocked.set(false);
     FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
 
     InitTracker tracker = firebaseApp.get(InitTracker.class);
@@ -409,7 +413,7 @@ public class FirebaseAppTest {
     assertThat(sdkVerifier.isAnalyticsInitialized()).isFalse();
 
     // User unlocks the device.
-    isDeviceProtectedStorage.set(false);
+    isUserUnlocked.set(true);
     Intent userUnlockBroadcast = new Intent(Intent.ACTION_USER_UNLOCKED);
     localBroadcastManager.sendBroadcastSync(userUnlockBroadcast);
 
@@ -454,11 +458,21 @@ public class FirebaseAppTest {
 
   /** Returns mock context that forwards calls to targetContext and localBroadcastManager. */
   private Context createForwardingMockContext() {
+    final UserManager spyUserManager = spy(targetContext.getSystemService(UserManager.class));
+    when(spyUserManager.isUserUnlocked())
+        .thenAnswer((Answer<Boolean>) invocation -> isUserUnlocked.get());
     final ContextWrapper applicationContextWrapper =
         new ContextWrapper(targetContext) {
           @Override
-          public boolean isDeviceProtectedStorage() {
-            return isDeviceProtectedStorage.get();
+          public Object getSystemService(String name) {
+            Object original = super.getSystemService(name);
+            if (original == null) {
+              return null;
+            }
+            if (original instanceof UserManager) {
+              return spyUserManager;
+            }
+            return original;
           }
 
           @Override
