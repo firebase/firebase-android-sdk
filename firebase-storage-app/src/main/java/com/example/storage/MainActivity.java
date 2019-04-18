@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.example.flubber;
+package com.example.storage;
 
 import android.Manifest;
 import android.app.Activity;
@@ -57,7 +57,7 @@ import java.io.IOException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-/** test app for flubber */
+/** test app for Firebase Storage */
 public class MainActivity extends AppCompatActivity {
   private static final String TAG = "MainActivity";
 

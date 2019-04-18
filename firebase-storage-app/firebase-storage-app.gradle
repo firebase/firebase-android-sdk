@@ -19,7 +19,7 @@ android {
   compileSdkVersion project.targetSdkVersion
 
   defaultConfig {
-    applicationId "com.example.flubber"
+    applicationId "com.example.storage"
     minSdkVersion 16
     targetSdkVersion project.targetSdkVersion
     versionCode 1
@@ -63,5 +63,5 @@ dependencies {
 // Copy from here down if you want to use the google-services plugin in your
 // androidTest integration tests.
 // ==========================================================================
-ext.packageName = "com.example.flubber"
+ext.packageName = "com.example.storage"
 apply from: '../gradle/googleServices.gradle'
