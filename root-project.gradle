@@ -26,7 +26,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.1'
+        classpath 'com.android.tools.build:gradle:3.4.0'
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.6'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6'
         classpath 'org.jsoup:jsoup:1.11.2'
