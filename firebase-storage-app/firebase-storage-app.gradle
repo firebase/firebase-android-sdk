@@ -14,6 +14,7 @@
 
 
 apply plugin: "com.android.application"
+apply plugin: 'com.google.gms.google-services'
 
 android {
   compileSdkVersion project.targetSdkVersion
@@ -45,11 +46,8 @@ android {
 dependencies {
   // We intentionally use an open ended version to pick up any SNAPSHOT
   // versions published to the root project' s build/ directory.
-  implementation 'com.google.firebase:firebase-storage:16+'
+  implementation 'com.google.firebase:firebase-storage:16.1.0'
   implementation 'com.google.firebase:firebase-auth:16+'
-  implementation('com.google.firebase:firebase-core:16+') {
-    exclude group: 'com.google.firebase', module: 'firebase-common'
-  }
 
   implementation "com.android.support:design:27.1.1"
   implementation "com.android.support:appcompat-v7:27.1.1"
