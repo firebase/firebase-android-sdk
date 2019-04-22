@@ -258,7 +258,7 @@ public class FirebaseApp {
       }
       FirebaseOptions firebaseOptions = FirebaseOptions.fromResource(context);
       if (firebaseOptions == null) {
-        Log.d(
+        Log.w(
             LOG_TAG,
             "Default FirebaseApp failed to initialize because no default "
                 + "options were found. This usually means that com.google.gms:google-services was "
