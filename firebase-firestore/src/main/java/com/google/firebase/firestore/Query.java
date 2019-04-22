@@ -916,7 +916,7 @@ public class Query {
   }
 
   @PublicApi
-  public List<OrderBy> getExplicitOrderBy() {
+  public List<OrderBy> getOrderBy() {
     return query.getExplicitOrderBy();
   }
 

@@ -71,13 +71,6 @@ public final class Bound {
     return builder.toString();
   }
 
-  public String getFieldValue() {
-    StringBuilder builder = new StringBuilder();
-    for (FieldValue indexComponent : position) {
-      builder.append(indexComponent.toString());
-    }
-    return builder.toString();
-  }
 
   /** Returns true if a document sorts before a bound using the provided sort order. */
   public boolean sortsBeforeDocument(List<OrderBy> orderBy, Document document) {

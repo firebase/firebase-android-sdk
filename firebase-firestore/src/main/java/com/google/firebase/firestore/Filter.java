@@ -39,16 +39,6 @@ public final class Filter {
     }
 
     @PublicApi
-    public boolean isNaNFilter() {
-        return filter instanceof NaNFilter;
-    }
-
-    @PublicApi
-    public boolean isNullFilter() {
-        return filter instanceof NullFilter;
-    }
-
-    @PublicApi
     public boolean isRelationFilter() {
         return filter instanceof RelationFilter;
     }
@@ -60,7 +50,7 @@ public final class Filter {
 
     @Nullable
     @PublicApi
-    public Operator getFieldOperator() {
+    public Operator getOperator() {
         if (isRelationFilter()) {
             return ((RelationFilter) filter).getOperator();
         } else {
@@ -71,10 +61,14 @@ public final class Filter {
     @Nullable
     @PublicApi
     public Object getFieldValue() {
-        if (isRelationFilter()) {
-            return ((RelationFilter) filter).getValue().value();
+        if (filter instanceof NaNFilter) {
+            return Double.NaN;
         } else {
-            return null;
+            if (isRelationFilter()) {
+                return ((RelationFilter) filter).getValue().value();
+            } else {
+                return null;
+            }
         }
     }
 
