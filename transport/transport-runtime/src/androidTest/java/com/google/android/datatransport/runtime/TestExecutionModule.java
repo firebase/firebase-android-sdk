@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.scheduling.jobscheduling;
+package com.google.android.datatransport.runtime;
 
-/** Used by the schedulers for some basic constants and utility methods. */
-final class SchedulerUtil {
+import dagger.Module;
+import dagger.Provides;
+import java.util.concurrent.Executor;
+import javax.inject.Singleton;
 
-  static final String ATTEMPT_NUMBER = "attemptNumber";
-
-  static final String BACKEND_NAME = "backendName";
-
-  static final String APPLICATION_BUNDLE_ID = "appBundleId";
-
-  private SchedulerUtil() {}
+@Module
+abstract class TestExecutionModule {
+  @Singleton
+  @Provides
+  static Executor executor() {
+    return Runnable::run;
+  }
 }

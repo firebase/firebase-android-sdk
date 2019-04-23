@@ -40,7 +40,9 @@ public class JobInfoSchedulerTest {
   private final EventStore store = new InMemoryEventStore();
   private final JobScheduler jobScheduler =
       (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-  private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, () -> 1);
+
+  private final SchedulerConfig config = new SchedulerConfig(30000, 100000000, -1);
+  private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, () -> 1, config);
 
   @Test
   public void schedule_longWaitTimeFirstAttempt() {

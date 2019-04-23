@@ -41,13 +41,15 @@ public class JobInfoScheduler implements WorkScheduler {
 
   private final Clock clock;
 
-  private final int DELTA = 30000; // 30 seconds delta
+  private final SchedulerConfig config;
 
   @Inject
-  public JobInfoScheduler(Context applicationContext, EventStore eventStore, Clock clock) {
+  public JobInfoScheduler(
+      Context applicationContext, EventStore eventStore, Clock clock, SchedulerConfig config) {
     this.context = applicationContext;
     this.eventStore = eventStore;
     this.clock = clock;
+    this.config = config;
   }
 
   @VisibleForTesting
@@ -69,7 +71,7 @@ public class JobInfoScheduler implements WorkScheduler {
   /**
    * Schedules the JobScheduler service.
    *
-   * @param backendName The backend to where the events are logged.
+   * @param transportContext Contains information about the backend and the priority.
    * @param attemptNumber Number of times the JobScheduler has tried to log for this backend.
    */
   @Override
@@ -87,13 +89,17 @@ public class JobInfoScheduler implements WorkScheduler {
     if (backendTime != null) {
       timeDiff = backendTime - clock.getTime();
     }
+    long latency = config.getScheduleDelay(timeDiff, attemptNumber);
     // Schedule the build.
     PersistableBundle bundle = new PersistableBundle();
     bundle.putInt(SchedulerUtil.ATTEMPT_NUMBER, attemptNumber);
     bundle.putString(SchedulerUtil.BACKEND_NAME, transportContext.getBackendName());
     JobInfo.Builder builder = new JobInfo.Builder(jobId, serviceComponent);
-    builder.setMinimumLatency(
-        SchedulerUtil.getScheduleDelay(timeDiff, DELTA, attemptNumber)); // wait at least
+    builder.setMinimumLatency(latency); // wait at least
+    if(config.getMaximumDelay() >= 0) {
+      builder.setOverrideDeadline(latency + config.getMaximumDelay());
+    }
+    builder.setOverrideDeadline(1500);
     builder.setExtras(bundle);
     builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
     jobScheduler.schedule(builder.build());

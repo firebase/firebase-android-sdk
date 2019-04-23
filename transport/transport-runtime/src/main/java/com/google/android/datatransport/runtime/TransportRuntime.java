@@ -16,6 +16,7 @@ package com.google.android.datatransport.runtime;
 
 import android.content.Context;
 import android.support.annotation.RestrictTo;
+import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
@@ -81,6 +82,12 @@ public class TransportRuntime implements TransportInternal {
       throw new IllegalStateException("Not initialized!");
     }
     return localRef.getTransportRuntime();
+  }
+
+  @VisibleForTesting
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  static void setInstance(TransportRuntimeComponent component) {
+    INSTANCE = component;
   }
 
   /** Returns a {@link TransportFactory} for a given {@code backendName}. */

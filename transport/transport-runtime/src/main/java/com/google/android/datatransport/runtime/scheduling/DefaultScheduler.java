@@ -77,7 +77,7 @@ public class DefaultScheduler implements Scheduler {
               LOCK_TIME_OUT,
               () -> {
                 eventStore.persist(transportContext, decoratedEvent);
-                workScheduler.schedule(transportContext, 0);
+                workScheduler.schedule(transportContext, 1);
                 return null;
               });
         });
