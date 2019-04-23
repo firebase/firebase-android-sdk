@@ -96,10 +96,9 @@ public class JobInfoScheduler implements WorkScheduler {
     bundle.putString(SchedulerUtil.BACKEND_NAME, transportContext.getBackendName());
     JobInfo.Builder builder = new JobInfo.Builder(jobId, serviceComponent);
     builder.setMinimumLatency(latency); // wait at least
-    if(config.getMaximumDelay() >= 0) {
+    if (config.getMaximumDelay() >= 0) {
       builder.setOverrideDeadline(latency + config.getMaximumDelay());
     }
-    builder.setOverrideDeadline(1500);
     builder.setExtras(bundle);
     builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
     jobScheduler.schedule(builder.build());

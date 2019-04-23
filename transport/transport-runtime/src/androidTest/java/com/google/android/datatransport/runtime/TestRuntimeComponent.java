@@ -34,7 +34,7 @@ import javax.inject.Singleton;
       SchedulingModule.class,
     })
 @Singleton
-interface TestRuntimeComponent extends TransportRuntimeComponent{
+interface TestRuntimeComponent extends TransportRuntimeComponent {
 
   TransportRuntime getTransportRuntime();
 

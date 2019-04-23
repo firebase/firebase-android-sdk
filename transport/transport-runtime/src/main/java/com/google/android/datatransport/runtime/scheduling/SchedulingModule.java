@@ -41,5 +41,4 @@ public abstract class SchedulingModule {
 
   @Binds
   abstract Scheduler scheduler(DefaultScheduler scheduler);
-  
 }

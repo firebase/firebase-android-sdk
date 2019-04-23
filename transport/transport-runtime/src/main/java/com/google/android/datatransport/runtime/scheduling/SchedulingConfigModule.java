@@ -15,15 +15,14 @@
 package com.google.android.datatransport.runtime.scheduling;
 
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig;
-import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 
 @Module
 public abstract class SchedulingConfigModule {
 
-    @Provides
-    static SchedulerConfig config() {
-        return new SchedulerConfig(30000, 100000000, -1);
-    }
+  @Provides
+  static SchedulerConfig config() {
+    return new SchedulerConfig(30000, 100000000, -1);
+  }
 }
