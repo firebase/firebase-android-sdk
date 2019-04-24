@@ -50,6 +50,14 @@ class SQLiteSchema {
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
+  /**
+   * The batch size for operations that potentially operate on a large result set.
+   *
+   * <p>This addresses https://github.com/firebase/firebase-android-sdk/issues/370, where a customer
+   * reported that schema migrations failed for clients with thousands of documents.
+   */
+  static final int REMOTE_DOCUMENTS_BATCH_SIZE = 100;
+
   private final SQLiteDatabase db;
 
   // PORTING NOTE: The Android client doesn't need to use a serializer to remove held write acks.
@@ -210,6 +218,10 @@ class SQLiteSchema {
           String uid = mutationQueueEntry.getString(0);
           long lastAcknowledgedBatchId = mutationQueueEntry.getLong(1);
 
+          // Unlike other migrations, removeAcknowledgedMutations() does not use batching. Since
+          // this query only returns acknowledged mutations that have not yet been committed to
+          // the `remote_documents` table, the total number of entries should fit within a single
+          // operation.
           SQLitePersistence.Query mutationsQuery =
               new SQLitePersistence.Query(
                       db, "SELECT batch_id FROM mutations WHERE uid = ? AND batch_id <= ?")
@@ -359,17 +371,30 @@ class SQLiteSchema {
     SQLiteStatement tagDocument =
         db.compileStatement(
             "INSERT INTO target_documents (target_id, path, sequence_number) VALUES (0, ?, ?)");
+
     SQLitePersistence.Query untaggedDocumentsQuery =
         new SQLitePersistence.Query(
-            db,
-            "SELECT RD.path FROM remote_documents AS RD WHERE NOT EXISTS (SELECT TD.path FROM target_documents AS TD WHERE RD.path = TD.path AND TD.target_id = 0)");
-    untaggedDocumentsQuery.forEach(
-        row -> {
-          tagDocument.clearBindings();
-          tagDocument.bindString(1, row.getString(0));
-          tagDocument.bindLong(2, sequenceNumber);
-          hardAssert(tagDocument.executeInsert() != -1, "Failed to insert a sentinel row");
-        });
+                db,
+                "SELECT RD.path FROM remote_documents AS RD WHERE NOT EXISTS ("
+                    + "SELECT TD.path FROM target_documents AS TD "
+                    + "WHERE RD.path = TD.path AND TD.target_id = 0"
+                    + ") LIMIT ?")
+            .binding(REMOTE_DOCUMENTS_BATCH_SIZE);
+
+    boolean[] resultsRemaining = new boolean[1];
+
+    do {
+      resultsRemaining[0] = false;
+
+      untaggedDocumentsQuery.forEach(
+          row -> {
+            resultsRemaining[0] = true;
+            tagDocument.clearBindings();
+            tagDocument.bindString(1, row.getString(0));
+            tagDocument.bindLong(2, sequenceNumber);
+            hardAssert(tagDocument.executeInsert() != -1, "Failed to insert a sentinel row");
+          });
+    } while (resultsRemaining[0]);
   }
 
   private void createV8CollectionParentsIndex() {
@@ -407,21 +432,46 @@ class SQLiteSchema {
 
     // Index existing remote documents.
     SQLitePersistence.Query remoteDocumentsQuery =
-        new SQLitePersistence.Query(db, "SELECT path FROM remote_documents");
-    remoteDocumentsQuery.forEach(
-        row -> {
-          ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
-          addEntry.accept(path.popLast());
-        });
+        new SQLitePersistence.Query(db, "SELECT path FROM remote_documents LIMIT ? OFFSET ?");
+
+    boolean[] resultsRemaining = new boolean[1];
+    int batchesExecuted = 0;
+    do {
+      resultsRemaining[0] = false;
+
+      SQLitePersistence.Query query =
+          remoteDocumentsQuery.binding(
+              REMOTE_DOCUMENTS_BATCH_SIZE, REMOTE_DOCUMENTS_BATCH_SIZE * batchesExecuted);
+      query.forEach(
+          row -> {
+            resultsRemaining[0] = true;
+            ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+            addEntry.accept(path.popLast());
+          });
+
+      ++batchesExecuted;
+    } while (resultsRemaining[0]);
 
     // Index existing mutations.
     SQLitePersistence.Query documentMutationsQuery =
-        new SQLitePersistence.Query(db, "SELECT path FROM document_mutations");
-    documentMutationsQuery.forEach(
-        row -> {
-          ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
-          addEntry.accept(path.popLast());
-        });
+        new SQLitePersistence.Query(db, "SELECT path FROM document_mutations LIMIT ? OFFSET ?");
+
+    batchesExecuted = 0;
+    do {
+      resultsRemaining[0] = false;
+
+      SQLitePersistence.Query query =
+          documentMutationsQuery.binding(
+              REMOTE_DOCUMENTS_BATCH_SIZE, REMOTE_DOCUMENTS_BATCH_SIZE * batchesExecuted);
+      query.forEach(
+          row -> {
+            resultsRemaining[0] = true;
+            ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+            addEntry.accept(path.popLast());
+          });
+
+      ++batchesExecuted;
+    } while (resultsRemaining[0]);
   }
 
   private boolean tableContainsColumn(String table, String column) {
