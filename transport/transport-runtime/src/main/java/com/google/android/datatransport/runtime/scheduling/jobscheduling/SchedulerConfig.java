@@ -14,29 +14,36 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
-import javax.inject.Inject;
+import com.google.auto.value.AutoValue;
 
-public class SchedulerConfig {
+@AutoValue
+public abstract class SchedulerConfig {
 
-  private long delta;
-  private long maxAllowedTime;
-  private long maximumDelay;
+  abstract long getDelta();
 
-  @Inject
-  public SchedulerConfig(long delta, long maxAllowedTime, long maximumDelay) {
-    this.delta = delta;
-    this.maxAllowedTime = maxAllowedTime;
-    this.maximumDelay = maximumDelay;
+  abstract long getMaxAllowedTime();
+
+  abstract long getMaximumDelay();
+
+  public static SchedulerConfig.Builder builder() {
+    return new AutoValue_SchedulerConfig.Builder();
   }
 
-  public long getMaximumDelay() {
-    return maximumDelay;
+  @AutoValue.Builder
+  public abstract static class Builder {
+    public abstract SchedulerConfig.Builder setDelta(long value);
+
+    public abstract SchedulerConfig.Builder setMaxAllowedTime(long value);
+
+    public abstract SchedulerConfig.Builder setMaximumDelay(long value);
+
+    public abstract SchedulerConfig build();
   }
 
   public long getScheduleDelay(long backendTimeDiff, int attemptNumber) {
     if (attemptNumber > 11) {
-      return maxAllowedTime;
+      return getMaxAllowedTime();
     }
-    return Math.max(((long) Math.pow(2, attemptNumber)) * delta, backendTimeDiff);
+    return Math.max(((long) Math.pow(2, attemptNumber)) * getDelta(), backendTimeDiff);
   }
 }

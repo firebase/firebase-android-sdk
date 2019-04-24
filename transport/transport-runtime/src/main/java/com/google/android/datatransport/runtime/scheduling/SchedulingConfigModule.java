@@ -23,6 +23,10 @@ public abstract class SchedulingConfigModule {
 
   @Provides
   static SchedulerConfig config() {
-    return new SchedulerConfig(30000, 100000000, -1);
+    return SchedulerConfig.builder()
+        .setDelta(30000)
+        .setMaxAllowedTime(100000000)
+        .setMaximumDelay(-1)
+        .build();
   }
 }

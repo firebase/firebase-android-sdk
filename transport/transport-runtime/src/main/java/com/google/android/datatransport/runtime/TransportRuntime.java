@@ -86,8 +86,19 @@ public class TransportRuntime implements TransportInternal {
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  static void setInstance(TransportRuntimeComponent component) {
-    INSTANCE = component;
+  static void withInstance(TransportRuntimeComponent component, Runnable runnable) {
+    TransportRuntimeComponent original;
+    synchronized (TransportRuntime.class) {
+      original = INSTANCE;
+      INSTANCE = component;
+    }
+    try {
+      runnable.run();
+    } finally {
+      synchronized (TransportRuntime.class) {
+        INSTANCE = original;
+      }
+    }
   }
 
   /** Returns a {@link TransportFactory} for a given {@code backendName}. */
