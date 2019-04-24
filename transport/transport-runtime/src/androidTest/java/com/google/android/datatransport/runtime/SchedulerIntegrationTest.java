@@ -32,8 +32,8 @@ import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
-import java.nio.charset.Charset;
-import java.util.Random;
+import java.util.UUID;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -94,13 +94,11 @@ public class SchedulerIntegrationTest {
   }
 
   private String generateBackendName() {
-    byte[] array = new byte[8]; // length is bounded by 8
-    new Random().nextBytes(array);
-    return new String(array, Charset.forName("UTF-8"));
+    return  UUID.randomUUID().toString().replace("-", "");
   }
 
   @Test
-  public void scheduler_whenEventScheduledForFirstTime_shouldUploadEventWithinExpectedTime() {
+  public void scheduler_whenEventScheduledForFirstTime_shouldUpload() {
 
     String mockBackendName = generateBackendName();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
@@ -122,7 +120,7 @@ public class SchedulerIntegrationTest {
   }
 
   @Test
-  public void scheduler_whenEventsScheduledWithSametBackend_shouldUploadOnce() {
+  public void scheduler_whenEventsScheduledWithSameBackend_shouldUploadOnce() {
     String mockBackendName = generateBackendName();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     TransportFactory factory = runtime.newFactory(mockBackendName);
