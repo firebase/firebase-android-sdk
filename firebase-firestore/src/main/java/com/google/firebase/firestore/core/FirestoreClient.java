@@ -137,7 +137,9 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   /** Shuts down this client, cancels all writes / listeners, and releases all resources. */
   public Task<Void> shutdown() {
-    this.verifyNotShutdown();
+    if (this.isShutdown) {
+      return Tasks.forResult(null);
+    }
     credentialsProvider.removeChangeListener();
     return asyncQueue.enqueue(
         () -> {
@@ -269,7 +271,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   private void verifyNotShutdown() {
     if (this.isShutdown) {
-      throw new IllegalArgumentException("The client has already ben shutdown");
+      throw new IllegalArgumentException("The client has already been shutdown");
     }
   }
 

@@ -953,4 +953,16 @@ public class FirestoreTest {
     waitFor(firestore.disableNetwork());
     waitFor(firestore.enableNetwork());
   }
+
+  @Test
+  public void testClientCallsAfterShutdown() {
+    FirebaseFirestore firestore = testFirestore();
+    waitFor(firestore.shutdown());
+    try {
+      waitFor(firestore.disableNetwork());
+      fail("Should have thrown exception");
+    } catch (IllegalArgumentException e) {
+      assertEquals(e.getMessage(), "The client has already been shutdown");
+    }
+  }
 }

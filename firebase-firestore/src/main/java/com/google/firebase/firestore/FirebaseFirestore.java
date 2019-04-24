@@ -333,6 +333,8 @@ public class FirebaseFirestore {
 
   @VisibleForTesting
   Task<Void> shutdown() {
+    // The client must be initialized to ensure that all subsequent API usage throws an exception.
+    this.ensureClientConfigured();
     if (client == null) {
       return Tasks.forResult(null);
     } else {
