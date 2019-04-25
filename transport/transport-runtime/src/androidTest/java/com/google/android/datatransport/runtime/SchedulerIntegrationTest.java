@@ -15,14 +15,16 @@
 package com.google.android.datatransport.runtime;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.os.SystemClock;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 import com.google.android.datatransport.Event;
@@ -32,6 +34,7 @@ import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
+import com.google.android.datatransport.runtime.scheduling.locking.Locker;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Rule;
@@ -50,6 +53,7 @@ public class SchedulerIntegrationTest {
   private final BackendRegistry mockRegistry = mock(BackendRegistry.class);
   private final Context context = InstrumentationRegistry.getInstrumentation().getContext();
   private final Uploader mockUploader = mock(Uploader.class);
+  private final Locker<Boolean> locker = new Locker<>();
 
   @Rule
   public final TransportRuntimeRule runtimeRule =
@@ -88,6 +92,14 @@ public class SchedulerIntegrationTest {
                         .toBuilder()
                         .addMetadata(TEST_KEY, TEST_VALUE)
                         .build());
+    doAnswer(
+            (Answer<Void>)
+                i -> {
+                  locker.setResult(true);
+                  return null;
+                })
+        .when(mockUploader)
+        .upload(anyString(), anyInt(), any());
   }
 
   private String generateBackendName() {
@@ -112,7 +124,7 @@ public class SchedulerIntegrationTest {
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
-    SystemClock.sleep(5000);
+    locker.await();
     verify(mockUploader, times(1)).upload(eq(mockBackendName), eq(1), any());
   }
 
@@ -144,7 +156,7 @@ public class SchedulerIntegrationTest {
     transport.send(stringEvent2);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
     verify(mockBackend, times(1)).decorate(eq(expectedEvent2));
-    SystemClock.sleep(5000);
+    locker.await();
     verify(mockUploader, times(1)).upload(eq(mockBackendName), eq(1), any());
   }
 
@@ -173,7 +185,8 @@ public class SchedulerIntegrationTest {
     transport2.send(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
     verify(mockBackend2, times(1)).decorate(eq(expectedEvent));
-    SystemClock.sleep(5000);
+    locker.await();
+    locker.await();
     verify(mockUploader, times(1)).upload(eq(firstBackendName), eq(1), any());
     verify(mockUploader, times(1)).upload(eq(secondBackendName), eq(1), any());
   }

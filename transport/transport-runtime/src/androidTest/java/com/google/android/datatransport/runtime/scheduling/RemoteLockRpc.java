@@ -16,6 +16,7 @@ package com.google.android.datatransport.runtime.scheduling;
 
 import android.os.Process;
 import com.google.android.datatransport.runtime.ITestRemoteLockRpc;
+import com.google.android.datatransport.runtime.scheduling.locking.Locker;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.util.concurrent.Executor;
