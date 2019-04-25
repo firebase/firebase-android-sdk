@@ -45,7 +45,7 @@ public class UploaderTest {
   private static final SynchronizationGuard guard =
       new SynchronizationGuard() {
         @Override
-        public <T> T runCriticalSection(long lockTimeoutMs, CriticalSection<T> criticalSection) {
+        public <T> T runCriticalSection(CriticalSection<T> criticalSection) {
           return criticalSection.execute();
         }
       };
