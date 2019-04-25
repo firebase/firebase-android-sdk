@@ -35,13 +35,12 @@ class RemoteLockRpc extends ITestRemoteLockRpc.Stub {
   }
 
   @Override
-  public boolean tryAcquireLock(long lockTimeoutMs) {
+  public boolean tryAcquireLock() {
     Locker<Boolean> sectionEnteredLocker = new Locker<>();
     executor.execute(
         () -> {
           try {
             guard.runCriticalSection(
-                lockTimeoutMs,
                 () -> {
                   sectionEnteredLocker.setResult(true);
                   acquireReleaseLocker.await();

@@ -19,14 +19,11 @@ import static org.junit.Assert.fail;
 
 import android.app.Service;
 import android.content.Intent;
-import android.os.IBinder;
 import android.os.RemoteException;
-import android.os.SystemClock;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ServiceTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import com.google.android.datatransport.runtime.ITestRemoteLockRpc;
-import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
 import java.util.concurrent.TimeoutException;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,7 +89,7 @@ public class MultiProcessSynchronizationGuardTest {
 
   private static void lockAndRunOrFail(ITestRemoteLockRpc rpc, ThrowingRunnable runnable)
       throws RemoteException {
-    assertThat(rpc.tryAcquireLock(0)).isTrue();
+    assertThat(rpc.tryAcquireLock()).isTrue();
     try {
       runnable.run();
     } finally {
@@ -101,7 +98,7 @@ public class MultiProcessSynchronizationGuardTest {
   }
 
   private static void assertCanLock(ITestRemoteLockRpc rpc, boolean can) throws RemoteException {
-    boolean locked = rpc.tryAcquireLock(0);
+    boolean locked = rpc.tryAcquireLock();
 
     try {
       if (locked) {
@@ -123,38 +120,6 @@ public class MultiProcessSynchronizationGuardTest {
     ITestRemoteLockRpc rpc =
         ITestRemoteLockRpc.Stub.asInterface(
             rule.bindService(new Intent(InstrumentationRegistry.getTargetContext(), serviceClass)));
-    return new WaitingRpc(rpc);
-  }
-
-  static class WaitingRpc implements ITestRemoteLockRpc {
-    private final ITestRemoteLockRpc delegate;
-
-    WaitingRpc(ITestRemoteLockRpc delegate) {
-      this.delegate = delegate;
-    }
-
-    @Override
-    public boolean tryAcquireLock(long timeout) throws RemoteException {
-      boolean result = delegate.tryAcquireLock(timeout);
-      if (!result) {
-        SystemClock.sleep(SQLiteEventStore.LOCK_RETRY_BACK_OFF_MILLIS * 2);
-      }
-      return result;
-    }
-
-    @Override
-    public void releaseLock() throws RemoteException {
-      delegate.releaseLock();
-    }
-
-    @Override
-    public long getPid() throws RemoteException {
-      return delegate.getPid();
-    }
-
-    @Override
-    public IBinder asBinder() {
-      return delegate.asBinder();
-    }
+    return rpc;
   }
 }
