@@ -13,6 +13,7 @@
 // limitations under the License.
 
 apply plugin: 'com.android.library'
+apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 android {
     adbOptions {
@@ -72,20 +73,9 @@ dependencies {
     testImplementation 'com.android.support.test:rules:1.0.2'
 }
 
-task startFunctionsEmulator(type: Exec) {
-    workingDir "$projectDir/src/androidTest/test"
-    commandLine 'bash', './start.sh'
-}
-
-task stopFunctionsEmulator(type: Exec) {
-    commandLine 'killall', 'node'
-}
-
-// This is neccesary because the connectedAndroidTest task doesn't exist yet. It is added later
-// by the android plugin.
-tasks.all { Task t ->
-    if (t.name == 'connectedAndroidTest' || t.name == 'connectedReleaseAndroidTest') {
-        t.dependsOn(startFunctionsEmulator)
-        t.finalizedBy(stopFunctionsEmulator)
-    }
-}
+// ==========================================================================
+// Copy from here down if you want to use the google-services plugin in your
+// androidTest integration tests.
+// ==========================================================================
+ext.packageName = "com.google.firebase.functions"
+apply from: '../gradle/googleServices.gradle'

@@ -38,7 +38,6 @@ public class DefaultScheduler implements Scheduler {
   private final BackendRegistry backendRegistry;
   private final EventStore eventStore;
   private final SynchronizationGuard guard;
-  private final int LOCK_TIME_OUT = 10000; // 10 seconds lock timeout
 
   @Inject
   DefaultScheduler(
@@ -74,7 +73,6 @@ public class DefaultScheduler implements Scheduler {
           }
           EventInternal decoratedEvent = transportBackend.decorate(event);
           guard.runCriticalSection(
-              LOCK_TIME_OUT,
               () -> {
                 eventStore.persist(transportContext, decoratedEvent);
                 workScheduler.schedule(transportContext, 1);

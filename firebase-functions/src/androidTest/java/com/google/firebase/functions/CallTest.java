@@ -25,7 +25,6 @@ import android.support.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,23 +41,13 @@ public class CallTest {
 
   @BeforeClass
   public static void setUp() {
-    FirebaseOptions options =
-        new FirebaseOptions.Builder()
-            .setApplicationId("app-id")
-            .setProjectId("functions-integration-test")
-            .build();
-    FirebaseApp.initializeApp(InstrumentationRegistry.getContext(), options);
+    FirebaseApp.initializeApp(InstrumentationRegistry.getContext());
     app = FirebaseApp.getInstance();
-  }
-
-  private void useTestURL(FirebaseFunctions functions) {
-    functions.useFunctionsEmulator("http://10.0.2.2:5005");
   }
 
   @Test
   public void testData() throws InterruptedException, ExecutionException {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
-    useTestURL(functions);
 
     Map<String, Object> params = new HashMap<>();
     params.put("bool", true);
@@ -82,7 +71,6 @@ public class CallTest {
   @Test
   public void testScalars() throws InterruptedException, ExecutionException {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
-    useTestURL(functions);
 
     HttpsCallableReference function = functions.getHttpsCallable("scalarTest");
     Task<HttpsCallableResult> result = function.call(17);
@@ -97,16 +85,12 @@ public class CallTest {
     FirebaseFunctions functions =
         new FirebaseFunctions(
             app.getApplicationContext(),
-            "functions-integration-test",
+            app.getOptions().getProjectId(),
             "us-central1",
-            new ContextProvider() {
-              @Override
-              public Task<HttpsCallableContext> getContext() {
-                HttpsCallableContext context = new HttpsCallableContext("token", null);
-                return Tasks.forResult(context);
-              }
+            () -> {
+              HttpsCallableContext context = new HttpsCallableContext("token", null);
+              return Tasks.forResult(context);
             });
-    useTestURL(functions);
 
     HttpsCallableReference function = functions.getHttpsCallable("tokenTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
@@ -121,16 +105,12 @@ public class CallTest {
     FirebaseFunctions functions =
         new FirebaseFunctions(
             app.getApplicationContext(),
-            "functions-integration-test",
+            app.getOptions().getProjectId(),
             "us-central1",
-            new ContextProvider() {
-              @Override
-              public Task<HttpsCallableContext> getContext() {
-                HttpsCallableContext context = new HttpsCallableContext(null, "iid");
-                return Tasks.forResult(context);
-              }
+            () -> {
+              HttpsCallableContext context = new HttpsCallableContext(null, "iid");
+              return Tasks.forResult(context);
             });
-    useTestURL(functions);
 
     HttpsCallableReference function = functions.getHttpsCallable("instanceIdTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
@@ -142,7 +122,6 @@ public class CallTest {
   @Test
   public void testNull() throws InterruptedException, ExecutionException {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
-    useTestURL(functions);
 
     HttpsCallableReference function = functions.getHttpsCallable("nullTest");
     Task<HttpsCallableResult> result = function.call(null);
@@ -156,9 +135,8 @@ public class CallTest {
   }
 
   @Test
-  public void testMissingResult() throws InterruptedException, ExecutionException {
+  public void testMissingResult() {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
-    useTestURL(functions);
 
     HttpsCallableReference function = functions.getHttpsCallable("missingResultTest");
     Task<HttpsCallableResult> result = function.call(null);
@@ -172,9 +150,8 @@ public class CallTest {
   }
 
   @Test
-  public void testUnhandledError() throws InterruptedException, ExecutionException {
+  public void testUnhandledError() {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
-    useTestURL(functions);
 
     HttpsCallableReference function = functions.getHttpsCallable("unhandledErrorTest");
     Task<HttpsCallableResult> result = function.call();
@@ -188,9 +165,8 @@ public class CallTest {
   }
 
   @Test
-  public void testUnknownError() throws InterruptedException, ExecutionException {
+  public void testUnknownError() {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
-    useTestURL(functions);
 
     HttpsCallableReference function = functions.getHttpsCallable("unknownErrorTest");
     Task<HttpsCallableResult> result = function.call();
@@ -204,9 +180,8 @@ public class CallTest {
   }
 
   @Test
-  public void testExplicitError() throws InterruptedException, ExecutionException {
+  public void testExplicitError() {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
-    useTestURL(functions);
 
     HttpsCallableReference function = functions.getHttpsCallable("explicitErrorTest");
     Task<HttpsCallableResult> result = function.call();
@@ -225,9 +200,8 @@ public class CallTest {
   }
 
   @Test
-  public void testHttpError() throws InterruptedException, ExecutionException {
+  public void testHttpError() {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
-    useTestURL(functions);
 
     HttpsCallableReference function = functions.getHttpsCallable("httpErrorTest");
     Task<HttpsCallableResult> result = function.call();
@@ -241,9 +215,8 @@ public class CallTest {
   }
 
   @Test
-  public void testTimeout() throws InterruptedException, ExecutionException {
+  public void testTimeout() {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
-    useTestURL(functions);
 
     HttpsCallableReference function =
         functions.getHttpsCallable("timeoutTest").withTimeout(10, TimeUnit.MILLISECONDS);

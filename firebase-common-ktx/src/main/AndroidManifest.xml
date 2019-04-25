@@ -4,7 +4,7 @@
     <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
     <!--<uses-sdk android:minSdkVersion="14"/>-->
     <application>
-        <service android:name="com.google.firebase.components.ComponentDiscoveryService">
+        <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
             <meta-data android:name="com.google.firebase.components:com.google.firebase.ktx.FirebaseCommonKtxRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>

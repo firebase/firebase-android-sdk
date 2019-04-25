@@ -15,19 +15,20 @@
 package com.google.android.datatransport.runtime;
 
 import android.content.Context;
-import com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule;
+import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
+import com.google.android.datatransport.runtime.scheduling.persistence.TestEventStoreModule;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.TimeModule;
 import dagger.BindsInstance;
 import dagger.Component;
 import javax.inject.Singleton;
 
-@Component(modules = {EventStoreModule.class, TimeModule.class})
+@Component(modules = {TestEventStoreModule.class, TimeModule.class})
 @Singleton
 public abstract class SynchronizationComponent {
-  private static SynchronizationGuard INSTANCE;
+  private static SQLiteEventStore INSTANCE;
 
-  abstract SynchronizationGuard getGuard();
+  abstract SQLiteEventStore getGuard();
 
   public static SynchronizationGuard getGuard(Context applicationContext) {
     synchronized (SynchronizationComponent.class) {
@@ -35,6 +36,15 @@ public abstract class SynchronizationComponent {
         INSTANCE = DaggerSynchronizationComponent.factory().create(applicationContext).getGuard();
       }
       return INSTANCE;
+    }
+  }
+
+  public static void shutdown() {
+    synchronized (SynchronizationComponent.class) {
+      if (INSTANCE == null) {
+        return;
+      }
+      INSTANCE.close();
     }
   }
 

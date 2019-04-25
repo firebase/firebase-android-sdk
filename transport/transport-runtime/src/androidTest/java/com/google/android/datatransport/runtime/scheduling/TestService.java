@@ -31,6 +31,12 @@ public abstract class TestService extends Service {
         DaggerSynchronizationComponent.getGuard(getApplicationContext()));
   }
 
+  @Override
+  public boolean onUnbind(Intent intent) {
+    DaggerSynchronizationComponent.shutdown();
+    return false;
+  }
+
   /** Service instance that runs in the main process of the Android application. */
   public static class Local extends TestService {}
 

@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.scheduling.persistence;
+plugins {
+  id 'org.jetbrains.kotlin.jvm'
+}
 
-import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
-import dagger.Binds;
-import dagger.Module;
-import dagger.Provides;
+def lintVersion = '26.3.2'
 
-@Module
-public abstract class EventStoreModule {
-  @Provides
-  static EventStoreConfig storeConfig() {
-    return EventStoreConfig.DEFAULT;
+dependencies {
+  compileOnly "com.android.tools.lint:lint-api:$lintVersion"
+  compileOnly "com.android.tools.lint:lint-checks:$lintVersion"
+
+  testImplementation "junit:junit:4.12"
+  testImplementation "com.android.tools.lint:lint:$lintVersion"
+  testImplementation "com.android.tools.lint:lint-tests:$lintVersion"
+  testImplementation "com.android.tools:testutils:$lintVersion"
+}
+
+jar {
+  manifest {
+    attributes('Lint-Registry-v2': 'com.google.firebase.lint.checks.CheckRegistry')
   }
-
-  @Binds
-  abstract EventStore eventStore(SQLiteEventStore store);
-
-  @Binds
-  abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
 }

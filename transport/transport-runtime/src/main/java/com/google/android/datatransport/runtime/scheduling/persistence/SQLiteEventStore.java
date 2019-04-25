@@ -25,7 +25,6 @@ import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.annotation.WorkerThread;
-import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
@@ -50,14 +49,11 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   static final int MAX_RETRIES = 10;
 
-  private static final Priority[] ALL_PRIORITIES = Priority.values();
-
-  @VisibleForTesting public static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
+  private static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
 
   private final OpenHelper openHelper;
   private final Clock monotonicClock;
   private final EventStoreConfig config;
-  private SQLiteDatabase db;
 
   @Inject
   SQLiteEventStore(Context applicationContext, @Monotonic Clock clock, EventStoreConfig config) {
@@ -68,16 +64,11 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   private SQLiteDatabase getDb() {
-    if (db == null) {
-      db =
-          retryIfDbLocked(
-              1000,
-              openHelper::getWritableDatabase,
-              ex -> {
-                throw new SynchronizationException("Timed out while trying to open db.", ex);
-              });
-    }
-    return db;
+    return retryIfDbLocked(
+        openHelper::getWritableDatabase,
+        ex -> {
+          throw new SynchronizationException("Timed out while trying to open db.", ex);
+        });
   }
 
   @Override
@@ -261,6 +252,11 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         });
   }
 
+  @Override
+  public void close() {
+    openHelper.close();
+  }
+
   /** Loads all events for a backend. */
   private List<PersistedEvent> loadEvents(SQLiteDatabase db, TransportContext transportContext) {
     List<PersistedEvent> events = new ArrayList<>();
@@ -348,14 +344,13 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     return events;
   }
 
-  private <T> T retryIfDbLocked(
-      long lockTimeoutMs, Producer<T> retriable, Function<Throwable, T> failureHandler) {
+  private <T> T retryIfDbLocked(Producer<T> retriable, Function<Throwable, T> failureHandler) {
     long startTime = monotonicClock.getTime();
     do {
       try {
         return retriable.produce();
       } catch (SQLiteDatabaseLockedException ex) {
-        if (monotonicClock.getTime() >= startTime + lockTimeoutMs) {
+        if (monotonicClock.getTime() >= startTime + config.getCriticalSectionEnterTimeoutMs()) {
           return failureHandler.apply(ex);
         }
         SystemClock.sleep(LOCK_RETRY_BACK_OFF_MILLIS);
@@ -372,9 +367,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   /** Tries to start a transaction until it succeeds or times out. */
-  private void ensureBeginTransaction(SQLiteDatabase db, long lockTimeoutMs) {
+  private void ensureBeginTransaction(SQLiteDatabase db) {
     retryIfDbLocked(
-        lockTimeoutMs,
         () -> {
           db.beginTransaction();
           return null;
@@ -385,9 +379,9 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   @Override
-  public <T> T runCriticalSection(long lockTimeoutMs, CriticalSection<T> criticalSection) {
+  public <T> T runCriticalSection(CriticalSection<T> criticalSection) {
     SQLiteDatabase db = getDb();
-    ensureBeginTransaction(db, lockTimeoutMs);
+    ensureBeginTransaction(db);
     try {
       T result = criticalSection.execute();
       db.setTransactionSuccessful();
@@ -419,15 +413,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     }
   }
 
-  private static Priority toPriority(int value) {
-    if (value < 0 || value >= ALL_PRIORITIES.length) {
-      return Priority.DEFAULT;
-    }
-    return ALL_PRIORITIES[value];
-  }
-
-  @VisibleForTesting
-  boolean isStorageAtLimit() {
+  private boolean isStorageAtLimit() {
     long byteSize = getPageCount() * getPageSize();
 
     return byteSize >= config.getMaxStorageSizeInBytes();
