@@ -76,7 +76,7 @@ public class StorageReferenceTest {
   @Test
   public void defaultInitTest() throws Exception {
     StorageReference ref = FirebaseStorage.getInstance().getReference();
-    Assert.assertEquals("gs://project-5516366556574091405.appspot.com/", ref.toString());
+    Assert.assertEquals("gs://fooey.appspot.com/", ref.toString());
   }
 
   @Test
@@ -88,18 +88,13 @@ public class StorageReferenceTest {
   @Test
   public void allStorageObjectsAreEqual() throws Exception {
     FirebaseStorage original = FirebaseStorage.getInstance();
-    FirebaseStorage copy =
-        FirebaseStorage.getInstance("gs://project-5516366556574091405.appspot.com/");
+    FirebaseStorage copy = FirebaseStorage.getInstance("gs://fooey.appspot.com/");
     Assert.assertSame(copy, original); // Pointer comparison intended
-    copy = FirebaseStorage.getInstance("gs://project-5516366556574091405.appspot.com");
+    copy = FirebaseStorage.getInstance("gs://fooey.appspot.com");
     Assert.assertSame(copy, original);
-    copy =
-        FirebaseStorage.getInstance(
-            FirebaseApp.getInstance(), "gs://project-5516366556574091405.appspot.com/");
+    copy = FirebaseStorage.getInstance(FirebaseApp.getInstance(), "gs://fooey.appspot.com/");
     Assert.assertSame(copy, original);
-    Assert.assertEquals(
-        "gs://project-5516366556574091405.appspot.com/",
-        copy.getReference().getStorageUri().toString());
+    Assert.assertEquals("gs://fooey.appspot.com/", copy.getReference().getStorageUri().toString());
   }
 
   @Test
@@ -116,7 +111,7 @@ public class StorageReferenceTest {
   @Test
   public void initWithPathTest() throws Exception {
     try {
-      FirebaseStorage.getInstance("gs://project-5516366556574091405.appspot.com/foo");
+      FirebaseStorage.getInstance("gs://fooey.appspot.com/foo");
       Assert.fail("Expected exception");
     } catch (IllegalArgumentException e) {
       Assert.assertEquals("The storage Uri cannot contain a path element.", e.getMessage());
@@ -139,14 +134,13 @@ public class StorageReferenceTest {
     StorageReference defaultRef = FirebaseStorage.getInstance().getReference();
     StorageReference customRef =
         FirebaseStorage.getInstance("gs://foo-bar.appspot.com/").getReference();
-    Assert.assertEquals("gs://project-5516366556574091405.appspot.com/", defaultRef.toString());
+    Assert.assertEquals("gs://fooey.appspot.com/", defaultRef.toString());
     Assert.assertEquals("gs://foo-bar.appspot.com/", customRef.toString());
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void badInitTest() throws Exception {
-    FirebaseStorage.getInstance()
-        .getReference("gs://project-5516366556574091405.appspot.com/child");
+    FirebaseStorage.getInstance().getReference("gs://fooey.appspot.com/child");
   }
 
   @Test
@@ -161,15 +155,15 @@ public class StorageReferenceTest {
         FirebaseApp.initializeApp(
             RuntimeEnvironment.application.getApplicationContext(),
             new FirebaseOptions.Builder()
-                .setApiKey("AIzaSyCkEhVjf3pduRDt6d1yKOMitrUEke8agEM")
+                .setApiKey("fooey")
                 .setApplicationId("fooey")
-                .setStorageBucket("benwu-test2.storage.firebase.com")
+                .setStorageBucket("fooey.storage.firebase.com")
                 .build(),
             "app2");
 
     StorageReference ref =
         FirebaseStorage.getInstance(app2)
-            .getReferenceFromUrl("gs://benwu-test2.storage.firebase.com/child");
+            .getReferenceFromUrl("gs://fooey.storage.firebase.com/child");
 
     Assert.assertEquals("child", ref.getName());
   }
@@ -188,26 +182,24 @@ public class StorageReferenceTest {
   @Test
   public void urlUriEquivalence() throws Exception {
     StorageReference ref =
-        FirebaseStorage.getInstance()
-            .getReferenceFromUrl("gs://project-5516366556574091405.appspot.com/child/image.png");
+        FirebaseStorage.getInstance().getReferenceFromUrl("gs://fooey.appspot.com/child/image.png");
     StorageReference ref2 =
         FirebaseStorage.getInstance()
             .getReferenceFromUrl(
-                "https://firebasestorage.googleapis.com/v0/b/project-"
-                    + "5516366556574091405.appspot.com/o/child%2Fimage.png?alt=media&"
+                "https://firebasestorage.googleapis.com/v0/b/"
+                    + "fooey.appspot.com/o/child%2Fimage.png?alt=media&"
                     + "token=42a1b22e-5e56-4337-bd61-f177233b40bc");
 
     Assert.assertEquals(ref, ref2);
     Assert.assertEquals("/child/image.png", ref.getPath());
-    Assert.assertEquals("project-5516366556574091405.appspot.com", ref.getBucket());
+    Assert.assertEquals("fooey.appspot.com", ref.getBucket());
   }
 
   @Test
   public void badGSUriScheme() throws Exception {
     boolean thrown = false;
     try {
-      FirebaseStorage.getInstance()
-          .getReferenceFromUrl("gs2://project-5516366556574091405.appspot.com/child/image.png");
+      FirebaseStorage.getInstance().getReferenceFromUrl("gs2://fooey.appspot.com/child/image.png");
     } catch (IllegalArgumentException e) {
       thrown = true;
     }
@@ -244,7 +236,7 @@ public class StorageReferenceTest {
     try {
       FirebaseStorage.getInstance()
           .getReferenceFromUrl(
-              "https://www.googleapis.com/v0/b/project-5516366556574091405.appspot"
+              "https://www.googleapis.com/v0/b/fooey.appspot"
                   + ".com/o/child%2Fimage.png?alt=media&token=42a1b22e-5e56-4337-bd61-f177233b40bc");
     } catch (IllegalArgumentException e) {
       thrown = true;

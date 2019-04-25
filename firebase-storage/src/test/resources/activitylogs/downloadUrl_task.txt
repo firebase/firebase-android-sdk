@@ -1,0 +1,6 @@
+Getting Download Url.
+Received Download Url.
+getDownloadUrl:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/flubbertest.txt?alt=media&token=39083245-565f-416c-9bca-a8c1338fe9de
+onComplete:Success=
+true
+done.

@@ -1,0 +1,173 @@
+
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/flubbertest.txt
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="39,38,37,36,35"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[468]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 27 Jul 2017 00:47:30 GMT]
+ Expires:[Thu, 27 Jul 2017 00:47:30 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1501116451612]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1501116451457]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2UoseaRAUfBG7_-e0NeZQnDiSNYyvP0qsparmFfTxTZ7m-DhfXgg7g8vbJ0eA52Xv4ZYjXhWeUML7AZTwUh9KXo83Wjz_A]
+getInputStream:ewogICJuYW1lIjogImZsdWJiZXJ0ZXN0LnR4dCIsCiAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIsCiAgImdlbmVyYXRpb24iOiAiMTUwMDY3NjQ4MDkxMjQxNiIsCiAgIm1ldGFnZW5lcmF0aW9uIjogIjU2IiwKICAidGltZUNyZWF0ZWQiOiAiMjAxNy0wNy0yMVQyMjozNDo0MC44MTFaIiwKICAidXBkYXRlZCI6ICIyMDE3LTA3LTI3VDAwOjQ3OjA2LjM3N1oiLAogICJzdG9yYWdlQ2xhc3MiOiAiU1RBTkRBUkQiLAogICJzaXplIjogIjE3IiwKICAibWQ1SGFzaCI6ICJzQ0lQNmo4ZXF1TmdYa2ZXNFpURVF3PT0iLAogICJjb250ZW50RW5jb2RpbmciOiAiaWRlbnRpdHkiLAogICJjcmMzMmMiOiAiRHI4bkVBPT0iLAogICJldGFnIjogIkNLQ1l4Y1MzbTlVQ0VEZz0iLAogICJkb3dubG9hZFRva2VucyI6ICI4M2VjZGU4YS0xOTlhLTRiMTctYjNlZS0yNTMwNTQyNWM1ZGMiCn0=
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/flubbertest.txt
+setRequestMethod:PUT
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:X-HTTP-Method-Override,PATCH
+setRequestProperty:Content-Type,application/json
+setDoOutput:true
+setRequestProperty:Content-Length,179
+setUseCaches:false
+setDoInput:true
+getOutputStream:eyJjb250ZW50TGFuZ3VhZ2UiOiJkZSIsImNvbnRlbnRFbmNvZGluZyI6Imd6aXAiLCJjb250ZW50VHlwZSI6ImNvbnRlbnQtdHlwZSIsIm1ldGFkYXRhIjp7ImtleSI6InZhbHVlIn0sImNvbnRlbnREaXNwb3NpdGlvbiI6ImNvbnRlbnQtZGlzcG9zaXRpb24iLCJjYWNoZUNvbnRyb2wiOiJjYWNoZS1jb250cm9sIn0=
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="39,38,37,36,35"]
+ Content-Length:[646]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 27 Jul 2017 00:47:46 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1501116468111]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1501116467682]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2UoJdkPZCQXirkQAsrmDA--BvT3dJjJWUdwUXL3v_xDs7LOy-1vFuKPhWnGT8viHgv8Tuk2s-AiQX6jiP4dul4nDwO03bA]
+getInputStream:ewogICJuYW1lIjogImZsdWJiZXJ0ZXN0LnR4dCIsCiAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIsCiAgImdlbmVyYXRpb24iOiAiMTUwMDY3NjQ4MDkxMjQxNiIsCiAgIm1ldGFnZW5lcmF0aW9uIjogIjU3IiwKICAiY29udGVudFR5cGUiOiAiY29udGVudC10eXBlIiwKICAidGltZUNyZWF0ZWQiOiAiMjAxNy0wNy0yMVQyMjozNDo0MC44MTFaIiwKICAidXBkYXRlZCI6ICIyMDE3LTA3LTI3VDAwOjQ3OjQ2LjU0MloiLAogICJzdG9yYWdlQ2xhc3MiOiAiU1RBTkRBUkQiLAogICJzaXplIjogIjE3IiwKICAibWQ1SGFzaCI6ICJzQ0lQNmo4ZXF1TmdYa2ZXNFpURVF3PT0iLAogICJjb250ZW50RW5jb2RpbmciOiAiZ3ppcCIsCiAgImNvbnRlbnREaXNwb3NpdGlvbiI6ICJjb250ZW50LWRpc3Bvc2l0aW9uIiwKICAiY29udGVudExhbmd1YWdlIjogImRlIiwKICAiY2FjaGVDb250cm9sIjogImNhY2hlLWNvbnRyb2wiLAogICJjcmMzMmMiOiAiRHI4bkVBPT0iLAogICJldGFnIjogIkNLQ1l4Y1MzbTlVQ0VEaz0iLAogICJkb3dubG9hZFRva2VucyI6ICI4M2VjZGU4YS0xOTlhLTRiMTctYjNlZS0yNTMwNTQyNWM1ZGMiLAogICJtZXRhZGF0YSI6IHsKICAgICJrZXkiOiAidmFsdWUiCiAgfQp9
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/flubbertest.txt
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="39,38,37,36,35"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[646]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 27 Jul 2017 00:48:05 GMT]
+ Expires:[Thu, 27 Jul 2017 00:48:05 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1501116487052]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1501116486914]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2Up04SVN6S7TKHyFgQkZhX1DiH8-Laza1konAIxYKSfnlYYvxbPQtNK3aiyhzpAjeU5_a7JKuOPgMIkptLPY6mrBSFu5Pw]
+getInputStream:ewogICJuYW1lIjogImZsdWJiZXJ0ZXN0LnR4dCIsCiAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIsCiAgImdlbmVyYXRpb24iOiAiMTUwMDY3NjQ4MDkxMjQxNiIsCiAgIm1ldGFnZW5lcmF0aW9uIjogIjU3IiwKICAiY29udGVudFR5cGUiOiAiY29udGVudC10eXBlIiwKICAidGltZUNyZWF0ZWQiOiAiMjAxNy0wNy0yMVQyMjozNDo0MC44MTFaIiwKICAidXBkYXRlZCI6ICIyMDE3LTA3LTI3VDAwOjQ3OjQ2LjU0MloiLAogICJzdG9yYWdlQ2xhc3MiOiAiU1RBTkRBUkQiLAogICJzaXplIjogIjE3IiwKICAibWQ1SGFzaCI6ICJzQ0lQNmo4ZXF1TmdYa2ZXNFpURVF3PT0iLAogICJjb250ZW50RW5jb2RpbmciOiAiZ3ppcCIsCiAgImNvbnRlbnREaXNwb3NpdGlvbiI6ICJjb250ZW50LWRpc3Bvc2l0aW9uIiwKICAiY29udGVudExhbmd1YWdlIjogImRlIiwKICAiY2FjaGVDb250cm9sIjogImNhY2hlLWNvbnRyb2wiLAogICJjcmMzMmMiOiAiRHI4bkVBPT0iLAogICJldGFnIjogIkNLQ1l4Y1MzbTlVQ0VEaz0iLAogICJkb3dubG9hZFRva2VucyI6ICI4M2VjZGU4YS0xOTlhLTRiMTctYjNlZS0yNTMwNTQyNWM1ZGMiLAogICJtZXRhZGF0YSI6IHsKICAgICJrZXkiOiAidmFsdWUiCiAgfQp9
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/flubbertest.txt
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="39,38,37,36,35"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[646]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 27 Jul 2017 00:48:10 GMT]
+ Expires:[Thu, 27 Jul 2017 00:48:10 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1501116491369]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1501116491241]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2Ur0yvTm8lMCjx1Dl2PJvhHhJDivckjRF_pq74Zs7cSKZf_jQduLt9P-3RIMpgakFW1waS-V0fevWQTExs0q5K-GPdpI-g]
+getInputStream:ewogICJuYW1lIjogImZsdWJiZXJ0ZXN0LnR4dCIsCiAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIsCiAgImdlbmVyYXRpb24iOiAiMTUwMDY3NjQ4MDkxMjQxNiIsCiAgIm1ldGFnZW5lcmF0aW9uIjogIjU3IiwKICAiY29udGVudFR5cGUiOiAiY29udGVudC10eXBlIiwKICAidGltZUNyZWF0ZWQiOiAiMjAxNy0wNy0yMVQyMjozNDo0MC44MTFaIiwKICAidXBkYXRlZCI6ICIyMDE3LTA3LTI3VDAwOjQ3OjQ2LjU0MloiLAogICJzdG9yYWdlQ2xhc3MiOiAiU1RBTkRBUkQiLAogICJzaXplIjogIjE3IiwKICAibWQ1SGFzaCI6ICJzQ0lQNmo4ZXF1TmdYa2ZXNFpURVF3PT0iLAogICJjb250ZW50RW5jb2RpbmciOiAiZ3ppcCIsCiAgImNvbnRlbnREaXNwb3NpdGlvbiI6ICJjb250ZW50LWRpc3Bvc2l0aW9uIiwKICAiY29udGVudExhbmd1YWdlIjogImRlIiwKICAiY2FjaGVDb250cm9sIjogImNhY2hlLWNvbnRyb2wiLAogICJjcmMzMmMiOiAiRHI4bkVBPT0iLAogICJldGFnIjogIkNLQ1l4Y1MzbTlVQ0VEaz0iLAogICJkb3dubG9hZFRva2VucyI6ICI4M2VjZGU4YS0xOTlhLTRiMTctYjNlZS0yNTMwNTQyNWM1ZGMiLAogICJtZXRhZGF0YSI6IHsKICAgICJrZXkiOiAidmFsdWUiCiAgfQp9
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/flubbertest.txt
+setRequestMethod:PUT
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:X-HTTP-Method-Override,PATCH
+setRequestProperty:Content-Type,application/json
+setDoOutput:true
+setRequestProperty:Content-Length,136
+setUseCaches:false
+setDoInput:true
+getOutputStream:eyJjb250ZW50TGFuZ3VhZ2UiOm51bGwsImNvbnRlbnRFbmNvZGluZyI6bnVsbCwiY29udGVudFR5cGUiOm51bGwsIm1ldGFkYXRhIjp7ImtleSI6bnVsbH0sImNvbnRlbnREaXNwb3NpdGlvbiI6bnVsbCwiY2FjaGVDb250cm9sIjpudWxsfQ==
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="39,38,37,36,35"]
+ Content-Length:[468]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 27 Jul 2017 00:48:12 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1501116493715]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1501116493150]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2UqWpNl0_Vq1gj7fjjiyYVtS_u0d8PR_Qa-MZQRFAcOfZRt0ZDBc4CHDEn2NQyBJjjriPd1rNpeaRMaPCLRhxU2q5ls3tg]
+getInputStream:ewogICJuYW1lIjogImZsdWJiZXJ0ZXN0LnR4dCIsCiAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIsCiAgImdlbmVyYXRpb24iOiAiMTUwMDY3NjQ4MDkxMjQxNiIsCiAgIm1ldGFnZW5lcmF0aW9uIjogIjU4IiwKICAidGltZUNyZWF0ZWQiOiAiMjAxNy0wNy0yMVQyMjozNDo0MC44MTFaIiwKICAidXBkYXRlZCI6ICIyMDE3LTA3LTI3VDAwOjQ4OjEyLjIxN1oiLAogICJzdG9yYWdlQ2xhc3MiOiAiU1RBTkRBUkQiLAogICJzaXplIjogIjE3IiwKICAibWQ1SGFzaCI6ICJzQ0lQNmo4ZXF1TmdYa2ZXNFpURVF3PT0iLAogICJjb250ZW50RW5jb2RpbmciOiAiaWRlbnRpdHkiLAogICJjcmMzMmMiOiAiRHI4bkVBPT0iLAogICJldGFnIjogIkNLQ1l4Y1MzbTlVQ0VEbz0iLAogICJkb3dubG9hZFRva2VucyI6ICI4M2VjZGU4YS0xOTlhLTRiMTctYjNlZS0yNTMwNTQyNWM1ZGMiCn0=
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/flubbertest.txt
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="39,38,37,36,35"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[468]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 27 Jul 2017 00:48:19 GMT]
+ Expires:[Thu, 27 Jul 2017 00:48:19 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1501116500531]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1501116500283]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2UrWs6RtsX47W2ryxeiB5h73MUFB4fkyZqqP0ze8f5psriEB3wrfly9HiZ9Ig9T3Ml53ePS430WZC_qprFQnXkuQwk1sAA]
+getInputStream:ewogICJuYW1lIjogImZsdWJiZXJ0ZXN0LnR4dCIsCiAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIsCiAgImdlbmVyYXRpb24iOiAiMTUwMDY3NjQ4MDkxMjQxNiIsCiAgIm1ldGFnZW5lcmF0aW9uIjogIjU4IiwKICAidGltZUNyZWF0ZWQiOiAiMjAxNy0wNy0yMVQyMjozNDo0MC44MTFaIiwKICAidXBkYXRlZCI6ICIyMDE3LTA3LTI3VDAwOjQ4OjEyLjIxN1oiLAogICJzdG9yYWdlQ2xhc3MiOiAiU1RBTkRBUkQiLAogICJzaXplIjogIjE3IiwKICAibWQ1SGFzaCI6ICJzQ0lQNmo4ZXF1TmdYa2ZXNFpURVF3PT0iLAogICJjb250ZW50RW5jb2RpbmciOiAiaWRlbnRpdHkiLAogICJjcmMzMmMiOiAiRHI4bkVBPT0iLAogICJldGFnIjogIkNLQ1l4Y1MzbTlVQ0VEbz0iLAogICJkb3dubG9hZFRva2VucyI6ICI4M2VjZGU4YS0xOTlhLTRiMTctYjNlZS0yNTMwNTQyNWM1ZGMiCn0=
+disconnect:
