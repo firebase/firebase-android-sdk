@@ -27,7 +27,6 @@ public final class TransportRuntimeRule implements TestRule {
 
   @Override
   public Statement apply(final Statement base, final Description description) {
-      try (component) {
         return new Statement() {
           @Override
           public void evaluate() throws Throwable {
@@ -36,13 +35,19 @@ public final class TransportRuntimeRule implements TestRule {
                       () -> {
                           try {
                               base.evaluate();
-                          } catch (Throwable throwable) {
+                           } catch (RuntimeException e) {
+                              throw e;
+                          } catch (Exception e) {
+                              throw e;
+                          }
+                          catch (Throwable throwable) {
                               throw new Exception(throwable);
+                          } finally {
+                              component.close();
                           }
                           return true;
                       });
           }
-      }
     };
   }
 }
