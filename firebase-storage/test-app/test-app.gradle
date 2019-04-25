@@ -32,7 +32,7 @@ android {
   sourceSets {
     main {
       java {
-        srcDir "../firebase-storage/src/testUtil/java"
+        srcDir "../src/testUtil/java"
       }
     }
   }
@@ -62,4 +62,4 @@ dependencies {
 // androidTest integration tests.
 // ==========================================================================
 ext.packageName = "com.example.storage"
-apply from: '../gradle/googleServices.gradle'
+apply from: '../../gradle/googleServices.gradle'
