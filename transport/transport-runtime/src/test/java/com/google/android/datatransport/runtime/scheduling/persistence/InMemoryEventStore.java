@@ -96,4 +96,7 @@ public class InMemoryEventStore implements EventStore {
     }
     return events;
   }
+
+  @Override
+  public void close() {}
 }
