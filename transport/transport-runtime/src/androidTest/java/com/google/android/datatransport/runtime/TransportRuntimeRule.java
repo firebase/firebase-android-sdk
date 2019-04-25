@@ -27,19 +27,21 @@ public final class TransportRuntimeRule implements TestRule {
 
   @Override
   public Statement apply(final Statement base, final Description description) {
-    return new Statement() {
-      @Override
-      public void evaluate() throws Throwable {
-        TransportRuntime.withInstance(
-            component,
-            () -> {
-              try {
-                base.evaluate();
-              } catch (Throwable throwable) {
-                throw new Exception(throwable);
-              }
-              return true;
-            });
+      try (component) {
+        return new Statement() {
+          @Override
+          public void evaluate() throws Throwable {
+              TransportRuntime.withInstance(
+                      component,
+                      () -> {
+                          try {
+                              base.evaluate();
+                          } catch (Throwable throwable) {
+                              throw new Exception(throwable);
+                          }
+                          return true;
+                      });
+          }
       }
     };
   }
