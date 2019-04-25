@@ -50,7 +50,6 @@ public class SchedulerIntegrationTest {
   private final BackendRegistry mockRegistry = mock(BackendRegistry.class);
   private final Context context = InstrumentationRegistry.getInstrumentation().getContext();
   private final Uploader mockUploader = mock(Uploader.class);
-  private TransportRuntime runtime;
 
   @Rule
   public final TransportRuntimeRule runtimeRule =
@@ -89,7 +88,6 @@ public class SchedulerIntegrationTest {
                         .toBuilder()
                         .addMetadata(TEST_KEY, TEST_VALUE)
                         .build());
-    runtime = TransportRuntime.getInstance();
   }
 
   private String generateBackendName() {
@@ -98,7 +96,7 @@ public class SchedulerIntegrationTest {
 
   @Test
   public void scheduler_whenEventScheduledForFirstTime_shouldUpload() {
-
+    TransportRuntime runtime = TransportRuntime.getInstance();
     String mockBackendName = generateBackendName();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     TransportFactory factory = runtime.newFactory(mockBackendName);
@@ -120,6 +118,7 @@ public class SchedulerIntegrationTest {
 
   @Test
   public void scheduler_whenEventsScheduledWithSameBackend_shouldUploadOnce() {
+    TransportRuntime runtime = TransportRuntime.getInstance();
     String mockBackendName = generateBackendName();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     TransportFactory factory = runtime.newFactory(mockBackendName);
@@ -151,6 +150,7 @@ public class SchedulerIntegrationTest {
 
   @Test
   public void scheduler_whenEventsScheduledWithDifferentBackends_shouldUploadTwice() {
+    TransportRuntime runtime = TransportRuntime.getInstance();
     String firstBackendName = generateBackendName();
     String secondBackendName = generateBackendName();
     when(mockRegistry.get(firstBackendName)).thenReturn(mockBackend);
