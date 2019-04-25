@@ -96,6 +96,7 @@ public class SchedulerIntegrationTest {
             (Answer<Void>)
                 i -> {
                   locker.setResult(true);
+                  i.<Runnable>getArgument(2).run();
                   return null;
                 })
         .when(mockUploader)
