@@ -38,8 +38,11 @@ https://firebase.google.com.
 
 * Install the latest Android Studio (should be 3.0.1 or later)
 * Clone the repo (`git clone git@github.com:firebase/firebase-android-sdk.git`)
+* Add a `google-services.json` file to the root of your checkout. You can use
+  the `google-services.json` from any Firebase project that includes an Android
+  App. To set up a testing-only project, follow the steps in **Project Setup**.
 * Import the firebase-android-sdk gradle project into Android Studio using the
-  **Import project(Gradle, Eclipse ADT, etc.** option.
+  **Import project(Gradle, Eclipse ADT, etc.)** option.
 
 ## Testing
 
@@ -75,10 +78,11 @@ components.
 
 #### Project Setup
 
-Before you can run integration tests, you need to add a `google-services.json`
-file to the root of your checkout. You can use the `google-services.json` from
-any project that includes an Android App, though you'll likely want one that's
-separate from any production data you have because our tests write random data.
+Before you can import the SDK into Android Studio, you need to add a
+`google-services.json` file to the root of your checkout. You can use the
+`google-services.json` from any project that includes an Android App, though 
+you'll likely want one that's separate from any production data you have
+because our tests write random data.
 
 If you don't have a suitable testing project already:
 
