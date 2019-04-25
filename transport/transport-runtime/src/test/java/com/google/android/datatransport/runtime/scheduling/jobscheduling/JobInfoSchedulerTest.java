@@ -41,7 +41,7 @@ public class JobInfoSchedulerTest {
   private final JobScheduler jobScheduler =
       (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
 
-  private final SchedulerConfig config = new SchedulerConfig(30000, 100000000, -1);
+  private final SchedulerConfig config =  SchedulerConfig.builder().setDelta(30000).setMaxAllowedTime(100000000).setMaximumDelay(-1).build();
   private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, () -> 1, config);
 
   @Test

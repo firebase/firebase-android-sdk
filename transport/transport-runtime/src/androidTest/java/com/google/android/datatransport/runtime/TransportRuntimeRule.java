@@ -18,6 +18,8 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.util.concurrent.Callable;
+
 public final class TransportRuntimeRule implements TestRule {
   private TransportRuntimeComponent component;
 
@@ -31,14 +33,14 @@ public final class TransportRuntimeRule implements TestRule {
       @Override
       public void evaluate() throws Throwable {
         TransportRuntime.withInstance(
-            component,
-            () -> {
-              try {
-                base.evaluate();
-              } catch (Throwable throwable) {
-                throwable.printStackTrace();
-              }
-            });
+                component, () -> {
+                    try {
+                        base.evaluate();
+                    } catch (Throwable throwable) {
+                        throw new Exception(throwable);
+                    }
+                    return true;
+                });
       }
     };
   }

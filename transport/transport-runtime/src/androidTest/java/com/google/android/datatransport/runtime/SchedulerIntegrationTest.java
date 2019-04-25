@@ -175,6 +175,7 @@ public class SchedulerIntegrationTest {
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
     verify(mockBackend2, times(1)).decorate(eq(expectedEvent));
     SystemClock.sleep(5000);
-    verify(mockUploader, times(2)).upload(any(), eq(1), any());
+    verify(mockUploader, times(1)).upload(eq(firstBackendName), eq(1), any());
+    verify(mockUploader, times(1)).upload(eq(secondBackendName), eq(1), any());
   }
 }
