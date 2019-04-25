@@ -23,9 +23,7 @@ import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploade
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
-
 import java.util.concurrent.Callable;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -89,7 +87,8 @@ public class TransportRuntime implements TransportInternal {
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  static void withInstance(TransportRuntimeComponent component, Callable callable) throws Throwable{
+  static void withInstance(TransportRuntimeComponent component, Callable callable)
+      throws Throwable {
     TransportRuntimeComponent original;
     synchronized (TransportRuntime.class) {
       original = INSTANCE;

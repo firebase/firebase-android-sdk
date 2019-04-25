@@ -33,7 +33,6 @@ import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import java.util.UUID;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -94,7 +93,7 @@ public class SchedulerIntegrationTest {
   }
 
   private String generateBackendName() {
-    return  UUID.randomUUID().toString().replace("-", "");
+    return UUID.randomUUID().toString().replace("-", "");
   }
 
   @Test
