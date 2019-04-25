@@ -25,6 +25,7 @@ import android.support.test.rule.ServiceTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import com.google.android.datatransport.runtime.ITestRemoteLockRpc;
 import java.util.concurrent.TimeoutException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +44,11 @@ public class MultiProcessSynchronizationGuardTest {
     process2 = bindTestingRpc(TestService.Remote.class);
 
     assertThat(process1.getPid()).isNotEqualTo(process2.getPid());
+  }
+
+  @After
+  public void after() {
+    rule.unbindService();
   }
 
   @Test

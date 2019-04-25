@@ -252,6 +252,11 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         });
   }
 
+  @Override
+  public void close() {
+    openHelper.close();
+  }
+
   /** Loads all events for a backend. */
   private List<PersistedEvent> loadEvents(SQLiteDatabase db, TransportContext transportContext) {
     List<PersistedEvent> events = new ArrayList<>();

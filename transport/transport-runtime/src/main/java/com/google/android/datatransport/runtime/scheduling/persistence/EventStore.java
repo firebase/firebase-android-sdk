@@ -18,6 +18,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import java.io.Closeable;
 
 /**
  * Persistence layer.
@@ -25,7 +26,7 @@ import com.google.android.datatransport.runtime.TransportContext;
  * <p>Responsible for storing events and backend-specific metadata.
  */
 @WorkerThread
-public interface EventStore {
+public interface EventStore extends Closeable {
 
   /** Persist a new event. */
   @Nullable
