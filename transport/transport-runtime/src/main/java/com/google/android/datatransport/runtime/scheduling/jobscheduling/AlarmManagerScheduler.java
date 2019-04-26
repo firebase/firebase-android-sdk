@@ -95,7 +95,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
     Long backendTime = eventStore.getNextCallTime(transportContext);
 
     long timeDiff = 0;
-    if (backendTime != null) {
+    if (backendTime != null && backendTime != 0) {
       timeDiff = backendTime - clock.getTime();
     }
 

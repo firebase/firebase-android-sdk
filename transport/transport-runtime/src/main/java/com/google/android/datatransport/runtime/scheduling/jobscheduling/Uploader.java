@@ -72,9 +72,9 @@ public class Uploader {
   public void upload(String backendName, int attemptNumber, Runnable callback) {
     this.executor.execute(
         () -> {
+          TransportContext transportContext =
+              TransportContext.builder().setBackendName(backendName).build();
           try {
-            TransportContext transportContext =
-                TransportContext.builder().setBackendName(backendName).build();
             if (!isNetworkAvailable()) {
               guard.runCriticalSection(
                   () -> {
@@ -84,6 +84,8 @@ public class Uploader {
             } else {
               logAndUpdateState(transportContext, attemptNumber);
             }
+          } catch (Exception e) {
+            workScheduler.schedule(transportContext, attemptNumber + 1);
           } finally {
             callback.run();
           }
