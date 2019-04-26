@@ -47,8 +47,14 @@ public class AlarmManagerSchedulerTest {
   private final EventStore store = new InMemoryEventStore();
   private final AlarmManager alarmManager =
       spy((AlarmManager) context.getSystemService(Context.ALARM_SERVICE));
+  private final SchedulerConfig config =
+      SchedulerConfig.builder()
+          .setDelta(30000)
+          .setMaxAllowedTime(100000000)
+          .setMaximumDelay(-1)
+          .build();
   private final AlarmManagerScheduler scheduler =
-      new AlarmManagerScheduler(context, store, () -> 1, alarmManager);
+      new AlarmManagerScheduler(context, store, () -> 1, alarmManager, config);
 
   private Intent getIntent() {
     Uri.Builder intentDataBuilder = new Uri.Builder();
