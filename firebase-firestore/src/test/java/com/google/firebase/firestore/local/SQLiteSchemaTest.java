@@ -309,6 +309,11 @@ public class SQLiteSchemaTest {
 
   @Test
   public void addsSentinelRowsForLargeNumberOfDocuments() {
+    // This test only verifies that we add sentinal rows for documents even if the number of
+    // documents exceed our batch size. It does not verify that we do not hit a
+    // `SQLiteBlobTooBigException`, since this exception is not thrown when using SQLite through
+    // Robolectric.
+
     // PORTING NOTE: This test only exists on Android since other clients do not need to split
     // large data sets during schema migration.
 
