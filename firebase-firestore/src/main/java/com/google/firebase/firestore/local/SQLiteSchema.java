@@ -55,9 +55,9 @@ class SQLiteSchema {
    *
    * <p>This addresses https://github.com/firebase/firebase-android-sdk/issues/370, where a customer
    * reported that schema migrations failed for clients with thousands of documents. The number has
-   * been chosen arbitrarily.
+   * been chosen based on manual experiments.
    */
-  private static final int SEQUENCE_NUMBER_BATCH_SIZE = 1000;
+  private static final int SEQUENCE_NUMBER_BATCH_SIZE = 100;
 
   private final SQLiteDatabase db;
 

@@ -308,12 +308,15 @@ public class SQLiteSchemaTest {
   }
 
   @Test
-  public void addsSequenceNumberInBatches() {
+  public void addsSentinelRowsForLargeNumberOfDocuments() {
+    // PORTING NOTE: This test only exists on Android since other clients do not need to split
+    // large data sets during schema migration.
+
     schema.runMigrations(0, 6);
 
     // Set up some documents (we only need the keys). Note this count is higher than the batch size
-    // during migration, which is 1000.
-    int documentCount = 2500;
+    // during migration, which is 100.
+    int documentCount = 250;
     for (int i = 0; i < documentCount; i++) {
       String path = "coll/doc_" + i;
       db.execSQL(
