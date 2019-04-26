@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.scheduling;
+package com.google.android.datatransport.runtime.scheduling.locking;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 
 /** Simple locking mechanism that supports results to the waiting/blocked side. */
-class Locker<T> {
+public class Locker<T> {
   private final BlockingQueue<T> queue;
 
-  Locker() {
+  public Locker() {
     queue = new SynchronousQueue<>(true);
   }
 
-  T await() {
+  public T await() {
     try {
       return queue.take();
     } catch (InterruptedException e) {
@@ -34,7 +34,7 @@ class Locker<T> {
     }
   }
 
-  void setResult(T result) {
+  public void setResult(T result) {
     try {
       queue.put(result);
     } catch (InterruptedException e) {

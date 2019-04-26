@@ -40,25 +40,31 @@ public class AlarmManagerScheduler implements WorkScheduler {
 
   private AlarmManager alarmManager;
 
-  private final int DELTA = 30000; // 30 seconds delta
+  private final SchedulerConfig config;
 
   @Inject
-  public AlarmManagerScheduler(Context applicationContext, EventStore eventStore, Clock clock) {
+  public AlarmManagerScheduler(
+      Context applicationContext, EventStore eventStore, Clock clock, SchedulerConfig config) {
     this.context = applicationContext;
     this.eventStore = eventStore;
     this.clock = clock;
     this.alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-    ;
+    this.config = config;
   }
 
   @RestrictTo(RestrictTo.Scope.TESTS)
   @VisibleForTesting
   AlarmManagerScheduler(
-      Context applicationContext, EventStore eventStore, Clock clock, AlarmManager alarmManager) {
+      Context applicationContext,
+      EventStore eventStore,
+      Clock clock,
+      AlarmManager alarmManager,
+      SchedulerConfig config) {
     this.context = applicationContext;
     this.eventStore = eventStore;
     this.clock = clock;
     this.alarmManager = alarmManager;
+    this.config = config;
   }
 
   @VisibleForTesting
@@ -69,7 +75,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
   /**
    * Schedules the AlarmManager service.
    *
-   * @param backendName The backend to where the events are logged.
+   * @param transportContext Contains information about the backend and the priority.
    * @param attemptNumber Number of times the AlarmManager has tried to log for this backend.
    */
   @Override
@@ -96,7 +102,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
     this.alarmManager.set(
         AlarmManager.ELAPSED_REALTIME,
-        SchedulerUtil.getScheduleDelay(timeDiff, DELTA, attemptNumber),
+        config.getScheduleDelay(timeDiff, attemptNumber),
         pendingIntent);
   }
 }

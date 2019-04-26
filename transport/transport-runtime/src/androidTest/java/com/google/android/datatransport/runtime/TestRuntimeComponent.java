@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,43 +15,49 @@
 package com.google.android.datatransport.runtime;
 
 import android.content.Context;
-import com.google.android.datatransport.runtime.backends.BackendRegistryModule;
-import com.google.android.datatransport.runtime.scheduling.SchedulingConfigModule;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.scheduling.SchedulingModule;
-import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule;
-import com.google.android.datatransport.runtime.time.TimeModule;
+import com.google.android.datatransport.runtime.time.Clock;
+import com.google.android.datatransport.runtime.time.Monotonic;
+import com.google.android.datatransport.runtime.time.WallTime;
 import dagger.BindsInstance;
 import dagger.Component;
-import java.io.Closeable;
-import java.io.IOException;
 import javax.inject.Singleton;
 
 @Component(
     modules = {
-      BackendRegistryModule.class,
       EventStoreModule.class,
-      ExecutionModule.class,
+      TestExecutionModule.class,
       SchedulingModule.class,
-      SchedulingConfigModule.class,
-      TimeModule.class,
     })
 @Singleton
-abstract class TransportRuntimeComponent implements Closeable {
+abstract class TestRuntimeComponent extends TransportRuntimeComponent {
+
   abstract TransportRuntime getTransportRuntime();
-
-  abstract EventStore getEventStore();
-
-  @Override
-  public void close() throws IOException {
-    getEventStore().close();
-  }
 
   @Component.Builder
   interface Builder {
     @BindsInstance
     Builder setApplicationContext(Context applicationContext);
 
-    TransportRuntimeComponent build();
+    @BindsInstance
+    Builder setBackendRegistry(BackendRegistry registry);
+
+    @BindsInstance
+    Builder setUploader(Uploader uploader);
+
+    @BindsInstance
+    Builder setSchedulerConfig(SchedulerConfig config);
+
+    @BindsInstance
+    Builder setUptimeClock(@Monotonic Clock clock);
+
+    @BindsInstance
+    Builder setEventClock(@WallTime Clock clock);
+
+    TestRuntimeComponent build();
   }
 }

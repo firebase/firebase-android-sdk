@@ -69,7 +69,7 @@ public class Uploader {
     return activeNetworkInfo != null && activeNetworkInfo.isConnected();
   }
 
-  void upload(String backendName, int attemptNumber, Runnable callback) {
+  public void upload(String backendName, int attemptNumber, Runnable callback) {
     this.executor.execute(
         () -> {
           try {

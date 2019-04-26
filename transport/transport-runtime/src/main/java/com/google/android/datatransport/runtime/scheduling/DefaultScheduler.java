@@ -75,7 +75,7 @@ public class DefaultScheduler implements Scheduler {
           guard.runCriticalSection(
               () -> {
                 eventStore.persist(transportContext, decoratedEvent);
-                workScheduler.schedule(transportContext, 0);
+                workScheduler.schedule(transportContext, 1);
                 return null;
               });
         });
