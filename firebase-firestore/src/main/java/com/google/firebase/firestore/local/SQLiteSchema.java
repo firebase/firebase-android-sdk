@@ -51,13 +51,13 @@ class SQLiteSchema {
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
   /**
-   * The batch size for operations that potentially operate on a large result set.
+   * The batch size for the sequence number migration in `ensureSequenceNumbers()`.
    *
    * <p>This addresses https://github.com/firebase/firebase-android-sdk/issues/370, where a customer
    * reported that schema migrations failed for clients with thousands of documents. The number has
    * been chosen arbitrarily.
    */
-  static final int REMOTE_DOCUMENTS_BATCH_SIZE = 1000;
+  private static final int SEQUENCE_NUMBER_BATCH_SIZE = 1000;
 
   private final SQLiteDatabase db;
 
@@ -376,7 +376,7 @@ class SQLiteSchema {
                     + "SELECT TD.path FROM target_documents AS TD "
                     + "WHERE RD.path = TD.path AND TD.target_id = 0"
                     + ") LIMIT ?")
-            .binding(REMOTE_DOCUMENTS_BATCH_SIZE);
+            .binding(SEQUENCE_NUMBER_BATCH_SIZE);
 
     boolean[] resultsRemaining = new boolean[1];
 
