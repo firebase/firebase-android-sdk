@@ -87,7 +87,7 @@ public class TransportRuntime implements TransportInternal {
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  static void withInstance(TransportRuntimeComponent component, Callable callable)
+  static void withInstance(TransportRuntimeComponent component, Callable<Void> callable)
       throws Throwable {
     TransportRuntimeComponent original;
     synchronized (TransportRuntime.class) {

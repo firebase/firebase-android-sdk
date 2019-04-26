@@ -43,8 +43,8 @@ public class JobInfoSchedulerTest {
 
   private final SchedulerConfig config =
       SchedulerConfig.builder()
-          .setDelta(30000)
-          .setMaxAllowedTime(100000000)
+          .setDelta(SchedulerUtil.THIRTY_SECONDS)
+          .setMaxAllowedTime(SchedulerUtil.TWENTY_FOUR_HOURS)
           .setMaximumDelay(-1)
           .build();
   private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, () -> 1, config);

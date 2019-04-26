@@ -44,7 +44,7 @@ public final class TransportRuntimeRule implements TestRule {
               } finally {
                 component.close();
               }
-              return true;
+              return null;
             });
       }
     };

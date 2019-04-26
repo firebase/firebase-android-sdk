@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime.scheduling;
 
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerUtil;
 import dagger.Module;
 import dagger.Provides;
 
@@ -24,8 +25,8 @@ public abstract class SchedulingConfigModule {
   @Provides
   static SchedulerConfig config() {
     return SchedulerConfig.builder()
-        .setDelta(30000)
-        .setMaxAllowedTime(100000000)
+        .setDelta(SchedulerUtil.THIRTY_SECONDS)
+        .setMaxAllowedTime(SchedulerUtil.TWENTY_FOUR_HOURS)
         .setMaximumDelay(-1)
         .build();
   }

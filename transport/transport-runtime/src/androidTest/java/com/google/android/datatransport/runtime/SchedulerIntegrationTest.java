@@ -92,6 +92,16 @@ public class SchedulerIntegrationTest {
                         .toBuilder()
                         .addMetadata(TEST_KEY, TEST_VALUE)
                         .build());
+    /*
+     We need the locker to ensure that the job service is called before we continue our testing.
+     The await present in the tests wait until the uploader's upload is called so that we know
+     for sure that the service is already run.
+     Also we would need to make sure that the runnable is being run. Because in
+     JobInfoSchedulerService if we don't communicate that the job is complete. Then the
+     JobScheduler will try to reschedule the service and will cause an exception for the retry
+     though the tests are going to pass. In tests testing multiple uploader calls not running the
+     runnable is going to cause significant delays.
+    */
     doAnswer(
             (Answer<Void>)
                 i -> {

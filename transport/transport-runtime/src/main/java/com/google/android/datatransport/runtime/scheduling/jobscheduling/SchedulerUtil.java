@@ -15,13 +15,17 @@
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 /** Used by the schedulers for some basic constants and utility methods. */
-final class SchedulerUtil {
+public final class SchedulerUtil {
 
   static final String ATTEMPT_NUMBER = "attemptNumber";
 
   static final String BACKEND_NAME = "backendName";
 
   static final String APPLICATION_BUNDLE_ID = "appBundleId";
+
+  public static final long THIRTY_SECONDS = 30 * 1000;
+
+  public static final long TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
   private SchedulerUtil() {}
 }
