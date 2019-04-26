@@ -1,6 +1,6 @@
 # Unreleased
 - [fixed] Fixed an issue that prevented schema migrations for clients with
-  large offline datasets (#370, #734).
+  large offline datasets (#370).
 
 # To be released - 19.0.0
 - [feature] You can now query across all collections in your database with a

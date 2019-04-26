@@ -312,8 +312,8 @@ public class SQLiteSchemaTest {
     schema.runMigrations(0, 6);
 
     // Set up some documents (we only need the keys). Note this count is higher than the batch size
-    // during migration, which is 100.
-    int documentCount = 250;
+    // during migration, which is 1000.
+    int documentCount = 2500;
     for (int i = 0; i < documentCount; i++) {
       String path = "coll/doc_" + i;
       db.execSQL(
@@ -384,31 +384,6 @@ public class SQLiteSchemaTest {
     }
 
     assertEquals(expectedParents, actualParents);
-  }
-
-  @Test
-  public void addsCollectionParentsInBatches() {
-    schema.runMigrations(0, 7);
-
-    // Set up some collections (we only need the keys). Note this count is higher than the batch
-    // size during migration, which is 100.
-    int collectionCount = 500;
-    for (int i = 0; i < collectionCount / 2; i++) {
-      db.execSQL(
-          "INSERT INTO remote_documents (path) VALUES (?)",
-          new String[] {encode(path("docs_" + i + "/doc"))});
-      db.execSQL(
-          "INSERT INTO document_mutations (path) VALUES (?)",
-          new String[] {encode(path("mutations_" + i + "/doc"))});
-    }
-
-    schema.runMigrations(7, 8);
-
-    new SQLitePersistence.Query(db, "SELECT COUNT(*) FROM collection_parents")
-        .first(
-            row -> {
-              assertEquals(collectionCount, row.getLong(0));
-            });
   }
 
   private void assertNoResultsForQuery(String query, String[] args) {

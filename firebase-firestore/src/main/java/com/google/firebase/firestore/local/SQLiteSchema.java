@@ -54,9 +54,10 @@ class SQLiteSchema {
    * The batch size for operations that potentially operate on a large result set.
    *
    * <p>This addresses https://github.com/firebase/firebase-android-sdk/issues/370, where a customer
-   * reported that schema migrations failed for clients with thousands of documents.
+   * reported that schema migrations failed for clients with thousands of documents. The number has
+   * been chosen arbitrarily.
    */
-  static final int REMOTE_DOCUMENTS_BATCH_SIZE = 100;
+  static final int REMOTE_DOCUMENTS_BATCH_SIZE = 1000;
 
   private final SQLiteDatabase db;
 
@@ -218,10 +219,6 @@ class SQLiteSchema {
           String uid = mutationQueueEntry.getString(0);
           long lastAcknowledgedBatchId = mutationQueueEntry.getLong(1);
 
-          // Unlike other migrations, removeAcknowledgedMutations() does not use batching. Since
-          // this query only returns acknowledged mutations that have not yet been committed to
-          // the `remote_documents` table, the total number of entries should fit within a single
-          // operation.
           SQLitePersistence.Query mutationsQuery =
               new SQLitePersistence.Query(
                       db, "SELECT batch_id FROM mutations WHERE uid = ? AND batch_id <= ?")
@@ -432,46 +429,21 @@ class SQLiteSchema {
 
     // Index existing remote documents.
     SQLitePersistence.Query remoteDocumentsQuery =
-        new SQLitePersistence.Query(db, "SELECT path FROM remote_documents LIMIT ? OFFSET ?");
-
-    boolean[] resultsRemaining = new boolean[1];
-    int batchesExecuted = 0;
-    do {
-      resultsRemaining[0] = false;
-
-      SQLitePersistence.Query query =
-          remoteDocumentsQuery.binding(
-              REMOTE_DOCUMENTS_BATCH_SIZE, REMOTE_DOCUMENTS_BATCH_SIZE * batchesExecuted);
-      query.forEach(
-          row -> {
-            resultsRemaining[0] = true;
-            ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
-            addEntry.accept(path.popLast());
-          });
-
-      ++batchesExecuted;
-    } while (resultsRemaining[0]);
+        new SQLitePersistence.Query(db, "SELECT path FROM remote_documents");
+    remoteDocumentsQuery.forEach(
+        row -> {
+          ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+          addEntry.accept(path.popLast());
+        });
 
     // Index existing mutations.
     SQLitePersistence.Query documentMutationsQuery =
-        new SQLitePersistence.Query(db, "SELECT path FROM document_mutations LIMIT ? OFFSET ?");
-
-    batchesExecuted = 0;
-    do {
-      resultsRemaining[0] = false;
-
-      SQLitePersistence.Query query =
-          documentMutationsQuery.binding(
-              REMOTE_DOCUMENTS_BATCH_SIZE, REMOTE_DOCUMENTS_BATCH_SIZE * batchesExecuted);
-      query.forEach(
-          row -> {
-            resultsRemaining[0] = true;
-            ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
-            addEntry.accept(path.popLast());
-          });
-
-      ++batchesExecuted;
-    } while (resultsRemaining[0]);
+        new SQLitePersistence.Query(db, "SELECT path FROM document_mutations");
+    documentMutationsQuery.forEach(
+        row -> {
+          ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+          addEntry.accept(path.popLast());
+        });
   }
 
   private boolean tableContainsColumn(String table, String column) {
