@@ -31,7 +31,7 @@ public abstract class SpyEventStoreModule {
 
   @Provides
   @Singleton
-  EventStore eventStore(SQLiteEventStore store) {
+  static EventStore eventStore(SQLiteEventStore store) {
     return spy(store);
   }
 
