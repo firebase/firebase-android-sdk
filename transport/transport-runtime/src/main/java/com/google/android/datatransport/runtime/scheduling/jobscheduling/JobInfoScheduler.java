@@ -86,7 +86,7 @@ public class JobInfoScheduler implements WorkScheduler {
     Long backendTime = eventStore.getNextCallTime(transportContext);
 
     long timeDiff = 0;
-    if (backendTime != null && backendTime != 0) {
+    if (backendTime != 0) {
       timeDiff = backendTime - clock.getTime();
     }
     long latency = config.getScheduleDelay(timeDiff, attemptNumber);

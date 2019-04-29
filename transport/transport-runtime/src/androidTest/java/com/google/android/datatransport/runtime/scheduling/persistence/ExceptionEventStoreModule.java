@@ -12,16 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime;
+package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import com.google.android.datatransport.runtime.scheduling.DefaultScheduler;
-import com.google.android.datatransport.runtime.scheduling.Scheduler;
+import static org.mockito.Mockito.spy;
+
+import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import dagger.Binds;
 import dagger.Module;
+import dagger.Provides;
+import javax.inject.Singleton;
 
 @Module
-abstract class TestSchedulingModule {
+public abstract class ExceptionEventStoreModule {
+  @Provides
+  static EventStoreConfig storeConfig() {
+    return EventStoreConfig.DEFAULT;
+  }
+
+  @Provides
+  @Singleton
+  static EventStore eventStore(SQLiteEventStore store) {
+    return spy(store);
+  }
 
   @Binds
-  abstract Scheduler scheduler(DefaultScheduler scheduler);
+  abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
 }

@@ -39,8 +39,7 @@ public interface EventStore extends Closeable {
   void recordSuccess(Iterable<PersistedEvent> events);
 
   /** Returns the timestamp when the backend is allowed to be called next time or null. */
-  @Nullable
-  Long getNextCallTime(TransportContext transportContext);
+  long getNextCallTime(TransportContext transportContext);
 
   /** Record the timestamp when the backend is allowed to be called next time. */
   void recordNextCallTime(TransportContext transportContext, long timestampMs);

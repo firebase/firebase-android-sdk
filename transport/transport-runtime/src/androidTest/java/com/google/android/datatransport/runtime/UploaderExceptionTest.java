@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -31,13 +32,10 @@ import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
-import com.google.android.datatransport.runtime.backends.BackendRequest;
-import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
-import java.util.Collections;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Rule;
@@ -46,7 +44,7 @@ import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
 
 @RunWith(AndroidJUnit4.class)
-public class UploaderIntegrationTest {
+public class UploaderExceptionTest {
   private static final String testTransport = "testTransport";
   private final TransportBackend mockBackend = mock(TransportBackend.class);
   private final BackendRegistry mockRegistry = mock(BackendRegistry.class);
@@ -54,7 +52,7 @@ public class UploaderIntegrationTest {
   private final WorkScheduler spyScheduler = spy(new TestWorkScheduler(context));
 
   private final TransportRuntimeComponent component =
-      DaggerUploaderTestRuntimeComponent.builder()
+      DaggerUploaderExceptionTestRuntimeComponent.builder()
           .setApplicationContext(context)
           .setBackendRegistry(mockRegistry)
           .setWorkScheduler(spyScheduler)
@@ -77,18 +75,18 @@ public class UploaderIntegrationTest {
   }
 
   @Test
-  public void uploader_transientError_shouldReschedule() {
+  public void uploader_dbException_shouldReschedule() {
     TransportRuntime runtime = TransportRuntime.getInstance();
     EventStore store = component.getEventStore();
     String mockBackendName = generateBackendName();
+
     TransportContext transportContext =
         TransportContext.builder()
             .setBackendName(mockBackendName)
             .setPriority(Priority.DEFAULT)
             .build();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
-    when(mockBackend.send(any()))
-        .thenReturn(BackendResponse.create(BackendResponse.Status.TRANSIENT_ERROR, -1));
+    doThrow(new SynchronizationException("Error", null)).when(store).loadBatch(any());
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
@@ -101,79 +99,7 @@ public class UploaderIntegrationTest {
             .setPayload("TelemetryData".getBytes())
             .build();
     transport.send(stringEvent);
-    verify(mockBackend, times(2))
-        .send(eq(BackendRequest.create(Collections.singletonList(expectedEvent))));
     verify(spyScheduler, times(1)).schedule(any(), eq(2));
-    Iterable<PersistedEvent> eventList = store.loadBatch(transportContext);
-    assertThat(eventList).isNotEmpty();
-    for (PersistedEvent persistedEvent : eventList) {
-      assertThat(persistedEvent.getEvent()).isEqualTo(expectedEvent);
-    }
-
-    assertThat(store.getNextCallTime(transportContext)).isEqualTo(0);
-  }
-
-  @Test
-  public void uploader_ok_shouldNotReschedule() {
-    TransportRuntime runtime = TransportRuntime.getInstance();
-    EventStore store = component.getEventStore();
-    String mockBackendName = generateBackendName();
-    TransportContext transportContext =
-        TransportContext.builder()
-            .setBackendName(mockBackendName)
-            .setPriority(Priority.DEFAULT)
-            .build();
-    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
-    when(mockBackend.send(any()))
-        .thenReturn(BackendResponse.create(BackendResponse.Status.OK, 1000));
-    TransportFactory factory = runtime.newFactory(mockBackendName);
-    Transport<String> transport =
-        factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry("TelemetryData");
-    EventInternal expectedEvent =
-        EventInternal.builder()
-            .setEventMillis(3)
-            .setUptimeMillis(1)
-            .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
-            .build();
-    transport.send(stringEvent);
-    verify(mockBackend, times(1))
-        .send(eq(BackendRequest.create(Collections.singletonList(expectedEvent))));
-    verify(spyScheduler, times(0)).schedule(any(), eq(2));
-    assertThat(store.loadBatch(transportContext)).isEmpty();
-    assertThat(store.getNextCallTime(transportContext)).isAtLeast((long) 1000);
-  }
-
-  @Test
-  public void uploader_nonTransientError_shouldNotReschedule() {
-    TransportRuntime runtime = TransportRuntime.getInstance();
-    EventStore store = component.getEventStore();
-    String mockBackendName = generateBackendName();
-    TransportContext transportContext =
-        TransportContext.builder()
-            .setBackendName(mockBackendName)
-            .setPriority(Priority.DEFAULT)
-            .build();
-    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
-    when(mockBackend.send(any()))
-        .thenReturn(BackendResponse.create(BackendResponse.Status.NONTRANSIENT_ERROR, -1));
-    TransportFactory factory = runtime.newFactory(mockBackendName);
-    Transport<String> transport =
-        factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry("TelemetryData");
-    EventInternal expectedEvent =
-        EventInternal.builder()
-            .setEventMillis(3)
-            .setUptimeMillis(1)
-            .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
-            .build();
-    transport.send(stringEvent);
-    verify(mockBackend, times(1))
-        .send(eq(BackendRequest.create(Collections.singletonList(expectedEvent))));
-    verify(spyScheduler, times(0)).schedule(any(), eq(2));
-    assertThat(store.loadBatch(transportContext)).isEmpty();
     assertThat(store.getNextCallTime(transportContext)).isEqualTo(0);
   }
 }

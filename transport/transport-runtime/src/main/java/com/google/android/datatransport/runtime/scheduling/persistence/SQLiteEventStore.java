@@ -183,8 +183,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   @Override
-  @Nullable
-  public Long getNextCallTime(TransportContext transportContext) {
+  public long getNextCallTime(TransportContext transportContext) {
     try (Cursor cursor =
         getDb()
             .rawQuery(
@@ -197,7 +196,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         return cursor.getLong(0);
       }
     }
-    return null;
+    return 0;
   }
 
   @Override

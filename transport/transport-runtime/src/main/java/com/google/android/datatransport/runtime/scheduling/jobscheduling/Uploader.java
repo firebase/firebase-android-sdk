@@ -25,6 +25,7 @@ import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.WallTime;
@@ -84,7 +85,7 @@ public class Uploader {
             } else {
               logAndUpdateState(transportContext, attemptNumber);
             }
-          } catch (Exception e) {
+          } catch (SynchronizationException e) {
             workScheduler.schedule(transportContext, attemptNumber + 1);
           } finally {
             callback.run();
