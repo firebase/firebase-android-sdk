@@ -1,0 +1,26 @@
+{
+  "name": "latency-metrics-collection",
+  "version": "0.0.1",
+  "description": "Collects test latency metrics from Prow.",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "format": "prettier --write 'src/**/*.ts' '*.json' '.prettierrc'",
+    "lint": "tslint -c tslint.json --fix 'src/**/*.ts'",
+    "start": "ts-node src/index.ts",
+    "test": "echo 'No test implemented.'"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "0.8.2",
+    "mkdirp": "0.5.1",
+    "moment": "2.24.0",
+    "immutable": "4.0.0-rc.12",
+    "ts-node": "8.1.0",
+    "typescript": "3.4.5",
+    "yargs": "13.2.2"
+  },
+  "devDependencies": {
+    "prettier": "1.17.0",
+    "tslint": "5.16.0"
+  }
+}
