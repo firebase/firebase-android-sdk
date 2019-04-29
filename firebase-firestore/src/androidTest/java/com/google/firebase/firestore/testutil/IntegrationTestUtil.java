@@ -202,16 +202,6 @@ public class IntegrationTestUtil {
     return testFirestore(BAD_PROJECT_ID, Level.DEBUG, newTestSettings());
   }
 
-  private static void clearPersistence(
-      Context context, DatabaseId databaseId, String persistenceKey) {
-    @SuppressWarnings("VisibleForTests")
-    String databaseName = SQLitePersistence.databaseName(persistenceKey, databaseId);
-    String sqlLitePath = context.getDatabasePath(databaseName).getPath();
-    String journalPath = sqlLitePath + "-journal";
-    new File(sqlLitePath).delete();
-    new File(journalPath).delete();
-  }
-
   /**
    * Initializes a new Firestore instance that can be used in testing. It is guaranteed to not share
    * state with other instances returned from this call.
@@ -227,8 +217,6 @@ public class IntegrationTestUtil {
     Context context = InstrumentationRegistry.getContext();
     DatabaseId databaseId = DatabaseId.forDatabase(projectId, DatabaseId.DEFAULT_DATABASE_ID);
     String persistenceKey = "db" + firestoreStatus.size();
-
-    clearPersistence(context, databaseId, persistenceKey);
 
     AsyncQueue asyncQueue = null;
 
@@ -246,6 +234,7 @@ public class IntegrationTestUtil {
             new EmptyCredentialsProvider(),
             asyncQueue,
             /*firebaseApp=*/ null);
+    SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);
 

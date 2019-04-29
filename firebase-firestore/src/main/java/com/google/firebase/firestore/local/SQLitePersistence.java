@@ -34,6 +34,7 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -200,6 +201,15 @@ public final class SQLitePersistence extends Persistence {
       db.endTransaction();
     }
     return value;
+  }
+
+  public static void clearPersistence(
+      Context context, DatabaseId databaseId, String persistenceKey) {
+    String databaseName = SQLitePersistence.databaseName(persistenceKey, databaseId);
+    String sqlLitePath = context.getDatabasePath(databaseName).getPath();
+    String journalPath = sqlLitePath + "-journal";
+    new File(sqlLitePath).delete();
+    new File(journalPath).delete();
   }
 
   long getByteSize() {

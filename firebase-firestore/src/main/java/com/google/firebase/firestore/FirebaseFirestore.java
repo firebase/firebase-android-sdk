@@ -34,6 +34,7 @@ import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
+import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -63,6 +64,8 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final UserDataConverter dataConverter;
+
+  private boolean clientRunning;
 
   @NonNull
   @PublicApi
@@ -146,6 +149,7 @@ public class FirebaseFirestore {
     this.asyncQueue = checkNotNull(asyncQueue);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
+    this.clientRunning = false;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
   }
@@ -186,6 +190,7 @@ public class FirebaseFirestore {
       if (client != null) {
         return;
       }
+      this.clientRunning = true;
       DatabaseInfo databaseInfo =
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
@@ -335,6 +340,7 @@ public class FirebaseFirestore {
   Task<Void> shutdown() {
     // The client must be initialized to ensure that all subsequent API usage throws an exception.
     this.ensureClientConfigured();
+    this.clientRunning = false;
     return client.shutdown();
   }
 
@@ -375,6 +381,22 @@ public class FirebaseFirestore {
     } else {
       Logger.setLogLevel(Level.WARN);
     }
+  }
+
+  /**
+   * Clears the persistent storage.
+   *
+   * <p>Must be called while the client is not started (after the app is shutdown or when the app is
+   * first initialized). On startup, this method must called before other methods (other than
+   * settings()). If the client is still running, an exception with the a code of
+   * `failed-precondition` will be thrown.
+   */
+  @PublicApi
+  public void _clearPersistence() {
+    if (this.clientRunning) {
+      throw new IllegalStateException("Persistence cannot be cleared while the client is running.");
+    }
+    SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
   }
 
   FirestoreClient getClient() {
