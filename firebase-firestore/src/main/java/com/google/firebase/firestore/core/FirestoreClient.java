@@ -223,7 +223,6 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   }
 
   private void initialize(Context context, User user, boolean usePersistence, long cacheSizeBytes) {
-    this.verifyNotShutdown();
     // Note: The initialization work must all be synchronous (we can't dispatch more work) since
     // external write/listen operations could get queued to run before that subsequent work
     // completes.
@@ -277,37 +276,31 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   @Override
   public void handleRemoteEvent(RemoteEvent remoteEvent) {
-    this.verifyNotShutdown();
     syncEngine.handleRemoteEvent(remoteEvent);
   }
 
   @Override
   public void handleRejectedListen(int targetId, Status error) {
-    this.verifyNotShutdown();
     syncEngine.handleRejectedListen(targetId, error);
   }
 
   @Override
   public void handleSuccessfulWrite(MutationBatchResult mutationBatchResult) {
-    this.verifyNotShutdown();
     syncEngine.handleSuccessfulWrite(mutationBatchResult);
   }
 
   @Override
   public void handleRejectedWrite(int batchId, Status error) {
-    this.verifyNotShutdown();
     syncEngine.handleRejectedWrite(batchId, error);
   }
 
   @Override
   public void handleOnlineStateChange(OnlineState onlineState) {
-    this.verifyNotShutdown();
     syncEngine.handleOnlineStateChange(onlineState);
   }
 
   @Override
   public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
-    this.verifyNotShutdown();
     return syncEngine.getRemoteKeysForTarget(targetId);
   }
 }
