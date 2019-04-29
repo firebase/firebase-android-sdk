@@ -85,10 +85,7 @@ public class JobInfoScheduler implements WorkScheduler {
     // Obtain the next available call time for the backend.
     Long backendTime = eventStore.getNextCallTime(transportContext);
 
-    long timeDiff = 0;
-    if (backendTime != 0) {
-      timeDiff = backendTime - clock.getTime();
-    }
+    long timeDiff = Math.max(0, backendTime - clock.getTime());
     long latency = config.getScheduleDelay(timeDiff, attemptNumber);
     // Schedule the build.
     PersistableBundle bundle = new PersistableBundle();

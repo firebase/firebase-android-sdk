@@ -23,7 +23,7 @@ import dagger.Provides;
 import javax.inject.Singleton;
 
 @Module
-public abstract class ExceptionEventStoreModule {
+public abstract class SpyEventStoreModule {
   @Provides
   static EventStoreConfig storeConfig() {
     return EventStoreConfig.DEFAULT;
@@ -31,7 +31,7 @@ public abstract class ExceptionEventStoreModule {
 
   @Provides
   @Singleton
-  static EventStore eventStore(SQLiteEventStore store) {
+  EventStore eventStore(SQLiteEventStore store) {
     return spy(store);
   }
 

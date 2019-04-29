@@ -94,10 +94,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
 
     Long backendTime = eventStore.getNextCallTime(transportContext);
 
-    long timeDiff = 0;
-    if (backendTime != 0) {
-      timeDiff = backendTime - clock.getTime();
-    }
+    long timeDiff = Math.max(0, backendTime - clock.getTime());
 
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
     this.alarmManager.set(
