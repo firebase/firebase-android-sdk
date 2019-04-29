@@ -21,6 +21,7 @@ import static junit.framework.Assert.fail;
 
 import android.content.Context;
 import android.net.SSLCertificateSocketFactory;
+import android.os.StrictMode;
 import android.support.test.InstrumentationRegistry;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -84,6 +85,7 @@ public class IntegrationTestUtil {
 
   private static final FirestoreProvider provider = new FirestoreProvider();
 
+  private static boolean strictModeEnabled = false;
   private static boolean backendPrimed = false;
 
   public static FirestoreProvider provider() {
@@ -203,6 +205,27 @@ public class IntegrationTestUtil {
   }
 
   /**
+   * Enable strict mode for integration tests. Currently checks for leaked SQLite or other Closeable
+   * objects.
+   *
+   * <p>If a leak is found, Android will log the leak and kill the test.
+   */
+  private static void ensureStrictMode() {
+    if (strictModeEnabled) {
+      return;
+    }
+
+    strictModeEnabled = true;
+    StrictMode.setVmPolicy(
+        new StrictMode.VmPolicy.Builder()
+            .detectLeakedSqlLiteObjects()
+            .detectLeakedClosableObjects()
+            .penaltyLog()
+            .penaltyDeath()
+            .build());
+  }
+
+  /**
    * Initializes a new Firestore instance that can be used in testing. It is guaranteed to not share
    * state with other instances returned from this call.
    */
@@ -217,6 +240,9 @@ public class IntegrationTestUtil {
     Context context = InstrumentationRegistry.getContext();
     DatabaseId databaseId = DatabaseId.forDatabase(projectId, DatabaseId.DEFAULT_DATABASE_ID);
     String persistenceKey = "db" + firestoreStatus.size();
+
+    ensureStrictMode();
+    SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
 
     AsyncQueue asyncQueue = null;
 
