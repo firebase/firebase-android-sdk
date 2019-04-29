@@ -66,8 +66,13 @@ public class InMemoryEventStore implements EventStore {
   }
 
   @Override
-  public Long getNextCallTime(TransportContext transportContext) {
-    return backendCallTime.get(transportContext);
+  public long getNextCallTime(TransportContext transportContext) {
+    Long nextCalltime = backendCallTime.get(transportContext);
+    if (nextCalltime == null) {
+      return 0;
+    } else {
+      return nextCalltime;
+    }
   }
 
   @Override

@@ -18,7 +18,7 @@ import android.content.Context;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule;
+import com.google.android.datatransport.runtime.scheduling.persistence.ExceptionEventStoreModule;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
@@ -28,7 +28,7 @@ import javax.inject.Singleton;
 
 @Component(
     modules = {
-      EventStoreModule.class,
+      ExceptionEventStoreModule.class,
       TestExecutionModule.class,
       TestSchedulingModule.class,
     })
