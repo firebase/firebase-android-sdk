@@ -39,7 +39,6 @@ import com.google.android.datatransport.cct.proto.NetworkConnectionInfo;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
-import com.google.android.datatransport.runtime.backends.BackendResponse.Status;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
@@ -133,8 +132,7 @@ public class CctTransportBackendTest {
                                         .setMobileSubtypeValue(activeNetworkInfo.getSubtype())
                                         .build()))));
 
-    assertEquals(response.getStatus(), Status.OK);
-    assertEquals(response.getNextRequestWaitMillis(), 3);
+    assertEquals(response, BackendResponse.ok(3));
   }
 
   @Test
@@ -144,8 +142,7 @@ public class CctTransportBackendTest {
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response.getStatus(), Status.TRANSIENT_ERROR);
-    assertEquals(response.getNextRequestWaitMillis(), -1);
+    assertEquals(response, BackendResponse.transientError());
   }
 
   @Test
@@ -155,8 +152,7 @@ public class CctTransportBackendTest {
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response.getStatus(), Status.TRANSIENT_ERROR);
-    assertEquals(response.getNextRequestWaitMillis(), -1);
+    assertEquals(response, BackendResponse.transientError());
   }
 
   @Test
@@ -172,8 +168,7 @@ public class CctTransportBackendTest {
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response.getStatus(), Status.NONTRANSIENT_ERROR);
-    assertEquals(response.getNextRequestWaitMillis(), -1);
+    assertEquals(response, BackendResponse.fatalError());
   }
 
   @Test
@@ -183,7 +178,17 @@ public class CctTransportBackendTest {
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response.getStatus(), Status.NONTRANSIENT_ERROR);
-    assertEquals(response.getNextRequestWaitMillis(), -1);
+    assertEquals(response, BackendResponse.fatalError());
+  }
+
+  @Test
+  public void send_whenBackendResponseTimesOut_shouldReturnTransientError() {
+    CctTransportBackend backend =
+        new CctTransportBackend(
+            RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock, 300);
+    stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withFixedDelay(500)));
+    BackendResponse response = backend.send(getBackendRequest());
+
+    assertEquals(response, BackendResponse.transientError());
   }
 }
