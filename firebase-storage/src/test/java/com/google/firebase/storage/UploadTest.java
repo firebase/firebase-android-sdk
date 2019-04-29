@@ -113,8 +113,7 @@ public class UploadTest {
     System.out.println("Starting test cantUploadToRoot.");
 
     StorageReference storage =
-        FirebaseStorage.getInstance()
-            .getReferenceFromUrl("gs://project-5516366556574091405.appspot.com");
+        FirebaseStorage.getInstance().getReferenceFromUrl("gs://fooey.appspot.com");
 
     AtomicReference<Exception> taskException = new AtomicReference<>();
 
@@ -172,8 +171,7 @@ public class UploadTest {
     System.out.println("Starting test addAndRemoveListeners.");
 
     StorageReference storage =
-        FirebaseStorage.getInstance()
-            .getReferenceFromUrl("gs://project-5516366556574091405.appspot.com/listeners.txt");
+        FirebaseStorage.getInstance().getReferenceFromUrl("gs://fooey.appspot.com/listeners.txt");
 
     ActivityController<Activity> activityController =
         Robolectric.buildActivity(Activity.class).create();
@@ -610,8 +608,7 @@ public class UploadTest {
     NetworkLayerMock.ensureNetworkMock("streamDownload", true);
 
     StorageReference storage =
-        FirebaseStorage.getInstance()
-            .getReferenceFromUrl("gs://project-5516366556574091405.appspot.com/image.jpg");
+        FirebaseStorage.getInstance().getReferenceFromUrl("gs://fooey.appspot.com/image.jpg");
     final Semaphore semaphore = new Semaphore(0);
 
     StreamDownloadTask task =

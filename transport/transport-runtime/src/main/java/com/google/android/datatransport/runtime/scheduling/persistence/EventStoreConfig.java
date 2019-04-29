@@ -18,23 +18,42 @@ import com.google.auto.value.AutoValue;
 
 @AutoValue
 abstract class EventStoreConfig {
+  private static final long MAX_DB_STORAGE_SIZE_IN_BYTES = 10 * 1024 * 1024;
+  private static final int LOAD_BATCH_SIZE = 200;
+  private static final int LOCK_TIME_OUT_MS = 10000;
+
+  static final EventStoreConfig DEFAULT =
+      EventStoreConfig.builder()
+          .setMaxStorageSizeInBytes(MAX_DB_STORAGE_SIZE_IN_BYTES)
+          .setLoadBatchSize(LOAD_BATCH_SIZE)
+          .setCriticalSectionEnterTimeoutMs(LOCK_TIME_OUT_MS)
+          .build();
+
   abstract long getMaxStorageSizeInBytes();
 
   abstract int getLoadBatchSize();
 
-  static EventStoreConfig create(long maxStorageSizeInBytes, int loadBatchSize) {
-    if (maxStorageSizeInBytes < 0) {
-      throw new IllegalArgumentException(
-          "Cannot set max storage size to a negative number of bytes");
-    }
-    if (loadBatchSize < 0) {
-      throw new IllegalArgumentException(
-          "Cannot set load batch size to a negative number of bytes");
-    }
-    return new AutoValue_EventStoreConfig(maxStorageSizeInBytes, loadBatchSize);
+  abstract int getCriticalSectionEnterTimeoutMs();
+
+  static EventStoreConfig.Builder builder() {
+    return new AutoValue_EventStoreConfig.Builder();
   }
 
-  EventStoreConfig withMaxStorageSizeInBytes(long newVaue) {
-    return create(newVaue, getLoadBatchSize());
+  Builder toBuilder() {
+    return builder()
+        .setMaxStorageSizeInBytes(getMaxStorageSizeInBytes())
+        .setLoadBatchSize(getLoadBatchSize())
+        .setCriticalSectionEnterTimeoutMs(getCriticalSectionEnterTimeoutMs());
+  }
+
+  @AutoValue.Builder
+  abstract static class Builder {
+    abstract Builder setMaxStorageSizeInBytes(long value);
+
+    abstract Builder setLoadBatchSize(int value);
+
+    abstract Builder setCriticalSectionEnterTimeoutMs(int value);
+
+    abstract EventStoreConfig build();
   }
 }

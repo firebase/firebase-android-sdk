@@ -16,7 +16,6 @@ package com.google.firebase.firestore.testutil;
 
 // Copyright 2009 Google Inc. All Rights Reserved.
 
-import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth.assert_;
 
@@ -155,8 +154,8 @@ public class ComparatorTester {
         testClassCast(reference);
         for (int otherIndex = 0; otherIndex < equalityGroups.size(); otherIndex++) {
           for (Object other : equalityGroups.get(otherIndex)) {
-            assertThat(Integer.signum(compare(reference, other)))
-                .named("compare(%s, %s)", reference, other)
+            assertWithMessage("compare(%s, %s)", reference, other)
+                .that(Integer.signum(compare(reference, other)))
                 .isEqualTo(Integer.signum(Ints.compare(referenceIndex, otherIndex)));
           }
         }
@@ -172,8 +171,8 @@ public class ComparatorTester {
             assertWithMessage(
                     "Testing equals() for compatibility with compare()/compareTo(), "
                         + "add a call to doNotRequireEqualsCompatibility() if this is not required")
+                .withMessage("%s.equals(%s)", reference, other)
                 .that(reference.equals(other))
-                .named("%s.equals(%s)", reference, other)
                 .isEqualTo(compare(reference, other) == 0);
           }
         }

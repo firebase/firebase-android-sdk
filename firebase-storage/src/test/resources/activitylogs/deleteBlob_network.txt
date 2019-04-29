@@ -1,0 +1,40 @@
+
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/flubbertest.txt
+setRequestMethod:DELETE
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:Content-Length,0
+setRequestProperty:x-firebase-gmpid,fooey
+setUseCaches:false
+setDoInput:true
+getResponseCode:204
+getHeaderFields:
+ null:[HTTP/1.1 204 No Content]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="35,34,33,32,31,30,29,28,27,26,25"]
+ Alternate-Protocol:[443:quic]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[0]
+ Date:[Wed, 06 Jul 2016 01:48:47 GMT]
+ Expires:[Wed, 06 Jul 2016 01:48:47 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1467769723990]
+ X-Android-Response-Source:[NETWORK 204]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1467769723866]
+ X-Google-Backends:[/bns/ir/borg/ir/bns/apps-upload/apps-upload.uploader/262,acsfoa10:443]
+ X-Google-DOS-Service-Trace:[main:apps-upload-embargo]
+ X-Google-GFE-Backend-Request-Info:[eid=f2N8V_iUL4W2iAGar5lg]
+ X-Google-GFE-Request-Trace:[acsfoa10:443,/bns/ir/borg/ir/bns/apps-upload/apps-upload.uploader/262,acsfoa10:443]
+ X-Google-GFE-Response-Code-Details-Trace:[response_code_set_by_backend]
+ X-Google-GFE-Service-Trace:[apps-upload-embargo]
+ X-Google-Netmon-Label:[/bns/ir/borg/ir/bns/apps-upload/apps-upload.uploader/262]
+ X-Google-Service:[apps-upload-embargo]
+ X-Google-Shellfish-Status:[CIgCQEY]
+ X-GUploader-Customer:[firebase-storage]
+ X-GUploader-Request-Result:[success]
+ X-GUploader-Upload-Result:[success]
+ X-GUploader-UploadID:[AEnB2UrKjby3kCEonubufIPh9DF9q0kB6c3x99Y3a0xj7VjFvjQAB0_ySp_Te6Iv1d8Nh4Gb4Cg2G4wCEyv73KQrUSFu9Pfp8Q]
+getInputStream:
+disconnect:

@@ -41,7 +41,8 @@ public class SQLiteEventStoreTest {
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();
-  private static final EventStoreConfig CONFIG = EventStoreConfig.create(10 * 1024 * 1024, 5);
+  private static final EventStoreConfig CONFIG =
+      EventStoreConfig.DEFAULT.toBuilder().setLoadBatchSize(5).build();
 
   private final SQLiteEventStore store = newStoreWithConfig(CONFIG);
 
@@ -143,10 +144,13 @@ public class SQLiteEventStoreTest {
   @Test
   public void persist_whenDbSizeOnDiskIsAtLimit_shouldNotPersistNewEvents() {
     SQLiteEventStore storeUnderTest =
-        newStoreWithConfig(CONFIG.withMaxStorageSizeInBytes(store.getByteSize()));
+        newStoreWithConfig(
+            CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize()).build());
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNull();
 
-    storeUnderTest = newStoreWithConfig(CONFIG.withMaxStorageSizeInBytes(store.getByteSize() + 1));
+    storeUnderTest =
+        newStoreWithConfig(
+            CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize() + 1).build());
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNotNull();
   }
 
