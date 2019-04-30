@@ -202,22 +202,31 @@ final class CctTransportBackend implements TransportBackend {
     connection.setRequestMethod("POST");
     connection.setRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
     connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, PROTOBUF_CONTENT_TYPE);
-    try (WritableByteChannel channel = Channels.newChannel(connection.getOutputStream())) {
+
+    WritableByteChannel channel = Channels.newChannel(connection.getOutputStream());
+    try {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
-      try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output)) {
+      GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output);
+
+      try {
         requestBody.writeTo(gzipOutputStream);
+      } finally {
+        gzipOutputStream.close();
       }
       channel.write(ByteBuffer.wrap(output.toByteArray()));
       int responseCode = connection.getResponseCode();
       LOGGER.info("Status Code: " + responseCode);
 
       long nextRequestMillis;
-      try (InputStream inputStream = connection.getInputStream()) {
+      InputStream inputStream = connection.getInputStream();
+      try {
         try {
           nextRequestMillis = LogResponse.parseFrom(inputStream).getNextRequestWaitMillis();
         } catch (InvalidProtocolBufferException e) {
           return BackendResponse.fatalError();
         }
+      } finally {
+        inputStream.close();
       }
       if (responseCode == 200) {
         return BackendResponse.ok(nextRequestMillis);
@@ -226,6 +235,8 @@ final class CctTransportBackend implements TransportBackend {
       } else {
         return BackendResponse.fatalError();
       }
+    } finally {
+      channel.close();
     }
   }
 
