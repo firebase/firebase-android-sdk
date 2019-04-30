@@ -392,11 +392,11 @@ public class FirebaseFirestore {
    *
    * @throws IllegalStateException if the client is still running.
    */
-  void _clearPersistence() {
+  Task<Void> _clearPersistence() {
     if (this.clientRunning) {
       throw new IllegalStateException("Persistence cannot be cleared while the client is running.");
     }
-    SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
+    return SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
   }
 
   FirestoreClient getClient() {

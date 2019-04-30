@@ -46,7 +46,7 @@ public final class AccessHelper {
     return firestore.getAsyncQueue();
   }
 
-  public static void clearPersistence(FirebaseFirestore firestore) {
-    firestore._clearPersistence();
+  public static Task<Void> clearPersistence(FirebaseFirestore firestore) {
+    return firestore._clearPersistence();
   }
 }

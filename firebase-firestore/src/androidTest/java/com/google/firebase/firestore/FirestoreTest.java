@@ -988,7 +988,7 @@ public class FirestoreTest {
     Context context = InstrumentationRegistry.getContext();
 
     waitFor(AccessHelper.shutdown(firestore));
-    AccessHelper.clearPersistence(firestore);
+    waitFor(AccessHelper.clearPersistence(firestore));
     FirebaseApp app2 = FirebaseApp.initializeApp(context);
     FirebaseFirestore firestore2 = FirebaseFirestore.getInstance(app2);
     DocumentReference docRef2 = firestore2.document(docRef.getPath());
@@ -1001,7 +1001,7 @@ public class FirestoreTest {
     FirebaseFirestore firestore = testFirestore();
     waitFor(firestore.enableNetwork());
     expectError(
-        () -> AccessHelper.clearPersistence(firestore),
+        () -> waitFor(AccessHelper.clearPersistence(firestore)),
         "Persistence cannot be cleared while the client is running.");
   }
 }

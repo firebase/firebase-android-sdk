@@ -31,6 +31,9 @@ import android.database.sqlite.SQLiteTransactionListener;
 import android.os.Build;
 import android.os.Build.VERSION;
 import android.support.annotation.VisibleForTesting;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
@@ -43,6 +46,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -210,7 +214,7 @@ public final class SQLitePersistence extends Persistence {
     return value;
   }
 
-  public static void clearPersistence(
+  public static Task<Void> clearPersistence(
       Context context, DatabaseId databaseId, String persistenceKey) {
     String databaseName = SQLitePersistence.databaseName(persistenceKey, databaseId);
     String sqLitePath = context.getDatabasePath(databaseName).getPath();
@@ -219,39 +223,43 @@ public final class SQLitePersistence extends Persistence {
     File sqLiteFile = new File(sqLitePath);
     File journalFile = new File(journalPath);
     if (!sqLiteFile.exists() && !journalFile.exists()) {
-      return;
-    }
-
-    if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      SqLiteDeleter.delete(sqLiteFile, journalFile);
+      return Tasks.forResult(null);
+    } else if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      return DefaultSqLiteDeleter.delete(sqLiteFile, journalFile);
     } else {
-      SqLiteDeleter.delete(sqLiteFile, journalFile);
+      return SqLiteDeleter.delete(sqLiteFile, journalFile);
     }
   }
 
-  /** Clears the SQLite dtabase. Only used on API levels 26+. */
+  /** Clears the SQLite database. Only used on API levels >= 26. */
   @TargetApi(Build.VERSION_CODES.O)
   private static class DefaultSqLiteDeleter {
-    public static boolean delete(File sqLiteFile, File journalFile) {
+    public static Task<Void> delete(File sqLiteFile, File journalFile) {
       try {
         Files.delete(sqLiteFile.toPath());
         Files.delete(journalFile.toPath());
-        return true;
+        return Tasks.forResult(null);
       } catch (IOException e) {
-        throw new IllegalStateException("Failed to delete the database in O." + e);
+        final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+        source.setException(
+            new FirebaseFirestoreException("Failed to delete the database." + e, Code.UNKNOWN));
+        return source.getTask();
       }
     }
   }
 
-  /** Clears the SQLite dtabase. Only used on API levels < 16. */
+  /** Clears the SQLite database. Only used on API levels < 16. */
   private static class SqLiteDeleter {
-    public static boolean delete(File sqLiteFile, File journalFile) {
+    public static Task<Void> delete(File sqLiteFile, File journalFile) {
       boolean sqlResult = sqLiteFile.delete();
       boolean journalResult = journalFile.delete();
       if (!sqlResult && !journalResult) {
-        throw new IllegalStateException("Failed to delete the database.");
+        final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+        source.setException(
+            new FirebaseFirestoreException("Failed to delete the database.", Code.UNKNOWN));
+        return source.getTask();
       }
-      return true;
+      return Tasks.forResult(null);
     }
   }
 
@@ -262,7 +270,7 @@ public final class SQLitePersistence extends Persistence {
   /**
    * Gets the page size of the database. Typically 4096.
    *
-   * @see https://www.sqlite.org/pragma.html#pragma_page_size
+   * @see "https://www.sqlite.org/pragma.html#pragma_page_size"
    */
   private long getPageSize() {
     return query("PRAGMA page_size").firstValue(row -> row.getLong(/*column=*/ 0));
@@ -272,7 +280,7 @@ public final class SQLitePersistence extends Persistence {
    * Gets the number of pages in the database file. Multiplying this with the page size yields the
    * approximate size of the database on disk (including the WAL, if relevant).
    *
-   * @see https://www.sqlite.org/pragma.html#pragma_page_count.
+   * @see "https://www.sqlite.org/pragma.html#pragma_page_count."
    */
   private long getPageCount() {
     return query("PRAGMA page_count").firstValue(row -> row.getLong(/*column=*/ 0));
