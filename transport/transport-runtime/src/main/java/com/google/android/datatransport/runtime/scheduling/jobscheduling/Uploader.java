@@ -70,12 +70,11 @@ public class Uploader {
     return activeNetworkInfo != null && activeNetworkInfo.isConnected();
   }
 
-  public void upload(String backendName, int attemptNumber, Runnable callback) {
+  public void upload(TransportContext transportContext, int attemptNumber, Runnable callback) {
     this.executor.execute(
         () -> {
-          TransportContext transportContext =
-              TransportContext.builder().setBackendName(backendName).build();
           try {
+            guard.runCriticalSection(eventStore::cleanUp);
             if (!isNetworkAvailable()) {
               guard.runCriticalSection(
                   () -> {

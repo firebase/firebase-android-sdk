@@ -22,11 +22,11 @@ public abstract class Event<T> {
 
   public abstract Priority getPriority();
 
-  public static <T> Event<T> ofData(T payload, Priority priority) {
-    return new AutoValue_Event<>(payload, priority);
+  public static <T> Event<T> ofData(T payload) {
+    return new AutoValue_Event<>(payload, Priority.DEFAULT);
   }
 
   public static <T> Event<T> ofTelemetry(T value) {
-    return new AutoValue_Event<>(value, Priority.DEFAULT);
+    return new AutoValue_Event<>(value, Priority.VERY_LOW);
   }
 }

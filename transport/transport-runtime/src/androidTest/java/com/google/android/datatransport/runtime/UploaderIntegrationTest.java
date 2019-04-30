@@ -86,7 +86,7 @@ public class UploaderIntegrationTest {
     TransportContext transportContext =
         TransportContext.builder()
             .setBackendName(mockBackendName)
-            .setPriority(Priority.DEFAULT)
+            .setPriority(Priority.VERY_LOW)
             .build();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     when(mockBackend.send(any())).thenReturn(BackendResponse.transientError());
@@ -122,8 +122,9 @@ public class UploaderIntegrationTest {
     TransportContext transportContext =
         TransportContext.builder()
             .setBackendName(mockBackendName)
-            .setPriority(Priority.DEFAULT)
+            .setPriority(Priority.VERY_LOW)
             .build();
+
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
     TransportFactory factory = runtime.newFactory(mockBackendName);
@@ -143,6 +144,7 @@ public class UploaderIntegrationTest {
     verify(spyScheduler, times(0)).schedule(any(), eq(2));
     assertThat(store.loadBatch(transportContext)).isEmpty();
     assertThat(store.getNextCallTime(transportContext)).isAtLeast((long) 1000);
+    verify(store, times(1)).cleanUp();
   }
 
   @Test
@@ -153,7 +155,7 @@ public class UploaderIntegrationTest {
     TransportContext transportContext =
         TransportContext.builder()
             .setBackendName(mockBackendName)
-            .setPriority(Priority.DEFAULT)
+            .setPriority(Priority.VERY_LOW)
             .build();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     when(mockBackend.send(any())).thenReturn(BackendResponse.fatalError());
@@ -185,7 +187,7 @@ public class UploaderIntegrationTest {
     TransportContext transportContext =
         TransportContext.builder()
             .setBackendName(mockBackendName)
-            .setPriority(Priority.DEFAULT)
+            .setPriority(Priority.VERY_LOW)
             .build();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     doThrow(new SynchronizationException("Error", null)).when(store).loadBatch(any());

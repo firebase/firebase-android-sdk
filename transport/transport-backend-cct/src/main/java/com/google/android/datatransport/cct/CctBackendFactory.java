@@ -22,7 +22,8 @@ import com.google.android.datatransport.runtime.backends.TransportBackend;
 
 @Keep
 public class CctBackendFactory implements BackendFactory {
-  private static final String URL = mergeStrings("hts/pa.ogepscmlgbth", "tp:/lygolai.o/o/ac");
+  private static final String URL =
+      mergeStrings("hts/frbslgiggolai.o/0clgbth", "tp:/ieaeogn.ogepscmvc/o/ac");
 
   @Override
   public TransportBackend create(CreationContext creationContext) {

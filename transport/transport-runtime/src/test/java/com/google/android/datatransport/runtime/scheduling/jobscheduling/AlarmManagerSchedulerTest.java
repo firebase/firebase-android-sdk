@@ -47,21 +47,17 @@ public class AlarmManagerSchedulerTest {
   private final EventStore store = new InMemoryEventStore();
   private final AlarmManager alarmManager =
       spy((AlarmManager) context.getSystemService(Context.ALARM_SERVICE));
-  private final SchedulerConfig config =
-      SchedulerConfig.builder()
-          .setDelta(30000)
-          .setMaxAllowedTime(100000000)
-          .setMaximumDelay(-1)
-          .build();
+  private final SchedulerConfig config = SchedulerConfig.getDefault(() -> 1);
   private final AlarmManagerScheduler scheduler =
-      new AlarmManagerScheduler(context, store, () -> 1, alarmManager, config);
+      new AlarmManagerScheduler(context, store, alarmManager, config);
 
   private Intent getIntent() {
     Uri.Builder intentDataBuilder = new Uri.Builder();
     intentDataBuilder.appendQueryParameter(
-        SchedulerUtil.BACKEND_NAME, TRANSPORT_CONTEXT.getBackendName());
+        AlarmManagerScheduler.BACKEND_NAME, TRANSPORT_CONTEXT.getBackendName());
     intentDataBuilder.appendQueryParameter(
-        SchedulerUtil.APPLICATION_BUNDLE_ID, context.getPackageName());
+        AlarmManagerScheduler.EVENT_PRIORITY,
+        String.valueOf(TRANSPORT_CONTEXT.getPriority().ordinal()));
 
     Intent intent = new Intent(context, AlarmManagerSchedulerBroadcastReceiver.class);
     intent.setData(intentDataBuilder.build());

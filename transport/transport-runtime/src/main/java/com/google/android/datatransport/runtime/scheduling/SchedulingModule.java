@@ -21,8 +21,6 @@ import com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfo
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import com.google.android.datatransport.runtime.time.Clock;
-import com.google.android.datatransport.runtime.time.WallTime;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
@@ -31,11 +29,11 @@ import dagger.Provides;
 public abstract class SchedulingModule {
   @Provides
   static WorkScheduler workScheduler(
-      Context context, EventStore eventStore, @WallTime Clock eventClock, SchedulerConfig config) {
+      Context context, EventStore eventStore, SchedulerConfig config) {
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      return new JobInfoScheduler(context, eventStore, eventClock, config);
+      return new JobInfoScheduler(context, eventStore, config);
     } else {
-      return new AlarmManagerScheduler(context, eventStore, eventClock, config);
+      return new AlarmManagerScheduler(context, eventStore, config);
     }
   }
 

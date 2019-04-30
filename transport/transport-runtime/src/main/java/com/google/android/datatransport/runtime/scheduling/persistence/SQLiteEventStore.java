@@ -31,6 +31,7 @@ import com.google.android.datatransport.runtime.synchronization.SynchronizationE
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
+import com.google.android.datatransport.runtime.time.WallTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,13 +53,19 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   private static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
 
   private final OpenHelper openHelper;
+  private final Clock wallClock;
   private final Clock monotonicClock;
   private final EventStoreConfig config;
 
   @Inject
-  SQLiteEventStore(Context applicationContext, @Monotonic Clock clock, EventStoreConfig config) {
+  SQLiteEventStore(
+      Context applicationContext,
+      @WallTime Clock wallClock,
+      @Monotonic Clock clock,
+      EventStoreConfig config) {
 
     this.openHelper = new OpenHelper(applicationContext);
+    this.wallClock = wallClock;
     this.monotonicClock = clock;
     this.config = config;
   }
@@ -250,6 +257,13 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
           List<PersistedEvent> events = loadEvents(db, transportContext);
           return join(events, loadMetadata(db, events));
         });
+  }
+
+  @Override
+  public int cleanUp() {
+    long oneWeekAgo = wallClock.getTime() - config.getEventCleanUpAge();
+    return inTransaction(
+        db -> db.delete("events", "timestamp_ms < ?", new String[] {String.valueOf(oneWeekAgo)}));
   }
 
   @Override
