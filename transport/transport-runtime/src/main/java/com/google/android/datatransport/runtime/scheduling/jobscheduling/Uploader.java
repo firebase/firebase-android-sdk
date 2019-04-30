@@ -25,6 +25,7 @@ import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
+import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.WallTime;
@@ -72,9 +73,9 @@ public class Uploader {
   public void upload(String backendName, int attemptNumber, Runnable callback) {
     this.executor.execute(
         () -> {
+          TransportContext transportContext =
+              TransportContext.builder().setBackendName(backendName).build();
           try {
-            TransportContext transportContext =
-                TransportContext.builder().setBackendName(backendName).build();
             if (!isNetworkAvailable()) {
               guard.runCriticalSection(
                   () -> {
@@ -84,6 +85,8 @@ public class Uploader {
             } else {
               logAndUpdateState(transportContext, attemptNumber);
             }
+          } catch (SynchronizationException e) {
+            workScheduler.schedule(transportContext, attemptNumber + 1);
           } finally {
             callback.run();
           }
