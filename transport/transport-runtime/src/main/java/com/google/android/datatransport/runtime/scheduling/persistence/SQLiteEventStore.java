@@ -127,7 +127,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   @Nullable
   private Long getTransportContextId(SQLiteDatabase db, TransportContext transportContext) {
-    try (Cursor cursor =
+    return tryWithCursor(
         db.query(
             "transport_contexts",
             new String[] {"_id"},
@@ -135,12 +135,13 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
             new String[] {transportContext.getBackendName()},
             null,
             null,
-            null)) {
-      if (!cursor.moveToNext()) {
-        return null;
-      }
-      return cursor.getLong(0);
-    }
+            null),
+        cursor -> {
+          if (!cursor.moveToNext()) {
+            return null;
+          }
+          return cursor.getLong(0);
+        });
   }
 
   @Override
@@ -183,21 +184,21 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   @Override
-  @Nullable
-  public Long getNextCallTime(TransportContext transportContext) {
-    try (Cursor cursor =
+  public long getNextCallTime(TransportContext transportContext) {
+    return tryWithCursor(
         getDb()
             .rawQuery(
                 "SELECT next_request_ms FROM transport_contexts WHERE backend_name = ? and priority = ?",
                 new String[] {
                   transportContext.getBackendName(),
                   String.valueOf(transportContext.getPriority().ordinal())
-                })) {
-      if (cursor.moveToNext()) {
-        return cursor.getLong(0);
-      }
-    }
-    return null;
+                }),
+        cursor -> {
+          if (cursor.moveToNext()) {
+            return cursor.getLong(0);
+          }
+          return 0L;
+        });
   }
 
   @Override
@@ -208,13 +209,12 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
           if (contextId == null) {
             return false;
           }
-          try (Cursor cursor =
+          return tryWithCursor(
               getDb()
                   .rawQuery(
                       "SELECT 1 FROM events WHERE context_id = ? LIMIT 1",
-                      new String[] {contextId.toString()})) {
-            return cursor.moveToNext();
-          }
+                      new String[] {contextId.toString()}),
+              Cursor::moveToNext);
         });
   }
 
@@ -265,7 +265,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
       return events;
     }
 
-    try (Cursor cursor =
+    tryWithCursor(
         db.query(
             "events",
             new String[] {"_id", "transport_name", "timestamp_ms", "uptime_ms", "payload"},
@@ -274,19 +274,21 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
             null,
             null,
             null,
-            String.valueOf(config.getLoadBatchSize()))) {
-      while (cursor.moveToNext()) {
-        long id = cursor.getLong(0);
-        EventInternal event =
-            EventInternal.builder()
-                .setTransportName(cursor.getString(1))
-                .setEventMillis(cursor.getLong(2))
-                .setUptimeMillis(cursor.getLong(3))
-                .setPayload(cursor.getBlob(4))
-                .build();
-        events.add(PersistedEvent.create(id, transportContext, event));
-      }
-    }
+            String.valueOf(config.getLoadBatchSize())),
+        cursor -> {
+          while (cursor.moveToNext()) {
+            long id = cursor.getLong(0);
+            EventInternal event =
+                EventInternal.builder()
+                    .setTransportName(cursor.getString(1))
+                    .setEventMillis(cursor.getLong(2))
+                    .setUptimeMillis(cursor.getLong(3))
+                    .setPayload(cursor.getBlob(4))
+                    .build();
+            events.add(PersistedEvent.create(id, transportContext, event));
+          }
+          return null;
+        });
     return events;
   }
 
@@ -302,7 +304,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     }
     whereClause.append(')');
 
-    try (Cursor cursor =
+    tryWithCursor(
         db.query(
             "event_metadata",
             new String[] {"event_id", "name", "value"},
@@ -310,17 +312,19 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
             null,
             null,
             null,
-            null)) {
-      while (cursor.moveToNext()) {
-        long eventId = cursor.getLong(0);
-        Set<Metadata> currentSet = metadataIndex.get(eventId);
-        if (currentSet == null) {
-          currentSet = new HashSet<>();
-          metadataIndex.put(eventId, currentSet);
-        }
-        currentSet.add(new Metadata(cursor.getString(1), cursor.getString(2)));
-      }
-    }
+            null),
+        cursor -> {
+          while (cursor.moveToNext()) {
+            long eventId = cursor.getLong(0);
+            Set<Metadata> currentSet = metadataIndex.get(eventId);
+            if (currentSet == null) {
+              currentSet = new HashSet<>();
+              metadataIndex.put(eventId, currentSet);
+            }
+            currentSet.add(new Metadata(cursor.getString(1), cursor.getString(2)));
+          }
+          return null;
+        });
     return metadataIndex;
   }
 
@@ -435,6 +439,14 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
    */
   private long getPageCount() {
     return getDb().compileStatement("PRAGMA page_count").simpleQueryForLong();
+  }
+
+  private static <T> T tryWithCursor(Cursor c, Function<Cursor, T> function) {
+    try {
+      return function.apply(c);
+    } finally {
+      c.close();
+    }
   }
 
   private static class OpenHelper extends SQLiteOpenHelper {
