@@ -89,8 +89,7 @@ public class UploaderIntegrationTest {
             .setPriority(Priority.DEFAULT)
             .build();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
-    when(mockBackend.send(any()))
-        .thenReturn(BackendResponse.create(BackendResponse.Status.TRANSIENT_ERROR, -1));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.transientError());
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
@@ -126,8 +125,7 @@ public class UploaderIntegrationTest {
             .setPriority(Priority.DEFAULT)
             .build();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
-    when(mockBackend.send(any()))
-        .thenReturn(BackendResponse.create(BackendResponse.Status.OK, 1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
@@ -158,8 +156,7 @@ public class UploaderIntegrationTest {
             .setPriority(Priority.DEFAULT)
             .build();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
-    when(mockBackend.send(any()))
-        .thenReturn(BackendResponse.create(BackendResponse.Status.NONTRANSIENT_ERROR, -1));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.fatalError());
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
