@@ -13,3 +13,9 @@ Firebase and Google Cloud Platform products, including Cloud Functions.
 All Gradle commands should be run from the source root (which is one level up
 from this folder). See the README.md in the source root for instructions on
 publishing/testing Cloud Firestore.
+
+## Testing
+
+After importing the project into Android Studio and building successfully, you 
+will need to undo the deletion of test files in `.idea/runConfigurations` to
+run integration tests from Android Studio. 

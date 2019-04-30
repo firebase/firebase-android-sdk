@@ -220,7 +220,9 @@ projects may be published as follows.
 
 Code in this repo is formatted with the google-java-format tool. You can enable
 this formatting in Android Studio by downloading and installing the
-[google-java-format plugin](https://plugins.jetbrains.com/plugin/8527-google-java-format).
+[google-java-format plugin](https://github.com/google/google-java-format#).
+The plugin is disabled by default, but the repo contains configuration information
+and links to additional plugins.
 
 To run formatting on your entire project you can run
 ```bash
