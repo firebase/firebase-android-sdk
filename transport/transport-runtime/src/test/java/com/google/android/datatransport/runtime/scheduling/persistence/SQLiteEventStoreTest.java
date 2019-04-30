@@ -106,7 +106,7 @@ public class SQLiteEventStoreTest {
 
   @Test
   public void getNextCallTime_doesNotReturnUnknownBackends() {
-    assertThat(store.getNextCallTime(TRANSPORT_CONTEXT)).isNull();
+    assertThat(store.getNextCallTime(TRANSPORT_CONTEXT)).isEqualTo(0);
   }
 
   @Test
