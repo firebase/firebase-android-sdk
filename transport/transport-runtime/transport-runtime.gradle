@@ -38,12 +38,16 @@ android {
 
 firebaseTestLab {
     devices = [
-            'model=Pixel2,version=28,locale=en,orientation=portrait',
-            'model=Pixel2,version=27,locale=en,orientation=portrait',
-            'model=victara,version=19,locale=en,orientation=portrait',
-            'model=Nexus4,version=22,locale=en,orientation=portrait',
-            'model=Nexus7,version=21,locale=en,orientation=portrait',
-            'model=Nexus4,version=19,locale=en,orientation=portrait',
+            'model=walleye,version=28', // Pixel2
+            'model=walleye,version=27', // Pixel2
+            'model=victara,version=19', // Moto X
+            'model=Nexus4,version=22',
+            'model=Nexus7,version=21',
+            'model=Nexus4,version=19',
+            'model=starqlteue,version=26', // Galaxy S9
+            'model=m0,version=18', // Galaxy S3
+            'model=hero2lte,version=23', // Galaxy S7
+            'model=g3,version=19', // LG G3
     ]
 }
 
