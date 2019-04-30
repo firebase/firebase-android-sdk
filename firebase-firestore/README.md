@@ -16,6 +16,6 @@ publishing/testing Cloud Firestore.
 
 ## Testing
 
-After importing the project into Android Studio and building successfully, you 
-will need to undo the deletion of test files in `.idea/runConfigurations` to
-run integration tests from Android Studio. 
+After importing the project into Android Studio and building successfully
+for the first time, you will need to undo the deletion of xml files in 
+`.idea/runConfigurations` to run Firestore tests from Android Studio. 
