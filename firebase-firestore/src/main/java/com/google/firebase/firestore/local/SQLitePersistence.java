@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteCursor;
@@ -27,14 +28,19 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteProgram;
 import android.database.sqlite.SQLiteStatement;
 import android.database.sqlite.SQLiteTransactionListener;
+import android.os.Build;
+import android.os.Build.VERSION;
 import android.support.annotation.VisibleForTesting;
 import com.google.common.base.Function;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -42,6 +48,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import javax.annotation.Nullable;
+import java.nio.file.Files;
 
 /**
  * A SQLite-backed instance of Persistence.
@@ -206,10 +213,46 @@ public final class SQLitePersistence extends Persistence {
   public static void clearPersistence(
       Context context, DatabaseId databaseId, String persistenceKey) {
     String databaseName = SQLitePersistence.databaseName(persistenceKey, databaseId);
-    String sqlLitePath = context.getDatabasePath(databaseName).getPath();
-    String journalPath = sqlLitePath + "-journal";
-    new File(sqlLitePath).delete();
-    new File(journalPath).delete();
+    String sqLitePath = context.getDatabasePath(databaseName).getPath();
+    String journalPath = sqLitePath + "-journal";
+
+    File sqLiteFile = new File(sqLitePath);
+    File journalFile = new File(journalPath);
+    if (!sqLiteFile.exists() && !journalFile.exists()) {
+      return;
+    }
+
+    if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      SqLiteDeleter.delete(sqLiteFile, journalFile);
+    } else {
+      SqLiteDeleter.delete(sqLiteFile, journalFile);
+    }
+  }
+
+  /** Clears the SQLite dtabase. Only used on API levels 26+. */
+  @TargetApi(Build.VERSION_CODES.O)
+  private static class DefaultSqLiteDeleter {
+    public static boolean delete(File sqLiteFile, File journalFile) {
+      try {
+        Files.delete(sqLiteFile.toPath());
+        Files.delete(journalFile.toPath());
+        return true;
+      } catch (IOException e) {
+        throw new IllegalStateException("Failed to delete the database in O." + e);
+      }
+    }
+  }
+
+  /** Clears the SQLite dtabase. Only used on API levels < 16. */
+  private static class SqLiteDeleter {
+    public static boolean delete(File sqLiteFile, File journalFile) {
+      boolean sqlResult = sqLiteFile.delete();
+      boolean journalResult = journalFile.delete();
+      if (!sqlResult && !journalResult) {
+        throw new IllegalStateException("Failed to delete the database.");
+      }
+      return true;
+    }
   }
 
   long getByteSize() {

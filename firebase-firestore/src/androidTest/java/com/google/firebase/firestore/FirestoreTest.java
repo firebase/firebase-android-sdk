@@ -36,6 +36,7 @@ import static org.junit.Assert.assertNotEquals;
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
@@ -980,14 +981,14 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testClearPersistenceAfterRestarting() {
+  public void testClearPersistenceAfterRestarting() throws Exception {
     DocumentReference docRef = testDocument();
     FirebaseFirestore firestore = docRef.getFirestore();
     waitFor(docRef.set(map("foo", "bar")));
     Context context = InstrumentationRegistry.getContext();
 
     waitFor(AccessHelper.shutdown(firestore));
-    firestore._clearPersistence();
+    AccessHelper.clearPersistence(firestore);
     FirebaseApp app2 = FirebaseApp.initializeApp(context);
     FirebaseFirestore firestore2 = FirebaseFirestore.getInstance(app2);
     DocumentReference docRef2 = firestore2.document(docRef.getPath());
@@ -1000,7 +1001,7 @@ public class FirestoreTest {
     FirebaseFirestore firestore = testFirestore();
     waitFor(firestore.enableNetwork());
     expectError(
-        () -> firestore._clearPersistence(),
+        () -> AccessHelper.clearPersistence(firestore),
         "Persistence cannot be cleared while the client is running.");
   }
 }

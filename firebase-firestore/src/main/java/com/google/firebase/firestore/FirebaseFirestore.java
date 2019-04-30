@@ -388,11 +388,11 @@ public class FirebaseFirestore {
    *
    * <p>Must be called while the client is not started (after the app is shutdown or when the app is
    * first initialized). On startup, this method must be called before other methods (other than
-   * settings()). If the client is still running, an exception with a code of `failed-precondition`
-   * will be thrown.
+   * setFirestoreSettings()).
+   *
+   * @throws IllegalStateException if the client is still running.
    */
-  @PublicApi
-  public void _clearPersistence() {
+  void _clearPersistence() {
     if (this.clientRunning) {
       throw new IllegalStateException("Persistence cannot be cleared while the client is running.");
     }

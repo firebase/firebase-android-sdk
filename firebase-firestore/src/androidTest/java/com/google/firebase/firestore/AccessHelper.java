@@ -18,6 +18,7 @@ import android.content.Context;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
 
@@ -43,5 +44,9 @@ public final class AccessHelper {
 
   public static AsyncQueue getAsyncQueue(FirebaseFirestore firestore) {
     return firestore.getAsyncQueue();
+  }
+
+  public static void clearPersistence(FirebaseFirestore firestore) {
+    firestore._clearPersistence();
   }
 }

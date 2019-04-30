@@ -242,7 +242,6 @@ public class IntegrationTestUtil {
     String persistenceKey = "db" + firestoreStatus.size();
 
     ensureStrictMode();
-    SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
 
     AsyncQueue asyncQueue = null;
 
@@ -260,7 +259,11 @@ public class IntegrationTestUtil {
             new EmptyCredentialsProvider(),
             asyncQueue,
             /*firebaseApp=*/ null);
-    SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
+    try {
+      AccessHelper.clearPersistence(firestore);
+    } catch (Exception e) {
+      fail("Failed to clearPersistence:" + e);
+    }
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);
 
