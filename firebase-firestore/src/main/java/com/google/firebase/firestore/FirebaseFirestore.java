@@ -263,9 +263,9 @@ public class FirebaseFirestore {
    * transaction. If any document read within the transaction has changed, the updateFunction will
    * be retried. If it fails to commit after 5 attempts, the transaction will fail.
    *
-   * <p>The maximum number of writes allowed in a single transaction is 500, but note that each
-   * usage of FieldValue.serverTimestamp(), FieldValue.arrayUnion(), FieldValue.arrayRemove(), or
-   * FieldValue.increment() inside a transaction counts as an additional write.
+   * <p>The maximum number of writes allowed in a single transaction batch is 500, but note that
+   * each usage of FieldValue.serverTimestamp(), FieldValue.arrayUnion(), FieldValue.arrayRemove(),
+   * or FieldValue.increment() inside a transaction counts as an additional write.
    *
    * @param updateFunction The function to execute within the transaction context.
    * @param executor The executor to run the transaction callback on.
@@ -310,9 +310,9 @@ public class FirebaseFirestore {
   /**
    * Creates a write batch, used for performing multiple writes as a single atomic operation.
    *
-   * <p>The maximum number of writes allowed in a single transaction is 500, but note that each
-   * usage of FieldValue.serverTimestamp(), FieldValue.arrayUnion(), FieldValue.arrayRemove(), or
-   * FieldValue.increment() inside a transaction counts as an additional write.
+   * <p>The maximum number of writes allowed in a single transaction batch is 500, but note that
+   * each usage of FieldValue.serverTimestamp(), FieldValue.arrayUnion(), FieldValue.arrayRemove(),
+   * or FieldValue.increment() inside a transaction counts as an additional write.
    *
    * @return The created WriteBatch object.
    */
