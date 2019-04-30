@@ -40,6 +40,8 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.Consumer;
+import com.google.firebase.firestore.util.FileUtil.DefaultFileDeleter;
+import com.google.firebase.firestore.util.FileUtil.FileDeleter;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
 import java.io.File;
@@ -214,52 +216,29 @@ public final class SQLitePersistence extends Persistence {
     return value;
   }
 
-  public static Task<Void> clearPersistence(
-      Context context, DatabaseId databaseId, String persistenceKey) {
+  public static void clearPersistence(Context context, DatabaseId databaseId, String persistenceKey)
+      throws FirebaseFirestoreException {
     String databaseName = SQLitePersistence.databaseName(persistenceKey, databaseId);
     String sqLitePath = context.getDatabasePath(databaseName).getPath();
     String journalPath = sqLitePath + "-journal";
 
     File sqLiteFile = new File(sqLitePath);
     File journalFile = new File(journalPath);
-    if (!sqLiteFile.exists() && !journalFile.exists()) {
-      return Tasks.forResult(null);
-    } else if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      return DefaultSqLiteDeleter.delete(sqLiteFile, journalFile);
-    } else {
-      return SqLiteDeleter.delete(sqLiteFile, journalFile);
-    }
-  }
 
-  /** Clears the SQLite database. Only used on API levels >= 26. */
-  @TargetApi(Build.VERSION_CODES.O)
-  private static class DefaultSqLiteDeleter {
-    public static Task<Void> delete(File sqLiteFile, File journalFile) {
+    if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       try {
-        Files.delete(sqLiteFile.toPath());
-        Files.delete(journalFile.toPath());
-        return Tasks.forResult(null);
+        DefaultFileDeleter.delete(sqLiteFile);
+        DefaultFileDeleter.delete(journalFile);
       } catch (IOException e) {
-        final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-        source.setException(
-            new FirebaseFirestoreException("Failed to delete the database." + e, Code.UNKNOWN));
-        return source.getTask();
+        throw new FirebaseFirestoreException("Failed to delete the database." + e, Code.UNKNOWN);
       }
-    }
-  }
-
-  /** Clears the SQLite database. Only used on API levels < 16. */
-  private static class SqLiteDeleter {
-    public static Task<Void> delete(File sqLiteFile, File journalFile) {
-      boolean sqlResult = sqLiteFile.delete();
-      boolean journalResult = journalFile.delete();
-      if (!sqlResult && !journalResult) {
-        final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-        source.setException(
-            new FirebaseFirestoreException("Failed to delete the database.", Code.UNKNOWN));
-        return source.getTask();
+    } else {
+      try {
+        FileDeleter.delete(sqLiteFile);
+        FileDeleter.delete(journalFile);
+      } catch (SecurityException e) {
+        throw new FirebaseFirestoreException("Failed to delete the database." + e, Code.UNKNOWN);
       }
-      return Tasks.forResult(null);
     }
   }
 

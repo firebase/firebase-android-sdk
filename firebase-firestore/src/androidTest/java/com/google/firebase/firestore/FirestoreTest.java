@@ -36,7 +36,6 @@ import static org.junit.Assert.assertNotEquals;
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;

@@ -24,6 +24,7 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.security.ProviderInstaller;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
 import com.google.firebase.FirebaseApp;
@@ -396,7 +397,17 @@ public class FirebaseFirestore {
     if (this.clientRunning) {
       throw new IllegalStateException("Persistence cannot be cleared while the client is running.");
     }
-    return SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
+    final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+    asyncQueue.enqueueAndForget(
+        () -> {
+          try {
+            SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
+            source.setResult(null);
+          } catch (FirebaseFirestoreException e) {
+            source.setException(e);
+          }
+        });
+    return source.getTask();
   }
 
   FirestoreClient getClient() {
