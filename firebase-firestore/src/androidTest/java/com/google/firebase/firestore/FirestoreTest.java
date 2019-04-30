@@ -953,4 +953,11 @@ public class FirestoreTest {
     waitFor(firestore.disableNetwork());
     waitFor(firestore.enableNetwork());
   }
+
+  @Test
+  public void testClientCallsAfterShutdownFails() {
+    FirebaseFirestore firestore = testFirestore();
+    waitFor(firestore.shutdown());
+    expectError(() -> waitFor(firestore.disableNetwork()), "The client has already been shutdown");
+  }
 }
