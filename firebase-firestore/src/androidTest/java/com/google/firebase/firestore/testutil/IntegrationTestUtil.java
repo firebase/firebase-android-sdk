@@ -17,7 +17,6 @@ package com.google.firebase.firestore.testutil;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.util.Util.autoId;
 import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.fail;
 
 import android.content.Context;
 import android.net.SSLCertificateSocketFactory;
@@ -38,7 +37,6 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.Persistence;
-import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
@@ -46,7 +44,6 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import io.grpc.okhttp.OkHttpChannelBuilder;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -225,16 +222,6 @@ public class IntegrationTestUtil {
             .build());
   }
 
-  private static void clearPersistence(
-      Context context, DatabaseId databaseId, String persistenceKey) {
-    @SuppressWarnings("VisibleForTests")
-    String databaseName = SQLitePersistence.databaseName(persistenceKey, databaseId);
-    String sqlLitePath = context.getDatabasePath(databaseName).getPath();
-    String journalPath = sqlLitePath + "-journal";
-    new File(sqlLitePath).delete();
-    new File(journalPath).delete();
-  }
-
   /**
    * Initializes a new Firestore instance that can be used in testing. It is guaranteed to not share
    * state with other instances returned from this call.
@@ -252,15 +239,10 @@ public class IntegrationTestUtil {
     String persistenceKey = "db" + firestoreStatus.size();
 
     ensureStrictMode();
-    clearPersistence(context, databaseId, persistenceKey);
 
     AsyncQueue asyncQueue = null;
 
-    try {
-      asyncQueue = new AsyncQueue();
-    } catch (Exception e) {
-      fail("Failed to initialize AsyncQueue:" + e);
-    }
+    asyncQueue = new AsyncQueue();
 
     FirebaseFirestore firestore =
         AccessHelper.newFirebaseFirestore(
@@ -270,6 +252,7 @@ public class IntegrationTestUtil {
             new EmptyCredentialsProvider(),
             asyncQueue,
             /*firebaseApp=*/ null);
+    waitFor(AccessHelper.clearPersistence(firestore));
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);
 
