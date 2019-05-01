@@ -34,6 +34,9 @@ import org.robolectric.annotation.Config;
 @Config(sdk = {LOLLIPOP})
 @RunWith(RobolectricTestRunner.class)
 public class JobInfoSchedulerTest {
+  private static final long TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+  private static final long THIRTY_SECONDS = 30 * 1000;
+
   private static final TransportContext TRANSPORT_CONTEXT =
       TransportContext.builder().setBackendName("backend1").build();
 
@@ -76,7 +79,7 @@ public class JobInfoSchedulerTest {
     assertThat(bundle.get(JobInfoScheduler.BACKEND_NAME))
         .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
     assertThat(bundle.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
-    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(60000); // 2^1*DELTA
+    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(THIRTY_SECONDS); // 2^0*DELTA
   }
 
   @Test
@@ -92,7 +95,7 @@ public class JobInfoSchedulerTest {
     assertThat(bundle.get(JobInfoScheduler.BACKEND_NAME))
         .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
     assertThat(bundle.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
-    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(60000); // 2^1*DELTA
+    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(THIRTY_SECONDS); // 2^0*DELTA
   }
 
   @Test
@@ -133,7 +136,7 @@ public class JobInfoSchedulerTest {
   }
 
   @Test
-  public void schedule_smallWaitTImeFirstAttempt1() {
+  public void schedule_smallWaitTImeFirstAttempt_multiplePriorities() {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
     scheduler.schedule(UNMETERED_TRANSPORT_CONTEXT, 1);
@@ -144,22 +147,22 @@ public class JobInfoSchedulerTest {
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(2);
     JobInfo jobInfo1 = jobScheduler.getAllPendingJobs().get(0);
     assertThat(jobInfo1.getId()).isEqualTo(jobId1);
-    assertThat(jobInfo1.getMinLatencyMillis()).isEqualTo(60000); // 2^1*DELTA
+    assertThat(jobInfo1.getMinLatencyMillis()).isEqualTo(THIRTY_SECONDS); // 2^0*DELTA
 
     PersistableBundle bundle1 = jobInfo1.getExtras();
     assertThat(bundle1.get(JobInfoScheduler.BACKEND_NAME))
         .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
-    assertThat(bundle1.get(JobInfoScheduler.EVENT_PRIORITY)).isEqualTo("DEFAULT");
+    assertThat(bundle1.get(JobInfoScheduler.EVENT_PRIORITY)).isEqualTo(Priority.DEFAULT.ordinal());
     assertThat(bundle1.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
 
     JobInfo jobInfo2 = jobScheduler.getAllPendingJobs().get(1);
     assertThat(jobInfo2.getId()).isEqualTo(jobId2);
-    assertThat(jobInfo2.getMinLatencyMillis()).isEqualTo(60000); // 2^1*DELTA
+    assertThat(jobInfo2.getMinLatencyMillis()).isEqualTo(TWENTY_FOUR_HOURS); // 2^0*DELTA
 
     PersistableBundle bundle2 = jobInfo2.getExtras();
     assertThat(bundle2.get(JobInfoScheduler.BACKEND_NAME))
         .isEqualTo(UNMETERED_TRANSPORT_CONTEXT.getBackendName());
-    assertThat(bundle1.get(JobInfoScheduler.EVENT_PRIORITY)).isEqualTo("VERY_LOW");
+    assertThat(bundle2.get(JobInfoScheduler.EVENT_PRIORITY)).isEqualTo(Priority.VERY_LOW.ordinal());
     assertThat(bundle2.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
   }
 }
