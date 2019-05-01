@@ -13,3 +13,13 @@ Firebase and Google Cloud Platform products, including Cloud Functions.
 All Gradle commands should be run from the source root (which is one level up
 from this folder). See the README.md in the source root for instructions on
 publishing/testing Cloud Firestore.
+
+## Testing
+
+After importing the project into Android Studio and building successfully
+for the first time, Android Studio will delete the run configuration xml files
+in `./idea/runConfigurations`. Undo these changes with the command:
+
+```
+$ git checkout .idea/runConfigurations
+```
