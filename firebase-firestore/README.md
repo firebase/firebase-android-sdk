@@ -17,5 +17,9 @@ publishing/testing Cloud Firestore.
 ## Testing
 
 After importing the project into Android Studio and building successfully
-for the first time, you will need to undo the deletion of xml files in 
-`.idea/runConfigurations` to run Firestore tests from Android Studio. 
+for the first time, Android Studio will delete the run configuration xml files
+in `./idea/runConfigurations`. Undo these changes with the command:
+
+```
+$ git checkout .idea/runConfigurations
+```
