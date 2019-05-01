@@ -150,7 +150,6 @@ public class FirebaseFirestore {
     this.asyncQueue = checkNotNull(asyncQueue);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
-    this.clientRunning = false;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
   }
@@ -401,7 +400,7 @@ public class FirebaseFirestore {
    *
    * @throws IllegalStateException if the client is still running.
    */
-  Task<Void> _clearPersistence() {
+  Task<Void> clearPersistence() {
     if (this.clientRunning) {
       throw new IllegalStateException("Persistence cannot be cleared while the client is running.");
     }

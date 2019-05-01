@@ -259,11 +259,7 @@ public class IntegrationTestUtil {
             new EmptyCredentialsProvider(),
             asyncQueue,
             /*firebaseApp=*/ null);
-    try {
-      AccessHelper.clearPersistence(firestore);
-    } catch (Exception e) {
-      fail("Failed to clearPersistence:" + e);
-    }
+    waitFor(AccessHelper.clearPersistence(firestore));
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);
 

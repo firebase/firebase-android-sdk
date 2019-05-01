@@ -980,7 +980,7 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testClearPersistenceAfterRestarting() throws Exception {
+  public void testCanClearPersistenceAfterRestarting() throws Exception {
     DocumentReference docRef = testDocument();
     FirebaseFirestore firestore = docRef.getFirestore();
     waitFor(docRef.set(map("foo", "bar")));

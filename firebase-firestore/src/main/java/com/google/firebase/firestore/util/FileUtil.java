@@ -16,16 +16,24 @@ package com.google.firebase.firestore.util;
 
 import android.annotation.TargetApi;
 import android.os.Build;
+import android.os.Build.VERSION;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
 /** Contains utility methods for files in different API levels. */
 public class FileUtil {
+  public static void delete(File file) throws IOException {
+    if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      DefaultFileDeleter.delete(file);
+    } else {
+      LegacyFileDeleter.delete(file);
+    }
+  }
 
   /** Deletes a file if it exists. Only used on API levels >= 26. */
   @TargetApi(Build.VERSION_CODES.O)
-  public static class DefaultFileDeleter {
+  private static class DefaultFileDeleter {
     public static void delete(File file) throws IOException {
       try {
         Files.deleteIfExists(file.toPath());
@@ -35,13 +43,12 @@ public class FileUtil {
     }
   }
 
-  /** Deletes a file if it exists. Only used on API levels < 16. */
-  public static class FileDeleter {
-    public static void delete(File file) throws SecurityException {
-      try {
-        file.delete();
-      } catch (SecurityException e) {
-        throw e;
+  /** Deletes a file if it exists. Only used on API levels < 26. */
+  private static class LegacyFileDeleter {
+    public static void delete(File file) throws IOException {
+      boolean fileDeleted = file.delete();
+      if (!fileDeleted && file.exists()) {
+        throw new IOException("Failed to delete file " + file);
       }
     }
   }
