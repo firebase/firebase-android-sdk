@@ -24,9 +24,8 @@ import android.support.annotation.RequiresApi;
 import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import com.google.android.datatransport.runtime.time.Clock;
+import java.nio.ByteBuffer;
 import java.util.zip.Adler32;
-import javax.inject.Inject;
 
 /**
  * Schedules the service {@link JobInfoSchedulerService} based on the backendname. Used for Apis 21
@@ -34,35 +33,38 @@ import javax.inject.Inject;
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JobInfoScheduler implements WorkScheduler {
+  static final String ATTEMPT_NUMBER = "attemptNumber";
+  static final String BACKEND_NAME = "backendName";
+  static final String EVENT_PRIORITY = "priority";
 
   private final Context context;
 
   private final EventStore eventStore;
 
-  private final Clock clock;
-
   private final SchedulerConfig config;
 
-  @Inject
   public JobInfoScheduler(
-      Context applicationContext, EventStore eventStore, Clock clock, SchedulerConfig config) {
+      Context applicationContext, EventStore eventStore, SchedulerConfig config) {
     this.context = applicationContext;
     this.eventStore = eventStore;
-    this.clock = clock;
     this.config = config;
   }
 
   @VisibleForTesting
   int getJobId(TransportContext transportContext) {
     Adler32 checksum = new Adler32();
+    checksum.update(context.getPackageName().getBytes());
     checksum.update(transportContext.getBackendName().getBytes());
+    checksum.update(
+        ByteBuffer.allocate(4).putInt(transportContext.getPriority().ordinal()).array());
     return (int) checksum.getValue();
   }
 
-  private boolean isJobServiceOn(JobScheduler scheduler, int jobId) {
+  private boolean isJobServiceOn(JobScheduler scheduler, int jobId, int attemptNumber) {
     for (JobInfo jobInfo : scheduler.getAllPendingJobs()) {
+      int existingAttemptNumber = jobInfo.getExtras().getInt(ATTEMPT_NUMBER);
       if (jobInfo.getId() == jobId) {
-        return true;
+        return existingAttemptNumber >= attemptNumber;
       }
     }
     return false;
@@ -81,23 +83,22 @@ public class JobInfoScheduler implements WorkScheduler {
         (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
     int jobId = getJobId(transportContext);
     // Check if there exists a job scheduled for this backend name.
-    if (isJobServiceOn(jobScheduler, jobId)) return;
-    // Obtain the next available call time for the backend.
-    Long backendTime = eventStore.getNextCallTime(transportContext);
+    if (isJobServiceOn(jobScheduler, jobId, attemptNumber)) return;
 
-    long timeDiff = Math.max(0, backendTime - clock.getTime());
-    long latency = config.getScheduleDelay(timeDiff, attemptNumber);
     // Schedule the build.
+    JobInfo.Builder builder =
+        config.configureJob(
+            new JobInfo.Builder(jobId, serviceComponent),
+            transportContext.getPriority(),
+            eventStore.getNextCallTime(transportContext),
+            attemptNumber);
+
     PersistableBundle bundle = new PersistableBundle();
-    bundle.putInt(SchedulerUtil.ATTEMPT_NUMBER, attemptNumber);
-    bundle.putString(SchedulerUtil.BACKEND_NAME, transportContext.getBackendName());
-    JobInfo.Builder builder = new JobInfo.Builder(jobId, serviceComponent);
-    builder.setMinimumLatency(latency); // wait at least
-    if (config.getMaximumDelay() >= 0) {
-      builder.setOverrideDeadline(latency + config.getMaximumDelay());
-    }
+    bundle.putInt(ATTEMPT_NUMBER, attemptNumber);
+    bundle.putString(BACKEND_NAME, transportContext.getBackendName());
+    bundle.putInt(EVENT_PRIORITY, transportContext.getPriority().ordinal());
     builder.setExtras(bundle);
-    builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
+
     jobScheduler.schedule(builder.build());
   }
 }

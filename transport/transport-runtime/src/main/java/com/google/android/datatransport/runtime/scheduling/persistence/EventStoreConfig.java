@@ -21,12 +21,14 @@ abstract class EventStoreConfig {
   private static final long MAX_DB_STORAGE_SIZE_IN_BYTES = 10 * 1024 * 1024;
   private static final int LOAD_BATCH_SIZE = 200;
   private static final int LOCK_TIME_OUT_MS = 10000;
+  private static final long DURATION_ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
   static final EventStoreConfig DEFAULT =
       EventStoreConfig.builder()
           .setMaxStorageSizeInBytes(MAX_DB_STORAGE_SIZE_IN_BYTES)
           .setLoadBatchSize(LOAD_BATCH_SIZE)
           .setCriticalSectionEnterTimeoutMs(LOCK_TIME_OUT_MS)
+          .setEventCleanUpAge(DURATION_ONE_WEEK_MS)
           .build();
 
   abstract long getMaxStorageSizeInBytes();
@@ -34,6 +36,8 @@ abstract class EventStoreConfig {
   abstract int getLoadBatchSize();
 
   abstract int getCriticalSectionEnterTimeoutMs();
+
+  abstract long getEventCleanUpAge();
 
   static EventStoreConfig.Builder builder() {
     return new AutoValue_EventStoreConfig.Builder();
@@ -43,7 +47,8 @@ abstract class EventStoreConfig {
     return builder()
         .setMaxStorageSizeInBytes(getMaxStorageSizeInBytes())
         .setLoadBatchSize(getLoadBatchSize())
-        .setCriticalSectionEnterTimeoutMs(getCriticalSectionEnterTimeoutMs());
+        .setCriticalSectionEnterTimeoutMs(getCriticalSectionEnterTimeoutMs())
+        .setEventCleanUpAge(getEventCleanUpAge());
   }
 
   @AutoValue.Builder
@@ -53,6 +58,8 @@ abstract class EventStoreConfig {
     abstract Builder setLoadBatchSize(int value);
 
     abstract Builder setCriticalSectionEnterTimeoutMs(int value);
+
+    abstract Builder setEventCleanUpAge(long value);
 
     abstract EventStoreConfig build();
   }

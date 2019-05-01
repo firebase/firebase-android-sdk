@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
 
 /** The service responsible for uploading information to the backend. */
@@ -24,9 +25,16 @@ public class AlarmManagerSchedulerBroadcastReceiver extends BroadcastReceiver {
 
   @Override
   public void onReceive(Context context, Intent intent) {
-    String backendName = intent.getData().getQueryParameter(SchedulerUtil.BACKEND_NAME);
-    int attemptNumber = intent.getExtras().getInt(SchedulerUtil.ATTEMPT_NUMBER);
+    String backendName = intent.getData().getQueryParameter(AlarmManagerScheduler.BACKEND_NAME);
+    int priority =
+        Integer.valueOf(intent.getData().getQueryParameter(AlarmManagerScheduler.EVENT_PRIORITY));
+    int attemptNumber = intent.getExtras().getInt(AlarmManagerScheduler.ATTEMPT_NUMBER);
     TransportRuntime.initialize(context);
-    TransportRuntime.getInstance().getUploader().upload(backendName, attemptNumber, () -> {});
+    TransportRuntime.getInstance()
+        .getUploader()
+        .upload(
+            TransportContext.builder().setBackendName(backendName).setPriority(priority).build(),
+            attemptNumber,
+            () -> {});
   }
 }

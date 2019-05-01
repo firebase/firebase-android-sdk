@@ -16,7 +16,6 @@ package com.google.android.datatransport.runtime;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -28,6 +27,7 @@ import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 import com.google.android.datatransport.Event;
+import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
@@ -47,7 +47,7 @@ public class SchedulerIntegrationTest {
   private static final String TEST_KEY = "test";
   private static final String TEST_VALUE = "test-value";
   private static final String testTransport = "testTransport";
-  private final TransportInternal transportInternalMock = mock(TransportInternal.class);
+
   private final TransportBackend mockBackend = mock(TransportBackend.class);
   private final TransportBackend mockBackend2 = mock(TransportBackend.class);
   private final BackendRegistry mockRegistry = mock(BackendRegistry.class);
@@ -64,9 +64,19 @@ public class SchedulerIntegrationTest {
               .setBackendRegistry(mockRegistry)
               .setSchedulerConfig(
                   SchedulerConfig.builder()
-                      .setDelta(500)
-                      .setMaxAllowedTime(100000)
-                      .setMaximumDelay(500)
+                      .setClock(() -> 3)
+                      .addConfig(
+                          Priority.DEFAULT,
+                          SchedulerConfig.ConfigValue.builder()
+                              .setDelta(500)
+                              .setMaxAllowedDelay(100000)
+                              .build())
+                      .addConfig(
+                          Priority.VERY_LOW,
+                          SchedulerConfig.ConfigValue.builder()
+                              .setDelta(500)
+                              .setMaxAllowedDelay(100000)
+                              .build())
                       .build())
               .setEventClock(() -> 3)
               .setUptimeClock(() -> 1)
@@ -110,7 +120,7 @@ public class SchedulerIntegrationTest {
                   return null;
                 })
         .when(mockUploader)
-        .upload(anyString(), anyInt(), any());
+        .upload(any(), anyInt(), any());
   }
 
   private String generateBackendName() {
@@ -121,54 +131,56 @@ public class SchedulerIntegrationTest {
   public void scheduler_whenEventScheduledForFirstTime_shouldUpload() {
     TransportRuntime runtime = TransportRuntime.getInstance();
     String mockBackendName = generateBackendName();
+    TransportContext context = TransportContext.builder().setBackendName(mockBackendName).build();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry("TelemetryData");
+    Event<String> stringEvent = Event.ofData("Data");
     EventInternal expectedEvent =
         EventInternal.builder()
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("Data".getBytes())
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
     locker.await();
-    verify(mockUploader, times(1)).upload(eq(mockBackendName), eq(1), any());
+    verify(mockUploader, times(1)).upload(eq(context), eq(1), any());
   }
 
   @Test
   public void scheduler_whenEventsScheduledWithSameBackend_shouldUploadOnce() {
     TransportRuntime runtime = TransportRuntime.getInstance();
     String mockBackendName = generateBackendName();
+    TransportContext context = TransportContext.builder().setBackendName(mockBackendName).build();
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry("TelemetryData");
+    Event<String> stringEvent = Event.ofData("Data");
     EventInternal expectedEvent =
         EventInternal.builder()
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("Data".getBytes())
             .build();
-    Event<String> stringEvent2 = Event.ofTelemetry("TelemetryData2");
+    Event<String> stringEvent2 = Event.ofData("Data2");
     EventInternal expectedEvent2 =
         EventInternal.builder()
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData2".getBytes())
+            .setPayload("Data2".getBytes())
             .build();
     transport.send(stringEvent);
     transport.send(stringEvent2);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
     verify(mockBackend, times(1)).decorate(eq(expectedEvent2));
     locker.await();
-    verify(mockUploader, times(1)).upload(eq(mockBackendName), eq(1), any());
+    verify(mockUploader, times(1)).upload(eq(context), eq(1), any());
   }
 
   @Test
@@ -176,18 +188,22 @@ public class SchedulerIntegrationTest {
     TransportRuntime runtime = TransportRuntime.getInstance();
     String firstBackendName = generateBackendName();
     String secondBackendName = generateBackendName();
+    TransportContext firstContext =
+        TransportContext.builder().setBackendName(firstBackendName).build();
+    TransportContext secondContext =
+        TransportContext.builder().setBackendName(secondBackendName).build();
     when(mockRegistry.get(firstBackendName)).thenReturn(mockBackend);
     when(mockRegistry.get(secondBackendName)).thenReturn(mockBackend2);
     TransportFactory factory = runtime.newFactory(firstBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry("TelemetryData");
+    Event<String> stringEvent = Event.ofData("Data");
     EventInternal expectedEvent =
         EventInternal.builder()
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("Data".getBytes())
             .build();
     transport.send(stringEvent);
     TransportFactory factory2 = runtime.newFactory(secondBackendName);
@@ -198,7 +214,7 @@ public class SchedulerIntegrationTest {
     verify(mockBackend2, times(1)).decorate(eq(expectedEvent));
     locker.await();
     locker.await();
-    verify(mockUploader, times(1)).upload(eq(firstBackendName), eq(1), any());
-    verify(mockUploader, times(1)).upload(eq(secondBackendName), eq(1), any());
+    verify(mockUploader, times(1)).upload(eq(firstContext), eq(1), any());
+    verify(mockUploader, times(1)).upload(eq(secondContext), eq(1), any());
   }
 }
