@@ -245,11 +245,7 @@ public class IntegrationTestUtil {
 
     AsyncQueue asyncQueue = null;
 
-    try {
-      asyncQueue = new AsyncQueue();
-    } catch (Exception e) {
-      fail("Failed to initialize AsyncQueue:" + e);
-    }
+    asyncQueue = new AsyncQueue();
 
     FirebaseFirestore firestore =
         AccessHelper.newFirebaseFirestore(
