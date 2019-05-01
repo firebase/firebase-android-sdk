@@ -21,7 +21,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-/** Contains utility methods for files in different API levels. */
+/**
+ * Deletes the given file if it exists. Unlike {@link java.io.File#delete}, deleting a file that
+ * does not exist is not considered an error.
+ *
+ * @throws IOException if the deletion fails. On devices at API level 26 or greater, details about
+ *     the cause of the failure will be in the error message. On older devices, the error message
+ *     will be generic.
+ */
 public class FileUtil {
   public static void delete(File file) throws IOException {
     if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -38,7 +45,7 @@ public class FileUtil {
       try {
         Files.deleteIfExists(file.toPath());
       } catch (IOException e) {
-        throw e;
+        throw new IOException("Failed to delete file " + file + ": " + e);
       }
     }
   }

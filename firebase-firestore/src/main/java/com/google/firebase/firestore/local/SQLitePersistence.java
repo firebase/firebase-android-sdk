@@ -212,15 +212,18 @@ public final class SQLitePersistence extends Persistence {
     String databaseName = SQLitePersistence.databaseName(persistenceKey, databaseId);
     String sqLitePath = context.getDatabasePath(databaseName).getPath();
     String journalPath = sqLitePath + "-journal";
+    String walPath = sqLitePath + "-wal";
 
     File sqLiteFile = new File(sqLitePath);
     File journalFile = new File(journalPath);
+    File walFile = new File(walPath);
 
     try {
       FileUtil.delete(sqLiteFile);
       FileUtil.delete(journalFile);
+      FileUtil.delete(walFile);
     } catch (IOException e) {
-      throw new FirebaseFirestoreException("Failed to delete the database." + e, Code.UNKNOWN);
+      throw new FirebaseFirestoreException("Failed to clear persistence." + e, Code.UNKNOWN);
     }
   }
 
