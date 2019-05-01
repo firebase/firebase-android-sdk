@@ -24,6 +24,7 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.security.ProviderInstaller;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
 import com.google.firebase.FirebaseApp;
@@ -34,6 +35,7 @@ import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
+import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -63,6 +65,8 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final UserDataConverter dataConverter;
+
+  private boolean clientRunning;
 
   @NonNull
   @PublicApi
@@ -186,6 +190,7 @@ public class FirebaseFirestore {
       if (client != null) {
         return;
       }
+      this.clientRunning = true;
       DatabaseInfo databaseInfo =
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
@@ -343,6 +348,7 @@ public class FirebaseFirestore {
   Task<Void> shutdown() {
     // The client must be initialized to ensure that all subsequent API usage throws an exception.
     this.ensureClientConfigured();
+    this.clientRunning = false;
     return client.shutdown();
   }
 
@@ -383,6 +389,32 @@ public class FirebaseFirestore {
     } else {
       Logger.setLogLevel(Level.WARN);
     }
+  }
+
+  /**
+   * Clears the persistent storage.
+   *
+   * <p>Must be called while the client is not started (after the app is shutdown or when the app is
+   * first initialized). On startup, this method must be called before other methods (other than
+   * setFirestoreSettings()).
+   *
+   * @throws IllegalStateException if the client is still running.
+   */
+  Task<Void> clearPersistence() {
+    if (this.clientRunning) {
+      throw new IllegalStateException("Persistence cannot be cleared while the client is running.");
+    }
+    final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+    asyncQueue.enqueueAndForget(
+        () -> {
+          try {
+            SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
+            source.setResult(null);
+          } catch (FirebaseFirestoreException e) {
+            source.setException(e);
+          }
+        });
+    return source.getTask();
   }
 
   FirestoreClient getClient() {
