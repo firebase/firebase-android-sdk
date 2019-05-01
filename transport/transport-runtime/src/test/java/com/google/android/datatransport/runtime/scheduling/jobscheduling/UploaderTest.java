@@ -87,7 +87,7 @@ public class UploaderTest {
   @Test
   public void upload_noNetwork() {
     when(uploader.isNetworkAvailable()).thenReturn(Boolean.FALSE);
-    uploader.upload(BACKEND_NAME, 1, mockRunnable);
+    uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
     // Scheduler must be called with the attempt number incremented.
     verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 2);
     verify(mockRunnable, times(1)).run();
@@ -97,7 +97,7 @@ public class UploaderTest {
   public void upload_yesNetwork() {
     when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
     when(uploader.isNetworkAvailable()).thenReturn(Boolean.TRUE);
-    uploader.upload(BACKEND_NAME, 1, mockRunnable);
+    uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
     verify(uploader, times(1)).logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(mockRunnable, times(1)).run();
   }

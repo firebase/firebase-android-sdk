@@ -31,8 +31,6 @@ public class TestWorkScheduler implements WorkScheduler {
       return;
     }
     TransportRuntime.initialize(context);
-    TransportRuntime.getInstance()
-        .getUploader()
-        .upload(transportContext.getBackendName(), attemptNumber, () -> {});
+    TransportRuntime.getInstance().getUploader().upload(transportContext, attemptNumber, () -> {});
   }
 }

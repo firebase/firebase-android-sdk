@@ -19,50 +19,44 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
-import com.google.android.datatransport.runtime.time.Clock;
-import javax.inject.Inject;
 
 /**
  * Schedules the service {@link AlarmManagerSchedulerBroadcastReceiver} based on the backendname.
  * Used for Apis 20 and below.
  */
 public class AlarmManagerScheduler implements WorkScheduler {
+  static final String ATTEMPT_NUMBER = "attemptNumber";
+  static final String BACKEND_NAME = "backendName";
+  static final String EVENT_PRIORITY = "priority";
 
   private final Context context;
 
   private final EventStore eventStore;
 
-  private final Clock clock;
-
   private AlarmManager alarmManager;
 
   private final SchedulerConfig config;
 
-  @Inject
   public AlarmManagerScheduler(
-      Context applicationContext, EventStore eventStore, Clock clock, SchedulerConfig config) {
-    this.context = applicationContext;
-    this.eventStore = eventStore;
-    this.clock = clock;
-    this.alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-    this.config = config;
+      Context applicationContext, EventStore eventStore, SchedulerConfig config) {
+    this(
+        applicationContext,
+        eventStore,
+        (AlarmManager) applicationContext.getSystemService(Context.ALARM_SERVICE),
+        config);
   }
 
-  @RestrictTo(RestrictTo.Scope.TESTS)
   @VisibleForTesting
   AlarmManagerScheduler(
       Context applicationContext,
       EventStore eventStore,
-      Clock clock,
       AlarmManager alarmManager,
       SchedulerConfig config) {
     this.context = applicationContext;
     this.eventStore = eventStore;
-    this.clock = clock;
     this.alarmManager = alarmManager;
     this.config = config;
   }
@@ -80,26 +74,22 @@ public class AlarmManagerScheduler implements WorkScheduler {
    */
   @Override
   public void schedule(TransportContext transportContext, int attemptNumber) {
-    // Create Intent
-    String backendName = transportContext.getBackendName();
     Uri.Builder intentDataBuilder = new Uri.Builder();
-    intentDataBuilder.appendQueryParameter(SchedulerUtil.BACKEND_NAME, backendName);
+    intentDataBuilder.appendQueryParameter(BACKEND_NAME, transportContext.getBackendName());
     intentDataBuilder.appendQueryParameter(
-        SchedulerUtil.APPLICATION_BUNDLE_ID, context.getPackageName());
+        EVENT_PRIORITY, String.valueOf(transportContext.getPriority().ordinal()));
     Intent intent = new Intent(context, AlarmManagerSchedulerBroadcastReceiver.class);
     intent.setData(intentDataBuilder.build());
-    intent.putExtra(SchedulerUtil.ATTEMPT_NUMBER, attemptNumber);
+    intent.putExtra(ATTEMPT_NUMBER, attemptNumber);
 
     if (isJobServiceOn(intent)) return;
 
-    Long backendTime = eventStore.getNextCallTime(transportContext);
-
-    long timeDiff = Math.max(0, backendTime - clock.getTime());
+    long backendTime = eventStore.getNextCallTime(transportContext);
 
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
     this.alarmManager.set(
         AlarmManager.ELAPSED_REALTIME,
-        config.getScheduleDelay(timeDiff, attemptNumber),
+        config.getScheduleDelay(transportContext.getPriority(), backendTime, attemptNumber),
         pendingIntent);
   }
 }

@@ -103,5 +103,10 @@ public class InMemoryEventStore implements EventStore {
   }
 
   @Override
+  public int cleanUp() {
+    return 0;
+  }
+
+  @Override
   public void close() {}
 }
