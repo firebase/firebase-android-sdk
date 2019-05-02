@@ -513,7 +513,6 @@ public abstract class NetworkRequest {
     if (keys == null || keys.size() == 0) {
       return null;
     }
-    
 
     StringBuilder result = new StringBuilder();
     boolean first = true;
