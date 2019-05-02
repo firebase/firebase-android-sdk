@@ -513,10 +513,7 @@ public abstract class NetworkRequest {
     if (keys == null || keys.size() == 0) {
       return null;
     }
-
-    if (values == null || values.size() != keys.size()) {
-      throw new AssertionError("invalid key/value pairing");
-    }
+    
 
     StringBuilder result = new StringBuilder();
     boolean first = true;
