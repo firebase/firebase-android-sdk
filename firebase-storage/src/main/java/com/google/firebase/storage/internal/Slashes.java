@@ -26,7 +26,7 @@ import java.io.UnsupportedEncodingException;
  *
  * @hide
  */
-public class SlashUtil {
+public class Slashes {
 
   /**
    * URL encodes a string, but leaves slashes unmolested. This is used for encoding gs uri paths to

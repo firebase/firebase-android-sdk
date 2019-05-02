@@ -21,7 +21,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.annotations.PublicApi;
-import com.google.firebase.storage.internal.SlashUtil;
+import com.google.firebase.storage.internal.Slashes;
 import com.google.firebase.storage.internal.Util;
 import java.io.UnsupportedEncodingException;
 import java.util.Collections;
@@ -280,7 +280,7 @@ public class StorageMetadata {
               new Uri.Builder()
                   .scheme("gs")
                   .authority(bucket)
-                  .encodedPath(SlashUtil.preserveSlashEncode(path))
+                  .encodedPath(Slashes.preserveSlashEncode(path))
                   .build();
         } catch (UnsupportedEncodingException e) {
           Log.e(TAG, "Unable to create a valid default Uri. " + bucket + path, e);

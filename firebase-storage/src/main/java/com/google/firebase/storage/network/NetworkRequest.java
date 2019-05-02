@@ -28,7 +28,7 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.StorageException;
-import com.google.firebase.storage.internal.SlashUtil;
+import com.google.firebase.storage.internal.Slashes;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactoryImpl;
 import java.io.BufferedOutputStream;
@@ -118,7 +118,7 @@ public abstract class NetworkRequest {
         + "/b/"
         + gsUri.getAuthority()
         + "/o/"
-        + (pathWithoutBucket != null ? SlashUtil.unSlashize(pathWithoutBucket) : "");
+        + (pathWithoutBucket != null ? Slashes.unSlashize(pathWithoutBucket) : "");
   }
 
   /**
