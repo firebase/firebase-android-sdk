@@ -83,13 +83,18 @@ public class GenerateMeasurementsTask extends DefaultTask {
                 'firebase-firestore-ktx': 5,
                 'firebase-functions': 6,
                 'firebase-inappmessaging-display': 7,
-                'firebase-storage': 8
+                'firebase-storage': 8,
+                'firebase-datatransport': 9
         ]
 
         for (Project p: project.rootProject.subprojects) {
             if (p.name.startsWith('firebase')) {
                 def (name, percent) = getCoveragePercentFromReport(p)
-                coverages[sdkMap[name]] = percent
+                if (sdkMap.containsKey(name)) {
+                    coverages[sdkMap[name]] = percent
+                } else {
+                    project.logger.warn("Find SDK with name: $name not defined in the SDK to ID mapping.")
+                }
             }
         }
 
