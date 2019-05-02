@@ -25,10 +25,8 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 import com.google.android.gms.common.internal.Preconditions;
-import com.google.android.gms.common.internal.BuildConstants;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.storage.BuildConfig;
 import com.google.firebase.storage.StorageException;
 import com.google.firebase.storage.internal.SlashUtil;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
@@ -516,7 +514,7 @@ public abstract class NetworkRequest {
       return null;
     }
 
-    if (BuildConstants.APK_IS_DEBUG_APK && (values == null || values.size() != keys.size())) {
+    if (values == null || values.size() != keys.size()) {
       throw new AssertionError("invalid key/value pairing");
     }
 
