@@ -15,6 +15,10 @@
  * limitations under the License.
  */
 
+import * as moment from 'moment';
+
+import { TEST_TARGET_ID_MAP } from './test_target_id_map';
+
 export interface ProwJob {
   apiVersion: string;
   kind: string;
@@ -35,14 +39,62 @@ export interface ProwJob {
   };
 }
 
-export interface ReplaceMeasurement extends Array<string | number> {}
+export class ReplaceMeasurement extends Array<string | number> {
+  private static readonly DATETIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
-export interface Table {
+  static fromProwJob(job: ProwJob): ReplaceMeasurement {
+    const testId = job.metadata.name;
+    const testTargetId = TEST_TARGET_ID_MAP.get(job.spec.job);
+    const startTime = moment(job.status.startTime);
+    const endTime = moment(job.status.completionTime);
+    const testStartTime = startTime.format(ReplaceMeasurement.DATETIME_FORMAT);
+    const testEndTime = endTime.format(ReplaceMeasurement.DATETIME_FORMAT);
+    const testDuration = endTime.diff(startTime, 'seconds');
+    const testState = job.status.state;
+    const testType = job.spec.type;
+    const pulls = job.spec.refs.pulls;
+    const pullRequestId = pulls ? pulls[0].number : -1;
+
+    return [
+      testId,
+      testTargetId,
+      testStartTime,
+      testEndTime,
+      testDuration,
+      testState,
+      testType,
+      pullRequestId,
+    ];
+  }
+}
+
+/* Fields in the Table class need to be in snake case. */
+/* tslint:disable:variable-name */
+export class Table {
   table_name: string;
   column_names: string[];
   replace_measurements: ReplaceMeasurement[];
-}
 
-export interface Report {
+  constructor(
+    table_name: string,
+    column_names: string[],
+    replace_measurements: ReplaceMeasurement[]
+  ) {
+    this.table_name = table_name;
+    this.column_names = column_names;
+    this.replace_measurements = replace_measurements;
+  }
+}
+/* tslint:enable:variable-name */
+
+export class Report {
   tables: Table[];
+
+  constructor(tables: Table[]) {
+    this.tables = tables;
+  }
+
+  toJsonString(): string {
+    return JSON.stringify(this);
+  }
 }

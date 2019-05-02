@@ -18,12 +18,11 @@
 import * as k8s from '@kubernetes/client-node';
 import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
-import * as moment from 'moment';
 import * as path from 'path';
 import { argv } from 'yargs';
 
 import { TEST_TARGET_ID_MAP } from './test_target_id_map';
-import { ProwJob, ReplaceMeasurement, Report } from './types';
+import { ProwJob, ReplaceMeasurement, Report, Table } from './types';
 
 async function getProwJobs(api: k8s.Custom_objectsApi): Promise<ProwJob[]> {
   const group = 'prow.k8s.io';
@@ -55,38 +54,6 @@ function isAndroidSdkJob(prowJob: ProwJob): boolean {
   return TEST_TARGET_ID_MAP.has(prowJob.spec.job);
 }
 
-function convertProwJobToReplaceMeasurement(job: ProwJob): ReplaceMeasurement {
-  // test_id
-  const testId = job.metadata.name;
-  // test_target_id
-  const testTargetId = TEST_TARGET_ID_MAP.get(job.spec.job);
-  // test_start_time, test_end_time, test_duration
-  const startTime = moment(job.status.startTime);
-  const endTime = moment(job.status.completionTime);
-  const format = 'YYYY-MM-DD HH:mm:ss';
-  const testStartTime = startTime.format(format);
-  const testEndTime = endTime.format(format);
-  const testDuration = endTime.diff(startTime, 'seconds');
-  // test_state
-  const testState = job.status.state;
-  // test_type
-  const testType = job.spec.type;
-  // pull_request_id
-  const pulls = job.spec.refs.pulls;
-  const pullRequestId = pulls ? pulls[0].number : -1;
-
-  return [
-    testId,
-    testTargetId,
-    testStartTime,
-    testEndTime,
-    testDuration,
-    testState,
-    testType,
-    pullRequestId,
-  ];
-}
-
 function constructReport(prowJobs: ProwJob[]): Report {
   /* Temporarily allow snake case naming for report object assembly. */
   /* tslint:disable:variable-name */
@@ -103,14 +70,14 @@ function constructReport(prowJobs: ProwJob[]): Report {
   ];
   const replace_measurements = prowJobs
     .filter(isAndroidSdkJob)
-    .map(convertProwJobToReplaceMeasurement);
+    .map(ReplaceMeasurement.fromProwJob);
 
-  return { tables: [{ table_name, column_names, replace_measurements }] };
+  return new Report([new Table(table_name, column_names, replace_measurements)]);
   /* tslint:enable:variable-name */
 }
 
 async function generateReportFile(report: Report): Promise<void> {
-  const data = JSON.stringify(report);
+  const data = report.toJsonString();
   if (argv.reportFile) {
     return new Promise((resolve, reject) => {
       const dir = path.dirname(argv.reportFile);
