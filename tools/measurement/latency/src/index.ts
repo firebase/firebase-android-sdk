@@ -63,7 +63,6 @@ function constructReport(prowJobs: ProwJob[]): Report {
     'test_target_id',
     'test_start_time',
     'test_end_time',
-    'test_duration',
     'test_state',
     'test_type',
     'pull_request_id',
@@ -72,7 +71,9 @@ function constructReport(prowJobs: ProwJob[]): Report {
     .filter(isAndroidSdkJob)
     .map(ReplaceMeasurement.fromProwJob);
 
-  return new Report([new Table(table_name, column_names, replace_measurements)]);
+  return new Report([
+    new Table(table_name, column_names, replace_measurements),
+  ]);
   /* tslint:enable:variable-name */
 }
 

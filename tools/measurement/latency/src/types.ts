@@ -49,7 +49,6 @@ export class ReplaceMeasurement extends Array<string | number> {
     const endTime = moment(job.status.completionTime);
     const testStartTime = startTime.format(ReplaceMeasurement.DATETIME_FORMAT);
     const testEndTime = endTime.format(ReplaceMeasurement.DATETIME_FORMAT);
-    const testDuration = endTime.diff(startTime, 'seconds');
     const testState = job.status.state;
     const testType = job.spec.type;
     const pulls = job.spec.refs.pulls;
@@ -60,7 +59,6 @@ export class ReplaceMeasurement extends Array<string | number> {
       testTargetId,
       testStartTime,
       testEndTime,
-      testDuration,
       testState,
       testType,
       pullRequestId,
