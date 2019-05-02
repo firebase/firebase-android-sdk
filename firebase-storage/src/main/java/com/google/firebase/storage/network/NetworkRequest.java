@@ -27,7 +27,6 @@ import android.util.Log;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.storage.BuildConfig;
 import com.google.firebase.storage.StorageException;
 import com.google.firebase.storage.internal.SlashUtil;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
@@ -513,10 +512,6 @@ public abstract class NetworkRequest {
       throws UnsupportedEncodingException {
     if (keys == null || keys.size() == 0) {
       return null;
-    }
-
-    if (BuildConfig.DEBUG && (values == null || values.size() != keys.size())) {
-      throw new AssertionError("invalid key/value pairing");
     }
 
     StringBuilder result = new StringBuilder();
