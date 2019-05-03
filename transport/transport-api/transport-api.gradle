@@ -16,6 +16,8 @@ plugins {
     id 'firebase-library'
 }
 
+firebaseLibrary.publishJavadoc = false
+
 android {
     compileSdkVersion 28
     defaultConfig {

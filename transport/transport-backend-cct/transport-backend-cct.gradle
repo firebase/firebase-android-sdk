@@ -17,6 +17,8 @@ plugins {
     id 'com.google.protobuf'
 }
 
+firebaseLibrary.publishJavadoc = false
+
 protobuf {
     // Configure the protoc executable
     protoc {

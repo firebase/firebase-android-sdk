@@ -16,6 +16,8 @@ plugins {
     id 'firebase-library'
 }
 
+firebaseLibrary.publishJavadoc = false
+
 android {
     adbOptions {
         timeOutInMs 60 * 1000
