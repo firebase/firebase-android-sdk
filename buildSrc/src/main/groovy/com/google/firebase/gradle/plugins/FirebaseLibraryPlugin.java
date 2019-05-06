@@ -1,8 +1,3 @@
-package com.google.firebase.gradle.plugins;
-
-import com.android.build.gradle.LibraryExtension;
-import com.google.common.collect.ImmutableMap;
-import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 // Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +12,11 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+package com.google.firebase.gradle.plugins;
+
+import com.android.build.gradle.LibraryExtension;
+import com.google.common.collect.ImmutableMap;
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.bundling.Jar;

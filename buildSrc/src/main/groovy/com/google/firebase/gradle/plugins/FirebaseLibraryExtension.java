@@ -15,11 +15,9 @@
 package com.google.firebase.gradle.plugins;
 
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension;
-
+import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.model.ObjectFactory;
-
-import javax.inject.Inject;
 
 public class FirebaseLibraryExtension {
   public boolean publishJavadoc = true;
