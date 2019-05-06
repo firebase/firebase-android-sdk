@@ -38,7 +38,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     // TODO(vkryachko): include sources in firebasePublish
     project.afterEvaluate(
         p -> {
-          if (firebaseLibrary.publishSources.get()) {
+          if (firebaseLibrary.publishSources) {
 
             p.getTasks()
                 .create(
