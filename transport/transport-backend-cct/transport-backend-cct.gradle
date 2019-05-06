@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply plugin: 'com.android.library'
-apply plugin: 'com.google.protobuf'
+plugins {
+    id 'firebase-library'
+    id 'com.google.protobuf'
+}
+
+firebaseLibrary.publishJavadoc = false
 
 protobuf {
     // Configure the protoc executable

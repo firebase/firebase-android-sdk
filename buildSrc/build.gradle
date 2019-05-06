@@ -62,6 +62,10 @@ gradlePlugin {
             id = 'PublishingPlugin'
             implementationClass = 'com.google.firebase.gradle.plugins.publish.PublishingPlugin'
         }
+        firebaseLibraryPlugin {
+            id = 'firebase-library'
+            implementationClass = 'com.google.firebase.gradle.plugins.FirebaseLibraryPlugin'
+        }
     }
 }
 

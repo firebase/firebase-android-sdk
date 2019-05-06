@@ -60,7 +60,7 @@ class FirebaseTestServer extends TestServer {
 
     @Override
     boolean isConfigured() {
-        return true
+        return extension.enabled
     }
 
     private List<String> getResultUploadArgs() {
