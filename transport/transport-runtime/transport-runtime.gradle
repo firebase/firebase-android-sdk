@@ -12,8 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply plugin: 'com.android.library'
-apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+plugins {
+    id 'firebase-library'
+}
+
+firebaseLibrary {
+    publishJavadoc = false
+    testLab {
+        enabled = true
+
+        device 'model=walleye,version=28' // Pixel2
+        device 'model=walleye,version=27' // Pixel2
+        device 'model=victara,version=19' // Moto X
+        device 'model=Nexus4,version=22'
+        device 'model=Nexus7,version=21'
+        device 'model=Nexus4,version=19'
+        device 'model=starqlteue,version=26' // Galaxy S9
+        device 'model=m0,version=18' // Galaxy S3
+        device 'model=hero2lte,version=23' // Galaxy S7
+        device 'model=g3,version=19' // LG G3
+    }
+}
 
 android {
     compileSdkVersion 28
@@ -34,21 +53,6 @@ android {
         }
     }
     testOptions.unitTests.includeAndroidResources = true
-}
-
-firebaseTestLab {
-    devices = [
-            'model=walleye,version=28', // Pixel2
-            'model=walleye,version=27', // Pixel2
-            'model=victara,version=19', // Moto X
-            'model=Nexus4,version=22',
-            'model=Nexus7,version=21',
-            'model=Nexus4,version=19',
-            'model=starqlteue,version=26', // Galaxy S9
-            'model=m0,version=18', // Galaxy S3
-            'model=hero2lte,version=23', // Galaxy S7
-            'model=g3,version=19', // LG G3
-    ]
 }
 
 dependencies {
