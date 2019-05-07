@@ -29,8 +29,13 @@ public class FirebaseLibraryExtension {
   private final Project project;
   private final Set<FirebaseLibraryExtension> librariesToCoRelease = new HashSet<>();
 
+  /** Indicates whether the library has public javadoc. */
   public boolean publishJavadoc = true;
+
+  /** Indicates whether sources are published alongside the library. */
   public boolean publishSources;
+
+  /** Firebase Test Lab configuration/ */
   public final FirebaseTestLabExtension testLab;
 
   @Inject
@@ -39,10 +44,12 @@ public class FirebaseLibraryExtension {
     this.testLab = new FirebaseTestLabExtension(project.getObjects());
   }
 
+  /** Configure Firebase Test Lab. */
   public void testLab(Action<FirebaseTestLabExtension> action) {
     action.execute(testLab);
   }
 
+  /** Register to be released alongside another Firebase Library project. */
   public void releaseWith(Project releaseWithProject) {
     try {
       FirebaseLibraryExtension releaseWithLibrary =
