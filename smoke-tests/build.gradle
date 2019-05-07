@@ -38,6 +38,11 @@ android {
   flavorDimensions "systemUnderTest"
 
   productFlavors {
+    combined {
+      dimension "systemUnderTest"
+      applicationId "com.google.firebase.testing.combined"
+    }
+
     database {
       dimension "systemUnderTest"
       applicationId "com.google.firebase.testing.database"
@@ -51,6 +56,17 @@ android {
     storage {
       dimension "systemUnderTest"
       applicationId "com.google.firebase.testing.storage"
+    }
+  }
+
+  sourceSets {
+    combined {
+      java.srcDirs = [
+          "src/combined/java",
+	  "src/database/java",
+	  "src/firestore/java",
+	  "src/storage/java",
+      ]
     }
   }
 }
@@ -68,6 +84,12 @@ dependencies {
 
   implementation "androidx.test:rules:1.1.0"
   implementation "com.google.firebase:firebase-common:16.0.7"
+
+  // All
+  combinedImplementation "com.google.firebase:firebase-auth:16.1.0"
+  combinedImplementation "com.google.firebase:firebase-database:16.1.0"
+  combinedImplementation "com.google.firebase:firebase-firestore:18.1.0"
+  combinedImplementation "com.google.firebase:firebase-storage:16.1.0"
 
   // Database
   databaseImplementation "com.google.firebase:firebase-auth:16.1.0"
