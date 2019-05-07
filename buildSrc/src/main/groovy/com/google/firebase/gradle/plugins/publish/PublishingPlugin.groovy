@@ -105,6 +105,10 @@ class PublishingPlugin implements Plugin<Project> {
                     publications {
                         mavenAar(MavenPublication) {
                             from sub.components.android
+                            if (sub.name == 'ktx') {
+                                artifactId = "$sub.parent.name-ktx"
+                                groupId = sub.parent.group
+                            }
                             pom {
                                 licenses {
                                     license {
