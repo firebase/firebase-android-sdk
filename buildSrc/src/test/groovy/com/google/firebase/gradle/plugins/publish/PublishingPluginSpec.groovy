@@ -27,16 +27,20 @@ class PublishingPluginSpec extends Specification {
     static class Project {
         static final String BUILD_TEMPLATE = '''
         plugins {
-            id 'com.android.library'
+            id 'firebase-library'
         }
-        android.compileSdkVersion = 26
         group = '${group}'
         version = '${version}'
         <% if (latestReleasedVersion) println "ext.latestReleasedVersion = $latestReleasedVersion" %>
+        firebaseLibrary {
+          <% if (releaseWith != null) println "releaseWith project(':$releaseWith.name')" %>
+        }
+        android.compileSdkVersion = 26
+
         repositories {
             google()
             jcenter()
-	}
+	    }
         dependencies {
             <%dependencies.each { println "implementation project(':$it.name')" } %>
         }
@@ -46,6 +50,7 @@ class PublishingPluginSpec extends Specification {
         String version = 'undefined'
         String latestReleasedVersion = ''
         Set<Project> projectDependencies = []
+        Project releaseWith = null
 
         String generateBuildFile() {
             def text = new SimpleTemplateEngine().createTemplate(BUILD_TEMPLATE).make([
@@ -53,6 +58,7 @@ class PublishingPluginSpec extends Specification {
                     group: group,
                     version: version,
                     dependencies: projectDependencies,
+                    releaseWith: releaseWith,
                     latestReleasedVersion: latestReleasedVersion
             ])
 
@@ -60,8 +66,9 @@ class PublishingPluginSpec extends Specification {
         }
 
         Optional<File> getPublishedPom(String rootFolder) {
+            def v = releaseWith == null ? version : releaseWith.version
             def poms = new FileNameFinder().getFileNames(rootFolder,
-                    "${group.replaceAll('\\.', '/')}/${name}/${version}*/*.pom")
+                    "${group.replaceAll('\\.', '/')}/${name}/${v}*/*.pom")
 
             if(poms.empty) {
                 return Optional.empty()
@@ -95,36 +102,13 @@ class PublishingPluginSpec extends Specification {
         </manifest>
     """
 
-    final Project project1 = new Project(name: 'childProject1', version: '1.0')
-    final Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1])
-
-    final String childProject1 = """
-        plugins {
-            id 'com.android.library'
-        }
-        android.compileSdkVersion = 26
-        version = '1.0'
-        """
-
-    final String childProject2 = """
-        plugins {
-            id 'com.android.library'
-        }
-        android.compileSdkVersion = 26
-        version = '0.9'
-        
-        dependencies {
-            implementation project(':childProject1')
-        }
-        """
-
     def "Publish all dependent projects succeeds"() {
         Project project1 = new Project(name: 'childProject1', version: '1.0')
         Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1])
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
-        def result = publish(Mode.RELEASE, 'childProject1', 'childProject2')
+        def result = publish(Mode.RELEASE, project1, project2)
         then: 'poms exist'
         def pom1 = project1.getPublishedPom("$testProjectDir.root/build/m2repository")
         def pom2 = project2.getPublishedPom("$testProjectDir.root/build/m2repository")
@@ -150,7 +134,7 @@ class PublishingPluginSpec extends Specification {
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
-        def result = publish(Mode.RELEASE, 'childProject2')
+        def result = publish(Mode.RELEASE, project2)
         then: 'build fails'
         Exception e = thrown(Exception)
         e.getMessage().contains("Failed to release project ':childProject2'")
@@ -162,7 +146,7 @@ class PublishingPluginSpec extends Specification {
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
-        def result = publish(Mode.RELEASE, 'childProject2')
+        def result = publish(Mode.RELEASE, project2)
         then: 'poms exist'
         def pom1 = project1.getPublishedPom("$testProjectDir.root/build/m2repository")
         def pom2 = project2.getPublishedPom("$testProjectDir.root/build/m2repository")
@@ -186,7 +170,7 @@ class PublishingPluginSpec extends Specification {
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
-        def result = publish(Mode.SNAPSHOT, 'childProject1', 'childProject2')
+        def result = publish(Mode.SNAPSHOT, project1, project2)
         then: 'poms exist'
         def pom1 = project1.getPublishedPom("$testProjectDir.root/build/m2repository")
         def pom2 = project2.getPublishedPom("$testProjectDir.root/build/m2repository")
@@ -212,7 +196,7 @@ class PublishingPluginSpec extends Specification {
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
-        def result = publish(Mode.SNAPSHOT, 'childProject2')
+        def result = publish(Mode.SNAPSHOT, project2)
         then: 'poms exist'
         def pom1 = project1.getPublishedPom("$testProjectDir.root/build/m2repository")
         def pom2 = project2.getPublishedPom("$testProjectDir.root/build/m2repository")
@@ -230,6 +214,32 @@ class PublishingPluginSpec extends Specification {
         dependency.version == project1.latestReleasedVersion
     }
 
+    def "Publish project should also publish coreleased projects"() {
+        Project project1 = new Project(name: 'childProject1', version: '1.0')
+        Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1], releaseWith: project1)
+
+        when: "publishFirebase invoked"
+        subprojectsDefined(project1, project2)
+        def result = publish(Mode.RELEASE, project1)
+        then: 'poms exist'
+        def pom1 = project1.getPublishedPom("$testProjectDir.root/build/m2repository")
+        def pom2 = project2.getPublishedPom("$testProjectDir.root/build/m2repository")
+        assert pom1.isPresent()
+        assert pom2.isPresent()
+
+        and: 'versions are valid'
+        def xml1 = new XmlSlurper().parseText(pom1.get().text)
+        xml1.version == project1.version
+
+        def xml2 = new XmlSlurper().parseText(pom2.get().text)
+        xml2.version == project1.version
+        def dependency = xml2.dependencies.dependency
+
+        dependency.groupId == project1.group
+        dependency.artifactId == project1.name
+        dependency.version == project1.version
+    }
+
     private BuildResult build(String... args) {
         GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
@@ -238,8 +248,8 @@ class PublishingPluginSpec extends Specification {
                 .build()
     }
 
-    private BuildResult publish(Mode mode, String... projects) {
-        def projectsArg = "-PprojectsToPublish=${projects.join(',')}"
+    private BuildResult publish(Mode mode, Project... projects) {
+        def projectsArg = "-PprojectsToPublish=${projects.collect { it.name }.join(',')}"
         def modeArg = "-PpublishMode=$mode"
         build(projectsArg, modeArg, 'firebasePublish')
     }

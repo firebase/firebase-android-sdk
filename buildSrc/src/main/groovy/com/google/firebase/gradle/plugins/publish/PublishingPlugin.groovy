@@ -131,7 +131,7 @@ class PublishingPlugin implements Plugin<Project> {
                 }
             }
 
-            def publishProjectsToBuildDir = project.task('publishProjectsToBuildDir') { task ->
+            def publishProjectsToBuildDir = project.task('publishProjectsToBuildDir') {
                 projectsToPublish.each { projectToPublish ->
                     dependsOn getPublishTask(projectToPublish, 'BuildDirRepository')
                 }
@@ -143,7 +143,14 @@ class PublishingPlugin implements Plugin<Project> {
                 archiveName "$project.buildDir/m2repository.zip"
             }
 
-            firebasePublish.dependsOn buildMavenZip
+            def info = project.task('publishPrintInfo') {
+                doLast {
+                    project.logger.lifecycle("Publishing the following libraries: \n{}", projectsToPublish.collect{it.path}.join('\n'))
+                }
+            }
+            buildMavenZip.mustRunAfter info
+
+            firebasePublish.dependsOn info, buildMavenZip
         }
     }
 
