@@ -14,22 +14,60 @@
 
 package com.google.firebase.gradle.plugins;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.gradle.api.Action;
-import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.GradleException;
+import org.gradle.api.Project;
+import org.gradle.api.UnknownDomainObjectException;
 
 public class FirebaseLibraryExtension {
+  private final Project project;
+  private final Set<FirebaseLibraryExtension> librariesToCoRelease = new HashSet<>();
+
   public boolean publishJavadoc = true;
   public boolean publishSources;
   public final FirebaseTestLabExtension testLab;
 
   @Inject
-  public FirebaseLibraryExtension(ObjectFactory objectFactory) {
-    this.testLab = new FirebaseTestLabExtension(objectFactory);
+  public FirebaseLibraryExtension(Project project) {
+    this.project = project;
+    this.testLab = new FirebaseTestLabExtension(project.getObjects());
   }
 
-  void testLab(Action<FirebaseTestLabExtension> action) {
+  public void testLab(Action<FirebaseTestLabExtension> action) {
     action.execute(testLab);
+  }
+
+  public void releaseWith(Project releaseWithProject) {
+    try {
+      FirebaseLibraryExtension releaseWithLibrary =
+          releaseWithProject.getExtensions().getByType(FirebaseLibraryExtension.class);
+      releaseWithLibrary.librariesToCoRelease.add(this);
+      this.project.setVersion(releaseWithProject.getVersion());
+
+      String latestRelease = "latestReleasedVersion";
+      if (releaseWithProject.getExtensions().getExtraProperties().has(latestRelease)) {
+        this.project
+            .getExtensions()
+            .getExtraProperties()
+            .set(latestRelease, releaseWithProject.getProperties().get(latestRelease));
+      }
+
+    } catch (UnknownDomainObjectException ex) {
+      throw new GradleException(
+          "Library cannot be released with a project that is not a Firebase Library itself");
+    }
+  }
+
+  public Set<Project> getProjectsToRelease() {
+    return ImmutableSet.<Project>builder()
+        .add(project)
+        .addAll(librariesToCoRelease.stream().map(l -> l.project).collect(Collectors.toSet()))
+        .build();
   }
 }

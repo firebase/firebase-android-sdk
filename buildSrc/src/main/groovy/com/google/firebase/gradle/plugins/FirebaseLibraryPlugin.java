@@ -27,9 +27,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     project.apply(ImmutableMap.of("plugin", "com.android.library"));
 
     FirebaseLibraryExtension firebaseLibrary =
-        project
-            .getExtensions()
-            .create("firebaseLibrary", FirebaseLibraryExtension.class, project.getObjects());
+        project.getExtensions().create("firebaseLibrary", FirebaseLibraryExtension.class, project);
 
     LibraryExtension android = project.getExtensions().getByType(LibraryExtension.class);
 
