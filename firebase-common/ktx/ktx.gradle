@@ -17,6 +17,10 @@ plugins {
     id 'kotlin-android'
 }
 
+firebaseLibrary {
+    releaseWith project(':firebase-common')
+}
+
 android {
     compileSdkVersion project.targetSdkVersion
     defaultConfig {

@@ -15,11 +15,13 @@
 package com.google.firebase.gradle.plugins;
 
 import com.android.build.gradle.LibraryExtension;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.bundling.Jar;
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
 public class FirebaseLibraryPlugin implements Plugin<Project> {
   @Override
@@ -27,9 +29,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     project.apply(ImmutableMap.of("plugin", "com.android.library"));
 
     FirebaseLibraryExtension firebaseLibrary =
-        project
-            .getExtensions()
-            .create("firebaseLibrary", FirebaseLibraryExtension.class, project.getObjects());
+        project.getExtensions().create("firebaseLibrary", FirebaseLibraryExtension.class, project);
 
     LibraryExtension android = project.getExtensions().getByType(LibraryExtension.class);
 
@@ -50,5 +50,23 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                     });
           }
         });
+
+    // reduce the likelihood of kotlin module files colliding.
+    project
+        .getTasks()
+        .withType(
+            KotlinCompile.class,
+            kotlin ->
+                kotlin
+                    .getKotlinOptions()
+                    .setFreeCompilerArgs(
+                        ImmutableList.of("-module-name", kotlinModuleName(project))));
+  }
+
+  private static String kotlinModuleName(Project project) {
+
+    String fullyQualifiedProjectPath = project.getPath().replaceAll(":", "-");
+
+    return project.getRootProject().getName() + fullyQualifiedProjectPath;
   }
 }
