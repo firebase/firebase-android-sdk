@@ -99,6 +99,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
               values.put("timestamp_ms", event.getEventMillis());
               values.put("uptime_ms", event.getUptimeMillis());
               values.put("payload", event.getPayload());
+              values.put("code", event.getCode());
               values.put("num_attempts", 0);
               long newEventId = db.insert("events", null, values);
 
@@ -282,7 +283,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     tryWithCursor(
         db.query(
             "events",
-            new String[] {"_id", "transport_name", "timestamp_ms", "uptime_ms", "payload"},
+            new String[] {"_id", "transport_name", "timestamp_ms", "uptime_ms", "payload", "code"},
             "context_id = ?",
             new String[] {contextId.toString()},
             null,
@@ -292,14 +293,16 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         cursor -> {
           while (cursor.moveToNext()) {
             long id = cursor.getLong(0);
-            EventInternal event =
+            EventInternal.Builder event =
                 EventInternal.builder()
                     .setTransportName(cursor.getString(1))
                     .setEventMillis(cursor.getLong(2))
                     .setUptimeMillis(cursor.getLong(3))
-                    .setPayload(cursor.getBlob(4))
-                    .build();
-            events.add(PersistedEvent.create(id, transportContext, event));
+                    .setPayload(cursor.getBlob(4));
+            if (!cursor.isNull(5)) {
+              event.setCode(cursor.getInt(5));
+            }
+            events.add(PersistedEvent.create(id, transportContext, event.build()));
           }
           return null;
         });
@@ -476,6 +479,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
             + " timestamp_ms INTEGER NOT NULL,"
             + " uptime_ms INTEGER NOT NULL,"
             + " payload BLOB NOT NULL,"
+            + " code INTEGER,"
             + " num_attempts INTEGER NOT NULL,"
             + "FOREIGN KEY (context_id) REFERENCES transport_contexts(_id) ON DELETE CASCADE)";
 

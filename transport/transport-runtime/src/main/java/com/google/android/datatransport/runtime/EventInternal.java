@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime;
 
+import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,8 +22,10 @@ import java.util.Map;
 
 @AutoValue
 public abstract class EventInternal {
-  // send source
   public abstract String getTransportName();
+
+  @Nullable
+  public abstract Integer getCode();
 
   public abstract byte[] getPayload();
 
@@ -59,6 +62,7 @@ public abstract class EventInternal {
   public Builder toBuilder() {
     return new AutoValue_EventInternal.Builder()
         .setTransportName(getTransportName())
+        .setCode(getCode())
         .setPayload(getPayload())
         .setEventMillis(getEventMillis())
         .setUptimeMillis(getUptimeMillis())
@@ -72,6 +76,8 @@ public abstract class EventInternal {
   @AutoValue.Builder
   public abstract static class Builder {
     public abstract Builder setTransportName(String value);
+
+    public abstract Builder setCode(Integer value);
 
     public abstract Builder setPayload(byte[] value);
 

@@ -60,6 +60,17 @@ public class SQLiteEventStoreTest {
     PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, EVENT);
     Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
 
+    assertThat(newEvent.getEvent()).isEqualTo(EVENT);
+    assertThat(events).containsExactly(newEvent);
+  }
+
+  @Test
+  public void persist_withEventCode_correctlyRoundTrips() {
+    EventInternal eventWithCode = EVENT.toBuilder().setCode(5).build();
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, eventWithCode);
+    Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
+
+    assertThat(newEvent.getEvent()).isEqualTo(eventWithCode);
     assertThat(events).containsExactly(newEvent);
   }
 
