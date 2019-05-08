@@ -16,6 +16,7 @@ plugins {
     id 'firebase-library'
 }
 
+def a = "a"
 firebaseLibrary {
     testLab.enabled = true
     publishJavadoc = true
