@@ -14,10 +14,12 @@
 
 package com.google.firebase.gradle.plugins.publish
 
+import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import digital.wup.android_maven_publish.AndroidMavenPublishPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
 
 /**
@@ -88,8 +90,9 @@ class PublishingPlugin implements Plugin<Project> {
                 if (!sub.plugins.hasPlugin('firebase-library')) {
                     return
                 }
+                FirebaseLibraryExtension firebaseLibrary = sub.extensions.getByType(FirebaseLibraryExtension)
                 if (projectsToPublish.contains(sub)) {
-                    projectsToPublish.addAll(sub.firebaseLibrary.projectsToRelease)
+                    projectsToPublish.addAll(firebaseLibrary.projectsToRelease)
                 }
 
                 sub.ext.versionToPublish = publisher.determineVersion(sub)
@@ -111,18 +114,13 @@ class PublishingPlugin implements Plugin<Project> {
                                 artifactId = "$sub.parent.name-ktx"
                                 groupId = sub.parent.group
                             }
-                            pom {
-                                licenses {
-                                    license {
-                                        name = 'The Apache Software License, Version 2.0'
-                                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                                    }
-                                }
-                                scm {
-                                    connection = 'scm:git:https://github.com/firebase/firebase-android-sdk.git'
-                                    url = 'https://github.com/firebase/firebase-android-sdk'
+                            if (firebaseLibrary.publishSources) {
+                                artifact sub.tasks.create("sourcesJar", Jar) {
+                                    from sub.android.sourceSets.main.java.srcDirs
+                                    classifier "sources"
                                 }
                             }
+                            firebaseLibrary.applyPomCustomization(pom)
                             publisher.decorate(sub, it)
                         }
                     }

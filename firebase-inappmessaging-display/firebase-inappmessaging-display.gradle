@@ -18,6 +18,7 @@ plugins {
 
 firebaseLibrary {
     testLab.enabled = true
+    publishSources = true
 }
 
 android {
