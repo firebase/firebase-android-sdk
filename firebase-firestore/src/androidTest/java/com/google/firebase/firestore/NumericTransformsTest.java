@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 
+import android.support.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
@@ -28,7 +29,9 @@ import java.util.concurrent.ExecutionException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(AndroidJUnit4.class)
 public class NumericTransformsTest {
   private static final double DOUBLE_EPSILON = 0.000001;
 
