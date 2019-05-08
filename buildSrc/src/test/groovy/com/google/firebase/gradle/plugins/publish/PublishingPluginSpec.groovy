@@ -102,7 +102,7 @@ class PublishingPluginSpec extends Specification {
         </manifest>
     """
 
-    def "Publish all dependent projects succeeds"() {
+    def "Publishing dependent projects succeeds"() {
         Project project1 = new Project(name: 'childProject1', version: '1.0')
         Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1])
 

@@ -49,7 +49,12 @@ public class FirebaseLibraryExtension {
     action.execute(testLab);
   }
 
-  /** Register to be released alongside another Firebase Library project. */
+  /**
+   * Register to be released alongside another Firebase Library project.
+   *
+   * <p>This will force the released version of the current project to match the one it's released
+   * with.
+   */
   public void releaseWith(Project releaseWithProject) {
     try {
       FirebaseLibraryExtension releaseWithLibrary =
