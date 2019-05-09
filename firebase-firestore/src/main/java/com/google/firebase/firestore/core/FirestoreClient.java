@@ -75,7 +75,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
-  private boolean isShutdown = false;
+  private volatile boolean isShutdown = false;
 
   // LRU-related
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
@@ -137,18 +137,17 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   /** Shuts down this client, cancels all writes / listeners, and releases all resources. */
   public Task<Void> shutdown() {
-    if (this.isShutdown) {
-      return Tasks.forResult(null);
-    }
     credentialsProvider.removeChangeListener();
     return asyncQueue.enqueue(
         () -> {
-          remoteStore.shutdown();
-          persistence.shutdown();
-          if (lruScheduler != null) {
-            lruScheduler.stop();
+          if (!this.isShutdown) {
+            remoteStore.shutdown();
+            persistence.shutdown();
+            if (lruScheduler != null) {
+              lruScheduler.stop();
+            }
+            this.isShutdown = true;
           }
-          this.isShutdown = true;
         });
   }
 
