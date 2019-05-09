@@ -139,8 +139,11 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         db.query(
             "transport_contexts",
             new String[] {"_id"},
-            "backend_name = ?",
-            new String[] {transportContext.getBackendName()},
+            "backend_name = ? and priority = ?",
+            new String[] {
+              transportContext.getBackendName(),
+              String.valueOf(transportContext.getPriority().ordinal())
+            },
             null,
             null,
             null),
