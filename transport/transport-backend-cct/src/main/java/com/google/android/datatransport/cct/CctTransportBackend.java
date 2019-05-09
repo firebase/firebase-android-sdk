@@ -175,7 +175,7 @@ final class CctTransportBackend implements TransportBackend {
                               .build())
                       .build());
       for (EventInternal eventInternal : entry.getValue()) {
-        LogEvent event =
+        LogEvent.Builder event =
             LogEvent.newBuilder()
                 .setEventTimeMs(eventInternal.getEventMillis())
                 .setEventUptimeMs(eventInternal.getUptimeMillis())
@@ -184,8 +184,10 @@ final class CctTransportBackend implements TransportBackend {
                 .setNetworkConnectionInfo(
                     NetworkConnectionInfo.newBuilder()
                         .setNetworkTypeValue(eventInternal.getInteger(KEY_NETWORK_TYPE))
-                        .setMobileSubtypeValue(eventInternal.getInteger(KEY_MOBILE_SUBTYPE)))
-                .build();
+                        .setMobileSubtypeValue(eventInternal.getInteger(KEY_MOBILE_SUBTYPE)));
+        if (eventInternal.getCode() != null) {
+          event.setEventCode(eventInternal.getCode());
+        }
         requestBuilder.addLogEvent(event);
       }
       batchedRequestBuilder.addLogRequest(requestBuilder.build());

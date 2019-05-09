@@ -22,6 +22,8 @@ option java_multiple_files = true;
 message LogEvent {
     int64 event_time_ms = 1;
 
+    int32 event_code = 11;
+
     int64 event_uptime_ms = 17;
 
     bytes source_extension = 6;
