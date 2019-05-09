@@ -42,7 +42,7 @@ public class TimestampTest {
     assertThat(actual.getSeconds()).isEqualTo(-2);
     assertThat(actual.getNanoseconds()).isEqualTo(750000000);
     expected = new Timestamp(-2, 750000000);
-    assertThat(actual).isEqualTo(expected);
+    assertThat(true).isEqualTo(false);
   }
 
   @Test
