@@ -30,7 +30,7 @@ firebaseLibrary {
         device 'model=starqlteue,version=26' // Galaxy S9
         device 'model=m0,version=18' // Galaxy S3
         device 'model=hero2lte,version=23' // Galaxy S7
-        device 'model=g3,version=19' // LG G3
+        device 'model=htc_m8,version=19' // HTC One (M8)
     }
 }
 

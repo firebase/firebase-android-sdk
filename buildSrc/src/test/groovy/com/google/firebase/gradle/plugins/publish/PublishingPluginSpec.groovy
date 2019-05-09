@@ -20,7 +20,7 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
-import spock.lang.Specification;
+import spock.lang.Specification
 
 class PublishingPluginSpec extends Specification {
 
@@ -34,6 +34,7 @@ class PublishingPluginSpec extends Specification {
         <% if (latestReleasedVersion) println "ext.latestReleasedVersion = $latestReleasedVersion" %>
         firebaseLibrary {
           <% if (releaseWith != null) println "releaseWith project(':$releaseWith.name')" %>
+          <% if (customizePom != null) println "customizePom {$customizePom}" %>
         }
         android.compileSdkVersion = 26
 
@@ -51,6 +52,7 @@ class PublishingPluginSpec extends Specification {
         String latestReleasedVersion = ''
         Set<Project> projectDependencies = []
         Project releaseWith = null
+        String customizePom = null
 
         String generateBuildFile() {
             def text = new SimpleTemplateEngine().createTemplate(BUILD_TEMPLATE).make([
@@ -59,7 +61,8 @@ class PublishingPluginSpec extends Specification {
                     version: version,
                     dependencies: projectDependencies,
                     releaseWith: releaseWith,
-                    latestReleasedVersion: latestReleasedVersion
+                    latestReleasedVersion: latestReleasedVersion,
+                    customizePom: customizePom,
             ])
 
             return text
@@ -104,7 +107,13 @@ class PublishingPluginSpec extends Specification {
 
     def "Publishing dependent projects succeeds"() {
         Project project1 = new Project(name: 'childProject1', version: '1.0')
-        Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1])
+        Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1], customizePom: """
+licenses {
+  license {
+    name = 'Hello'
+  }
+}
+""")
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
@@ -118,9 +127,13 @@ class PublishingPluginSpec extends Specification {
         and: 'versions are valid'
         def xml1 = new XmlSlurper().parseText(pom1.get().text)
         xml1.version == project1.version
+        xml1.licenses.license.name == "The Apache Software License, Version 2.0"
+        xml1.licenses.license.url == "http://www.apache.org/licenses/LICENSE-2.0.txt"
 
         def xml2 = new XmlSlurper().parseText(pom2.get().text)
         xml2.version == project2.version
+        xml2.licenses.license.name == "Hello"
+
         def dependency = xml2.dependencies.dependency
 
         dependency.groupId == project1.group
