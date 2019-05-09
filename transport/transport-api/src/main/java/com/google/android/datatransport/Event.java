@@ -14,19 +14,31 @@
 
 package com.google.android.datatransport;
 
+import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
 @AutoValue
 public abstract class Event<T> {
+  @Nullable
+  public abstract Integer getCode();
+
   public abstract T getPayload();
 
   public abstract Priority getPriority();
 
+  public static <T> Event<T> ofData(int code, T payload) {
+    return new AutoValue_Event<>(code, payload, Priority.DEFAULT);
+  }
+
   public static <T> Event<T> ofData(T payload) {
-    return new AutoValue_Event<>(payload, Priority.DEFAULT);
+    return new AutoValue_Event<>(null, payload, Priority.DEFAULT);
+  }
+
+  public static <T> Event<T> ofTelemetry(int code, T value) {
+    return new AutoValue_Event<>(code, value, Priority.VERY_LOW);
   }
 
   public static <T> Event<T> ofTelemetry(T value) {
-    return new AutoValue_Event<>(value, Priority.VERY_LOW);
+    return new AutoValue_Event<>(null, value, Priority.VERY_LOW);
   }
 }

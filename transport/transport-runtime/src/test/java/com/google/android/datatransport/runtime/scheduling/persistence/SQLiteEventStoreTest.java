@@ -16,6 +16,7 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.Clock;
@@ -60,6 +61,32 @@ public class SQLiteEventStoreTest {
     PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, EVENT);
     Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
 
+    assertThat(newEvent.getEvent()).isEqualTo(EVENT);
+    assertThat(events).containsExactly(newEvent);
+  }
+
+  @Test
+  public void persist_withEventsOfDifferentPriority_shouldEndBeStoredUnderDifferentContexts() {
+    TransportContext ctx1 = TRANSPORT_CONTEXT;
+    TransportContext ctx2 = TRANSPORT_CONTEXT.withPriority(Priority.VERY_LOW);
+
+    EventInternal event1 = EVENT;
+    EventInternal event2 = EVENT.toBuilder().setPayload("World".getBytes()).build();
+
+    PersistedEvent newEvent1 = store.persist(ctx1, event1);
+    PersistedEvent newEvent2 = store.persist(ctx2, event2);
+
+    assertThat(store.loadBatch(ctx1)).containsExactly(newEvent1);
+    assertThat(store.loadBatch(ctx2)).containsExactly(newEvent2);
+  }
+
+  @Test
+  public void persist_withEventCode_correctlyRoundTrips() {
+    EventInternal eventWithCode = EVENT.toBuilder().setCode(5).build();
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, eventWithCode);
+    Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
+
+    assertThat(newEvent.getEvent()).isEqualTo(eventWithCode);
     assertThat(events).containsExactly(newEvent);
   }
 

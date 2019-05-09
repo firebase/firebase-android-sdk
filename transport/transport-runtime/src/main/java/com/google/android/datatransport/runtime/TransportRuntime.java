@@ -127,6 +127,7 @@ public class TransportRuntime implements TransportInternal {
         .setUptimeMillis(uptimeClock.getTime())
         .setTransportName(request.getTransportName())
         .setPayload(request.getPayload())
+        .setCode(request.getEvent().getCode())
         .build();
   }
 }
