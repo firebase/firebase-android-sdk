@@ -43,6 +43,7 @@ class GradleTest(unittest.TestCase):
   @in_tempdir
   def test_gradle_passes_arguments_to_gradlew(self):
     args = ['--foo', '-Pbar=baz', 'task1', 'task3']
+    args1 = ['--foo', '-Pbar=baz', 'task1', 'task2']
     gradle_opts = '--some --Dgradle_opts=foo'
     create_artifacts(
         Artifact(
@@ -54,4 +55,4 @@ class GradleTest(unittest.TestCase):
                 }),
             mode=0o744,
         ))
-    self.assertEqual(gradle.run(*args, gradle_opts=gradle_opts), 0)
+    self.assertEqual(gradle.run(*args1, gradle_opts=gradle_opts), 0)
