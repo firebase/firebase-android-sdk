@@ -42,7 +42,7 @@ class GradleTest(unittest.TestCase):
 
   @in_tempdir
   def test_gradle_passes_arguments_to_gradlew(self):
-    args = ['--foo', '-Pbar=baz', 'task1', 'task2']
+    args = ['--foo', '-Pbar=baz', 'task1', 'task3']
     gradle_opts = '--some --Dgradle_opts=foo'
     create_artifacts(
         Artifact(
