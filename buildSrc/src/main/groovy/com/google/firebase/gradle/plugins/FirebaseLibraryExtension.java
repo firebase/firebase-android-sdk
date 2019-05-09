@@ -24,6 +24,7 @@ import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.UnknownDomainObjectException;
+import org.gradle.api.publish.maven.MavenPom;
 
 public class FirebaseLibraryExtension {
   private final Project project;
@@ -37,6 +38,23 @@ public class FirebaseLibraryExtension {
 
   /** Firebase Test Lab configuration/ */
   public final FirebaseTestLabExtension testLab;
+
+  private Action<MavenPom> customizePomAction =
+      pom -> {
+        pom.licenses(
+            licenses ->
+                licenses.license(
+                    license -> {
+                      license.getName().set("The Apache Software License, Version 2.0");
+                      license.getUrl().set("http://www.apache.org/licenses/LICENSE-2.0.txt");
+                    }));
+        pom.scm(
+            scm -> {
+              scm.getConnection()
+                  .set("scm:git:https://github.com/firebase/firebase-android-sdk.git");
+              scm.getUrl().set("https://github.com/firebase/firebase-android-sdk");
+            });
+      };
 
   @Inject
   public FirebaseLibraryExtension(Project project) {
@@ -81,5 +99,16 @@ public class FirebaseLibraryExtension {
         .add(project)
         .addAll(librariesToCoRelease.stream().map(l -> l.project).collect(Collectors.toSet()))
         .build();
+  }
+
+  /** Provides a hook to customize pom generation. */
+  public void customizePom(Action<MavenPom> action) {
+    customizePomAction = action;
+  }
+
+  public void applyPomCustomization(MavenPom pom) {
+    if (customizePomAction != null) {
+      customizePomAction.execute(pom);
+    }
   }
 }

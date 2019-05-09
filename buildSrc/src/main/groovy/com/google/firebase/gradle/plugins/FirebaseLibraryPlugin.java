@@ -35,22 +35,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
 
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab));
 
-    // TODO(vkryachko): include sources in firebasePublish
-    project.afterEvaluate(
-        p -> {
-          if (firebaseLibrary.publishSources) {
-
-            p.getTasks()
-                .create(
-                    "sourcesJar",
-                    Jar.class,
-                    jar -> {
-                      jar.from(android.getSourceSets().getByName("main").getJava().getSrcDirs());
-                      jar.setClassifier("sources");
-                    });
-          }
-        });
-
     // reduce the likelihood of kotlin module files colliding.
     project
         .getTasks()
