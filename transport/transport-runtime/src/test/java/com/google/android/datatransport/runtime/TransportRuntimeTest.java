@@ -89,13 +89,14 @@ public class TransportRuntimeTest {
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry("TelemetryData");
+    Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
     EventInternal expectedEvent =
         EventInternal.builder()
             .setEventMillis(eventMillis)
             .setUptimeMillis(uptimeMillis)
             .setTransportName(testTransport)
             .setPayload("TelemetryData".getBytes())
+            .setCode(12)
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
