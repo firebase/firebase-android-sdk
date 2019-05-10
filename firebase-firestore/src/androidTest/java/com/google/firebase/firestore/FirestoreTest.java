@@ -15,7 +15,8 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.AccessHelper.getAsyncQueue;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettings;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provider;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
@@ -43,6 +44,7 @@ import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
+import com.google.firebase.firestore.util.Logger.Level;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -964,12 +966,14 @@ public class FirestoreTest {
 
   @Test
   public void testMaintainsPersistenceAfterRestarting() {
-    DocumentReference docRef = testDocument();
-    FirebaseFirestore firestore = docRef.getFirestore();
+    FirebaseFirestore firestore =
+        testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
+    DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
 
     waitFor(AccessHelper.shutdown(firestore));
-    FirebaseFirestore firestore2 = testFirestore();
+    FirebaseFirestore firestore2 =
+        testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef2 = firestore2.document(docRef.getPath());
     DocumentSnapshot doc = waitFor(docRef2.get());
     assertEquals(doc.exists(), true);
@@ -977,13 +981,15 @@ public class FirestoreTest {
 
   @Test
   public void testCanClearPersistenceAfterRestarting() throws Exception {
-    DocumentReference docRef = testDocument();
-    FirebaseFirestore firestore = docRef.getFirestore();
+    FirebaseFirestore firestore =
+        testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
+    DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
 
     waitFor(AccessHelper.shutdown(firestore));
     waitFor(AccessHelper.clearPersistence(firestore));
-    FirebaseFirestore firestore2 = testFirestore();
+    FirebaseFirestore firestore2 =
+        testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef2 = firestore2.document(docRef.getPath());
     Exception e = waitForException(docRef2.get(Source.CACHE));
     assertEquals(Code.UNAVAILABLE, ((FirebaseFirestoreException) e).getCode());
