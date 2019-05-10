@@ -27,7 +27,6 @@ android {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         versionName version
-        buildConfigField('String', 'LIBRARY_NAME', "\"$project.name\"")
         buildConfigField('String', 'KOTLIN_VERSION', "\"$kotlinVersion\"")
     }
     sourceSets {
