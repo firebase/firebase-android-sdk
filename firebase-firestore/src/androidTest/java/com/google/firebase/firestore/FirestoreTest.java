@@ -15,6 +15,8 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.AccessHelper.getAsyncQueue;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettings;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provider;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
@@ -33,18 +35,16 @@ import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertNotEquals;
 
-import android.content.Context;
-import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
+import com.google.firebase.firestore.util.Logger.Level;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -966,14 +966,14 @@ public class FirestoreTest {
 
   @Test
   public void testMaintainsPersistenceAfterRestarting() {
-    DocumentReference docRef = testDocument();
-    FirebaseFirestore firestore = docRef.getFirestore();
+    FirebaseFirestore firestore =
+        testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
+    DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
-    Context context = InstrumentationRegistry.getContext();
 
     waitFor(AccessHelper.shutdown(firestore));
-    FirebaseApp app2 = FirebaseApp.initializeApp(context);
-    FirebaseFirestore firestore2 = FirebaseFirestore.getInstance(app2);
+    FirebaseFirestore firestore2 =
+        testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef2 = firestore2.document(docRef.getPath());
     DocumentSnapshot doc = waitFor(docRef2.get());
     assertEquals(doc.exists(), true);
@@ -981,15 +981,15 @@ public class FirestoreTest {
 
   @Test
   public void testCanClearPersistenceAfterRestarting() throws Exception {
-    DocumentReference docRef = testDocument();
-    FirebaseFirestore firestore = docRef.getFirestore();
+    FirebaseFirestore firestore =
+        testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
+    DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
-    Context context = InstrumentationRegistry.getContext();
 
     waitFor(AccessHelper.shutdown(firestore));
     waitFor(AccessHelper.clearPersistence(firestore));
-    FirebaseApp app2 = FirebaseApp.initializeApp(context);
-    FirebaseFirestore firestore2 = FirebaseFirestore.getInstance(app2);
+    FirebaseFirestore firestore2 =
+        testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef2 = firestore2.document(docRef.getPath());
     Exception e = waitForException(docRef2.get(Source.CACHE));
     assertEquals(Code.UNAVAILABLE, ((FirebaseFirestoreException) e).getCode());

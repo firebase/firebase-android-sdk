@@ -228,6 +228,15 @@ public class IntegrationTestUtil {
    */
   public static FirebaseFirestore testFirestore(
       String projectId, Logger.Level logLevel, FirebaseFirestoreSettings settings) {
+    String persistenceKey = "db" + firestoreStatus.size();
+    return testFirestore(projectId, logLevel, settings, persistenceKey);
+  }
+
+  public static FirebaseFirestore testFirestore(
+      String projectId,
+      Logger.Level logLevel,
+      FirebaseFirestoreSettings settings,
+      String persistenceKey) {
     // This unfortunately is a global setting that affects existing Firestore clients.
     Logger.setLogLevel(logLevel);
 
@@ -236,7 +245,6 @@ public class IntegrationTestUtil {
 
     Context context = InstrumentationRegistry.getContext();
     DatabaseId databaseId = DatabaseId.forDatabase(projectId, DatabaseId.DEFAULT_DATABASE_ID);
-    String persistenceKey = "db" + firestoreStatus.size();
 
     ensureStrictMode();
 
