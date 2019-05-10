@@ -43,7 +43,7 @@ class VersionTests {
         withApp("ktxTestApp") {
             val uaPublisher = get(UserAgentPublisher::class.java)
             assertThat(uaPublisher.userAgent).contains("kotlin")
-            assertThat(uaPublisher.userAgent).contains(BuildConfig.LIBRARY_NAME)
+            assertThat(uaPublisher.userAgent).contains(LIBRARY_NAME)
         }
     }
 }
