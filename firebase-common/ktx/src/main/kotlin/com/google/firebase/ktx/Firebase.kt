@@ -50,12 +50,14 @@ fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String
 val Firebase.options: FirebaseOptions
     get() = Firebase.app.options
 
+internal const val LIBRARY_NAME: String = "fire-core-ktx"
+
 /** @suppress */
 @Keep
 class FirebaseCommonKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> {
         return listOf(
-                LibraryVersionComponent.create(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME),
+                LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
                 LibraryVersionComponent.create("kotlin", BuildConfig.KOTLIN_VERSION))
     }
 }
