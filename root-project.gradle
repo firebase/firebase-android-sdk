@@ -69,10 +69,6 @@ configure(subprojects) {
         maven {
             url "https://oss.sonatype.org/content/repositories/snapshots"
         }
-
-        maven {
-            url "file://$rootProject.projectDir/unpublished_artifacts"
-        }
     }
     apply plugin: 'net.ltgt.errorprone'
     dependencies {
