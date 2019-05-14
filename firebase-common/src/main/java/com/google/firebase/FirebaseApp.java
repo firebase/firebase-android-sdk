@@ -46,9 +46,6 @@ import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.internal.DataCollectionConfigStorage;
-import com.google.firebase.internal.DefaultIdTokenListenersCountChangedListener;
-import com.google.firebase.internal.InternalTokenProvider;
-import com.google.firebase.internal.InternalTokenResult;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.nio.charset.Charset;
@@ -567,70 +564,11 @@ public class FirebaseApp {
     } else {
       componentRuntime.initializeEagerComponents(isDefaultApp());
     }
-    initializeApis(FirebaseApp.class, this, API_INITIALIZERS, isDeviceProtectedStorage);
-    if (isDefaultApp()) {
-      initializeApis(
-          FirebaseApp.class, this, DEFAULT_APP_API_INITITALIZERS, isDeviceProtectedStorage);
-      initializeApis(
-          Context.class,
-          applicationContext,
-          DEFAULT_CONTEXT_API_INITITALIZERS,
-          isDeviceProtectedStorage);
-    }
   }
 
   /** Normalizes the app name. */
   private static String normalize(@NonNull String name) {
     return name.trim();
-  }
-
-  /**
-   * Calls getInstance(FirebaseApp) API entry points using reflection.
-   *
-   * @param <T> Type parameter for the initializer method. Either {@link Context} or {@link
-   *     FirebaseApp}.
-   */
-  private <T> void initializeApis(
-      Class<T> parameterClass,
-      T parameter,
-      Iterable<String> apiInitClasses,
-      boolean isDeviceProtectedStorage) {
-    for (String apiInitClass : apiInitClasses) {
-      try {
-        if (!isDeviceProtectedStorage
-            || DIRECT_BOOT_COMPATIBLE_API_INITIALIZERS.contains(apiInitClass)) {
-          // If the device is in direct boot mode, do not initialize APIs that don't
-          // support it.
-          Class<?> initializerClass = Class.forName(apiInitClass);
-          Method initMethod = initializerClass.getMethod("getInstance", parameterClass);
-          int initMethodModifiers = initMethod.getModifiers();
-
-          if (Modifier.isPublic(initMethodModifiers) && Modifier.isStatic(initMethodModifiers)) {
-            initMethod.invoke(null /* static */, parameter);
-          }
-        }
-
-      } catch (ClassNotFoundException e) {
-        if (CORE_CLASSES.contains(apiInitClass)) {
-          throw new IllegalStateException(
-              apiInitClass
-                  + " is missing, "
-                  + "but is required. Check if it has been removed by Proguard.");
-        }
-        Log.d(LOG_TAG, apiInitClass + " is not linked. Skipping initialization.");
-      } catch (NoSuchMethodException e) {
-        // TODO: add doc link in error message.
-        throw new IllegalStateException(
-            apiInitClass
-                + "#getInstance has been removed by Proguard."
-                + " Add keep rule to prevent it.");
-      } catch (InvocationTargetException e) {
-        Log.wtf(LOG_TAG, "Firebase API initialization failure.", e);
-      } catch (IllegalAccessException e) {
-        // We check modifiers above, this shouldn't happen.
-        Log.wtf(LOG_TAG, "Failed to initialize " + apiInitClass, e);
-      }
-    }
   }
 
   /**
