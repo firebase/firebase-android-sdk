@@ -27,10 +27,10 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:3.2.1'
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.6'
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.8'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6'
         classpath 'org.jsoup:jsoup:1.11.2'
-        classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.6'
+        classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.8'
         classpath 'com.google.gms:google-services:4.1.0'
         classpath 'me.tatarka:gradle-retrolambda:3.7.1'
         classpath 'digital.wup:android-maven-publish:3.6.2'
@@ -78,7 +78,7 @@ configure(subprojects) {
     }
     apply plugin: 'com.github.sherter.google-java-format'
     googleJavaFormat {
-        toolVersion = '1.6'
+        toolVersion = '1.7'
     }
     tasks.googleJavaFormat {
         source '.'
