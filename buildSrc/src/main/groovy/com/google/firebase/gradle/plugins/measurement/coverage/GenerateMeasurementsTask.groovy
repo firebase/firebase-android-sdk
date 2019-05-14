@@ -58,8 +58,7 @@ public class GenerateMeasurementsTask extends DefaultTask {
             if (lineCoverage) {
                 def covered = Double.parseDouble(lineCoverage.@covered.text())
                 def missed = Double.parseDouble(lineCoverage.@missed.text())
-                def percent = covered / (covered + missed)
-                return percent
+                return covered / (covered + missed)
             } else {
                 throw new IllegalStateException("Cannot find line coverage section in the report: $path.")
             }
@@ -94,10 +93,7 @@ public class GenerateMeasurementsTask extends DefaultTask {
                 // #409 and #426. Old mappings are kept for backward
                 // compatibility reason.
                 'firebase-common:ktx': 10,
-                'firebase-firestore:ktx': 11,
-
-                // 'firebase-storage:test-app' was added in PR #303.
-                'firebase-storage:test-app': 12
+                'firebase-firestore:ktx': 11
         ]
 
         for (Project p: project.rootProject.subprojects) {
