@@ -50,6 +50,15 @@ class SQLiteSchema {
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
+  /**
+   * The batch size for the sequence number migration in `ensureSequenceNumbers()`.
+   *
+   * <p>This addresses https://github.com/firebase/firebase-android-sdk/issues/370, where a customer
+   * reported that schema migrations failed for clients with thousands of documents. The number has
+   * been chosen based on manual experiments.
+   */
+  private static final int SEQUENCE_NUMBER_BATCH_SIZE = 100;
+
   private final SQLiteDatabase db;
 
   // PORTING NOTE: The Android client doesn't need to use a serializer to remove held write acks.
@@ -359,17 +368,30 @@ class SQLiteSchema {
     SQLiteStatement tagDocument =
         db.compileStatement(
             "INSERT INTO target_documents (target_id, path, sequence_number) VALUES (0, ?, ?)");
+
     SQLitePersistence.Query untaggedDocumentsQuery =
         new SQLitePersistence.Query(
-            db,
-            "SELECT RD.path FROM remote_documents AS RD WHERE NOT EXISTS (SELECT TD.path FROM target_documents AS TD WHERE RD.path = TD.path AND TD.target_id = 0)");
-    untaggedDocumentsQuery.forEach(
-        row -> {
-          tagDocument.clearBindings();
-          tagDocument.bindString(1, row.getString(0));
-          tagDocument.bindLong(2, sequenceNumber);
-          hardAssert(tagDocument.executeInsert() != -1, "Failed to insert a sentinel row");
-        });
+                db,
+                "SELECT RD.path FROM remote_documents AS RD WHERE NOT EXISTS ("
+                    + "SELECT TD.path FROM target_documents AS TD "
+                    + "WHERE RD.path = TD.path AND TD.target_id = 0"
+                    + ") LIMIT ?")
+            .binding(SEQUENCE_NUMBER_BATCH_SIZE);
+
+    boolean[] resultsRemaining = new boolean[1];
+
+    do {
+      resultsRemaining[0] = false;
+
+      untaggedDocumentsQuery.forEach(
+          row -> {
+            resultsRemaining[0] = true;
+            tagDocument.clearBindings();
+            tagDocument.bindString(1, row.getString(0));
+            tagDocument.bindLong(2, sequenceNumber);
+            hardAssert(tagDocument.executeInsert() != -1, "Failed to insert a sentinel row");
+          });
+    } while (resultsRemaining[0]);
   }
 
   private void createV8CollectionParentsIndex() {

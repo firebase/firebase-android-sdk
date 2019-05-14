@@ -83,7 +83,7 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
 
   private static InputStream getResFile(String fileName) {
     ClassLoader classLoader = MockConnectionFactory.class.getClassLoader();
-    return classLoader.getResourceAsStream("assets/" + fileName);
+    return classLoader.getResourceAsStream("activitylogs/" + fileName);
   }
 
   @Override

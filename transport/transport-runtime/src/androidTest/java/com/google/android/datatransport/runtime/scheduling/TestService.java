@@ -18,7 +18,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
-import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.runtime.DaggerSynchronizationComponent;
 import java.util.concurrent.Executors;
 
 /** Base class fore the rpc test service. */
@@ -26,8 +26,15 @@ public abstract class TestService extends Service {
   @Override
   public IBinder onBind(Intent intent) {
     Log.i("TransportService", "My Pid: " + android.os.Process.myPid());
-    TransportRuntime.initialize(getApplicationContext());
-    return new RemoteLockRpc(Executors.newCachedThreadPool());
+    return new RemoteLockRpc(
+        Executors.newCachedThreadPool(),
+        DaggerSynchronizationComponent.getGuard(getApplicationContext()));
+  }
+
+  @Override
+  public boolean onUnbind(Intent intent) {
+    DaggerSynchronizationComponent.shutdown();
+    return false;
   }
 
   /** Service instance that runs in the main process of the Android application. */

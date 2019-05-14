@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply plugin: 'com.android.library'
+plugins {
+    id 'firebase-library'
+}
+
+firebaseLibrary.publishJavadoc = false
 
 android {
     compileSdkVersion 28
@@ -24,7 +28,8 @@ android {
 }
 
 dependencies {
-    api "com.google.auto.value:auto-value-annotations:1.6.2"
+    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
+    compileOnly 'com.android.support:support-annotations:28.0.0'
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'

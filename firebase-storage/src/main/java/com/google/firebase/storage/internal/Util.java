@@ -95,7 +95,7 @@ public class Util {
     String bucket;
     String encodedPath;
     if (trimmedInput.startsWith("gs://")) {
-      String fullUri = SlashUtil.preserveSlashEncode(SlashUtil.normalizeSlashes(s.substring(5)));
+      String fullUri = Slashes.preserveSlashEncode(Slashes.normalizeSlashes(s.substring(5)));
       return Uri.parse("gs://" + fullUri);
     } else {
       Uri uri = Uri.parse(s);
@@ -111,7 +111,7 @@ public class Util {
           throw new UnsupportedEncodingException(
               "Could not parse Url because the Storage network layer did not load");
         }
-        encodedPath = SlashUtil.slashize(uri.getEncodedPath());
+        encodedPath = Slashes.slashize(uri.getEncodedPath());
         if (indexOfAuth == 0 && encodedPath.startsWith("/")) {
           int firstBSlash = encodedPath.indexOf("/b/", 0); // /v0/b/bucket.storage
           // .firebase.com/o/child/image.png

@@ -29,16 +29,15 @@ public interface SynchronizationGuard {
    * <p>Example usage:
    *
    * <pre>{@code
-   * store.atomically(() -> {
+   * int result = guard.runCriticalSection(() -> {
    *   store.persist("foo", event);
    *   store.recordSuccess(Collections.singleton(event));
+   *   return 1;
    * });
    * }</pre>
    *
-   * @param lockTimeoutMs how long to wait to acquire the lock before throwing {@link
-   *     SynchronizationException}.
    * @param criticalSection Critical section to run while holding the lock.
    * @throws SynchronizationException if unable to enter critical section.
    */
-  <T> T runCriticalSection(long lockTimeoutMs, CriticalSection<T> criticalSection);
+  <T> T runCriticalSection(CriticalSection<T> criticalSection);
 }

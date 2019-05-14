@@ -27,7 +27,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.PublicApi;
-import com.google.firebase.storage.internal.SlashUtil;
+import com.google.firebase.storage.internal.Slashes;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -84,13 +84,13 @@ public class StorageReference {
     Preconditions.checkArgument(
         !TextUtils.isEmpty(pathString), "childName cannot be null or empty");
 
-    pathString = SlashUtil.normalizeSlashes(pathString);
+    pathString = Slashes.normalizeSlashes(pathString);
     Uri child;
     try {
       child =
           mStorageUri
               .buildUpon()
-              .appendEncodedPath(SlashUtil.preserveSlashEncode(pathString))
+              .appendEncodedPath(Slashes.preserveSlashEncode(pathString))
               .build();
     } catch (UnsupportedEncodingException e) {
       Log.e(TAG, "Unable to create a valid default Uri. " + pathString, e);

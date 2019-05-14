@@ -66,8 +66,13 @@ public class InMemoryEventStore implements EventStore {
   }
 
   @Override
-  public Long getNextCallTime(TransportContext transportContext) {
-    return backendCallTime.get(transportContext);
+  public long getNextCallTime(TransportContext transportContext) {
+    Long nextCalltime = backendCallTime.get(transportContext);
+    if (nextCalltime == null) {
+      return 0;
+    } else {
+      return nextCalltime;
+    }
   }
 
   @Override
@@ -85,7 +90,7 @@ public class InMemoryEventStore implements EventStore {
   }
 
   @Override
-  public synchronized Iterable<PersistedEvent> loadAll(TransportContext transportContext) {
+  public synchronized Iterable<PersistedEvent> loadBatch(TransportContext transportContext) {
     Map<Long, EventInternal> backendStore = store.get(transportContext);
     if (backendStore == null) {
       return Collections.emptyList();
@@ -96,4 +101,12 @@ public class InMemoryEventStore implements EventStore {
     }
     return events;
   }
+
+  @Override
+  public int cleanUp() {
+    return 0;
+  }
+
+  @Override
+  public void close() {}
 }

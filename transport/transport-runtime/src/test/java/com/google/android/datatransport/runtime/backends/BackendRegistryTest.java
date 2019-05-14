@@ -33,7 +33,8 @@ public class BackendRegistryTest {
 
   @Before
   public void setup() {
-    registry = new BackendRegistry(ApplicationProvider.getApplicationContext(), creationContext);
+    registry =
+        new MetadataBackendRegistry(ApplicationProvider.getApplicationContext(), creationContext);
   }
 
   @Test

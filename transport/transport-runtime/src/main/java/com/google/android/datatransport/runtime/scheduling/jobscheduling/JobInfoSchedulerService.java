@@ -18,6 +18,7 @@ import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
+import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
 
 /** The service responsible for uploading information to the backend. */
@@ -26,12 +27,16 @@ public class JobInfoSchedulerService extends JobService {
 
   @Override
   public boolean onStartJob(JobParameters params) {
-    String backendName = params.getExtras().getString(SchedulerUtil.BACKEND_NAME);
-    int attemptNumber = params.getExtras().getInt(SchedulerUtil.ATTEMPT_NUMBER);
+    String backendName = params.getExtras().getString(JobInfoScheduler.BACKEND_NAME);
+    int priority = params.getExtras().getInt(JobInfoScheduler.EVENT_PRIORITY);
+    int attemptNumber = params.getExtras().getInt(JobInfoScheduler.ATTEMPT_NUMBER);
     TransportRuntime.initialize(getApplicationContext());
     TransportRuntime.getInstance()
         .getUploader()
-        .upload(backendName, attemptNumber, () -> this.jobFinished(params, false));
+        .upload(
+            TransportContext.builder().setBackendName(backendName).setPriority(priority).build(),
+            attemptNumber,
+            () -> this.jobFinished(params, false));
     return true;
   }
 

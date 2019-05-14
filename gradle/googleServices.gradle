@@ -32,8 +32,8 @@ task copyRootGoogleServices(type: Copy) {
 // Before the google-services plugin tries to process the JSON file, attempt
 // to copy it from the root project.
 afterEvaluate {
-    if (tasks.findByName("processDebugGoogleServices")) {
-        processDebugGoogleServices.dependsOn 'copyRootGoogleServices'
+    if (tasks.findByName("processReleaseGoogleServices")) {
+        processReleaseGoogleServices.dependsOn 'copyRootGoogleServices'
     }
 }
 
@@ -45,7 +45,10 @@ afterEvaluate {
 // ./gradlew test at the root project).
 def isTesting = getGradle().getStartParameter().getTaskNames().any({ String taskName ->
     def hasProjectTestTask = taskName.contains("$name") &&  ['AndroidTest', 'connectedCheck', 'deviceCheck'].any({ taskName.contains(it)})
-    return hasProjectTestTask || taskName.contains('connectedCheck') || taskName.contains('deviceCheck')
+
+    // this is needed for storage test app to build
+    def hasStorageAppAssembleTask = taskName == ":firebase-storage:test-app:assembleRelease"
+    return hasProjectTestTask || hasStorageAppAssembleTask || taskName.contains('connectedCheck') || taskName.contains('deviceCheck')
 })
 
 if (isTesting) {

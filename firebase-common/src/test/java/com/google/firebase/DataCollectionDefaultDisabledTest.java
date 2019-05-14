@@ -20,6 +20,7 @@ import static com.google.firebase.DataCollectionTestUtil.setSharedPreferencesTo;
 import static com.google.firebase.DataCollectionTestUtil.withApp;
 
 import android.content.SharedPreferences;
+import com.google.firebase.internal.DataCollectionConfigStorage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -52,8 +53,12 @@ public class DataCollectionDefaultDisabledTest {
         app -> {
           app.setDataCollectionDefaultEnabled(true);
           SharedPreferences prefs = getSharedPreferences();
-          assertThat(prefs.contains(FirebaseApp.DATA_COLLECTION_DEFAULT_ENABLED)).isTrue();
-          assertThat(prefs.getBoolean(FirebaseApp.DATA_COLLECTION_DEFAULT_ENABLED, false)).isTrue();
+          assertThat(prefs.contains(DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED))
+              .isTrue();
+          assertThat(
+                  prefs.getBoolean(
+                      DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED, false))
+              .isTrue();
           assertThat(app.isDataCollectionDefaultEnabled()).isTrue();
         });
   }

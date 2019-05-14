@@ -26,7 +26,7 @@ public abstract class BackendResponse {
   public enum Status {
     OK,
     TRANSIENT_ERROR,
-    NONTRANSIENT_ERROR,
+    FATAL_ERROR,
   }
 
   /** Status result of the backend call */
@@ -35,8 +35,15 @@ public abstract class BackendResponse {
   /** Time in millis to wait before attempting another request. */
   public abstract long getNextRequestWaitMillis();
 
-  /** Create a new instance of {@link BackendResponse}. */
-  public static BackendResponse create(Status status, long nextRequestMillis) {
-    return new AutoValue_BackendResponse(status, nextRequestMillis);
+  public static BackendResponse transientError() {
+    return new AutoValue_BackendResponse(Status.TRANSIENT_ERROR, -1);
+  }
+
+  public static BackendResponse fatalError() {
+    return new AutoValue_BackendResponse(Status.FATAL_ERROR, -1);
+  }
+
+  public static BackendResponse ok(long nextRequestWaitMillis) {
+    return new AutoValue_BackendResponse(Status.OK, nextRequestWaitMillis);
   }
 }

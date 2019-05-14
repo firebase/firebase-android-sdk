@@ -19,7 +19,7 @@ import com.google.android.datatransport.Transformer;
 import com.google.auto.value.AutoValue;
 
 @AutoValue
-public abstract class SendRequest {
+abstract class SendRequest {
   public abstract TransportContext getTransportContext();
 
   public abstract String getTransportName();

@@ -31,7 +31,6 @@ import com.google.android.datatransport.cct.proto.QosTierConfiguration;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
-import com.google.android.datatransport.runtime.backends.BackendResponse.Status;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.protobuf.ByteString;
@@ -82,6 +81,7 @@ final class CctTransportBackend implements TransportBackend {
   private final URL endPoint;
   private final Clock uptimeClock;
   private final Clock wallTimeClock;
+  private final int readTimeout;
 
   private static URL parseUrlOrThrow(String url) {
     try {
@@ -92,12 +92,22 @@ final class CctTransportBackend implements TransportBackend {
   }
 
   CctTransportBackend(
-      Context applicationContext, String url, Clock wallTimeClock, Clock uptimeClock) {
+      Context applicationContext,
+      String url,
+      Clock wallTimeClock,
+      Clock uptimeClock,
+      int readTimeout) {
     this.connectivityManager =
         (ConnectivityManager) applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE);
     this.endPoint = parseUrlOrThrow(url);
     this.uptimeClock = uptimeClock;
     this.wallTimeClock = wallTimeClock;
+    this.readTimeout = readTimeout;
+  }
+
+  CctTransportBackend(
+      Context applicationContext, String url, Clock wallTimeClock, Clock uptimeClock) {
+    this(applicationContext, url, wallTimeClock, uptimeClock, READ_TIME_OUT);
   }
 
   @Override
@@ -165,7 +175,7 @@ final class CctTransportBackend implements TransportBackend {
                               .build())
                       .build());
       for (EventInternal eventInternal : entry.getValue()) {
-        LogEvent event =
+        LogEvent.Builder event =
             LogEvent.newBuilder()
                 .setEventTimeMs(eventInternal.getEventMillis())
                 .setEventUptimeMs(eventInternal.getUptimeMillis())
@@ -174,8 +184,10 @@ final class CctTransportBackend implements TransportBackend {
                 .setNetworkConnectionInfo(
                     NetworkConnectionInfo.newBuilder()
                         .setNetworkTypeValue(eventInternal.getInteger(KEY_NETWORK_TYPE))
-                        .setMobileSubtypeValue(eventInternal.getInteger(KEY_MOBILE_SUBTYPE)))
-                .build();
+                        .setMobileSubtypeValue(eventInternal.getInteger(KEY_MOBILE_SUBTYPE)));
+        if (eventInternal.getCode() != null) {
+          event.setEventCode(eventInternal.getCode());
+        }
         requestBuilder.addLogEvent(event);
       }
       batchedRequestBuilder.addLogRequest(requestBuilder.build());
@@ -186,36 +198,47 @@ final class CctTransportBackend implements TransportBackend {
   private BackendResponse doSend(BatchedLogRequest requestBody) throws IOException {
     HttpURLConnection connection = (HttpURLConnection) endPoint.openConnection();
     connection.setConnectTimeout(CONNECTION_TIME_OUT);
-    connection.setReadTimeout(READ_TIME_OUT);
+    connection.setReadTimeout(readTimeout);
     connection.setDoOutput(true);
     connection.setInstanceFollowRedirects(false);
     connection.setRequestMethod("POST");
     connection.setRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
     connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, PROTOBUF_CONTENT_TYPE);
-    try (WritableByteChannel channel = Channels.newChannel(connection.getOutputStream())) {
+
+    WritableByteChannel channel = Channels.newChannel(connection.getOutputStream());
+    try {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
-      try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output)) {
+      GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output);
+
+      try {
         requestBody.writeTo(gzipOutputStream);
+      } finally {
+        gzipOutputStream.close();
       }
       channel.write(ByteBuffer.wrap(output.toByteArray()));
       int responseCode = connection.getResponseCode();
       LOGGER.info("Status Code: " + responseCode);
 
       long nextRequestMillis;
-      try (InputStream inputStream = connection.getInputStream()) {
+      InputStream inputStream = connection.getInputStream();
+      try {
         try {
           nextRequestMillis = LogResponse.parseFrom(inputStream).getNextRequestWaitMillis();
         } catch (InvalidProtocolBufferException e) {
-          return BackendResponse.create(Status.NONTRANSIENT_ERROR, -1);
+          return BackendResponse.fatalError();
         }
+      } finally {
+        inputStream.close();
       }
       if (responseCode == 200) {
-        return BackendResponse.create(Status.OK, nextRequestMillis);
+        return BackendResponse.ok(nextRequestMillis);
       } else if (responseCode >= 500 || responseCode == 404) {
-        return BackendResponse.create(Status.TRANSIENT_ERROR, -1);
+        return BackendResponse.transientError();
       } else {
-        return BackendResponse.create(Status.NONTRANSIENT_ERROR, -1);
+        return BackendResponse.fatalError();
       }
+    } finally {
+      channel.close();
     }
   }
 
@@ -226,7 +249,7 @@ final class CctTransportBackend implements TransportBackend {
       return doSend(requestBody);
     } catch (IOException e) {
       LOGGER.log(Level.SEVERE, "Could not make request to the backend", e);
-      return BackendResponse.create(Status.TRANSIENT_ERROR, -1);
+      return BackendResponse.transientError();
     }
   }
 

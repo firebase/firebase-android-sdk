@@ -30,7 +30,6 @@ import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
-import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -76,13 +75,6 @@ public class TransportRuntimeTest {
             () -> eventMillis,
             () -> uptimeMillis,
             new ImmediateScheduler(Runnable::run, mockRegistry),
-            new SynchronizationGuard() {
-              @Override
-              public <T> T runCriticalSection(
-                  long lockTimeoutMs, CriticalSection<T> criticalSection) {
-                return criticalSection.execute();
-              }
-            },
             new Uploader(null, null, null, null, null, null, () -> 2));
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     when(mockBackend.decorate(any()))
@@ -97,13 +89,14 @@ public class TransportRuntimeTest {
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry("TelemetryData");
+    Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
     EventInternal expectedEvent =
         EventInternal.builder()
             .setEventMillis(eventMillis)
             .setUptimeMillis(uptimeMillis)
             .setTransportName(testTransport)
             .setPayload("TelemetryData".getBytes())
+            .setCode(12)
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));

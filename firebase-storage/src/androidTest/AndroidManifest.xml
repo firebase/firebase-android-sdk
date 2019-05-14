@@ -13,7 +13,7 @@
 <!-- limitations under the License. -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.firebase.storage.integration">
+    package="com.google.firebase.storage">
   <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
   <!--<uses-sdk android:minSdkVersion="15" android:targetSdkVersion="23" />-->
   <uses-permission android:name="android.permission.INTERNET"/>
@@ -25,5 +25,5 @@
 
   <instrumentation
       android:name="androidx.test.runner.AndroidJUnitRunner"
-      android:targetPackage="com.google.firebase.storage.integration" />
+      android:targetPackage="com.google.firebase.storage" />
 </manifest>

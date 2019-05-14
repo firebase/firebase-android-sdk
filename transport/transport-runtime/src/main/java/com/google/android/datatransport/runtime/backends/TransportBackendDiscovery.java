@@ -21,7 +21,7 @@ import android.os.IBinder;
 /**
  * Dummy service needed to be able to declare transport backends in AndroidManifest.xml files.
  *
- * @see BackendRegistry
+ * @see MetadataBackendRegistry
  */
 public class TransportBackendDiscovery extends Service {
   @Override

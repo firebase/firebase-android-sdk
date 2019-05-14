@@ -65,6 +65,8 @@ public class UploadMeasurementsTask extends DefaultTask {
                 Files.copy(it, jar, StandardCopyOption.REPLACE_EXISTING)
             }
 
+            project.logger.info("Running uploader with flags: --config_path=${configuration} --json_path=${reportFile}")
+
             project.exec {
                 executable("java")
 

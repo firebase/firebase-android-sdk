@@ -22,16 +22,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
-import android.support.v4.content.ContextCompat;
+import android.support.v4.os.UserManagerCompat;
 import android.support.v4.util.ArrayMap;
 import android.text.TextUtils;
 import android.util.Log;
@@ -46,20 +43,19 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentDiscovery;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
-import com.google.firebase.events.Event;
+import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
+import com.google.firebase.internal.DataCollectionConfigStorage;
+import com.google.firebase.internal.DefaultIdTokenListenersCountChangedListener;
+import com.google.firebase.internal.InternalTokenProvider;
+import com.google.firebase.internal.InternalTokenResult;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -99,45 +95,6 @@ public class FirebaseApp {
 
   public static final String DEFAULT_APP_NAME = "[DEFAULT]";
 
-  private static final String FIREBASE_APP_PREFS = "com.google.firebase.common.prefs:";
-
-  @VisibleForTesting
-  static final String DATA_COLLECTION_DEFAULT_ENABLED = "firebase_data_collection_default_enabled";
-
-  private static final String MEASUREMENT_CLASSNAME =
-      "com.google.android.gms.measurement.AppMeasurement";
-  private static final String AUTH_CLASSNAME = "com.google.firebase.auth.FirebaseAuth";
-  private static final String IID_CLASSNAME = "com.google.firebase.iid.FirebaseInstanceId";
-  private static final String CRASH_CLASSNAME = "com.google.firebase.crash.FirebaseCrash";
-
-  /**
-   * Firebase APIs in order of their initialization. To be initialized for each FirebaseApp
-   * instance.
-   */
-  private static final List<String> API_INITIALIZERS = Arrays.asList(AUTH_CLASSNAME, IID_CLASSNAME);
-
-  /**
-   * Default Firebase APIs requiring a FirebaseApp in order of their initialization.
-   *
-   * <p>These APIs are initialized for the default app.
-   */
-  private static final List<String> DEFAULT_APP_API_INITITALIZERS =
-      Collections.singletonList(CRASH_CLASSNAME);
-
-  /**
-   * Default Firebase APIs requiring a Context in order of their initialization.
-   *
-   * <p>These APIs are initialized for the default app.
-   */
-  private static final List<String> DEFAULT_CONTEXT_API_INITITALIZERS =
-      Arrays.asList(MEASUREMENT_CLASSNAME);
-
-  /** Firebase APIs that are initialized in direct boot mode. */
-  private static final List<String> DIRECT_BOOT_COMPATIBLE_API_INITIALIZERS = Arrays.asList();
-
-  /** Set of APIs that are part of Firebase Core and should always be initialized. */
-  private static final Set<String> CORE_CLASSES = Collections.emptySet();
-
   private static final Object LOCK = new Object();
 
   private static final Executor UI_EXECUTOR = new UiExecutor();
@@ -153,14 +110,12 @@ public class FirebaseApp {
   private final String name;
   private final FirebaseOptions options;
   private final ComponentRuntime componentRuntime;
-  private final SharedPreferences sharedPreferences;
-  private final Publisher publisher;
 
   // Default disabled. We released Firebase publicly without this feature, so making it default
   // enabled is a backwards incompatible change.
   private final AtomicBoolean automaticResourceManagementEnabled = new AtomicBoolean(false);
   private final AtomicBoolean deleted = new AtomicBoolean();
-  private final AtomicBoolean dataCollectionDefaultEnabled;
+  private final Lazy<DataCollectionConfigStorage> dataCollectionConfigStorage;
 
   private final List<BackgroundStateChangeListener> backgroundStateChangeListeners =
       new CopyOnWriteArrayList<>();
@@ -295,7 +250,7 @@ public class FirebaseApp {
       }
       FirebaseOptions firebaseOptions = FirebaseOptions.fromResource(context);
       if (firebaseOptions == null) {
-        Log.d(
+        Log.w(
             LOG_TAG,
             "Default FirebaseApp failed to initialize because no default "
                 + "options were found. This usually means that com.google.gms:google-services was "
@@ -428,7 +383,7 @@ public class FirebaseApp {
   @KeepForSdk
   public boolean isDataCollectionDefaultEnabled() {
     checkNotDeleted();
-    return dataCollectionDefaultEnabled.get();
+    return dataCollectionConfigStorage.get().isEnabled();
   }
 
   /**
@@ -442,12 +397,7 @@ public class FirebaseApp {
   @KeepForSdk
   public void setDataCollectionDefaultEnabled(boolean enabled) {
     checkNotDeleted();
-    if (dataCollectionDefaultEnabled.compareAndSet(!enabled, enabled)) {
-      sharedPreferences.edit().putBoolean(DATA_COLLECTION_DEFAULT_ENABLED, enabled).commit();
-
-      publisher.publish(
-          new Event<>(DataCollectionDefaultChange.class, new DataCollectionDefaultChange(enabled)));
-    }
+    dataCollectionConfigStorage.get().setEnabled(enabled);
   }
 
   /**
@@ -459,10 +409,6 @@ public class FirebaseApp {
     this.applicationContext = Preconditions.checkNotNull(applicationContext);
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
-
-    sharedPreferences =
-        applicationContext.getSharedPreferences(getSharedPrefsName(name), Context.MODE_PRIVATE);
-    dataCollectionDefaultEnabled = new AtomicBoolean(readAutoDataCollectionEnabled());
 
     List<ComponentRegistrar> registrars =
         ComponentDiscovery.forContext(applicationContext).discover();
@@ -476,33 +422,13 @@ public class FirebaseApp {
             LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
             LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
             DefaultUserAgentPublisher.component());
-    publisher = componentRuntime.get(Publisher.class);
-  }
-
-  private static String getSharedPrefsName(String appName) {
-    return FIREBASE_APP_PREFS + appName;
-  }
-
-  private boolean readAutoDataCollectionEnabled() {
-    if (sharedPreferences.contains(DATA_COLLECTION_DEFAULT_ENABLED)) {
-      return sharedPreferences.getBoolean(DATA_COLLECTION_DEFAULT_ENABLED, true);
-    }
-    try {
-      PackageManager packageManager = applicationContext.getPackageManager();
-      if (packageManager != null) {
-        ApplicationInfo applicationInfo =
-            packageManager.getApplicationInfo(
-                applicationContext.getPackageName(), PackageManager.GET_META_DATA);
-        if (applicationInfo != null
-            && applicationInfo.metaData != null
-            && applicationInfo.metaData.containsKey(DATA_COLLECTION_DEFAULT_ENABLED)) {
-          return applicationInfo.metaData.getBoolean(DATA_COLLECTION_DEFAULT_ENABLED);
-        }
-      }
-    } catch (PackageManager.NameNotFoundException e) {
-      // This shouldn't happen since it's this app's package, but fall through to default if so.
-    }
-    return true;
+    dataCollectionConfigStorage =
+        new Lazy<>(
+            () ->
+                new DataCollectionConfigStorage(
+                    applicationContext,
+                    getPersistenceKey(),
+                    componentRuntime.get(Publisher.class)));
   }
 
   private void checkNotDeleted() {
@@ -634,8 +560,8 @@ public class FirebaseApp {
 
   /** Initializes all appropriate APIs for this instance. */
   private void initializeAllApis() {
-    boolean isDeviceProtectedStorage = ContextCompat.isDeviceProtectedStorage(applicationContext);
-    if (isDeviceProtectedStorage) {
+    boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
+    if (inDirectBoot) {
       // Ensure that all APIs are initialized once the user unlocks the phone.
       UserUnlockReceiver.ensureReceiverRegistered(applicationContext);
     } else {

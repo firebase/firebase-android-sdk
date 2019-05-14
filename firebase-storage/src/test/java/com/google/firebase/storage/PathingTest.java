@@ -51,10 +51,7 @@ public class PathingTest {
     app =
         FirebaseApp.initializeApp(
             RuntimeEnvironment.application.getApplicationContext(),
-            new FirebaseOptions.Builder()
-                .setApiKey("AIzaSyCkEhVjf3pduRDt6d1yKOMitrUEke8agEM")
-                .setApplicationId("fooey")
-                .build());
+            new FirebaseOptions.Builder().setApiKey("fooey").setApplicationId("fooey").build());
   }
 
   @After

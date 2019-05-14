@@ -25,13 +25,13 @@ import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.annotation.WorkerThread;
-import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
+import com.google.android.datatransport.runtime.time.WallTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,39 +50,32 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   static final int MAX_RETRIES = 10;
 
-  private static final Priority[] ALL_PRIORITIES = Priority.values();
-
-  @VisibleForTesting public static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
+  private static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
 
   private final OpenHelper openHelper;
+  private final Clock wallClock;
   private final Clock monotonicClock;
-  private final long maxDbDiskSizeInBytes;
-  private SQLiteDatabase db;
+  private final EventStoreConfig config;
 
   @Inject
   SQLiteEventStore(
-      Context applicationContext, @Monotonic Clock clock, @MaxStorageSize long maxStorageSize) {
-    if (maxStorageSize < 0) {
-      throw new IllegalArgumentException(
-          "Cannot set max storage size to a negative number of bytes");
-    }
+      Context applicationContext,
+      @WallTime Clock wallClock,
+      @Monotonic Clock clock,
+      EventStoreConfig config) {
 
     this.openHelper = new OpenHelper(applicationContext);
+    this.wallClock = wallClock;
     this.monotonicClock = clock;
-    this.maxDbDiskSizeInBytes = maxStorageSize;
+    this.config = config;
   }
 
   private SQLiteDatabase getDb() {
-    if (db == null) {
-      db =
-          retryIfDbLocked(
-              1000,
-              openHelper::getWritableDatabase,
-              ex -> {
-                throw new SynchronizationException("Timed out while trying to open db.", ex);
-              });
-    }
-    return db;
+    return retryIfDbLocked(
+        openHelper::getWritableDatabase,
+        ex -> {
+          throw new SynchronizationException("Timed out while trying to open db.", ex);
+        });
   }
 
   @Override
@@ -106,6 +99,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
               values.put("timestamp_ms", event.getEventMillis());
               values.put("uptime_ms", event.getUptimeMillis());
               values.put("payload", event.getPayload());
+              values.put("code", event.getCode());
               values.put("num_attempts", 0);
               long newEventId = db.insert("events", null, values);
 
@@ -141,20 +135,24 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   @Nullable
   private Long getTransportContextId(SQLiteDatabase db, TransportContext transportContext) {
-    try (Cursor cursor =
+    return tryWithCursor(
         db.query(
             "transport_contexts",
             new String[] {"_id"},
-            "backend_name = ?",
-            new String[] {transportContext.getBackendName()},
+            "backend_name = ? and priority = ?",
+            new String[] {
+              transportContext.getBackendName(),
+              String.valueOf(transportContext.getPriority().ordinal())
+            },
             null,
             null,
-            null)) {
-      if (!cursor.moveToNext()) {
-        return null;
-      }
-      return cursor.getLong(0);
-    }
+            null),
+        cursor -> {
+          if (!cursor.moveToNext()) {
+            return null;
+          }
+          return cursor.getLong(0);
+        });
   }
 
   @Override
@@ -197,21 +195,21 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   @Override
-  @Nullable
-  public Long getNextCallTime(TransportContext transportContext) {
-    try (Cursor cursor =
+  public long getNextCallTime(TransportContext transportContext) {
+    return tryWithCursor(
         getDb()
             .rawQuery(
                 "SELECT next_request_ms FROM transport_contexts WHERE backend_name = ? and priority = ?",
                 new String[] {
                   transportContext.getBackendName(),
                   String.valueOf(transportContext.getPriority().ordinal())
-                })) {
-      if (cursor.moveToNext()) {
-        return cursor.getLong(0);
-      }
-    }
-    return null;
+                }),
+        cursor -> {
+          if (cursor.moveToNext()) {
+            return cursor.getLong(0);
+          }
+          return 0L;
+        });
   }
 
   @Override
@@ -222,13 +220,12 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
           if (contextId == null) {
             return false;
           }
-          try (Cursor cursor =
+          return tryWithCursor(
               getDb()
                   .rawQuery(
                       "SELECT 1 FROM events WHERE context_id = ? LIMIT 1",
-                      new String[] {contextId.toString()})) {
-            return cursor.moveToNext();
-          }
+                      new String[] {contextId.toString()}),
+              Cursor::moveToNext);
         });
   }
 
@@ -258,12 +255,24 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   @Override
-  public Iterable<PersistedEvent> loadAll(TransportContext transportContext) {
+  public Iterable<PersistedEvent> loadBatch(TransportContext transportContext) {
     return inTransaction(
         db -> {
           List<PersistedEvent> events = loadEvents(db, transportContext);
           return join(events, loadMetadata(db, events));
         });
+  }
+
+  @Override
+  public int cleanUp() {
+    long oneWeekAgo = wallClock.getTime() - config.getEventCleanUpAge();
+    return inTransaction(
+        db -> db.delete("events", "timestamp_ms < ?", new String[] {String.valueOf(oneWeekAgo)}));
+  }
+
+  @Override
+  public void close() {
+    openHelper.close();
   }
 
   /** Loads all events for a backend. */
@@ -274,27 +283,32 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
       return events;
     }
 
-    try (Cursor cursor =
+    tryWithCursor(
         db.query(
             "events",
-            new String[] {"_id", "transport_name", "timestamp_ms", "uptime_ms", "payload"},
+            new String[] {"_id", "transport_name", "timestamp_ms", "uptime_ms", "payload", "code"},
             "context_id = ?",
             new String[] {contextId.toString()},
             null,
             null,
-            null)) {
-      while (cursor.moveToNext()) {
-        long id = cursor.getLong(0);
-        EventInternal event =
-            EventInternal.builder()
-                .setTransportName(cursor.getString(1))
-                .setEventMillis(cursor.getLong(2))
-                .setUptimeMillis(cursor.getLong(3))
-                .setPayload(cursor.getBlob(4))
-                .build();
-        events.add(PersistedEvent.create(id, transportContext, event));
-      }
-    }
+            null,
+            String.valueOf(config.getLoadBatchSize())),
+        cursor -> {
+          while (cursor.moveToNext()) {
+            long id = cursor.getLong(0);
+            EventInternal.Builder event =
+                EventInternal.builder()
+                    .setTransportName(cursor.getString(1))
+                    .setEventMillis(cursor.getLong(2))
+                    .setUptimeMillis(cursor.getLong(3))
+                    .setPayload(cursor.getBlob(4));
+            if (!cursor.isNull(5)) {
+              event.setCode(cursor.getInt(5));
+            }
+            events.add(PersistedEvent.create(id, transportContext, event.build()));
+          }
+          return null;
+        });
     return events;
   }
 
@@ -310,7 +324,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     }
     whereClause.append(')');
 
-    try (Cursor cursor =
+    tryWithCursor(
         db.query(
             "event_metadata",
             new String[] {"event_id", "name", "value"},
@@ -318,17 +332,19 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
             null,
             null,
             null,
-            null)) {
-      while (cursor.moveToNext()) {
-        long eventId = cursor.getLong(0);
-        Set<Metadata> currentSet = metadataIndex.get(eventId);
-        if (currentSet == null) {
-          currentSet = new HashSet<>();
-          metadataIndex.put(eventId, currentSet);
-        }
-        currentSet.add(new Metadata(cursor.getString(1), cursor.getString(2)));
-      }
-    }
+            null),
+        cursor -> {
+          while (cursor.moveToNext()) {
+            long eventId = cursor.getLong(0);
+            Set<Metadata> currentSet = metadataIndex.get(eventId);
+            if (currentSet == null) {
+              currentSet = new HashSet<>();
+              metadataIndex.put(eventId, currentSet);
+            }
+            currentSet.add(new Metadata(cursor.getString(1), cursor.getString(2)));
+          }
+          return null;
+        });
     return metadataIndex;
   }
 
@@ -352,14 +368,13 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     return events;
   }
 
-  private <T> T retryIfDbLocked(
-      long lockTimeoutMs, Producer<T> retriable, Function<Throwable, T> failureHandler) {
+  private <T> T retryIfDbLocked(Producer<T> retriable, Function<Throwable, T> failureHandler) {
     long startTime = monotonicClock.getTime();
     do {
       try {
         return retriable.produce();
       } catch (SQLiteDatabaseLockedException ex) {
-        if (monotonicClock.getTime() >= startTime + lockTimeoutMs) {
+        if (monotonicClock.getTime() >= startTime + config.getCriticalSectionEnterTimeoutMs()) {
           return failureHandler.apply(ex);
         }
         SystemClock.sleep(LOCK_RETRY_BACK_OFF_MILLIS);
@@ -376,9 +391,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   /** Tries to start a transaction until it succeeds or times out. */
-  private void ensureBeginTransaction(SQLiteDatabase db, long lockTimeoutMs) {
+  private void ensureBeginTransaction(SQLiteDatabase db) {
     retryIfDbLocked(
-        lockTimeoutMs,
         () -> {
           db.beginTransaction();
           return null;
@@ -389,9 +403,9 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   @Override
-  public <T> T runCriticalSection(long lockTimeoutMs, CriticalSection<T> criticalSection) {
+  public <T> T runCriticalSection(CriticalSection<T> criticalSection) {
     SQLiteDatabase db = getDb();
-    ensureBeginTransaction(db, lockTimeoutMs);
+    ensureBeginTransaction(db);
     try {
       T result = criticalSection.execute();
       db.setTransactionSuccessful();
@@ -423,18 +437,10 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     }
   }
 
-  private static Priority toPriority(int value) {
-    if (value < 0 || value >= ALL_PRIORITIES.length) {
-      return Priority.DEFAULT;
-    }
-    return ALL_PRIORITIES[value];
-  }
-
-  @VisibleForTesting
-  boolean isStorageAtLimit() {
+  private boolean isStorageAtLimit() {
     long byteSize = getPageCount() * getPageSize();
 
-    return byteSize >= maxDbDiskSizeInBytes;
+    return byteSize >= config.getMaxStorageSizeInBytes();
   }
 
   @VisibleForTesting
@@ -455,6 +461,14 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     return getDb().compileStatement("PRAGMA page_count").simpleQueryForLong();
   }
 
+  private static <T> T tryWithCursor(Cursor c, Function<Cursor, T> function) {
+    try {
+      return function.apply(c);
+    } finally {
+      c.close();
+    }
+  }
+
   private static class OpenHelper extends SQLiteOpenHelper {
     // TODO: when we do schema upgrades in the future we need to make sure both downgrades and
     // upgrades work as expected, e.g. `up+down+up` is equivalent to `up`.
@@ -468,6 +482,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
             + " timestamp_ms INTEGER NOT NULL,"
             + " uptime_ms INTEGER NOT NULL,"
             + " payload BLOB NOT NULL,"
+            + " code INTEGER,"
             + " num_attempts INTEGER NOT NULL,"
             + "FOREIGN KEY (context_id) REFERENCES transport_contexts(_id) ON DELETE CASCADE)";
 
