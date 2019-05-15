@@ -129,22 +129,22 @@ public class FirebaseAppTest {
     assertThat(actualUserAgent).asList().contains("test-component/1.2.3");
   }
 
-//  @Test
-//  public void testInitializeApp_shouldPublishVersionForFirebaseCommon() {
-//    Context mockContext = createForwardingMockContext();
-//    FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
-//
-//    TestUserAgentDependentComponent userAgentDependant =
-//        firebaseApp.get(TestUserAgentDependentComponent.class);
-//    UserAgentPublisher userAgentPublisher = userAgentDependant.getUserAgentPublisher();
-//    String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
-//    Arrays.sort(actualUserAgent);
-//
-//    // After sorting the user agents are expected to be {"fire-android/", "fire-core/x.y.z",
-//    // "test-component/1.2.3"}
-//    assertThat(actualUserAgent[0]).contains("fire-android");
-//    assertThat(actualUserAgent[1]).contains("fire-core");
-//  }
+  //  @Test
+  //  public void testInitializeApp_shouldPublishVersionForFirebaseCommon() {
+  //    Context mockContext = createForwardingMockContext();
+  //    FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
+  //
+  //    TestUserAgentDependentComponent userAgentDependant =
+  //        firebaseApp.get(TestUserAgentDependentComponent.class);
+  //    UserAgentPublisher userAgentPublisher = userAgentDependant.getUserAgentPublisher();
+  //    String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
+  //    Arrays.sort(actualUserAgent);
+  //
+  //    // After sorting the user agents are expected to be {"fire-android/", "fire-core/x.y.z",
+  //    // "test-component/1.2.3"}
+  //    assertThat(actualUserAgent[0]).contains("fire-android");
+  //    assertThat(actualUserAgent[1]).contains("fire-core");
+  //  }
 
   @Test
   public void testRemovedBackgroundStateChangeCallbacksDontFire() {
