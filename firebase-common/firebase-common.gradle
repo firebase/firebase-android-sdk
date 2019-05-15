@@ -28,7 +28,7 @@ android {
 
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
-      minSdkVersion 16
+      minSdkVersion project.minSdkVersion
       targetSdkVersion project.targetSdkVersion
       versionName version
       multiDexEnabled true
