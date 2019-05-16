@@ -17,7 +17,6 @@ package com.google.firebase.storage;
 import android.annotation.TargetApi;
 import android.net.Uri;
 import android.support.annotation.Nullable;
-import com.google.android.gms.auth.api.signin.internal.Storage;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -34,7 +33,7 @@ import java.util.concurrent.Executor;
 @TargetApi(26)
 public class TestCommandHelper {
 
-  private static final Executor executor = com.google.firebase.storage.ExecutorProviderHelper.getInstance();
+  private static final Executor executor = ExecutorProviderHelper.getInstance();
 
   public static Task<StringBuilder> testDownloadUrl(StorageReference ref) {
     TaskCompletionSource<StringBuilder> result = new TaskCompletionSource<>();
