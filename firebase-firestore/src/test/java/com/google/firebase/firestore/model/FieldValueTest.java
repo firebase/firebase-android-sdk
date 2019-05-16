@@ -28,7 +28,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.os.Parcel;
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
@@ -361,20 +360,5 @@ public class FieldValueTest {
         .addEqualityGroup(wrapObject(map("foo", 2)))
         .addEqualityGroup(wrapObject(map("foo", "0")))
         .testCompare();
-  }
-
-  @Test
-  public void testTimestampParcelable() {
-    Timestamp timestamp = new Timestamp(1234L, 4567);
-
-    // Write the Timestamp into the Parcel and then rewind the data position for reading.
-    Parcel parcel = Parcel.obtain();
-    timestamp.writeToParcel(parcel, 0);
-    parcel.setDataPosition(0);
-
-    Timestamp recreated = Timestamp.CREATOR.createFromParcel(parcel);
-    assertEquals(timestamp, recreated);
-
-    parcel.recycle();
   }
 }
