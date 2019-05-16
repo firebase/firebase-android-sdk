@@ -43,7 +43,7 @@ class GetDownloadUrlTask implements Runnable {
 
     this.storageRef = storageRef;
     this.pendingResult = pendingResult;
-    if (storageRef.getRoot().getPath().equals(storageRef.getPath())) {
+    if (storageRef.getRoot().getName().equals(storageRef.getName())) {
       throw new
           IllegalArgumentException("Cannot get download url at the root of a bucket.");
     }
