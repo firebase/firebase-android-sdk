@@ -282,7 +282,7 @@ public class StorageReferenceTest {
   @SuppressWarnings("ConstantConditions")
   @Test
   public void downloadUrlBucketRoot() throws Exception {
-    final StorageReference ref = FirebaseStorage.getInstance().getReference("");
+    final StorageReference ref = FirebaseStorage.getInstance().getReference();
 
     boolean thrown = false;
     try {
