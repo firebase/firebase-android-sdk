@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply plugin: 'com.android.library'
+plugins {
+    id 'firebase-library'
+}
+
+firebaseLibrary {
+    publishJavadoc = false
+    publishSources = true
+}
 
 android {
     adbOptions {

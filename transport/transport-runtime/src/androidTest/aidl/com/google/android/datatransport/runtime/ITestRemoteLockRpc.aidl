@@ -4,7 +4,7 @@ package com.google.android.datatransport.runtime;
 interface ITestRemoteLockRpc {
 
     /** Try to acuire lock or timeout. */
-    boolean tryAcquireLock(long lockTimeoutMs);
+    boolean tryAcquireLock();
 
     /** Release held lock. If lock is not held - undefined behavior. */
     void releaseLock();

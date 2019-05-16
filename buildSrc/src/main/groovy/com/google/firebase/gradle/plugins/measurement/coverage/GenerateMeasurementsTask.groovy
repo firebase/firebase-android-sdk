@@ -54,20 +54,22 @@ public class GenerateMeasurementsTask extends DefaultTask {
         def path = "${_project.jacoco.reportsDir}/${coverageTaskName}/${coverageTaskName}.xml"
         try {
             def report = parser.parse(path)
-            def name = report.@name
             def lineCoverage = report.counter.find { it.@type == 'LINE' }
             if (lineCoverage) {
                 def covered = Double.parseDouble(lineCoverage.@covered.text())
                 def missed = Double.parseDouble(lineCoverage.@missed.text())
-                def percent = covered / (covered + missed)
-                return new Tuple(name, percent)
+                return covered / (covered + missed)
             } else {
                 throw new IllegalStateException("Cannot find line coverage section in the report: $path.")
             }
         } catch (FileNotFoundException e) {
             project.logger.warn("Cannot find coverage report for project: $_project.")
-            return new Tuple(_project.name, 0)
+            return 0
         }
+    }
+
+    private def trimProjectPathLeadingColon(path) {
+        return path.startsWith(':') ? path.drop(1) : path
     }
 
     private def generateJson(pullRequestNumber) {
@@ -83,13 +85,26 @@ public class GenerateMeasurementsTask extends DefaultTask {
                 'firebase-firestore-ktx': 5,
                 'firebase-functions': 6,
                 'firebase-inappmessaging-display': 7,
-                'firebase-storage': 8
+                'firebase-storage': 8,
+                'firebase-datatransport': 9,
+
+                // 'firebase-common-ktx' and 'firebase-firestore-ktx' has been
+                // made a subproject of their corresponding java projects in PR
+                // #409 and #426. Old mappings are kept for backward
+                // compatibility reason.
+                'firebase-common:ktx': 10,
+                'firebase-firestore:ktx': 11
         ]
 
         for (Project p: project.rootProject.subprojects) {
-            if (p.name.startsWith('firebase')) {
-                def (name, percent) = getCoveragePercentFromReport(p)
-                coverages[sdkMap[name]] = percent
+            def name = trimProjectPathLeadingColon(p.path)
+            if (name.startsWith('firebase')) {
+                def percent = getCoveragePercentFromReport(p)
+                if (sdkMap.containsKey(name)) {
+                    coverages[sdkMap[name]] = percent
+                } else {
+                    project.logger.warn("Find SDK with name: $name not defined in the SDK to ID mapping.")
+                }
             }
         }
 

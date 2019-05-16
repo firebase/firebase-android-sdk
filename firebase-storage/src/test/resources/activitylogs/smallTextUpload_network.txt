@@ -1,0 +1,91 @@
+
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=flubbertest.txt&uploadType=resumable
+setRequestMethod:POST
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:X-Goog-Upload-Command,start
+setRequestProperty:X-Goog-Upload-Header-Content-Type,text/plain
+setRequestProperty:X-Goog-Upload-Protocol,resumable
+setRequestProperty:Content-Type,application/json
+setDoOutput:true
+setRequestProperty:Content-Length,29
+setRequestProperty:x-firebase-gmpid,fooey
+setUseCaches:false
+setDoInput:true
+getOutputStream:
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Alt-Svc:[quic=":443"; ma=2592000; v="35,34,33,32,31,30,29,28,27,26,25"]
+ Alternate-Protocol:[443:quic]
+ Content-Length:[0]
+ Content-Type:[text/html; charset=UTF-8]
+ Date:[Wed, 06 Jul 2016 23:15:48 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1467846947444]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1467846947237]
+ X-Goog-Upload-Chunk-Granularity:[262144]
+ X-Goog-Upload-Control-URL:[https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=flubbertest.txt&uploadType=resumable&upload_id=AEnB2UpiUp_5KfaK6GOLd7irwdTGoPDu4Gkju3UgdurfxWqzfyc73eEmB5AT_hVr75TxnS2vCJgPzE_V-enNA4MlOSEP79F-cw&upload_protocol=resumable]
+ X-Goog-Upload-Status:[active]
+ X-Goog-Upload-URL:[https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=flubbertest.txt&uploadType=resumable&upload_id=AEnB2UpiUp_5KfaK6GOLd7irwdTGoPDu4Gkju3UgdurfxWqzfyc73eEmB5AT_hVr75TxnS2vCJgPzE_V-enNA4MlOSEP79F-cw&upload_protocol=resumable]
+ X-Google-Backends:[/bns/ir/borg/ir/bns/apps-upload/apps-upload.uploader/115,acsfoa13:443]
+ X-Google-DOS-Service-Trace:[main:apps-upload-embargo]
+ X-Google-GFE-Backend-Request-Info:[eid=JJF9V6-mAsSfiQH3oZ6ICQ]
+ X-Google-GFE-Request-Trace:[acsfoa13:443,/bns/ir/borg/ir/bns/apps-upload/apps-upload.uploader/115,acsfoa13:443]
+ X-Google-GFE-Response-Code-Details-Trace:[response_code_set_by_backend]
+ X-Google-GFE-Service-Trace:[apps-upload-embargo]
+ X-Google-Netmon-Label:[/bns/ir/borg/ir/bns/apps-upload/apps-upload.uploader/115]
+ X-Google-Service:[apps-upload-embargo]
+ X-Google-Shellfish-Status:[CIgCQEY]
+ X-GUploader-Customer:[firebase-storage]
+ X-GUploader-Request-Result:[success]
+ X-GUploader-UploadID:[AEnB2UpiUp_5KfaK6GOLd7irwdTGoPDu4Gkju3UgdurfxWqzfyc73eEmB5AT_hVr75TxnS2vCJgPzE_V-enNA4MlOSEP79F-cw]
+getInputStream:
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=flubbertest.txt&uploadType=resumable&upload_id=AEnB2UpiUp_5KfaK6GOLd7irwdTGoPDu4Gkju3UgdurfxWqzfyc73eEmB5AT_hVr75TxnS2vCJgPzE_V-enNA4MlOSEP79F-cw&upload_protocol=resumable
+setRequestMethod:POST
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:X-Goog-Upload-Command,upload, finalize
+setRequestProperty:X-Goog-Upload-Offset,0
+setRequestProperty:X-Goog-Upload-Protocol,resumable
+setDoOutput:true
+setRequestProperty:Content-Length,17
+setRequestProperty:x-firebase-gmpid,fooey
+setUseCaches:false
+setDoInput:true
+getOutputStream:
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="35,34,33,32,31,30,29,28,27,26,25"]
+ Alternate-Protocol:[443:quic]
+ Content-Length:[506]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Wed, 06 Jul 2016 23:15:48 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1467846947911]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1467846947457]
+ X-Content-Type-Options:[nosniff]
+ X-Goog-Upload-Status:[final]
+ X-Google-Backends:[/bns/ir/borg/ir/bns/apps-upload/apps-upload.uploader/52,acsfoa13:443]
+ X-Google-DOS-Service-Trace:[main:apps-upload-embargo]
+ X-Google-GFE-Backend-Request-Info:[eid=JJF9V7_eD4O9iQHkuK6IBw]
+ X-Google-GFE-Request-Trace:[acsfoa13:443,/bns/ir/borg/ir/bns/apps-upload/apps-upload.uploader/52,acsfoa13:443]
+ X-Google-GFE-Response-Code-Details-Trace:[response_code_set_by_backend]
+ X-Google-GFE-Service-Trace:[apps-upload-embargo]
+ X-Google-Netmon-Label:[/bns/ir/borg/ir/bns/apps-upload/apps-upload.uploader/52]
+ X-Google-Service:[apps-upload-embargo]
+ X-Google-Shellfish-Status:[CIgCQEY]
+ X-GUploader-Customer:[firebase-storage]
+ X-GUploader-Request-Result:[success]
+ X-GUploader-Upload-Result:[success]
+ X-GUploader-UploadID:[AEnB2UpiUp_5KfaK6GOLd7irwdTGoPDu4Gkju3UgdurfxWqzfyc73eEmB5AT_hVr75TxnS2vCJgPzE_V-enNA4MlOSEP79F-cw]
+getInputStream:ewogICJuYW1lIjogImZsdWJiZXJ0ZXN0LnR4dCIsCiAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIsCiAgImdlbmVyYXRpb24iOiAiMTQ2Nzg0Njk0ODU3MjAwMCIsCiAgIm1ldGFnZW5lcmF0aW9uIjogIjEiLAogICJjb250ZW50VHlwZSI6ICJ0ZXh0L3BsYWluIiwKICAidGltZUNyZWF0ZWQiOiAiMjAxNi0wNy0wNlQxNjoxNTo0OC41MDEtMDcwMCIsCiAgInVwZGF0ZWQiOiAiMjAxNi0wNy0wNlQxNjoxNTo0OC41MDEtMDcwMCIsCiAgInN0b3JhZ2VDbGFzcyI6ICJTVEFOREFSRCIsCiAgInNpemUiOiAiMTciLAogICJtZDVIYXNoIjogInNDSVA2ajhlcXVOZ1hrZlc0WlRFUXc9PSIsCiAgImNvbnRlbnRFbmNvZGluZyI6ICJpZGVudGl0eSIsCiAgImNyYzMyYyI6ICJEcjhuRUE9PSIsCiAgImV0YWciOiAiQ09DVzBmLzczODBDRUFFPSIsCiAgImRvd25sb2FkVG9rZW5zIjogImU4NDMwYWNhLTIzMjktNGM5MC1iM2M4LTlmMGY0NjI1ODJmMyIKfQ==
+disconnect:

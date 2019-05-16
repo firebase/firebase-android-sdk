@@ -29,11 +29,16 @@ import android.database.sqlite.SQLiteStatement;
 import android.database.sqlite.SQLiteTransactionListener;
 import android.support.annotation.VisibleForTesting;
 import com.google.common.base.Function;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.Consumer;
+import com.google.firebase.firestore.util.FileUtil;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
+import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -202,6 +207,26 @@ public final class SQLitePersistence extends Persistence {
     return value;
   }
 
+  public static void clearPersistence(Context context, DatabaseId databaseId, String persistenceKey)
+      throws FirebaseFirestoreException {
+    String databaseName = SQLitePersistence.databaseName(persistenceKey, databaseId);
+    String sqLitePath = context.getDatabasePath(databaseName).getPath();
+    String journalPath = sqLitePath + "-journal";
+    String walPath = sqLitePath + "-wal";
+
+    File sqLiteFile = new File(sqLitePath);
+    File journalFile = new File(journalPath);
+    File walFile = new File(walPath);
+
+    try {
+      FileUtil.delete(sqLiteFile);
+      FileUtil.delete(journalFile);
+      FileUtil.delete(walFile);
+    } catch (IOException e) {
+      throw new FirebaseFirestoreException("Failed to clear persistence." + e, Code.UNKNOWN);
+    }
+  }
+
   long getByteSize() {
     return getPageCount() * getPageSize();
   }
@@ -209,7 +234,7 @@ public final class SQLitePersistence extends Persistence {
   /**
    * Gets the page size of the database. Typically 4096.
    *
-   * @see https://www.sqlite.org/pragma.html#pragma_page_size
+   * @see "https://www.sqlite.org/pragma.html#pragma_page_size"
    */
   private long getPageSize() {
     return query("PRAGMA page_size").firstValue(row -> row.getLong(/*column=*/ 0));
@@ -219,7 +244,7 @@ public final class SQLitePersistence extends Persistence {
    * Gets the number of pages in the database file. Multiplying this with the page size yields the
    * approximate size of the database on disk (including the WAL, if relevant).
    *
-   * @see https://www.sqlite.org/pragma.html#pragma_page_count.
+   * @see "https://www.sqlite.org/pragma.html#pragma_page_count."
    */
   private long getPageCount() {
     return query("PRAGMA page_count").firstValue(row -> row.getLong(/*column=*/ 0));

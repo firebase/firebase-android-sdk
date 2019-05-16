@@ -14,10 +14,12 @@
 
 package com.google.firebase.gradle.plugins.publish
 
+import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import digital.wup.android_maven_publish.AndroidMavenPublishPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
 
 /**
@@ -83,10 +85,14 @@ class PublishingPlugin implements Plugin<Project> {
         def publishAllToBuildDir = project.task('publishAllToBuildDir')
         def firebasePublish = project.task('firebasePublish')
 
-        project.subprojects {
-            afterEvaluate { Project sub ->
-                if (!sub.plugins.hasPlugin('com.android.library')) {
+        project.getGradle().projectsEvaluated {
+            project.subprojects { Project sub ->
+                if (!sub.plugins.hasPlugin('firebase-library')) {
                     return
+                }
+                FirebaseLibraryExtension firebaseLibrary = sub.extensions.getByType(FirebaseLibraryExtension)
+                if (projectsToPublish.contains(sub)) {
+                    projectsToPublish.addAll(firebaseLibrary.projectsToRelease)
                 }
 
                 sub.ext.versionToPublish = publisher.determineVersion(sub)
@@ -102,18 +108,19 @@ class PublishingPlugin implements Plugin<Project> {
                     publications {
                         mavenAar(MavenPublication) {
                             from sub.components.android
-                            pom {
-                                licenses {
-                                    license {
-                                        name = 'The Apache Software License, Version 2.0'
-                                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                                    }
-                                }
-                                scm {
-                                    connection = 'scm:git:https://github.com/firebase/firebase-android-sdk.git'
-                                    url = 'https://github.com/firebase/firebase-android-sdk'
+                            // TODO(vkryachko): move it to a more appropriate place once the
+                            // FirebaseLibraryPlugin migration is complete
+                            if (sub.name == 'ktx') {
+                                artifactId = "$sub.parent.name-ktx"
+                                groupId = sub.parent.group
+                            }
+                            if (firebaseLibrary.publishSources) {
+                                artifact sub.tasks.create("sourcesJar", Jar) {
+                                    from sub.android.sourceSets.main.java.srcDirs
+                                    classifier "sources"
                                 }
                             }
+                            firebaseLibrary.applyPomCustomization(pom)
                             publisher.decorate(sub, it)
                         }
                     }
@@ -122,26 +129,33 @@ class PublishingPlugin implements Plugin<Project> {
 
                 }
             }
-        }
-        project.task('publishProjectsToMavenLocal') {
-            projectsToPublish.each { projectToPublish ->
-                dependsOn getPublishTask(projectToPublish, 'MavenLocal')
+            project.task('publishProjectsToMavenLocal') {
+                projectsToPublish.each { projectToPublish ->
+                    dependsOn getPublishTask(projectToPublish, 'MavenLocal')
+                }
             }
-        }
 
-        def publishProjectsToBuildDir = project.task('publishProjectsToBuildDir') { task ->
-            projectsToPublish.each { projectToPublish ->
-                dependsOn getPublishTask(projectToPublish, 'BuildDirRepository')
+            def publishProjectsToBuildDir = project.task('publishProjectsToBuildDir') {
+                projectsToPublish.each { projectToPublish ->
+                    dependsOn getPublishTask(projectToPublish, 'BuildDirRepository')
+                }
             }
-        }
-        def buildMavenZip = project.task('buildMavenZip', type: Zip) {
-            dependsOn publishProjectsToBuildDir
+            def buildMavenZip = project.task('buildMavenZip', type: Zip) {
+                dependsOn publishProjectsToBuildDir
 
-            from "$project.buildDir/m2repository"
-            archiveName "$project.buildDir/m2repository.zip"
-        }
+                from "$project.buildDir/m2repository"
+                archiveName "$project.buildDir/m2repository.zip"
+            }
 
-        firebasePublish.dependsOn buildMavenZip
+            def info = project.task('publishPrintInfo') {
+                doLast {
+                    project.logger.lifecycle("Publishing the following libraries: \n{}", projectsToPublish.collect{it.path}.join('\n'))
+                }
+            }
+            buildMavenZip.mustRunAfter info
+
+            firebasePublish.dependsOn info, buildMavenZip
+        }
     }
 
     private static String getPublishTask(Project p, String repoName) {

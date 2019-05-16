@@ -75,6 +75,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
+  private volatile boolean isShutdown = false;
 
   // LRU-related
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
@@ -125,10 +126,12 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   }
 
   public Task<Void> disableNetwork() {
+    this.verifyNotShutdown();
     return asyncQueue.enqueue(() -> remoteStore.disableNetwork());
   }
 
   public Task<Void> enableNetwork() {
+    this.verifyNotShutdown();
     return asyncQueue.enqueue(() -> remoteStore.enableNetwork());
   }
 
@@ -137,10 +140,13 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     credentialsProvider.removeChangeListener();
     return asyncQueue.enqueue(
         () -> {
-          remoteStore.shutdown();
-          persistence.shutdown();
-          if (lruScheduler != null) {
-            lruScheduler.stop();
+          if (!this.isShutdown) {
+            remoteStore.shutdown();
+            persistence.shutdown();
+            if (lruScheduler != null) {
+              lruScheduler.stop();
+            }
+            this.isShutdown = true;
           }
         });
   }
@@ -148,6 +154,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   /** Starts listening to a query. */
   public QueryListener listen(
       Query query, ListenOptions options, EventListener<ViewSnapshot> listener) {
+    this.verifyNotShutdown();
     QueryListener queryListener = new QueryListener(query, options, listener);
     asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
     return queryListener;
@@ -155,10 +162,12 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   /** Stops listening to a query previously listened to. */
   public void stopListening(QueryListener listener) {
+    this.verifyNotShutdown();
     asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(listener));
   }
 
   public Task<Document> getDocumentFromLocalCache(DocumentKey docKey) {
+    this.verifyNotShutdown();
     return asyncQueue
         .enqueue(() -> localStore.readDocument(docKey))
         .continueWith(
@@ -180,6 +189,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   }
 
   public Task<ViewSnapshot> getDocumentsFromLocalCache(Query query) {
+    this.verifyNotShutdown();
     return asyncQueue.enqueue(
         () -> {
           ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
@@ -196,6 +206,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   /** Writes mutations. The returned task will be notified when it's written to the backend. */
   public Task<Void> write(final List<Mutation> mutations) {
+    this.verifyNotShutdown();
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(() -> syncEngine.writeMutations(mutations, source));
     return source.getTask();
@@ -204,6 +215,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   /** Tries to execute the transaction in updateFunction up to retries times. */
   public <TResult> Task<TResult> transaction(
       Function<Transaction, Task<TResult>> updateFunction, int retries) {
+    this.verifyNotShutdown();
     return AsyncQueue.callTask(
         asyncQueue.getExecutor(),
         () -> syncEngine.transaction(asyncQueue, updateFunction, retries));
@@ -253,6 +265,12 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     // queue, etc.) so must be started after LocalStore.
     localStore.start();
     remoteStore.start();
+  }
+
+  private void verifyNotShutdown() {
+    if (this.isShutdown) {
+      throw new IllegalArgumentException("The client has already been shutdown");
+    }
   }
 
   @Override

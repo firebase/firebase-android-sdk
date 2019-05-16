@@ -24,6 +24,7 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.security.ProviderInstaller;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
 import com.google.firebase.FirebaseApp;
@@ -34,6 +35,7 @@ import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
+import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -63,6 +65,8 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final UserDataConverter dataConverter;
+
+  private boolean clientRunning;
 
   @NonNull
   @PublicApi
@@ -186,6 +190,7 @@ public class FirebaseFirestore {
       if (client != null) {
         return;
       }
+      this.clientRunning = true;
       DatabaseInfo databaseInfo =
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
@@ -263,6 +268,10 @@ public class FirebaseFirestore {
    * transaction. If any document read within the transaction has changed, the updateFunction will
    * be retried. If it fails to commit after 5 attempts, the transaction will fail.
    *
+   * <p>The maximum number of writes allowed in a single transaction is 500, but note that each
+   * usage of FieldValue.serverTimestamp(), FieldValue.arrayUnion(), FieldValue.arrayRemove(), or
+   * FieldValue.increment() inside a transaction counts as an additional write.
+   *
    * @param updateFunction The function to execute within the transaction context.
    * @param executor The executor to run the transaction callback on.
    * @return The task returned from the updateFunction.
@@ -306,6 +315,10 @@ public class FirebaseFirestore {
   /**
    * Creates a write batch, used for performing multiple writes as a single atomic operation.
    *
+   * <p>The maximum number of writes allowed in a single batch is 500, but note that each usage of
+   * FieldValue.serverTimestamp(), FieldValue.arrayUnion(), FieldValue.arrayRemove(), or
+   * FieldValue.increment() inside a transaction counts as an additional write.
+   *
    * @return The created WriteBatch object.
    */
   @NonNull
@@ -333,11 +346,10 @@ public class FirebaseFirestore {
 
   @VisibleForTesting
   Task<Void> shutdown() {
-    if (client == null) {
-      return Tasks.forResult(null);
-    } else {
-      return client.shutdown();
-    }
+    // The client must be initialized to ensure that all subsequent API usage throws an exception.
+    this.ensureClientConfigured();
+    this.clientRunning = false;
+    return client.shutdown();
   }
 
   @VisibleForTesting
@@ -377,6 +389,32 @@ public class FirebaseFirestore {
     } else {
       Logger.setLogLevel(Level.WARN);
     }
+  }
+
+  /**
+   * Clears the persistent storage.
+   *
+   * <p>Must be called while the client is not started (after the app is shutdown or when the app is
+   * first initialized). On startup, this method must be called before other methods (other than
+   * setFirestoreSettings()).
+   *
+   * @throws IllegalStateException if the client is still running.
+   */
+  Task<Void> clearPersistence() {
+    if (this.clientRunning) {
+      throw new IllegalStateException("Persistence cannot be cleared while the client is running.");
+    }
+    final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+    asyncQueue.enqueueAndForget(
+        () -> {
+          try {
+            SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
+            source.setResult(null);
+          } catch (FirebaseFirestoreException e) {
+            source.setException(e);
+          }
+        });
+    return source.getTask();
   }
 
   FirestoreClient getClient() {

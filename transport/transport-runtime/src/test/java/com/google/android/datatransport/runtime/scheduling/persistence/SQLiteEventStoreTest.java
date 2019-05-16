@@ -16,8 +16,11 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.time.Clock;
+import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,12 +44,16 @@ public class SQLiteEventStoreTest {
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();
-  private static final EventStoreConfig CONFIG = EventStoreConfig.create(10 * 1024 * 1024, 5);
 
-  private final SQLiteEventStore store = newStoreWithConfig(CONFIG);
+  private static final long HOUR = 60 * 60 * 1000;
+  private static final EventStoreConfig CONFIG =
+      EventStoreConfig.DEFAULT.toBuilder().setLoadBatchSize(5).setEventCleanUpAge(HOUR).build();
 
-  private static SQLiteEventStore newStoreWithConfig(EventStoreConfig config) {
-    return new SQLiteEventStore(RuntimeEnvironment.application, new UptimeClock(), config);
+  private final TestClock clock = new TestClock(1);
+  private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG);
+
+  private static SQLiteEventStore newStoreWithConfig(Clock clock, EventStoreConfig config) {
+    return new SQLiteEventStore(RuntimeEnvironment.application, clock, new UptimeClock(), config);
   }
 
   @Test
@@ -54,6 +61,32 @@ public class SQLiteEventStoreTest {
     PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, EVENT);
     Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
 
+    assertThat(newEvent.getEvent()).isEqualTo(EVENT);
+    assertThat(events).containsExactly(newEvent);
+  }
+
+  @Test
+  public void persist_withEventsOfDifferentPriority_shouldEndBeStoredUnderDifferentContexts() {
+    TransportContext ctx1 = TRANSPORT_CONTEXT;
+    TransportContext ctx2 = TRANSPORT_CONTEXT.withPriority(Priority.VERY_LOW);
+
+    EventInternal event1 = EVENT;
+    EventInternal event2 = EVENT.toBuilder().setPayload("World".getBytes()).build();
+
+    PersistedEvent newEvent1 = store.persist(ctx1, event1);
+    PersistedEvent newEvent2 = store.persist(ctx2, event2);
+
+    assertThat(store.loadBatch(ctx1)).containsExactly(newEvent1);
+    assertThat(store.loadBatch(ctx2)).containsExactly(newEvent2);
+  }
+
+  @Test
+  public void persist_withEventCode_correctlyRoundTrips() {
+    EventInternal eventWithCode = EVENT.toBuilder().setCode(5).build();
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, eventWithCode);
+    Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
+
+    assertThat(newEvent.getEvent()).isEqualTo(eventWithCode);
     assertThat(events).containsExactly(newEvent);
   }
 
@@ -105,7 +138,7 @@ public class SQLiteEventStoreTest {
 
   @Test
   public void getNextCallTime_doesNotReturnUnknownBackends() {
-    assertThat(store.getNextCallTime(TRANSPORT_CONTEXT)).isNull();
+    assertThat(store.getNextCallTime(TRANSPORT_CONTEXT)).isEqualTo(0);
   }
 
   @Test
@@ -143,10 +176,13 @@ public class SQLiteEventStoreTest {
   @Test
   public void persist_whenDbSizeOnDiskIsAtLimit_shouldNotPersistNewEvents() {
     SQLiteEventStore storeUnderTest =
-        newStoreWithConfig(CONFIG.withMaxStorageSizeInBytes(store.getByteSize()));
+        newStoreWithConfig(
+            clock, CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize()).build());
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNull();
 
-    storeUnderTest = newStoreWithConfig(CONFIG.withMaxStorageSizeInBytes(store.getByteSize() + 1));
+    storeUnderTest =
+        newStoreWithConfig(
+            clock, CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize() + 1).build());
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNotNull();
   }
 
@@ -160,5 +196,20 @@ public class SQLiteEventStoreTest {
 
     store.recordSuccess(persistedEvents);
     assertThat(store.loadBatch(TRANSPORT_CONTEXT)).hasSize(1);
+  }
+
+  @Test
+  public void cleanUp_whenEventIsNotOld_shouldNotDeleteIt() {
+    PersistedEvent persistedEvent = store.persist(TRANSPORT_CONTEXT, EVENT);
+    assertThat(store.cleanUp()).isEqualTo(0);
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).containsExactly(persistedEvent);
+  }
+
+  @Test
+  public void cleanUp_whenEventIsOld_shouldDeleteIt() {
+    store.persist(TRANSPORT_CONTEXT, EVENT);
+    clock.advance(HOUR + 1);
+    assertThat(store.cleanUp()).isEqualTo(1);
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
 }

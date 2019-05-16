@@ -45,7 +45,7 @@ public class UploaderTest {
   private static final SynchronizationGuard guard =
       new SynchronizationGuard() {
         @Override
-        public <T> T runCriticalSection(long lockTimeoutMs, CriticalSection<T> criticalSection) {
+        public <T> T runCriticalSection(CriticalSection<T> criticalSection) {
           return criticalSection.execute();
         }
       };
@@ -87,7 +87,7 @@ public class UploaderTest {
   @Test
   public void upload_noNetwork() {
     when(uploader.isNetworkAvailable()).thenReturn(Boolean.FALSE);
-    uploader.upload(BACKEND_NAME, 1, mockRunnable);
+    uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
     // Scheduler must be called with the attempt number incremented.
     verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 2);
     verify(mockRunnable, times(1)).run();
@@ -95,18 +95,16 @@ public class UploaderTest {
 
   @Test
   public void upload_yesNetwork() {
-    when(mockBackend.send(any()))
-        .thenReturn(BackendResponse.create(BackendResponse.Status.OK, 1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
     when(uploader.isNetworkAvailable()).thenReturn(Boolean.TRUE);
-    uploader.upload(BACKEND_NAME, 1, mockRunnable);
+    uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
     verify(uploader, times(1)).logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(mockRunnable, times(1)).run();
   }
 
   @Test
   public void logAndUpdateStatus_okResponse() {
-    when(mockBackend.send(any()))
-        .thenReturn(BackendResponse.create(BackendResponse.Status.OK, 1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(store, times(1)).recordSuccess(any());
     verify(store, times(1)).recordNextCallTime(TRANSPORT_CONTEXT, 1002);
@@ -114,16 +112,14 @@ public class UploaderTest {
 
   @Test
   public void logAndUpdateStatus_nontransientResponse() {
-    when(mockBackend.send(any()))
-        .thenReturn(BackendResponse.create(BackendResponse.Status.NONTRANSIENT_ERROR, -1));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.fatalError());
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(store, times(1)).recordSuccess(any());
   }
 
   @Test
   public void logAndUpdateStatus_transientReponse() {
-    when(mockBackend.send(any()))
-        .thenReturn(BackendResponse.create(BackendResponse.Status.TRANSIENT_ERROR, -1));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.transientError());
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(store, times(1)).recordFailure(any());
     verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 2);
@@ -137,7 +133,7 @@ public class UploaderTest {
                 invocation -> {
                   // store a new event
                   store.persist(TRANSPORT_CONTEXT, EVENT);
-                  return BackendResponse.create(BackendResponse.Status.OK, 1000);
+                  return BackendResponse.ok(1000);
                 });
     Iterable<PersistedEvent> persistedEvents = store.loadBatch(TRANSPORT_CONTEXT);
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);

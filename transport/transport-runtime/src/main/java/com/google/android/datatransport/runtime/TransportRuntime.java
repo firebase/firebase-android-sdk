@@ -16,12 +16,14 @@ package com.google.android.datatransport.runtime;
 
 import android.content.Context;
 import android.support.annotation.RestrictTo;
+import android.support.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
+import java.util.concurrent.Callable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -83,6 +85,24 @@ public class TransportRuntime implements TransportInternal {
     return localRef.getTransportRuntime();
   }
 
+  @VisibleForTesting
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  static void withInstance(TransportRuntimeComponent component, Callable<Void> callable)
+      throws Throwable {
+    TransportRuntimeComponent original;
+    synchronized (TransportRuntime.class) {
+      original = INSTANCE;
+      INSTANCE = component;
+    }
+    try {
+      callable.call();
+    } finally {
+      synchronized (TransportRuntime.class) {
+        INSTANCE = original;
+      }
+    }
+  }
+
   /** Returns a {@link TransportFactory} for a given {@code backendName}. */
   public TransportFactory newFactory(String backendName) {
     return new TransportFactoryImpl(
@@ -107,6 +127,7 @@ public class TransportRuntime implements TransportInternal {
         .setUptimeMillis(uptimeClock.getTime())
         .setTransportName(request.getTransportName())
         .setPayload(request.getPayload())
+        .setCode(request.getEvent().getCode())
         .build();
   }
 }

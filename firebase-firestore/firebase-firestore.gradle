@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply plugin: 'com.android.library'
-apply plugin: 'com.google.protobuf'
-apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+plugins {
+    id 'firebase-library'
+    id 'com.google.protobuf'
+}
+
+firebaseLibrary {
+    testLab.enabled = true
+    publishSources = true
+}
 
 protobuf {
     // Configure the protoc executable

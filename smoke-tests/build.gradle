@@ -38,6 +38,11 @@ android {
   flavorDimensions "systemUnderTest"
 
   productFlavors {
+    combined {
+      dimension "systemUnderTest"
+      applicationId "com.google.firebase.testing.combined"
+    }
+
     database {
       dimension "systemUnderTest"
       applicationId "com.google.firebase.testing.database"
@@ -53,12 +58,25 @@ android {
       applicationId "com.google.firebase.testing.storage"
     }
   }
+
+  sourceSets {
+    combined {
+      java.srcDirs = [
+          "src/combined/java",
+	  "src/database/java",
+	  "src/firestore/java",
+	  "src/storage/java",
+      ]
+    }
+  }
 }
 
 repositories {
   google()
   jcenter()
 }
+
+apply from: "configure.gradle"
 
 dependencies {
   // Common
@@ -67,19 +85,25 @@ dependencies {
   api "junit:junit:4.12"
 
   implementation "androidx.test:rules:1.1.0"
-  implementation "com.google.firebase:firebase-common:16.0.7"
+  implementation "com.google.firebase:firebase-common"
+
+  // All
+  combinedImplementation "com.google.firebase:firebase-auth"
+  combinedImplementation "com.google.firebase:firebase-database"
+  combinedImplementation "com.google.firebase:firebase-firestore"
+  combinedImplementation "com.google.firebase:firebase-storage"
 
   // Database
-  databaseImplementation "com.google.firebase:firebase-auth:16.1.0"
-  databaseImplementation "com.google.firebase:firebase-database:16.1.0"
+  databaseImplementation "com.google.firebase:firebase-auth"
+  databaseImplementation "com.google.firebase:firebase-database"
 
   // Firestore
-  firestoreImplementation "com.google.firebase:firebase-auth:16.1.0"
-  firestoreImplementation "com.google.firebase:firebase-firestore:18.1.0"
+  firestoreImplementation "com.google.firebase:firebase-auth"
+  firestoreImplementation "com.google.firebase:firebase-firestore"
 
   // Storage
-  storageImplementation "com.google.firebase:firebase-auth:16.1.0"
-  storageImplementation "com.google.firebase:firebase-storage:16.1.0"
+  storageImplementation "com.google.firebase:firebase-auth"
+  storageImplementation "com.google.firebase:firebase-storage"
 }
 
 apply plugin: "com.google.gms.google-services"

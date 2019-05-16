@@ -111,9 +111,7 @@ public class DownloadTest {
     NetworkLayerMock.ensureNetworkMock("streamDownload", true);
     final Semaphore semaphore = new Semaphore(0);
 
-    StorageReference storage =
-        FirebaseStorage.getInstance()
-            .getReferenceFromUrl("gs://project-5516366556574091405.appspot.com/image.jpg");
+    StorageReference storage = FirebaseStorage.getInstance().getReference("image.jpg");
 
     final AtomicLong bytesDownloaded = new AtomicLong();
     final AtomicLong bytesTransferred = new AtomicLong();
