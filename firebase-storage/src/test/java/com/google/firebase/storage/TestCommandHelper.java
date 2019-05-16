@@ -35,11 +35,7 @@ public class TestCommandHelper {
 
   private static final Executor executor = ExecutorProviderHelper.getInstance();
 
-  public static Task<StringBuilder> testDownloadUrl() {
-    final StorageReference ref =
-        FirebaseStorage.getInstance()
-            .getReferenceFromUrl("gs://project-5516366556574091405.appspot.com/flubbertest.txt");
-
+  public static Task<StringBuilder> testDownloadUrl(StorageReference ref) {
     TaskCompletionSource<StringBuilder> result = new TaskCompletionSource<>();
     StringBuilder builder = new StringBuilder();
     builder.append("Getting Download Url.\n");

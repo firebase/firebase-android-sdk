@@ -43,6 +43,10 @@ class GetDownloadUrlTask implements Runnable {
 
     this.storageRef = storageRef;
     this.pendingResult = pendingResult;
+    if (storageRef.getRoot().getPath().equals(storageRef.getPath())) {
+      throw new
+          IllegalArgumentException("Cannot get download url at the root of a bucket.");
+    }
 
     FirebaseStorage storage = this.storageRef.getStorage();
     sender =
