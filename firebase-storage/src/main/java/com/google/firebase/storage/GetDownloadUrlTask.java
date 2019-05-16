@@ -47,7 +47,6 @@ class GetDownloadUrlTask implements Runnable {
       throw new
           IllegalArgumentException("Cannot get download url at the root of a bucket.");
     }
-
     FirebaseStorage storage = this.storageRef.getStorage();
     sender =
         new ExponentialBackoffSender(

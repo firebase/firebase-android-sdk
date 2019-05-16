@@ -263,11 +263,9 @@ public class StorageReferenceTest {
   @Test
   public void downloadUrl() throws Exception {
     MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("downloadUrl", true);
-    final StorageReference ref =
-        FirebaseStorage.getInstance()
-            .getReferenceFromUrl("gs://project-5516366556574091405.appspot.com/flubbertest.txt");
+    final StorageReference ref = FirebaseStorage.getInstance().getReference("flubbertest.txt");
 
-    Task<StringBuilder> task = TestCommandHelper.testDownloadUrl(ref);
+    Task<StringBuilder> task = com.google.firebase.storage.TestCommandHelper.testDownloadUrl(ref);
     for (int i = 0; i < 3000; i++) {
       Robolectric.flushForegroundThreadScheduler();
       if (task.isComplete()) {
@@ -285,13 +283,11 @@ public class StorageReferenceTest {
   @Test
   public void downloadUrlBucketRoot() throws Exception {
     MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("downloadUrlBucketRoot", true);
-    final StorageReference ref =
-        FirebaseStorage.getInstance()
-            .getReferenceFromUrl("gs://project-5516366556574091405.appspot.com");
+    final StorageReference ref = FirebaseStorage.getInstance().getReference("");
 
     boolean thrown = false;
     try {
-      TestCommandHelper.testDownloadUrl(ref);
+      com.google.firebase.storage.TestCommandHelper.testDownloadUrl(ref);
     } catch (IllegalArgumentException e) {
       thrown = true;
     }
