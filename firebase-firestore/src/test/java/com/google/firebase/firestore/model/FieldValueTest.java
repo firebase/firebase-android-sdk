@@ -26,12 +26,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.BlobValue;
 import com.google.firebase.firestore.model.value.BooleanValue;
 import com.google.firebase.firestore.model.value.DoubleValue;
@@ -195,26 +193,6 @@ public class FieldValueTest {
     assertNotEquals(old, mod);
     assertEquals(wrapObject(third), old);
     assertEquals(ObjectValue.emptyObject(), mod);
-  }
-
-  @Test
-  public void testArrays() {
-    ArrayValue expected =
-        ArrayValue.fromList(
-            Arrays.asList(StringValue.valueOf("value"), BooleanValue.valueOf(true)));
-    FieldValue actual = wrap(Arrays.asList("value", true));
-    assertEquals(expected, actual);
-  }
-
-  @Test
-  public void testArraysFail() {
-    String[] array = {"foo", "bar"};
-    try {
-      wrap(array);
-      fail("wrap should have failed");
-    } catch (IllegalArgumentException e) {
-      assertNotEquals(-1, e.getMessage().indexOf("use Lists instead"));
-    }
   }
 
   @Test

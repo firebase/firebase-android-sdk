@@ -21,10 +21,13 @@ import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.BlobValue;
 import com.google.firebase.firestore.model.value.BooleanValue;
 import com.google.firebase.firestore.model.value.DoubleValue;
@@ -252,5 +255,24 @@ public class UserDataConverterTest {
             fromMap(
                 "b", fromMap("c", StringValue.valueOf("foo")), "d", BooleanValue.valueOf(true)));
     assertEquals(expected, actual);
+  }
+
+  @Test
+  public void testConvertsLists() {
+    ArrayValue expected =
+        ArrayValue.fromList(asList(StringValue.valueOf("value"), BooleanValue.valueOf(true)));
+    FieldValue actual = wrap(asList("value", true));
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  public void testRejectsJavaArrays() {
+    String[] array = {"foo", "bar"};
+    try {
+      wrap(array);
+      fail("wrap should have failed");
+    } catch (IllegalArgumentException e) {
+      assertNotEquals(-1, e.getMessage().indexOf("use Lists instead"));
+    }
   }
 }
