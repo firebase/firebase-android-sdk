@@ -282,7 +282,6 @@ public class StorageReferenceTest {
   @SuppressWarnings("ConstantConditions")
   @Test
   public void downloadUrlBucketRoot() throws Exception {
-    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("downloadUrlBucketRoot", true);
     final StorageReference ref = FirebaseStorage.getInstance().getReference("");
 
     boolean thrown = false;
