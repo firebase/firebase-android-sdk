@@ -57,17 +57,14 @@ import java.util.concurrent.TimeoutException;
 /** A set of helper methods for tests */
 public class IntegrationTestUtil {
 
+  // Alternate project ID for creating "bad" references. Doesn't actually need to work.
+  public static final String BAD_PROJECT_ID = "test-project-2";
   // Whether the integration tests should run against a local Firestore emulator instead of the
   // Production environment. Note that the Android Emulator treats "10.0.2.2" as its host machine.
   // TODO(mrschmidt): Support multiple envrionments (Emulator, QA, Nightly, Production)
   private static final boolean CONNECT_TO_EMULATOR = false;
-
   private static final String EMULATOR_HOST = "10.0.2.2";
   private static final int EMULATOR_PORT = 8081;
-
-  // Alternate project ID for creating "bad" references. Doesn't actually need to work.
-  public static final String BAD_PROJECT_ID = "test-project-2";
-
   /** Online status of all active Firestore clients. */
   private static final Map<FirebaseFirestore, Boolean> firestoreStatus = new HashMap<>();
 
@@ -409,6 +406,10 @@ public class IntegrationTestUtil {
 
   public static boolean isNetworkEnabled(FirebaseFirestore firestore) {
     return firestoreStatus.get(firestore);
+  }
+
+  public static void removeFirestore(FirebaseFirestore firestore) {
+    firestoreStatus.remove(firestore);
   }
 
   public static Map<String, Object> toDataMap(QuerySnapshot qrySnap) {
