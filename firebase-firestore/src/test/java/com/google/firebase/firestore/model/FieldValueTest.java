@@ -26,16 +26,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import android.os.Parcel;
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.Blob;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.TestAccessHelper;
-import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.BlobValue;
 import com.google.firebase.firestore.model.value.BooleanValue;
 import com.google.firebase.firestore.model.value.DoubleValue;
@@ -52,8 +46,6 @@ import com.google.firebase.firestore.testutil.ComparatorTester;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -76,198 +68,6 @@ public class FieldValueTest {
 
     calendar.set(2016, 10, 21, 15, 32, 0);
     date2 = calendar.getTime();
-  }
-
-  @Test
-  public void testIntegerValueConversion() {
-    List<Integer> testCases = Arrays.asList(Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE);
-    for (Integer i : testCases) {
-      FieldValue value = wrap(i);
-      assertTrue(value instanceof IntegerValue);
-      assertEquals(i.longValue(), value.value());
-    }
-  }
-
-  @Test
-  public void testLongValueConversion() {
-    List<Long> testCases =
-        Arrays.asList(
-            Long.MIN_VALUE,
-            Long.valueOf(Integer.MIN_VALUE),
-            -1L,
-            0L,
-            1L,
-            Long.valueOf(Integer.MAX_VALUE),
-            Long.MAX_VALUE);
-    for (Long l : testCases) {
-      FieldValue value = wrap(l);
-      assertTrue(value instanceof IntegerValue);
-      assertEquals(l, value.value());
-    }
-  }
-
-  @Test
-  public void testFloatValueConversion() {
-    List<Float> testCases =
-        Arrays.asList(
-            -Float.MAX_VALUE,
-            Long.MIN_VALUE * 1.0f,
-            -1.1f,
-            -Float.MIN_VALUE,
-            -0.0f,
-            0.0f,
-            Float.MIN_VALUE,
-            Float.MIN_NORMAL,
-            Long.MAX_VALUE * 1.0f,
-            Float.MAX_VALUE);
-    for (Float f : testCases) {
-      FieldValue value = wrap(f);
-      assertTrue(value instanceof DoubleValue);
-      assertEquals(f.doubleValue(), value.value());
-    }
-  }
-
-  @Test
-  public void testDoubleValueConversion() {
-    List<Double> testCases =
-        Arrays.asList(
-            Double.POSITIVE_INFINITY,
-            -Double.MAX_VALUE,
-            Double.valueOf(-Float.MAX_VALUE),
-            Long.MIN_VALUE * 1.0,
-            -1.1,
-            Double.valueOf(-Float.MIN_VALUE),
-            -Double.MIN_VALUE,
-            -0.0,
-            0.0,
-            Double.valueOf(Float.MIN_VALUE),
-            Double.MIN_VALUE,
-            Double.valueOf(Float.MIN_NORMAL),
-            Double.MIN_NORMAL,
-            Long.MAX_VALUE * 1.0,
-            Double.valueOf(Float.MAX_VALUE),
-            Double.MAX_VALUE,
-            Double.POSITIVE_INFINITY,
-            Double.NaN);
-    for (Double d : testCases) {
-      FieldValue value = wrap(d);
-      assertTrue(value instanceof DoubleValue);
-      assertEquals(d, value.value());
-    }
-  }
-
-  @Test
-  public void testNullValueConversion() {
-    FieldValue value = wrap(null);
-    assertTrue(value instanceof NullValue);
-    assertEquals(value.value(), null);
-  }
-
-  @Test
-  public void testBooleanValueConversion() {
-    List<Boolean> testCases = Arrays.asList(true, false);
-    for (Boolean b : testCases) {
-      FieldValue value = wrap(b);
-      assertTrue(value instanceof BooleanValue);
-      assertEquals(b, value.value());
-    }
-  }
-
-  @Test
-  public void testDateValueConversion() {
-    List<Date> testCases = Arrays.asList(new Date(0), new Date(1356048000000L));
-    for (Date d : testCases) {
-      FieldValue value = wrap(d);
-      assertTrue(value instanceof TimestampValue);
-      Timestamp timestamp = (Timestamp) value.value();
-      assertEquals(d, timestamp.toDate());
-    }
-  }
-
-  @Test
-  public void testTimestampValueConversion() {
-    List<Timestamp> testCases = Arrays.asList(new Timestamp(0, 0), new Timestamp(1356048000L, 0));
-    for (Timestamp d : testCases) {
-      FieldValue value = wrap(d);
-      assertTrue(value instanceof TimestampValue);
-      assertTrue(value.value() instanceof Timestamp);
-      assertEquals(d, value.value());
-    }
-  }
-
-  @Test
-  public void testGeoPointValueConversion() {
-    List<GeoPoint> testCases = Arrays.asList(new GeoPoint(1.24, 4.56), new GeoPoint(-20, 100));
-    for (GeoPoint p : testCases) {
-      FieldValue value = wrap(p);
-      assertTrue(value instanceof GeoPointValue);
-      assertEquals(p, value.value());
-    }
-  }
-
-  @Test
-  public void testBlobValueConversion() {
-    List<Blob> testCases = Arrays.asList(blob(1, 2, 3), blob(1, 2));
-    for (Blob b : testCases) {
-      FieldValue value = wrap(b);
-      assertTrue(value instanceof BlobValue);
-      assertEquals(b, value.value());
-    }
-  }
-
-  @Test
-  public void testResourceNameConversion() {
-    DatabaseId id = DatabaseId.forProject("project");
-    List<DocumentReference> testCases = Arrays.asList(ref("foo/bar"), ref("foo/baz"));
-    for (DocumentReference docRef : testCases) {
-      FieldValue value = wrap(docRef);
-      assertTrue(value instanceof ReferenceValue);
-      ReferenceValue ref = (ReferenceValue) value;
-      assertEquals(TestAccessHelper.referenceKey(docRef), ref.value());
-      assertEquals(id, ref.getDatabaseId());
-    }
-  }
-
-  @Test
-  public void testWrapsEmptyObjects() {
-    assertEquals(wrap(new TreeMap<String, FieldValue>()), ObjectValue.emptyObject());
-  }
-
-  @Test
-  public void testWrapsSimpleObjects() {
-    // Guava doesn't like null values, so we create a copy of the Immutable map without
-    // the null value and then add the null value later.
-    Map<String, Object> actual = map("a", "foo", "b", 1, "c", true, "d", null);
-
-    Map<String, FieldValue> expected =
-        map(
-            "a", StringValue.valueOf("foo"),
-            "b", IntegerValue.valueOf(1L),
-            "c", BooleanValue.valueOf(true),
-            "d", NullValue.nullValue());
-
-    FieldValue wrappedActual = wrapObject(actual);
-    ObjectValue wrappedExpected = ObjectValue.fromMap(expected);
-    assertEquals(wrappedActual, wrappedExpected);
-  }
-
-  static ObjectValue fromMap(Object... entries) {
-    Map<String, FieldValue> res = new HashMap<>();
-    for (int i = 0; i < entries.length; i += 2) {
-      res.put((String) entries[i], (FieldValue) entries[i + 1]);
-    }
-    return ObjectValue.fromMap(res);
-  }
-
-  @Test
-  public void testWrapsNestedObjects() {
-    FieldValue actual = wrapObject("a", map("b", map("c", "foo"), "d", true));
-    ObjectValue expected =
-        fromMap(
-            "a",
-            fromMap(
-                "b", fromMap("c", StringValue.valueOf("foo")), "d", BooleanValue.valueOf(true)));
-    assertEquals(expected, actual);
   }
 
   @Test
@@ -393,26 +193,6 @@ public class FieldValueTest {
     assertNotEquals(old, mod);
     assertEquals(wrapObject(third), old);
     assertEquals(ObjectValue.emptyObject(), mod);
-  }
-
-  @Test
-  public void testArrays() {
-    ArrayValue expected =
-        ArrayValue.fromList(
-            Arrays.asList(StringValue.valueOf("value"), BooleanValue.valueOf(true)));
-    FieldValue actual = wrap(Arrays.asList("value", true));
-    assertEquals(expected, actual);
-  }
-
-  @Test
-  public void testArraysFail() {
-    String[] array = {"foo", "bar"};
-    try {
-      wrap(array);
-      fail("wrap should have failed");
-    } catch (IllegalArgumentException e) {
-      assertNotEquals(-1, e.getMessage().indexOf("use Lists instead"));
-    }
   }
 
   @Test
@@ -558,20 +338,5 @@ public class FieldValueTest {
         .addEqualityGroup(wrapObject(map("foo", 2)))
         .addEqualityGroup(wrapObject(map("foo", "0")))
         .testCompare();
-  }
-
-  @Test
-  public void testTimestampParcelable() {
-    Timestamp timestamp = new Timestamp(1234L, 4567);
-
-    // Write the Timestamp into the Parcel and then rewind the data position for reading.
-    Parcel parcel = Parcel.obtain();
-    timestamp.writeToParcel(parcel, 0);
-    parcel.setDataPosition(0);
-
-    Timestamp recreated = Timestamp.CREATOR.createFromParcel(parcel);
-    assertEquals(timestamp, recreated);
-
-    parcel.recycle();
   }
 }
