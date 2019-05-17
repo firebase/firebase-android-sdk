@@ -17,6 +17,7 @@ package com.google.firebase;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 
+import android.os.Parcel;
 import java.util.Date;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,5 +69,20 @@ public class TimestampTest {
     assertThrows(IllegalArgumentException.class, () -> new Timestamp(new Date(300000000000000L)));
     assertThrows(IllegalArgumentException.class, () -> new Timestamp(0, -1));
     assertThrows(IllegalArgumentException.class, () -> new Timestamp(0, 1000000000));
+  }
+
+  @Test
+  public void testTimestampParcelable() {
+    Timestamp timestamp = new Timestamp(1234L, 4567);
+
+    // Write the Timestamp into the Parcel and then rewind the data position for reading.
+    Parcel parcel = Parcel.obtain();
+    timestamp.writeToParcel(parcel, 0);
+    parcel.setDataPosition(0);
+
+    Timestamp recreated = Timestamp.CREATOR.createFromParcel(parcel);
+    assertThat(recreated).isEqualTo(timestamp);
+
+    parcel.recycle();
   }
 }
