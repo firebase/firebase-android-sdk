@@ -971,7 +971,7 @@ public class FirestoreTest {
     DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
     waitFor(AccessHelper.shutdown(firestore));
-    IntegrationTestUtil.removeFirestoreFromFirestores(firestore);
+    IntegrationTestUtil.removeFirestore(firestore);
 
     // We restart the app with the same name and options to check that the previous instance's
     // persistent storage is actually cleared after the restart. Calling testFirestore() without the
@@ -990,7 +990,7 @@ public class FirestoreTest {
     DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
     waitFor(AccessHelper.shutdown(firestore));
-    IntegrationTestUtil.removeFirestoreFromFirestores(firestore);
+    IntegrationTestUtil.removeFirestore(firestore);
     waitFor(AccessHelper.clearPersistence(firestore));
 
     // We restart the app with the same name and options to check that the previous instance's

@@ -408,7 +408,7 @@ public class IntegrationTestUtil {
     return firestoreStatus.get(firestore);
   }
 
-  public static void removeFirestoreFromFirestores(FirebaseFirestore firestore) {
+  public static void removeFirestore(FirebaseFirestore firestore) {
     firestoreStatus.remove(firestore);
   }
 

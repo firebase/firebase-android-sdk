@@ -53,6 +53,7 @@ import java.util.concurrent.Executor;
  */
 @PublicApi
 public class FirebaseFirestore {
+
   private static final String TAG = "FirebaseFirestore";
   private final Context context;
   // This is also used as private lock object for this instance. There is nothing inherent about
@@ -66,25 +67,7 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
 
-  @VisibleForTesting
-  FirebaseFirestore(
-      Context context,
-      DatabaseId databaseId,
-      String persistenceKey,
-      CredentialsProvider credentialsProvider,
-      AsyncQueue asyncQueue,
-      @Nullable FirebaseApp firebaseApp) {
-    this.context = checkNotNull(context);
-    this.databaseId = checkNotNull(checkNotNull(databaseId));
-    this.dataConverter = new UserDataConverter(databaseId);
-    this.persistenceKey = checkNotNull(persistenceKey);
-    this.credentialsProvider = checkNotNull(credentialsProvider);
-    this.asyncQueue = checkNotNull(asyncQueue);
-    // NOTE: We allow firebaseApp to be null in tests only.
-    this.firebaseApp = firebaseApp;
 
-    settings = new FirebaseFirestoreSettings.Builder().build();
-  }
 
   @NonNull
   @PublicApi
@@ -152,17 +135,29 @@ public class FirebaseFirestore {
     return new FirebaseFirestore(context, databaseId, persistenceKey, provider, queue, app);
   }
 
-  /** Globally enables / disables Firestore logging for the SDK. */
-  @PublicApi
-  public static void setLoggingEnabled(boolean loggingEnabled) {
-    if (loggingEnabled) {
-      Logger.setLogLevel(Level.DEBUG);
-    } else {
-      Logger.setLogLevel(Level.WARN);
-    }
+  @VisibleForTesting
+  FirebaseFirestore(
+          Context context,
+          DatabaseId databaseId,
+          String persistenceKey,
+          CredentialsProvider credentialsProvider,
+          AsyncQueue asyncQueue,
+          @Nullable FirebaseApp firebaseApp) {
+    this.context = checkNotNull(context);
+    this.databaseId = checkNotNull(checkNotNull(databaseId));
+    this.dataConverter = new UserDataConverter(databaseId);
+    this.persistenceKey = checkNotNull(persistenceKey);
+    this.credentialsProvider = checkNotNull(credentialsProvider);
+    this.asyncQueue = checkNotNull(asyncQueue);
+    // NOTE: We allow firebaseApp to be null in tests only.
+    this.firebaseApp = firebaseApp;
+
+    settings = new FirebaseFirestoreSettings.Builder().build();
   }
 
-  /** Returns the settings used by this FirebaseFirestore object. */
+  /**
+   * Returns the settings used by this FirebaseFirestore object.
+   */
   @NonNull
   @PublicApi
   public FirebaseFirestoreSettings getFirestoreSettings() {
@@ -252,7 +247,7 @@ public class FirebaseFirestore {
    * contained in a collection or subcollection with the given @code{collectionId}.
    *
    * @param collectionId Identifies the collections to query over. Every collection or subcollection
-   *     with this ID as the last segment of its path will be included. Cannot contain a slash.
+   * with this ID as the last segment of its path will be included. Cannot contain a slash.
    * @return The created Query.
    */
   @NonNull
@@ -388,6 +383,18 @@ public class FirebaseFirestore {
   }
 
   /**
+   * Globally enables / disables Firestore logging for the SDK.
+   */
+  @PublicApi
+  public static void setLoggingEnabled(boolean loggingEnabled) {
+    if (loggingEnabled) {
+      Logger.setLogLevel(Level.DEBUG);
+    } else {
+      Logger.setLogLevel(Level.WARN);
+    }
+  }
+
+  /**
    * Clears the persistent storage. This includes pending writes and cached documents.
    *
    * <p>Must be called while the firestore instance is not started (after the app is shutdown or
@@ -402,7 +409,7 @@ public class FirebaseFirestore {
    * recommend not to enable persistence in the first place.
    *
    * @return A Task that is resolved once the persistent storage has been cleared. Otherwise, the
-   *     Task is rejected with an error.
+   * Task is rejected with an error.
    */
   Task<Void> clearPersistence() {
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
@@ -435,7 +442,9 @@ public class FirebaseFirestore {
     return dataConverter;
   }
 
-  /** Helper to validate a DocumentReference. Used by WriteBatch and Transaction. */
+  /**
+   * Helper to validate a DocumentReference. Used by WriteBatch and Transaction.
+   */
   void validateReference(DocumentReference docRef) {
     checkNotNull(docRef, "Provided DocumentReference must not be null.");
     if (docRef.getFirestore() != this) {
