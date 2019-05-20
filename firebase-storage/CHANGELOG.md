@@ -4,3 +4,6 @@
   and are not mentioned in our documentation.
 - [internal] Updated the SDK initialization process and removed usages of
   deprecated methods.
+- [changed] Added validation to `StorageReference.getDownloadUrl` and 
+  `StorageReference.getMetadata` to return error if the reference is the root
+  of the bucket.
