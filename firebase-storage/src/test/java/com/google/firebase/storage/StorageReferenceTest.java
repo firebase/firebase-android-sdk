@@ -279,7 +279,6 @@ public class StorageReferenceTest {
     Assert.fail();
   }
 
-  @SuppressWarnings("ConstantConditions")
   @Test
   public void downloadUrlBucketRoot() throws Exception {
     final StorageReference ref = FirebaseStorage.getInstance().getReference();
@@ -287,6 +286,19 @@ public class StorageReferenceTest {
     boolean thrown = false;
     try {
       TestCommandHelper.testDownloadUrl(ref);
+    } catch (IllegalArgumentException e) {
+      thrown = true;
+    }
+    Assert.assertTrue(thrown);
+  }
+
+  @Test
+  public void getMetadataBucketRoot() throws Exception {
+    final StorageReference ref = FirebaseStorage.getInstance().getReference();
+
+    boolean thrown = false;
+    try {
+      TestCommandHelper.getMetadata(ref);
     } catch (IllegalArgumentException e) {
       thrown = true;
     }

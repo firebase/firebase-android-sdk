@@ -41,6 +41,9 @@ class GetMetadataTask implements Runnable {
 
     this.mStorageRef = storageRef;
     this.mPendingResult = pendingResult;
+    if (storageRef.getRoot().getName().equals(storageRef.getName())) {
+      throw new IllegalArgumentException("Cannot get object metedata at the root of a bucket.");
+    }
 
     FirebaseStorage storage = mStorageRef.getStorage();
     mSender =
