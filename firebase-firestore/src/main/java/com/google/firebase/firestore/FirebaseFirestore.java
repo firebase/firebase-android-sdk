@@ -30,6 +30,7 @@ import com.google.common.base.Function;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
@@ -52,6 +53,7 @@ import java.util.concurrent.Executor;
  */
 @PublicApi
 public class FirebaseFirestore {
+
   private static final String TAG = "FirebaseFirestore";
   private final Context context;
   // This is also used as private lock object for this instance. There is nothing inherent about
@@ -61,12 +63,9 @@ public class FirebaseFirestore {
   private final CredentialsProvider credentialsProvider;
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
-
+  private final UserDataConverter dataConverter;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
-  private final UserDataConverter dataConverter;
-
-  private boolean clientRunning;
 
   @NonNull
   @PublicApi
@@ -190,7 +189,6 @@ public class FirebaseFirestore {
       if (client != null) {
         return;
       }
-      this.clientRunning = true;
       DatabaseInfo databaseInfo =
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
@@ -348,7 +346,6 @@ public class FirebaseFirestore {
   Task<Void> shutdown() {
     // The client must be initialized to ensure that all subsequent API usage throws an exception.
     this.ensureClientConfigured();
-    this.clientRunning = false;
     return client.shutdown();
   }
 
@@ -392,22 +389,32 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Clears the persistent storage.
+   * Clears the persistent storage. This includes pending writes and cached documents.
    *
-   * <p>Must be called while the client is not started (after the app is shutdown or when the app is
-   * first initialized). On startup, this method must be called before other methods (other than
-   * setFirestoreSettings()).
+   * <p>Must be called while the firestore instance is not started (after the app is shutdown or
+   * when the app is first initialized). On startup, this method must be called before other methods
+   * (other than setFirestoreSettings()). If the firestore instance is still running, the Task will
+   * fail with an error code of FAILED_PRECONDITION.
    *
-   * @throws IllegalStateException if the client is still running.
+   * <p>Note: clearPersistence() is primarily intended to help write reliable tests that use
+   * Firestore. It uses the most efficient mechanism possible for dropping existing data but does
+   * not attempt to securely overwrite or otherwise make cached data unrecoverable. For applications
+   * that are sensitive to the disclosure of cache data in between user sessions we strongly
+   * recommend not to enable persistence in the first place.
+   *
+   * @return A Task that is resolved once the persistent storage has been cleared. Otherwise, the
+   *     Task is rejected with an error.
    */
   Task<Void> clearPersistence() {
-    if (this.clientRunning) {
-      throw new IllegalStateException("Persistence cannot be cleared while the client is running.");
-    }
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(
         () -> {
           try {
+            if (client != null && !client.isShutdown()) {
+              throw new FirebaseFirestoreException(
+                  "Persistence cannot be cleared while the firestore instance is running.",
+                  Code.FAILED_PRECONDITION);
+            }
             SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
             source.setResult(null);
           } catch (FirebaseFirestoreException e) {
