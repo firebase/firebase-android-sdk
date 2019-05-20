@@ -52,7 +52,7 @@ public class TestCommandHelper {
     return result.getTask();
   }
 
-  private static Task<StringBuilder> getMetadata(StorageReference ref) {
+  static Task<StringBuilder> getMetadata(StorageReference ref) {
     TaskCompletionSource<StringBuilder> result = new TaskCompletionSource<>();
     StringBuilder builder = new StringBuilder();
     builder.append("Getting Metadata.\n");
