@@ -61,7 +61,6 @@ public class IntegrationTestHelpers {
 
   private static List<DatabaseConfig> contexts = new ArrayList<DatabaseConfig>();
   private static String testSecret = null;
-  private static boolean appInitialized = false;
 
   public static Path path(String path) {
     return new Path(path);
