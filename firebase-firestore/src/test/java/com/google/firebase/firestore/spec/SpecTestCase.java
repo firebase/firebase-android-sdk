@@ -122,6 +122,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
   // TODO: Make this configurable with JUnit options.
   private static final boolean RUN_BENCHMARK_TESTS = false;
+  private static final String BENCHMARK_TAG = "benchmark";
 
   // Disables all other tests; useful for debugging. Multiple tests can have
   // this tag and they'll all be run (but all others won't).
@@ -133,7 +134,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private static final Set<String> DISABLED_TAGS =
       RUN_BENCHMARK_TESTS
           ? Sets.newHashSet("no-android", "multi-client")
-          : Sets.newHashSet("no-android", "benchmark", "multi-client");
+          : Sets.newHashSet("no-android", BENCHMARK_TAG, "multi-client");
 
   private boolean garbageCollectionEnabled;
   private boolean networkEnabled = true;
@@ -1063,7 +1064,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         Set<String> tags = getTestTags(testJSON);
 
         boolean runTest = shouldRunTest(tags) && (!exclusiveMode || tags.contains(EXCLUSIVE_TAG));
-        boolean measureRuntime = tags.contains(EXCLUSIVE_TAG);
+        boolean measureRuntime = tags.contains(BENCHMARK_TAG);
         if (runTest) {
           long start = System.currentTimeMillis();
           try {
