@@ -1063,13 +1063,19 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         Set<String> tags = getTestTags(testJSON);
 
         boolean runTest = shouldRunTest(tags) && (!exclusiveMode || tags.contains(EXCLUSIVE_TAG));
+        boolean measureRuntime = tags.contains(EXCLUSIVE_TAG);
         if (runTest) {
+          long start = System.currentTimeMillis();
           try {
-            info("  Spec test: " + name);
+            info("Spec test: " + name);
             runSteps(steps, config);
             ranAtLeastOneTest = true;
           } catch (AssertionError e) {
             throw new AssertionError("Spec test failure: " + name, e);
+          }
+          long end = System.currentTimeMillis();
+          if (measureRuntime) {
+            info("Runtime: " + (end - start) + " ms");
           }
         } else {
           info("  [SKIPPED] Spec test: " + name);
