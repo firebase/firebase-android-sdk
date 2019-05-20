@@ -35,9 +35,7 @@ public class TestCommandHelper {
 
   private static final Executor executor = ExecutorProviderHelper.getInstance();
 
-  public static Task<StringBuilder> testDownloadUrl() {
-    final StorageReference ref = FirebaseStorage.getInstance().getReference("flubbertest.txt");
-
+  public static Task<StringBuilder> testDownloadUrl(StorageReference ref) {
     TaskCompletionSource<StringBuilder> result = new TaskCompletionSource<>();
     StringBuilder builder = new StringBuilder();
     builder.append("Getting Download Url.\n");
@@ -54,7 +52,7 @@ public class TestCommandHelper {
     return result.getTask();
   }
 
-  private static Task<StringBuilder> getMetadata(StorageReference ref) {
+  static Task<StringBuilder> getMetadata(StorageReference ref) {
     TaskCompletionSource<StringBuilder> result = new TaskCompletionSource<>();
     StringBuilder builder = new StringBuilder();
     builder.append("Getting Metadata.\n");
