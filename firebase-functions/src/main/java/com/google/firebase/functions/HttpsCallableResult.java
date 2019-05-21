@@ -14,15 +14,18 @@
 
 package com.google.firebase.functions;
 
+import android.support.annotation.Nullable;
+
 /** The result of calling a HttpsCallableReference function. */
 public class HttpsCallableResult {
   // The actual result data, as generic types decoded from JSON.
   private final Object data;
 
-  HttpsCallableResult(Object data) {
+  HttpsCallableResult(@Nullable Object data) {
     this.data = data;
   }
 
+  @Nullable
   /**
    * Returns the data that was returned from the Callable HTTPS trigger.
    *
