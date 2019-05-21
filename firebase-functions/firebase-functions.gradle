@@ -56,7 +56,7 @@ dependencies {
     implementation ('com.google.firebase:firebase-iid:17.0.3') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
-    implementation ('com.google.firebase:firebase-auth-interop:16.0.1') {
+    implementation ('com.google.firebase:firebase-auth-interop:17.0.0') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
     implementation 'com.google.firebase:firebase-iid-interop:16.0.1'
