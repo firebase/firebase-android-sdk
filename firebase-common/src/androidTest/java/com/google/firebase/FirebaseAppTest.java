@@ -144,7 +144,7 @@ public class FirebaseAppTest {
     // "fire-core/x.y.z", "test-component/1.2.3"}
     assertThat(actualUserAgent[0]).contains("fire-android");
     assertThat(actualUserAgent[1]).contains("fire-auth");
-    assertThat(actualUserAgent[1]).contains("fire-core");
+    assertThat(actualUserAgent[2]).contains("fire-core");
   }
 
   @Test
