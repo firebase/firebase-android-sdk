@@ -38,9 +38,10 @@ See [here](../README.md#project-setup) for how to setup a project.
 Once you setup the project, download `google-services.json` and place it in
 the source root.
 
-### Run on Local Emulator
+Make sure you have created a Firestore instance for your project, before
+you proceed.
 
-Make sure you have created a Firestore instance for your project.
+### Run on Local Emulator
 
 Then simply run:
 ```bash
@@ -77,7 +78,7 @@ Run:
 ./gradlew -PprojectsToPublish="firebase-firestore" firebasePublish
 ```
 
-This will build an `m2repository.zip` under `build/`, which contains a locally
+This will build a `m2repository.zip` under `build/`, which contains a locally
 built Firestore SDK.
 
 This way you can pick up updates/fixes before official releases.
