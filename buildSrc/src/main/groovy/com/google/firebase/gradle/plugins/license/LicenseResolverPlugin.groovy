@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins.license
 
+import com.android.build.gradle.tasks.BundleAar
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.AnotherMITLicenseFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.AndroidSdkTermsFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.AnotherApache2LicenseFetcher
@@ -90,7 +91,7 @@ class LicenseResolverPlugin implements Plugin<Project> {
                     outputDir = licensesDir
                 }
 
-                project.tasks.getByName("bundleReleaseAar") {
+                project.tasks.withType(BundleAar) {
                     dependsOn licensesTask
                     from licensesTask.outputDir
                 }
