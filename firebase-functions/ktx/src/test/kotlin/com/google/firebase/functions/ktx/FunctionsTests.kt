@@ -76,6 +76,19 @@ class FunctionsTests : BaseTestCase() {
         val app = Firebase.app(EXISTING_APP)
         assertThat(Firebase.functions(app)).isSameAs(FirebaseFunctions.getInstance(app))
     }
+
+    @Test
+    fun `Firebase#functions should delegate to FirebaseFunctions#getInstance(region)`() {
+        val region = "valid_region"
+        assertThat(Firebase.functions(region)).isSameAs(FirebaseFunctions.getInstance(region))
+    }
+
+    @Test
+    fun `Firebase#functions should delegate to FirebaseFunctions#getInstance(FirebaseApp, region)`() {
+        val app = Firebase.app(EXISTING_APP)
+        val region = "valid_region"
+        assertThat(Firebase.functions(app, region)).isSameAs(FirebaseFunctions.getInstance(app, region))
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)
