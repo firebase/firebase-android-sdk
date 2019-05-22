@@ -970,8 +970,12 @@ public class FirestoreTest {
         testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
-
     waitFor(AccessHelper.shutdown(firestore));
+    IntegrationTestUtil.removeFirestore(firestore);
+
+    // We restart the app with the same name and options to check that the previous instance's
+    // persistent storage is actually cleared after the restart. Calling testFirestore() without the
+    // parameters would create a new instance of firestore, which defeats the purpose of this test.
     FirebaseFirestore firestore2 =
         testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef2 = firestore2.document(docRef.getPath());
@@ -985,9 +989,13 @@ public class FirestoreTest {
         testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
-
     waitFor(AccessHelper.shutdown(firestore));
+    IntegrationTestUtil.removeFirestore(firestore);
     waitFor(AccessHelper.clearPersistence(firestore));
+
+    // We restart the app with the same name and options to check that the previous instance's
+    // persistent storage is actually cleared after the restart. Calling testFirestore() without the
+    // parameters would create a new instance of firestore, which defeats the purpose of this test.
     FirebaseFirestore firestore2 =
         testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef2 = firestore2.document(docRef.getPath());
@@ -999,8 +1007,12 @@ public class FirestoreTest {
   public void testClearPersistenceWhileRunningFails() {
     FirebaseFirestore firestore = testFirestore();
     waitFor(firestore.enableNetwork());
-    expectError(
-        () -> waitFor(AccessHelper.clearPersistence(firestore)),
-        "Persistence cannot be cleared while the client is running.");
+
+    Task<Void> transactionTask = AccessHelper.clearPersistence(firestore);
+    waitForException(transactionTask);
+    assertFalse(transactionTask.isSuccessful());
+    Exception e = transactionTask.getException();
+    FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
+    assertEquals(Code.FAILED_PRECONDITION, firestoreException.getCode());
   }
 }

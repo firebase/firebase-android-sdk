@@ -61,7 +61,6 @@ public class IntegrationTestUtil {
   // Production environment. Note that the Android Emulator treats "10.0.2.2" as its host machine.
   // TODO(mrschmidt): Support multiple envrionments (Emulator, QA, Nightly, Production)
   private static final boolean CONNECT_TO_EMULATOR = false;
-
   private static final String EMULATOR_HOST = "10.0.2.2";
   private static final int EMULATOR_PORT = 8081;
 
@@ -409,6 +408,10 @@ public class IntegrationTestUtil {
 
   public static boolean isNetworkEnabled(FirebaseFirestore firestore) {
     return firestoreStatus.get(firestore);
+  }
+
+  public static void removeFirestore(FirebaseFirestore firestore) {
+    firestoreStatus.remove(firestore);
   }
 
   public static Map<String, Object> toDataMap(QuerySnapshot qrySnap) {
