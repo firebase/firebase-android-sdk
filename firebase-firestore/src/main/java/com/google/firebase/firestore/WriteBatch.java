@@ -87,12 +87,13 @@ public class WriteBatch {
     firestore.validateReference(documentRef);
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
-    // TODO: Assert fields annotated with DocumentId in `data` match `documentRef`.
     verifyNotCommitted();
     ParsedSetData parsed =
         options.isMerge()
-            ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
-            : firestore.getDataConverter().parseSetData(data);
+            ? firestore
+                .getDataConverter()
+                .parseMergeData(data, options.getFieldMask(), documentRef.getId())
+            : firestore.getDataConverter().parseSetData(data, documentRef.getId());
     mutations.addAll(parsed.toMutationList(documentRef.getKey(), Precondition.NONE));
     return this;
   }

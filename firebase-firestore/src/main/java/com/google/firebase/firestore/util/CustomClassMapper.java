@@ -48,7 +48,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import javax.annotation.Nullable;
 
 /** Helper class to convert to/from custom POJO classes and plain Java types. */
 public class CustomClassMapper {
@@ -68,17 +67,34 @@ public class CustomClassMapper {
   }
 
   /**
+   * Returns a mapper with a given document ID. The document ID will be used to populate the {@link
+   * com.google.firebase.firestore.DocumentId} annotated fields of the POJO of the custom class;
+   * when converting a POJO to plain Java type, the @DocumentId-annotated fields should be either
+   * null or match the given document ID.
+   */
+  // TODO: actually implement documentId population/validation logic during (de)serialization.
+  public static CustomClassMapper withDocumentId(String documentId) {
+    return new CustomClassMapper(documentId);
+  }
+
+  private CustomClassMapper(String documentId) {
+    this.documentId = documentId;
+  }
+
+  private String documentId = null;
+
+  /**
    * Converts a Java representation of JSON data to standard library Java data types: Map, Array,
    * String, Double, Integer and Boolean. POJOs are converted to Java Maps.
    *
    * @param object The representation of the JSON data
    * @return JSON representation containing only standard library Java types
    */
-  public static Object convertToPlainJavaTypes(Object object) {
+  public Object convertToPlainJavaTypes(Object object) {
     return serialize(object);
   }
 
-  public static Map<String, Object> convertToPlainJavaTypes(Map<?, Object> update) {
+  public Map<String, Object> convertToPlainJavaTypes(Map<?, Object> update) {
     Object converted = serialize(update);
     hardAssert(converted instanceof Map);
     @SuppressWarnings("unchecked")
@@ -94,25 +110,16 @@ public class CustomClassMapper {
    * @param clazz The class of the object to convert to
    * @return The POJO object.
    */
-  public static <T> T convertToCustomClass(Object object, Class<T> clazz) {
+  public <T> T convertToCustomClass(Object object, Class<T> clazz) {
     return deserializeToClass(object, clazz, ErrorPath.EMPTY);
   }
 
-  /**
-   * If there are fields annotated with {@link com.google.firebase.firestore.DocumentId}, make sure
-   * they are set to expected value by throwing runtime exception when it fails to comply.
-   *
-   * @param object Java object that might have DocumentId annotated fields.
-   * @param expected Expected value of the DocumentId annotated fields.
-   */
-  public static void assertAnnotatedDocumentIdEqual(Object object, @Nullable Object expected) {}
-
-  private static <T> Object serialize(T o) {
+  private <T> Object serialize(T o) {
     return serialize(o, ErrorPath.EMPTY);
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> Object serialize(T o, ErrorPath path) {
+  private <T> Object serialize(T o, ErrorPath path) {
     if (path.getLength() > MAX_DEPTH) {
       throw serializeError(
           path,
@@ -182,7 +189,7 @@ public class CustomClassMapper {
     } else {
       Class<T> clazz = (Class<T>) o.getClass();
       BeanMapper<T> mapper = loadOrCreateBeanMapperForClass(clazz);
-      return mapper.serialize(o, path);
+      return mapper.serialize(o, path, this);
     }
   }
 
@@ -763,7 +770,7 @@ public class CustomClassMapper {
       }
     }
 
-    Map<String, Object> serialize(T object, ErrorPath path) {
+    Map<String, Object> serialize(T object, ErrorPath path, CustomClassMapper classMapper) {
       if (!clazz.isAssignableFrom(object.getClass())) {
         throw new IllegalArgumentException(
             "Can't serialize object of class "
@@ -795,7 +802,7 @@ public class CustomClassMapper {
           // Replace null ServerTimestamp-annotated fields with the sentinel.
           serializedValue = FieldValue.serverTimestamp();
         } else {
-          serializedValue = CustomClassMapper.serialize(propertyValue, path.child(property));
+          serializedValue = classMapper.serialize(propertyValue, path.child(property));
         }
         result.put(property, serializedValue);
       }

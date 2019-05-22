@@ -125,8 +125,7 @@ public class CollectionReference extends Query {
   public Task<DocumentReference> add(@NonNull Object data) {
     checkNotNull(data, "Provided data must not be null.");
     final DocumentReference ref = document();
-    // TODO: Assert fields annotated with DocumentId in `data` are set to null.
-    return ref.setForAddition(data)
+    return ref.set(data)
         .continueWith(
             Executors.DIRECT_EXECUTOR,
             task -> {

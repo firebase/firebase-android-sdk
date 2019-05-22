@@ -21,21 +21,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation used to mark an object field to be the ID of a firestore document.
- *
- * <p>This annotation is recognized by {@link com.google.firebase.firestore.util.CustomClassMapper}.
- *
- * <p>During conversions from documents to java objects, fields with this annotation will be
- * populated with the document ID being converted.
- *
- * <p>When objects with the annotation is used to create new documents, its field value must be null
- * to guarantee uniqueness, otherwise a runtime exception will be thrown.
- *
- * <p>When objects with the annotation is used to update documents, its field value must match the
- * target documents, otherwise a runtime exception will be thrown.
+ * Annotation used to mark a POJO field to be automatically populated with the document's ID when
+ * the POJO is created from a Firestore document (e.g. via {@link DocumentSnapshot#toObject}).
  *
  * <p>This annotation can only be applied to fields of String or {@link DocumentReference},
  * otherwise a runtime exception will be thrown.
+ *
+ * <p>When writing a POJO to Firestore, the @DocumentId-annotated field must either be null or match
+ * the document ID of the document being written to, else a runtime exception will be thrown.
  */
 @PublicApi
 @Retention(RetentionPolicy.RUNTIME)
