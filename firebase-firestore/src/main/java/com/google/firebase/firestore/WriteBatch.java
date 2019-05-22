@@ -87,6 +87,7 @@ public class WriteBatch {
     firestore.validateReference(documentRef);
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
+    // TODO: Assert fields annotated with DocumentId in `data` match `documentRef`.
     verifyNotCommitted();
     ParsedSetData parsed =
         options.isMerge()

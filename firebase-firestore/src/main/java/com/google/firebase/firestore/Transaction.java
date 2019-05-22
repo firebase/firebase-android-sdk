@@ -88,6 +88,7 @@ public class Transaction {
     firestore.validateReference(documentRef);
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
+    // TODO: Assert fields annotated with DocumentId in `data` match `documentRef`.
     ParsedSetData parsed =
         options.isMerge()
             ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())

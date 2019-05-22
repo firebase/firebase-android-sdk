@@ -48,6 +48,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import javax.annotation.Nullable;
 
 /** Helper class to convert to/from custom POJO classes and plain Java types. */
 public class CustomClassMapper {
@@ -96,6 +97,15 @@ public class CustomClassMapper {
   public static <T> T convertToCustomClass(Object object, Class<T> clazz) {
     return deserializeToClass(object, clazz, ErrorPath.EMPTY);
   }
+
+  /**
+   * If there are fields annotated with {@link com.google.firebase.firestore.DocumentId}, make sure
+   * they are set to expected value by throwing runtime exception when it fails to comply.
+   *
+   * @param object Java object that might have DocumentId annotated fields.
+   * @param expected Expected value of the DocumentId annotated fields.
+   */
+  public static void assertAnnotatedDocumentIdEqual(Object object, @Nullable Object expected) {}
 
   private static <T> Object serialize(T o) {
     return serialize(o, ErrorPath.EMPTY);

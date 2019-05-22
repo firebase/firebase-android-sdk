@@ -154,6 +154,13 @@ public class DocumentReference {
     return set(data, SetOptions.OVERWRITE);
   }
 
+  // Handles specific logic for document addition before entering comment `set` logic.
+  /* package */ Task<Void> setForAddition(@NonNull Object data) {
+    checkNotNull(data, "Provided data must not be null.");
+    // TODO: Assert fields annotated with DocumentId in `data` are set to null.
+    return setImpl(data, SetOptions.OVERWRITE);
+  }
+
   /**
    * Writes to the document referred to by this DocumentReference. If the document does not yet
    * exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged into
@@ -169,6 +176,12 @@ public class DocumentReference {
   public Task<Void> set(@NonNull Object data, @NonNull SetOptions options) {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
+    // TODO: Assert fields annotated with DocumentId in `data` match `documentRef`.
+    return setImpl(data, options);
+  }
+
+  @NonNull
+  private Task<Void> setImpl(@NonNull Object data, @NonNull SetOptions options) {
     ParsedSetData parsed =
         options.isMerge()
             ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
