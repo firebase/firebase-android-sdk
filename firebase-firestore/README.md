@@ -10,81 +10,12 @@ responsive apps that work regardless of network latency or Internet
 connectivity. Cloud Firestore also offers seamless integration with other
 Firebase and Google Cloud Platform products, including Cloud Functions.
 
-## Building
-
 All Gradle commands should be run from the source root (which is one level up
 from this folder). See the README.md in the source root for instructions on
 publishing/testing Cloud Firestore.
 
-To build Cloud Firestore, from the source root run:
-```bash
-./gradlew :firebase-firestore:assembleRelease
-```
+## Testing
 
-## Unit Testing
-
-To run unit tests for Cloud Firestore, from the source root run:
-```bash
-./gradlew :firebase-firestore:check
-```
-
-## Integration Testing
-
-Running integration tests requires a Firebase project because they would try
-to connect to the Firestore backends.
-
-See [here](../README.md#project-setup) for how to setup a project.
-
-Once you setup the project, download `google-services.json` and place it in
-the source root.
-
-Make sure you have created a Firestore instance for your project, before
-you proceed.
-
-### Run on Local Emulator
-
-Then simply run:
-```bash
-./gradlew :firebase-firestore:connectedCheck
-```
-
-### Run on Firebase Test Lab
-
-You can also test on Firebase Test Lab, which allow you to run the integration
-tests on devices hosted in Google data center.
-
-See [here](../README.md#running-integration-tests-on-firebase-test-lab) for
-instructions of how to setup Firebase Test Lab for your project.
-
-Run:
-```bash
-./gradlew :firebase-firestore:deviceCheck
-```
-
-## Code Formatting
-
-Run below to format Java code:
-```bash
-./gradlew :firebase-firestore:googleJavaFormat
-```
-
-See [here](../README.md#code-formatting) if you want to be able to format code
-from within Android Studio.
-
-## Build Local Jar of Firestore SDK
-
-Run:
-```bash
-./gradlew -PprojectsToPublish="firebase-firestore" firebasePublish
-```
-
-This will build a `m2repository.zip` under `build/`, which contains a locally
-built Firestore SDK.
-
-This way you can pick up updates/fixes before official releases.
-
-
-## Misc
 After importing the project into Android Studio and building successfully
 for the first time, Android Studio will delete the run configuration xml files
 in `./idea/runConfigurations`. Undo these changes with the command:
