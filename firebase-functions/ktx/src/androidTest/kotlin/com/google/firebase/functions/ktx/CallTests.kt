@@ -18,6 +18,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
+import com.google.firebase.ktx.initialize
 import com.google.android.gms.tasks.Tasks
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -26,13 +27,16 @@ import org.junit.runner.RunWith
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 
+const val APP_ID = "APP_ID"
+const val API_KEY = "API_KEY"
+
 @RunWith(AndroidJUnit4::class)
 class CallTests {
     companion object {
         lateinit var app: FirebaseApp
 
         @BeforeClass @JvmStatic fun setup() {
-            app = FirebaseApp.initializeApp(InstrumentationRegistry.getContext())!!
+            app = Firebase.initialize(InstrumentationRegistry.getContext())!!
         }
 
         @AfterClass @JvmStatic fun cleanup() {
