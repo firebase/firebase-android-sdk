@@ -171,8 +171,8 @@ public class DocumentReference {
     checkNotNull(options, "Provided options must not be null.");
     ParsedSetData parsed =
         options.isMerge()
-            ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask(), getId())
-            : firestore.getDataConverter().parseSetData(data, getId());
+            ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
+            : firestore.getDataConverter().parseSetData(data);
     return firestore
         .getClient()
         .write(parsed.toMutationList(key, Precondition.NONE))

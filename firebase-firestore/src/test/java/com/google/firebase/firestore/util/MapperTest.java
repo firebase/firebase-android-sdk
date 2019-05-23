@@ -899,11 +899,11 @@ public class MapperTest {
 
   private static <T> T deserialize(String jsonString, Class<T> clazz) {
     Map<String, Object> json = fromSingleQuotedString(jsonString);
-    return CustomClassMapper.withDocumentId(null).convertToCustomClass(json, clazz);
+    return CustomClassMapper.convertToCustomClass(json, clazz, null);
   }
 
   private static Object serialize(Object object) {
-    return CustomClassMapper.withDocumentId(null).convertToPlainJavaTypes(object);
+    return CustomClassMapper.convertToPlainJavaTypes(object);
   }
 
   private static void assertJson(String expected, Object actual) {
@@ -1340,8 +1340,7 @@ public class MapperTest {
     Date date = new Date(1491847082123L);
     Map<String, Object> source = map("values", map("foo", date));
     UpperBoundedMapBean bean =
-        CustomClassMapper.withDocumentId(null)
-            .convertToCustomClass(source, UpperBoundedMapBean.class);
+        CustomClassMapper.convertToCustomClass(source, UpperBoundedMapBean.class, null);
     Map<String, Object> expected = map("foo", date);
     assertEquals(expected, bean.values);
   }
@@ -1351,8 +1350,7 @@ public class MapperTest {
     Date date = new Date(1491847082123L);
     Map<String, Object> source = map("map", map("values", map("foo", date)));
     MultiBoundedMapHolderBean bean =
-        CustomClassMapper.withDocumentId(null)
-            .convertToCustomClass(source, MultiBoundedMapHolderBean.class);
+        CustomClassMapper.convertToCustomClass(source, MultiBoundedMapHolderBean.class, null);
 
     Map<String, Object> expected = map("foo", date);
     assertEquals(expected, bean.map.values);
@@ -1369,8 +1367,8 @@ public class MapperTest {
   public void beansCanContainUnboundedTypeVariableMaps() {
     Map<String, Object> source = map("map", map("values", map("foo", "bar")));
     UnboundedTypeVariableMapHolderBean bean =
-        CustomClassMapper.withDocumentId(null)
-            .convertToCustomClass(source, UnboundedTypeVariableMapHolderBean.class);
+        CustomClassMapper.convertToCustomClass(
+            source, UnboundedTypeVariableMapHolderBean.class, null);
 
     Map<String, Object> expected = map("foo", "bar");
     assertEquals(expected, bean.map.values);
@@ -1826,36 +1824,24 @@ public class MapperTest {
 
   @Test
   public void objectClassCanBePassedInAtTopLevel() {
-    assertEquals(
-        "foo", CustomClassMapper.withDocumentId(null).convertToCustomClass("foo", Object.class));
-    assertEquals(1, CustomClassMapper.withDocumentId(null).convertToCustomClass(1, Object.class));
-    assertEquals(1L, CustomClassMapper.withDocumentId(null).convertToCustomClass(1L, Object.class));
-    assertEquals(
-        true, CustomClassMapper.withDocumentId(null).convertToCustomClass(true, Object.class));
-    assertEquals(
-        1.1, CustomClassMapper.withDocumentId(null).convertToCustomClass(1.1, Object.class));
+    assertEquals("foo", CustomClassMapper.convertToCustomClass("foo", Object.class, null));
+    assertEquals(1, CustomClassMapper.convertToCustomClass(1, Object.class, null));
+    assertEquals(1L, CustomClassMapper.convertToCustomClass(1L, Object.class, null));
+    assertEquals(true, CustomClassMapper.convertToCustomClass(true, Object.class, null));
+    assertEquals(1.1, CustomClassMapper.convertToCustomClass(1.1, Object.class, null));
     List<String> fooList = Collections.singletonList("foo");
-    assertEquals(
-        fooList,
-        CustomClassMapper.withDocumentId(null).convertToCustomClass(fooList, Object.class));
+    assertEquals(fooList, CustomClassMapper.convertToCustomClass(fooList, Object.class, null));
     Map<String, String> fooMap = Collections.singletonMap("foo", "bar");
-    assertEquals(
-        fooMap, CustomClassMapper.withDocumentId(null).convertToCustomClass(fooMap, Object.class));
+    assertEquals(fooMap, CustomClassMapper.convertToCustomClass(fooMap, Object.class, null));
   }
 
   @Test
   public void primitiveClassesCanBePassedInTopLevel() {
-    assertEquals(
-        "foo", CustomClassMapper.withDocumentId(null).convertToCustomClass("foo", String.class));
-    assertEquals(
-        (Integer) 1, CustomClassMapper.withDocumentId(null).convertToCustomClass(1, Integer.class));
-    assertEquals(
-        (Long) 1L, CustomClassMapper.withDocumentId(null).convertToCustomClass(1L, Long.class));
-    assertEquals(
-        true, CustomClassMapper.withDocumentId(null).convertToCustomClass(true, Boolean.class));
-    assertEquals(
-        (Double) 1.1,
-        CustomClassMapper.withDocumentId(null).convertToCustomClass(1.1, Double.class));
+    assertEquals("foo", CustomClassMapper.convertToCustomClass("foo", String.class, null));
+    assertEquals((Integer) 1, CustomClassMapper.convertToCustomClass(1, Integer.class, null));
+    assertEquals((Long) 1L, CustomClassMapper.convertToCustomClass(1L, Long.class, null));
+    assertEquals(true, CustomClassMapper.convertToCustomClass(true, Boolean.class, null));
+    assertEquals((Double) 1.1, CustomClassMapper.convertToCustomClass(1.1, Double.class, null));
   }
 
   @Test
@@ -1864,8 +1850,8 @@ public class MapperTest {
         "Class java.util.List has generic type parameters, please use GenericTypeIndicator "
             + "instead",
         () ->
-            CustomClassMapper.withDocumentId(null)
-                .convertToCustomClass(Collections.singletonList("foo"), List.class));
+            CustomClassMapper.convertToCustomClass(
+                Collections.singletonList("foo"), List.class, null));
   }
 
   @Test
@@ -1874,29 +1860,29 @@ public class MapperTest {
         "Class java.util.Map has generic type parameters, please use GenericTypeIndicator "
             + "instead",
         () ->
-            CustomClassMapper.withDocumentId(null)
-                .convertToCustomClass(Collections.singletonMap("foo", "bar"), Map.class));
+            CustomClassMapper.convertToCustomClass(
+                Collections.singletonMap("foo", "bar"), Map.class, null));
   }
 
   @Test
   public void passingInCharacterTopLevelThrows() {
     assertExceptionContains(
         "Deserializing values to Character is not supported",
-        () -> CustomClassMapper.withDocumentId(null).convertToCustomClass('1', Character.class));
+        () -> CustomClassMapper.convertToCustomClass('1', Character.class, null));
   }
 
   @Test
   public void passingInShortTopLevelThrows() {
     assertExceptionContains(
         "Deserializing values to Short is not supported",
-        () -> CustomClassMapper.withDocumentId(null).convertToCustomClass(1, Short.class));
+        () -> CustomClassMapper.convertToCustomClass(1, Short.class, null));
   }
 
   @Test
   public void passingInByteTopLevelThrows() {
     assertExceptionContains(
         "Deserializing values to Byte is not supported",
-        () -> CustomClassMapper.withDocumentId(null).convertToCustomClass(1, Byte.class));
+        () -> CustomClassMapper.convertToCustomClass(1, Byte.class, null));
   }
 
   @Test
@@ -1933,13 +1919,13 @@ public class MapperTest {
 
   @Test
   public void allowNullEverywhere() {
-    assertNull(CustomClassMapper.withDocumentId(null).convertToCustomClass(null, Integer.class));
-    assertNull(CustomClassMapper.withDocumentId(null).convertToCustomClass(null, String.class));
-    assertNull(CustomClassMapper.withDocumentId(null).convertToCustomClass(null, Double.class));
-    assertNull(CustomClassMapper.withDocumentId(null).convertToCustomClass(null, Long.class));
-    assertNull(CustomClassMapper.withDocumentId(null).convertToCustomClass(null, Boolean.class));
-    assertNull(CustomClassMapper.withDocumentId(null).convertToCustomClass(null, StringBean.class));
-    assertNull(CustomClassMapper.withDocumentId(null).convertToCustomClass(null, Object.class));
+    assertNull(CustomClassMapper.convertToCustomClass(null, Integer.class, null));
+    assertNull(CustomClassMapper.convertToCustomClass(null, String.class, null));
+    assertNull(CustomClassMapper.convertToCustomClass(null, Double.class, null));
+    assertNull(CustomClassMapper.convertToCustomClass(null, Long.class, null));
+    assertNull(CustomClassMapper.convertToCustomClass(null, Boolean.class, null));
+    assertNull(CustomClassMapper.convertToCustomClass(null, StringBean.class, null));
+    assertNull(CustomClassMapper.convertToCustomClass(null, Object.class, null));
   }
 
   @Test
@@ -2250,7 +2236,7 @@ public class MapperTest {
     Object serialized = Collections.singletonMap("value", (short) 1);
 
     try {
-      CustomClassMapper.withDocumentId(null).convertToCustomClass(serialized, ShortBean.class);
+      CustomClassMapper.convertToCustomClass(serialized, ShortBean.class, null);
       fail("should have thrown");
     } catch (RuntimeException e) {
       assertEquals(

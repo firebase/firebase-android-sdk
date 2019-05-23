@@ -77,13 +77,10 @@ public final class UserDataConverter {
    * Parse document data from a non-merge set() call.
    *
    * @param input A POJO object representing document data.
-   * @param expectedId If `input` has any fields annotated with {@link DocumentId}, they should
-   *     either be null or match this parameter.
    */
-  public ParsedSetData parseSetData(Object input, String expectedId) {
+  public ParsedSetData parseSetData(Object input) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Set);
-    ObjectValue updateData =
-        convertAndParseDocumentData(input, accumulator.rootContext(), expectedId);
+    ObjectValue updateData = convertAndParseDocumentData(input, accumulator.rootContext());
     return accumulator.toSetData(updateData);
   }
 
@@ -92,14 +89,10 @@ public final class UserDataConverter {
    *
    * @param input A POJO object representing document data.
    * @param fieldMask A {@link FieldMask} object representing the fields to be merged.
-   * @param expectedId If `input` has any fields annotated with {@link DocumentId}, they should
-   *     either be null or match this parameter.
    */
-  public ParsedSetData parseMergeData(
-      Object input, @Nullable FieldMask fieldMask, String expectedId) {
+  public ParsedSetData parseMergeData(Object input, @Nullable FieldMask fieldMask) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.MergeSet);
-    ObjectValue updateData =
-        convertAndParseDocumentData(input, accumulator.rootContext(), expectedId);
+    ObjectValue updateData = convertAndParseDocumentData(input, accumulator.rootContext());
 
     if (fieldMask != null) {
       // Verify that all elements specified in the field mask are part of the parsed context.
@@ -214,7 +207,7 @@ public final class UserDataConverter {
 
   /** Converts a POJO to native types and then parses it into model types. */
   private FieldValue convertAndParseFieldData(Object input, ParseContext context) {
-    Object converted = CustomClassMapper.withDocumentId(null).convertToPlainJavaTypes(input);
+    Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
     return parseData(converted, context);
   }
 
@@ -223,8 +216,7 @@ public final class UserDataConverter {
    * conform to document data (i.e. it must parse into an ObjectValue model type) and will throw an
    * appropriate error otherwise.
    */
-  private ObjectValue convertAndParseDocumentData(
-      Object input, ParseContext context, String expectedId) {
+  private ObjectValue convertAndParseDocumentData(Object input, ParseContext context) {
     String badDocReason =
         "Invalid data. Data must be a Map<String, Object> or a suitable POJO object, but it was ";
 
@@ -234,7 +226,7 @@ public final class UserDataConverter {
       throw new IllegalArgumentException(badDocReason + "an array");
     }
 
-    Object converted = CustomClassMapper.withDocumentId(expectedId).convertToPlainJavaTypes(input);
+    Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
     FieldValue value = parseData(converted, context);
 
     if (!(value instanceof ObjectValue)) {

@@ -67,34 +67,17 @@ public class CustomClassMapper {
   }
 
   /**
-   * Returns a mapper with a given document ID. The document ID will be used to populate the {@link
-   * com.google.firebase.firestore.DocumentId} annotated fields of the POJO of the custom class;
-   * when converting a POJO to plain Java type, the @DocumentId-annotated fields should be either
-   * null or match the given document ID.
-   */
-  // TODO: actually implement documentId population/validation logic during (de)serialization.
-  public static CustomClassMapper withDocumentId(String documentId) {
-    return new CustomClassMapper(documentId);
-  }
-
-  private CustomClassMapper(String documentId) {
-    this.documentId = documentId;
-  }
-
-  private String documentId = null;
-
-  /**
    * Converts a Java representation of JSON data to standard library Java data types: Map, Array,
    * String, Double, Integer and Boolean. POJOs are converted to Java Maps.
    *
    * @param object The representation of the JSON data
    * @return JSON representation containing only standard library Java types
    */
-  public Object convertToPlainJavaTypes(Object object) {
+  public static Object convertToPlainJavaTypes(Object object) {
     return serialize(object);
   }
 
-  public Map<String, Object> convertToPlainJavaTypes(Map<?, Object> update) {
+  public static Map<String, Object> convertToPlainJavaTypes(Map<?, Object> update) {
     Object converted = serialize(update);
     hardAssert(converted instanceof Map);
     @SuppressWarnings("unchecked")
@@ -108,18 +91,21 @@ public class CustomClassMapper {
    *
    * @param object The representation of the JSON data
    * @param clazz The class of the object to convert to
+   * @param documentId The value to set to {@link com.google.firebase.firestore.DocumentId}
+   *     annotated fields in the custom class.
    * @return The POJO object.
    */
-  public <T> T convertToCustomClass(Object object, Class<T> clazz) {
+  public static <T> T convertToCustomClass(Object object, Class<T> clazz, String documentId) {
+    // TODO: Use DeserializeContext to encapsulate ErrorPath and documentId.
     return deserializeToClass(object, clazz, ErrorPath.EMPTY);
   }
 
-  private <T> Object serialize(T o) {
+  private static <T> Object serialize(T o) {
     return serialize(o, ErrorPath.EMPTY);
   }
 
   @SuppressWarnings("unchecked")
-  private <T> Object serialize(T o, ErrorPath path) {
+  private static <T> Object serialize(T o, ErrorPath path) {
     if (path.getLength() > MAX_DEPTH) {
       throw serializeError(
           path,
@@ -189,7 +175,7 @@ public class CustomClassMapper {
     } else {
       Class<T> clazz = (Class<T>) o.getClass();
       BeanMapper<T> mapper = loadOrCreateBeanMapperForClass(clazz);
-      return mapper.serialize(o, path, this);
+      return mapper.serialize(o, path);
     }
   }
 
@@ -770,7 +756,8 @@ public class CustomClassMapper {
       }
     }
 
-    Map<String, Object> serialize(T object, ErrorPath path, CustomClassMapper classMapper) {
+    Map<String, Object> serialize(T object, ErrorPath path) {
+      // TODO: Add logic to skip @DocumentId annotated fields in serialization.
       if (!clazz.isAssignableFrom(object.getClass())) {
         throw new IllegalArgumentException(
             "Can't serialize object of class "
@@ -802,7 +789,7 @@ public class CustomClassMapper {
           // Replace null ServerTimestamp-annotated fields with the sentinel.
           serializedValue = FieldValue.serverTimestamp();
         } else {
-          serializedValue = classMapper.serialize(propertyValue, path.child(property));
+          serializedValue = CustomClassMapper.serialize(propertyValue, path.child(property));
         }
         result.put(property, serializedValue);
       }
@@ -1026,6 +1013,20 @@ public class CustomClassMapper {
         // This is not very efficient, but it's only hit if there's an error.
         return parent.toString() + "." + name;
       }
+    }
+  }
+
+  static class DeserializeContext {
+    final ErrorPath errorPath;
+    final String documentId;
+
+    DeserializeContext(ErrorPath path, String docId) {
+      errorPath = path;
+      documentId = docId;
+    }
+
+    DeserializeContext newInstanceWithErrorPath(ErrorPath newPath) {
+      return new DeserializeContext(newPath, documentId);
     }
   }
 }

@@ -90,10 +90,8 @@ public class WriteBatch {
     verifyNotCommitted();
     ParsedSetData parsed =
         options.isMerge()
-            ? firestore
-                .getDataConverter()
-                .parseMergeData(data, options.getFieldMask(), documentRef.getId())
-            : firestore.getDataConverter().parseSetData(data, documentRef.getId());
+            ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
+            : firestore.getDataConverter().parseSetData(data);
     mutations.addAll(parsed.toMutationList(documentRef.getKey(), Precondition.NONE));
     return this;
   }

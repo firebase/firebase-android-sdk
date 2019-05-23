@@ -90,10 +90,8 @@ public class Transaction {
     checkNotNull(options, "Provided options must not be null.");
     ParsedSetData parsed =
         options.isMerge()
-            ? firestore
-                .getDataConverter()
-                .parseMergeData(data, options.getFieldMask(), documentRef.getId())
-            : firestore.getDataConverter().parseSetData(data, documentRef.getId());
+            ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
+            : firestore.getDataConverter().parseSetData(data);
     transaction.set(documentRef.getKey(), parsed);
     return this;
   }
