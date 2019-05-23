@@ -96,7 +96,7 @@ public class CustomClassMapper {
    */
   public static <T> T convertToCustomClass(
       Object object, Class<T> clazz, DocumentReference docRef) {
-    // TODO: Use DeserializeContext to encapsulate ErrorPath and docRef.
+    // TODO(wuandy): Use DeserializeContext to encapsulate ErrorPath and docRef.
     return deserializeToClass(object, clazz, ErrorPath.EMPTY);
   }
 
@@ -757,7 +757,7 @@ public class CustomClassMapper {
     }
 
     Map<String, Object> serialize(T object, ErrorPath path) {
-      // TODO: Add logic to skip @DocumentId annotated fields in serialization.
+      // TODO(wuandy): Add logic to skip @DocumentId annotated fields in serialization.
       if (!clazz.isAssignableFrom(object.getClass())) {
         throw new IllegalArgumentException(
             "Can't serialize object of class "
@@ -1013,20 +1013,6 @@ public class CustomClassMapper {
         // This is not very efficient, but it's only hit if there's an error.
         return parent.toString() + "." + name;
       }
-    }
-  }
-
-  static class DeserializeContext {
-    final ErrorPath errorPath;
-    final String documentId;
-
-    DeserializeContext(ErrorPath path, String docId) {
-      errorPath = path;
-      documentId = docId;
-    }
-
-    DeserializeContext newInstanceWithErrorPath(ErrorPath newPath) {
-      return new DeserializeContext(newPath, documentId);
     }
   }
 }

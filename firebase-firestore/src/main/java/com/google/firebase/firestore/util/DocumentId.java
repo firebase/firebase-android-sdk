@@ -35,4 +35,4 @@ import java.lang.annotation.Target;
 @PublicApi
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
-public @interface DocumentId {}
+@interface DocumentId {}

@@ -76,7 +76,7 @@ public final class UserDataConverter {
   /**
    * Parse document data from a non-merge set() call.
    *
-   * @param input A POJO object representing document data.
+   * @param input A map or POJO object representing document data.
    */
   public ParsedSetData parseSetData(Object input) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Set);
@@ -87,7 +87,7 @@ public final class UserDataConverter {
   /**
    * Parse document data from a set() call with SetOptions.merge() set.
    *
-   * @param input A POJO object representing document data.
+   * @param input A map or POJO object representing document data.
    * @param fieldMask A {@link FieldMask} object representing the fields to be merged.
    */
   public ParsedSetData parseMergeData(Object input, @Nullable FieldMask fieldMask) {
