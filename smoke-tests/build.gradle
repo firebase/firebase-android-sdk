@@ -74,6 +74,9 @@ android {
 repositories {
   google()
   jcenter()
+  maven {
+    url "../build/m2repository/"
+  }
 }
 
 apply from: "configure.gradle"
