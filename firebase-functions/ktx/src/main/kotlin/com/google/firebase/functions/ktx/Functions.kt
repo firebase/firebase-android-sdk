@@ -17,6 +17,7 @@ package com.google.firebase.functions.ktx
 import android.support.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.functions.HttpsCallableReference
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 
@@ -36,6 +37,12 @@ fun Firebase.functions(app: FirebaseApp): FirebaseFunctions = FirebaseFunctions.
 /** Returns the [FirebaseFunctions] instance of a given [FirebaseApp] and [region]. */
 fun Firebase.functions(app: FirebaseApp, region: String): FirebaseFunctions =
         FirebaseFunctions.getInstance(app, region)
+
+/** Runs the callable. */
+operator fun HttpsCallableReference.invoke() = this.call()
+
+/** Runs the callable using [data] as the arg. */
+operator fun HttpsCallableReference.invoke(data: Any?) = this.call(data)
 
 internal const val LIBRARY_NAME: String = "fire-fun-ktx"
 

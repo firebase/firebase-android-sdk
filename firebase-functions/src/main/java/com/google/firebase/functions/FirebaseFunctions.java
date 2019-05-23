@@ -194,6 +194,9 @@ public class FirebaseFunctions {
    * @param origin The origin of the local emulator, such as "http://10.0.2.2:5005".
    */
   public void useFunctionsEmulator(@NonNull String origin) {
+    if (origin == null) {
+      throw new IllegalArgumentException("origin cannot be null");
+    }
     urlFormat = origin + "/%2$s/%1$s/%3$s";
   }
 
