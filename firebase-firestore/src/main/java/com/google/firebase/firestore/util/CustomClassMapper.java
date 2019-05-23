@@ -91,12 +91,12 @@ public class CustomClassMapper {
    *
    * @param object The representation of the JSON data
    * @param clazz The class of the object to convert to
-   * @param documentId The value to set to {@link com.google.firebase.firestore.DocumentId}
-   *     annotated fields in the custom class.
+   * @param docRef The value to set to {@link DocumentId} annotated fields in the custom class.
    * @return The POJO object.
    */
-  public static <T> T convertToCustomClass(Object object, Class<T> clazz, String documentId) {
-    // TODO: Use DeserializeContext to encapsulate ErrorPath and documentId.
+  public static <T> T convertToCustomClass(
+      Object object, Class<T> clazz, DocumentReference docRef) {
+    // TODO: Use DeserializeContext to encapsulate ErrorPath and docRef.
     return deserializeToClass(object, clazz, ErrorPath.EMPTY);
   }
 

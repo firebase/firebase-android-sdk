@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore;
+package com.google.firebase.firestore.util;
 
 import com.google.firebase.annotations.PublicApi;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -27,8 +29,8 @@ import java.lang.annotation.Target;
  * <p>This annotation can only be applied to fields of String or {@link DocumentReference},
  * otherwise a runtime exception will be thrown.
  *
- * <p>When writing a POJO to Firestore, the @DocumentId-annotated field must either be null or match
- * the document ID of the document being written to, else a runtime exception will be thrown.
+ * <p>When writing a POJO to Firestore, the @DocumentId-annotated field will be ignored, to allow
+ * writing to any documents that are not the origin of the POJO.
  */
 @PublicApi
 @Retention(RetentionPolicy.RUNTIME)

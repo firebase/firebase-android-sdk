@@ -202,7 +202,7 @@ public class DocumentSnapshot {
     Map<String, Object> data = getData(serverTimestampBehavior);
     return data == null
         ? null
-        : CustomClassMapper.convertToCustomClass(data, valueType, key.getPath().getLastSegment());
+        : CustomClassMapper.convertToCustomClass(data, valueType, getReference());
   }
 
   /**
@@ -357,7 +357,7 @@ public class DocumentSnapshot {
     Object data = get(fieldPath, serverTimestampBehavior);
     return data == null
         ? null
-        : CustomClassMapper.convertToCustomClass(data, valueType, key.getPath().getFirstSegment());
+        : CustomClassMapper.convertToCustomClass(data, valueType, getReference());
   }
 
   /**
