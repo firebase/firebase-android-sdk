@@ -1,0 +1,281 @@
+
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[992]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 01:39:47 GMT]
+ Expires:[Thu, 23 May 2019 01:39:47 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558575588242]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558575587690]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2UoQRko4mi6-C2m8suegbtjQVC1x-Zz6vhkhIxbLhTTNnMQlrIk3_UxE2zbVgdGUc2m42CkrATFp0dSWhYSwFn8PW6nErQ]
+getInputStream:ewogICJwcmVmaXhlcyI6IFsKICAgICJzbWFsbERpcmVjdG9yeS9hcHJlZml4LyIKICBdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTEuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGExMC5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTExLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMTIuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGExMy5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTE0LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMTUuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGExNi5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTE3LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9CiAgXSwKICAibmV4dFBhZ2VUb2tlbiI6ICJjMjFoYkd4RWFYSmxZM1J2Y25rdlpHRjBZVEUzTG1SaGRBPT0iCn0=
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10&pageToken=c21hbGxEaXJlY3RvcnkvZGF0YTE3LmRhdA%3D%3D
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[1055]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 01:39:47 GMT]
+ Expires:[Thu, 23 May 2019 01:39:47 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558575588399]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558575588252]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2UpjS-0nxQiPI1Oy2aFO7VF_NYShzQi8VxwLR7HgI-bOi1jzMhSvrub6h1ia009DlOerbGtjyr8Kh4SYUzGi7EHAh0uBqw]
+getInputStream:ewogICJwcmVmaXhlcyI6IFtdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTE4LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMTkuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGEyLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMjAuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGEyMS5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTIyLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMjMuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGEyNC5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTI1LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMjYuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0KICBdLAogICJuZXh0UGFnZVRva2VuIjogImMyMWhiR3hFYVhKbFkzUnZjbmt2WkdGMFlUSTJMbVJoZEE9PSIKfQ==
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10&pageToken=c21hbGxEaXJlY3RvcnkvZGF0YTI2LmRhdA%3D%3D
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[1055]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 01:39:48 GMT]
+ Expires:[Thu, 23 May 2019 01:39:48 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558575588567]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558575588410]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2Upn1k41ijKLerfm-ydTC51nQKYONnJbQ8TvKaGs59bNw1stnAW4L7b1fUp-9iyg9m40UbBGloIR01jFQlmfL039GdhfdA]
+getInputStream:ewogICJwcmVmaXhlcyI6IFtdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTI3LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMjguZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGEyOS5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTMuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGEzMC5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTMxLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMzIuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGEzMy5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTM0LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMzUuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0KICBdLAogICJuZXh0UGFnZVRva2VuIjogImMyMWhiR3hFYVhKbFkzUnZjbmt2WkdGMFlUTTFMbVJoZEE9PSIKfQ==
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10&pageToken=c21hbGxEaXJlY3RvcnkvZGF0YTM1LmRhdA%3D%3D
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[1055]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 01:39:48 GMT]
+ Expires:[Thu, 23 May 2019 01:39:48 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558575588720]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558575588575]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2UrWYJpb5lFbunGKXNxIZv6gAhV25DLcI4Qxyoj014Jcb2z45TgCDTbLo-olVGYg3L1Y7CMHD0jduwiIUrqQijPNEnyncA]
+getInputStream:ewogICJwcmVmaXhlcyI6IFtdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTM2LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMzcuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGEzOC5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTM5LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNC5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTQwLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNDEuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE0Mi5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTQzLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNDQuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0KICBdLAogICJuZXh0UGFnZVRva2VuIjogImMyMWhiR3hFYVhKbFkzUnZjbmt2WkdGMFlUUTBMbVJoZEE9PSIKfQ==
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10&pageToken=c21hbGxEaXJlY3RvcnkvZGF0YTQ0LmRhdA%3D%3D
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[1055]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 01:39:48 GMT]
+ Expires:[Thu, 23 May 2019 01:39:48 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558575589063]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558575588732]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2UqYcFTn3ziIQMczgUTHoEj9CdDzjFV1vQqs_KcMEOXfYuylORHq82fef1fvE3DCjKselBSMSkjyPGsHN_dCTBGa3xRGsw]
+getInputStream:ewogICJwcmVmaXhlcyI6IFtdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTQ1LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNDYuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE0Ny5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTQ4LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNDkuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE1LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNTAuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE1MS5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTUyLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNTMuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0KICBdLAogICJuZXh0UGFnZVRva2VuIjogImMyMWhiR3hFYVhKbFkzUnZjbmt2WkdGMFlUVXpMbVJoZEE9PSIKfQ==
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10&pageToken=c21hbGxEaXJlY3RvcnkvZGF0YTUzLmRhdA%3D%3D
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[1055]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 01:39:48 GMT]
+ Expires:[Thu, 23 May 2019 01:39:48 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558575589226]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558575589074]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2UrSYfkiD4yT77DMvEf_aEpr9f7rxLIUTpsOGHIMt9FmRhyCO2tDxTWYOnDJRZn3Ek-t3xTSWpV-L0WUojq1ca_4qaMHgA]
+getInputStream:ewogICJwcmVmaXhlcyI6IFtdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTU0LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNTUuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE1Ni5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTU3LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNTguZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE1OS5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTYuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE2MC5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTYxLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNjIuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0KICBdLAogICJuZXh0UGFnZVRva2VuIjogImMyMWhiR3hFYVhKbFkzUnZjbmt2WkdGMFlUWXlMbVJoZEE9PSIKfQ==
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10&pageToken=c21hbGxEaXJlY3RvcnkvZGF0YTYyLmRhdA%3D%3D
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[1055]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 01:39:48 GMT]
+ Expires:[Thu, 23 May 2019 01:39:48 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558575589575]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558575589245]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2Up9j717doYd2ylQcqQqp-Y3UaZX9e9SrHHi1kTNkK1CIg-QecFqG2Z7uHfzK_P-ziihupUfj8v8dM1F2qajifxdyR_UwQ]
+getInputStream:ewogICJwcmVmaXhlcyI6IFtdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTYzLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNjQuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE2NS5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTY2LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNjcuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE2OC5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTY5LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNy5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTcwLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNzEuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0KICBdLAogICJuZXh0UGFnZVRva2VuIjogImMyMWhiR3hFYVhKbFkzUnZjbmt2WkdGMFlUY3hMbVJoZEE9PSIKfQ==
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10&pageToken=c21hbGxEaXJlY3RvcnkvZGF0YTcxLmRhdA%3D%3D
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[1055]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 01:39:49 GMT]
+ Expires:[Thu, 23 May 2019 01:39:49 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558575589985]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558575589594]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2Uo12zNvXe9wwzbhkDR7JvaiTvYXWh0_cpAnJkDM9HogUI0qPpO1krpU92MB2mpP5iQZklla2QTXwI3cqJ4sOP2fKGrw6A]
+getInputStream:ewogICJwcmVmaXhlcyI6IFtdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTcyLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNzMuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE3NC5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTc1LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNzYuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE3Ny5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTc4LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhNzkuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE4LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhODAuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0KICBdLAogICJuZXh0UGFnZVRva2VuIjogImMyMWhiR3hFYVhKbFkzUnZjbmt2WkdGMFlUZ3dMbVJoZEE9PSIKfQ==
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10&pageToken=c21hbGxEaXJlY3RvcnkvZGF0YTgwLmRhdA%3D%3D
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[1051]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 01:39:49 GMT]
+ Expires:[Thu, 23 May 2019 01:39:49 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558575590393]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558575590005]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2Up3v0Llez7a_qF3TyojGYLgmj4W1Sryi2VoEkvXCOkQajIotFeqHLVWZ0Vdl6_43Pa9Dkd_q10V89whvn_B6haWrJ4cww]
+getInputStream:ewogICJwcmVmaXhlcyI6IFtdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTgxLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhODIuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE4My5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTg0LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhODUuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE4Ni5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTg3LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhODguZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE4OS5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTkuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0KICBdLAogICJuZXh0UGFnZVRva2VuIjogImMyMWhiR3hFYVhKbFkzUnZjbmt2WkdGMFlUa3VaR0YwIgp9
+disconnect:
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10&pageToken=c21hbGxEaXJlY3RvcnkvZGF0YTkuZGF0
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[901]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 01:39:49 GMT]
+ Expires:[Thu, 23 May 2019 01:39:49 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558575590514]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558575590406]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2UrzTPR8e_QNNGYOoq-PiQtJX_S6CqMkOHi7uZ9LJvIukI0aY_Q-DwNjI1qkw9uOdiwMLb8VHJ9oagIXIe328f-vDW7Nvg]
+getInputStream:ewogICJwcmVmaXhlcyI6IFtdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTkwLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhOTEuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE5Mi5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTkzLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhOTQuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE5NS5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTk2LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhOTcuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGE5OC5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfQogIF0KfQ==
+disconnect:

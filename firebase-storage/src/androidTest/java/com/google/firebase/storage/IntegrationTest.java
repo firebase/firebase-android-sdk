@@ -130,6 +130,17 @@ public class IntegrationTest {
         .isEqualTo(randomMetadata.getCustomMetadata("rand"));
   }
 
+  @Test
+  public void listFiles() throws ExecutionException, InterruptedException {
+    Task<ListResult> listTask = storageClient.getReference(randomPrefix).listAll();
+    ListResult listResult = Tasks.await(listTask);
+
+    assertThat(listResult.getPrefixes()).isEmpty();
+    assertThat(listResult.getItems())
+        .containsExactly(getReference("metadata.dat"), getReference("download.dat"));
+    assertThat(listResult.getPageToken()).isNull();
+  }
+
   @NonNull
   private StorageReference getReference(String filename) {
     return storageClient.getReference(randomPrefix + "/" + filename);

@@ -97,7 +97,7 @@
         android:layout_height="wrap_content"
         android:text="UnicodeMetadata"
         android:id="@+id/unicodeMetadata"
-        android:layout_below="@+id/smallTextUpload"
+        android:layout_below="@+id/deleteBlob"
         android:layout_centerHorizontal="true" />
 
     <Button
@@ -234,7 +234,7 @@
         android:layout_height="wrap_content"
         android:text="Multi\nBucket"
         android:id="@+id/multiBucket"
-        android:layout_below="@+id/download12kb"
+        android:layout_below="@+id/adaptiveChunking"
         android:layout_alignParentLeft="true" />
 
     <Button
@@ -257,6 +257,34 @@
 
     <!-- Ninth Row -->
 
+    <Button
+        android:textSize="7sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="List Single Page"
+        android:id="@+id/listSinglePage"
+        android:layout_below="@+id/multiBucket"
+        android:layout_alignParentLeft="true" />
+
+    <Button
+        android:textSize="7sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="List Multiple Pages"
+        android:id="@+id/listMultplePages"
+        android:layout_below="@+id/clearMetadata"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:textSize="7sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="List All"
+        android:id="@+id/listAll"
+        android:layout_below="@+id/uploadWithSpace"
+        android:layout_alignParentRight="true" />
+
+    <!-- Tenth Row -->
 
     <EditText
         android:layout_width="fill_parent"
@@ -264,7 +292,7 @@
         android:inputType="textMultiLine"
         android:ems="10"
         android:id="@+id/editText"
-        android:layout_below="@+id/download12kb"
+        android:layout_below="@+id/listMultplePages"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"/>
 
