@@ -19,6 +19,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.android.gms.tasks.Tasks
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,8 +32,11 @@ class CallTests {
         lateinit var app: FirebaseApp
 
         @BeforeClass @JvmStatic fun setup() {
-            FirebaseApp.initializeApp(InstrumentationRegistry.getContext())
-            app = FirebaseApp.getInstance()
+            app = FirebaseApp.initializeApp(InstrumentationRegistry.getContext())!!
+        }
+
+        @AfterClass @JvmStatic fun cleanup() {
+            app.delete()
         }
     }
 
@@ -52,7 +56,7 @@ class CallTests {
         val result = function(input)
         val actual = Tasks.await(result).getData()
 
-        assertThat(actual is Map<*, *>).isTrue()
+        assertThat(actual).isInstanceOf(Map::class.java)
         @Suppress("UNCHECKED_CAST")
         val map = actual as Map<String, *>
         assertThat(map["message"]).isEqualTo("stub response")
