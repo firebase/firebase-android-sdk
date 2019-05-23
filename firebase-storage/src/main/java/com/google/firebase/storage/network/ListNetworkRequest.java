@@ -61,8 +61,12 @@ public class ListNetworkRequest extends NetworkRequest {
       keys.add("prefix");
       values.add(prefix + "/");
     }
+
+    // Firebase Storage uses file system semantics and treats slashes as separators. GCS's List API
+    // does not prescribe a separator, and hence we need to provide a slash as the delimiter.
     keys.add("delimiter");
     values.add("/");
+
     keys.add("maxResults");
     values.add(Integer.toString(maxPageSize));
 

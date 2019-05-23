@@ -131,7 +131,24 @@ public class IntegrationTest {
   }
 
   @Test
-  public void listFiles() throws ExecutionException, InterruptedException {
+  public void pagedListFiles() throws ExecutionException, InterruptedException {
+    Task<ListResult> listTask = storageClient.getReference(randomPrefix).list(1);
+    ListResult listResult = Tasks.await(listTask);
+
+    assertThat(listResult.getPrefixes()).isEmpty();
+    assertThat(listResult.getItems()).containsExactly(getReference("download.dat"));
+    assertThat(listResult.getPageToken()).isNotEmpty();
+
+    listTask = storageClient.getReference(randomPrefix).list(1, listResult.getPageToken());
+    listResult = Tasks.await(listTask);
+
+    assertThat(listResult.getPrefixes()).isEmpty();
+    assertThat(listResult.getItems()).containsExactly(getReference("metadata.dat"));
+    assertThat(listResult.getPageToken()).isNull();
+  }
+
+  @Test
+  public void listAllFiles() throws ExecutionException, InterruptedException {
     Task<ListResult> listTask = storageClient.getReference(randomPrefix).listAll();
     ListResult listResult = Tasks.await(listTask);
 

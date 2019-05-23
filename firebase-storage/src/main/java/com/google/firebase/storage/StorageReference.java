@@ -639,8 +639,9 @@ public class StorageReference implements Comparable<StorageReference> {
   public Task<ListResult> listAll() {
     TaskCompletionSource<ListResult> pendingResult = new TaskCompletionSource<>();
 
-    List<StorageReference> prefixes = new ArrayList<>();
-    List<StorageReference> items = new ArrayList<>();
+    List<ListResult> results = new ArrayList<>();
+    int[] prefixesCount = new int[] {0};
+    int[] itemsCount = new int[] {0};
 
     Executor executor = StorageTaskScheduler.getInstance().getCommandPoolExecutor();
     Task<ListResult> list = list(ListTask.DEFAULT_PAGE_SIZE);
@@ -650,14 +651,23 @@ public class StorageReference implements Comparable<StorageReference> {
           @Override
           public Task<Void> then(@NonNull Task<ListResult> currentPage) {
             ListResult result = currentPage.getResult();
-            prefixes.addAll(result.getPrefixes());
-            items.addAll(result.getItems());
+            prefixesCount[0] += result.getPrefixes().size();
+            itemsCount[0] += result.getItems().size();
+            results.add(result);
 
             if (result.getPageToken() != null) {
               Task<ListResult> nextPage = list(ListTask.DEFAULT_PAGE_SIZE, result.getPageToken());
               nextPage.continueWithTask(executor, this);
             } else {
-              pendingResult.setResult(new ListResult(prefixes, items, null));
+              List<StorageReference> prefixes = new ArrayList<>(prefixesCount[0]);
+              List<StorageReference> items = new ArrayList<>(itemsCount[0]);
+              for (ListResult previousResult : results) {
+                // These operations are O(n) since we provided an initial capacity at construction
+                // time.
+                prefixes.addAll(previousResult.getPrefixes());
+                items.addAll(previousResult.getItems());
+              }
+              pendingResult.setResult(new ListResult(prefixes, items, /* pageToken= */ null));
             }
 
             return Tasks.forResult(null);

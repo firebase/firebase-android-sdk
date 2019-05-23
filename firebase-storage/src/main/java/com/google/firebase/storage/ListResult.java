@@ -15,7 +15,6 @@
 package com.google.firebase.storage;
 
 import android.support.annotation.Nullable;
-import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.annotations.PublicApi;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,9 +22,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** A single paged result of a {@link StorageReference#list} call. */
+/** Contains the prefixes and items returned by a {@link StorageReference#list} call. */
 @PublicApi
-public class ListResult {
+public final class ListResult {
   private static final String ITEMS_KEY = "items";
   private static final String NAME_KEY = "name";
   private static final String PAGE_TOKEN_KEY = "nextPageToken";
@@ -40,6 +39,34 @@ public class ListResult {
     this.prefixes = prefixes;
     this.items = items;
     this.pageToken = pageToken;
+  }
+
+  static ListResult fromJSON(FirebaseStorage storage, JSONObject resultBody) throws JSONException {
+    List<StorageReference> prefixes = new ArrayList<>();
+    List<StorageReference> items = new ArrayList<>();
+
+    if (resultBody.has(PREFIXES_KEY)) {
+      JSONArray prefixEntries = resultBody.getJSONArray(PREFIXES_KEY);
+      for (int i = 0; i < prefixEntries.length(); ++i) {
+        String pathWithoutTrailingSlash = prefixEntries.getString(i);
+        if (pathWithoutTrailingSlash.endsWith("/")) {
+          pathWithoutTrailingSlash =
+              pathWithoutTrailingSlash.substring(0, pathWithoutTrailingSlash.length() - 1);
+        }
+        prefixes.add(storage.getReference(pathWithoutTrailingSlash));
+      }
+    }
+
+    if (resultBody.has(ITEMS_KEY)) {
+      JSONArray itemEntries = resultBody.getJSONArray(ITEMS_KEY);
+      for (int i = 0; i < itemEntries.length(); ++i) {
+        JSONObject metadata = itemEntries.getJSONObject(i);
+        items.add(storage.getReference(metadata.getString(NAME_KEY)));
+      }
+    }
+
+    String pageToken = resultBody.optString(PAGE_TOKEN_KEY, /* defaultValue= */ null);
+    return new ListResult(prefixes, items, pageToken);
   }
 
   /**
@@ -72,47 +99,5 @@ public class ListResult {
   @Nullable
   public String getPageToken() {
     return pageToken;
-  }
-
-  static class Builder {
-    private final JSONObject resultBody;
-    private final StorageReference storageRef;
-    private final FirebaseStorage firebaseStorage;
-
-    public Builder(JSONObject resultBody, StorageReference storageRef) {
-      Preconditions.checkNotNull(resultBody);
-
-      this.resultBody = resultBody;
-      this.storageRef = storageRef;
-      this.firebaseStorage = storageRef.getStorage();
-    }
-
-    ListResult build() throws JSONException {
-      List<StorageReference> prefixes = new ArrayList<>();
-      List<StorageReference> items = new ArrayList<>();
-
-      if (resultBody.has(PREFIXES_KEY)) {
-        JSONArray prefixEntries = resultBody.getJSONArray(PREFIXES_KEY);
-        for (int i = 0; i < prefixEntries.length(); ++i) {
-          String pathWithoutTrailingSlash = prefixEntries.getString(i);
-          if (pathWithoutTrailingSlash.endsWith("/")) {
-            pathWithoutTrailingSlash =
-                pathWithoutTrailingSlash.substring(0, pathWithoutTrailingSlash.length() - 1);
-          }
-          prefixes.add(firebaseStorage.getReference(pathWithoutTrailingSlash));
-        }
-      }
-
-      if (resultBody.has(ITEMS_KEY)) {
-        JSONArray itemEntries = resultBody.getJSONArray(ITEMS_KEY);
-        for (int i = 0; i < itemEntries.length(); ++i) {
-          JSONObject metadata = itemEntries.getJSONObject(i);
-          items.add(firebaseStorage.getReference(metadata.getString(NAME_KEY)));
-        }
-      }
-
-      String pageToken = resultBody.optString(PAGE_TOKEN_KEY, /* defaultValue= */ null);
-      return new ListResult(prefixes, items, pageToken);
-    }
   }
 }

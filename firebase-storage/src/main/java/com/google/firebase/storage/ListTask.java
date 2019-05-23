@@ -69,7 +69,7 @@ class ListTask implements Runnable {
 
     if (request.isResultSuccess()) {
       try {
-        listResult = new ListResult.Builder(request.getResultBody(), storageRef).build();
+        listResult = ListResult.fromJSON(storageRef.getStorage(), request.getResultBody());
       } catch (final JSONException e) {
         Log.e(TAG, "Unable to parse response body. " + request.getRawResult(), e);
 

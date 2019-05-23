@@ -63,14 +63,12 @@ public class ListTest {
       reference.list(-1);
       fail();
     } catch (IllegalArgumentException e) {
-
     }
 
     try {
       reference.list(1001);
       fail();
     } catch (IllegalArgumentException e) {
-
     }
 
     try {
