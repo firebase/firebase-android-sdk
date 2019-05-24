@@ -14,6 +14,7 @@
 
 package com.google.firebase.storage;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.google.firebase.annotations.PublicApi;
 import java.util.ArrayList;
@@ -74,6 +75,7 @@ public final class ListResult {
    *
    * @return A list of prefixes (folders).
    */
+  @NonNull
   @PublicApi
   public List<StorageReference> getPrefixes() {
     return prefixes;
@@ -84,6 +86,7 @@ public final class ListResult {
    *
    * @return A list of items (files).
    */
+  @NonNull
   @PublicApi
   public List<StorageReference> getItems() {
     return items;
@@ -95,8 +98,8 @@ public final class ListResult {
    *
    * @return A page token if more results are avaible.
    */
-  @PublicApi
   @Nullable
+  @PublicApi
   public String getPageToken() {
     return pageToken;
   }
