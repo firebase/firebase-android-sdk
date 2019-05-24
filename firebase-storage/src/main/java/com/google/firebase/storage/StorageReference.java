@@ -580,7 +580,7 @@ public class StorageReference implements Comparable<StorageReference> {
    * List up to `maxResults` items (files) and prefixes (folders) under this StorageReference.
    *
    * <p>"/" is treated as a path delimiter. Firebase Storage does not support invalid object paths
-   * that end with "/" or contain two consecutive "//". All invalid objects in GCS will be filtered.
+   * that end with "/" or contain two consecutive "/"s. All invalid objects in GCS will be filtered.
    *
    * @param maxResults The maximum number of results to return in a single page. Must be greater
    *     than 0 and at most 1000.
