@@ -25,13 +25,13 @@ import java.util.List;
 
 /** A network request that lists folder contents within gcs. */
 public class ListNetworkRequest extends NetworkRequest {
-  private final int maxPageSize;
+  @Nullable private final Integer maxPageSize;
   @Nullable private final String nextPageToken;
 
   public ListNetworkRequest(
       @NonNull Uri gsUri,
       @NonNull FirebaseApp app,
-      int maxPageSize,
+      @Nullable Integer maxPageSize,
       @Nullable String nextPageToken) {
     super(gsUri, app);
     this.maxPageSize = maxPageSize;
@@ -67,8 +67,13 @@ public class ListNetworkRequest extends NetworkRequest {
     keys.add("delimiter");
     values.add("/");
 
-    keys.add("maxResults");
-    values.add(Integer.toString(maxPageSize));
+    // We don't set the `maxPageSize` for listAll() as this allows Firebase Storage to return
+    // fewer items per page. This removes the need to backfill results if Firebase Storage filters
+    // objects that are considered invalid (such as items with two consecutive slashes).
+    if (maxPageSize != null) {
+      keys.add("maxResults");
+      values.add(Integer.toString(maxPageSize));
+    }
 
     if (!TextUtils.isEmpty(nextPageToken)) {
       keys.add("pageToken");

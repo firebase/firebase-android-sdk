@@ -576,6 +576,8 @@ public class StorageReference implements Comparable<StorageReference> {
     return pendingResult.getTask();
   }
 
+  // region List
+
   /**
    * List up to `maxResults` items (files) and prefixes (folders) under this StorageReference.
    *
@@ -591,11 +593,8 @@ public class StorageReference implements Comparable<StorageReference> {
   @PublicApi
   public Task<ListResult> list(int maxResults) {
     Preconditions.checkArgument(maxResults > 0, "maxResults must be greater than zero");
-    Preconditions.checkArgument(maxResults <= 1000, "maxResults must be less than 1000");
-    TaskCompletionSource<ListResult> pendingResult = new TaskCompletionSource<>();
-    StorageTaskScheduler.getInstance()
-        .scheduleCommand(new ListTask(this, maxResults, /* pageToken= */ null, pendingResult));
-    return pendingResult.getTask();
+    Preconditions.checkArgument(maxResults <= 1000, "maxResults must be at most 1000");
+    return listHelper(maxResults, /* pageToken */ null);
   }
 
   /**
@@ -615,13 +614,10 @@ public class StorageReference implements Comparable<StorageReference> {
   @PublicApi
   public Task<ListResult> list(int maxResults, @NonNull String pageToken) {
     Preconditions.checkArgument(maxResults > 0, "maxResults must be greater than zero");
-    Preconditions.checkArgument(maxResults <= 1000, "maxResults must be less than 1000");
+    Preconditions.checkArgument(maxResults <= 1000, "maxResults must be at most 1000");
     Preconditions.checkArgument(
         pageToken != null, "pageToken must be non-null to resume a previous list() operation");
-    TaskCompletionSource<ListResult> pendingResult = new TaskCompletionSource<>();
-    StorageTaskScheduler.getInstance()
-        .scheduleCommand(new ListTask(this, maxResults, pageToken, pendingResult));
-    return pendingResult.getTask();
+    return listHelper(maxResults, pageToken);
   }
 
   /**
@@ -644,7 +640,7 @@ public class StorageReference implements Comparable<StorageReference> {
     int[] itemsCount = new int[] {0};
 
     Executor executor = StorageTaskScheduler.getInstance().getCommandPoolExecutor();
-    Task<ListResult> list = list(ListTask.DEFAULT_PAGE_SIZE);
+    Task<ListResult> list = listHelper(/* maxResults= */ null, /* pageToken= */ null);
 
     Continuation<ListResult, Task<Void>> continuation =
         new Continuation<ListResult, Task<Void>>() {
@@ -656,7 +652,7 @@ public class StorageReference implements Comparable<StorageReference> {
             results.add(result);
 
             if (result.getPageToken() != null) {
-              Task<ListResult> nextPage = list(ListTask.DEFAULT_PAGE_SIZE, result.getPageToken());
+              Task<ListResult> nextPage = listHelper(/* maxResults= */ null, result.getPageToken());
               nextPage.continueWithTask(executor, this);
             } else {
               List<StorageReference> prefixes = new ArrayList<>(prefixesCount[0]);
@@ -676,6 +672,13 @@ public class StorageReference implements Comparable<StorageReference> {
 
     list.continueWithTask(executor, continuation);
 
+    return pendingResult.getTask();
+  }
+
+  private Task<ListResult> listHelper(@Nullable Integer maxResults, @Nullable String pageToken) {
+    TaskCompletionSource<ListResult> pendingResult = new TaskCompletionSource<>();
+    StorageTaskScheduler.getInstance()
+        .scheduleCommand(new ListTask(this, maxResults, pageToken, pendingResult));
     return pendingResult.getTask();
   }
 

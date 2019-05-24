@@ -26,21 +26,19 @@ import org.json.JSONException;
 
 /** A Task that lists the entries under a {@link StorageReference} */
 class ListTask implements Runnable {
-  static final int DEFAULT_PAGE_SIZE = 1000;
-
   private static final String TAG = "ListTask";
 
-  private StorageReference storageRef;
-  private TaskCompletionSource<ListResult> pendingResult;
+  private final StorageReference storageRef;
+  private final TaskCompletionSource<ListResult> pendingResult;
+  private final ExponentialBackoffSender sender;
+  @Nullable private final String pageToken;
+  @Nullable private Integer maxResults;
   private ListResult listResult;
-  private ExponentialBackoffSender sender;
-  @Nullable String pageToken;
-  private int maxResults;
 
   ListTask(
       @NonNull StorageReference storageRef,
-      int maxResults,
-      @Nullable String pakeToken,
+      @Nullable Integer maxResults,
+      @Nullable String pageToken,
       @NonNull TaskCompletionSource<ListResult> pendingResult) {
     Preconditions.checkNotNull(storageRef);
     Preconditions.checkNotNull(storageRef);
@@ -48,7 +46,7 @@ class ListTask implements Runnable {
 
     this.storageRef = storageRef;
     this.maxResults = maxResults;
-    this.pageToken = pakeToken;
+    this.pageToken = pageToken;
     this.pendingResult = pendingResult;
 
     FirebaseStorage storage = this.storageRef.getStorage();
