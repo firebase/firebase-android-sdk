@@ -200,7 +200,9 @@ public class DocumentSnapshot {
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
     Map<String, Object> data = getData(serverTimestampBehavior);
-    return data == null ? null : CustomClassMapper.convertToCustomClass(data, valueType);
+    return data == null
+        ? null
+        : CustomClassMapper.convertToCustomClass(data, valueType, getReference());
   }
 
   /**
@@ -353,7 +355,9 @@ public class DocumentSnapshot {
       @NonNull Class<T> valueType,
       @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     Object data = get(fieldPath, serverTimestampBehavior);
-    return data == null ? null : CustomClassMapper.convertToCustomClass(data, valueType);
+    return data == null
+        ? null
+        : CustomClassMapper.convertToCustomClass(data, valueType, getReference());
   }
 
   /**
