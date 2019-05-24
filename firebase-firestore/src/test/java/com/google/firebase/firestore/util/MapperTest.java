@@ -173,6 +173,13 @@ public class MapperTest {
     }
   }
 
+  @ThrowOnExtraProperties
+  private static class GetterBeanNoField {
+    public String getValue() {
+      return "getter:value";
+    }
+  }
+
   private static class GetterPublicFieldBean {
     public String value;
 
@@ -1499,6 +1506,21 @@ public class MapperTest {
   }
 
   @Test
+  public void serializeGetterBeanWithNoBackingField() {
+    GetterBeanNoField bean = new GetterBeanNoField();
+    assertJson("{'value': 'getter:value'}", serialize(bean));
+  }
+
+  @Test
+  public void deserializeGetterBeanWithNoBackingFieldThrows() {
+    assertExceptionContains(
+        "No setter/field",
+        () -> {
+          deserialize("{'value': 'foo'}", GetterBeanNoField.class);
+        });
+  }
+
+  @Test
   public void getterOverridesPublicField() {
     GetterPublicFieldBean bean = new GetterPublicFieldBean();
     bean.value = "foo";
@@ -2247,4 +2269,122 @@ public class MapperTest {
           e.getMessage());
     }
   }
+
+  // Bean definitions with @DocumentId applied to wrong type.
+  private static class FieldWithDocumentIdOnWrongTypeBean {
+    @DocumentId public Integer intField;
+  }
+
+  private static class SetterWithDocumentIdOnWrongTypeBean {
+    private int intField = 100;
+
+    @DocumentId
+    public void setIntField(int value) {
+      intField = value;
+    }
+  }
+
+  private static class GetterWithDocumentIdOnWrongTypeBean {
+    private int intField = 100;
+
+    @DocumentId
+    public int getIntField() {
+      return intField;
+    }
+  }
+
+  private static class PropertyWithDocumentIdOnWrongTypeBean {
+    @PropertyName("intField")
+    @DocumentId
+    public int intField = 100;
+  }
+
+  @Test
+  public void documentIdAnnotateWrongTypeThrows() {
+    assertExceptionContains(
+        "instead of String or DocumentReference",
+        () -> serialize(new FieldWithDocumentIdOnWrongTypeBean()));
+    assertExceptionContains(
+        "instead of String or DocumentReference",
+        () -> deserialize("{'intField': 1}", FieldWithDocumentIdOnWrongTypeBean.class));
+
+    assertExceptionContains(
+        "instead of String or DocumentReference",
+        () -> serialize(new SetterWithDocumentIdOnWrongTypeBean()));
+    assertExceptionContains(
+        "instead of String or DocumentReference",
+        () -> deserialize("{'intField': 1}", SetterWithDocumentIdOnWrongTypeBean.class));
+
+    assertExceptionContains(
+        "instead of String or DocumentReference",
+        () -> serialize(new GetterWithDocumentIdOnWrongTypeBean()));
+    assertExceptionContains(
+        "instead of String or DocumentReference",
+        () -> deserialize("{'intField': 1}", GetterWithDocumentIdOnWrongTypeBean.class));
+
+    assertExceptionContains(
+        "instead of String or DocumentReference",
+        () -> serialize(new PropertyWithDocumentIdOnWrongTypeBean()));
+    assertExceptionContains(
+        "instead of String or DocumentReference",
+        () -> deserialize("{'intField': 1}", PropertyWithDocumentIdOnWrongTypeBean.class));
+  }
+
+  private static class GetterWithoutBackingFieldOnDocumentIdBean {
+    @DocumentId
+    public String getDocId() {
+      return "doc-id";
+    }
+  }
+
+  @Test
+  public void documentIdAnnotateReadOnlyThrows() {
+    // Serialization.
+    GetterWithoutBackingFieldOnDocumentIdBean bean =
+        new GetterWithoutBackingFieldOnDocumentIdBean();
+    assertExceptionContains("provides no way to write", () -> serialize(bean));
+
+    // Deserialization.
+    assertExceptionContains(
+        "provides no way to write",
+        () -> deserialize("{'docId': 'id'}", GetterWithoutBackingFieldOnDocumentIdBean.class));
+  }
+
+  private static class DocumentIdOnStringField {
+    @DocumentId public String docId = "doc-id";
+  }
+
+  private static class DocumentIdOnDocRefGetter {
+    private DocumentReference docRef;
+
+    @DocumentId
+    public DocumentReference getDocRef() {
+      return docRef;
+    }
+
+    public void setDocRef(DocumentReference ref) {
+      docRef = ref;
+    }
+  }
+
+  private static class DocumentIdOnInheritedDocRefSetter {}
+
+  private static class DocumentIdOnNestObjects {}
+
+  @Test
+  public void documentIdsDeserialize() {}
+
+  @Test
+  public void documentIdsAreIgnoredWhenSerializing() {}
+
+  private static class DocumentIdOnStringFieldWithConflict {}
+
+  private static class DocumentIdOnDocRefGetterWithConflict {}
+
+  private static class DocumentIdOnNestObjectStringProperyWithConflict {}
+
+  private static class DocumentIdOnInheritedDocRefSetterWithConflict {}
+
+  @Test
+  public void documentIdsDeserializeConflictThrows() {}
 }
