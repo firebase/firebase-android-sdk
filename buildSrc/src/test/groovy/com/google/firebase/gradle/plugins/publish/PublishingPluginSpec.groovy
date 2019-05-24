@@ -44,6 +44,7 @@ class PublishingPluginSpec extends Specification {
 	    }
         dependencies {
             <%dependencies.each { println "implementation project(':$it.name')" } %>
+            <%externalDependencies.each { println "implementation '$it'" } %>
         }
         '''
         String name
@@ -51,6 +52,7 @@ class PublishingPluginSpec extends Specification {
         String version = 'undefined'
         String latestReleasedVersion = ''
         Set<Project> projectDependencies = []
+        Set<String> externalDependencies = []
         Project releaseWith = null
         String customizePom = null
 
@@ -60,6 +62,7 @@ class PublishingPluginSpec extends Specification {
                     group: group,
                     version: version,
                     dependencies: projectDependencies,
+                    externalDependencies: externalDependencies,
                     releaseWith: releaseWith,
                     latestReleasedVersion: latestReleasedVersion,
                     customizePom: customizePom,
@@ -251,6 +254,42 @@ licenses {
         dependency.groupId == project1.group
         dependency.artifactId == project1.name
         dependency.version == project1.version
+    }
+
+    def "Publish project should correctly set dependency types"() {
+        Project project1 = new Project(name: 'childProject1', version: '1.0', latestReleasedVersion: '0.8')
+        Project project2 = new Project(
+                name: 'childProject2',
+                version: '0.9',
+                projectDependencies: [project1],
+                externalDependencies: [
+                        'com.google.dagger:dagger:2.22',
+                        'com.google.dagger:dagger-android-support:2.22',
+                        'com.android.support:multidex:1.0.3'
+                ])
+
+        when: "publishFirebase invoked"
+        subprojectsDefined(project1, project2)
+        def result = publish(Mode.RELEASE, project2)
+        then: 'poms exist'
+        def pom1 = project1.getPublishedPom("$testProjectDir.root/build/m2repository")
+        def pom2 = project2.getPublishedPom("$testProjectDir.root/build/m2repository")
+        assert !pom1.isPresent()
+        assert pom2.isPresent()
+
+        and: 'versions and dependency types are valid'
+
+        def xml2 = new XmlSlurper().parseText(pom2.get().text)
+        xml2.version == project2.version
+        def dependencies = xml2.dependencies.dependency.collect {
+            "${it.groupId.text()}:${it.artifactId.text()}:${it.version.text()}:${it.type.text()}:${it.scope.text()}"
+        } as Set<String>
+        dependencies == [
+                "$project1.group:$project1.name:$project1.latestReleasedVersion:aar:compile",
+                'com.google.dagger:dagger:2.22:jar:compile',
+                'com.google.dagger:dagger-android-support:2.22:aar:compile'
+        ] as Set<String>
+
     }
 
     private BuildResult build(String... args) {
