@@ -76,7 +76,7 @@ class Publisher {
             if (it.groupId.text() in ['com.android.support', 'androidx'] && it.artifactId.text() == 'multidex') {
                 it.parent().remove(it)
             }
-            it.appendNode('type', [:], deps["${it.groupId.text()}:${it.artifactId.text()}:${it.version.text()}"])
+            it.appendNode('type', [:], deps["${it.groupId.text()}:${it.artifactId.text()}:${it.version.text()}"] ?: 'aar')
 
             // change scope to compile to preserve existing behavior
             it.scope.replaceNode {
@@ -103,10 +103,6 @@ class Publisher {
     }
 
     private static String getType(Configuration config, Dependency d) {
-        if (d instanceof ProjectDependency) {
-            // we currently only support aar libraries to be produced in this repository
-            return 'aar'
-        }
         String path = config.find {
             it.absolutePath.matches(".*\\Q$d.group/$d.name/$d.version/\\E[a-zA-Z0-9]+/\\Q$d.name-$d.version.\\E[aj]ar")
         }?.absolutePath

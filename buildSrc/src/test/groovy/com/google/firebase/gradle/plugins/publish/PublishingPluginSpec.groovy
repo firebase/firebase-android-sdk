@@ -44,7 +44,7 @@ class PublishingPluginSpec extends Specification {
 	    }
         dependencies {
             <%dependencies.each { println "implementation project(':$it.name')" } %>
-            <%customDependencies.each { println "implementation '$it'" } %>
+            <%externalDependencies.each { println "implementation '$it'" } %>
         }
         '''
         String name
@@ -52,7 +52,7 @@ class PublishingPluginSpec extends Specification {
         String version = 'undefined'
         String latestReleasedVersion = ''
         Set<Project> projectDependencies = []
-        Set<String> customDependencies = []
+        Set<String> externalDependencies = []
         Project releaseWith = null
         String customizePom = null
 
@@ -62,7 +62,7 @@ class PublishingPluginSpec extends Specification {
                     group: group,
                     version: version,
                     dependencies: projectDependencies,
-                    customDependencies: customDependencies,
+                    externalDependencies: externalDependencies,
                     releaseWith: releaseWith,
                     latestReleasedVersion: latestReleasedVersion,
                     customizePom: customizePom,
@@ -262,7 +262,7 @@ licenses {
                 name: 'childProject2',
                 version: '0.9',
                 projectDependencies: [project1],
-                customDependencies: [
+                externalDependencies: [
                         'com.google.dagger:dagger:2.22',
                         'com.google.dagger:dagger-android-support:2.22',
                         'com.android.support:multidex:1.0.3'
