@@ -260,7 +260,8 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
     Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context);
     ConnectivityMonitor connectivityMonitor = new AndroidConnectivityMonitor(context);
-    remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue, connectivityMonitor);
+    remoteStore =
+        new RemoteStore(this, context, localStore, datastore, asyncQueue, connectivityMonitor);
 
     syncEngine = new SyncEngine(localStore, remoteStore, user);
     eventManager = new EventManager(syncEngine);

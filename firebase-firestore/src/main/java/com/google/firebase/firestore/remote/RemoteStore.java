@@ -16,8 +16,12 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.content.Context;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.security.ProviderInstaller;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Transaction;
@@ -45,6 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * RemoteStore handles all interaction with the backend through a simple, clean interface. This
@@ -125,6 +130,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final OnlineStateTracker onlineStateTracker;
 
   private boolean networkEnabled = false;
+  private final CountDownLatch sslBarrier = new CountDownLatch(1);
   private final WatchStream watchStream;
   private final WriteStream writeStream;
   @Nullable private WatchChangeAggregator watchChangeAggregator;
@@ -147,6 +153,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   public RemoteStore(
       RemoteStoreCallback remoteStoreCallback,
+      Context context,
       LocalStore localStore,
       Datastore datastore,
       AsyncQueue workerQueue,
@@ -161,6 +168,23 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     onlineStateTracker =
         new OnlineStateTracker(workerQueue, remoteStoreCallback::handleOnlineStateChange);
+
+    new Thread() {
+      public void run() {
+        try {
+          ProviderInstaller.installIfNeeded(context);
+        } catch (GooglePlayServicesNotAvailableException /* Thrown by ProviderInstaller */
+            | GooglePlayServicesRepairableException /* Thrown by ProviderInstaller */
+            | IllegalStateException /* Thrown by Robolectric */ e) {
+          // Proceed with client initialization, even though we may be using outdated SSL ciphers.
+          // GRPC-Java recommends obtaining updated ciphers from GMSCore, but we allow the device
+          // to fall back to other SSL ciphers if GMSCore is not available.
+          Logger.warn(LOG_TAG, "Failed to update ssl context");
+        } finally {
+          sslBarrier.countDown();
+        }
+      }
+    }.start();
 
     // Create new streams (but note they're not started yet).
     watchStream =
@@ -406,8 +430,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         shouldStartWatchStream(),
         "startWatchStream() called when shouldStartWatchStream() is false.");
     watchChangeAggregator = new WatchChangeAggregator(this);
-    watchStream.start();
 
+    initializeSslIfNeeded();
+    watchStream.start();
     onlineStateTracker.handleWatchStreamStart();
   }
 
@@ -613,7 +638,24 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     hardAssert(
         shouldStartWriteStream(),
         "startWriteStream() called when shouldStartWriteStream() is false.");
+
+    initializeSslIfNeeded();
     writeStream.start();
+  }
+
+  /** Waits for the SSL Provider to be installed. Logs a warning on failure. */
+  private void initializeSslIfNeeded() {
+    try {
+      sslBarrier.await();
+    } catch (InterruptedException e) {
+      // On API Level 21+, an SSL connection can be established even if the installation of
+      // SecurityProvider failed.
+      Logger.warn(
+          LOG_TAG,
+          "Interrupted while waiting for the SSL Provider. Firestore may not be able to connect "
+              + "to the backend: %s",
+          e);
+    }
   }
 
   /**

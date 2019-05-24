@@ -271,7 +271,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     ConnectivityMonitor connectivityMonitor =
         new AndroidConnectivityMonitor(RuntimeEnvironment.application);
-    remoteStore = new RemoteStore(this, localStore, datastore, queue, connectivityMonitor);
+    remoteStore =
+        new RemoteStore(
+            this,
+            RuntimeEnvironment.systemContext,
+            localStore,
+            datastore,
+            queue,
+            connectivityMonitor);
     syncEngine = new SyncEngine(localStore, remoteStore, currentUser);
     eventManager = new EventManager(syncEngine);
     localStore.start();

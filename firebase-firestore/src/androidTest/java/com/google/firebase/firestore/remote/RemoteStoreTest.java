@@ -70,7 +70,13 @@ public class RemoteStoreTest {
     persistence.start();
     LocalStore localStore = new LocalStore(persistence, User.UNAUTHENTICATED);
     RemoteStore remoteStore =
-        new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
+        new RemoteStore(
+            callback,
+            InstrumentationRegistry.getContext(),
+            localStore,
+            datastore,
+            testQueue,
+            connectivityMonitor);
 
     waitFor(testQueue.enqueue(() -> remoteStore.forceEnableNetwork()));
     drain(testQueue);

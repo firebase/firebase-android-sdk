@@ -1,4 +1,8 @@
 # Unreleased
+- [changed] SSL initialization now happens on a separate thread, which should
+  improve query performance during client startup.
+
+# Unreleased (19.0.1)
 - [fixed] Fixed an issue that prevented schema migrations for clients with
   large offline datasets (#370).
 
