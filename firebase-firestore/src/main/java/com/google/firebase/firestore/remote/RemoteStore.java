@@ -648,12 +648,12 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     try {
       sslBarrier.await();
     } catch (InterruptedException e) {
-      // On API Level 21+, an SSL connection can be established even if the installation of
+      // On API Level 21+, an SSL connection can be established even if the installation of the
       // SecurityProvider failed.
       Logger.warn(
           LOG_TAG,
-          "Interrupted while waiting for the SSL Provider. Firestore may not be able to connect "
-              + "to the backend: %s",
+          "Interrupted while waiting for the SSL Provider. Firestore may not be able to"
+              + " establish a connection to the backend: %s",
           e);
     }
   }
