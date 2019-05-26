@@ -91,9 +91,12 @@ public class CustomClassMapper {
    *
    * @param object The representation of the JSON data
    * @param clazz The class of the object to convert to
+   * @param docRef The value to set to {@link DocumentId} annotated fields in the custom class.
    * @return The POJO object.
    */
-  public static <T> T convertToCustomClass(Object object, Class<T> clazz) {
+  public static <T> T convertToCustomClass(
+      Object object, Class<T> clazz, DocumentReference docRef) {
+    // TODO(wuandy): Use DeserializeContext to encapsulate ErrorPath and docRef.
     return deserializeToClass(object, clazz, ErrorPath.EMPTY);
   }
 
@@ -754,6 +757,7 @@ public class CustomClassMapper {
     }
 
     Map<String, Object> serialize(T object, ErrorPath path) {
+      // TODO(wuandy): Add logic to skip @DocumentId annotated fields in serialization.
       if (!clazz.isAssignableFrom(object.getClass())) {
         throw new IllegalArgumentException(
             "Can't serialize object of class "
