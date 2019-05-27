@@ -76,7 +76,7 @@ dependencies {
     implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
     implementation "com.google.android.gms:play-services-base:$playServicesVersion"
     implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
-    implementation('com.google.firebase:firebase-auth-interop:16.0.1') {
+    implementation('com.google.firebase:firebase-auth-interop:17.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
