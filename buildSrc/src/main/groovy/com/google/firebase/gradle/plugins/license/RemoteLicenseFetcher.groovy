@@ -72,6 +72,20 @@ interface RemoteLicenseFetcher extends Serializable {
     }
   }
 
+  static final class YetAnotherApache2LicenseFetcher implements RemoteLicenseFetcher {
+    private URI APACHE_2_LICENSE_URI = URI.create("http://www.apache.org/licenses/LICENSE-2.0")
+
+    @Override
+    URI getServiceUri() {
+      APACHE_2_LICENSE_URI
+    }
+
+    @Override
+    String get() {
+      APACHE_2_LICENSE_URI.toURL().getText()
+    }
+  }
+
   static final class BSDLicenseFetcher implements RemoteLicenseFetcher {
     private URI BSD_LICENSE_URI = URI.create("http://www.opensource.org/licenses/bsd-license.php")
 
