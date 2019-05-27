@@ -661,18 +661,10 @@ public class CustomClassMapper {
                     + method.getName());
           }
 
-          // OK to add since existingPropertyName == propertyName.
-          properties.put(propertyName.toLowerCase(Locale.US), propertyName);
-
-          // Handle `setter` update.
           Method existingSetter = setters.get(propertyName);
-          if (existingSetter == null) {
-            method.setAccessible(true);
-            setters.put(propertyName, method);
-            applySetterAnnotations(method);
-          } else if (!isSetterOverride(method, existingSetter)) {
-            // We require that setters with conflicting property names are
-            // overrides from a base class
+
+          // Raise exception if a conflict between setters is found.
+          if (existingSetter != null && !isSetterOverride(method, existingSetter)) {
             if (currentClass == clazz) {
               // TODO: Should we support overloads?
               throw new RuntimeException(
@@ -691,6 +683,13 @@ public class CustomClassMapper {
                       + existingSetter.getDeclaringClass().getName()
                       + ")");
             }
+          }
+
+          // Make it accessible and process annotations if not yet.
+          if (existingSetter == null) {
+            method.setAccessible(true);
+            setters.put(propertyName, method);
+            applySetterAnnotations(method);
           }
         }
 
