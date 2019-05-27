@@ -32,10 +32,11 @@ import java.lang.annotation.Target;
  * <p>A run time exception will be thrown if this annotation is applied to a property that is not
  * writeable (eg, a Java Bean getter without a backing field.).
  *
- * <p>If there are conflicts between this annotation and property name matches, this annotation will
- * take precedence. For example: If a POJO has a field `firstName` annotated by @DocumentId, and
- * there is a property from the document named `firstName` as well, the SDK will set the value to be
- * the document ID.
+ * <p>If there are conflicts between this annotation and property name matches, a runtime exception
+ * will be thrown. For example: If a POJO has a field `firstName` annotated by @DocumentId, and
+ * there is a property from the document named `firstName` as well, an exception will be thrown when
+ * you try to read document into the POJO via {@link DocumentSnapshot#toObject} or {@link
+ * DocumentReference#get}.
  *
  * <p>When writing a POJO to Firestore, the @DocumentId-annotated property will be ignored, to allow
  * writing to any documents that are not the origin of the POJO.
