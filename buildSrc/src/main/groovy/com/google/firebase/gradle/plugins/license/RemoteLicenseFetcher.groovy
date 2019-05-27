@@ -56,22 +56,6 @@ interface RemoteLicenseFetcher extends Serializable {
     }
   }
 
-  static final class BSDLicenseFetcher implements RemoteLicenseFetcher {
-    private URI BSD_LICENSE_URI = URI.create("http://www.opensource.org/licenses/bsd-license.php")
-
-    @Override
-    URI getServiceUri() {
-      BSD_LICENSE_URI
-    }
-
-    @Override
-    String get() {
-      def doc = Jsoup.connect(BSD_LICENSE_URI.toString()).get()
-
-      TEXT_FORMATTER.getPlainText(doc.select('#content-wrapper')[0])
-    }
-  }
-
   static final class AnotherApache2LicenseFetcher implements RemoteLicenseFetcher {
     private URI APACHE_2_LICENSE_URI = URI.create("https://opensource.org/licenses/Apache-2.0")
 
@@ -85,6 +69,22 @@ interface RemoteLicenseFetcher extends Serializable {
       def doc = Jsoup.connect(APACHE_2_LICENSE_URI.toString()).get()
 
       TEXT_FORMATTER.getPlainText(doc.select('#content-wrapper'))
+    }
+  }
+
+  static final class BSDLicenseFetcher implements RemoteLicenseFetcher {
+    private URI BSD_LICENSE_URI = URI.create("http://www.opensource.org/licenses/bsd-license.php")
+
+    @Override
+    URI getServiceUri() {
+      BSD_LICENSE_URI
+    }
+
+    @Override
+    String get() {
+      def doc = Jsoup.connect(BSD_LICENSE_URI.toString()).get()
+
+      TEXT_FORMATTER.getPlainText(doc.select('#content-wrapper')[0])
     }
   }
 
