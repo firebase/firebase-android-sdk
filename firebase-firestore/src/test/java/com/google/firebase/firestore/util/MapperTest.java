@@ -2451,14 +2451,6 @@ public class MapperTest {
         serialize(deserialize("{'nestedDocIdHolder': {}}", DocumentIdOnNestedObjects.class, ref)));
   }
 
-  private static class DocumentIdOnStringFieldWithConflict {}
-
-  private static class DocumentIdOnDocRefGetterWithConflict {}
-
-  private static class DocumentIdOnNestObjectStringProperyWithConflict {}
-
-  private static class DocumentIdOnInheritedDocRefSetterWithConflict {}
-
   @Test
   public void documentIdsDeserializeConflictThrows() {
     DocumentReference ref = TestUtil.documentReference("coll/doc123");
