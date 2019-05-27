@@ -758,6 +758,7 @@ public class CustomClassMapper {
       }
 
       T instance = newInstance(constructor);
+      HashSet<String> deserialzedProperties = new HashSet<>();
       for (Map.Entry<String, Object> entry : values.entrySet()) {
         String propertyName = entry.getKey();
         ErrorPath childPath = context.errorPath.child(propertyName);
@@ -772,6 +773,7 @@ public class CustomClassMapper {
               CustomClassMapper.deserializeToType(
                   entry.getValue(), resolvedType, context.newInstanceWithErrorPath(childPath));
           invoke(setter, instance, value);
+          deserialzedProperties.add(propertyName);
         } else if (fields.containsKey(propertyName)) {
           Field field = fields.get(propertyName);
           Type resolvedType = resolveType(field.getGenericType(), types);
@@ -783,6 +785,7 @@ public class CustomClassMapper {
           } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
           }
+          deserialzedProperties.add(propertyName);
         } else {
           String message =
               "No setter/field for " + propertyName + " found on class " + clazz.getName();
@@ -797,9 +800,20 @@ public class CustomClassMapper {
         }
       }
 
-      // Populate @DocumentId annotated fields. If there is a conflict, @DocumentId annotation will
-      // override whatever value set earlier with document ID from context.
+      // Populate @DocumentId annotated fields. If there is a conflict (@DocumentId annotation is
+      // applied to a property that is already deserialized from the firestore document)
+      // a runtime exception will be thrown.
       for (String docIdPropertyName : documentIdPropertyNames) {
+        if (deserialzedProperties.contains(docIdPropertyName)) {
+          String message =
+              "'"
+                  + docIdPropertyName
+                  + "' is found from document "
+                  + context.documentRef.getPath()
+                  + ", cannot apply @DocumentId on this property for class "
+                  + clazz.getName();
+          throw new RuntimeException(message);
+        }
         ErrorPath childPath = context.errorPath.child(docIdPropertyName);
         if (setters.containsKey(docIdPropertyName)) {
           Method setter = setters.get(docIdPropertyName);

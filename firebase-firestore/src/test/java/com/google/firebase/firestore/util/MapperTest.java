@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.PropertyName;
+import com.google.firebase.firestore.TestUtil;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -906,8 +907,12 @@ public class MapperTest {
   }
 
   private static <T> T deserialize(String jsonString, Class<T> clazz) {
+    return deserialize(jsonString, clazz, null);
+  }
+
+  private static <T> T deserialize(String jsonString, Class<T> clazz, DocumentReference docRef) {
     Map<String, Object> json = fromSingleQuotedString(jsonString);
-    return CustomClassMapper.convertToCustomClass(json, clazz, null);
+    return CustomClassMapper.convertToCustomClass(json, clazz, docRef);
   }
 
   private static Object serialize(Object object) {
@@ -2354,6 +2359,15 @@ public class MapperTest {
     @DocumentId public String docId = "doc-id";
   }
 
+  private static class DocumentIdOnStringFieldAsProperty {
+    @PropertyName("docIdProperty")
+    @DocumentId
+    public String docId = "doc-id";
+
+    @PropertyName("anotherProperty")
+    public int someOtherProperty = 0;
+  }
+
   private static class DocumentIdOnDocRefGetter {
     private DocumentReference docRef;
 
@@ -2367,15 +2381,75 @@ public class MapperTest {
     }
   }
 
-  private static class DocumentIdOnInheritedDocRefSetter {}
+  private static class DocumentIdOnInheritedDocRefSetter extends DocumentIdOnDocRefGetter {
 
-  private static class DocumentIdOnNestObjects {}
+    private DocumentReference inheritedDocRef;
+
+    @DocumentId
+    public DocumentReference getInheritedDocRef() {
+      return inheritedDocRef;
+    }
+
+    public void setInheritedDocRef(DocumentReference ref) {
+      inheritedDocRef = ref;
+    }
+  }
+
+  private static class DocumentIdOnNestedObjects {
+    @PropertyName("nestedDocIdHolder")
+    public DocumentIdOnStringField nestedDocIdHolder;
+  }
 
   @Test
-  public void documentIdsDeserialize() {}
+  public void documentIdsDeserialize() {
+    DocumentReference ref = TestUtil.documentReference("coll/doc123");
+
+    assertEquals("doc123", deserialize("{}", DocumentIdOnStringField.class, ref).docId);
+
+    DocumentIdOnStringFieldAsProperty target =
+        deserialize("{'anotherProperty': 100}", DocumentIdOnStringFieldAsProperty.class, ref);
+    assertEquals("doc123", target.docId);
+    assertEquals(100, target.someOtherProperty);
+
+    assertEquals(ref, deserialize("{}", DocumentIdOnDocRefGetter.class, ref).getDocRef());
+
+    DocumentIdOnInheritedDocRefSetter target1 =
+        deserialize("{}", DocumentIdOnInheritedDocRefSetter.class, ref);
+    assertEquals(ref, target1.getInheritedDocRef());
+    assertEquals(ref, target1.getDocRef());
+
+    assertEquals(
+        "doc123",
+        deserialize("{'nestedDocIdHolder': {}}", DocumentIdOnNestedObjects.class, ref)
+            .nestedDocIdHolder
+            .docId);
+  }
 
   @Test
-  public void documentIdsAreIgnoredWhenSerializing() {}
+  public void documentIdsRoundTrip() {
+    // Implicitly verifies @DocumentId is ignore during serialization.
+
+    DocumentReference ref = TestUtil.documentReference("coll/doc123");
+
+    assertEquals(
+        Collections.emptyMap(), serialize(deserialize("{}", DocumentIdOnStringField.class, ref)));
+
+    assertEquals(
+        Collections.singletonMap("anotherProperty", 100),
+        serialize(
+            deserialize("{'anotherProperty': 100}", DocumentIdOnStringFieldAsProperty.class, ref)));
+
+    assertEquals(
+        Collections.emptyMap(), serialize(deserialize("{}", DocumentIdOnDocRefGetter.class, ref)));
+
+    assertEquals(
+        Collections.emptyMap(),
+        serialize(deserialize("{}", DocumentIdOnInheritedDocRefSetter.class, ref)));
+
+    assertEquals(
+        Collections.singletonMap("nestedDocIdHolder", Collections.emptyMap()),
+        serialize(deserialize("{'nestedDocIdHolder': {}}", DocumentIdOnNestedObjects.class, ref)));
+  }
 
   private static class DocumentIdOnStringFieldWithConflict {}
 
@@ -2386,5 +2460,27 @@ public class MapperTest {
   private static class DocumentIdOnInheritedDocRefSetterWithConflict {}
 
   @Test
-  public void documentIdsDeserializeConflictThrows() {}
+  public void documentIdsDeserializeConflictThrows() {
+    DocumentReference ref = TestUtil.documentReference("coll/doc123");
+
+    assertExceptionContains(
+        "cannot apply @DocumentId on this property",
+        () -> deserialize("{'docId': 'toBeOverwritten'}", DocumentIdOnStringField.class, ref));
+
+    assertExceptionContains(
+        "cannot apply @DocumentId on this property",
+        () ->
+            deserialize(
+                "{'docIdProperty': 'toBeOverwritten', 'anotherProperty': 100}",
+                DocumentIdOnStringFieldAsProperty.class,
+                ref));
+
+    assertExceptionContains(
+        "cannot apply @DocumentId on this property",
+        () ->
+            deserialize(
+                "{'nestedDocIdHolder': {'docId': 'toBeOverwritten'}}",
+                DocumentIdOnNestedObjects.class,
+                ref));
+  }
 }
