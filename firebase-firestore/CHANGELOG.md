@@ -1,6 +1,6 @@
 # Unreleased
-- [changed] SSL initialization now happens on a separate thread, which should
-  improve query performance during client startup.
+- [changed] SSL initialization now happens on a separate thread, which reduces
+  the time taken to produce the first query result.
 
 # Unreleased (19.0.1)
 - [fixed] Fixed an issue that prevented schema migrations for clients with

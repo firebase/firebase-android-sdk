@@ -49,7 +49,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * RemoteStore handles all interaction with the backend through a simple, clean interface. This
@@ -130,7 +129,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final OnlineStateTracker onlineStateTracker;
 
   private boolean networkEnabled = false;
-  private final CountDownLatch sslBarrier = new CountDownLatch(1);
+  private volatile boolean sslReady = false;
   private final WatchStream watchStream;
   private final WriteStream writeStream;
   @Nullable private WatchChangeAggregator watchChangeAggregator;
@@ -176,12 +175,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         } catch (GooglePlayServicesNotAvailableException /* Thrown by ProviderInstaller */
             | GooglePlayServicesRepairableException /* Thrown by ProviderInstaller */
             | IllegalStateException /* Thrown by Robolectric */ e) {
+          Logger.warn(LOG_TAG, "Failed to update ssl context");
+        } finally {
           // Proceed with client initialization, even though we may be using outdated SSL ciphers.
           // GRPC-Java recommends obtaining updated ciphers from GMSCore, but we allow the device
           // to fall back to other SSL ciphers if GMSCore is not available.
-          Logger.warn(LOG_TAG, "Failed to update ssl context");
-        } finally {
-          sslBarrier.countDown();
+          sslReady = true;
+          workerQueue.enqueueAndForget(RemoteStore.this::tryInitializeStreams);
         }
       }
     }.start();
@@ -250,7 +250,27 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   /** Re-enables the network. Only to be called as the counterpart to disableNetwork(). */
   public void enableNetwork() {
     networkEnabled = true;
+    tryInitializeStreams();
+  }
 
+  /**
+   * Re-enables the network, and forces the state to ONLINE. Without this, the state will be
+   * UNKNOWN. If the OnlineStateTracker updates the state from UNKNOWN to UNKNOWN, then it doesn't
+   * trigger the callback.
+   */
+  @VisibleForTesting
+  void forceEnableNetwork() {
+    networkEnabled = true;
+    if (tryInitializeStreams()) {
+      onlineStateTracker.updateState(OnlineState.ONLINE);
+    }
+  }
+
+  /**
+   * Initializes the outgoing streams if the network is enabled and the SSL ciphers have been
+   * loaded. If the ciphers have not yet been loaded, this method when this loading completes.
+   */
+  private boolean tryInitializeStreams() {
     if (canUseNetwork()) {
       writeStream.setLastStreamToken(localStore.getLastStreamToken());
 
@@ -262,18 +282,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
       // This will start the write stream if necessary.
       fillWritePipeline();
+      return true;
     }
-  }
 
-  /**
-   * Re-enables the network, and forces the state to ONLINE. Without this, the state will be
-   * UNKNOWN. If the OnlineStateTracker updates the state from UNKNOWN to UNKNOWN, then it doesn't
-   * trigger the callback.
-   */
-  @VisibleForTesting
-  void forceEnableNetwork() {
-    enableNetwork();
-    onlineStateTracker.updateState(OnlineState.ONLINE);
+    return false;
   }
 
   /** Temporarily disables the network. The network can be re-enabled using enableNetwork(). */
@@ -431,7 +443,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         "startWatchStream() called when shouldStartWatchStream() is false.");
     watchChangeAggregator = new WatchChangeAggregator(this);
 
-    initializeSslIfNeeded();
     watchStream.start();
     onlineStateTracker.handleWatchStreamStart();
   }
@@ -506,7 +517,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private boolean canUseNetwork() {
     // PORTING NOTE: This method exists mostly because web also has to take into account primary
     // vs. secondary state.
-    return networkEnabled;
+    return sslReady && networkEnabled;
   }
 
   /**
@@ -639,23 +650,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         shouldStartWriteStream(),
         "startWriteStream() called when shouldStartWriteStream() is false.");
 
-    initializeSslIfNeeded();
     writeStream.start();
-  }
-
-  /** Waits for the SSL Provider to be installed. Logs a warning on failure. */
-  private void initializeSslIfNeeded() {
-    try {
-      sslBarrier.await();
-    } catch (InterruptedException e) {
-      // On API Level 21+, an SSL connection can be established even if the installation of the
-      // SecurityProvider failed.
-      Logger.warn(
-          LOG_TAG,
-          "Interrupted while waiting for the SSL Provider. Firestore may not be able to"
-              + " establish a connection to the backend: %s",
-          e);
-    }
   }
 
   /**
