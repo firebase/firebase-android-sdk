@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.OnlineState;
@@ -66,17 +67,13 @@ public class RemoteStoreTest {
         };
 
     FakeConnectivityMonitor connectivityMonitor = new FakeConnectivityMonitor();
+    SslProvider sslProvider = () -> Tasks.forResult(null);
     Persistence persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     persistence.start();
     LocalStore localStore = new LocalStore(persistence, User.UNAUTHENTICATED);
     RemoteStore remoteStore =
         new RemoteStore(
-            callback,
-            InstrumentationRegistry.getContext(),
-            localStore,
-            datastore,
-            testQueue,
-            connectivityMonitor);
+            callback, localStore, datastore, testQueue, sslProvider, connectivityMonitor);
 
     waitFor(testQueue.enqueue(() -> remoteStore.forceEnableNetwork()));
     drain(testQueue);

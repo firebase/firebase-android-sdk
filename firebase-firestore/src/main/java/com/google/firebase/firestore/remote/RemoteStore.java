@@ -16,12 +16,8 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.content.Context;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesRepairableException;
-import com.google.android.gms.security.ProviderInstaller;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Transaction;
@@ -129,7 +125,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final OnlineStateTracker onlineStateTracker;
 
   private boolean networkEnabled = false;
-  private volatile boolean sslReady = false;
+  private boolean sslReady = false;
   private final WatchStream watchStream;
   private final WriteStream writeStream;
   @Nullable private WatchChangeAggregator watchChangeAggregator;
@@ -152,10 +148,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   public RemoteStore(
       RemoteStoreCallback remoteStoreCallback,
-      Context context,
       LocalStore localStore,
       Datastore datastore,
       AsyncQueue workerQueue,
+      SslProvider sslProvider,
       ConnectivityMonitor connectivityMonitor) {
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
@@ -167,24 +163,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     onlineStateTracker =
         new OnlineStateTracker(workerQueue, remoteStoreCallback::handleOnlineStateChange);
-
-    new Thread() {
-      public void run() {
-        try {
-          ProviderInstaller.installIfNeeded(context);
-        } catch (GooglePlayServicesNotAvailableException /* Thrown by ProviderInstaller */
-            | GooglePlayServicesRepairableException /* Thrown by ProviderInstaller */
-            | IllegalStateException /* Thrown by Robolectric */ e) {
-          Logger.warn(LOG_TAG, "Failed to update ssl context");
-        } finally {
-          // Proceed with client initialization, even though we may be using outdated SSL ciphers.
-          // GRPC-Java recommends obtaining updated ciphers from GMSCore, but we allow the device
-          // to fall back to other SSL ciphers if GMSCore is not available.
-          sslReady = true;
-          workerQueue.enqueueAndForget(RemoteStore.this::tryInitializeStreams);
-        }
-      }
-    }.start();
 
     // Create new streams (but note they're not started yet).
     watchStream =
@@ -245,6 +223,15 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 }
               });
         });
+
+    sslProvider
+        .initializeSsl()
+        .addOnCompleteListener(
+            result -> workerQueue.enqueueAndForget(() -> {
+              hardAssert(result.isSuccessful(), "SSL Provider initialization failed unexpectedly");
+              sslReady = true;
+              RemoteStore.this.tryInitializeStreams();
+            }));
   }
 
   /** Re-enables the network. Only to be called as the counterpart to disableNetwork(). */
@@ -254,21 +241,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   /**
-   * Re-enables the network, and forces the state to ONLINE. Without this, the state will be
-   * UNKNOWN. If the OnlineStateTracker updates the state from UNKNOWN to UNKNOWN, then it doesn't
-   * trigger the callback.
-   */
-  @VisibleForTesting
-  void forceEnableNetwork() {
-    networkEnabled = true;
-    if (tryInitializeStreams()) {
-      onlineStateTracker.updateState(OnlineState.ONLINE);
-    }
-  }
-
-  /**
    * Initializes the outgoing streams if the network is enabled and the SSL ciphers have been
-   * loaded. If the ciphers have not yet been loaded, this method when this loading completes.
+   * loaded. If the ciphers have not yet been loaded, this method is invoked again
+   * when loading completes.
    */
   private boolean tryInitializeStreams() {
     if (canUseNetwork()) {
@@ -286,6 +261,19 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     }
 
     return false;
+  }
+
+  /**
+   * Re-enables the network, and forces the state to ONLINE. Without this, the state will be
+   * UNKNOWN. If the OnlineStateTracker updates the state from UNKNOWN to UNKNOWN, then it doesn't
+   * trigger the callback.
+   */
+  @VisibleForTesting
+  void forceEnableNetwork() {
+    networkEnabled = true;
+    if (tryInitializeStreams()) {
+      onlineStateTracker.updateState(OnlineState.ONLINE);
+    }
   }
 
   /** Temporarily disables the network. The network can be re-enabled using enableNetwork(). */
@@ -442,8 +430,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         shouldStartWatchStream(),
         "startWatchStream() called when shouldStartWatchStream() is false.");
     watchChangeAggregator = new WatchChangeAggregator(this);
-
     watchStream.start();
+
     onlineStateTracker.handleWatchStreamStart();
   }
 
@@ -649,7 +637,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     hardAssert(
         shouldStartWriteStream(),
         "startWriteStream() called when shouldStartWriteStream() is false.");
-
     writeStream.start();
   }
 

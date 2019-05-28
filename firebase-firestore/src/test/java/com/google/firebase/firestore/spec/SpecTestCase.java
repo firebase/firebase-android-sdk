@@ -33,6 +33,7 @@ import static org.junit.Assert.fail;
 import android.util.Pair;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.Sets;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
@@ -63,6 +64,7 @@ import com.google.firebase.firestore.remote.MockDatastore;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.RemoteStore.RemoteStoreCallback;
+import com.google.firebase.firestore.remote.SslProvider;
 import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
@@ -271,14 +273,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     ConnectivityMonitor connectivityMonitor =
         new AndroidConnectivityMonitor(RuntimeEnvironment.application);
+    SslProvider sslProvider = () -> Tasks.forResult(null);
     remoteStore =
-        new RemoteStore(
-            this,
-            RuntimeEnvironment.systemContext,
-            localStore,
-            datastore,
-            queue,
-            connectivityMonitor);
+        new RemoteStore(this, localStore, datastore, queue, sslProvider, connectivityMonitor);
     syncEngine = new SyncEngine(localStore, remoteStore, currentUser);
     eventManager = new EventManager(syncEngine);
     localStore.start();
