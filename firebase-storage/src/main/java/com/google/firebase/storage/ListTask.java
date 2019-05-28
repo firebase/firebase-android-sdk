@@ -32,15 +32,13 @@ class ListTask implements Runnable {
   private final TaskCompletionSource<ListResult> pendingResult;
   private final ExponentialBackoffSender sender;
   @Nullable private final String pageToken;
-  @Nullable private Integer maxResults;
-  private ListResult listResult;
+  @Nullable private final Integer maxResults;
 
   ListTask(
       @NonNull StorageReference storageRef,
       @Nullable Integer maxResults,
       @Nullable String pageToken,
       @NonNull TaskCompletionSource<ListResult> pendingResult) {
-    Preconditions.checkNotNull(storageRef);
     Preconditions.checkNotNull(storageRef);
     Preconditions.checkNotNull(pendingResult);
 
@@ -64,6 +62,8 @@ class ListTask implements Runnable {
             storageRef.getStorageUri(), storageRef.getApp(), maxResults, pageToken);
 
     sender.sendWithExponentialBackoff(request);
+
+    ListResult listResult = null;
 
     if (request.isResultSuccess()) {
       try {

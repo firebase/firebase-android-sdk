@@ -31,9 +31,9 @@ public final class ListResult {
   private static final String PAGE_TOKEN_KEY = "nextPageToken";
   private static final String PREFIXES_KEY = "prefixes";
 
-  private List<StorageReference> prefixes;
-  private List<StorageReference> items;
-  @Nullable private String pageToken;
+  private final List<StorageReference> prefixes;
+  private final List<StorageReference> items;
+  @Nullable final private String pageToken;
 
   ListResult(
       List<StorageReference> prefixes, List<StorageReference> items, @Nullable String pageToken) {

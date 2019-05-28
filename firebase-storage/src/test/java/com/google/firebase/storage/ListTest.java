@@ -79,7 +79,7 @@ public class ListTest {
   }
 
   @Test
-  public void listResultsWitSinglePage() throws InterruptedException {
+  public void listResultsWithSinglePage() throws InterruptedException {
     final MockConnectionFactory factory =
         NetworkLayerMock.ensureNetworkMock("listSinglePage", true);
 

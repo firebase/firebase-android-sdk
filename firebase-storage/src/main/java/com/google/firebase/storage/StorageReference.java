@@ -584,6 +584,10 @@ public class StorageReference implements Comparable<StorageReference> {
    * <p>"/" is treated as a path delimiter. Firebase Storage does not support invalid object paths
    * that end with "/" or contain two consecutive "/"s. All invalid objects in GCS will be filtered.
    *
+   * {@code list()} is only available for projects using <a
+   * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
+   * Rules Version 2</a>.
+   *
    * @param maxResults The maximum number of results to return in a single page. Must be greater
    *     than 0 and at most 1000.
    * @return A a {@link Task} that returns up to maxResults items and prefixes under the current
@@ -604,6 +608,10 @@ public class StorageReference implements Comparable<StorageReference> {
    * <p>"/" is treated as a path delimiter. Firebase Storage does not support invalid object paths
    * that end with "/" or contain two consecutive "//". All invalid objects in GCS will be filtered.
    *
+   * {@code list()} is only available for projects using <a
+   * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
+   * Rules Version 2</a>.
+   *
    * @param maxResults The maximum number of results to return in a single page. Must be greater
    *     than 0 and at most 1000.
    * @param pageToken A page token from a previous call to list.
@@ -623,9 +631,13 @@ public class StorageReference implements Comparable<StorageReference> {
   /**
    * List all items (files) and prefixes (folders) under this StorageReference.
    *
-   * <p>This is a helper method for calling list() repeatedly until there are no more results. The
-   * default pagination size is 1000. Consistency of the result is not guaranteed if objects are
-   * inserted or removed while this operation is executing.
+   * <p>This is a helper method for calling list() repeatedly until there are no more results.
+   * Consistency of the result is not guaranteed if objects are inserted or removed while this
+   * operation is executing.
+   *
+   * {@code listAll()} is only available for projects using <a
+   * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
+   * Rules Version 2</a>.
    *
    * @throws OutOfMemoryError If there are too many items at this location.
    * @return A {@link Task} that returns all items and prefixes under the current StorageReference.
@@ -635,9 +647,8 @@ public class StorageReference implements Comparable<StorageReference> {
   public Task<ListResult> listAll() {
     TaskCompletionSource<ListResult> pendingResult = new TaskCompletionSource<>();
 
-    List<ListResult> results = new ArrayList<>();
-    int[] prefixesCount = new int[] {0};
-    int[] itemsCount = new int[] {0};
+    List<StorageReference> prefixes = new ArrayList<>();
+    List<StorageReference> items = new ArrayList<>();
 
     Executor executor = StorageTaskScheduler.getInstance().getCommandPoolExecutor();
     Task<ListResult> list = listHelper(/* maxResults= */ null, /* pageToken= */ null);
@@ -647,22 +658,13 @@ public class StorageReference implements Comparable<StorageReference> {
           @Override
           public Task<Void> then(@NonNull Task<ListResult> currentPage) {
             ListResult result = currentPage.getResult();
-            prefixesCount[0] += result.getPrefixes().size();
-            itemsCount[0] += result.getItems().size();
-            results.add(result);
+            prefixes.addAll(result.getPrefixes());
+            items.addAll(result.getItems());
 
             if (result.getPageToken() != null) {
               Task<ListResult> nextPage = listHelper(/* maxResults= */ null, result.getPageToken());
               nextPage.continueWithTask(executor, this);
             } else {
-              List<StorageReference> prefixes = new ArrayList<>(prefixesCount[0]);
-              List<StorageReference> items = new ArrayList<>(itemsCount[0]);
-              for (ListResult previousResult : results) {
-                // These operations are O(n) since we provided an initial capacity at construction
-                // time.
-                prefixes.addAll(previousResult.getPrefixes());
-                items.addAll(previousResult.getItems());
-              }
               pendingResult.setResult(new ListResult(prefixes, items, /* pageToken= */ null));
             }
 
@@ -717,6 +719,8 @@ public class StorageReference implements Comparable<StorageReference> {
 
   @Override
   public int compareTo(StorageReference other) {
+    // mStorageUri contains a reference to the GCS bucket as well as the fully qualified path
+    // of this reference.
     return mStorageUri.compareTo(other.mStorageUri);
   }
 }

@@ -58,6 +58,7 @@ public class IntegrationTest {
 
       Tasks.await(getReference("metadata.dat").putBytes(new byte[0]));
       Tasks.await(getReference("download.dat").putBytes(new byte[LARGE_FILE_SIZE_BYTES]));
+      Tasks.await(getReference("prefix/empty.dat").putBytes(new byte[0]));
     }
   }
 
@@ -132,18 +133,18 @@ public class IntegrationTest {
 
   @Test
   public void pagedListFiles() throws ExecutionException, InterruptedException {
-    Task<ListResult> listTask = storageClient.getReference(randomPrefix).list(1);
+    Task<ListResult> listTask = storageClient.getReference(randomPrefix).list(2);
     ListResult listResult = Tasks.await(listTask);
 
+    assertThat(listResult.getItems()).containsExactly(getReference("download.dat"), getReference("metadata.dat"));
     assertThat(listResult.getPrefixes()).isEmpty();
-    assertThat(listResult.getItems()).containsExactly(getReference("download.dat"));
     assertThat(listResult.getPageToken()).isNotEmpty();
 
-    listTask = storageClient.getReference(randomPrefix).list(1, listResult.getPageToken());
+    listTask = storageClient.getReference(randomPrefix).list(2, listResult.getPageToken());
     listResult = Tasks.await(listTask);
 
-    assertThat(listResult.getPrefixes()).isEmpty();
-    assertThat(listResult.getItems()).containsExactly(getReference("metadata.dat"));
+    assertThat(listResult.getItems()).isEmpty();
+    assertThat(listResult.getPrefixes()).containsExactly(getReference("prefix"));
     assertThat(listResult.getPageToken()).isNull();
   }
 
@@ -152,7 +153,7 @@ public class IntegrationTest {
     Task<ListResult> listTask = storageClient.getReference(randomPrefix).listAll();
     ListResult listResult = Tasks.await(listTask);
 
-    assertThat(listResult.getPrefixes()).isEmpty();
+    assertThat(listResult.getPrefixes()).containsExactly(getReference("prefix"));
     assertThat(listResult.getItems())
         .containsExactly(getReference("metadata.dat"), getReference("download.dat"));
     assertThat(listResult.getPageToken()).isNull();
