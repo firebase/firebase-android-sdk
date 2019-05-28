@@ -584,7 +584,7 @@ public class StorageReference implements Comparable<StorageReference> {
    * <p>"/" is treated as a path delimiter. Firebase Storage does not support invalid object paths
    * that end with "/" or contain two consecutive "/"s. All invalid objects in GCS will be filtered.
    *
-   * {@code list()} is only available for projects using <a
+   * <p>{@code list()} is only available for projects using <a
    * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
    * Rules Version 2</a>.
    *
@@ -608,7 +608,7 @@ public class StorageReference implements Comparable<StorageReference> {
    * <p>"/" is treated as a path delimiter. Firebase Storage does not support invalid object paths
    * that end with "/" or contain two consecutive "//". All invalid objects in GCS will be filtered.
    *
-   * {@code list()} is only available for projects using <a
+   * <p>{@code list()} is only available for projects using <a
    * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
    * Rules Version 2</a>.
    *
@@ -635,7 +635,7 @@ public class StorageReference implements Comparable<StorageReference> {
    * Consistency of the result is not guaranteed if objects are inserted or removed while this
    * operation is executing.
    *
-   * {@code listAll()} is only available for projects using <a
+   * <p>{@code listAll()} is only available for projects using <a
    * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
    * Rules Version 2</a>.
    *

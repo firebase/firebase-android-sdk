@@ -33,7 +33,7 @@ public final class ListResult {
 
   private final List<StorageReference> prefixes;
   private final List<StorageReference> items;
-  @Nullable final private String pageToken;
+  @Nullable private final String pageToken;
 
   ListResult(
       List<StorageReference> prefixes, List<StorageReference> items, @Nullable String pageToken) {

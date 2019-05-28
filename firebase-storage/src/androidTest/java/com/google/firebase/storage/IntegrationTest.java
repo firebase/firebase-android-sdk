@@ -136,7 +136,8 @@ public class IntegrationTest {
     Task<ListResult> listTask = storageClient.getReference(randomPrefix).list(2);
     ListResult listResult = Tasks.await(listTask);
 
-    assertThat(listResult.getItems()).containsExactly(getReference("download.dat"), getReference("metadata.dat"));
+    assertThat(listResult.getItems())
+        .containsExactly(getReference("download.dat"), getReference("metadata.dat"));
     assertThat(listResult.getPrefixes()).isEmpty();
     assertThat(listResult.getPageToken()).isNotEmpty();
 
