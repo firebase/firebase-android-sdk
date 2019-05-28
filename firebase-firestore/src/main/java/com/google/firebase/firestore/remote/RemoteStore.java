@@ -227,11 +227,14 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     sslProvider
         .initializeSsl()
         .addOnCompleteListener(
-            result -> workerQueue.enqueueAndForget(() -> {
-              hardAssert(result.isSuccessful(), "SSL Provider initialization failed unexpectedly");
-              sslReady = true;
-              RemoteStore.this.tryInitializeStreams();
-            }));
+            result ->
+                workerQueue.enqueueAndForget(
+                    () -> {
+                      hardAssert(
+                          result.isSuccessful(), "SSL Provider initialization failed unexpectedly");
+                      sslReady = true;
+                      RemoteStore.this.tryInitializeStreams();
+                    }));
   }
 
   /** Re-enables the network. Only to be called as the counterpart to disableNetwork(). */
@@ -242,8 +245,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   /**
    * Initializes the outgoing streams if the network is enabled and the SSL ciphers have been
-   * loaded. If the ciphers have not yet been loaded, this method is invoked again
-   * when loading completes.
+   * loaded. If the ciphers have not yet been loaded, this method is invoked again when loading
+   * completes.
    */
   private boolean tryInitializeStreams() {
     if (canUseNetwork()) {

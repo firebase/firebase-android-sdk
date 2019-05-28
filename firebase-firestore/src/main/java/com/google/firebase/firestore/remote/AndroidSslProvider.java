@@ -25,7 +25,7 @@ import com.google.firebase.firestore.util.Logger;
 /**
  * Android implementation of the SSL Provider. Attempts to fetch GMSCore's SSL Ciphers if available.
  *
- * Note: `initializeSsl()` starts a separate thread to load GMSCore. This allows the rest of the
+ * <p>Note: `initializeSsl()` starts a separate thread to load GMSCore. This allows the rest of the
  * client initialization to proceed without blocking on the SSL stack.
  */
 public class AndroidSslProvider implements SslProvider {
@@ -51,7 +51,7 @@ public class AndroidSslProvider implements SslProvider {
           // Mark the SSL initialization as done, even though we may be using outdated SSL ciphers.
           // GRPC-Java recommends obtaining updated ciphers from GMSCore, but we allow the device
           // to fall back to other SSL ciphers if GMSCore is not available.
-         taskCompletionSource.setResult(null);
+          taskCompletionSource.setResult(null);
         }
       }
     }.start();
