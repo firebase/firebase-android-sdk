@@ -22,6 +22,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageException;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.testing.common.Tasks2;
 import com.google.firebase.testing.common.TestId;
@@ -36,6 +37,25 @@ import org.junit.runner.RunWith;
 public final class StorageTest {
 
   @Rule public final ActivityTestRule<Activity> activity = new ActivityTestRule<>(Activity.class);
+
+  @Test
+  public void putShouldFailWithNotAuthorized() throws Exception {
+    FirebaseAuth auth = FirebaseAuth.getInstance();
+    FirebaseStorage storage = FirebaseStorage.getInstance();
+
+    auth.signOut();
+    StorageReference blob = storage.getReference("restaurants").child(TestId.create());
+    byte[] data = "Google NYC".getBytes(StandardCharsets.UTF_8);
+
+    try {
+      Task<?> putTask = blob.putBytes(Arrays.copyOf(data, data.length));
+      Throwable failure = Tasks2.waitForFailure(putTask);
+      StorageException ex = (StorageException) failure;
+      assertThat(ex.getErrorCode()).isEqualTo(StorageException.ERROR_NOT_AUTHORIZED);
+    } finally {
+      Tasks2.waitBestEffort(blob.delete());
+    }
+  }
 
   @Test
   public void getShouldReturnNewlyPutData() throws Exception {
