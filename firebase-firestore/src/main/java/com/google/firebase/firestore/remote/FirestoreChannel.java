@@ -69,10 +69,10 @@ class FirestoreChannel {
   private final String resourcePrefixValue;
 
   FirestoreChannel(
-          AsyncQueue asyncQueue,
-          CredentialsProvider credentialsProvider,
-          ManagedChannel grpcChannel,
-          DatabaseId databaseId) {
+      AsyncQueue asyncQueue,
+      CredentialsProvider credentialsProvider,
+      ManagedChannel grpcChannel,
+      DatabaseId databaseId) {
     this.asyncQueue = asyncQueue;
     this.credentialsProvider = credentialsProvider;
 
