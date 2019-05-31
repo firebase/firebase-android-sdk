@@ -581,8 +581,9 @@ public class StorageReference implements Comparable<StorageReference> {
   /**
    * List up to `maxResults` items (files) and prefixes (folders) under this StorageReference.
    *
-   * <p>"/" is treated as a path delimiter. Firebase Storage does not support invalid object paths
-   * that end with "/" or contain two consecutive "/"s. All invalid objects in GCS will be filtered.
+   * <p>"/" is treated as a path delimiter. Firebase Storage does not support unsupported object
+   * paths that end with "/" or contain two consecutive "/"s. All invalid objects in GCS will be
+   * filtered.
    *
    * <p>{@code list()} is only available for projects using <a
    * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
@@ -605,8 +606,9 @@ public class StorageReference implements Comparable<StorageReference> {
    * Resumes a previous call to {@link #list(int)}, starting after a pagination token. Returns the
    * next set of items (files) and prefixes (folders) under this StorageReference.
    *
-   * <p>"/" is treated as a path delimiter. Firebase Storage does not support invalid object paths
-   * that end with "/" or contain two consecutive "//". All invalid objects in GCS will be filtered.
+   * <p>"/" is treated as a path delimiter. Firebase Storage does not support unsupported object
+   * paths that end with "/" or contain two consecutive "/"s. All invalid objects in GCS will be
+   * filtered.
    *
    * <p>{@code list()} is only available for projects using <a
    * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
