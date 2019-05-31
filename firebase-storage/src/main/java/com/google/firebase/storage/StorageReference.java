@@ -21,10 +21,12 @@ import android.text.TextUtils;
 import android.util.Log;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.Slashes;
@@ -34,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -44,7 +47,7 @@ import java.util.concurrent.Executor;
  */
 @SuppressWarnings("unused")
 @PublicApi
-public class StorageReference {
+public class StorageReference implements Comparable<StorageReference> {
   private static final String TAG = "StorageReference";
 
   private final Uri mStorageUri;
@@ -563,14 +566,126 @@ public class StorageReference {
   /**
    * Deletes the object at this {@link StorageReference}.
    *
-   * @return a {@link Task} that indicates whether the operation succeeded or failed.
+   * @return A {@link Task} that indicates whether the operation succeeded or failed.
    */
+  @NonNull
   @PublicApi
   public Task<Void> delete() {
     TaskCompletionSource<Void> pendingResult = new TaskCompletionSource<>();
     StorageTaskScheduler.getInstance().scheduleCommand(new DeleteStorageTask(this, pendingResult));
     return pendingResult.getTask();
   }
+
+  // region List
+
+  /**
+   * List up to `maxResults` items (files) and prefixes (folders) under this StorageReference.
+   *
+   * <p>"/" is treated as a path delimiter. Firebase Storage does not support unsupported object
+   * paths that end with "/" or contain two consecutive "/"s. All invalid objects in GCS will be
+   * filtered.
+   *
+   * <p>{@code list()} is only available for projects using <a
+   * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
+   * Rules Version 2</a>.
+   *
+   * @param maxResults The maximum number of results to return in a single page. Must be greater
+   *     than 0 and at most 1000.
+   * @return A a {@link Task} that returns up to maxResults items and prefixes under the current
+   *     StorageReference.
+   */
+  @NonNull
+  @PublicApi
+  public Task<ListResult> list(int maxResults) {
+    Preconditions.checkArgument(maxResults > 0, "maxResults must be greater than zero");
+    Preconditions.checkArgument(maxResults <= 1000, "maxResults must be at most 1000");
+    return listHelper(maxResults, /* pageToken */ null);
+  }
+
+  /**
+   * Resumes a previous call to {@link #list(int)}, starting after a pagination token. Returns the
+   * next set of items (files) and prefixes (folders) under this StorageReference.
+   *
+   * <p>"/" is treated as a path delimiter. Firebase Storage does not support unsupported object
+   * paths that end with "/" or contain two consecutive "/"s. All invalid objects in GCS will be
+   * filtered.
+   *
+   * <p>{@code list()} is only available for projects using <a
+   * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
+   * Rules Version 2</a>.
+   *
+   * @param maxResults The maximum number of results to return in a single page. Must be greater
+   *     than 0 and at most 1000.
+   * @param pageToken A page token from a previous call to list.
+   * @return A a {@link Task} that returns the next items and prefixes under the current
+   *     StorageReference.
+   */
+  @NonNull
+  @PublicApi
+  public Task<ListResult> list(int maxResults, @NonNull String pageToken) {
+    Preconditions.checkArgument(maxResults > 0, "maxResults must be greater than zero");
+    Preconditions.checkArgument(maxResults <= 1000, "maxResults must be at most 1000");
+    Preconditions.checkArgument(
+        pageToken != null, "pageToken must be non-null to resume a previous list() operation");
+    return listHelper(maxResults, pageToken);
+  }
+
+  /**
+   * List all items (files) and prefixes (folders) under this StorageReference.
+   *
+   * <p>This is a helper method for calling list() repeatedly until there are no more results.
+   * Consistency of the result is not guaranteed if objects are inserted or removed while this
+   * operation is executing.
+   *
+   * <p>{@code listAll()} is only available for projects using <a
+   * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
+   * Rules Version 2</a>.
+   *
+   * @throws OutOfMemoryError If there are too many items at this location.
+   * @return A {@link Task} that returns all items and prefixes under the current StorageReference.
+   */
+  @NonNull
+  @PublicApi
+  public Task<ListResult> listAll() {
+    TaskCompletionSource<ListResult> pendingResult = new TaskCompletionSource<>();
+
+    List<StorageReference> prefixes = new ArrayList<>();
+    List<StorageReference> items = new ArrayList<>();
+
+    Executor executor = StorageTaskScheduler.getInstance().getCommandPoolExecutor();
+    Task<ListResult> list = listHelper(/* maxResults= */ null, /* pageToken= */ null);
+
+    Continuation<ListResult, Task<Void>> continuation =
+        new Continuation<ListResult, Task<Void>>() {
+          @Override
+          public Task<Void> then(@NonNull Task<ListResult> currentPage) {
+            ListResult result = currentPage.getResult();
+            prefixes.addAll(result.getPrefixes());
+            items.addAll(result.getItems());
+
+            if (result.getPageToken() != null) {
+              Task<ListResult> nextPage = listHelper(/* maxResults= */ null, result.getPageToken());
+              nextPage.continueWithTask(executor, this);
+            } else {
+              pendingResult.setResult(new ListResult(prefixes, items, /* pageToken= */ null));
+            }
+
+            return Tasks.forResult(null);
+          }
+        };
+
+    list.continueWithTask(executor, continuation);
+
+    return pendingResult.getTask();
+  }
+
+  private Task<ListResult> listHelper(@Nullable Integer maxResults, @Nullable String pageToken) {
+    TaskCompletionSource<ListResult> pendingResult = new TaskCompletionSource<>();
+    StorageTaskScheduler.getInstance()
+        .scheduleCommand(new ListTask(this, maxResults, pageToken, pendingResult));
+    return pendingResult.getTask();
+  }
+
   // endregion
 
   // region package private methods
@@ -602,5 +717,12 @@ public class StorageReference {
   @Override
   public int hashCode() {
     return toString().hashCode();
+  }
+
+  @Override
+  public int compareTo(StorageReference other) {
+    // mStorageUri contains a reference to the GCS bucket as well as the fully qualified path
+    // of this reference.
+    return mStorageUri.compareTo(other.mStorageUri);
   }
 }

@@ -1,0 +1,151 @@
+
+list:
+  onComplete:Success=true
+  Received Prefixes:
+    /smallDirectory/aprefix
+  Received Items:
+    /smallDirectory/data1.dat
+    /smallDirectory/data10.dat
+    /smallDirectory/data11.dat
+    /smallDirectory/data12.dat
+    /smallDirectory/data13.dat
+    /smallDirectory/data14.dat
+    /smallDirectory/data15.dat
+    /smallDirectory/data16.dat
+    /smallDirectory/data17.dat
+  Page Token:c21hbGxEaXJlY3RvcnkvZGF0YTE3LmRhdA==
+list:
+  onComplete:Success=true
+  Received Prefixes:
+  Received Items:
+    /smallDirectory/data18.dat
+    /smallDirectory/data19.dat
+    /smallDirectory/data2.dat
+    /smallDirectory/data20.dat
+    /smallDirectory/data21.dat
+    /smallDirectory/data22.dat
+    /smallDirectory/data23.dat
+    /smallDirectory/data24.dat
+    /smallDirectory/data25.dat
+    /smallDirectory/data26.dat
+  Page Token:c21hbGxEaXJlY3RvcnkvZGF0YTI2LmRhdA==
+list:
+  onComplete:Success=true
+  Received Prefixes:
+  Received Items:
+    /smallDirectory/data27.dat
+    /smallDirectory/data28.dat
+    /smallDirectory/data29.dat
+    /smallDirectory/data3.dat
+    /smallDirectory/data30.dat
+    /smallDirectory/data31.dat
+    /smallDirectory/data32.dat
+    /smallDirectory/data33.dat
+    /smallDirectory/data34.dat
+    /smallDirectory/data35.dat
+  Page Token:c21hbGxEaXJlY3RvcnkvZGF0YTM1LmRhdA==
+list:
+  onComplete:Success=true
+  Received Prefixes:
+  Received Items:
+    /smallDirectory/data36.dat
+    /smallDirectory/data37.dat
+    /smallDirectory/data38.dat
+    /smallDirectory/data39.dat
+    /smallDirectory/data4.dat
+    /smallDirectory/data40.dat
+    /smallDirectory/data41.dat
+    /smallDirectory/data42.dat
+    /smallDirectory/data43.dat
+    /smallDirectory/data44.dat
+  Page Token:c21hbGxEaXJlY3RvcnkvZGF0YTQ0LmRhdA==
+list:
+  onComplete:Success=true
+  Received Prefixes:
+  Received Items:
+    /smallDirectory/data45.dat
+    /smallDirectory/data46.dat
+    /smallDirectory/data47.dat
+    /smallDirectory/data48.dat
+    /smallDirectory/data49.dat
+    /smallDirectory/data5.dat
+    /smallDirectory/data50.dat
+    /smallDirectory/data51.dat
+    /smallDirectory/data52.dat
+    /smallDirectory/data53.dat
+  Page Token:c21hbGxEaXJlY3RvcnkvZGF0YTUzLmRhdA==
+list:
+  onComplete:Success=true
+  Received Prefixes:
+  Received Items:
+    /smallDirectory/data54.dat
+    /smallDirectory/data55.dat
+    /smallDirectory/data56.dat
+    /smallDirectory/data57.dat
+    /smallDirectory/data58.dat
+    /smallDirectory/data59.dat
+    /smallDirectory/data6.dat
+    /smallDirectory/data60.dat
+    /smallDirectory/data61.dat
+    /smallDirectory/data62.dat
+  Page Token:c21hbGxEaXJlY3RvcnkvZGF0YTYyLmRhdA==
+list:
+  onComplete:Success=true
+  Received Prefixes:
+  Received Items:
+    /smallDirectory/data63.dat
+    /smallDirectory/data64.dat
+    /smallDirectory/data65.dat
+    /smallDirectory/data66.dat
+    /smallDirectory/data67.dat
+    /smallDirectory/data68.dat
+    /smallDirectory/data69.dat
+    /smallDirectory/data7.dat
+    /smallDirectory/data70.dat
+    /smallDirectory/data71.dat
+  Page Token:c21hbGxEaXJlY3RvcnkvZGF0YTcxLmRhdA==
+list:
+  onComplete:Success=true
+  Received Prefixes:
+  Received Items:
+    /smallDirectory/data72.dat
+    /smallDirectory/data73.dat
+    /smallDirectory/data74.dat
+    /smallDirectory/data75.dat
+    /smallDirectory/data76.dat
+    /smallDirectory/data77.dat
+    /smallDirectory/data78.dat
+    /smallDirectory/data79.dat
+    /smallDirectory/data8.dat
+    /smallDirectory/data80.dat
+  Page Token:c21hbGxEaXJlY3RvcnkvZGF0YTgwLmRhdA==
+list:
+  onComplete:Success=true
+  Received Prefixes:
+  Received Items:
+    /smallDirectory/data81.dat
+    /smallDirectory/data82.dat
+    /smallDirectory/data83.dat
+    /smallDirectory/data84.dat
+    /smallDirectory/data85.dat
+    /smallDirectory/data86.dat
+    /smallDirectory/data87.dat
+    /smallDirectory/data88.dat
+    /smallDirectory/data89.dat
+    /smallDirectory/data9.dat
+  Page Token:c21hbGxEaXJlY3RvcnkvZGF0YTkuZGF0
+list:
+  onComplete:Success=true
+  Received Prefixes:
+  Received Items:
+    /smallDirectory/data90.dat
+    /smallDirectory/data91.dat
+    /smallDirectory/data92.dat
+    /smallDirectory/data93.dat
+    /smallDirectory/data94.dat
+    /smallDirectory/data95.dat
+    /smallDirectory/data96.dat
+    /smallDirectory/data97.dat
+    /smallDirectory/data98.dat
+  Page Token:null
+done.
