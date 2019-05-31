@@ -127,6 +127,7 @@ public class Datastore {
     channel =
         new FirestoreChannel(
             workerQueue,
+            context,
             credentialsProvider,
             androidChannelBuilder.build(),
             databaseInfo.getDatabaseId());
