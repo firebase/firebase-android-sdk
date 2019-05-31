@@ -24,7 +24,7 @@ import io.grpc.Status;
 import java.util.concurrent.Executor;
 
 /** CallCredentials that applies any authorization headers. */
-public final class FirestoreCallCredentials extends CallCredentials2 {
+final class FirestoreCallCredentials extends CallCredentials2 {
 
   private static final String LOG_TAG = "FirestoreCallCredentials";
 
@@ -33,7 +33,7 @@ public final class FirestoreCallCredentials extends CallCredentials2 {
 
   private final CredentialsProvider credentialsProvider;
 
-  public FirestoreCallCredentials(CredentialsProvider provider) {
+  FirestoreCallCredentials(CredentialsProvider provider) {
     credentialsProvider = provider;
   }
 
