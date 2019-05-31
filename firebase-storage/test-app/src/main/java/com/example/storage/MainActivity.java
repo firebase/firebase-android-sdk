@@ -377,6 +377,17 @@ public class MainActivity extends AppCompatActivity {
 
     clickButton = findViewById(R.id.multiBucket);
     clickButton.setOnClickListener(v -> runMultiBucketSequence());
+
+    clickButton = findViewById(R.id.listSinglePage);
+    clickButton.setOnClickListener(
+        v -> runTaskTest("listSinglePage", () -> TestCommandHelper.listFiles(10, 1)));
+
+    clickButton = findViewById(R.id.listMultplePages);
+    clickButton.setOnClickListener(
+        v -> runTaskTest("listMultplePages", () -> TestCommandHelper.listFiles(10, 10)));
+
+    clickButton = findViewById(R.id.listAll);
+    clickButton.setOnClickListener(v -> runTaskTest("listAll", TestCommandHelper::listAllFiles));
   }
 
   private void runTaskTest(final String testName, TaskProvider runner) {
