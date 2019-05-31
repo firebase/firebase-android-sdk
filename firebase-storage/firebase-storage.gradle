@@ -45,8 +45,8 @@ android {
     sourceSets {
         androidTest {
             java {
-                srcDir 'src/androidTest'
-                srcDir 'src/testUtil'
+                srcDir 'src/androidTest/java'
+                srcDir 'src/testUtil/java'
                 //We need this since FirebaseApp rule is externalized
                 //TODO(ashwinraghav) b/113079738
                 srcDir '../firebase-common/src/testUtil'
