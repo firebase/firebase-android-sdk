@@ -209,7 +209,6 @@ class GrpcCallProvider {
                     "Unable to forcefully shutdown the gRPC ManagedChannel.");
               }
             }
-
           } catch (InterruptedException e) {
             // (Re-)Cancel if current thread also interrupted
             channel.shutdownNow();
