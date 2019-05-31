@@ -38,12 +38,6 @@ fun Firebase.functions(app: FirebaseApp): FirebaseFunctions = FirebaseFunctions.
 fun Firebase.functions(app: FirebaseApp, region: String): FirebaseFunctions =
         FirebaseFunctions.getInstance(app, region)
 
-/** Runs the callable. */
-operator fun HttpsCallableReference.invoke() = this.call()
-
-/** Runs the callable using [data] as the arg. */
-operator fun HttpsCallableReference.invoke(data: Any?) = this.call(data)
-
 internal const val LIBRARY_NAME: String = "fire-fun-ktx"
 
 /** @suppress */

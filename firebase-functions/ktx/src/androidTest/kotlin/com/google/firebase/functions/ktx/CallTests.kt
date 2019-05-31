@@ -57,8 +57,7 @@ class CallTests {
         )
 
         var function = functions.getHttpsCallable("dataTest")
-        val result = function(input)
-        val actual = Tasks.await(result).getData()
+        val actual = Tasks.await(function.call(input)).getData()
 
         assertThat(actual).isInstanceOf(Map::class.java)
         @Suppress("UNCHECKED_CAST")
@@ -69,30 +68,10 @@ class CallTests {
     }
 
     @Test
-    fun testInvokeEquivalence() {
-        val functions = Firebase.functions(app)
-        val input = hashMapOf(
-            "bool" to true,
-            "int" to 2,
-            "long" to 3L,
-            "string" to "four",
-            "array" to listOf(5, 6),
-            "null" to null
-        )
-
-        var function = functions.getHttpsCallable("dataTest")
-        var invoked = Tasks.await(function(input)).getData()
-        val called = Tasks.await(function.call(input)).getData()
-
-        assertThat(invoked).isEqualTo(called)
-    }
-
-    @Test
     fun testNullDataCall() {
         val functions = Firebase.functions(app)
         var function = functions.getHttpsCallable("nullTest")
-        val result = function(null)
-        val actual = Tasks.await(result).getData()
+        val actual = Tasks.await(function.call(null)).getData()
 
         assertThat(actual).isNull()
     }
@@ -101,8 +80,7 @@ class CallTests {
     fun testEmptyDataCall() {
         val functions = Firebase.functions(app)
         var function = functions.getHttpsCallable("nullTest")
-        val result = function()
-        val actual = Tasks.await(result).getData()
+        val actual = Tasks.await(function.call()).getData()
 
         assertThat(actual).isNull()
     }
