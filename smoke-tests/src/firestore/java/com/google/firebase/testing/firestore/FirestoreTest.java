@@ -42,6 +42,28 @@ public final class FirestoreTest {
   @Rule public final ActivityTestRule<Activity> activity = new ActivityTestRule<>(Activity.class);
 
   @Test
+  public void setShouldFailWithPermissionDenied() throws Exception {
+    FirebaseAuth auth = FirebaseAuth.getInstance();
+    FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+
+    auth.signOut();
+    Thread.sleep(1000); // TODO(allisonbm92): Introduce a better means to reduce flakes.
+    DocumentReference doc = firestore.collection("restaurants").document(TestId.create());
+    try {
+      HashMap<String, Object> data = new HashMap<>();
+      data.put("popularity", 5000L);
+
+      Task<?> setTask = doc.set(new HashMap<>(data));
+      Throwable failure = Tasks2.waitForFailure(setTask);
+      FirebaseFirestoreException ex = (FirebaseFirestoreException) failure;
+
+      assertThat(ex.getCode()).isEqualTo(FirebaseFirestoreException.Code.PERMISSION_DENIED);
+    } finally {
+      Tasks2.waitBestEffort(doc.delete());
+    }
+  }
+
+  @Test
   public void setShouldTriggerListenerWithNewlySetData() throws Exception {
     FirebaseAuth auth = FirebaseAuth.getInstance();
     FirebaseFirestore firestore = FirebaseFirestore.getInstance();
@@ -71,15 +93,70 @@ public final class FirestoreTest {
     }
   }
 
+  @Test
+  public void updateShouldTriggerListenerWithUpdatedData() throws Exception {
+    FirebaseAuth auth = FirebaseAuth.getInstance();
+    FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+
+    auth.signOut();
+    Task<?> signInTask = auth.signInWithEmailAndPassword("test@mailinator.com", "password");
+    Tasks2.waitForSuccess(signInTask);
+
+    DocumentReference doc = firestore.collection("restaurants").document(TestId.create());
+    try {
+      HashMap<String, Object> originalData = new HashMap<>();
+      originalData.put("location", "Google NYC");
+
+      Task<?> setTask = doc.set(new HashMap<>(originalData));
+      Tasks2.waitForSuccess(setTask);
+
+      SnapshotListener listener = new SnapshotListener(2);
+      ListenerRegistration registration = doc.addSnapshotListener(listener);
+
+      try {
+        HashMap<String, Object> updateData = new HashMap<>();
+        updateData.put("priority", 5L);
+
+        Task<?> updateTask = doc.update(new HashMap<>(updateData));
+        Task<DocumentSnapshot> snapshotTask = listener.toTask();
+        Tasks2.waitForSuccess(updateTask);
+        Tasks2.waitForSuccess(snapshotTask);
+
+        DocumentSnapshot result = snapshotTask.getResult();
+        HashMap<String, Object> finalData = new HashMap<>();
+        finalData.put("location", "Google NYC");
+        finalData.put("priority", 5L);
+        assertThat(result.getData()).isEqualTo(finalData);
+      } finally {
+        registration.remove();
+      }
+    } finally {
+      Tasks2.waitBestEffort(doc.delete());
+    }
+  }
+
   private static class SnapshotListener implements EventListener<DocumentSnapshot> {
     private final TaskCompletionSource<DocumentSnapshot> taskFactory = new TaskCompletionSource<>();
+
+    private int eventsUntilFinished;
+
+    SnapshotListener() {
+      this.eventsUntilFinished = 1;
+    }
+
+    SnapshotListener(int count) {
+      this.eventsUntilFinished = count;
+    }
 
     @Override
     public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException error) {
       if (error != null) {
         taskFactory.trySetException(error);
-      } else if (snapshot.exists()) {
-        taskFactory.trySetResult(snapshot);
+      } else {
+        if (eventsUntilFinished == 1) {
+          taskFactory.trySetResult(snapshot);
+        }
+        eventsUntilFinished -= 1;
       }
     }
 

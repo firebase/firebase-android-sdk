@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 public final class Tasks2 {
 
   private static final long BEST_EFFORT_DURATION = 10;
-  private static final long WAIT_DURATION = 30;
+  private static final long WAIT_DURATION = 40;
   private static final TimeUnit WAIT_UNIT = TimeUnit.SECONDS;
 
   private Tasks2() {}
@@ -48,6 +48,22 @@ public final class Tasks2 {
     } catch (ExecutionException | TimeoutException ex) {
       // Ignore.
     }
+  }
+
+  /**
+   * Waits for the task to complete with a failure.
+   *
+   * <p>This method will block the current thread and return the resulting exception. An assertion
+   * failure will be thrown if the task does not fail.
+   */
+  public static Throwable waitForFailure(Task<?> task) throws Exception {
+    try {
+      Tasks.await(task, WAIT_DURATION, WAIT_UNIT);
+    } catch (ExecutionException ex) {
+      return ex.getCause();
+    }
+
+    throw new AssertionError("Task did not fail");
   }
 
   /**
