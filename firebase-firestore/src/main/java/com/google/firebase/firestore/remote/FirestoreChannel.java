@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.util;
+package com.google.firebase.firestore.remote;
 
 import android.content.Context;
 import com.google.android.gms.tasks.Task;
@@ -22,7 +22,8 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.remote.FirestoreCallCredentials;
+import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Util;
 import io.grpc.ClientCall;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
@@ -35,7 +36,7 @@ import java.util.List;
  * Wrapper class around io.grpc.Channel that adds headers, exception handling and simplifies
  * invoking RPCs.
  */
-public class FirestoreChannel {
+class FirestoreChannel {
 
   private static final Metadata.Key<String> X_GOOG_API_CLIENT_HEADER =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER);
@@ -60,7 +61,7 @@ public class FirestoreChannel {
   /** The value to use as resource prefix header. */
   private final String resourcePrefixValue;
 
-  public FirestoreChannel(
+  FirestoreChannel(
       AsyncQueue asyncQueue,
       Context context,
       CredentialsProvider credentialsProvider,

@@ -26,7 +26,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.FirestoreChannel;
 import com.google.firebase.firestore.util.Supplier;
 import com.google.firestore.v1.BatchGetDocumentsRequest;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
@@ -61,7 +60,7 @@ import java.util.concurrent.TimeUnit;
 public class Datastore {
 
   /** Set of lowercase, white-listed headers for logging purposes. */
-  public static final Set<String> WHITE_LISTED_HEADERS =
+  static final Set<String> WHITE_LISTED_HEADERS =
       new HashSet<>(
           Arrays.asList(
               "date",

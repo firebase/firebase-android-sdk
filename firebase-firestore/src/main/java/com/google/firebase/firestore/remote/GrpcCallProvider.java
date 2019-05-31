@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.util;
+package com.google.firebase.firestore.remote;
 
 import android.content.Context;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.security.ProviderInstaller;
+import com.google.firebase.firestore.util.Assert;
+import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.CallCredentials;
 import io.grpc.CallOptions;
@@ -167,7 +170,7 @@ class GrpcCallProvider {
   }
 
   /** Shuts down the GRPC channel and the internal worker queue. */
-  public void shutdown() {
+  void shutdown() {
     shutdown = true;
 
     channelQueue.execute(
