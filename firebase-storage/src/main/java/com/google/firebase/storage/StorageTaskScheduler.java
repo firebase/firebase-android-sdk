@@ -17,6 +17,7 @@ package com.google.firebase.storage;
 import android.support.annotation.NonNull;
 import android.support.annotation.RestrictTo;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -79,6 +80,10 @@ public class StorageTaskScheduler {
 
   public void scheduleCallback(Runnable task) {
     CALLBACK_QUEUE_EXECUTOR.execute(task);
+  }
+
+  public Executor getCommandPoolExecutor() {
+    return COMMAND_POOL_EXECUTOR;
   }
 
   /** The thread factory for Storage threads. */

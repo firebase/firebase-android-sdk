@@ -51,6 +51,7 @@ public class RecordingHttpURLConnection extends HttpURLConnection {
     super(wrappedConnection.getURL());
     mWrappedConnection = wrappedConnection;
     mBuilder = builder;
+    mBuilder.append("\n<new>");
     mBuilder.append("\nUrl:").append(wrappedConnection.getURL().toString());
     this.injector = injector;
   }

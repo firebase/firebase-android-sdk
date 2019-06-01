@@ -1,0 +1,17 @@
+
+list:
+  onComplete:Success=true
+  Received Prefixes:
+    /smallDirectory/aprefix
+  Received Items:
+    /smallDirectory/data1.dat
+    /smallDirectory/data10.dat
+    /smallDirectory/data11.dat
+    /smallDirectory/data12.dat
+    /smallDirectory/data13.dat
+    /smallDirectory/data14.dat
+    /smallDirectory/data15.dat
+    /smallDirectory/data16.dat
+    /smallDirectory/data17.dat
+  Page Token:c21hbGxEaXJlY3RvcnkvZGF0YTE3LmRhdA==
+done.
