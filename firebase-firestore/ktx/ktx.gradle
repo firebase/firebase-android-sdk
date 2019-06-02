@@ -44,8 +44,8 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
     implementation project(':firebase-common')
-    implementation project(':firebase-common:ktx')
-    implementation project(':firebase-firestore')
+    api project(':firebase-common:ktx')
+    api project(':firebase-firestore')
     implementation 'com.android.support:support-annotations:28.0.0'
 
     testImplementation project(':firebase-database-collection')
