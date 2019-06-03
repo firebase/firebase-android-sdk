@@ -588,8 +588,8 @@ public class CustomClassMapper {
     private final HashSet<String> serverTimestamps;
 
     // A set of property names that were annotated with @DocumentId. These properties will be
-    // populated with
-    // document ID values during deserialization, and be skipped during serialization.
+    // populated with document ID values during deserialization, and be skipped during
+    // serialization.
     private final HashSet<String> documentIdPropertyNames;
 
     BeanMapper(Class<T> clazz) {
@@ -648,48 +648,46 @@ public class CustomClassMapper {
       do {
         // Add any setters
         for (Method method : currentClass.getDeclaredMethods()) {
-          if (!shouldIncludeSetter(method)) {
-            continue;
-          }
-          String propertyName = propertyName(method);
-          String existingPropertyName = properties.get(propertyName.toLowerCase(Locale.US));
-          if (existingPropertyName != null && !existingPropertyName.equals(propertyName)) {
-            throw new RuntimeException(
-                "Found setter on "
-                    + currentClass.getName()
-                    + " with invalid case-sensitive name: "
-                    + method.getName());
-          }
-
-          Method existingSetter = setters.get(propertyName);
-
-          // Raise exception if a conflict between setters is found.
-          if (existingSetter != null && !isSetterOverride(method, existingSetter)) {
-            if (currentClass == clazz) {
-              // TODO: Should we support overloads?
-              throw new RuntimeException(
-                  "Class "
-                      + clazz.getName()
-                      + " has multiple setter overloads with name "
-                      + method.getName());
-            } else {
-              throw new RuntimeException(
-                  "Found conflicting setters "
-                      + "with name: "
-                      + method.getName()
-                      + " (conflicts with "
-                      + existingSetter.getName()
-                      + " defined on "
-                      + existingSetter.getDeclaringClass().getName()
-                      + ")");
+          if (shouldIncludeSetter(method)) {
+            String propertyName = propertyName(method);
+            String existingPropertyName = properties.get(propertyName.toLowerCase(Locale.US));
+            if (existingPropertyName != null) {
+              if (!existingPropertyName.equals(propertyName)) {
+                throw new RuntimeException(
+                    "Found setter on "
+                        + currentClass.getName()
+                        + " with invalid case-sensitive name: "
+                        + method.getName());
+              } else {
+                Method existingSetter = setters.get(propertyName);
+                if (existingSetter == null) {
+                  method.setAccessible(true);
+                  setters.put(propertyName, method);
+                  applySetterAnnotations(method);
+                } else if (!isSetterOverride(method, existingSetter)) {
+                  // We require that setters with conflicting property names are
+                  // overrides from a base class
+                  if (currentClass == clazz) {
+                    // TODO: Should we support overloads?
+                    throw new RuntimeException(
+                        "Class "
+                            + clazz.getName()
+                            + " has multiple setter overloads with name "
+                            + method.getName());
+                  } else {
+                    throw new RuntimeException(
+                        "Found conflicting setters "
+                            + "with name: "
+                            + method.getName()
+                            + " (conflicts with "
+                            + existingSetter.getName()
+                            + " defined on "
+                            + existingSetter.getDeclaringClass().getName()
+                            + ")");
+                  }
+                }
+              }
             }
-          }
-
-          // Make it accessible and process annotations if not yet.
-          if (existingSetter == null) {
-            method.setAccessible(true);
-            setters.put(propertyName, method);
-            applySetterAnnotations(method);
           }
         }
 
@@ -717,15 +715,14 @@ public class CustomClassMapper {
 
       // Make sure we can write to @DocumentId annotated properties before proceeding.
       for (String docIdProperty : documentIdPropertyNames) {
-        if (setters.containsKey(docIdProperty) || fields.containsKey(docIdProperty)) {
-          continue;
+        if (!setters.containsKey(docIdProperty) && !fields.containsKey(docIdProperty)) {
+          throw new RuntimeException(
+              "@DocumentId is annotated on property "
+                  + docIdProperty
+                  + " of class "
+                  + clazz.getName()
+                  + " but no field or public setter was found");
         }
-
-        throw new RuntimeException(
-            "@DocumentId is annotated on property "
-                + docIdProperty
-                + " which provides no way to write to on class "
-                + clazz.getName());
       }
     }
 
@@ -798,10 +795,19 @@ public class CustomClassMapper {
           }
         }
       }
+      populateDocumentIdProperties(types, context, instance, deserialzedProperties);
 
-      // Populate @DocumentId annotated fields. If there is a conflict (@DocumentId annotation is
-      // applied to a property that is already deserialized from the firestore document)
-      // a runtime exception will be thrown.
+      return instance;
+    }
+
+    // Populate @DocumentId annotated fields. If there is a conflict (@DocumentId annotation is
+    // applied to a property that is already deserialized from the firestore document)
+    // a runtime exception will be thrown.
+    private void populateDocumentIdProperties(
+        Map<TypeVariable<Class<T>>, Type> types,
+        DeserializeContext context,
+        T instance,
+        HashSet<String> deserialzedProperties) {
       for (String docIdPropertyName : documentIdPropertyNames) {
         if (deserialzedProperties.contains(docIdPropertyName)) {
           String message =
@@ -839,7 +845,6 @@ public class CustomClassMapper {
           }
         }
       }
-      return instance;
     }
 
     private Type resolveType(Type type, Map<TypeVariable<Class<T>>, Type> types) {
@@ -915,14 +920,7 @@ public class CustomClassMapper {
 
       if (field.isAnnotationPresent(DocumentId.class)) {
         Class<?> fieldType = field.getType();
-        if (fieldType != String.class && fieldType != DocumentReference.class) {
-          throw new IllegalArgumentException(
-              "Field "
-                  + field.getName()
-                  + " is annotated with @DocumentId but is "
-                  + fieldType
-                  + " instead of String or DocumentReference.");
-        }
+        ensureValidDocumentIdType("Field", "is", fieldType);
         documentIdPropertyNames.add(propertyName(field));
       }
     }
@@ -944,14 +942,7 @@ public class CustomClassMapper {
       // Even though the value will be skipped, we still check for type matching for consistency.
       if (method.isAnnotationPresent(DocumentId.class)) {
         Class<?> returnType = method.getReturnType();
-        if (returnType != String.class && returnType != DocumentReference.class) {
-          throw new IllegalArgumentException(
-              "Method "
-                  + method.getName()
-                  + " is annotated with @DocumentId but returns "
-                  + returnType
-                  + " instead of String or DocumentReference.");
-        }
+        ensureValidDocumentIdType("Method", "returns", returnType);
         documentIdPropertyNames.add(propertyName(method));
       }
     }
@@ -967,15 +958,20 @@ public class CustomClassMapper {
 
       if (method.isAnnotationPresent(DocumentId.class)) {
         Class<?> paramType = method.getParameterTypes()[0];
-        if (paramType != String.class && paramType != DocumentReference.class) {
-          throw new IllegalArgumentException(
-              "Method "
-                  + method.getName()
-                  + " is annotated with @DocumentId but sets "
-                  + paramType
-                  + " instead of String or DocumentReference.");
-        }
+        ensureValidDocumentIdType("Method", "sets", paramType);
         documentIdPropertyNames.add(propertyName(method));
+      }
+    }
+
+    private void ensureValidDocumentIdType(String fieldDescription, String operation, Type type) {
+      if (type != String.class && type != DocumentReference.class) {
+        throw new IllegalArgumentException(
+            fieldDescription
+                + " is annotated with @DocumentId but "
+                + operation
+                + " "
+                + type
+                + " instead of String or DocumentReference.");
       }
     }
 

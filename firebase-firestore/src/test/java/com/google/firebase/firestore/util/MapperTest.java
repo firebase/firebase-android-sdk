@@ -907,7 +907,7 @@ public class MapperTest {
   }
 
   private static <T> T deserialize(String jsonString, Class<T> clazz) {
-    return deserialize(jsonString, clazz, null);
+    return deserialize(jsonString, clazz, /*docRef=*/ null);
   }
 
   private static <T> T deserialize(String jsonString, Class<T> clazz, DocumentReference docRef) {
@@ -2280,15 +2280,6 @@ public class MapperTest {
     @DocumentId public Integer intField;
   }
 
-  private static class SetterWithDocumentIdOnWrongTypeBean {
-    private int intField = 100;
-
-    @DocumentId
-    public void setIntField(int value) {
-      intField = value;
-    }
-  }
-
   private static class GetterWithDocumentIdOnWrongTypeBean {
     private int intField = 100;
 
@@ -2306,32 +2297,23 @@ public class MapperTest {
 
   @Test
   public void documentIdAnnotateWrongTypeThrows() {
+    final String expectedErrorMessage = "instead of String or DocumentReference";
     assertExceptionContains(
-        "instead of String or DocumentReference",
-        () -> serialize(new FieldWithDocumentIdOnWrongTypeBean()));
+        expectedErrorMessage, () -> serialize(new FieldWithDocumentIdOnWrongTypeBean()));
     assertExceptionContains(
-        "instead of String or DocumentReference",
+        expectedErrorMessage,
         () -> deserialize("{'intField': 1}", FieldWithDocumentIdOnWrongTypeBean.class));
 
     assertExceptionContains(
-        "instead of String or DocumentReference",
-        () -> serialize(new SetterWithDocumentIdOnWrongTypeBean()));
+        expectedErrorMessage, () -> serialize(new GetterWithDocumentIdOnWrongTypeBean()));
     assertExceptionContains(
-        "instead of String or DocumentReference",
-        () -> deserialize("{'intField': 1}", SetterWithDocumentIdOnWrongTypeBean.class));
-
-    assertExceptionContains(
-        "instead of String or DocumentReference",
-        () -> serialize(new GetterWithDocumentIdOnWrongTypeBean()));
-    assertExceptionContains(
-        "instead of String or DocumentReference",
+        expectedErrorMessage,
         () -> deserialize("{'intField': 1}", GetterWithDocumentIdOnWrongTypeBean.class));
 
     assertExceptionContains(
-        "instead of String or DocumentReference",
-        () -> serialize(new PropertyWithDocumentIdOnWrongTypeBean()));
+        expectedErrorMessage, () -> serialize(new PropertyWithDocumentIdOnWrongTypeBean()));
     assertExceptionContains(
-        "instead of String or DocumentReference",
+        expectedErrorMessage,
         () -> deserialize("{'intField': 1}", PropertyWithDocumentIdOnWrongTypeBean.class));
   }
 
@@ -2344,14 +2326,15 @@ public class MapperTest {
 
   @Test
   public void documentIdAnnotateReadOnlyThrows() {
+    final String expectedErrorMessage = "but no field or public setter was found";
     // Serialization.
     GetterWithoutBackingFieldOnDocumentIdBean bean =
         new GetterWithoutBackingFieldOnDocumentIdBean();
-    assertExceptionContains("provides no way to write", () -> serialize(bean));
+    assertExceptionContains(expectedErrorMessage, () -> serialize(bean));
 
     // Deserialization.
     assertExceptionContains(
-        "provides no way to write",
+        expectedErrorMessage,
         () -> deserialize("{'docId': 'id'}", GetterWithoutBackingFieldOnDocumentIdBean.class));
   }
 
@@ -2427,7 +2410,7 @@ public class MapperTest {
 
   @Test
   public void documentIdsRoundTrip() {
-    // Implicitly verifies @DocumentId is ignore during serialization.
+    // Implicitly verifies @DocumentId is ignored during serialization.
 
     DocumentReference ref = TestUtil.documentReference("coll/doc123");
 
@@ -2453,14 +2436,15 @@ public class MapperTest {
 
   @Test
   public void documentIdsDeserializeConflictThrows() {
+    final String expectedErrorMessage = "cannot apply @DocumentId on this property";
     DocumentReference ref = TestUtil.documentReference("coll/doc123");
 
     assertExceptionContains(
-        "cannot apply @DocumentId on this property",
+        expectedErrorMessage,
         () -> deserialize("{'docId': 'toBeOverwritten'}", DocumentIdOnStringField.class, ref));
 
     assertExceptionContains(
-        "cannot apply @DocumentId on this property",
+        expectedErrorMessage,
         () ->
             deserialize(
                 "{'docIdProperty': 'toBeOverwritten', 'anotherProperty': 100}",
@@ -2468,7 +2452,7 @@ public class MapperTest {
                 ref));
 
     assertExceptionContains(
-        "cannot apply @DocumentId on this property",
+        expectedErrorMessage,
         () ->
             deserialize(
                 "{'nestedDocIdHolder': {'docId': 'toBeOverwritten'}}",
