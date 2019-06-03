@@ -33,8 +33,8 @@ import java.io.File;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import junit.framework.Assert;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -74,8 +74,7 @@ public class DownloadTest {
   public void streamDownload() throws Exception {
     System.out.println("Starting test streamDownload.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("streamDownload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("streamDownload", true);
     final boolean[] completeHandlerInvoked = new boolean[] {false};
 
     Task<StreamDownloadResponse> task =
@@ -90,18 +89,11 @@ public class DownloadTest {
             "image.jpg",
             -1);
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("streamDownload", task.getResult());
-        assertTrue(completeHandlerInvoked[0]);
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("streamDownload", task.getResult());
+    assertTrue(completeHandlerInvoked[0]);
   }
 
   @Test
@@ -158,7 +150,7 @@ public class DownloadTest {
   public void streamDownloadWithResume() throws Exception {
     System.out.println("Starting test streamDownloadWithResume.");
 
-    final MockConnectionFactory factory =
+    MockConnectionFactory factory =
         NetworkLayerMock.ensureNetworkMock("streamDownloadWithResume", true);
     final boolean[] completeHandlerInvoked = new boolean[] {false};
 
@@ -174,97 +166,67 @@ public class DownloadTest {
             "image.jpg",
             -1);
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("streamDownloadWithResume", task.getResult());
-        assertTrue(completeHandlerInvoked[0]);
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("streamDownloadWithResume", task.getResult());
+    assertTrue(completeHandlerInvoked[0]);
   }
 
   @Test
   public void streamDownloadWithResumeAndCancel() throws Exception {
     System.out.println("Starting test streamDownloadWithResumeAndCancel.");
 
-    final MockConnectionFactory factory =
+    MockConnectionFactory factory =
         NetworkLayerMock.ensureNetworkMock("streamDownloadWithResumeAndCancel", true);
 
     Task<StreamDownloadResponse> task =
         TestDownloadHelper.streamDownload(
             bitmap -> fail("Should not get called since we cancelled."), null, "image.jpg", 260000);
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("streamDownloadWithResumeAndCancel", task.getResult());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("streamDownloadWithResumeAndCancel", task.getResult());
   }
 
   @Test
   public void streamDownloadCanceled() throws Exception {
     System.out.println("Starting test streamDownloadCanceled.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("streamDownload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("streamDownload", true);
 
     Task<StreamDownloadResponse> task =
         TestDownloadHelper.streamDownload(
             bitmap -> fail("Should not get called since we cancelled."), null, "image.jpg", 0);
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("streamDownloadCanceled", task.getResult());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("streamDownloadCanceled", task.getResult());
   }
 
   @Test
   public void streamDownloadWithETagChange() throws Exception {
     System.out.println("Starting test streamDownloadWithETagChange.");
 
-    final MockConnectionFactory factory =
+    MockConnectionFactory factory =
         NetworkLayerMock.ensureNetworkMock("streamDownloadWithETagChange", true);
 
     Task<StreamDownloadResponse> task =
         TestDownloadHelper.streamDownload(null, null, "image.jpg", -1);
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("streamDownloadWithETagChange", task.getResult());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("streamDownloadWithETagChange", task.getResult());
   }
 
   @Test
   public void emptyStreamDownload() throws Exception {
     System.out.println("Starting test emptyStreamDownload.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("emptyStreamDownload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("emptyStreamDownload", true);
     final boolean[] completeHandlerInvoked = new boolean[] {false};
 
     Task<StreamDownloadResponse> task =
@@ -277,26 +239,18 @@ public class DownloadTest {
             "empty.dat",
             -1);
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("emptyStreamDownload", task.getResult());
-        assertTrue(completeHandlerInvoked[0]);
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("emptyStreamDownload", task.getResult());
+    assertTrue(completeHandlerInvoked[0]);
   }
 
   @Test
   public void byteDownload() throws Exception {
     System.out.println("Starting test byteDownload.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("streamDownload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("streamDownload", true);
 
     Semaphore semaphore =
         TestDownloadHelper.byteDownload(
@@ -322,7 +276,7 @@ public class DownloadTest {
       outputFile.delete();
     }
     Uri destinationUri = Uri.fromFile(outputFile);
-    final MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileDownload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileDownload", true);
 
     final boolean[] completeHandlerInvoked = new boolean[] {false};
 
@@ -336,18 +290,11 @@ public class DownloadTest {
             },
             -1);
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("fileDownload", task.getResult().toString());
-        assertTrue(completeHandlerInvoked[0]);
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("fileDownload", task.getResult().toString());
+    assertTrue(completeHandlerInvoked[0]);
   }
 
   @Test
@@ -360,8 +307,7 @@ public class DownloadTest {
       outputFile.delete();
     }
     Uri destinationUri = Uri.fromFile(outputFile);
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("fileDownloadResume", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileDownloadResume", true);
 
     final boolean[] completeHandlerInvoked = new boolean[] {false};
 
@@ -375,18 +321,11 @@ public class DownloadTest {
             },
             -1);
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("fileDownloadResume", task.getResult().toString());
-        assertTrue(completeHandlerInvoked[0]);
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("fileDownloadResume", task.getResult().toString());
+    assertTrue(completeHandlerInvoked[0]);
   }
 
   @Test
@@ -399,7 +338,7 @@ public class DownloadTest {
       outputFile.delete();
     }
     Uri destinationUri = Uri.fromFile(outputFile);
-    final MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("emptyDownload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("emptyDownload", true);
     final boolean[] completeHandlerInvoked = new boolean[] {false};
 
     Task<StringBuilder> task =
@@ -412,18 +351,11 @@ public class DownloadTest {
             },
             -1);
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("emptyDownload", task.getResult().toString());
-        assertTrue(completeHandlerInvoked[0]);
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("emptyDownload", task.getResult().toString());
+    assertTrue(completeHandlerInvoked[0]);
   }
 
   @Test
@@ -436,21 +368,15 @@ public class DownloadTest {
       outputFile.delete();
     }
     Uri destinationUri = Uri.fromFile(outputFile);
-    final MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileDownload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileDownload", true);
 
     Task<StringBuilder> task =
         TestDownloadHelper.fileDownload(
             destinationUri, () -> fail("Should not run since we cancelled the task."), 0);
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("fileDownloadCanceled", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("fileDownloadCanceled", task.getResult().toString());
   }
 }
