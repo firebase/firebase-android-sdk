@@ -123,7 +123,9 @@ public class GrpcCallProvider {
       // `OkHttp` maintains a list of supported providers that is initialized when the JVM first
       // resolves the static dependencies of ManagedChannel.
       ProviderInstaller.installIfNeeded(context);
-    } catch (GooglePlayServicesNotAvailableException | GooglePlayServicesRepairableException e) {
+    } catch (GooglePlayServicesNotAvailableException /* Thrown by ProviderInstaller */
+        | GooglePlayServicesRepairableException /* Thrown by ProviderInstaller */
+        | IllegalStateException e /* Thrown by Robolectric */) {
       // Mark the SSL initialization as done, even though we may be using outdated SSL
       // ciphers. gRPC-Java recommends obtaining updated ciphers from GMSCore, but we allow
       // the device to fall back to other SSL ciphers if GMSCore is not available.
