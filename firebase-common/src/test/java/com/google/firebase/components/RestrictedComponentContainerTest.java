@@ -57,7 +57,7 @@ public final class RestrictedComponentContainerTest {
     Float value = 1.0f;
     when(delegate.get(Float.class)).thenReturn(value);
 
-    assertThat(container.get(Float.class)).isSameAs(value);
+    assertThat(container.get(Float.class)).isSameInstanceAs(value);
     verify(delegate).get(Float.class);
   }
 
@@ -96,7 +96,7 @@ public final class RestrictedComponentContainerTest {
     Double value = 3.0d;
     when(delegate.getProvider(Double.class)).thenReturn(new Lazy<>(value));
 
-    assertThat(container.getProvider(Double.class).get()).isSameAs(value);
+    assertThat(container.getProvider(Double.class).get()).isSameInstanceAs(value);
     verify(delegate).getProvider(Double.class);
   }
 
@@ -125,7 +125,7 @@ public final class RestrictedComponentContainerTest {
     Set<Long> set = Collections.emptySet();
     when(delegate.setOf(Long.class)).thenReturn(set);
 
-    assertThat(container.setOf(Long.class)).isSameAs(set);
+    assertThat(container.setOf(Long.class)).isSameInstanceAs(set);
     verify(delegate).setOf(Long.class);
   }
 
@@ -144,7 +144,7 @@ public final class RestrictedComponentContainerTest {
     Set<Boolean> set = Collections.emptySet();
     when(delegate.setOfProvider(Boolean.class)).thenReturn(new Lazy<>(set));
 
-    assertThat(container.setOfProvider(Boolean.class).get()).isSameAs(set);
+    assertThat(container.setOfProvider(Boolean.class).get()).isSameInstanceAs(set);
     verify(delegate).setOfProvider(Boolean.class);
   }
 
