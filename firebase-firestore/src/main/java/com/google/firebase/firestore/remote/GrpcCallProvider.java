@@ -38,10 +38,10 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
 /**
- * Manages the GRPC channel and encapsulates all SSL and GRPC initialization.
+ * Manages the gRPC channel and encapsulates all SSL and gRPC initialization.
  *
  * <p>All operations are dispatched to an internal worker queue and are not executed until the SSL
- * and GRPC Stub initialization completes.
+ * and gRPC Stub initialization completes.
  */
 // PORTING NOTE: This class only exists on Android.
 class GrpcCallProvider {
@@ -50,7 +50,7 @@ class GrpcCallProvider {
 
   private static final RejectedExecutionHandler IGNORE_REJECTIONS_HANDLER =
       (runnable, executor) -> {
-        // We ignore rejected executions, since some GRPC messages can arrive after shutdown.
+        // We ignore rejected executions, since some gRPC messages can arrive after shutdown.
       };
 
   private final ExecutorService channelQueue;
@@ -89,19 +89,19 @@ class GrpcCallProvider {
     // depend on the AsyncQueue.
     channelQueue.execute(
         () -> {
-          FirestoreGrpc.FirestoreStub firestoreStub =
-              FirestoreGrpc.newStub(grpcChannel).withCallCredentials(firestoreHeaders);
-          callOptions = firestoreStub.getCallOptions();
-
           try {
             ProviderInstaller.installIfNeeded(context);
           } catch (GooglePlayServicesNotAvailableException
               | GooglePlayServicesRepairableException e) {
             // Mark the SSL initialization as done, even though we may be using outdated SSL
-            // ciphers. GRPC-Java recommends obtaining updated ciphers from GMSCore, but we allow
+            // ciphers. gRPC-Java recommends obtaining updated ciphers from GMSCore, but we allow
             // the device to fall back to other SSL ciphers if GMSCore is not available.
             Logger.warn(LOG_TAG, "Failed to update ssl context: %s", e);
           }
+
+          FirestoreGrpc.FirestoreStub firestoreStub =
+              FirestoreGrpc.newStub(grpcChannel).withCallCredentials(firestoreHeaders);
+          callOptions = firestoreStub.getCallOptions();
         });
   }
 
@@ -111,7 +111,7 @@ class GrpcCallProvider {
     Assert.hardAssert(!shutdown, "GrpcCallProvider already shut down");
 
     // Return a client call that is directly consumable. Note that we do not forward any operations
-    // until the initialization of the SSL stack and GRPC stub completes.
+    // until the initialization of the SSL stack and gRPC stub completes.
     return new ClientCall<ReqT, RespT>() {
       private ClientCall<ReqT, RespT> call;
 
@@ -169,7 +169,7 @@ class GrpcCallProvider {
     };
   }
 
-  /** Shuts down the GRPC channel and the internal worker queue. */
+  /** Shuts down the rRPC channel and the internal worker queue. */
   void shutdown() {
     shutdown = true;
 
@@ -184,10 +184,9 @@ class GrpcCallProvider {
             //
             // While running the integration tests, channel.shutdown() will occasionally timeout.
             // (Typically on ~4-5 different tests, differing from one run to the next.) We should
-            // figure
-            // this out. But in the meantime, just use an exceptionally short timeout here and skip
-            // straight to shutdownNow() which works every time. (We don't support shutting down
-            // firestore, so this should only be triggered from the test suite.)
+            // figure this out. But in the meantime, just use an exceptionally short timeout here
+            // and skip straight to shutdownNow() which works every time. (We don't support shutting
+            // down Firestore, so this should only be triggered from the test suite.)
             if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
               Logger.debug(
                   FirestoreChannel.class.getSimpleName(),
@@ -196,14 +195,11 @@ class GrpcCallProvider {
 
               // gRPC docs claim "Although forceful, the shutdown process is still not
               // instantaneous; isTerminated() will likely return false immediately after this
-              // method
-              // returns." Therefore, we still need to awaitTermination() again.
+              // method returns." Therefore, we still need to awaitTermination() again.
               if (!channel.awaitTermination(60, TimeUnit.SECONDS)) {
                 // Something bad has happened. We could assert, but this is just resource cleanup
-                // for a
-                // resource that is likely only released at the end of the execution. So instead,
-                // we'll
-                // just log the error.
+                // for a resource that is likely only released at the end of the execution. So
+                // instead, we'll just log the error.
                 Logger.warn(
                     FirestoreChannel.class.getSimpleName(),
                     "Unable to forcefully shutdown the gRPC ManagedChannel.");

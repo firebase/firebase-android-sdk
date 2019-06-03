@@ -55,7 +55,7 @@ class FirestoreChannel {
 
   private final CredentialsProvider credentialsProvider;
 
-  /** Manages the GRPC channel and provides all GRPC ClientCalls. */
+  /** Manages the gRPC channel and provides all gRPC ClientCalls. */
   private final GrpcCallProvider callProvider;
 
   /** The value to use as resource prefix header. */
