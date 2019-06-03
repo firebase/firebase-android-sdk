@@ -27,7 +27,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.UiThread;
 import android.support.annotation.VisibleForTesting;
 import android.support.v4.os.UserManagerCompat;
 import android.support.v4.util.ArrayMap;
@@ -39,10 +38,7 @@ import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.PlatformVersion;
 import com.google.android.gms.common.util.ProcessUtils;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.PublicApi;
-import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentDiscovery;
 import com.google.firebase.components.ComponentRegistrar;
@@ -50,9 +46,6 @@ import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.internal.DataCollectionConfigStorage;
-import com.google.firebase.internal.DefaultIdTokenListenersCountChangedListener;
-import com.google.firebase.internal.InternalTokenProvider;
-import com.google.firebase.internal.InternalTokenResult;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.nio.charset.Charset;
@@ -121,14 +114,10 @@ public class FirebaseApp {
   private final AtomicBoolean deleted = new AtomicBoolean();
   private final Lazy<DataCollectionConfigStorage> dataCollectionConfigStorage;
 
-  private final List<IdTokenListener> idTokenListeners = new CopyOnWriteArrayList<>();
   private final List<BackgroundStateChangeListener> backgroundStateChangeListeners =
       new CopyOnWriteArrayList<>();
   private final List<FirebaseAppLifecycleListener> lifecycleListeners =
       new CopyOnWriteArrayList<>();
-
-  private InternalTokenProvider tokenProvider;
-  private IdTokenListenersCountChangedListener idTokenListenersCountChangedListener;
 
   /** Returns the application {@link Context}. */
   @NonNull
@@ -322,69 +311,6 @@ public class FirebaseApp {
     return firebaseApp;
   }
 
-  /** @hide */
-  @Deprecated
-  @KeepForSdk
-  public void setTokenProvider(@NonNull InternalTokenProvider tokenProvider) {
-    this.tokenProvider = Preconditions.checkNotNull(tokenProvider);
-  }
-
-  /** @hide */
-  @Deprecated
-  @KeepForSdk
-  public void setIdTokenListenersCountChangedListener(
-      @NonNull IdTokenListenersCountChangedListener listener) {
-    idTokenListenersCountChangedListener = Preconditions.checkNotNull(listener);
-    // Immediately trigger so that the listenerlistener can properly decide if it needs to
-    // start out as active.
-    idTokenListenersCountChangedListener.onListenerCountChanged(idTokenListeners.size());
-  }
-
-  /**
-   * Fetch the UID of the currently logged-in user.
-   *
-   * @deprecated use {@link com.google.firebase.auth.internal.InternalAuthProvider#getUid()} from
-   *     firebase-auth-interop instead.
-   * @hide
-   */
-  @Deprecated
-  @Nullable
-  @KeepForSdk
-  public String getUid() throws FirebaseApiNotAvailableException {
-    checkNotDeleted();
-    if (tokenProvider == null) {
-      throw new FirebaseApiNotAvailableException(
-          "firebase-auth is not " + "linked, please fall back to unauthenticated mode.");
-    }
-    return tokenProvider.getUid();
-  }
-
-  /**
-   * Fetch a valid STS Token.
-   *
-   * @param forceRefresh force refreshes the token. Should only be set to <code>true</code> if the
-   *     token is invalidated out of band.
-   * @return a {@link Task}
-   * @deprecated use {@link
-   *     com.google.firebase.auth.internal.InternalAuthProvider#getToken(boolean)} from
-   *     firebase-auth-interop instead.
-   * @hide
-   */
-  @Deprecated
-  @NonNull
-  @KeepForSdk
-  public Task<GetTokenResult> getToken(boolean forceRefresh) {
-    checkNotDeleted();
-
-    if (tokenProvider == null) {
-      return Tasks.forException(
-          new FirebaseApiNotAvailableException(
-              "firebase-auth is not " + "linked, please fall back to unauthenticated mode."));
-    } else {
-      return tokenProvider.getAccessToken(forceRefresh);
-    }
-  }
-
   /**
    * Deletes the {@link FirebaseApp} and all its data. All calls to this {@link FirebaseApp}
    * instance will throw once it has been called.
@@ -480,7 +406,6 @@ public class FirebaseApp {
     this.applicationContext = Preconditions.checkNotNull(applicationContext);
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
-    idTokenListenersCountChangedListener = new DefaultIdTokenListenersCountChangedListener();
 
     List<ComponentRegistrar> registrars =
         ComponentDiscovery.forContext(applicationContext).discover();
@@ -508,32 +433,10 @@ public class FirebaseApp {
   }
 
   /** @hide */
-  @Deprecated
-  @KeepForSdk
-  public List<IdTokenListener> getListeners() {
-    checkNotDeleted();
-    return idTokenListeners;
-  }
-
-  /** @hide */
   @KeepForSdk
   @VisibleForTesting
   public boolean isDefaultApp() {
     return DEFAULT_APP_NAME.equals(getName());
-  }
-
-  /** @hide */
-  @Deprecated
-  @KeepForSdk
-  @UiThread
-  public void notifyIdTokenListeners(@NonNull InternalTokenResult tokenResult) {
-    Log.d(LOG_TAG, "Notifying auth state listeners.");
-    int size = 0;
-    for (IdTokenListener listener : idTokenListeners) {
-      listener.onIdTokenChanged(tokenResult);
-      size++;
-    }
-    Log.d(LOG_TAG, String.format("Notified %d auth state listeners.", size));
   }
 
   private void notifyBackgroundStateChangeListeners(boolean background) {
@@ -541,46 +444,6 @@ public class FirebaseApp {
     for (BackgroundStateChangeListener listener : backgroundStateChangeListeners) {
       listener.onBackgroundStateChanged(background);
     }
-  }
-
-  /**
-   * Adds a {@link com.google.firebase.FirebaseApp.IdTokenListener} to the list of interested
-   * listeners.
-   *
-   * @param listener represents the {@link com.google.firebase.FirebaseApp.IdTokenListener} that
-   *     needs to be notified when we have changes in user state.
-   * @deprecated use {@link
-   *     com.google.firebase.auth.internal.InternalAuthProvider#addIdTokenListener(IdTokenListener)}
-   *     from firebase-auth-interop instead.
-   * @hide
-   */
-  @Deprecated
-  @KeepForSdk
-  public void addIdTokenListener(@NonNull IdTokenListener listener) {
-    checkNotDeleted();
-    Preconditions.checkNotNull(listener);
-    idTokenListeners.add(listener);
-    idTokenListenersCountChangedListener.onListenerCountChanged(idTokenListeners.size());
-  }
-
-  /**
-   * Removes a {@link com.google.firebase.FirebaseApp.IdTokenListener} from the list of interested
-   * listeners.
-   *
-   * @param listenerToRemove represents the instance of {@link
-   *     com.google.firebase.FirebaseApp.IdTokenListener} to be removed.
-   * @deprecated use {@link
-   *     com.google.firebase.auth.internal.InternalAuthProvider#removeIdTokenListener(IdTokenListener)}
-   *     from firebase-auth-interop instead.
-   * @hide
-   */
-  @Deprecated
-  @KeepForSdk
-  public void removeIdTokenListener(@NonNull IdTokenListener listenerToRemove) {
-    checkNotDeleted();
-    Preconditions.checkNotNull(listenerToRemove);
-    idTokenListeners.remove(listenerToRemove);
-    idTokenListenersCountChangedListener.onListenerCountChanged(idTokenListeners.size());
   }
 
   /**
@@ -706,44 +569,6 @@ public class FirebaseApp {
   /** Normalizes the app name. */
   private static String normalize(@NonNull String name) {
     return name.trim();
-  }
-
-  /**
-   * Used to deliver notifications when authentication state changes.
-   *
-   * @deprecated Use {@link com.google.firebase.auth.internal.IdTokenListener} in
-   *     firebase-auth-interop.
-   * @hide
-   */
-  @Deprecated
-  @KeepForSdk
-  public interface IdTokenListener {
-    /**
-     * The method which gets invoked authentication state has changed.
-     *
-     * @param tokenResult represents the {@link InternalTokenResult} interface, which can be used to
-     *     obtain a cached access token.
-     */
-    @KeepForSdk
-    void onIdTokenChanged(@NonNull InternalTokenResult tokenResult);
-  }
-
-  /**
-   * Interface used to signal to FirebaseAuth when there are internal listeners, so that we know
-   * whether or not to do proactive token refreshing.
-   *
-   * @hide
-   */
-  @Deprecated
-  @KeepForSdk
-  public interface IdTokenListenersCountChangedListener {
-    /**
-     * To be called with the new number of auth state listeners on any events which change the
-     * number of listeners. Also triggered when {@link
-     * #setIdTokenListenersCountChangedListener(IdTokenListenersCountChangedListener)} is called.
-     */
-    @KeepForSdk
-    void onListenerCountChanged(int numListeners);
   }
 
   /**

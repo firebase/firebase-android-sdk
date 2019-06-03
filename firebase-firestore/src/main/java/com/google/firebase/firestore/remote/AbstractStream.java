@@ -23,8 +23,6 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.ExponentialBackoff;
-import com.google.firebase.firestore.util.FirestoreChannel;
-import com.google.firebase.firestore.util.IncomingStreamObserver;
 import com.google.firebase.firestore.util.Logger;
 import io.grpc.ClientCall;
 import io.grpc.Metadata;

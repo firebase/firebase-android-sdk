@@ -22,7 +22,6 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
-import com.google.firebase.firestore.util.FirestoreChannel;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.WriteRequest;
 import com.google.firestore.v1.WriteResponse;

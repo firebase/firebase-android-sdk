@@ -43,10 +43,14 @@ android {
 }
 
 dependencies {
+  implementation (project(':firebase-storage')) {
+    exclude group: 'com.google.firebase', module: 'firebase-common'
+  }
+
   // We intentionally use an open ended version to pick up any SNAPSHOT
   // versions published to the root project' s build/ directory.
-  implementation 'com.google.firebase:firebase-storage:16.1.0'
-  implementation 'com.google.firebase:firebase-auth:16+'
+  implementation 'com.google.firebase:firebase-auth:17+'
+  implementation 'com.google.firebase:firebase-common:17+'
 
   implementation "com.android.support:design:27.1.1"
   implementation "com.android.support:appcompat-v7:27.1.1"

@@ -41,6 +41,29 @@ public final class DatabaseTest {
   @Rule public final ActivityTestRule<Activity> activity = new ActivityTestRule<>(Activity.class);
 
   @Test
+  public void setValueShouldFailWithPermissionDenied() throws Exception {
+    FirebaseAuth auth = FirebaseAuth.getInstance();
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
+
+    auth.signOut();
+    Thread.sleep(1000); // TODO(allisonbm92): Introduce a better way to reduce flakiness.
+    DatabaseReference doc = database.getReference("restaurants").child(TestId.create());
+    HashMap<String, Object> data = new HashMap<>();
+    data.put("location", "Google DUB");
+
+    try {
+      Task<?> setTask = doc.setValue(new HashMap<>(data));
+      Tasks2.waitForFailure(setTask);
+
+      // Unfortunately, there's no good way to test that this has the correct error code, because
+      // Database does not expose it through the task interface. Perhaps we could re-structure this
+      // in the future.
+    } finally {
+      Tasks2.waitBestEffort(doc.removeValue());
+    }
+  }
+
+  @Test
   public void setValueShouldTriggerListenerWithNewlySetData() throws Exception {
     FirebaseAuth auth = FirebaseAuth.getInstance();
     FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -64,6 +87,43 @@ public final class DatabaseTest {
 
       DataSnapshot result = snapshotTask.getResult();
       assertThat(result.getValue()).isEqualTo(data);
+    } finally {
+      Tasks2.waitBestEffort(doc.removeValue());
+    }
+  }
+
+  @Test
+  public void updateChildrenShouldTriggerListenerWithUpdatedData() throws Exception {
+    FirebaseAuth auth = FirebaseAuth.getInstance();
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
+
+    auth.signOut();
+    Task<?> signInTask = auth.signInWithEmailAndPassword("test@mailinator.com", "password");
+    Tasks2.waitForSuccess(signInTask);
+
+    DatabaseReference doc = database.getReference("restaurants").child(TestId.create());
+    HashMap<String, Object> originalData = new HashMap<>();
+    originalData.put("location", "Google NYC");
+
+    try {
+      Task<?> setTask = doc.setValue(new HashMap<>(originalData));
+      Tasks2.waitForSuccess(setTask);
+      SnapshotListener listener = new SnapshotListener();
+      doc.addListenerForSingleValueEvent(listener);
+
+      HashMap<String, Object> updateData = new HashMap<>();
+      updateData.put("count", 412L);
+
+      Task<?> updateTask = doc.updateChildren(new HashMap<>(updateData));
+      Task<DataSnapshot> snapshotTask = listener.toTask();
+      Tasks2.waitForSuccess(updateTask);
+      Tasks2.waitForSuccess(snapshotTask);
+
+      DataSnapshot result = snapshotTask.getResult();
+      HashMap<String, Object> finalData = new HashMap<>();
+      finalData.put("location", "Google NYC");
+      finalData.put("count", 412L);
+      assertThat(result.getValue()).isEqualTo(finalData);
     } finally {
       Tasks2.waitBestEffort(doc.removeValue());
     }

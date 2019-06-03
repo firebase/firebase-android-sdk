@@ -861,6 +861,7 @@ public class CustomClassMapper {
     }
 
     Map<String, Object> serialize(T object, ErrorPath path) {
+      // TODO(wuandy): Add logic to skip @DocumentId annotated fields in serialization.
       if (!clazz.isAssignableFrom(object.getClass())) {
         throw new IllegalArgumentException(
             "Can't serialize object of class "

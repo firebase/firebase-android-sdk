@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.google.firebase.test">
 
-    <uses-sdk android:minSdkVersion="14"/>
+    <uses-sdk android:minSdkVersion="16" tools:overrideLibrary="com.google.firebase.auth"/>
     <application>
         <service android:name="com.google.firebase.components.ComponentDiscoveryService"
             android:exported="false">

@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins.license
 
+import com.android.build.gradle.tasks.BundleAar
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.AnotherMITLicenseFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.AndroidSdkTermsFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.AnotherApache2LicenseFetcher
@@ -22,6 +23,7 @@ import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.BSDLicens
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.CreativeCommonsLicenseFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.GnuClasspathLicenseFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.MITLicenseFetcher
+import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.YetAnotherApache2LicenseFetcher
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -49,8 +51,9 @@ class LicenseResolverPlugin implements Plugin<Project> {
     List<RemoteLicenseFetcher> remoteLicenseFetchers =
             [new AndroidSdkTermsFetcher(),
              new Apache2LicenseFetcher(),
-             new BSDLicenseFetcher(),
              new AnotherApache2LicenseFetcher(),
+             new YetAnotherApache2LicenseFetcher(),
+             new BSDLicenseFetcher(),
              new CreativeCommonsLicenseFetcher(), new MITLicenseFetcher(), new AnotherMITLicenseFetcher(), new GnuClasspathLicenseFetcher()]
     final static ANDROID_PLUGINS = ["com.android.application", "com.android.library",
                                     "com.android.test"]
@@ -90,7 +93,7 @@ class LicenseResolverPlugin implements Plugin<Project> {
                     outputDir = licensesDir
                 }
 
-                project.tasks.getByName("bundleReleaseAar") {
+                project.tasks.withType(BundleAar) {
                     dependsOn licensesTask
                     from licensesTask.outputDir
                 }
