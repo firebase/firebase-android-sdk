@@ -47,7 +47,7 @@ import org.robolectric.annotation.Config;
 /** Tests for {@link FirebaseStorage}. */
 @SuppressWarnings("ConstantConditions")
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
 public class DownloadTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);
