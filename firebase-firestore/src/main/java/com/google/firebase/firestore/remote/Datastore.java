@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.remote;
 
 import android.content.Context;
-import android.support.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -26,15 +25,12 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.Supplier;
 import com.google.firestore.v1.BatchGetDocumentsRequest;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
 import com.google.firestore.v1.FirestoreGrpc;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
-import io.grpc.android.AndroidChannelBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,7 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Datastore represents a proxy for the remote server, hiding details of the RPC layer. It:
@@ -75,21 +70,6 @@ public class Datastore {
 
   private final FirestoreChannel channel;
 
-  private static Supplier<ManagedChannelBuilder<?>> overrideChannelBuilderSupplier;
-
-  /**
-   * Helper function to globally override the channel that RPCs use. Useful for testing when you
-   * want to bypass SSL certificate checking.
-   *
-   * @param channelBuilderSupplier The supplier for a channel builder that is used to create gRPC
-   *     channels.
-   */
-  @VisibleForTesting
-  public static void overrideChannelBuilder(
-      Supplier<ManagedChannelBuilder<?>> channelBuilderSupplier) {
-    Datastore.overrideChannelBuilderSupplier = channelBuilderSupplier;
-  }
-
   public Datastore(
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
@@ -99,37 +79,7 @@ public class Datastore {
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
 
-    ManagedChannelBuilder<?> channelBuilder;
-    if (overrideChannelBuilderSupplier != null) {
-      channelBuilder = overrideChannelBuilderSupplier.get();
-    } else {
-      channelBuilder = ManagedChannelBuilder.forTarget(databaseInfo.getHost());
-      if (!databaseInfo.isSslEnabled()) {
-        // Note that the boolean flag does *NOT* indicate whether or not plaintext should be used
-        channelBuilder.usePlaintext();
-      }
-    }
-
-    // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will usually
-    // notify gRPC when a connection dies. But not always. This acts as a failsafe.)
-    channelBuilder.keepAliveTime(30, TimeUnit.SECONDS);
-
-    // This ensures all callbacks are issued on the worker queue. If this call is removed,
-    // all calls need to be audited to make sure they are executed on the right thread.
-    channelBuilder.executor(workerQueue.getExecutor());
-
-    // Wrap the ManagedChannelBuilder in an AndroidChannelBuilder. This allows the channel to
-    // respond more gracefully to network change events (such as switching from cell to wifi).
-    AndroidChannelBuilder androidChannelBuilder =
-        AndroidChannelBuilder.fromBuilder(channelBuilder).context(context);
-
-    channel =
-        new FirestoreChannel(
-            workerQueue,
-            context,
-            credentialsProvider,
-            androidChannelBuilder.build(),
-            databaseInfo.getDatabaseId());
+    channel = new FirestoreChannel(workerQueue, context, credentialsProvider, databaseInfo);
   }
 
   void shutdown() {

@@ -21,11 +21,11 @@ import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.ClientCall;
-import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
@@ -65,14 +65,14 @@ class FirestoreChannel {
       AsyncQueue asyncQueue,
       Context context,
       CredentialsProvider credentialsProvider,
-      ManagedChannel grpcChannel,
-      DatabaseId databaseId) {
+      DatabaseInfo databaseInfo) {
     this.asyncQueue = asyncQueue;
     this.credentialsProvider = credentialsProvider;
 
     FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(credentialsProvider);
-    this.callProvider = new GrpcCallProvider(asyncQueue, context, grpcChannel, firestoreHeaders);
+    this.callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
 
+    DatabaseId databaseId = databaseInfo.getDatabaseId();
     this.resourcePrefixValue =
         String.format(
             "projects/%s/databases/%s", databaseId.getProjectId(), databaseId.getDatabaseId());

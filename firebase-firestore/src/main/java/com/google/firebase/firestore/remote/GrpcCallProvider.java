@@ -15,19 +15,24 @@
 package com.google.firebase.firestore.remote;
 
 import android.content.Context;
+import android.support.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.security.ProviderInstaller;
+import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firebase.firestore.util.Supplier;
 import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.CallCredentials;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
 import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
+import io.grpc.android.AndroidChannelBuilder;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -44,7 +49,8 @@ import javax.annotation.Nullable;
  * and gRPC Stub initialization completes.
  */
 // PORTING NOTE: This class only exists on Android.
-class GrpcCallProvider {
+@VisibleForTesting
+public class GrpcCallProvider {
 
   private static final String LOG_TAG = "GrpcCallProvider";
 
@@ -53,25 +59,38 @@ class GrpcCallProvider {
         // We ignore rejected executions, since some gRPC messages can arrive after shutdown.
       };
 
-  private final ExecutorService channelQueue;
-  private final ManagedChannel channel;
+  private static Supplier<ManagedChannelBuilder<?>> overrideChannelBuilderSupplier;
 
+  private final ExecutorService channelQueue;
+  private ManagedChannel channel;
   private CallOptions callOptions;
   private boolean shutdown = false;
 
-  GrpcCallProvider(
-      AsyncQueue queue,
-      Context context,
-      ManagedChannel grpcChannel,
-      CallCredentials firestoreHeaders) {
-    this.channel = grpcChannel;
+  /**
+   * Helper function to globally override the channel that RPCs use. Useful for testing when you
+   * want to bypass SSL certificate checking.
+   *
+   * @param channelBuilderSupplier The supplier for a channel builder that is used to create gRPC
+   *     channels.
+   */
+  @VisibleForTesting
+  public static void overrideChannelBuilder(
+      Supplier<ManagedChannelBuilder<?>> channelBuilderSupplier) {
+    overrideChannelBuilderSupplier = channelBuilderSupplier;
+  }
 
+  GrpcCallProvider(
+      AsyncQueue workerQueue,
+      Context context,
+      DatabaseInfo databaseInfo,
+      CallCredentials firestoreHeaders) {
     ThreadFactory threadFactory =
         runnable -> {
           Thread thread = Executors.defaultThreadFactory().newThread(runnable);
           thread.setName("FirestoreGrpcWorker");
           thread.setDaemon(true);
-          thread.setUncaughtExceptionHandler((crashingThread, throwable) -> queue.panic(throwable));
+          thread.setUncaughtExceptionHandler(
+              (crashingThread, throwable) -> workerQueue.panic(throwable));
           return thread;
         };
 
@@ -89,20 +108,54 @@ class GrpcCallProvider {
     // depend on the AsyncQueue.
     channelQueue.execute(
         () -> {
-          try {
-            ProviderInstaller.installIfNeeded(context);
-          } catch (GooglePlayServicesNotAvailableException
-              | GooglePlayServicesRepairableException e) {
-            // Mark the SSL initialization as done, even though we may be using outdated SSL
-            // ciphers. gRPC-Java recommends obtaining updated ciphers from GMSCore, but we allow
-            // the device to fall back to other SSL ciphers if GMSCore is not available.
-            Logger.warn(LOG_TAG, "Failed to update ssl context: %s", e);
-          }
-
+          channel = initChannel(workerQueue, context, databaseInfo);
           FirestoreGrpc.FirestoreStub firestoreStub =
-              FirestoreGrpc.newStub(grpcChannel).withCallCredentials(firestoreHeaders);
+              FirestoreGrpc.newStub(channel).withCallCredentials(firestoreHeaders);
           callOptions = firestoreStub.getCallOptions();
         });
+  }
+
+  /** Sets up the SSL provider and configures the gRPC channel. */
+  private ManagedChannel initChannel(
+      AsyncQueue workerQueue, Context context, DatabaseInfo databaseInfo) {
+    try {
+      // We need to upgrade the Security Provider before any network channels are initialized.
+      // `OkHttp` maintains a list of supported providers that is initialized when the JVM first
+      // resolves the static dependencies of ManagedChannel.
+      ProviderInstaller.installIfNeeded(context);
+    } catch (GooglePlayServicesNotAvailableException | GooglePlayServicesRepairableException e) {
+      // Mark the SSL initialization as done, even though we may be using outdated SSL
+      // ciphers. gRPC-Java recommends obtaining updated ciphers from GMSCore, but we allow
+      // the device to fall back to other SSL ciphers if GMSCore is not available.
+      Logger.warn(LOG_TAG, "Failed to update ssl context: %s", e);
+    }
+
+    ManagedChannelBuilder<?> channelBuilder;
+    if (overrideChannelBuilderSupplier != null) {
+      channelBuilder = overrideChannelBuilderSupplier.get();
+    } else {
+      channelBuilder = ManagedChannelBuilder.forTarget(databaseInfo.getHost());
+      if (!databaseInfo.isSslEnabled()) {
+        // Note that the boolean flag does *NOT* indicate whether or not plaintext should be
+        // used
+        channelBuilder.usePlaintext();
+      }
+    }
+
+    // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will
+    // usually notify gRPC when a connection dies. But not always. This acts as a failsafe.)
+    channelBuilder.keepAliveTime(30, TimeUnit.SECONDS);
+
+    // This ensures all callbacks are issued on the worker queue. If this call is removed,
+    // all calls need to be audited to make sure they are executed on the right thread.
+    channelBuilder.executor(workerQueue.getExecutor());
+
+    // Wrap the ManagedChannelBuilder in an AndroidChannelBuilder. This allows the channel to
+    // respond more gracefully to network change events (such as switching from cell to wifi).
+    AndroidChannelBuilder androidChannelBuilder =
+        AndroidChannelBuilder.fromBuilder(channelBuilder).context(context);
+
+    return androidChannelBuilder.build();
   }
 
   /** Creates a new ClientCall. */
@@ -169,7 +222,7 @@ class GrpcCallProvider {
     };
   }
 
-  /** Shuts down the rRPC channel and the internal worker queue. */
+  /** Shuts down the gRPC channel and the internal worker queue. */
   void shutdown() {
     shutdown = true;
 
