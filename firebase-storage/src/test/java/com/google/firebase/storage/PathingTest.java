@@ -164,7 +164,7 @@ public class PathingTest {
         FirebaseStorage.getInstance()
             .getReferenceFromUrl("gs://benwu-test1" + ".storage.firebase.com/child/../");
 
-    assertEquals(ref.getName(), "..");
+    assertEquals("..", ref.getName());
   }
 
   @Test
@@ -184,7 +184,7 @@ public class PathingTest {
         FirebaseStorage.getInstance()
             .getReferenceFromUrl("gs://benwu-test1" + ".storage.firebase.com/child/image.png");
 
-    assertEquals(ref.getName(), "image.png");
+    assertEquals("image.png", ref.getName());
   }
 
   @Test
@@ -193,7 +193,7 @@ public class PathingTest {
         FirebaseStorage.getInstance()
             .getReferenceFromUrl("gs://benwu-test1" + ".storage.firebase.com/image.png");
 
-    assertEquals(ref.getName(), "image.png");
+    assertEquals("image.png", ref.getName());
   }
 
   @Test

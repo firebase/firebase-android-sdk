@@ -26,6 +26,7 @@ import com.google.firebase.database.future.ReadFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -150,7 +151,7 @@ public class InfoTest {
     try {
       ReadFuture.untilEquals(refDup.child(".info/connected"), true)
           .timedGet(1500, TimeUnit.MILLISECONDS);
-      assert (false); // We should never get here!
+      Assert.fail();
     } catch (TimeoutException e) { //
     }
 
