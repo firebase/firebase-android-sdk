@@ -813,7 +813,7 @@ public class CustomClassMapper {
           String message =
               "'"
                   + docIdPropertyName
-                  + "' is found from document "
+                  + "' was found from document "
                   + context.documentRef.getPath()
                   + ", cannot apply @DocumentId on this property for class "
                   + clazz.getName();
@@ -959,7 +959,7 @@ public class CustomClassMapper {
 
       if (method.isAnnotationPresent(DocumentId.class)) {
         Class<?> paramType = method.getParameterTypes()[0];
-        ensureValidDocumentIdType("Method", "sets", paramType);
+        ensureValidDocumentIdType("Method", "accepts", paramType);
         documentIdPropertyNames.add(propertyName(method));
       }
     }
