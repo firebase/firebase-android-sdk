@@ -19,8 +19,10 @@ import android.support.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.security.ProviderInstaller;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.DatabaseInfo;
-import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
@@ -30,17 +32,9 @@ import io.grpc.CallOptions;
 import io.grpc.ClientCall;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.android.AndroidChannelBuilder;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 
 /**
  * Manages the gRPC channel and encapsulates all SSL and gRPC initialization.
@@ -49,22 +43,16 @@ import javax.annotation.Nullable;
  * and gRPC Stub initialization completes.
  */
 // PORTING NOTE: This class only exists on Android.
-@VisibleForTesting
 public class GrpcCallProvider {
 
   private static final String LOG_TAG = "GrpcCallProvider";
 
-  private static final RejectedExecutionHandler IGNORE_REJECTIONS_HANDLER =
-      (runnable, executor) -> {
-        // We ignore rejected executions, since some gRPC messages can arrive after shutdown.
-      };
-
   private static Supplier<ManagedChannelBuilder<?>> overrideChannelBuilderSupplier;
 
-  private final ExecutorService channelQueue;
-  private ManagedChannel channel;
+  private final Task<ManagedChannel> channelTask;
+  private final AsyncQueue asyncQueue;
+
   private CallOptions callOptions;
-  private boolean shutdown = false;
 
   /**
    * Helper function to globally override the channel that RPCs use. Useful for testing when you
@@ -80,44 +68,34 @@ public class GrpcCallProvider {
   }
 
   GrpcCallProvider(
-      AsyncQueue workerQueue,
+      AsyncQueue asyncQueue,
       Context context,
       DatabaseInfo databaseInfo,
       CallCredentials firestoreHeaders) {
-    ThreadFactory threadFactory =
-        runnable -> {
-          Thread thread = Executors.defaultThreadFactory().newThread(runnable);
-          thread.setName("FirestoreGrpcWorker");
-          thread.setDaemon(true);
-          thread.setUncaughtExceptionHandler(
-              (crashingThread, throwable) -> workerQueue.panic(throwable));
-          return thread;
-        };
+    this.asyncQueue = asyncQueue;
 
-    this.channelQueue =
-        new ThreadPoolExecutor(
-            /* corePoolSize= */ 1,
-            /* maximumPoolSize= */ 1,
-            /* keepAliveTime= */ 0L,
-            TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(),
-            threadFactory,
-            IGNORE_REJECTIONS_HANDLER);
+    TaskCompletionSource<ManagedChannel> channelReady = new TaskCompletionSource<>();
+    this.channelTask = channelReady.getTask();
 
-    // We execute network initialization on an internal queue to not block operations that
+    // We execute network initialization on a separate thread to not block operations that
     // depend on the AsyncQueue.
-    channelQueue.execute(
-        () -> {
-          channel = initChannel(workerQueue, context, databaseInfo);
+    new Thread("FirestoreGrpcInit") {
+      public void run() {
+        try {
+          ManagedChannel channel = initChannel(context, databaseInfo);
           FirestoreGrpc.FirestoreStub firestoreStub =
               FirestoreGrpc.newStub(channel).withCallCredentials(firestoreHeaders);
           callOptions = firestoreStub.getCallOptions();
-        });
+          channelReady.setResult(channel);
+        } catch (Exception e) {
+          channelReady.setException(e);
+        }
+      }
+    }.start();
   }
 
   /** Sets up the SSL provider and configures the gRPC channel. */
-  private ManagedChannel initChannel(
-      AsyncQueue workerQueue, Context context, DatabaseInfo databaseInfo) {
+  private ManagedChannel initChannel(Context context, DatabaseInfo databaseInfo) {
     try {
       // We need to upgrade the Security Provider before any network channels are initialized.
       // `OkHttp` maintains a list of supported providers that is initialized when the JVM first
@@ -150,7 +128,7 @@ public class GrpcCallProvider {
 
     // This ensures all callbacks are issued on the worker queue. If this call is removed,
     // all calls need to be audited to make sure they are executed on the right thread.
-    channelBuilder.executor(workerQueue.getExecutor());
+    channelBuilder.executor(asyncQueue.getExecutor());
 
     // Wrap the ManagedChannelBuilder in an AndroidChannelBuilder. This allows the channel to
     // respond more gracefully to network change events (such as switching from cell to wifi).
@@ -161,78 +139,22 @@ public class GrpcCallProvider {
   }
 
   /** Creates a new ClientCall. */
-  <ReqT, RespT> ClientCall<ReqT, RespT> createClientCall(
+  <ReqT, RespT> Task<ClientCall<ReqT, RespT>> createClientCall(
       MethodDescriptor<ReqT, RespT> methodDescriptor) {
-    Assert.hardAssert(!shutdown, "GrpcCallProvider already shut down");
-
-    // Return a client call that is directly consumable. Note that we do not forward any operations
-    // until the initialization of the SSL stack and gRPC stub completes.
-    return new ClientCall<ReqT, RespT>() {
-      private ClientCall<ReqT, RespT> call;
-
-      private void ensureChannel() {
-        Assert.hardAssert(channel != null, "Channel is not initialized");
-        if (call == null) {
-          call = channel.newCall(methodDescriptor, callOptions);
-        }
-      }
-
-      @Override
-      public void start(Listener<RespT> responseListener, Metadata headers) {
-        channelQueue.execute(
-            () -> {
-              ensureChannel();
-              call.start(responseListener, headers);
-            });
-      }
-
-      @Override
-      public void request(int numMessages) {
-        channelQueue.execute(
-            () -> {
-              ensureChannel();
-              call.request(numMessages);
-            });
-      }
-
-      @Override
-      public void cancel(@Nullable String message, @Nullable Throwable cause) {
-        channelQueue.execute(
-            () -> {
-              ensureChannel();
-              call.cancel(message, cause);
-            });
-      }
-
-      @Override
-      public void halfClose() {
-        channelQueue.execute(
-            () -> {
-              ensureChannel();
-              call.halfClose();
-            });
-      }
-
-      @Override
-      public void sendMessage(ReqT message) {
-        channelQueue.execute(
-            () -> {
-              ensureChannel();
-              call.sendMessage(message);
-            });
-      }
-    };
+    return channelTask.continueWithTask(
+        asyncQueue.getExecutor(),
+        task -> {
+          ManagedChannel channel = task.getResult();
+          return Tasks.forResult(channel.newCall(methodDescriptor, callOptions));
+        });
   }
 
   /** Shuts down the gRPC channel and the internal worker queue. */
   void shutdown() {
-    shutdown = true;
-
-    channelQueue.execute(
-        () -> {
-          Assert.hardAssert(
-              channel != null, "Channel shutdown called when channel is not initialized");
-
+    channelTask.addOnCompleteListener(
+        asyncQueue.getExecutor(),
+        task -> {
+          ManagedChannel channel = task.getResult();
           channel.shutdown();
           try {
             // TODO(rsgowman): Investigate occasional hangs in channel.shutdown().
@@ -272,6 +194,5 @@ public class GrpcCallProvider {
             Thread.currentThread().interrupt();
           }
         });
-    channelQueue.shutdown();
   }
 }

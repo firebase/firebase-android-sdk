@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.content.Context;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -26,6 +28,7 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.ClientCall;
+import io.grpc.ForwardingClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
@@ -85,134 +88,177 @@ class FirestoreChannel {
     callProvider.shutdown();
   }
 
-  /** Creates and starts a new bi-directional streaming RPC. */
-  public <ReqT, RespT> ClientCall<ReqT, RespT> runBidiStreamingRpc(
+  /**
+   * Creates and starts a new bi-directional streaming RPC. The stream cannot accept message before
+   * the observer's `onOpen()` callback is invoked.
+   */
+  <ReqT, RespT> ClientCall<ReqT, RespT> runBidiStreamingRpc(
       MethodDescriptor<ReqT, RespT> method, IncomingStreamObserver<RespT> observer) {
-    ClientCall<ReqT, RespT> call = callProvider.createClientCall(method);
+    ClientCall<ReqT, RespT>[] call = (ClientCall<ReqT, RespT>[]) new ClientCall[] {null};
 
-    call.start(
-        new ClientCall.Listener<RespT>() {
-          @Override
-          public void onHeaders(Metadata headers) {
-            try {
-              observer.onHeaders(headers);
-            } catch (Throwable t) {
-              asyncQueue.panic(t);
-            }
-          }
+    callProvider
+        .createClientCall(method)
+        .addOnCompleteListener(
+            asyncQueue.getExecutor(),
+            result -> {
+              call[0] = result.getResult();
 
-          @Override
-          public void onMessage(RespT message) {
-            try {
-              observer.onNext(message);
-              // Make sure next message can be delivered
-              call.request(1);
-            } catch (Throwable t) {
-              asyncQueue.panic(t);
-            }
-          }
+              call[0].start(
+                  new ClientCall.Listener<RespT>() {
+                    @Override
+                    public void onHeaders(Metadata headers) {
+                      try {
+                        observer.onHeaders(headers);
+                      } catch (Throwable t) {
+                        asyncQueue.panic(t);
+                      }
+                    }
 
-          @Override
-          public void onClose(Status status, Metadata trailers) {
-            try {
-              observer.onClose(status);
-            } catch (Throwable t) {
-              asyncQueue.panic(t);
-            }
-          }
+                    @Override
+                    public void onMessage(RespT message) {
+                      try {
+                        observer.onNext(message);
+                        // Make sure next message can be delivered
+                        call[0].request(1);
+                      } catch (Throwable t) {
+                        asyncQueue.panic(t);
+                      }
+                    }
 
-          @Override
-          public void onReady() {
-            try {
-              observer.onReady();
-            } catch (Throwable t) {
-              asyncQueue.panic(t);
-            }
-          }
-        },
-        requestHeaders());
+                    @Override
+                    public void onClose(Status status, Metadata trailers) {
+                      try {
+                        observer.onClose(status);
+                      } catch (Throwable t) {
+                        asyncQueue.panic(t);
+                      }
+                    }
 
-    // Make sure to allow the first incoming message, all subsequent messages
-    call.request(1);
+                    @Override
+                    public void onReady() {
+                      try {
+                        observer.onReady();
+                      } catch (Throwable t) {
+                        asyncQueue.panic(t);
+                      }
+                    }
+                  },
+                  requestHeaders());
 
-    return call;
+              observer.onOpen();
+
+              // Make sure to allow the first incoming message, all subsequent messages
+              call[0].request(1);
+            });
+
+    return new ForwardingClientCall<ReqT, RespT>() {
+      @Override
+      protected ClientCall<ReqT, RespT> delegate() {
+        hardAssert(call[0] != null, "ClientCall used before onOpen() callback");
+        return call[0];
+      }
+
+      @Override
+      public void halfClose() {
+        // We allow stream closure even if the stream has not started. This can happen when a user
+        // calls `disableNetwork()` immediately after client startup.
+        if (call[0] == null) {
+          asyncQueue.enqueueAndForget(this::halfClose);
+        } else {
+          super.halfClose();
+        }
+      }
+    };
   }
 
   /** Creates and starts a streaming response RPC. */
-  public <ReqT, RespT> Task<List<RespT>> runStreamingResponseRpc(
+  <ReqT, RespT> Task<List<RespT>> runStreamingResponseRpc(
       MethodDescriptor<ReqT, RespT> method, ReqT request) {
     TaskCompletionSource<List<RespT>> tcs = new TaskCompletionSource<>();
 
-    ClientCall<ReqT, RespT> call = callProvider.createClientCall(method);
+    callProvider
+        .createClientCall(method)
+        .addOnCompleteListener(
+            asyncQueue.getExecutor(),
+            result -> {
+              ClientCall<ReqT, RespT> call = result.getResult();
 
-    List<RespT> results = new ArrayList<>();
+              List<RespT> results = new ArrayList<>();
 
-    call.start(
-        new ClientCall.Listener<RespT>() {
-          @Override
-          public void onMessage(RespT message) {
-            results.add(message);
+              call.start(
+                  new ClientCall.Listener<RespT>() {
+                    @Override
+                    public void onMessage(RespT message) {
+                      results.add(message);
 
-            // Make sure next message can be delivered
-            call.request(1);
-          }
+                      // Make sure next message can be delivered
+                      call.request(1);
+                    }
 
-          @Override
-          public void onClose(Status status, Metadata trailers) {
-            if (status.isOk()) {
-              tcs.setResult(results);
-            } else {
-              tcs.setException(Util.exceptionFromStatus(status));
-            }
-          }
-        },
-        requestHeaders());
+                    @Override
+                    public void onClose(Status status, Metadata trailers) {
+                      if (status.isOk()) {
+                        tcs.setResult(results);
+                      } else {
+                        tcs.setException(Util.exceptionFromStatus(status));
+                      }
+                    }
+                  },
+                  requestHeaders());
 
-    // Make sure to allow the first incoming message, all subsequent messages
-    call.request(1);
+              // Make sure to allow the first incoming message, all subsequent messages
+              call.request(1);
 
-    call.sendMessage(request);
-    call.halfClose();
+              call.sendMessage(request);
+              call.halfClose();
+            });
 
     return tcs.getTask();
   }
 
   /** Creates and starts a single response RPC. */
-  public <ReqT, RespT> Task<RespT> runRpc(MethodDescriptor<ReqT, RespT> method, ReqT request) {
+  <ReqT, RespT> Task<RespT> runRpc(MethodDescriptor<ReqT, RespT> method, ReqT request) {
     TaskCompletionSource<RespT> tcs = new TaskCompletionSource<>();
 
-    ClientCall<ReqT, RespT> call = callProvider.createClientCall(method);
+    callProvider
+        .createClientCall(method)
+        .addOnCompleteListener(
+            asyncQueue.getExecutor(),
+            result -> {
+              ClientCall<ReqT, RespT> call = result.getResult();
 
-    call.start(
-        new ClientCall.Listener<RespT>() {
-          @Override
-          public void onMessage(RespT message) {
-            // This should only be called once, so setting the result directly is fine
-            tcs.setResult(message);
-          }
+              call.start(
+                  new ClientCall.Listener<RespT>() {
+                    @Override
+                    public void onMessage(RespT message) {
+                      // This should only be called once, so setting the result directly is fine
+                      tcs.setResult(message);
+                    }
 
-          @Override
-          public void onClose(Status status, Metadata trailers) {
-            if (status.isOk()) {
-              if (!tcs.getTask().isComplete()) {
-                tcs.setException(
-                    new FirebaseFirestoreException(
-                        "Received onClose with status OK, but no message.", Code.INTERNAL));
-              }
-            } else {
-              tcs.setException(Util.exceptionFromStatus(status));
-            }
-          }
-        },
-        requestHeaders());
+                    @Override
+                    public void onClose(Status status, Metadata trailers) {
+                      if (status.isOk()) {
+                        if (!tcs.getTask().isComplete()) {
+                          tcs.setException(
+                              new FirebaseFirestoreException(
+                                  "Received onClose with status OK, but no message.",
+                                  Code.INTERNAL));
+                        }
+                      } else {
+                        tcs.setException(Util.exceptionFromStatus(status));
+                      }
+                    }
+                  },
+                  requestHeaders());
 
-    // Make sure to allow the first incoming message. Set to 2 so if there there is a second message
-    // the client will fail fast (by setting the result of the TaskCompletionSource) twice instead
-    // of going unnoticed.
-    call.request(2);
+              // Make sure to allow the first incoming message. Set to 2 so if there there is a
+              // second message the client will fail fast (by setting the result of the
+              // TaskCompletionSource) twice instead of going unnoticed.
+              call.request(2);
 
-    call.sendMessage(request);
-    call.halfClose();
+              call.sendMessage(request);
+              call.halfClose();
+            });
 
     return tcs.getTask();
   }

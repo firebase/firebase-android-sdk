@@ -25,7 +25,10 @@ interface IncomingStreamObserver<RespT> {
   /** A message was received on the stream. */
   void onNext(RespT response);
 
-  /** The stream is "ready" (What the hell does that mean?!). */
+  /** The stream is open and able to accept messages. */
+  void onOpen();
+
+  /** The stream is "ready". */
   void onReady();
 
   /** The stream has closed. Status.isOk() is false if there an error occurred. */
