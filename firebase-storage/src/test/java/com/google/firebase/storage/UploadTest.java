@@ -129,6 +129,7 @@ public class UploadTest {
           taskException.set(exception);
         });
 
+    // TODO(mrschmidt): Lower the timeout
     TestUtil.await(task, 300, TimeUnit.SECONDS);
 
     try {
@@ -136,7 +137,6 @@ public class UploadTest {
       Assert.fail();
     } catch (RuntimeExecutionException e) {
       Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
-      // Task failed.
     }
 
     try {
@@ -144,7 +144,6 @@ public class UploadTest {
       Assert.fail();
     } catch (StorageException e) {
       Assert.assertEquals(taskException.get().getCause(), e.getCause());
-      // Task failed.
     }
 
     Assert.assertEquals(taskException.get().getCause(), task.getException().getCause());
@@ -263,6 +262,7 @@ public class UploadTest {
     MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("cancelledUpload", true);
     Task<StringBuilder> task = TestUploadHelper.byteUploadCancel();
 
+    // TODO(mrschmidt): Lower the timeout
     TestUtil.await(task, 500, TimeUnit.SECONDS);
 
     factory.verifyOldMock();
@@ -593,6 +593,7 @@ public class UploadTest {
 
       Task<StringBuilder> task = TestUploadHelper.smallTextUpload();
 
+      // TODO(mrschmidt): Lower the timeout
       TestUtil.await(task, 300, TimeUnit.SECONDS);
 
       factory.verifyOldMock();
