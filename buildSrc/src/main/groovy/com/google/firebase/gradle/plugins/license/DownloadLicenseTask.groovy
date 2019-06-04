@@ -30,9 +30,9 @@ class DownloadLicenseTask extends DefaultTask {
   @TaskAction
   void execute(IncrementalTaskInputs inputs) {
     parsers.each { parser ->
-      println "Downloading license from ${parser.getServiceUri()} ..."
+      println "Downloading license from ${parser.getRemoteUrl()} ..."
 
-      String licenseContent = parser.get()
+      String licenseContent = parser.getText()
 
       if (!outputDir.exists()) {
         downloadsDir.mkdirs()
@@ -40,7 +40,7 @@ class DownloadLicenseTask extends DefaultTask {
 
       //We use the URI string's hashcode as the filename to store the download
       //This is safe since java String 's hashcode generation algorithm is part of the api spec
-      File licenseFile = new File(outputDir, "${parser.getServiceUri().toString().hashCode()}")
+      File licenseFile = new File(outputDir, "${parser.getRemoteUrl().toString().hashCode()}")
       licenseFile.write licenseContent
     }
   }
