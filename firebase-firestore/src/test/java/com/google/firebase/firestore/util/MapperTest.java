@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.PropertyName;
+import com.google.firebase.firestore.TestUtil;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -170,6 +171,13 @@ public class MapperTest {
 
     public String getValue() {
       return "getter:" + this.value;
+    }
+  }
+
+  @ThrowOnExtraProperties
+  private static class GetterBeanNoField {
+    public String getValue() {
+      return "getter:value";
     }
   }
 
@@ -899,8 +907,12 @@ public class MapperTest {
   }
 
   private static <T> T deserialize(String jsonString, Class<T> clazz) {
+    return deserialize(jsonString, clazz, /*docRef=*/ null);
+  }
+
+  private static <T> T deserialize(String jsonString, Class<T> clazz, DocumentReference docRef) {
     Map<String, Object> json = fromSingleQuotedString(jsonString);
-    return CustomClassMapper.convertToCustomClass(json, clazz, null);
+    return CustomClassMapper.convertToCustomClass(json, clazz, docRef);
   }
 
   private static Object serialize(Object object) {
@@ -1496,6 +1508,21 @@ public class MapperTest {
     GetterBean bean = new GetterBean();
     bean.value = "foo";
     assertJson("{'value': 'getter:foo'}", serialize(bean));
+  }
+
+  @Test
+  public void serializeGetterBeanWithNoBackingField() {
+    GetterBeanNoField bean = new GetterBeanNoField();
+    assertJson("{'value': 'getter:value'}", serialize(bean));
+  }
+
+  @Test
+  public void deserializeGetterBeanWithNoBackingFieldThrows() {
+    assertExceptionContains(
+        "No setter/field",
+        () -> {
+          deserialize("{'value': 'foo'}", GetterBeanNoField.class);
+        });
   }
 
   @Test
@@ -2246,5 +2273,190 @@ public class MapperTest {
               + "(found in field 'value')",
           e.getMessage());
     }
+  }
+
+  // Bean definitions with @DocumentId applied to wrong type.
+  private static class FieldWithDocumentIdOnWrongTypeBean {
+    @DocumentId public Integer intField;
+  }
+
+  private static class GetterWithDocumentIdOnWrongTypeBean {
+    private int intField = 100;
+
+    @DocumentId
+    public int getIntField() {
+      return intField;
+    }
+  }
+
+  private static class PropertyWithDocumentIdOnWrongTypeBean {
+    @PropertyName("intField")
+    @DocumentId
+    public int intField = 100;
+  }
+
+  @Test
+  public void documentIdAnnotateWrongTypeThrows() {
+    final String expectedErrorMessage = "instead of String or DocumentReference";
+    assertExceptionContains(
+        expectedErrorMessage, () -> serialize(new FieldWithDocumentIdOnWrongTypeBean()));
+    assertExceptionContains(
+        expectedErrorMessage,
+        () -> deserialize("{'intField': 1}", FieldWithDocumentIdOnWrongTypeBean.class));
+
+    assertExceptionContains(
+        expectedErrorMessage, () -> serialize(new GetterWithDocumentIdOnWrongTypeBean()));
+    assertExceptionContains(
+        expectedErrorMessage,
+        () -> deserialize("{'intField': 1}", GetterWithDocumentIdOnWrongTypeBean.class));
+
+    assertExceptionContains(
+        expectedErrorMessage, () -> serialize(new PropertyWithDocumentIdOnWrongTypeBean()));
+    assertExceptionContains(
+        expectedErrorMessage,
+        () -> deserialize("{'intField': 1}", PropertyWithDocumentIdOnWrongTypeBean.class));
+  }
+
+  private static class GetterWithoutBackingFieldOnDocumentIdBean {
+    @DocumentId
+    public String getDocId() {
+      return "doc-id";
+    }
+  }
+
+  @Test
+  public void documentIdAnnotateReadOnlyThrows() {
+    final String expectedErrorMessage = "but no field or public setter was found";
+    // Serialization.
+    GetterWithoutBackingFieldOnDocumentIdBean bean =
+        new GetterWithoutBackingFieldOnDocumentIdBean();
+    assertExceptionContains(expectedErrorMessage, () -> serialize(bean));
+
+    // Deserialization.
+    assertExceptionContains(
+        expectedErrorMessage,
+        () -> deserialize("{'docId': 'id'}", GetterWithoutBackingFieldOnDocumentIdBean.class));
+  }
+
+  private static class DocumentIdOnStringField {
+    @DocumentId public String docId = "doc-id";
+  }
+
+  private static class DocumentIdOnStringFieldAsProperty {
+    @PropertyName("docIdProperty")
+    @DocumentId
+    public String docId = "doc-id";
+
+    @PropertyName("anotherProperty")
+    public int someOtherProperty = 0;
+  }
+
+  private static class DocumentIdOnDocRefGetter {
+    private DocumentReference docRef;
+
+    @DocumentId
+    public DocumentReference getDocRef() {
+      return docRef;
+    }
+
+    public void setDocRef(DocumentReference ref) {
+      docRef = ref;
+    }
+  }
+
+  private static class DocumentIdOnInheritedDocRefSetter extends DocumentIdOnDocRefGetter {
+
+    private DocumentReference inheritedDocRef;
+
+    @DocumentId
+    public DocumentReference getInheritedDocRef() {
+      return inheritedDocRef;
+    }
+
+    public void setInheritedDocRef(DocumentReference ref) {
+      inheritedDocRef = ref;
+    }
+  }
+
+  private static class DocumentIdOnNestedObjects {
+    @PropertyName("nestedDocIdHolder")
+    public DocumentIdOnStringField nestedDocIdHolder;
+  }
+
+  @Test
+  public void documentIdsDeserialize() {
+    DocumentReference ref = TestUtil.documentReference("coll/doc123");
+
+    assertEquals("doc123", deserialize("{}", DocumentIdOnStringField.class, ref).docId);
+
+    DocumentIdOnStringFieldAsProperty target =
+        deserialize("{'anotherProperty': 100}", DocumentIdOnStringFieldAsProperty.class, ref);
+    assertEquals("doc123", target.docId);
+    assertEquals(100, target.someOtherProperty);
+
+    assertEquals(ref, deserialize("{}", DocumentIdOnDocRefGetter.class, ref).getDocRef());
+
+    DocumentIdOnInheritedDocRefSetter target1 =
+        deserialize("{}", DocumentIdOnInheritedDocRefSetter.class, ref);
+    assertEquals(ref, target1.getInheritedDocRef());
+    assertEquals(ref, target1.getDocRef());
+
+    assertEquals(
+        "doc123",
+        deserialize("{'nestedDocIdHolder': {}}", DocumentIdOnNestedObjects.class, ref)
+            .nestedDocIdHolder
+            .docId);
+  }
+
+  @Test
+  public void documentIdsRoundTrip() {
+    // Implicitly verifies @DocumentId is ignored during serialization.
+
+    DocumentReference ref = TestUtil.documentReference("coll/doc123");
+
+    assertEquals(
+        Collections.emptyMap(), serialize(deserialize("{}", DocumentIdOnStringField.class, ref)));
+
+    assertEquals(
+        Collections.singletonMap("anotherProperty", 100),
+        serialize(
+            deserialize("{'anotherProperty': 100}", DocumentIdOnStringFieldAsProperty.class, ref)));
+
+    assertEquals(
+        Collections.emptyMap(), serialize(deserialize("{}", DocumentIdOnDocRefGetter.class, ref)));
+
+    assertEquals(
+        Collections.emptyMap(),
+        serialize(deserialize("{}", DocumentIdOnInheritedDocRefSetter.class, ref)));
+
+    assertEquals(
+        Collections.singletonMap("nestedDocIdHolder", Collections.emptyMap()),
+        serialize(deserialize("{'nestedDocIdHolder': {}}", DocumentIdOnNestedObjects.class, ref)));
+  }
+
+  @Test
+  public void documentIdsDeserializeConflictThrows() {
+    final String expectedErrorMessage = "cannot apply @DocumentId on this property";
+    DocumentReference ref = TestUtil.documentReference("coll/doc123");
+
+    assertExceptionContains(
+        expectedErrorMessage,
+        () -> deserialize("{'docId': 'toBeOverwritten'}", DocumentIdOnStringField.class, ref));
+
+    assertExceptionContains(
+        expectedErrorMessage,
+        () ->
+            deserialize(
+                "{'docIdProperty': 'toBeOverwritten', 'anotherProperty': 100}",
+                DocumentIdOnStringFieldAsProperty.class,
+                ref));
+
+    assertExceptionContains(
+        expectedErrorMessage,
+        () ->
+            deserialize(
+                "{'nestedDocIdHolder': {'docId': 'toBeOverwritten'}}",
+                DocumentIdOnNestedObjects.class,
+                ref));
   }
 }
