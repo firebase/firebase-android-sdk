@@ -31,7 +31,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -264,19 +263,12 @@ public class StorageReferenceTest {
   public void downloadUrl() throws Exception {
     MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("downloadUrl", true);
     final StorageReference ref = FirebaseStorage.getInstance().getReference("flubbertest.txt");
-
     Task<StringBuilder> task = TestCommandHelper.testDownloadUrl(ref);
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("downloadUrl", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("downloadUrl", task.getResult().toString());
   }
 
   @Test
