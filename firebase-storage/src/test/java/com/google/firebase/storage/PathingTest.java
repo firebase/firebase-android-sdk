@@ -36,7 +36,7 @@ import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
 public class PathingTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);
@@ -164,7 +164,7 @@ public class PathingTest {
         FirebaseStorage.getInstance()
             .getReferenceFromUrl("gs://benwu-test1" + ".storage.firebase.com/child/../");
 
-    assertEquals(ref.getName(), "..");
+    assertEquals("..", ref.getName());
   }
 
   @Test
@@ -184,7 +184,7 @@ public class PathingTest {
         FirebaseStorage.getInstance()
             .getReferenceFromUrl("gs://benwu-test1" + ".storage.firebase.com/child/image.png");
 
-    assertEquals(ref.getName(), "image.png");
+    assertEquals("image.png", ref.getName());
   }
 
   @Test
@@ -193,7 +193,7 @@ public class PathingTest {
         FirebaseStorage.getInstance()
             .getReferenceFromUrl("gs://benwu-test1" + ".storage.firebase.com/image.png");
 
-    assertEquals(ref.getName(), "image.png");
+    assertEquals("image.png", ref.getName());
   }
 
   @Test

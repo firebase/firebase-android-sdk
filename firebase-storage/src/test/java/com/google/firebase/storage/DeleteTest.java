@@ -23,6 +23,7 @@ import com.google.firebase.storage.network.MockConnectionFactory;
 import com.google.firebase.storage.network.NetworkLayerMock;
 import com.google.firebase.testing.FirebaseAppRule;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,7 +33,7 @@ import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
 public class DeleteTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);
