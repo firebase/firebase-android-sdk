@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins.publish
 
+import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -28,7 +29,7 @@ class Publisher {
         RELEASE,
         SNAPSHOT
     }
-    private final Mode mode;
+    private final Mode mode
     private final Set<Project> projectsToPublish
 
     Publisher(Mode mode, Set<Project> projectsToPublish) {
@@ -93,7 +94,7 @@ class Publisher {
         dummyDependencyConfiguration.dependencies.addAll(nonProjectDependencies)
         try {
             return project.configurations.releaseRuntimeClasspath.getAllDependencies().collectEntries {
-                [("$it.group:$it.name" as String): getType(dummyDependencyConfiguration, it)]
+                getType(dummyDependencyConfiguration, it)
             }
         } finally {
             project.configurations.remove(dummyDependencyConfiguration)
@@ -101,19 +102,25 @@ class Publisher {
 
     }
 
-    private static String getType(Configuration config, Dependency d) {
+    private static def getType(Configuration config, Dependency d) {
         if (d instanceof ProjectDependency) {
             // we currently only support aar libraries to be produced in this repository
-            return 'aar'
+            def library = getFirebaseLibrary(d.dependencyProject)
+            return [("${library.groupId.get()}:${library.artifactId.get()}" as String): 'aar']
         }
         String path = config.find {
             it.absolutePath.matches(".*\\Q$d.group/$d.name/$d.version/\\E[a-zA-Z0-9]+/\\Q$d.name-$d.version.\\E[aj]ar")
         }?.absolutePath
+
         if (path && path.endsWith (".aar")) {
-            return "aar"
+            return [("$d.group:$d.name" as String): 'aar']
         } else {
-            return "jar"
+            return [("$d.group:$d.name" as String): 'jar']
         }
+    }
+
+    private static FirebaseLibraryExtension getFirebaseLibrary(Project project) {
+        return project.extensions.getByType(FirebaseLibraryExtension.class);
     }
 
 }
