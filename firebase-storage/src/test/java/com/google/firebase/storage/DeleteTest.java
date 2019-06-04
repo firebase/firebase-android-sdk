@@ -23,12 +23,10 @@ import com.google.firebase.storage.network.MockConnectionFactory;
 import com.google.firebase.storage.network.NetworkLayerMock;
 import com.google.firebase.testing.FirebaseAppRule;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -59,19 +57,12 @@ public class DeleteTest {
   @SuppressWarnings("ConstantConditions")
   @Test
   public void deleteBlob() throws Exception {
-    final MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("deleteBlob", false);
-
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("deleteBlob", false);
     Task<StringBuilder> task = TestCommandHelper.deleteBlob();
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("deleteBlob", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("deleteBlob", task.getResult().toString());
   }
 }
