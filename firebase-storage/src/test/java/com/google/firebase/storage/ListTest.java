@@ -29,7 +29,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -80,63 +79,34 @@ public class ListTest {
 
   @Test
   public void listResultsWithSinglePage() throws InterruptedException {
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("listSinglePage", true);
-
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("listSinglePage", true);
     Task<StringBuilder> task = TestCommandHelper.listFiles(/* pageSize= */ 10, /* pageCount= */ 1);
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("listSinglePage", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("listSinglePage", task.getResult().toString());
   }
 
   @Test
   public void listResultsWithMultiplePages() throws InterruptedException {
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("listMultiplePages", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("listMultiplePages", true);
+    Task<StringBuilder> task = TestCommandHelper.listFiles(/* pageSize= */ 10, /* pageCount= */ 10);
 
-    int pageSize = 10;
-    int pageCount = 10;
+    TestUtil.await(task);
 
-    Task<StringBuilder> task = TestCommandHelper.listFiles(pageSize, pageCount);
-
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("listMultiplePages", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("listMultiplePages", task.getResult().toString());
   }
 
   @Test
   public void listAll() throws InterruptedException {
-    final MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("listAll", true);
-
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("listAll", true);
     Task<StringBuilder> task = TestCommandHelper.listAllFiles();
 
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("listAll", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("listAll", task.getResult().toString());
   }
 }
