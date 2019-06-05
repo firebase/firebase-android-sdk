@@ -244,8 +244,6 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     StreamObserver streamObserver = new StreamObserver(closeGuardedRunner);
     call = firestoreChannel.runBidiStreamingRpc(methodDescriptor, streamObserver);
 
-    // Note that Starting is only used as intermediate state until onOpen is called asynchronously,
-    // since auth handled transparently by gRPC
     state = State.Starting;
   }
 

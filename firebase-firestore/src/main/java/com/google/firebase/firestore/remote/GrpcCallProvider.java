@@ -70,10 +70,8 @@ public class GrpcCallProvider {
       CallCredentials firestoreHeaders) {
     this.asyncQueue = asyncQueue;
 
-    TaskCompletionSource<ManagedChannel> channelReady = new TaskCompletionSource<>();
-
-    // We execute network initialization on a separate queue to not block operations that
-    // depend on the AsyncQueue.
+    // We execute network initialization on a separate thred to not block operations that depend on
+    // the AsyncQueue.
     this.channelTask =
         Tasks.call(
             AsyncTask.THREAD_POOL_EXECUTOR,
