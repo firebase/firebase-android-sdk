@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +34,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
@@ -42,7 +42,7 @@ public class EncodedPathTest {
 
   static class OpenHelper extends SQLiteOpenHelper {
     OpenHelper() {
-      super(RuntimeEnvironment.application, "test", null, 1);
+      super(ApplicationProvider.getApplicationContext(), "test", null, 1);
     }
 
     @Override

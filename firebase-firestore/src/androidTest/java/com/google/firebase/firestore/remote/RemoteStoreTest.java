@@ -48,18 +48,24 @@ public class RemoteStoreTest {
     Semaphore networkChangeSemaphore = new Semaphore(0);
     RemoteStore.RemoteStoreCallback callback =
         new RemoteStore.RemoteStoreCallback() {
+          @Override
           public void handleRemoteEvent(RemoteEvent remoteEvent) {}
 
+          @Override
           public void handleRejectedListen(int targetId, Status error) {}
 
+          @Override
           public void handleSuccessfulWrite(MutationBatchResult successfulWrite) {}
 
+          @Override
           public void handleRejectedWrite(int batchId, Status error) {}
 
+          @Override
           public void handleOnlineStateChange(OnlineState onlineState) {
             networkChangeSemaphore.release();
           }
 
+          @Override
           public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
             return null;
           }
@@ -90,7 +96,7 @@ public class RemoteStoreTest {
     waitFor(testQueue.enqueue(() -> {}));
   }
 
-  class FakeConnectivityMonitor implements ConnectivityMonitor {
+  static class FakeConnectivityMonitor implements ConnectivityMonitor {
     private Consumer<NetworkStatus> callback = null;
 
     @Override

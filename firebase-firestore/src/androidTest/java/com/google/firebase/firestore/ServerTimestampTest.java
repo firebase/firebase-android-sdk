@@ -19,12 +19,12 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDoc
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import android.support.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
