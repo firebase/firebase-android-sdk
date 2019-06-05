@@ -14,10 +14,12 @@
 
 package com.google.firebase.gradle.plugins.publish
 
+import com.google.firebase.gradle.plugins.ci.AffectedProjectFinder
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import digital.wup.android_maven_publish.AndroidMavenPublishPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
@@ -83,7 +85,11 @@ class PublishingPlugin implements Plugin<Project> {
 
         def publishAllToLocal = project.task('publishAllToLocal')
         def publishAllToBuildDir = project.task('publishAllToBuildDir')
+        def publishChangedToBuildDir = project.task('publishChangedToBuildDir')
         def firebasePublish = project.task('firebasePublish')
+
+        def changedProjects =
+                new AffectedProjectFinder(project, changedPaths(project.rootDir), []).find()
 
         project.getGradle().projectsEvaluated {
             project.subprojects { Project sub ->
@@ -121,10 +127,27 @@ class PublishingPlugin implements Plugin<Project> {
                             publisher.decorate(sub, it)
                         }
                     }
+
+                    // Add changed projects to publishChangedToBuildDir.
+                    if (changedProjects.contains(sub)) {
+                        publishChangedToBuildDir.dependsOn "$sub.path:publishMavenAarPublicationToBuildDirRepository"
+                        def dependencies = sub.configurations.implementation.dependencies
+                        for (def dep : dependencies) {
+                            if (dep instanceof ProjectDependency) {
+                                def task = dep.getDependencyProject()
+                                        .tasks.findByName("publishMavenAarPublicationToBuildDirRepository")
+                                if (task != null) {
+                                    publishChangedToBuildDir.dependsOn task
+                                }
+                            }
+                        }
+                    }
+
                     publishAllToLocal.dependsOn "$sub.path:publishMavenAarPublicationToMavenLocal"
                     publishAllToBuildDir.dependsOn "$sub.path:publishMavenAarPublicationToBuildDirRepository"
 
                 }
+
             }
             project.task('publishProjectsToMavenLocal') {
                 projectsToPublish.each { projectToPublish ->
@@ -153,6 +176,13 @@ class PublishingPlugin implements Plugin<Project> {
 
             firebasePublish.dependsOn info, buildMavenZip
         }
+    }
+
+    private static Set<String> changedPaths(File workDir) {
+        return 'git diff --name-only --submodule=diff HEAD@{0} HEAD@{1}'
+                .execute([], workDir)
+                .text
+                .readLines()
     }
 
     private static String getPublishTask(Project p, String repoName) {
