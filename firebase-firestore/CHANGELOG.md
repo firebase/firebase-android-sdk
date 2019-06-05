@@ -1,4 +1,6 @@
 # Unreleased
+- [changed] SSL and gRPC initialization now happens on a separate thread, which
+  reduces the time taken to produce the first query result.
 - [fixed] Updated gRPC to 1.21.0. A bug in the prior version would occasionally
   cause a crash if a network state change occurred concurrently with an RPC.
   (#428)

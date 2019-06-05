@@ -20,9 +20,6 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesRepairableException;
-import com.google.android.gms.security.ProviderInstaller;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -113,16 +110,6 @@ public class FirebaseFirestore {
     } else {
       provider = new FirebaseAuthCredentialsProvider(authProvider);
     }
-
-    queue.enqueueAndForget(
-        () -> {
-          try {
-            ProviderInstaller.installIfNeeded(context);
-          } catch (GooglePlayServicesNotAvailableException
-              | GooglePlayServicesRepairableException e) {
-            Logger.warn("Firestore", "Failed to update ssl context");
-          }
-        });
 
     // Firestore uses a different database for each app name. Note that we don't use
     // app.getPersistenceKey() here because it includes the application ID which is related

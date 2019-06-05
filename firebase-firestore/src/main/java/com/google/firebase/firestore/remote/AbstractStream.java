@@ -119,13 +119,15 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     }
 
     @Override
-    public void onReady() {
+    public void onOpen() {
       dispatcher.run(
-          () ->
-              Logger.debug(
-                  AbstractStream.this.getClass().getSimpleName(),
-                  "(%x) Stream is ready",
-                  System.identityHashCode(AbstractStream.this)));
+          () -> {
+            Logger.debug(
+                AbstractStream.this.getClass().getSimpleName(),
+                "(%x) Stream is open",
+                System.identityHashCode(AbstractStream.this));
+            AbstractStream.this.onOpen();
+          });
     }
 
     @Override
@@ -242,17 +244,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     StreamObserver streamObserver = new StreamObserver(closeGuardedRunner);
     call = firestoreChannel.runBidiStreamingRpc(methodDescriptor, streamObserver);
 
-    // Note that Starting is only used as intermediate state until onOpen is called asynchronously,
-    // since auth handled transparently by gRPC
     state = State.Starting;
-
-    workerQueue.enqueueAndForget(
-        () ->
-            closeGuardedRunner.run(
-                () -> {
-                  state = State.Open;
-                  this.listener.onOpen();
-                }));
   }
 
   /**
@@ -384,6 +376,12 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     // prevent cases where we retry without a backoff accidentally, we set the stream to error
     // in all cases.
     close(State.Error, status);
+  }
+
+  /** Marks the stream as available. */
+  private void onOpen() {
+    state = State.Open;
+    this.listener.onOpen();
   }
 
   public abstract void onNext(RespT change);
