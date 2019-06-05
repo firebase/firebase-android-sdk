@@ -45,21 +45,21 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
             def deviceCheckDependents = it.task('deviceCheckDependents')
 
             configurations.all {
-                if (it.name == 'releaseUnitTestRuntimeClasspath') {
+                if (it.name == 'debugUnitTestRuntimeClasspath') {
                     checkDependents.dependsOn(configurations
-                            .releaseUnitTestRuntimeClasspath.getTaskDependencyFromProjectDependency(
+                            .debugUnitTestRuntimeClasspath.getTaskDependencyFromProjectDependency(
                             false, "checkDependents"))
                     checkDependents.dependsOn 'check'
                 }
 
-                if (it.name == 'releaseAndroidTestRuntimeClasspath') {
+                if (it.name == 'debugAndroidTestRuntimeClasspath') {
                     connectedCheckDependents.dependsOn(configurations
-                            .releaseAndroidTestRuntimeClasspath.getTaskDependencyFromProjectDependency(
+                            .debugAndroidTestRuntimeClasspath.getTaskDependencyFromProjectDependency(
                             false, "connectedCheckDependents"))
                     connectedCheckDependents.dependsOn 'connectedCheck'
 
                     deviceCheckDependents.dependsOn(configurations
-                            .releaseAndroidTestRuntimeClasspath.getTaskDependencyFromProjectDependency(
+                            .debugAndroidTestRuntimeClasspath.getTaskDependencyFromProjectDependency(
                             false, "deviceCheckDependents"))
                     deviceCheckDependents.dependsOn 'deviceCheck'
                 }
@@ -82,8 +82,8 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                 // getTaskDependencyFromProjectDependency works.
                 if (!isAndroidProject(it)) {
                     configurations {
-                        releaseUnitTestRuntimeClasspath
-                        releaseAndroidTestRuntimeClasspath
+                        debugUnitTestRuntimeClasspath
+                        debugAndroidTestRuntimeClasspath
                         annotationProcessor
                     }
                     // noop task to avoid having to handle the edge-case of tasks not being

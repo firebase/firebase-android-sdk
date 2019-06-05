@@ -140,35 +140,6 @@ configure(subprojects) {
 }
 
 /**
- * Disable "debug" build type for all subprojects.
- *
- * They are identical to "release" and are not used in either release or smoke tests. Disabling them
- * to reduce the number of tests we run on pre/post-submit.
- */
-configure(subprojects) {
-    afterEvaluate { Project sub ->
-        if (!sub.plugins.hasPlugin('com.android.library') && !sub.plugins.hasPlugin('com.android.application')) {
-            return
-        }
-
-        sub.android {
-            testBuildType "release"
-            variantFilter { variant ->
-                def buildTypeName = variant.buildType*.name
-                if (buildTypeName.contains('debug')) {
-                    setIgnore(true)
-                }
-            }
-            buildTypes {
-                // In the case of and android library signing config only affects instrumentation test APK.
-                // We need it signed with default debug credentials in order for FTL to accept the APK.
-                release.signingConfig = debug.signingConfig
-            }
-        }
-    }
-}
-
-/**
  * Configure "Preguarding" and Desugaring for the subprojects.
  *
  * <p>Desugaring is enabled with the 'me.tatarka:gradle-retrolambda' plugin as the built-in Android
