@@ -405,7 +405,8 @@ public class FirebaseFirestore {
    * @return A Task that is resolved once the persistent storage has been cleared. Otherwise, the
    *     Task is rejected with an error.
    */
-  Task<Void> clearPersistence() {
+  @PublicApi
+  public Task<Void> clearPersistence() {
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(
         () -> {
