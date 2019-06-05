@@ -38,7 +38,7 @@ import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.remote.Datastore;
+import com.google.firebase.firestore.remote.GrpcCallProvider;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
@@ -133,7 +133,7 @@ public class IntegrationTestUtil {
           (SSLCertificateSocketFactory) SSLCertificateSocketFactory.getInsecure(0, null);
       channelBuilder.sslSocketFactory(insecureFactory);
 
-      Datastore.overrideChannelBuilder(() -> channelBuilder);
+      GrpcCallProvider.overrideChannelBuilder(() -> channelBuilder);
     } else {
       settings.setHost(provider.firestoreHost());
     }
