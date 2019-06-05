@@ -1,4 +1,9 @@
 # Unreleased
+- [fixed] Updated gRPC to 1.21.0. A bug in the prior version would occasionally
+  cause a crash if a network state change occurred concurrently with an RPC.
+  (#428)
+
+# 19.0.1
 - [fixed] Fixed an issue that prevented schema migrations for clients with
   large offline datasets (#370).
 

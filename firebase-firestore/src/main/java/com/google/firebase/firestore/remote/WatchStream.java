@@ -20,7 +20,6 @@ import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
-import com.google.firebase.firestore.util.FirestoreChannel;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.ListenRequest;
 import com.google.firestore.v1.ListenResponse;

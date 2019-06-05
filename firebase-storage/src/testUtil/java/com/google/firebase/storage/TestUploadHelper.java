@@ -509,8 +509,10 @@ public class TestUploadHelper {
     return task.continueWith(ignored -> builder);
   }
 
-  public static Semaphore fileUploadQueuedCancel(
+  public static Task<Void> fileUploadQueuedCancel(
       final StringBuilder builder, final Uri sourcefile) {
+    TaskCompletionSource<Void> result = new TaskCompletionSource<>();
+
     final StorageReference storage = FirebaseStorage.getInstance().getReference("image.jpg");
     StorageMetadata metadata =
         new StorageMetadata.Builder()
@@ -534,7 +536,7 @@ public class TestUploadHelper {
           String statusMessage = "\nonComplete:Success=\n" + completedTask.isSuccessful();
           Log.i(TAG, statusMessage);
           builder.append(statusMessage);
-          semaphore.release();
+          result.setResult(null);
         });
 
     // cancel while the task is still queued.
@@ -542,7 +544,7 @@ public class TestUploadHelper {
 
     ControllableSchedulerHelper.getInstance().resume();
 
-    return semaphore;
+    return result.getTask();
   }
 
   public static Task<StringBuilder> adaptiveChunking() {

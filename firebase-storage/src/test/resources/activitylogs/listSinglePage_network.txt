@@ -1,0 +1,29 @@
+
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=smallDirectory%2F&delimiter=%2F&maxResults=10
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:200
+getHeaderFields:
+ null:[HTTP/1.1 200 OK]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,44,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[992]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Thu, 23 May 2019 16:55:57 GMT]
+ Expires:[Thu, 23 May 2019 16:55:57 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1558630558691]
+ X-Android-Response-Source:[NETWORK 200]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1558630558417]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2Uqp-NgPCTSNivLpJItOfO_AAfW77Bfz36W1EyWTNyKEUHfLIfLpY7Rv4_cN85CQidd0LI4XfB0nEr17Gri9uP-sNrLkSA]
+getInputStream:ewogICJwcmVmaXhlcyI6IFsKICAgICJzbWFsbERpcmVjdG9yeS9hcHJlZml4LyIKICBdLAogICJpdGVtcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTEuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGExMC5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTExLmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMTIuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGExMy5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTE0LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJzbWFsbERpcmVjdG9yeS9kYXRhMTUuZGF0IiwKICAgICAgImJ1Y2tldCI6ICJmb29leS5hcHBzcG90LmNvbSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInNtYWxsRGlyZWN0b3J5L2RhdGExNi5kYXQiLAogICAgICAiYnVja2V0IjogImZvb2V5LmFwcHNwb3QuY29tIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAic21hbGxEaXJlY3RvcnkvZGF0YTE3LmRhdCIsCiAgICAgICJidWNrZXQiOiAiZm9vZXkuYXBwc3BvdC5jb20iCiAgICB9CiAgXSwKICAibmV4dFBhZ2VUb2tlbiI6ICJjMjFoYkd4RWFYSmxZM1J2Y25rdlpHRjBZVEUzTG1SaGRBPT0iCn0=
+disconnect:
