@@ -21,6 +21,10 @@ android {
     flavorDimensions "apkSize"
 }
 
+dependencies {
+    implementation("com.google.android.gms:play-services-basement:16.1.0")
+}
+
 apply from: "src/database/database.gradle"
 apply from: "src/storage/storage.gradle"
 apply from: "src/firestore/firestore.gradle"
