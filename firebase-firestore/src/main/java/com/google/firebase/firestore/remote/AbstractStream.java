@@ -131,16 +131,6 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     }
 
     @Override
-    public void onReady() {
-      dispatcher.run(
-          () ->
-              Logger.debug(
-                  AbstractStream.this.getClass().getSimpleName(),
-                  "(%x) Stream is ready",
-                  System.identityHashCode(AbstractStream.this)));
-    }
-
-    @Override
     public void onClose(Status status) {
       dispatcher.run(
           () -> {

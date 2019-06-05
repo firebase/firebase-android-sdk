@@ -96,60 +96,59 @@ class FirestoreChannel {
       MethodDescriptor<ReqT, RespT> method, IncomingStreamObserver<RespT> observer) {
     ClientCall<ReqT, RespT>[] call = (ClientCall<ReqT, RespT>[]) new ClientCall[] {null};
 
-    callProvider
-        .createClientCall(method)
-        .addOnCompleteListener(
-            asyncQueue.getExecutor(),
-            result -> {
-              call[0] = result.getResult();
+    Task<ClientCall<ReqT, RespT>> clientCall = callProvider.createClientCall(method);
 
-              call[0].start(
-                  new ClientCall.Listener<RespT>() {
-                    @Override
-                    public void onHeaders(Metadata headers) {
-                      try {
-                        observer.onHeaders(headers);
-                      } catch (Throwable t) {
-                        asyncQueue.panic(t);
-                      }
-                    }
+    clientCall.addOnCompleteListener(
+        asyncQueue.getExecutor(),
+        result -> {
+          call[0] = result.getResult();
 
-                    @Override
-                    public void onMessage(RespT message) {
-                      try {
-                        observer.onNext(message);
-                        // Make sure next message can be delivered
-                        call[0].request(1);
-                      } catch (Throwable t) {
-                        asyncQueue.panic(t);
-                      }
-                    }
+          call[0].start(
+              new ClientCall.Listener<RespT>() {
+                @Override
+                public void onHeaders(Metadata headers) {
+                  try {
+                    observer.onHeaders(headers);
+                  } catch (Throwable t) {
+                    asyncQueue.panic(t);
+                  }
+                }
 
-                    @Override
-                    public void onClose(Status status, Metadata trailers) {
-                      try {
-                        observer.onClose(status);
-                      } catch (Throwable t) {
-                        asyncQueue.panic(t);
-                      }
-                    }
+                @Override
+                public void onMessage(RespT message) {
+                  try {
+                    observer.onNext(message);
+                    // Make sure next message can be delivered
+                    call[0].request(1);
+                  } catch (Throwable t) {
+                    asyncQueue.panic(t);
+                  }
+                }
 
-                    @Override
-                    public void onReady() {
-                      try {
-                        observer.onReady();
-                      } catch (Throwable t) {
-                        asyncQueue.panic(t);
-                      }
-                    }
-                  },
-                  requestHeaders());
+                @Override
+                public void onClose(Status status, Metadata trailers) {
+                  try {
+                    observer.onClose(status);
+                  } catch (Throwable t) {
+                    asyncQueue.panic(t);
+                  }
+                }
 
-              observer.onOpen();
+                @Override
+                public void onReady() {
+                  // `onReady` indicates that the channel can transmit accepted messages directly,
+                  // without needing to "excessively" buffer them internally. We currently
+                  // ignore this notification in our client.
+                }
+              },
+              requestHeaders());
 
-              // Make sure to allow the first incoming message, all subsequent messages
-              call[0].request(1);
-            });
+          observer.onOpen();
+
+          // Make sure to allow the first incoming message, all subsequent messages will be
+          // accepted by our onMessage() handler above.
+          call[0].request(1);
+        });
 
     return new ForwardingClientCall<ReqT, RespT>() {
       @Override
@@ -163,7 +162,7 @@ class FirestoreChannel {
         // We allow stream closure even if the stream has not started. This can happen when a user
         // calls `disableNetwork()` immediately after client startup.
         if (call[0] == null) {
-          asyncQueue.enqueueAndForget(this::halfClose);
+          clientCall.addOnSuccessListener(asyncQueue.getExecutor(), ClientCall::halfClose);
         } else {
           super.halfClose();
         }

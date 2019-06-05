@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.remote;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.support.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -36,12 +37,7 @@ import io.grpc.MethodDescriptor;
 import io.grpc.android.AndroidChannelBuilder;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Manages the gRPC channel and encapsulates all SSL and gRPC initialization.
- *
- * <p>All operations are dispatched to an internal worker queue and are not executed until the SSL
- * and gRPC Stub initialization completes.
- */
+/** Manages the gRPC channel and encapsulates all SSL and gRPC initialization. */
 // PORTING NOTE: This class only exists on Android.
 public class GrpcCallProvider {
 
@@ -75,23 +71,19 @@ public class GrpcCallProvider {
     this.asyncQueue = asyncQueue;
 
     TaskCompletionSource<ManagedChannel> channelReady = new TaskCompletionSource<>();
-    this.channelTask = channelReady.getTask();
 
-    // We execute network initialization on a separate thread to not block operations that
+    // We execute network initialization on a separate queue to not block operations that
     // depend on the AsyncQueue.
-    new Thread("FirestoreGrpcInit") {
-      public void run() {
-        try {
-          ManagedChannel channel = initChannel(context, databaseInfo);
-          FirestoreGrpc.FirestoreStub firestoreStub =
-              FirestoreGrpc.newStub(channel).withCallCredentials(firestoreHeaders);
-          callOptions = firestoreStub.getCallOptions();
-          channelReady.setResult(channel);
-        } catch (Exception e) {
-          channelReady.setException(e);
-        }
-      }
-    }.start();
+    this.channelTask =
+        Tasks.call(
+            AsyncTask.THREAD_POOL_EXECUTOR,
+            () -> {
+              ManagedChannel channel = initChannel(context, databaseInfo);
+              FirestoreGrpc.FirestoreStub firestoreStub =
+                  FirestoreGrpc.newStub(channel).withCallCredentials(firestoreHeaders);
+              callOptions = firestoreStub.getCallOptions();
+              return channel;
+            });
   }
 
   /** Sets up the SSL provider and configures the gRPC channel. */
@@ -116,8 +108,8 @@ public class GrpcCallProvider {
     } else {
       channelBuilder = ManagedChannelBuilder.forTarget(databaseInfo.getHost());
       if (!databaseInfo.isSslEnabled()) {
-        // Note that the boolean flag does *NOT* indicate whether or not plaintext should be
-        // used
+        // Note that the boolean flag does *NOT* switch the wire format from Protobuf to Plaintext.
+        // It merely turns off SSL encryption.
         channelBuilder.usePlaintext();
       }
     }
@@ -143,10 +135,7 @@ public class GrpcCallProvider {
       MethodDescriptor<ReqT, RespT> methodDescriptor) {
     return channelTask.continueWithTask(
         asyncQueue.getExecutor(),
-        task -> {
-          ManagedChannel channel = task.getResult();
-          return Tasks.forResult(channel.newCall(methodDescriptor, callOptions));
-        });
+        task -> Tasks.forResult(task.getResult().newCall(methodDescriptor, callOptions)));
   }
 
   /** Shuts down the gRPC channel and the internal worker queue. */

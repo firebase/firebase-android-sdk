@@ -28,9 +28,6 @@ interface IncomingStreamObserver<RespT> {
   /** The stream is open and able to accept messages. */
   void onOpen();
 
-  /** The stream is "ready". */
-  void onReady();
-
   /** The stream has closed. Status.isOk() is false if there an error occurred. */
   void onClose(Status status);
 }
