@@ -395,6 +395,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
             case INTERNAL_STATE_CANCELED:
               onCanceled();
               break;
+            default: // fall out
           }
           successManager.onInternalStateChanged();
           failureManager.onInternalStateChanged();
