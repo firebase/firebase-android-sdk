@@ -55,7 +55,7 @@ public class AdaptiveStreamBuffer {
    * Moves the buffer forward by 'bytes' and disregards its data.
    *
    * @param bytes Number of bytes to advance.
-   * @return The number of bytes we were able to advance
+   * @return The number of bytes we were able to advance.
    */
   public int advance(int bytes) throws IOException {
     int bytesAdvanced;
