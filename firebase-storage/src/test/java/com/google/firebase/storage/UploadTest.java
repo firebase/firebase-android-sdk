@@ -346,7 +346,7 @@ public class UploadTest {
   public void fileUploadWithPauseCancel() throws Exception {
     System.out.println("Starting test fileUploadWithPauseCancel.");
 
-    ResumableUploadCancelRequest.CANCEL_CALLED = false;
+    ResumableUploadCancelRequest.cancelCalled = false;
 
     MockConnectionFactory factory =
         NetworkLayerMock.ensureNetworkMock("fileUploadWithPauseCancel", true);
@@ -369,7 +369,7 @@ public class UploadTest {
     TestUtil.await(task, 20, TimeUnit.SECONDS);
 
     TestUtil.verifyTaskStateChanges("fileUploadWithPauseCancel", task.getResult().toString());
-    Assert.assertTrue(ResumableUploadCancelRequest.CANCEL_CALLED);
+    Assert.assertTrue(ResumableUploadCancelRequest.cancelCalled);
   }
 
   @Test
@@ -403,7 +403,7 @@ public class UploadTest {
   public void fileUploadWithQueueCancel() throws Exception {
     System.out.println("Starting test fileUploadWithQueueCancel.");
 
-    ResumableUploadCancelRequest.CANCEL_CALLED = false;
+    ResumableUploadCancelRequest.cancelCalled = false;
 
     final StringBuilder taskOutput = new StringBuilder();
     NetworkLayerMock.ensureNetworkMock("fileUploadWithPauseCancel", true);
@@ -422,7 +422,7 @@ public class UploadTest {
     TestUtil.await(task, 2, TimeUnit.SECONDS);
 
     TestUtil.verifyTaskStateChanges("fileUploadWithQueueCancel", taskOutput.toString());
-    Assert.assertFalse(ResumableUploadCancelRequest.CANCEL_CALLED);
+    Assert.assertFalse(ResumableUploadCancelRequest.cancelCalled);
   }
 
   @Test
