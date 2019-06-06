@@ -910,7 +910,8 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   @NonNull
   private <ContinuationResultT> Task<ContinuationResultT> continueWithImpl(
-      @Nullable final Executor executor, @NonNull final Continuation< ResultT, ContinuationResultT> continuation) {
+      @Nullable final Executor executor,
+      @NonNull final Continuation<ResultT, ContinuationResultT> continuation) {
 
     final TaskCompletionSource<ContinuationResultT> source = new TaskCompletionSource<>();
     completeListener.addListener(
