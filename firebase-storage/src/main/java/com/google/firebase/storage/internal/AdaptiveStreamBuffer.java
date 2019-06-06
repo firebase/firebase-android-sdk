@@ -41,12 +41,12 @@ public class AdaptiveStreamBuffer {
     this.reachedEnd = false;
   }
 
-  /** @return The number of available bytes in the buffer. */
+  /** Returns the number of available bytes in the buffer. */
   public int available() {
     return availableBytes;
   }
 
-  /** @return A direct pointer to the underlying buffer. */
+  /** Returns a direct pointer to the underlying buffer. */
   public byte[] get() {
     return buffer;
   }
@@ -56,7 +56,6 @@ public class AdaptiveStreamBuffer {
    *
    * @param bytes Number of bytes to advance.
    * @return The number of bytes we were able to advance.
-   * @throws IOException
    */
   public int advance(int bytes) throws IOException {
     int bytesAdvanced;
@@ -96,7 +95,6 @@ public class AdaptiveStreamBuffer {
    *
    * @param targetSize Number of bytes that should be loaded into the buffer.
    * @return Number of bytes actually in buffer.
-   * @throws IOException
    */
   public int fill(int targetSize) throws IOException {
     if (targetSize > buffer.length) {
@@ -147,11 +145,7 @@ public class AdaptiveStreamBuffer {
     return reachedEnd;
   }
 
-  /**
-   * Close the underlying stream.
-   *
-   * @throws IOException
-   */
+  /** Close the underlying stream. */
   public void close() throws IOException {
     source.close();
   }
