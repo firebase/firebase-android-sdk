@@ -18,7 +18,7 @@ import com.google.firebase.annotations.PublicApi;
 
 /** A listener that is called periodically during execution of the {@link ControllableTask}. */
 @PublicApi
-public interface OnProgressListener<TProgress> {
+public interface OnProgressListener<ProgressT> {
   @PublicApi
-  void onProgress(TProgress snapshot);
+  void onProgress(ProgressT snapshot);
 }

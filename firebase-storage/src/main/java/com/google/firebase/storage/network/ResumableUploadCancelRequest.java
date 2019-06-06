@@ -22,14 +22,14 @@ import com.google.firebase.FirebaseApp;
 
 /** Cancels an upload request in progress. */
 public class ResumableUploadCancelRequest extends ResumableNetworkRequest {
-  @VisibleForTesting public static boolean CANCEL_CALLED = false;
+  @VisibleForTesting public static boolean cancelCalled = false;
 
   private final String uploadURL;
 
   public ResumableUploadCancelRequest(
       @NonNull Uri gsUri, @NonNull FirebaseApp app, @NonNull String uploadURL) {
     super(gsUri, app);
-    CANCEL_CALLED = true;
+    cancelCalled = true;
     if (TextUtils.isEmpty(uploadURL)) {
       super.mException = new IllegalArgumentException("uploadURL is null or empty");
     }

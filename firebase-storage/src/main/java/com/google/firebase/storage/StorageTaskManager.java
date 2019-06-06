@@ -34,14 +34,14 @@ import java.util.Map;
 
   private final Map<String, WeakReference<StorageTask>> mInProgressTasks = new HashMap<>();
 
-  private final Object mSyncObject = new Object();
+  private final Object syncObject = new Object();
 
   static StorageTaskManager getInstance() {
     return _instance;
   }
 
   public List<UploadTask> getUploadTasksUnder(@NonNull StorageReference parent) {
-    synchronized (mSyncObject) {
+    synchronized (syncObject) {
       ArrayList<UploadTask> inProgressList = new ArrayList<>();
       String parentPath = parent.toString();
       for (Map.Entry<String, WeakReference<StorageTask>> entry : mInProgressTasks.entrySet()) {
@@ -57,7 +57,7 @@ import java.util.Map;
   }
 
   public List<FileDownloadTask> getDownloadTasksUnder(@NonNull StorageReference parent) {
-    synchronized (mSyncObject) {
+    synchronized (syncObject) {
       ArrayList<FileDownloadTask> inProgressList = new ArrayList<>();
       String parentPath = parent.toString();
       for (Map.Entry<String, WeakReference<StorageTask>> entry : mInProgressTasks.entrySet()) {
@@ -73,14 +73,14 @@ import java.util.Map;
   }
 
   public void ensureRegistered(StorageTask targetTask) {
-    synchronized (mSyncObject) {
+    synchronized (syncObject) {
       // ensure *this* is added to the in progress list
       mInProgressTasks.put(targetTask.getStorage().toString(), new WeakReference<>(targetTask));
     }
   }
 
   public void unRegister(StorageTask targetTask) {
-    synchronized (mSyncObject) {
+    synchronized (syncObject) {
       // ensure *this* is added to the in progress list
       String key = targetTask.getStorage().toString();
       WeakReference<StorageTask> weakReference = mInProgressTasks.get(key);

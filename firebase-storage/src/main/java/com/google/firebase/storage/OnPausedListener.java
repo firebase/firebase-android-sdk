@@ -18,7 +18,7 @@ import com.google.firebase.annotations.PublicApi;
 
 /** A listener that is called if the Task is paused via {@link ControllableTask#pause()}. */
 @PublicApi
-public interface OnPausedListener<TProgress> {
+public interface OnPausedListener<ProgressT> {
   @PublicApi
-  void onPaused(TProgress snapshot);
+  void onPaused(ProgressT snapshot);
 }
