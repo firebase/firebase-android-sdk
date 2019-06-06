@@ -96,6 +96,7 @@ public class StorageTaskScheduler {
     }
 
     @Override
+    @SuppressWarnings("ThreadPriorityCheck")
     public Thread newThread(@NonNull Runnable r) {
       Thread t = new Thread(r, "FirebaseStorage-" + mNameSuffix + threadNumber.getAndIncrement());
       t.setDaemon(false);
