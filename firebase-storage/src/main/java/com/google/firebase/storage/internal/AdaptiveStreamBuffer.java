@@ -145,9 +145,7 @@ public class AdaptiveStreamBuffer {
     return reachedEnd;
   }
 
-  /**
-   * Close the underlying stream.
-   */
+  /** Close the underlying stream. */
   public void close() throws IOException {
     source.close();
   }
