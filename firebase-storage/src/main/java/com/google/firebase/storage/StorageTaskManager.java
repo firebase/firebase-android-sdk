@@ -32,7 +32,7 @@ import java.util.Map;
 /*package*/ class StorageTaskManager {
   private static final StorageTaskManager _instance = new StorageTaskManager();
 
-  private final Map<String, WeakReference<StorageTask>> mInProgressTasks = new HashMap<>();
+  private final Map<String, WeakReference<StorageTask>> inProgressTasks = new HashMap<>();
 
   private final Object syncObject = new Object();
 
@@ -44,7 +44,7 @@ import java.util.Map;
     synchronized (syncObject) {
       ArrayList<UploadTask> inProgressList = new ArrayList<>();
       String parentPath = parent.toString();
-      for (Map.Entry<String, WeakReference<StorageTask>> entry : mInProgressTasks.entrySet()) {
+      for (Map.Entry<String, WeakReference<StorageTask>> entry : inProgressTasks.entrySet()) {
         if (entry.getKey().startsWith(parentPath)) {
           StorageTask task = entry.getValue().get();
           if (task instanceof UploadTask) {
@@ -60,7 +60,7 @@ import java.util.Map;
     synchronized (syncObject) {
       ArrayList<FileDownloadTask> inProgressList = new ArrayList<>();
       String parentPath = parent.toString();
-      for (Map.Entry<String, WeakReference<StorageTask>> entry : mInProgressTasks.entrySet()) {
+      for (Map.Entry<String, WeakReference<StorageTask>> entry : inProgressTasks.entrySet()) {
         if (entry.getKey().startsWith(parentPath)) {
           StorageTask task = entry.getValue().get();
           if (task instanceof FileDownloadTask) {
@@ -75,7 +75,7 @@ import java.util.Map;
   public void ensureRegistered(StorageTask targetTask) {
     synchronized (syncObject) {
       // ensure *this* is added to the in progress list
-      mInProgressTasks.put(targetTask.getStorage().toString(), new WeakReference<>(targetTask));
+      inProgressTasks.put(targetTask.getStorage().toString(), new WeakReference<>(targetTask));
     }
   }
 
@@ -83,10 +83,10 @@ import java.util.Map;
     synchronized (syncObject) {
       // ensure *this* is added to the in progress list
       String key = targetTask.getStorage().toString();
-      WeakReference<StorageTask> weakReference = mInProgressTasks.get(key);
+      WeakReference<StorageTask> weakReference = inProgressTasks.get(key);
       StorageTask task = weakReference != null ? weakReference.get() : null;
       if (task == null || task == targetTask) {
-        mInProgressTasks.remove(key);
+        inProgressTasks.remove(key);
       }
     }
   }
