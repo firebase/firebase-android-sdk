@@ -66,7 +66,7 @@ public final class ListResult {
       }
     }
 
-    String pageToken = resultBody.optString(PAGE_TOKEN_KEY, /* defaultValue= */ null);
+    String pageToken = resultBody.optString(PAGE_TOKEN_KEY, /* fallback= */ null);
     return new ListResult(prefixes, items, pageToken);
   }
 
