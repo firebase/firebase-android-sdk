@@ -151,14 +151,18 @@ configure(subprojects) {
             return
         }
 
-        sub.android {
-            testBuildType "release"
-            variantFilter { variant ->
-                def buildTypeName = variant.buildType*.name
-                if (buildTypeName.contains('debug')) {
-                    setIgnore(true)
+        // skip debug unit tests in CI
+        // TODO(vkryachko): provide ability for teams to control this if needed
+        if (System.getenv().containsKey("FIREBASE_CI")) {
+            sub.tasks.all {Task task ->
+                if (task.name == 'testDebugUnitTest') {
+                    task.enabled = false
                 }
             }
+        }
+        sub.android {
+            testBuildType "release"
+
             buildTypes {
                 // In the case of and android library signing config only affects instrumentation test APK.
                 // We need it signed with default debug credentials in order for FTL to accept the APK.
