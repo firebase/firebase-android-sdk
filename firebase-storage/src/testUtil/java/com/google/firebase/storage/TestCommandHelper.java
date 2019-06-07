@@ -183,7 +183,7 @@ public class TestCommandHelper {
     builder.append("getSizeBytes:").append(Long.toString(metadata.getSizeBytes())).append("\n");
     builder.append("getReference:").append(metadata.getReference().getName()).append("\n");
     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
-    sdf.setTimeZone(TimeZone.getTimeZone("PST"));
+    sdf.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
     builder
         .append("getCreationTimeMillis:")
         .append(sdf.format(new Date(metadata.getCreationTimeMillis())))
