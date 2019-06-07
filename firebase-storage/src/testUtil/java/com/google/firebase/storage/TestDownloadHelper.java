@@ -272,7 +272,8 @@ public class TestDownloadHelper {
         StorageTaskManager.getInstance().getDownloadTasksUnder(reference.getParent());
     Preconditions.checkState(
         downloadTasksAtParent.size() == expectedTasks,
-        "Expected active download task at location %s to contain %s item(s), but contained %s item(s)",
+        "Expected active download task at location %s to contain %s item(s), "
+            + "but contained %s item(s)",
         reference.getParent(),
         downloadTasksAtParent.size());
   }
