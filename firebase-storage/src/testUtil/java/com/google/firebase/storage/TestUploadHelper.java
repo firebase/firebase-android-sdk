@@ -694,7 +694,8 @@ public class TestUploadHelper {
         StorageTaskManager.getInstance().getUploadTasksUnder(reference.getParent());
     Preconditions.checkState(
         uploadTasksAtParent.size() == expectedTasks,
-        "Expected active upload task at location %s to contain %s item(s), but contained %s item(s)",
+        "Expected active upload task at location %s to contain %s item(s), "
+            + "but contained %s item(s)",
         reference.getParent(),
         uploadTasksAtParent.size());
   }

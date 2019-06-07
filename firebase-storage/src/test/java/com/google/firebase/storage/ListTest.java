@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+/** Tests for {@link FirebaseStorage}. */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
 public class ListTest {
@@ -62,18 +63,21 @@ public class ListTest {
       reference.list(-1);
       fail();
     } catch (IllegalArgumentException e) {
+      // Expected.
     }
 
     try {
       reference.list(1001);
       fail();
     } catch (IllegalArgumentException e) {
+      // Expected.
     }
 
     try {
       reference.list(1000, null);
       fail();
     } catch (IllegalArgumentException e) {
+      // Expected.
     }
   }
 

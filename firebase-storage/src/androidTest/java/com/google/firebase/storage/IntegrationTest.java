@@ -37,6 +37,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Integration tests for Firebase Storage. */
 @RunWith(AndroidJUnit4.class)
 public class IntegrationTest {
   @Rule
