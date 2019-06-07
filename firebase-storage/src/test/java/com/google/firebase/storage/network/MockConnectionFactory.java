@@ -18,8 +18,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import android.support.annotation.NonNull;
 import android.util.Base64;
+import androidx.annotation.NonNull;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;

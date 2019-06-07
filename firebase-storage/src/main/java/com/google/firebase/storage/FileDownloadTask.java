@@ -15,9 +15,9 @@
 package com.google.firebase.storage;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
+import androidx.annotation.NonNull;
 import com.google.android.gms.common.api.Status;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;

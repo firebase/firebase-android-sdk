@@ -20,7 +20,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;

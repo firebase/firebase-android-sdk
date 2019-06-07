@@ -20,7 +20,7 @@
     <application
         android:allowBackup="true"
         android:supportsRtl="true"
-        android:name="android.support.multidex.MultiDexApplication">
+        android:name="androidx.multidex.MultiDexApplication">
         <activity
             android:name=".TestActivity">
             <intent-filter>

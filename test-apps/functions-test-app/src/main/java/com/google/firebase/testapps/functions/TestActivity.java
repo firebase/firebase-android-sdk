@@ -16,11 +16,11 @@ package com.google.firebase.testapps.functions;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
-import android.support.test.espresso.IdlingResource;
-import android.support.test.espresso.idling.CountingIdlingResource;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
+import androidx.test.espresso.IdlingResource;
+import androidx.test.espresso.idling.CountingIdlingResource;
 import android.widget.TextView;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;

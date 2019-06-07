@@ -14,10 +14,10 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.IntDef;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
+import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseException;

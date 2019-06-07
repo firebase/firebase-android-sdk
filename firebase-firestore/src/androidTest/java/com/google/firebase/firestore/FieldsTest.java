@@ -25,7 +25,7 @@ import static com.google.firebase.firestore.util.Util.autoId;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;

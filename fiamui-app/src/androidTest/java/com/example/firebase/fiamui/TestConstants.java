@@ -14,8 +14,8 @@
 
 package com.example.firebase.fiamui;
 
-import android.support.annotation.IdRes;
-import android.support.annotation.StringRes;
+import androidx.annotation.IdRes;
+import androidx.annotation.StringRes;
 
 public class TestConstants {
 

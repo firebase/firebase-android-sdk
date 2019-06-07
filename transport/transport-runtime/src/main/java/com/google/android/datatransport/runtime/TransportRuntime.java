@@ -15,8 +15,8 @@
 package com.google.android.datatransport.runtime;
 
 import android.content.Context;
-import android.support.annotation.RestrictTo;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;

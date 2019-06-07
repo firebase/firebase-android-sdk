@@ -19,7 +19,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.future.ReadFuture;

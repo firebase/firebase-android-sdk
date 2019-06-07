@@ -48,7 +48,7 @@ def isTesting = getGradle().getStartParameter().getTaskNames().any({ String task
 
     // this is needed for storage test app to build
     def hasStorageAppAssembleTask = taskName == ":firebase-storage:test-app:assembleRelease"
-    return hasProjectTestTask || hasStorageAppAssembleTask || taskName.contains('connectedCheck') || taskName.contains('deviceCheck')
+    return hasProjectTestTask || hasStorageAppAssembleTask || taskName.contains('connectedCheck') || taskName.contains('deviceCheck') || taskName.contains('AndroidTest')
 })
 
 if (isTesting) {

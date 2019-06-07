@@ -22,8 +22,8 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.model.SnapshotVersion;

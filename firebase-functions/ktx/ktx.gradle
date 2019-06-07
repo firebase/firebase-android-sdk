@@ -31,7 +31,7 @@ android {
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -49,12 +49,12 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-functions')
-    implementation 'com.android.support:support-annotations:28.0.0'
+    implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:16.0.1'
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'

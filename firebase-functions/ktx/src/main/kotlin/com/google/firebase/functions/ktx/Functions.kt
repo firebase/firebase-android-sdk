@@ -14,7 +14,7 @@
 
 package com.google.firebase.functions.ktx
 
-import android.support.annotation.Keep
+import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.components.Component

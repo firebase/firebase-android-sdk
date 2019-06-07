@@ -16,7 +16,7 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.FieldValue;
 

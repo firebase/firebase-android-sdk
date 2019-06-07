@@ -15,7 +15,7 @@
 package com.google.firebase.datatransport;
 
 import android.content.Context;
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.firebase.components.Component;

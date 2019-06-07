@@ -16,8 +16,8 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.OnlineState;

@@ -22,7 +22,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
 import static junit.framework.Assert.assertEquals;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import org.junit.Before;
 import org.junit.Test;

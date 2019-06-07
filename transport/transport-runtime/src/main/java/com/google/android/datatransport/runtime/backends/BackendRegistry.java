@@ -14,7 +14,7 @@
 
 package com.google.android.datatransport.runtime.backends;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 public interface BackendRegistry {
   @Nullable

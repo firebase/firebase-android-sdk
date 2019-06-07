@@ -21,7 +21,7 @@ import static junit.framework.Assert.assertNull;
 import android.content.Context;
 import android.net.SSLCertificateSocketFactory;
 import android.os.StrictMode;
-import android.support.test.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;

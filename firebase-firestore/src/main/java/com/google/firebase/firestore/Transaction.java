@@ -17,8 +17,8 @@ package com.google.firebase.firestore;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.fail;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.PublicApi;

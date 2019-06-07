@@ -18,7 +18,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.cct.proto.AndroidClientInfo;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
 import com.google.android.datatransport.cct.proto.ClientInfo;
