@@ -75,13 +75,13 @@ class FirestoreTests : BaseTestCase() {
 
     @Test
     fun `firestore should delegate to FirebaseFirestore#getInstance()`() {
-        assertThat(Firebase.firestore).isSameAs(FirebaseFirestore.getInstance())
+        assertThat(Firebase.firestore).isSameInstanceAs(FirebaseFirestore.getInstance())
     }
 
     @Test
     fun `FirebaseApp#firestore should delegate to FirebaseFirestore#getInstance(FirebaseApp)`() {
         val app = Firebase.app(EXISTING_APP)
-        assertThat(Firebase.firestore(app)).isSameAs(FirebaseFirestore.getInstance(app))
+        assertThat(Firebase.firestore(app)).isSameInstanceAs(FirebaseFirestore.getInstance(app))
     }
 }
 

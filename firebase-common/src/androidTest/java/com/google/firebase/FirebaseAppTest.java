@@ -349,18 +349,18 @@ public class FirebaseAppTest {
 
     Context appContext = mockContext.getApplicationContext();
 
-    assertThat(firebaseApp.get(Context.class)).isSameAs(appContext);
-    assertThat(firebaseApp.get(FirebaseApp.class)).isSameAs(firebaseApp);
+    assertThat(firebaseApp.get(Context.class)).isSameInstanceAs(appContext);
+    assertThat(firebaseApp.get(FirebaseApp.class)).isSameInstanceAs(firebaseApp);
 
     TestComponentOne one = firebaseApp.get(TestComponentOne.class);
     assertThat(one).isNotNull();
-    assertThat(one.getContext()).isSameAs(appContext);
+    assertThat(one.getContext()).isSameInstanceAs(appContext);
 
     TestComponentTwo two = firebaseApp.get(TestComponentTwo.class);
     assertThat(two).isNotNull();
-    assertThat(two.getApp()).isSameAs(firebaseApp);
-    assertThat(two.getOptions()).isSameAs(firebaseApp.getOptions());
-    assertThat(two.getOne()).isSameAs(one);
+    assertThat(two.getApp()).isSameInstanceAs(firebaseApp);
+    assertThat(two.getOptions()).isSameInstanceAs(firebaseApp.getOptions());
+    assertThat(two.getOne()).isSameInstanceAs(one);
   }
 
   @Test
