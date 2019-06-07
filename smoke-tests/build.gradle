@@ -87,11 +87,11 @@ apply from: "configure.gradle"
 
 dependencies {
   // Common
-  api "androidx.test:runner:1.1.0"
-  api "com.google.truth:truth:0.43"
+  api "androidx.test:runner:1.2.0"
+  api "com.google.truth:truth:0.44"
   api "junit:junit:4.12"
 
-  implementation "androidx.test:rules:1.1.0"
+  implementation "androidx.test:rules:1.2.0"
   implementation "com.google.firebase:firebase-common"
 
   // All
