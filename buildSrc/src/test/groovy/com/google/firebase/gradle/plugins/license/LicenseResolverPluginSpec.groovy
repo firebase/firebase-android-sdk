@@ -96,7 +96,7 @@ class LicenseResolverPluginSpec extends Specification {
         json != ""
 
         and: "license txt file contains dependency name"
-        txt.contains("OkHttp")
+        txt.contains("OkHttps")
 
         and: "license txt file contains license"
         txt.contains("Apache License")
