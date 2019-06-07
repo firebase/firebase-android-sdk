@@ -27,7 +27,7 @@ buildscript {
 apply plugin: "com.android.application"
 
 android {
-  compileSdkVersion 24
+  compileSdkVersion 28
 
   defaultConfig {
     minSdkVersion 16
