@@ -18,6 +18,7 @@ package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.platforminfo.UserAgentPublisher;
@@ -25,7 +26,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 @RunWith(RobolectricTestRunner.class)
 public class FirestoreRegistrarTest {
@@ -35,7 +35,7 @@ public class FirestoreRegistrarTest {
   public void storageRegistrar_getComponents_publishesLibVersionComponent() {
     FirebaseApp app =
         FirebaseApp.initializeApp(
-            RuntimeEnvironment.application.getApplicationContext(),
+            ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
                 .setProjectId("projectId")
                 .setApplicationId("1:196403931065:android:60949756fbe381ea")

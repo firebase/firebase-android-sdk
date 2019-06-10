@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDoc
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import android.support.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -38,7 +38,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class POJOTest {
-  public static class POJO {
+  public static final class POJO {
 
     double number;
     String str;
@@ -123,7 +123,7 @@ public class POJOTest {
       if (this == o) {
         return true;
       }
-      if (o == null || getClass() != o.getClass()) {
+      if (o == null || !(o instanceof POJO)) {
         return false;
       }
 

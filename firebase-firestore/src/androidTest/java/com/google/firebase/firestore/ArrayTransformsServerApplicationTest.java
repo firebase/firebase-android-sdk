@@ -20,7 +20,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import android.support.test.runner.AndroidJUnit4;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
