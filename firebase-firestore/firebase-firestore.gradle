@@ -117,6 +117,7 @@ dependencies {
     }
 
     testImplementation 'junit:junit:4.12'
+    testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
@@ -133,9 +134,9 @@ dependencies {
 
 gradle.projectsEvaluated {
     tasks.withType(JavaCompile) {
-        // TODO(rsgowman): Also add "-Xlint:unchecked". But currently that
+        // TODO(wuandy): Also add "-Xlint:unchecked". But currently that
         // enables 100+ warnings due to our generated source code.
-        options.compilerArgs << "-Xlint:deprecation"
+        options.compilerArgs << "-Xlint:deprecation" << "-Werror"
     }
 }
 

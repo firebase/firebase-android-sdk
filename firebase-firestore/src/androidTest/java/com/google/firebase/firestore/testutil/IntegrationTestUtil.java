@@ -16,7 +16,7 @@ package com.google.firebase.firestore.testutil;
 
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.util.Util.autoId;
-import static junit.framework.Assert.assertNull;
+import static org.junit.Assert.assertNull;
 
 import android.content.Context;
 import android.net.SSLCertificateSocketFactory;
