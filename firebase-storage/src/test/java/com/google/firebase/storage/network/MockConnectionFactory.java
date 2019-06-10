@@ -41,12 +41,8 @@ import org.junit.ComparisonFailure;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.exceptions.base.MockitoAssertionError;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 public class MockConnectionFactory implements HttpURLConnectionFactory {
-  private static final String LOG_TAG = MockConnectionFactory.class.getName();
-
   private final boolean binaryBody;
   HttpURLConnection oldMock;
   List<String> verifications = new ArrayList<>();
@@ -69,7 +65,7 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
         }
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
@@ -166,16 +162,13 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
     currentRecord++;
     if (currentRecord == pauseRecord) {
       Mockito.doAnswer(
-              new Answer<Void>() {
-                @Override
-                public Void answer(InvocationOnMock invocation) {
-                  try {
-                    pauseSemaphore.acquire();
-                  } catch (InterruptedException e) {
-                    e.printStackTrace();
-                  }
-                  return null;
+              invocation -> {
+                try {
+                  pauseSemaphore.acquire();
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
                 }
+                return null;
               })
           .when(mock)
           .disconnect();
@@ -205,7 +198,7 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
           try {
             verify(oldMock).setRequestMethod(value);
           } catch (ProtocolException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
           }
         } else if (key.equalsIgnoreCase("setRequestProperty")) {
           int comma = value.indexOf(',');
