@@ -41,7 +41,6 @@ import org.junit.ComparisonFailure;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.exceptions.base.MockitoAssertionError;
-import org.mockito.stubbing.Answer;
 
 public class MockConnectionFactory implements HttpURLConnectionFactory {
   private final boolean binaryBody;
@@ -163,15 +162,14 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
     currentRecord++;
     if (currentRecord == pauseRecord) {
       Mockito.doAnswer(
-              (Answer<Void>)
-                  invocation -> {
-                    try {
-                      pauseSemaphore.acquire();
-                    } catch (InterruptedException e) {
-                      Thread.currentThread().interrupt();
-                    }
-                    return null;
-                  })
+              invocation -> {
+                try {
+                  pauseSemaphore.acquire();
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+                }
+                return null;
+              })
           .when(mock)
           .disconnect();
     }
