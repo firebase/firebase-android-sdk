@@ -16,8 +16,8 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 
-import androidx.test.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.OnlineState;
@@ -44,7 +44,7 @@ public class RemoteStoreTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             null,
-            InstrumentationRegistry.getContext());
+            ApplicationProvider.getApplicationContext());
     Semaphore networkChangeSemaphore = new Semaphore(0);
     RemoteStore.RemoteStoreCallback callback =
         new RemoteStore.RemoteStoreCallback() {

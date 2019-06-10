@@ -22,8 +22,8 @@ import static org.junit.Assert.assertNull;
 
 import android.app.Activity;
 import androidx.fragment.app.FragmentActivity;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.ActivityTestRule;
-import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.concurrent.Semaphore;
 import org.junit.After;

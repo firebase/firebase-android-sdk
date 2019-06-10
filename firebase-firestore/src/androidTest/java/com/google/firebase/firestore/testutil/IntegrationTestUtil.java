@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNull;
 import android.content.Context;
 import android.net.SSLCertificateSocketFactory;
 import android.os.StrictMode;
-import androidx.test.InstrumentationRegistry;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -242,7 +242,7 @@ public class IntegrationTestUtil {
     // TODO: Remove this once this is ready to ship.
     Persistence.INDEXING_SUPPORT_ENABLED = true;
 
-    Context context = InstrumentationRegistry.getContext();
+    Context context = ApplicationProvider.getApplicationContext();
     DatabaseId databaseId = DatabaseId.forDatabase(projectId, DatabaseId.DEFAULT_DATABASE_ID);
 
     ensureStrictMode();
