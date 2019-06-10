@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.remote.Datastore.SSL_DEPENDENCY_ERROR_MESSAGE;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.support.annotation.Nullable;
@@ -464,6 +465,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
           !shouldStartWatchStream(), "Watch stream was stopped gracefully while still needed.");
     }
 
+    if (Datastore.isSslHandshakeError(status)) {
+      throw new IllegalStateException(SSL_DEPENDENCY_ERROR_MESSAGE, status.getCause());
+    }
+
     cleanUpWatchStreamState();
 
     // If we still need the watch stream, retry the connection.
@@ -677,6 +682,11 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void handleWriteHandshakeError(Status status) {
     hardAssert(!status.isOk(), "Handling write error with status OK.");
+
+    if (Datastore.isSslHandshakeError(status)) {
+      throw new IllegalStateException(SSL_DEPENDENCY_ERROR_MESSAGE, status.getCause());
+    }
+
     // Reset the token if it's a permanent error, signaling the write stream is no longer valid.
     // Note that the handshake does not count as a write: see comments on isPermanentWriteError for
     // details.

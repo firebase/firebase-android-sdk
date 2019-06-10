@@ -7,7 +7,8 @@
 - [feature] Added `clearPersistence()`, which clears the persistent storage
   including pending writes and cached documents. This is intended to help
   write reliable tests (https://github.com/firebase/firebase-js-sdk/issues/449).
-
+- [changed] Firestore now provides a clear error message when it fails to load
+  SSL Ciphers during a connection attempt.
 
 # 19.0.1
 - [fixed] Fixed an issue that prevented schema migrations for clients with
