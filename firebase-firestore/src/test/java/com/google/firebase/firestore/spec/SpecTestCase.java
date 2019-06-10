@@ -31,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import android.util.Pair;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.collect.Sets;
@@ -94,7 +95,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.util.concurrent.RoboExecutorService;
 
 /**
@@ -267,10 +267,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     queue = new AsyncQueue();
 
     // Set up the sync engine and various stores.
-    datastore = new MockDatastore(queue, RuntimeEnvironment.application);
+    datastore = new MockDatastore(queue, ApplicationProvider.getApplicationContext());
 
     ConnectivityMonitor connectivityMonitor =
-        new AndroidConnectivityMonitor(RuntimeEnvironment.application);
+        new AndroidConnectivityMonitor(ApplicationProvider.getApplicationContext());
     remoteStore = new RemoteStore(this, localStore, datastore, queue, connectivityMonitor);
     syncEngine = new SyncEngine(localStore, remoteStore, currentUser);
     eventManager = new EventManager(syncEngine);

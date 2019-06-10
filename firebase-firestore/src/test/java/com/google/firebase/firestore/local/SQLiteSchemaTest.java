@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.WriteBatch;
@@ -43,7 +44,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /** Tests migrations in SQLiteSchema. */
@@ -59,7 +59,7 @@ public class SQLiteSchemaTest {
   @Before
   public void setUp() {
     SQLiteOpenHelper opener =
-        new SQLiteOpenHelper(RuntimeEnvironment.application, "foo", null, 1) {
+        new SQLiteOpenHelper(ApplicationProvider.getApplicationContext(), "foo", null, 1) {
           @Override
           public void onCreate(SQLiteDatabase db) {}
 
