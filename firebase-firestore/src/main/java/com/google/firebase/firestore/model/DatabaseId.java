@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.model;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /** Represents a particular database in Firestore */
 public final class DatabaseId implements Comparable<DatabaseId> {

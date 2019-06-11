@@ -16,7 +16,7 @@ package com.google.firebase.database.core.persistence;
 
 import static org.junit.Assert.assertEquals;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.EventRecord;
 import com.google.firebase.database.IntegrationTestHelpers;

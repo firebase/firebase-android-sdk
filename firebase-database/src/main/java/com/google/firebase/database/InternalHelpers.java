@@ -14,7 +14,7 @@
 
 package com.google.firebase.database;
 
-import android.support.annotation.RestrictTo;
+import androidx.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;

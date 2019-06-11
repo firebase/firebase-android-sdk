@@ -16,8 +16,8 @@ package com.google.firebase.storage;
 
 import android.app.Activity;
 import android.net.Uri;
-import android.support.annotation.Nullable;
 import android.util.Log;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;

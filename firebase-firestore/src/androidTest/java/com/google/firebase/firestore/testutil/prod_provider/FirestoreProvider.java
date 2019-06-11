@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.testutil.provider;
 
 import android.content.Context;
-import android.support.test.InstrumentationRegistry;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.R;
 
 /**
@@ -28,7 +28,7 @@ public final class FirestoreProvider {
   private final Context context;
 
   public FirestoreProvider() {
-    this(InstrumentationRegistry.getContext());
+    this(ApplicationProvider.getApplicationContext());
   }
 
   public FirestoreProvider(Context context) {

@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.model.value;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.google.firebase.Timestamp;
 
 /** A wrapper for Date values in Timestamp. */

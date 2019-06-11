@@ -15,8 +15,8 @@
 package com.google.firebase.storage.network;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 
 /** Queries the current status of a resumable upload session. */

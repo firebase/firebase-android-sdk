@@ -14,8 +14,8 @@
 
 package com.google.firebase.components;
 
-import android.support.annotation.RestrictTo;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.inject.Provider;
 
 /**

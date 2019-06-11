@@ -14,7 +14,7 @@
 
 package com.google.firebase.inappmessaging.display;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 /**
  * Listener interface to be notified of in app messaging events. Use to register your listener.

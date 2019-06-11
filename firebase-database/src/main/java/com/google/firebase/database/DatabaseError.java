@@ -14,8 +14,8 @@
 
 package com.google.firebase.database;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.RestrictTo;
+import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
 import com.google.firebase.annotations.PublicApi;
 import java.io.PrintWriter;
 import java.io.StringWriter;

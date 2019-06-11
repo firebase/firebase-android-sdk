@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.database.DatabaseReference.CompletionListener;
 import com.google.firebase.database.core.AuthTokenProvider;
 import com.google.firebase.database.core.DatabaseConfig;

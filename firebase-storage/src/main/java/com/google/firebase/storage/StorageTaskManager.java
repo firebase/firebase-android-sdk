@@ -14,7 +14,7 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;

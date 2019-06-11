@@ -30,8 +30,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -98,7 +98,7 @@ public class ValidationTest {
   private static void withApp(String name, Consumer<FirebaseApp> toRun) {
     FirebaseApp app =
         FirebaseApp.initializeApp(
-            InstrumentationRegistry.getContext(),
+            ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
                 .setApiKey("key")
                 .setApplicationId("appId")

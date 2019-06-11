@@ -14,7 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import java.util.ArrayList;

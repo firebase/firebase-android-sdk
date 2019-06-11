@@ -17,7 +17,7 @@ package com.google.firebase.functions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;

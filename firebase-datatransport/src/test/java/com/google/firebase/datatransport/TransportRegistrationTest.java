@@ -16,7 +16,7 @@ package com.google.firebase.datatransport;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;

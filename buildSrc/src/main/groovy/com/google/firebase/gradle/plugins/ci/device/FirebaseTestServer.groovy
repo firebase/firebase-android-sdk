@@ -54,6 +54,7 @@ class FirebaseTestServer extends TestServer {
                     '--type=instrumentation',
                     "--app=$testedApkPath", "--test=$testApk",
                     '--no-auto-google-login', '--no-record-video', '--no-performance-metrics', '-q',
+                    "--results-history-name=$project.path",
                     *resultsArgs, *devicesCmd)
         }
     }
