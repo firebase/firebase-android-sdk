@@ -21,7 +21,7 @@ import org.jsoup.nodes.Document
 
 /**
  * Parse licenses from remote urls*/
-class RemoteLicenseFetcher implements Serializable {
+abstract class RemoteLicenseFetcher implements Serializable {
   private static final HtmlToPlainText TEXT_FORMATTER = new HtmlToPlainText()
 
   private final String remoteUrl
@@ -51,7 +51,7 @@ class RemoteLicenseFetcher implements Serializable {
           Thread.sleep(i * 1000)
         }
 
-        return processDocument(Jsoup.connect(remoteUrl).get())
+        return getTextAttempt()
       } catch (IOException ex) {
         if (storedEx == null) {
           storedEx = ex
@@ -64,10 +64,8 @@ class RemoteLicenseFetcher implements Serializable {
     throw storedEx
   }
 
-  /** Extracts the license text from the rest of the document. */
-  String processDocument(Document doc) {
-    return TEXT_FORMATTER.getPlainText(doc)
-  }
+  /** Attempts to download and extract the license exactly once. */
+  abstract String getTextAttempt()
 
   static final class AndroidSdkTermsFetcher extends RemoteLicenseFetcher {
 
@@ -76,10 +74,11 @@ class RemoteLicenseFetcher implements Serializable {
     }
 
     @Override
-    String processDocument(Document doc) {
+    String getTextAttempt() {
       // TODO(vkryachko, allisonbm92): Fix this silent failure.
       // This evaluates to an empty string. The HTML for this page must have changed since this
       // filter was original written. Interestingly, this is a hard-failure if run from Java.
+      def doc = Jsoup.connect(getRemoteUrl()).get()
       return TEXT_FORMATTER.getPlainText(doc.select("#body-content > div.jd-descr > div")[0])
     }
   }
@@ -88,6 +87,11 @@ class RemoteLicenseFetcher implements Serializable {
 
     Apache2LicenseFetcher() {
       super("http://www.apache.org/licenses/LICENSE-2.0.txt")
+    }
+
+    @Override
+    String getTextAttempt() {
+      return getRemoteUrl().toURL().getText()
     }
   }
 
@@ -98,7 +102,8 @@ class RemoteLicenseFetcher implements Serializable {
     }
 
     @Override
-    String processDocument(Document doc) {
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
       return TEXT_FORMATTER.getPlainText(doc.select("#content-wrapper").get(0))
     }
   }
@@ -107,6 +112,11 @@ class RemoteLicenseFetcher implements Serializable {
 
     YetAnotherApache2LicenseFetcher() {
       super("http://www.apache.org/licenses/LICENSE-2.0")
+    }
+
+    @Override
+    String getTextAttempt() {
+      return getRemoteUrl().toURL().getText()
     }
   }
 
@@ -117,7 +127,8 @@ class RemoteLicenseFetcher implements Serializable {
     }
 
     @Override
-    String processDocument(Document doc) {
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
       return TEXT_FORMATTER.getPlainText(doc.select("#content-wrapper").get(0))
     }
   }
@@ -129,7 +140,8 @@ class RemoteLicenseFetcher implements Serializable {
     }
 
     @Override
-    String processDocument(Document doc) {
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
       return TEXT_FORMATTER.getPlainText(doc.select("#deed").get(0))
     }
   }
@@ -141,7 +153,8 @@ class RemoteLicenseFetcher implements Serializable {
     }
 
     @Override
-    String processDocument(Document doc) {
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
       return TEXT_FORMATTER.getPlainText(doc.select("#content-wrapper").get(0))
     }
   }
@@ -153,7 +166,8 @@ class RemoteLicenseFetcher implements Serializable {
     }
 
     @Override
-    String processDocument(Document doc) {
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
       return TEXT_FORMATTER.getPlainText(doc.select("#content-wrapper").get(0))
     }
   }
@@ -166,7 +180,8 @@ class RemoteLicenseFetcher implements Serializable {
     }
 
     @Override
-    String processDocument(Document doc) {
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
       return TEXT_FORMATTER.getPlainText(doc.select("body > table > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > en > blockquote").get(0))
     }
   }
