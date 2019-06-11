@@ -79,7 +79,7 @@ public class FirebaseOptionsTest {
   @Test
   public void checkToBuilderCreatesNewEquivalentInstance() {
     FirebaseOptions allValuesOptionsCopy = new FirebaseOptions.Builder(ALL_VALUES_OPTIONS).build();
-    assertThat(allValuesOptionsCopy).isNotSameAs(ALL_VALUES_OPTIONS);
+    assertThat(allValuesOptionsCopy).isNotSameInstanceAs(ALL_VALUES_OPTIONS);
     assertThat(allValuesOptionsCopy).isEqualTo(ALL_VALUES_OPTIONS);
   }
 }
