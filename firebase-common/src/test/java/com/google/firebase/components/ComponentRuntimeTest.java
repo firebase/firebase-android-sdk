@@ -114,7 +114,7 @@ public final class ComponentRuntimeTest {
 
     ComponentTwo componentTwo = runtime.get(ComponentTwo.class);
     assertThat(componentTwo.getOne()).isNotNull();
-    assertThat(componentTwo.getOne().getTracker()).isSameAs(initTracker);
+    assertThat(componentTwo.getOne().getTracker()).isSameInstanceAs(initTracker);
 
     assertThat(initTracker.isInitialized()).isTrue();
   }
@@ -193,7 +193,7 @@ public final class ComponentRuntimeTest {
     assertThat(one.cyclicTwo).isNotNull();
     Provider<CyclicOne> oneProvider = one.cyclicTwo.cyclicOne;
     assertThat(oneProvider).isNotNull();
-    assertThat(oneProvider.get()).isSameAs(one);
+    assertThat(oneProvider.get()).isSameInstanceAs(one);
   }
 
   @Test
@@ -230,8 +230,8 @@ public final class ComponentRuntimeTest {
     Provider<Parent> parent = runtime.getProvider(Parent.class);
     assertThat(parent).isNotNull();
 
-    assertThat(child).isSameAs(parent);
-    assertThat(child.get()).isSameAs(parent.get());
+    assertThat(child).isSameInstanceAs(parent);
+    assertThat(child.get()).isSameInstanceAs(parent.get());
   }
 
   @Test

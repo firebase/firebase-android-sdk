@@ -42,7 +42,7 @@ public class ComponentTest {
     assertThat(component.isAlwaysEager()).isFalse();
     assertThat(component.isEagerInDefaultApp()).isFalse();
     assertThat(component.getDependencies()).isEmpty();
-    assertThat(component.getFactory().create(null)).isSameAs(testClass);
+    assertThat(component.getFactory().create(null)).isSameInstanceAs(testClass);
   }
 
   @Test
@@ -193,6 +193,6 @@ public class ComponentTest {
   public void getFactory_shouldReturnFactorySetInBuilder() {
     Component<TestClass> component =
         Component.builder(TestClass.class).factory(nullFactory).build();
-    assertThat(component.getFactory()).isSameAs(nullFactory);
+    assertThat(component.getFactory()).isSameInstanceAs(nullFactory);
   }
 }
