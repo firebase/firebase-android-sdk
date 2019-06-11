@@ -45,7 +45,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.net.ssl.SSLHandshakeException;
 
 /**
  * RemoteStore handles all interaction with the backend through a simple, clean interface. This
