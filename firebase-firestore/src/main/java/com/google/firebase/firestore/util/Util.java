@@ -214,8 +214,8 @@ public class Util {
     return obj == null ? "null" : obj.getClass().getName();
   }
 
-  /** Raises an exception on Android's UI Thread. */
-  public static void crashMainThead(RuntimeException exception) {
+  /** Raises an exception on Android's UI Thread and crashes the end user's app. */
+  public static void crashMainThread(RuntimeException exception) {
     new Handler(Looper.getMainLooper())
         .post(
             () -> {

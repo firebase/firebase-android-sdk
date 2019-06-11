@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.remote;
 
 import android.content.Context;
+import android.os.Build;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -230,7 +231,8 @@ public class Datastore {
     Status.Code code = status.getCode();
     Throwable t = status.getCause();
 
-    return code.equals(Status.Code.UNAVAILABLE)
+    return Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
+        && code.equals(Status.Code.UNAVAILABLE)
         && (t instanceof SSLHandshakeException
             || (t instanceof ConnectException && t.getMessage().contains("EHOSTUNREACH")));
   }

@@ -274,7 +274,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     if (Datastore.isSslHandshakeError(status)) {
       // The Android device is missing required SSL Ciphers. This error is non-recoverable and must
       // be addressed by the app developer (see https://bit.ly/2XFpdma).
-      Util.crashMainThead(
+      Util.crashMainThread(
           new IllegalStateException(SSL_DEPENDENCY_ERROR_MESSAGE, status.getCause()));
     }
 
