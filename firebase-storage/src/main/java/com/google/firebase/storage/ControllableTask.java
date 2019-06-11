@@ -15,7 +15,7 @@
 package com.google.firebase.storage;
 
 import android.app.Activity;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.google.firebase.annotations.PublicApi;
 import java.util.concurrent.Executor;
 

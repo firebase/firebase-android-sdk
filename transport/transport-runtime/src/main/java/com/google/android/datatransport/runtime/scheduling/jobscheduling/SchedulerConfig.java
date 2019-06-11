@@ -16,7 +16,7 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import android.app.job.JobInfo;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.auto.value.AutoValue;

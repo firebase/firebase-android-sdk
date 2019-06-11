@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.google.firebase.annotations.PublicApi;
 import java.util.Arrays;
 import java.util.List;

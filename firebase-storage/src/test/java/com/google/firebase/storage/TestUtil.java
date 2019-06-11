@@ -14,7 +14,7 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;

@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.util;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Continuation;
 import com.google.cloud.datastore.core.number.NumberComparisonHelper;
 import com.google.firebase.firestore.FieldPath;

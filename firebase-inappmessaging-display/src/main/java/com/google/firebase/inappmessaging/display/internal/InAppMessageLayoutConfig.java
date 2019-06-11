@@ -14,8 +14,8 @@
 
 package com.google.firebase.inappmessaging.display.internal;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Configurations for in app message layouts

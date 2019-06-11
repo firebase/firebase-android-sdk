@@ -16,7 +16,7 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.google.firebase.firestore.util.Util;
 import java.util.ArrayList;
 import java.util.List;

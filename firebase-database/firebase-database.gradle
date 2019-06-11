@@ -32,7 +32,7 @@ android {
         minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled true
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -73,19 +73,19 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-database-collection')
 
-    implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
-    implementation "com.google.android.gms:play-services-base:$playServicesVersion"
-    implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
+    implementation 'com.google.android.gms:play-services-basement:16.2.0'
+    implementation 'com.google.android.gms:play-services-base:16.1.0'
+    implementation 'com.google.android.gms:play-services-tasks:16.0.1'
     implementation('com.google.firebase:firebase-auth-interop:17.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
-    androidTestImplementation "com.android.support:support-annotations:$supportAnnotationsVersion"
-    androidTestImplementation 'com.android.support.test:rules:1.0.2'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation "androidx.annotation:annotation:1.1.0"
+    androidTestImplementation 'androidx.test:rules:1.2.0'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation 'com.fasterxml.jackson.core:jackson-core:2.9.6'
-    androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
+    androidTestImplementation 'com.fasterxml.jackson.core:jackson-core:2.9.8'
+    androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'net.java:quickcheck:0.6'
     androidTestAnnotationProcessor 'net.java:quickcheck-src-generator:0.6'
@@ -93,14 +93,14 @@ dependencies {
 
 
     testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:2.21.0'
+    testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'com.firebase:firebase-token-generator:2.0.0'
-    testImplementation 'com.fasterxml.jackson.core:jackson-core:2.9.6'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
+    testImplementation 'com.fasterxml.jackson.core:jackson-core:2.9.8'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'net.java.quickcheck:quickcheck:0.6'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'com.android.support.test:rules:1.0.2'
+    testImplementation 'androidx.test:rules:1.2.0'
 
 }
 

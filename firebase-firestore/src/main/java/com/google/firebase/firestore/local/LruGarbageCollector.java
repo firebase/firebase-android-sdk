@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
-import android.support.annotation.Nullable;
 import android.util.SparseArray;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.util.AsyncQueue;

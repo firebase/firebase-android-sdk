@@ -17,7 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.support.annotation.RestrictTo;
+import androidx.annotation.RestrictTo;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue.ArrayRemoveFieldValue;
 import com.google.firebase.firestore.FieldValue.ArrayUnionFieldValue;

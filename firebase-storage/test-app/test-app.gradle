@@ -24,7 +24,7 @@ android {
     targetSdkVersion project.targetSdkVersion
     versionCode 1
     versionName "1.0"
-    testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     multiDexEnabled true
   }
 
@@ -51,12 +51,14 @@ dependencies {
   // versions published to the root project' s build/ directory.
   implementation 'com.google.firebase:firebase-auth:17+'
   implementation 'com.google.firebase:firebase-common:17+'
+  implementation 'com.google.android.gms:play-services-basement:16.2.0'
+  implementation 'com.google.android.gms:play-services-base:16.1.0'
 
-  implementation "com.android.support:design:27.1.1"
-  implementation "com.android.support:appcompat-v7:27.1.1"
+  implementation 'com.google.android.material:material:1.0.0'
+  implementation 'androidx.appcompat:appcompat:1.0.2'
 
-  androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-  androidTestImplementation 'com.android.support.test:rules:1.0.2'
+  androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+  androidTestImplementation 'androidx.test:rules:1.2.0'
 }
 
 

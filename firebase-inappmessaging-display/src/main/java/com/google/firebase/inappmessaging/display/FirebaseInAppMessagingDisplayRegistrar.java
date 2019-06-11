@@ -15,7 +15,7 @@
 package com.google.firebase.inappmessaging.display;
 
 import android.app.Application;
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.components.Component;

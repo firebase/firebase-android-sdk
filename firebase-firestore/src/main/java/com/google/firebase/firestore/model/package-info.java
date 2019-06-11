@@ -16,4 +16,4 @@
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 package com.google.firebase.firestore.model;
 
-import android.support.annotation.RestrictTo;
+import androidx.annotation.RestrictTo;
