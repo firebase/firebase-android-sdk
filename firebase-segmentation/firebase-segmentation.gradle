@@ -1,0 +1,95 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+plugins {
+    id 'firebase-library'
+    id 'com.google.protobuf'
+}
+
+protobuf {
+    // Configure the protoc executable
+    protoc {
+        // Download from repositories
+        artifact = 'com.google.protobuf:protoc:3.4.0'
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.12.0'
+        }
+        javalite {
+            // The codegen for lite comes as a separate artifact
+            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                // In most cases you don't need the full Java output
+                // if you use the lite output.
+                remove java
+            }
+            task.plugins {
+                grpc {
+                    option 'lite'
+                }
+                javalite {}
+            }
+        }
+    }
+}
+
+android {
+    compileSdkVersion project.targetSdkVersion
+
+    defaultConfig {
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
+        multiDexEnabled true
+        versionName version
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    sourceSets {
+        main {
+            proto {
+                srcDir 'src/main/proto'
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+}
+
+dependencies {
+    implementation project(':firebase-common')
+
+    implementation ('com.google.firebase:firebase-iid:17.0.3') {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:multidex:1.0.3'
+    implementation 'com.google.android.gms:play-services-tasks:16.0.1'
+
+    testImplementation 'androidx.test:core:1.0.0'
+    testImplementation 'junit:junit:4.12'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+}
