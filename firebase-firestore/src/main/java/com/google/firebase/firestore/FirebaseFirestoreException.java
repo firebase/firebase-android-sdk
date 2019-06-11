@@ -16,8 +16,8 @@ package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import android.support.annotation.NonNull;
 import android.util.SparseArray;
+import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.util.Assert;

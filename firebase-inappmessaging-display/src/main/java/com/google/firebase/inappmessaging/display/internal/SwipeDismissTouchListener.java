@@ -34,12 +34,12 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
-import android.support.annotation.Nullable;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import androidx.annotation.Nullable;
 
 /**
  * A {@link View.OnTouchListener} that makes any {@link View} dismissable when the user swipes

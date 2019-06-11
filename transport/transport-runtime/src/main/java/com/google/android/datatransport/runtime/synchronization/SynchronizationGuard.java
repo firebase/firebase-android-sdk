@@ -14,7 +14,7 @@
 
 package com.google.android.datatransport.runtime.synchronization;
 
-import android.support.annotation.WorkerThread;
+import androidx.annotation.WorkerThread;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 
 @WorkerThread

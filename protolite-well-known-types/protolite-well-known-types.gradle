@@ -60,6 +60,6 @@ android {
 
 dependencies {
     implementation 'com.google.protobuf:protobuf-lite:3.0.1'
-    protobuf 'com.google.protobuf:protobuf-java:3.5.1'
-    protobuf 'com.google.api.grpc:proto-google-common-protos:1.11.0'
+    protobuf 'com.google.protobuf:protobuf-java:3.6.1'
+    protobuf 'com.google.api.grpc:proto-google-common-protos:1.12.0'
 }

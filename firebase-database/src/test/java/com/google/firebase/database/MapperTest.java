@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 import com.google.firebase.database.core.utilities.encoding.CustomClassMapper;
 import java.util.ArrayList;
 import java.util.Arrays;

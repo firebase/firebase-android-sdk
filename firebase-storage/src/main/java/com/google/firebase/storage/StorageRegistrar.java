@@ -14,8 +14,8 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.Keep;
-import android.support.annotation.RestrictTo;
+import androidx.annotation.Keep;
+import androidx.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;

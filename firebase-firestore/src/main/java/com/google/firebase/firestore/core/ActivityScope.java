@@ -17,7 +17,8 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.app.Activity;
-import android.support.v4.app.FragmentActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import com.google.firebase.firestore.ListenerRegistration;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +64,7 @@ public class ActivityScope {
     private final List<Runnable> callbacks = new ArrayList<>();
   }
 
-  public static class StopListenerSupportFragment extends android.support.v4.app.Fragment {
+  public static class StopListenerSupportFragment extends Fragment {
     CallbackList callbacks = new CallbackList();
 
     @Override

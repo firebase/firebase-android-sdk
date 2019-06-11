@@ -14,8 +14,8 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.RestrictTo;
+import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -96,6 +96,7 @@ public class StorageTaskScheduler {
     }
 
     @Override
+    @SuppressWarnings("ThreadPriorityCheck")
     public Thread newThread(@NonNull Runnable r) {
       Thread t = new Thread(r, "FirebaseStorage-" + mNameSuffix + threadNumber.getAndIncrement());
       t.setDaemon(false);

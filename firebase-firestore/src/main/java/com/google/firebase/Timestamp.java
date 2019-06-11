@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.google.firebase.annotations.PublicApi;
 import java.util.Date;
 

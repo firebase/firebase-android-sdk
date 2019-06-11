@@ -17,7 +17,7 @@ package com.google.firebase.database.core;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.IntegrationTestHelpers;
 import org.junit.Test;

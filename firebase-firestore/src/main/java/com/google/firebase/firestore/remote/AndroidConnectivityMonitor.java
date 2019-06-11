@@ -84,6 +84,7 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
           };
     } else {
       NetworkReceiver networkReceiver = new NetworkReceiver();
+      @SuppressWarnings("deprecation")
       IntentFilter networkIntentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
       context.registerReceiver(networkReceiver, networkIntentFilter);
       unregisterRunnable =

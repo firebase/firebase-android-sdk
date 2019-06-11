@@ -14,8 +14,8 @@
 
 package com.google.android.datatransport.cct;
 
-import android.support.annotation.Keep;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.Keep;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.backends.BackendFactory;
 import com.google.android.datatransport.runtime.backends.CreationContext;
 import com.google.android.datatransport.runtime.backends.TransportBackend;

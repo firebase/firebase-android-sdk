@@ -14,8 +14,8 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.annotations.PublicApi;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +66,7 @@ public final class ListResult {
       }
     }
 
-    String pageToken = resultBody.optString(PAGE_TOKEN_KEY, /* defaultValue= */ null);
+    String pageToken = resultBody.optString(PAGE_TOKEN_KEY, /* fallback= */ null);
     return new ListResult(prefixes, items, pageToken);
   }
 

@@ -18,9 +18,9 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotEmpty
 import static com.google.android.gms.common.util.Strings.isEmptyOrWhitespace;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;

@@ -4,13 +4,13 @@
                 SourceFile,LineNumberTable,*Annotation*,EnclosingMethod
 
 # Keep the classes/members we need for client functionality.
--keep @interface android.support.annotation.Keep
--keep @android.support.annotation.Keep class *
+-keep @interface androidx.annotation.Keep
+-keep @androidx.annotation.Keep class *
 -keepclasseswithmembers class * {
-  @android.support.annotation.Keep <fields>;
+  @androidx.annotation.Keep <fields>;
 }
 -keepclasseswithmembers class * {
-  @android.support.annotation.Keep <methods>;
+  @androidx.annotation.Keep <methods>;
 }
 
 # Keep the classes/members we need for client functionality.
@@ -34,7 +34,7 @@
 }
 
 # Keep Enum members implicitly
--keepclassmembers @android.support.annotation.Keep public class * extends java.lang.Enum {
+-keepclassmembers @androidx.annotation.Keep public class * extends java.lang.Enum {
     public <fields>;
     public static **[] values();
     public static ** valueOf(java.lang.String);

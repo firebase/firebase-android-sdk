@@ -16,7 +16,7 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import java.util.ArrayList;

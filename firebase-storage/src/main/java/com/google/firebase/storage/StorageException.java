@@ -14,15 +14,14 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.IntDef;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
+import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.annotations.PublicApi;
-import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -42,28 +41,27 @@ public class StorageException extends FirebaseException {
   @PublicApi public static final int ERROR_INVALID_CHECKSUM = -13031;
   @PublicApi public static final int ERROR_CANCELED = -13040;
   private static final int NETWORK_UNAVAILABLE = -2;
-  static IOException sCancelException = new IOException("The operation was canceled.");
 
-  private final int mErrorCode;
-  private final int mHttpResultCode;
-  private String mDetailMessage;
-  private Throwable mCause;
+  private final int errorCode;
+  private final int httpResultCode;
+  private String detailMessage;
+  private Throwable cause;
 
   StorageException(@ErrorCode int errorCode, Throwable inner, int httpResultCode) {
-    mDetailMessage = getErrorMessageForCode(errorCode);
-    mCause = inner;
-    this.mErrorCode = errorCode;
-    this.mHttpResultCode = httpResultCode;
+    this.detailMessage = getErrorMessageForCode(errorCode);
+    this.cause = inner;
+    this.errorCode = errorCode;
+    this.httpResultCode = httpResultCode;
     Log.e(
         TAG,
         "StorageException has occurred.\n"
-            + mDetailMessage
+            + detailMessage
             + "\n Code: "
-            + Integer.toString(mErrorCode)
+            + Integer.toString(this.errorCode)
             + " HttpResult: "
-            + Integer.toString(mHttpResultCode));
-    if (mCause != null) {
-      Log.e(TAG, mCause.getMessage(), mCause);
+            + Integer.toString(this.httpResultCode));
+    if (cause != null) {
+      Log.e(TAG, cause.getMessage(), cause);
     }
   }
 
@@ -169,30 +167,30 @@ public class StorageException extends FirebaseException {
   @Override
   @PublicApi
   public String getMessage() {
-    return mDetailMessage;
+    return detailMessage;
   }
 
   /** Returns the cause of this {@code Throwable}, or {@code null} if there is no cause. */
   @Override
   @PublicApi
   public synchronized Throwable getCause() {
-    if (mCause == this) {
+    if (cause == this) {
       return null;
     }
-    return mCause;
+    return cause;
   }
 
   @ErrorCode
   @PublicApi
   public int getErrorCode() {
-    return mErrorCode;
+    return errorCode;
   }
 
   /** @return the Http result code (if one exists) from a network operation. */
   @SuppressWarnings("unused")
   @PublicApi
   public int getHttpResultCode() {
-    return mHttpResultCode;
+    return httpResultCode;
   }
 
   /**

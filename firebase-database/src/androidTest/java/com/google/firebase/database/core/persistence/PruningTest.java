@@ -20,8 +20,8 @@ import static com.google.firebase.database.IntegrationTestHelpers.node;
 import static com.google.firebase.database.IntegrationTestHelpers.path;
 import static org.junit.Assert.assertEquals;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.database.RetryRule;
 import com.google.firebase.database.android.SqlPersistenceStorageEngine;
 import com.google.firebase.database.core.DatabaseConfig;

@@ -16,8 +16,8 @@ package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.ViewSnapshot;

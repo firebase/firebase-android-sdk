@@ -14,9 +14,9 @@
 
 package com.google.firebase.functions;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.SparseArray;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseException;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -199,7 +199,7 @@ public class FirebaseFunctionsException extends FirebaseException {
         // The default description needs to be updated for the new code.
         description = code.name();
       }
-      if (error.opt("message") instanceof String) {
+      if (error.opt("message") instanceof String && !error.getString("message").isEmpty()) {
         description = error.getString("message");
       }
       details = error.opt("details");

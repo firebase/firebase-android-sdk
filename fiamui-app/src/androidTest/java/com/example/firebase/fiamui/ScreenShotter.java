@@ -15,9 +15,9 @@
 package com.example.firebase.fiamui;
 
 import android.graphics.Bitmap;
-import android.support.test.runner.screenshot.ScreenCapture;
-import android.support.test.runner.screenshot.Screenshot;
 import android.util.Log;
+import androidx.test.runner.screenshot.ScreenCapture;
+import androidx.test.runner.screenshot.Screenshot;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;

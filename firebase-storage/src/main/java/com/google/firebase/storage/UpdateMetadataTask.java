@@ -14,8 +14,8 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.NonNull;
 import android.util.Log;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
 import com.google.firebase.storage.network.NetworkRequest;

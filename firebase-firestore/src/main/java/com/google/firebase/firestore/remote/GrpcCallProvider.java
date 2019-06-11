@@ -16,7 +16,7 @@ package com.google.firebase.firestore.remote;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.security.ProviderInstaller;

@@ -17,8 +17,8 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.remote.Datastore.SSL_DEPENDENCY_ERROR_MESSAGE;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.remote.Stream.StreamCallback;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;

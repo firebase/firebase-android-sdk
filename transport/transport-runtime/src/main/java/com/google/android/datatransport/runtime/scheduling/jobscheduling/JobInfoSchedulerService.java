@@ -17,7 +17,7 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
 

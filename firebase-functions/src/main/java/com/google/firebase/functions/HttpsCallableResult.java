@@ -14,7 +14,7 @@
 
 package com.google.firebase.functions;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /** The result of calling a HttpsCallableReference function. */
 public class HttpsCallableResult {
