@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.remote.Datastore.SSL_DEPENDENCY_ERROR_MESSAGE;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.support.annotation.Nullable;
@@ -24,6 +25,7 @@ import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.ExponentialBackoff;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firebase.firestore.util.Util;
 import io.grpc.ClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -268,6 +270,13 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
         finalState == State.Error || status.equals(Status.OK),
         "Can't provide an error when not in an error state.");
     workerQueue.verifyIsCurrentThread();
+
+    if (Datastore.isSslHandshakeError(status)) {
+      // The Android device is missing required SSL Ciphers. This error is non-recoverable and must
+      // be addressed by the app developer (see https://bit.ly/2XFpdma).
+      Util.crashMainThead(
+          new IllegalStateException(SSL_DEPENDENCY_ERROR_MESSAGE, status.getCause()));
+    }
 
     // Cancel any outstanding timers (they're guaranteed not to execute).
     cancelIdleCheck();

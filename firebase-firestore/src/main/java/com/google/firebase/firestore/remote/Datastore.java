@@ -31,6 +31,7 @@ import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
 import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.Status;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -61,8 +62,8 @@ public class Datastore {
    * part of their app's dependencies.
    */
   static final String SSL_DEPENDENCY_ERROR_MESSAGE =
-      "Could not establish a secure connection to the Firestore backend. This is likely a problem "
-          + "with your app, rather than with Firestore itself. See https://bit.ly/2XFpdma for "
+      "The Firestore SDK failed to establish a secure connection. This is likely a problem with "
+          + "your app, rather than with Firestore itself. See https://bit.ly/2XFpdma for "
           + "instructions on how to enable TLS on Android 4.x devices.";
 
   /** Set of lowercase, white-listed headers for logging purposes. */
@@ -226,8 +227,12 @@ public class Datastore {
    * <p>This error is non-recoverable and must be addressed by the app developer.
    */
   public static boolean isSslHandshakeError(Status status) {
-    return status.getCode().equals(Status.Code.UNAVAILABLE)
-        && status.getCause() instanceof SSLHandshakeException;
+    Status.Code code = status.getCode();
+    Throwable t = status.getCause();
+
+    return code.equals(Status.Code.UNAVAILABLE)
+        && (t instanceof SSLHandshakeException
+            || (t instanceof ConnectException && t.getMessage().contains("EHOSTUNREACH")));
   }
 
   /**
