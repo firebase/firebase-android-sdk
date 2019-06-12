@@ -14,7 +14,7 @@
 
 package com.google.firebase.segmentation;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
@@ -45,6 +45,6 @@ public class FirebaseSegmentationInstrumentedTest {
 
   @Test
   public void useAppContext() {
-    assertNotNull(FirebaseSegmentation.getInstance().setCustomInstallationId("123123").getResult());
+    assertNull(FirebaseSegmentation.getInstance().setCustomInstallationId("123123").getResult());
   }
 }
