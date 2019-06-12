@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import android.graphics.Path;
+
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.core.Filter.Operator;
@@ -167,16 +169,18 @@ public final class Query {
     return null;
   }
 
-  public boolean hasArrayContainsFilter() {
+  @Nullable
+  /** Checks if any of the provided RelationOps are included in the query and returns the first one that is, or null if none are. */
+  public Operator findOperatorFilter(List<Operator> filterOps) {
     for (Filter filter : filters) {
       if (filter instanceof RelationFilter) {
-        RelationFilter relationFilter = (RelationFilter) filter;
-        if (relationFilter.getOperator() == Operator.ARRAY_CONTAINS) {
-          return true;
+        Operator queryOp = ((RelationFilter) filter).getOperator();
+        if (filterOps.contains(queryOp)) {
+          return queryOp;
         }
       }
     }
-    return false;
+    return null;
   }
 
   /**

@@ -927,6 +927,10 @@ public final class RemoteSerializer {
         return FieldFilter.Operator.GREATER_THAN_OR_EQUAL;
       case ARRAY_CONTAINS:
         return FieldFilter.Operator.ARRAY_CONTAINS;
+      case IN:
+        return FieldFilter.Operator.IN;
+      case ARRAY_CONTAINS_ANY:
+        return FieldFilter.Operator.ARRAY_CONTAINS_ANY;
       default:
         throw fail("Unknown operator %d", operator);
     }
@@ -946,6 +950,10 @@ public final class RemoteSerializer {
         return RelationFilter.Operator.GREATER_THAN;
       case ARRAY_CONTAINS:
         return RelationFilter.Operator.ARRAY_CONTAINS;
+      case IN:
+        return RelationFilter.Operator.IN;
+      case ARRAY_CONTAINS_ANY:
+        return RelationFilter.Operator.ARRAY_CONTAINS_ANY;
       default:
         throw fail("Unhandled FieldFilter.operator %d", operator);
     }

@@ -14,6 +14,9 @@
 
 package com.google.firebase.firestore.core;
 
+import android.graphics.Path;
+
+import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.model.Document;
@@ -22,6 +25,10 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.util.Assert;
+
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.List;
 
 /** Represents a filter to be applied to query. */
 public class RelationFilter extends Filter {
@@ -61,8 +68,8 @@ public class RelationFilter extends Filter {
       hardAssert(
           refValue instanceof DocumentKey, "Comparing on key, but filter value not a DocumentKey");
       hardAssert(
-          operator != Operator.ARRAY_CONTAINS,
-          "ARRAY_CONTAINS queries don't make sense on document keys.");
+          operator != Operator.ARRAY_CONTAINS && operator != Operator.ARRAY_CONTAINS_ANY && operator != Operator.IN,
+          "'" + operator.toString() + "' queries don't make sense on document keys.");
       int comparison = DocumentKey.comparator().compare(doc.getKey(), (DocumentKey) refValue);
       return matchesComparison(comparison);
     } else {
@@ -74,6 +81,17 @@ public class RelationFilter extends Filter {
   private boolean matchesValue(FieldValue other) {
     if (operator == Operator.ARRAY_CONTAINS) {
       return other instanceof ArrayValue && ((ArrayValue) other).getInternalValue().contains(value);
+    } else if (operator == Operator.IN) {
+      return value instanceof ArrayValue && ((ArrayValue) value).getInternalValue().contains(other);
+    } else if (operator == Operator.ARRAY_CONTAINS_ANY) {
+      if (other instanceof ArrayValue && value instanceof ArrayValue) {
+        for (FieldValue val : ((ArrayValue) other).getInternalValue()) {
+          if (((ArrayValue) value).getInternalValue().contains(val)) {
+            return true;
+          }
+        }
+      }
+      return false;
     } else {
       // Only compare types with matching backend order (such as double and int).
       return value.typeOrder() == other.typeOrder()
@@ -99,7 +117,7 @@ public class RelationFilter extends Filter {
   }
 
   public boolean isInequality() {
-    return operator != Operator.EQUAL && operator != Operator.ARRAY_CONTAINS;
+    return Arrays.asList(Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL, Operator.GREATER_THAN, Operator.GREATER_THAN_OR_EQUAL).contains(operator);
   }
 
   @Override
