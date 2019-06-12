@@ -17,6 +17,10 @@ plugins {
     id 'com.google.protobuf'
 }
 
+firebaseLibrary {
+    testLab.enabled = true
+}
+
 protobuf {
     // Configure the protoc executable
     protoc {
@@ -57,7 +61,7 @@ android {
         targetSdkVersion project.targetSdkVersion
         multiDexEnabled true
         versionName version
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     sourceSets {
         main {
@@ -80,16 +84,18 @@ android {
 dependencies {
     implementation project(':firebase-common')
 
-    implementation ('com.google.firebase:firebase-iid:17.0.3') {
+    implementation('com.google.firebase:firebase-iid:17.0.3') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support:multidex:1.0.3'
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.multidex:multidex:2.0.0'
     implementation 'com.google.android.gms:play-services-tasks:16.0.1'
 
-    testImplementation 'androidx.test:core:1.0.0'
+    testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'junit:junit:4.12'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
 
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'androidx.annotation:annotation:1.1.0'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test:rules:1.2.0'
 }
