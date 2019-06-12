@@ -336,7 +336,7 @@ public class Query {
    */
   @NonNull
   @PublicApi
-  public Query whereArrayContainsAny(@NonNull String field, @NonNull Object value) {
+  public Query whereArrayContainsAny(@NonNull String field, @NonNull List<Object> value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS_ANY, value);
   }
 
@@ -369,7 +369,7 @@ public class Query {
    */
   @NonNull
   @PublicApi
-  public Query whereIn(@NonNull String field, @NonNull Object value) {
+  public Query whereIn(@NonNull String field, @NonNull List<Object> value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.IN, value);
   }
 

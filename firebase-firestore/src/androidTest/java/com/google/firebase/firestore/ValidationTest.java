@@ -38,6 +38,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.Transaction.Function;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.Consumer;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -408,6 +409,12 @@ public class ValidationTest {
     expectError(
         () -> collection.whereArrayContains("a", null),
         "Invalid Query. You can only perform equality comparisons on null (via whereEqualTo()).");
+    expectError(
+            () -> collection.whereArrayContainsAny("a", null),
+            "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
+    expectError(
+            () -> collection.whereIn("a", null),
+            "Invalid Query. A non-empty array is required for 'in' filters.");
 
     expectError(
         () -> collection.whereGreaterThan("a", Double.NaN),
@@ -539,10 +546,37 @@ public class ValidationTest {
   }
 
   @Test
-  public void queriesWithMultipleArrayContainsFiltersFail() {
+  public void queriesWithMultipleArrayFiltersFail() {
     expectError(
         () -> testCollection().whereArrayContains("foo", 1).whereArrayContains("foo", 2),
-        "Invalid Query. Queries only support having a single array-contains filter.");
+        "Invalid Query. You cannot use more than one 'array_contains' filter.");
+
+    expectError(
+            () -> testCollection().whereArrayContains("foo", 1).whereArrayContainsAny("foo", asList(1,2)),
+            "Invalid Query. You cannot use 'array_contains_any' filters with 'array_contains' filters.");
+
+    expectError(
+            () -> testCollection().whereArrayContainsAny("foo", asList(1,2)).whereArrayContains("foo", 1),
+            "Invalid Query. You cannot use 'array_contains' filters with 'array_contains_any' filters.");
+  }
+
+  @Test
+  public void queriesWithMultipleDisjunctiveFiltersFail() {
+    expectError(
+            () -> testCollection().whereIn("foo", asList(1,2)).whereIn("bar", asList(1,2)),
+            "Invalid Query. You cannot use more than one 'in' filter.");
+
+    expectError(
+            () -> testCollection().whereArrayContainsAny("foo", asList(1,2)).whereArrayContainsAny("bar", asList(1,2)),
+            "Invalid Query. You cannot use more than one 'array_contains_any' filter.");
+
+    expectError(
+            () -> testCollection().whereArrayContainsAny("foo", asList(1,2)).whereIn("bar", asList(1,2)),
+            "Invalid Query. You cannot use 'in' filters with 'array_contains_any' filters.");
+
+    expectError(
+            () -> testCollection().whereIn("bar", asList(1,2)).whereArrayContainsAny("foo", asList(1,2)),
+            "Invalid Query. You cannot use 'array_contains_any' filters with 'in' filters.");
   }
 
   @Test
@@ -592,8 +626,7 @@ public class ValidationTest {
         reason);
 
     reason =
-        "Invalid query. You can't perform array-contains queries on FieldPath.documentId() since "
-            + "document IDs are not arrays.";
+        "Invalid query. You can't perform 'array_contains' queries on FieldPath.documentId().";
     expectError(() -> collection.whereArrayContains(FieldPath.documentId(), 1), reason);
   }
 
