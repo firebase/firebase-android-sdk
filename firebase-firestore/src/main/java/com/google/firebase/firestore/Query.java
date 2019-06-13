@@ -44,8 +44,6 @@ import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -127,7 +125,8 @@ public class Query {
           validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
         }
       } else if (isDisjunctiveOp || isArrayOp) {
-        // You can have at most 1 disjunctive filter and 1 array filter. Check if the new filter conflicts with an existing one.
+        // You can have at most 1 disjunctive filter and 1 array filter. Check if the new filter
+        // conflicts with an existing one.
         Operator conflictingOp = null;
         if (isDisjunctiveOp) {
           conflictingOp = this.query.findOperatorFilter(disjunctiveOps);
@@ -139,10 +138,16 @@ public class Query {
           // We special case when it's a duplicate op to give a slightly clearer error message.
           if (conflictingOp == filterOp) {
             throw new IllegalArgumentException(
-                    "Invalid Query. You cannot use more than one '" + filterOp.toString() + "' filter.");
+                "Invalid Query. You cannot use more than one '"
+                    + filterOp.toString()
+                    + "' filter.");
           } else {
             throw new IllegalArgumentException(
-                    "Invalid Query. You cannot use '" + filterOp.toString() + "' filters with '" + conflictingOp.toString() + "' filters.");
+                "Invalid Query. You cannot use '"
+                    + filterOp.toString()
+                    + "' filters with '"
+                    + conflictingOp.toString()
+                    + "' filters.");
           }
         }
       }
@@ -326,7 +331,8 @@ public class Query {
 
   /**
    * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field, the value must be an array, and that the array must contain any values of the provided array.
+   * specified field, the value must be an array, and that the array must contain any values of the
+   * provided array.
    *
    * <p>A Query can have only one whereArrayContainsAny() filter.
    *
@@ -342,8 +348,8 @@ public class Query {
 
   /**
    * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field, the value must be an array, and that the array must contain any values of the provided
-   * array.
+   * specified field, the value must be an array, and that the array must contain any values of the
+   * provided array.
    *
    * <p>A Query can have only one whereArrayContainsAny() filter.
    *
@@ -406,7 +412,9 @@ public class Query {
     if (internalPath.isKeyField()) {
       if (op == Operator.ARRAY_CONTAINS || op == Operator.ARRAY_CONTAINS_ANY || op == Operator.IN) {
         throw new IllegalArgumentException(
-            "Invalid query. You can't perform '" + op.toString() + "' queries on FieldPath.documentId().");
+            "Invalid query. You can't perform '"
+                + op.toString()
+                + "' queries on FieldPath.documentId().");
       }
       if (value instanceof String) {
         String documentKey = (String) value;
@@ -445,11 +453,15 @@ public class Query {
       }
     } else {
       if (op == Operator.IN || op == Operator.ARRAY_CONTAINS_ANY) {
-        if (!(value instanceof List) || Array.getLength(value) == 0) {
-          throw new IllegalArgumentException("Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
+        if (!(value instanceof List) || ((List) value).size() == 0) {
+          throw new IllegalArgumentException(
+              "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
         }
-        if (Array.getLength(value) > 10) {
-          throw new IllegalArgumentException("Invalid Query. '" + op.toString() + "' filters support a maximum of 10 elements in the value array.");
+        if (((List) value).size() > 10) {
+          throw new IllegalArgumentException(
+              "Invalid Query. '"
+                  + op.toString()
+                  + "' filters support a maximum of 10 elements in the value array.");
         }
       }
       fieldValue = firestore.getDataConverter().parseQueryValue(value);

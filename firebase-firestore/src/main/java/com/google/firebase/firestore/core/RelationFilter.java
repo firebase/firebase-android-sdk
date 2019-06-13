@@ -14,9 +14,6 @@
 
 package com.google.firebase.firestore.core;
 
-import android.graphics.Path;
-
-import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.model.Document;
@@ -25,10 +22,7 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.util.Assert;
-
-import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.List;
 
 /** Represents a filter to be applied to query. */
 public class RelationFilter extends Filter {
@@ -68,7 +62,9 @@ public class RelationFilter extends Filter {
       hardAssert(
           refValue instanceof DocumentKey, "Comparing on key, but filter value not a DocumentKey");
       hardAssert(
-          operator != Operator.ARRAY_CONTAINS && operator != Operator.ARRAY_CONTAINS_ANY && operator != Operator.IN,
+          operator != Operator.ARRAY_CONTAINS
+              && operator != Operator.ARRAY_CONTAINS_ANY
+              && operator != Operator.IN,
           "'" + operator.toString() + "' queries don't make sense on document keys.");
       int comparison = DocumentKey.comparator().compare(doc.getKey(), (DocumentKey) refValue);
       return matchesComparison(comparison);
@@ -117,7 +113,12 @@ public class RelationFilter extends Filter {
   }
 
   public boolean isInequality() {
-    return Arrays.asList(Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL, Operator.GREATER_THAN, Operator.GREATER_THAN_OR_EQUAL).contains(operator);
+    return Arrays.asList(
+            Operator.LESS_THAN,
+            Operator.LESS_THAN_OR_EQUAL,
+            Operator.GREATER_THAN,
+            Operator.GREATER_THAN_OR_EQUAL)
+        .contains(operator);
   }
 
   @Override
