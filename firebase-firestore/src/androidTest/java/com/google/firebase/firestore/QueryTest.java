@@ -420,11 +420,56 @@ public class QueryTest {
         testCollectionWithDocs(map("a", docA, "b", docB, "c", docC, "d", docD));
 
     // Search for "array" to contain 42
-    QuerySnapshot snapshot = waitFor(collection.whereArrayContains("array", 42L).get());
+    QuerySnapshot snapshot = waitFor(collection.whereArrayContains("arrays", 42L).get());
     assertEquals(asList(docA, docB, docD), querySnapshotToValues(snapshot));
 
     // NOTE: The backend doesn't currently support null, NaN, objects, or arrays, so there isn't
     // much of anything else interesting to test.
+  }
+
+  @Test
+  public void testQueriesCanUseInFilters() {
+    Map<String, Object> docA = map("zip", 98101);
+    Map<String, Object> docB = map("zip", 91102);
+    Map<String, Object> docC = map("zip", 98103);
+    Map<String, Object> docD = map("zip", asList(98101));
+    Map<String, Object> docE = map("zip", asList("98101", map("zip", 98101)));
+    Map<String, Object> docF = map("zip", map("code", 500));
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF));
+
+    // Search for zips matching [98101, 98103].
+    QuerySnapshot snapshot = waitFor(collection.whereIn("zip", asList(98101, 98103)).get());
+    assertEquals(asList(docA, docC), querySnapshotToValues(snapshot));
+
+    // With objects.
+    snapshot = waitFor(collection.whereIn("zip", asList(map("code", 500))).get());
+    assertEquals(asList(docF), querySnapshotToValues(snapshot));
+  }
+
+  @Test
+  public void testQueriesCanUseArrayContainsAnyFilters() {
+    Map<String, Object> docA = map("array", asList(42L));
+    Map<String, Object> docB = map("array", asList("a", 42L, "c"));
+    Map<String, Object> docC = map("array", asList(41.999, "42", map("a", asList(42))));
+    Map<String, Object> docD = map("array", asList(42L), "array2", asList("bingo"));
+    Map<String, Object> docE = map("array", asList(43L));
+    Map<String, Object> docF = map("array", asList(map("a", 42L)));
+    Map<String, Object> docG = map("array", 42L);
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF));
+
+    // Search for "array" to contain [42, 43].
+    QuerySnapshot snapshot =
+        waitFor(collection.whereArrayContainsAny("array", asList(42L, 43L)).get());
+    assertEquals(asList(docA, docB, docD, docE), querySnapshotToValues(snapshot));
+
+    // With objects.
+    snapshot = waitFor(collection.whereArrayContainsAny("array", asList(map("a", 42L))).get());
+    assertEquals(asList(docF), querySnapshotToValues(snapshot));
   }
 
   @Test

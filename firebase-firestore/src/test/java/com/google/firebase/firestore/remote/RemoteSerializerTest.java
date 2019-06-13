@@ -577,8 +577,13 @@ public final class RemoteSerializerTest {
         Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"))
             .filter(filter("prop", "<", 42))
             .filter(filter("author", "==", "dimond"))
-            .filter(filter("tags", "array-contains", "pending"));
+            .filter(filter("tags", "array-contains", "pending"))
+            .filter(filter("tags", "in", asList("pending", "dimond")));
     Target actual = serializer.encodeTarget(wrapQueryData(q));
+    ArrayValue.Builder array =
+        ArrayValue.newBuilder()
+            .addValues(valueBuilder().setStringValue("pending"))
+            .addValues(valueBuilder().setStringValue("dimond"));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -611,7 +616,15 @@ public final class RemoteSerializerTest {
                                             .setField(
                                                 FieldReference.newBuilder().setFieldPath("tags"))
                                             .setOp(Operator.ARRAY_CONTAINS)
-                                            .setValue(valueBuilder().setStringValue("pending"))))))
+                                            .setValue(valueBuilder().setStringValue("pending"))))
+                            .addFilters(
+                                Filter.newBuilder()
+                                    .setFieldFilter(
+                                        FieldFilter.newBuilder()
+                                            .setField(
+                                                FieldReference.newBuilder().setFieldPath("tags"))
+                                            .setOp(Operator.IN)
+                                            .setValue(valueBuilder().setArrayValue(array))))))
             .addOrderBy(
                 Order.newBuilder()
                     .setField(FieldReference.newBuilder().setFieldPath("prop"))
@@ -632,10 +645,76 @@ public final class RemoteSerializerTest {
     assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
   }
 
-  // PORTING NOTE: Isolated array-contains filter test omitted since we seem to have omitted
-  // isolated filter tests on Android (and the encodeRelationFilter() / decodeRelationFilter()
-  // serializer methods are private) in favor of relying on the larger tests. array-contains
-  // encoding / decoding is covered by testEncodesMultipleFiltersOnDeeperCollections().
+  @Test
+  public void testEncodesDisjunctiveFiltersOnDeeperCollections() {
+    Query q =
+        Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"))
+            .filter(filter("prop", "<", 42))
+            .filter(filter("author", "==", "dimond"))
+            .filter(filter("tags", "array-contains-any", asList("pending", "dimond")));
+    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    ArrayValue.Builder array =
+        ArrayValue.newBuilder()
+            .addValues(valueBuilder().setStringValue("pending"))
+            .addValues(valueBuilder().setStringValue("dimond"));
+
+    StructuredQuery.Builder structuredQueryBuilder =
+        StructuredQuery.newBuilder()
+            .addFrom(CollectionSelector.newBuilder().setCollectionId("attachments"))
+            .setWhere(
+                Filter.newBuilder()
+                    .setCompositeFilter(
+                        StructuredQuery.CompositeFilter.newBuilder()
+                            .setOp(CompositeFilter.Operator.AND)
+                            .addFilters(
+                                Filter.newBuilder()
+                                    .setFieldFilter(
+                                        FieldFilter.newBuilder()
+                                            .setField(
+                                                FieldReference.newBuilder().setFieldPath("prop"))
+                                            .setOp(Operator.LESS_THAN)
+                                            .setValue(valueBuilder().setIntegerValue(42))))
+                            .addFilters(
+                                Filter.newBuilder()
+                                    .setFieldFilter(
+                                        FieldFilter.newBuilder()
+                                            .setField(
+                                                FieldReference.newBuilder().setFieldPath("author"))
+                                            .setOp(Operator.EQUAL)
+                                            .setValue(valueBuilder().setStringValue("dimond"))))
+                            .addFilters(
+                                Filter.newBuilder()
+                                    .setFieldFilter(
+                                        FieldFilter.newBuilder()
+                                            .setField(
+                                                FieldReference.newBuilder().setFieldPath("tags"))
+                                            .setOp(Operator.ARRAY_CONTAINS_ANY)
+                                            .setValue(valueBuilder().setArrayValue(array))))))
+            .addOrderBy(
+                Order.newBuilder()
+                    .setField(FieldReference.newBuilder().setFieldPath("prop"))
+                    .setDirection(Direction.ASCENDING))
+            .addOrderBy(defaultKeyOrder());
+    QueryTarget.Builder queryBuilder =
+        QueryTarget.newBuilder()
+            .setParent("projects/p/databases/d/documents/rooms/1/messages/10")
+            .setStructuredQuery(structuredQueryBuilder);
+    Target expected =
+        Target.newBuilder()
+            .setQuery(queryBuilder)
+            .setTargetId(1)
+            .setResumeToken(ByteString.EMPTY)
+            .build();
+
+    assertEquals(expected, actual);
+    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+  }
+
+  // PORTING NOTE: Isolated array-contains, array-contains-any, and in filter test omitted since we
+  // seem to have omitted isolated filter tests on Android (and the encodeRelationFilter() /
+  // decodeRelationFilter() serializer methods are private) in favor of relying on the larger tests.
+  // array-contains, array-contains-any, and in encoding / decoding is covered by
+  // testEncodesMultipleFiltersOnDeeperCollections().
 
   @Test
   public void testEncodesNullFilter() {

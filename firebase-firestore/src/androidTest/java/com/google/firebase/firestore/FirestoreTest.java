@@ -537,7 +537,6 @@ public class FirestoreTest {
     collection.orderBy("x").whereArrayContainsAny("y", Arrays.asList("cat"));
     // In different than orderBy works.
     collection.orderBy("x").whereIn("y", Arrays.asList("cat"));
-
   }
 
   @Test
