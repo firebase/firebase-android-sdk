@@ -420,7 +420,7 @@ public class QueryTest {
         testCollectionWithDocs(map("a", docA, "b", docB, "c", docC, "d", docD));
 
     // Search for "array" to contain 42
-    QuerySnapshot snapshot = waitFor(collection.whereArrayContains("arrays", 42L).get());
+    QuerySnapshot snapshot = waitFor(collection.whereArrayContains("array", 42L).get());
     assertEquals(asList(docA, docB, docD), querySnapshotToValues(snapshot));
 
     // NOTE: The backend doesn't currently support null, NaN, objects, or arrays, so there isn't
