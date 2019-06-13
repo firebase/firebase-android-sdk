@@ -509,26 +509,35 @@ public class FirestoreTest {
     // NOTE: Failure cases are validated in ValidationTest.
     CollectionReference collection = testCollection();
     final Query query = collection.whereGreaterThanOrEqualTo("x", 32);
-    // Same inequality field works;
+    // Same inequality field works.
     query.whereLessThanOrEqualTo("x", "cat");
-    // Equality on different field works;
+    // Equality on different field works.
     query.whereEqualTo("y", "cat");
-    // Array contains on different field works;
+    // Array contains on different field works.
     query.whereArrayContains("y", "cat");
+    // Array contains any on different field works.
+    query.whereArrayContainsAny("y", Arrays.asList("cat"));
+    // In on different field works.
+    query.whereIn("y", Arrays.asList("cat"));
 
     // Ordering by inequality field succeeds.
     query.orderBy("x");
     collection.orderBy("x").whereGreaterThanOrEqualTo("x", 32);
 
-    // inequality same as first order by works
+    // Inequality same as first order by works.
     query.orderBy("x").orderBy("y");
     collection.orderBy("x").orderBy("y").whereGreaterThanOrEqualTo("x", 32);
     collection.orderBy("x", Direction.DESCENDING).whereEqualTo("y", "true");
 
-    // Equality different than orderBy works
+    // Equality different than orderBy works.
     collection.orderBy("x").whereEqualTo("y", "cat");
-    // Array contains different than orderBy works
+    // Array contains different than orderBy works.
     collection.orderBy("x").whereArrayContains("y", "cat");
+    // Array contains any different than orderBy works.
+    collection.orderBy("x").whereArrayContainsAny("y", Arrays.asList("cat"));
+    // In different than orderBy works.
+    collection.orderBy("x").whereIn("y", Arrays.asList("cat"));
+
   }
 
   @Test
