@@ -22,6 +22,10 @@ firebaseLibrary {
     publishSources = true
 }
 
+ext {
+    useEmulatorForTests = false
+}
+
 protobuf {
     // Configure the protoc executable
     protoc {
@@ -65,6 +69,7 @@ android {
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments emulator: "false"
     }
 
     sourceSets {
@@ -92,6 +97,15 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     testOptions.unitTests.includeAndroidResources = true
+}
+
+android.libraryVariants.all { variant ->
+    if (findProperty("emulator")) {
+        project.ext.useEmulatorForTests = true;
+    } else {
+        project.ext.useEmulatorForTests = false;
+    }
+    variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "$project.ext.useEmulatorForTests")
 }
 
 dependencies {
