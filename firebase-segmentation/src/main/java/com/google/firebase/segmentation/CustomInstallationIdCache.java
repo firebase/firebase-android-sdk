@@ -17,12 +17,15 @@ package com.google.firebase.segmentation;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 
-class CustomInstallationIdMappingCache {
+class CustomInstallationIdCache {
 
   // Status of each cache entry
+  // NOTE: never change the ordinal of the enum values because the enum values are stored in cache
+  // as their ordinal numbers.
   enum CacheStatus {
     // Cache entry is synced to Firebase backend
     SYNCED,
@@ -38,8 +41,8 @@ class CustomInstallationIdMappingCache {
 
   private static final String GMP_APP_ID_COLUMN_NAME = "GmpAppId";
   private static final String FIREBASE_APP_NAME_COLUMN_NAME = "AppName";
-  private static final String INSTANCE_ID_COLUMN_NAME = "Iid";
   private static final String CUSTOM_INSTALLATION_ID_COLUMN_NAME = "Cid";
+  private static final String INSTANCE_ID_COLUMN_NAME = "Iid";
   private static final String CACHE_STATUS_COLUMN = "Status";
 
   private static final String QUERY_WHERE_CLAUSE =
@@ -48,7 +51,7 @@ class CustomInstallationIdMappingCache {
 
   private final SQLiteDatabase localDb;
 
-  CustomInstallationIdMappingCache() {
+  CustomInstallationIdCache() {
     // Since different FirebaseApp in the same Android application should have the same application
     // context and same dir path, so that use the context of the default FirebaseApp to create/open
     // the database.
@@ -64,35 +67,68 @@ class CustomInstallationIdMappingCache {
 
     localDb.execSQL(
         String.format(
-            "CREATE TABLE IF NOT EXISTS %s(%s TEXT PRIMARY KEY, %s TEXT PRIMARY KEY, "
-                + "%s TEXT NOT NULL, %s TEXT NOT NULL, %s INTEGER NOT NULL);",
+            "CREATE TABLE IF NOT EXISTS %s(%s TEXT NOT NULL, %s TEXT NOT NULL, "
+                + "%s TEXT NOT NULL, %s TEXT NOT NULL, %s INTEGER NOT NULL, PRIMARY KEY (%s, %s));",
             TABLE_NAME,
             GMP_APP_ID_COLUMN_NAME,
             FIREBASE_APP_NAME_COLUMN_NAME,
-            INSTANCE_ID_COLUMN_NAME,
             CUSTOM_INSTALLATION_ID_COLUMN_NAME,
-            CACHE_STATUS_COLUMN));
+            INSTANCE_ID_COLUMN_NAME,
+            CACHE_STATUS_COLUMN,
+            GMP_APP_ID_COLUMN_NAME,
+            FIREBASE_APP_NAME_COLUMN_NAME));
   }
 
   @Nullable
-  String readIid(FirebaseApp firebaseApp) {
+  CustomInstallationIdCacheEntryValue readCacheEntryValue(FirebaseApp firebaseApp) {
     String gmpAppId = firebaseApp.getOptions().getApplicationId();
     String appName = firebaseApp.getName();
     Cursor cursor =
         localDb.query(
             TABLE_NAME,
-            new String[] {INSTANCE_ID_COLUMN_NAME},
+            new String[] {
+              CUSTOM_INSTALLATION_ID_COLUMN_NAME, INSTANCE_ID_COLUMN_NAME, CACHE_STATUS_COLUMN
+            },
             QUERY_WHERE_CLAUSE,
             new String[] {gmpAppId, appName},
             null,
             null,
             null);
-    String iid = null;
+    CustomInstallationIdCacheEntryValue value = null;
     while (cursor.moveToNext()) {
       Preconditions.checkArgument(
-          iid == null, "Multiple iid found for " + "firebase app %s", appName);
-      iid = cursor.getString(cursor.getColumnIndex(INSTANCE_ID_COLUMN_NAME));
+          value == null, "Multiple cache entries found for " + "firebase app %s", appName);
+      value =
+          CustomInstallationIdCacheEntryValue.create(
+              cursor.getString(cursor.getColumnIndex(CUSTOM_INSTALLATION_ID_COLUMN_NAME)),
+              cursor.getString(cursor.getColumnIndex(INSTANCE_ID_COLUMN_NAME)),
+              CacheStatus.values()[cursor.getInt(cursor.getColumnIndex(CACHE_STATUS_COLUMN))]);
     }
-    return iid;
+    return value;
+  }
+
+  void insertOrUpdateCacheEntry(
+      FirebaseApp firebaseApp, CustomInstallationIdCacheEntryValue entryValue) {
+    String gmpAppId = firebaseApp.getOptions().getApplicationId();
+    String appName = firebaseApp.getName();
+    localDb.execSQL(
+        String.format(
+            "INSERT OR REPLACE INTO %s(%s, %s, %s, %s, %s) VALUES(%s, %s, %s, %s, %s)",
+            TABLE_NAME,
+            GMP_APP_ID_COLUMN_NAME,
+            FIREBASE_APP_NAME_COLUMN_NAME,
+            CUSTOM_INSTALLATION_ID_COLUMN_NAME,
+            INSTANCE_ID_COLUMN_NAME,
+            CACHE_STATUS_COLUMN,
+            "\"" + gmpAppId + "\"",
+            "\"" + appName + "\"",
+            "\"" + entryValue.getCustomInstallationId() + "\"",
+            "\"" + entryValue.getFirebaseInstanceId() + "\"",
+            entryValue.getCacheStatus().ordinal()));
+  }
+
+  @VisibleForTesting
+  void clear() {
+    localDb.execSQL(String.format("DROP TABLE IF EXISTS %s", TABLE_NAME));
   }
 }
