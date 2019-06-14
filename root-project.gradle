@@ -52,6 +52,7 @@ ext {
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
+apply plugin: com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.metrics.MetricsPlugin
 
 firebaseContinuousIntegration {
@@ -139,38 +140,6 @@ configure(subprojects) {
     }
 }
 
-/**
- * Disable "debug" build type for all subprojects.
- *
- * They are identical to "release" and are not used in either release or smoke tests. Disabling them
- * to reduce the number of tests we run on pre/post-submit.
- */
-configure(subprojects) {
-    afterEvaluate { Project sub ->
-        if (!sub.plugins.hasPlugin('com.android.library') && !sub.plugins.hasPlugin('com.android.application')) {
-            return
-        }
-
-        // skip debug unit tests in CI
-        // TODO(vkryachko): provide ability for teams to control this if needed
-        if (System.getenv().containsKey("FIREBASE_CI")) {
-            sub.tasks.all {Task task ->
-                if (task.name == 'testDebugUnitTest') {
-                    task.enabled = false
-                }
-            }
-        }
-        sub.android {
-            testBuildType "release"
-
-            buildTypes {
-                // In the case of and android library signing config only affects instrumentation test APK.
-                // We need it signed with default debug credentials in order for FTL to accept the APK.
-                release.signingConfig = debug.signingConfig
-            }
-        }
-    }
-}
 
 /**
  * Configure "Preguarding" and Desugaring for the subprojects.
