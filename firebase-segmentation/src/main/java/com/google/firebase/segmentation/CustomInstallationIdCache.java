@@ -109,8 +109,6 @@ class CustomInstallationIdCache {
 
   void insertOrUpdateCacheEntry(
       FirebaseApp firebaseApp, CustomInstallationIdCacheEntryValue entryValue) {
-    String gmpAppId = firebaseApp.getOptions().getApplicationId();
-    String appName = firebaseApp.getName();
     localDb.execSQL(
         String.format(
             "INSERT OR REPLACE INTO %s(%s, %s, %s, %s, %s) VALUES(%s, %s, %s, %s, %s)",
@@ -120,8 +118,8 @@ class CustomInstallationIdCache {
             CUSTOM_INSTALLATION_ID_COLUMN_NAME,
             INSTANCE_ID_COLUMN_NAME,
             CACHE_STATUS_COLUMN,
-            "\"" + gmpAppId + "\"",
-            "\"" + appName + "\"",
+            "\"" + firebaseApp.getOptions().getApplicationId() + "\"",
+            "\"" + firebaseApp.getName() + "\"",
             "\"" + entryValue.getCustomInstallationId() + "\"",
             "\"" + entryValue.getFirebaseInstanceId() + "\"",
             entryValue.getCacheStatus().ordinal()));

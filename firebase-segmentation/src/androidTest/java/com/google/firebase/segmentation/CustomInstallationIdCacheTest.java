@@ -15,7 +15,6 @@
 package com.google.firebase.segmentation;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import androidx.test.InstrumentationRegistry;
@@ -66,12 +65,21 @@ public class CustomInstallationIdCacheTest {
     cache.insertOrUpdateCacheEntry(
         firebaseApp0,
         CustomInstallationIdCacheEntryValue.create(
-            "123456", "cAAAAAAAAAA", CustomInstallationIdCache.CacheStatus.SYNCED));
+            "123456", "cAAAAAAAAAA", CustomInstallationIdCache.CacheStatus.PENDING));
     CustomInstallationIdCacheEntryValue entryValue = cache.readCacheEntryValue(firebaseApp0);
-    assertNotNull(entryValue);
+    assertThat(entryValue.getCustomInstallationId()).isEqualTo("123456");
+    assertThat(entryValue.getFirebaseInstanceId()).isEqualTo("cAAAAAAAAAA");
+    assertThat(entryValue.getCacheStatus())
+        .isEqualTo(CustomInstallationIdCache.CacheStatus.PENDING);
+    assertNull(cache.readCacheEntryValue(firebaseApp1));
+
+    cache.insertOrUpdateCacheEntry(
+        firebaseApp0,
+        CustomInstallationIdCacheEntryValue.create(
+            "123456", "cAAAAAAAAAA", CustomInstallationIdCache.CacheStatus.SYNCED));
+    entryValue = cache.readCacheEntryValue(firebaseApp0);
     assertThat(entryValue.getCustomInstallationId()).isEqualTo("123456");
     assertThat(entryValue.getFirebaseInstanceId()).isEqualTo("cAAAAAAAAAA");
     assertThat(entryValue.getCacheStatus()).isEqualTo(CustomInstallationIdCache.CacheStatus.SYNCED);
-    assertNull(cache.readCacheEntryValue(firebaseApp1));
   }
 }
