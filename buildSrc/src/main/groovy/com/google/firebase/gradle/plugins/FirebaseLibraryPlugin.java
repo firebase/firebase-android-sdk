@@ -31,6 +31,9 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
         project.getExtensions().create("firebaseLibrary", FirebaseLibraryExtension.class, project);
 
     LibraryExtension android = project.getExtensions().getByType(LibraryExtension.class);
+
+    // In the case of and android library signing config only affects instrumentation test APK.
+    // We need it signed with default debug credentials in order for FTL to accept the APK.
     android.buildTypes(
         types ->
             types
