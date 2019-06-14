@@ -84,8 +84,7 @@ public final class FieldPath {
   static FieldPath fromDotSeparatedPath(@NonNull String path) {
     checkNotNull(path, "Provided field path must not be null.");
     checkArgument(
-        !RESERVED.matcher(path).find(),
-        "Invalid field path (" + path + "). Paths must not contain '~', '*', '/', '[', or ']'");
+        !RESERVED.matcher(path).find(), "Use FieldPath.of() for field names containing '~*/[]'.");
     try {
       // By default, split() doesn't return empty leading and trailing segments. This can be enabled
       // by passing "-1" as the  limit.
