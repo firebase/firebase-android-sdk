@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.tasks.bundling.Jar;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
 public class FirebaseLibraryPlugin implements Plugin<Project> {
@@ -32,6 +31,25 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
         project.getExtensions().create("firebaseLibrary", FirebaseLibraryExtension.class, project);
 
     LibraryExtension android = project.getExtensions().getByType(LibraryExtension.class);
+    android.buildTypes(
+        types ->
+            types
+                .getByName("release")
+                .setSigningConfig(types.getByName("debug").getSigningConfig()));
+
+    // skip debug tests in CI
+    // TODO(vkryachko): provide ability for teams to control this if needed
+    if (System.getenv().containsKey("FIREBASE_CI")) {
+      android.setTestBuildType("release");
+      project
+          .getTasks()
+          .all(
+              task -> {
+                if ("testDebugUnitTest".equals(task.getName())) {
+                  task.setEnabled(false);
+                }
+              });
+    }
 
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab));
 
