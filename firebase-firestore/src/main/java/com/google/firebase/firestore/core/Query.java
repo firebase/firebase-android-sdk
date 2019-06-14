@@ -167,11 +167,11 @@ public final class Query {
     return null;
   }
 
-  @Nullable
   /**
-   * Checks if any of the provided RelationOps are included in the query and returns the first one
-   * that is, or null if none are.
+   * Checks if any of the provided filter operatorsrelation are included in the query and returns
+   * the first one that is, or null if none are.
    */
+  @Nullable
   public Operator findOperatorFilter(List<Operator> filterOps) {
     for (Filter filter : filters) {
       if (filter instanceof RelationFilter) {

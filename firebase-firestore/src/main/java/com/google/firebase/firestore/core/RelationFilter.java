@@ -78,9 +78,12 @@ public class RelationFilter extends Filter {
     if (operator == Operator.ARRAY_CONTAINS) {
       return other instanceof ArrayValue && ((ArrayValue) other).getInternalValue().contains(value);
     } else if (operator == Operator.IN) {
-      return value instanceof ArrayValue && ((ArrayValue) value).getInternalValue().contains(other);
+      hardAssert(value instanceof ArrayValue, "'in' filter has invalid value: " + value);
+      return ((ArrayValue) value).getInternalValue().contains(other);
     } else if (operator == Operator.ARRAY_CONTAINS_ANY) {
-      if (other instanceof ArrayValue && value instanceof ArrayValue) {
+      hardAssert(
+          value instanceof ArrayValue, "'array_contains_any' filter has invalid value: " + value);
+      if (other instanceof ArrayValue) {
         for (FieldValue val : ((ArrayValue) other).getInternalValue()) {
           if (((ArrayValue) value).getInternalValue().contains(val)) {
             return true;
