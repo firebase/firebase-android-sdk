@@ -54,7 +54,7 @@ android {
 
 dependencies {
     implementation project(':firebase-common')
-    implementation ("com.google.firebase:firebase-inappmessaging:17.0.3") {
+    implementation ("com.google.firebase:firebase-inappmessaging:18.0.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
