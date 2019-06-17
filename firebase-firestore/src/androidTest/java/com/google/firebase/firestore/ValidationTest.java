@@ -652,6 +652,23 @@ public class ValidationTest {
         () ->
             testCollection().whereArrayContainsAny("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
         "Invalid Query. 'array_contains_any' filters support a maximum of 10 elements in the value array.");
+
+    expectError(
+            () -> testCollection().whereIn("bar", asList("foo", null)),
+            "Invalid Query. 'in' filters cannot contain 'null' in the value array.");
+
+    expectError(
+            () -> testCollection().whereArrayContainsAny("bar", asList("foo", null)),
+            "Invalid Query. 'array_contains_any' filters cannot contain 'null' in the value array.");
+
+    expectError(
+            () -> testCollection().whereIn("bar", asList("foo", Double.NaN)),
+            "Invalid Query. 'in' filters cannot contain 'NaN' in the value array.");
+
+    expectError(
+            () -> testCollection().whereArrayContainsAny("bar", asList("foo", Float.NaN)),
+            "Invalid Query. 'array_contains_any' filters cannot contain 'NaN' in the value array.");
+
   }
 
   @Test
