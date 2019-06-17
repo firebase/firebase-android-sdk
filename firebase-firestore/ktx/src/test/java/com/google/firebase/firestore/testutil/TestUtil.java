@@ -175,7 +175,7 @@ public class TestUtil {
 
   public static Document doc(String key, long version, Map<String, Object> data) {
     return new Document(
-            key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
+        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
@@ -183,12 +183,12 @@ public class TestUtil {
   }
 
   public static Document doc(
-          String key, long version, ObjectValue data, Document.DocumentState documentState) {
+      String key, long version, ObjectValue data, Document.DocumentState documentState) {
     return new Document(key(key), version(version), data, documentState);
   }
 
   public static Document doc(
-          String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
+      String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
     return new Document(key(key), version(version), wrapObject(data), documentState);
   }
 
@@ -281,7 +281,7 @@ public class TestUtil {
 
   public static ImmutableSortedMap<DocumentKey, MaybeDocument> docUpdates(MaybeDocument... docs) {
     ImmutableSortedMap<DocumentKey, MaybeDocument> res =
-            ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
+        ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
     for (MaybeDocument doc : docs) {
       res = res.insert(doc.getKey(), doc);
     }
@@ -290,7 +290,7 @@ public class TestUtil {
 
   public static ImmutableSortedMap<DocumentKey, Document> docUpdates(Document... docs) {
     ImmutableSortedMap<DocumentKey, Document> res =
-            ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
+        ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
     for (Document doc : docs) {
       res = res.insert(doc.getKey(), doc);
     }
@@ -298,11 +298,11 @@ public class TestUtil {
   }
 
   public static TargetChange targetChange(
-          ByteString resumeToken,
-          boolean current,
-          @Nullable Collection<Document> addedDocuments,
-          @Nullable Collection<Document> modifiedDocuments,
-          @Nullable Collection<? extends MaybeDocument> removedDocuments) {
+      ByteString resumeToken,
+      boolean current,
+      @Nullable Collection<Document> addedDocuments,
+      @Nullable Collection<Document> modifiedDocuments,
+      @Nullable Collection<? extends MaybeDocument> removedDocuments) {
     ImmutableSortedSet<DocumentKey> addedDocumentKeys = DocumentKey.emptyKeySet();
     ImmutableSortedSet<DocumentKey> modifiedDocumentKeys = DocumentKey.emptyKeySet();
     ImmutableSortedSet<DocumentKey> removedDocumentKeys = DocumentKey.emptyKeySet();
@@ -326,7 +326,7 @@ public class TestUtil {
     }
 
     return new TargetChange(
-            resumeToken, current, addedDocumentKeys, modifiedDocumentKeys, removedDocumentKeys);
+        resumeToken, current, addedDocumentKeys, modifiedDocumentKeys, removedDocumentKeys);
   }
 
   public static TargetChange ackTarget(Document... docs) {
@@ -338,7 +338,7 @@ public class TestUtil {
     Map<Integer, QueryData> listenMap = new HashMap<>();
     for (Integer targetId : targets) {
       QueryData queryData =
-              new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN);
+          new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN);
       listenMap.put(targetId, queryData);
     }
     return listenMap;
@@ -349,12 +349,12 @@ public class TestUtil {
   }
 
   public static Map<Integer, QueryData> activeLimboQueries(
-          String docKey, Iterable<Integer> targets) {
+      String docKey, Iterable<Integer> targets) {
     Query query = query(docKey);
     Map<Integer, QueryData> listenMap = new HashMap<>();
     for (Integer targetId : targets) {
       QueryData queryData =
-              new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LIMBO_RESOLUTION);
+          new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LIMBO_RESOLUTION);
       listenMap.put(targetId, queryData);
     }
     return listenMap;
@@ -365,55 +365,55 @@ public class TestUtil {
   }
 
   public static RemoteEvent addedRemoteEvent(
-          MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     DocumentChange change =
-            new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
+        new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
     WatchChangeAggregator aggregator =
-            new WatchChangeAggregator(
-                    new WatchChangeAggregator.TargetMetadataProvider() {
-                      @Override
-                      public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
-                        return DocumentKey.emptyKeySet();
-                      }
+        new WatchChangeAggregator(
+            new WatchChangeAggregator.TargetMetadataProvider() {
+              @Override
+              public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+                return DocumentKey.emptyKeySet();
+              }
 
-                      @Override
-                      public QueryData getQueryDataForTarget(int targetId) {
-                        return queryData(targetId, QueryPurpose.LISTEN, doc.getKey().toString());
-                      }
-                    });
+              @Override
+              public QueryData getQueryDataForTarget(int targetId) {
+                return queryData(targetId, QueryPurpose.LISTEN, doc.getKey().toString());
+              }
+            });
     aggregator.handleDocumentChange(change);
     return aggregator.createRemoteEvent(doc.getVersion());
   }
 
   public static RemoteEvent updateRemoteEvent(
-          MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     return updateRemoteEvent(doc, updatedInTargets, removedFromTargets, Collections.emptyList());
   }
 
   public static RemoteEvent updateRemoteEvent(
-          MaybeDocument doc,
-          List<Integer> updatedInTargets,
-          List<Integer> removedFromTargets,
-          List<Integer> limboTargets) {
+      MaybeDocument doc,
+      List<Integer> updatedInTargets,
+      List<Integer> removedFromTargets,
+      List<Integer> limboTargets) {
     DocumentChange change =
-            new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
+        new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
     WatchChangeAggregator aggregator =
-            new WatchChangeAggregator(
-                    new WatchChangeAggregator.TargetMetadataProvider() {
-                      @Override
-                      public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
-                        return DocumentKey.emptyKeySet().insert(doc.getKey());
-                      }
+        new WatchChangeAggregator(
+            new WatchChangeAggregator.TargetMetadataProvider() {
+              @Override
+              public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+                return DocumentKey.emptyKeySet().insert(doc.getKey());
+              }
 
-                      @Override
-                      public QueryData getQueryDataForTarget(int targetId) {
-                        boolean isLimbo =
-                                !(updatedInTargets.contains(targetId) || removedFromTargets.contains(targetId));
-                        QueryPurpose purpose =
-                                isLimbo ? QueryPurpose.LIMBO_RESOLUTION : QueryPurpose.LISTEN;
-                        return queryData(targetId, purpose, doc.getKey().toString());
-                      }
-                    });
+              @Override
+              public QueryData getQueryDataForTarget(int targetId) {
+                boolean isLimbo =
+                    !(updatedInTargets.contains(targetId) || removedFromTargets.contains(targetId));
+                QueryPurpose purpose =
+                    isLimbo ? QueryPurpose.LIMBO_RESOLUTION : QueryPurpose.LISTEN;
+                return queryData(targetId, purpose, doc.getKey().toString());
+              }
+            });
     aggregator.handleDocumentChange(change);
     return aggregator.createRemoteEvent(doc.getVersion());
   }
@@ -427,7 +427,7 @@ public class TestUtil {
   }
 
   public static PatchMutation patchMutation(
-          String path, Map<String, Object> values, @Nullable List<FieldPath> updateMask) {
+      String path, Map<String, Object> values, @Nullable List<FieldPath> updateMask) {
     ObjectValue objectValue = ObjectValue.emptyObject();
     ArrayList<FieldPath> objectMask = new ArrayList<>();
     for (Entry<String, Object> entry : values.entrySet()) {
@@ -447,10 +447,10 @@ public class TestUtil {
     SortedSet<FieldPath> fieldMaskPaths = new TreeSet<>(merge ? updateMask : objectMask);
 
     return new PatchMutation(
-            key(path),
-            objectValue,
-            FieldMask.fromSet(fieldMaskPaths),
-            merge ? Precondition.NONE : Precondition.exists(true));
+        key(path),
+        objectValue,
+        FieldMask.fromSet(fieldMaskPaths),
+        merge ? Precondition.NONE : Precondition.exists(true));
   }
 
   public static DeleteMutation deleteMutation(String path) {
@@ -470,7 +470,7 @@ public class TestUtil {
     // order.
     ArrayList<FieldTransform> fieldTransforms = new ArrayList<>(result.getFieldTransforms());
     Collections.sort(
-            fieldTransforms, (ft1, ft2) -> ft1.getFieldPath().compareTo(ft2.getFieldPath()));
+        fieldTransforms, (ft1, ft2) -> ft1.getFieldPath().compareTo(ft2.getFieldPath()));
 
     return new TransformMutation(key(path), fieldTransforms);
   }
@@ -480,7 +480,7 @@ public class TestUtil {
   }
 
   public static LocalViewChanges viewChanges(
-          int targetId, List<String> addedKeys, List<String> removedKeys) {
+      int targetId, List<String> addedKeys, List<String> removedKeys) {
     ImmutableSortedSet<DocumentKey> added = DocumentKey.emptyKeySet();
     for (String keyPath : addedKeys) {
       added = added.insert(key(keyPath));
@@ -609,10 +609,10 @@ public class TestUtil {
     if (!exceptionThrown) {
       context = (context == null) ? "" : context;
       fail(
-              "Expected exception with message '"
-                      + exceptionMessage
-                      + "' but no exception was thrown"
-                      + context);
+          "Expected exception with message '"
+              + exceptionMessage
+              + "' but no exception was thrown"
+              + context);
     }
   }
 }
