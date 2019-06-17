@@ -49,10 +49,10 @@ dependencies {
 
   // We intentionally use an open ended version to pick up any SNAPSHOT
   // versions published to the root project' s build/ directory.
-  implementation 'com.google.firebase:firebase-auth:17+'
-  implementation 'com.google.firebase:firebase-common:17+'
-  implementation 'com.google.android.gms:play-services-basement:16.2.0'
-  implementation 'com.google.android.gms:play-services-base:16.1.0'
+  implementation 'com.google.firebase:firebase-auth:18+'
+  implementation 'com.google.firebase:firebase-common:18+'
+  implementation 'com.google.android.gms:play-services-basement:17.0.0'
+  implementation 'com.google.android.gms:play-services-base:17.0.0'
 
   implementation 'com.google.android.material:material:1.0.0'
   implementation 'androidx.appcompat:appcompat:1.0.2'
