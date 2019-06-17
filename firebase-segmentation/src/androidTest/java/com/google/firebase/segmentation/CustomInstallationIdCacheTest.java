@@ -51,7 +51,7 @@ public class CustomInstallationIdCacheTest {
 
   @After
   public void cleanUp() {
-    cache.clear();
+    cache.clearAll();
   }
 
   @Test

@@ -14,14 +14,10 @@
 
 package com.google.firebase.segmentation;
 
-import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.os.Build;
+import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.common.internal.Preconditions;
+import com.google.android.gms.common.util.Strings;
 import com.google.firebase.FirebaseApp;
 
 class CustomInstallationIdCache {
@@ -36,173 +32,70 @@ class CustomInstallationIdCache {
     // errors.
     PENDING,
     // Cache entry is not accepted by Firebase backend.
-    ERROR
+    ERROR,
   }
 
-  private static final String LOCAL_DB_NAME = "CustomInstallationIdCache";
-  private static final String TABLE_NAME = "InstallationIdMapping";
+  private static final String SHARED_PREFS_NAME = "CustomInstallationIdCache";
 
-  private static final String GMP_APP_ID_COLUMN_NAME = "GmpAppId";
-  private static final String FIREBASE_APP_NAME_COLUMN_NAME = "AppName";
-  private static final String CUSTOM_INSTALLATION_ID_COLUMN_NAME = "Cid";
-  private static final String INSTANCE_ID_COLUMN_NAME = "Iid";
-  private static final String CACHE_STATUS_COLUMN = "Status";
+  private static final String CUSTOM_INSTALLATION_ID_KEY = "Cid";
+  private static final String INSTANCE_ID_KEY = "Iid";
+  private static final String CACHE_STATUS_KEY = "Status";
 
-  private static final String QUERY_WHERE_CLAUSE =
-      String.format(
-          "%s = ? " + "AND " + "%s = ?", GMP_APP_ID_COLUMN_NAME, FIREBASE_APP_NAME_COLUMN_NAME);
-
-  /**
-   * A SQLiteOpenHelper that configures database connections just the way we like them, delegating
-   * to SQLiteSchema to actually do the work of migration.
-   *
-   * <p>The order of events when opening a new connection is as follows:
-   *
-   * <ol>
-   *   <li>New connection
-   *   <li>onConfigure (API 16 and above)
-   *   <li>onCreate / onUpgrade (optional; if version already matches these aren't called)
-   *   <li>onOpen
-   * </ol>
-   *
-   * <p>This OpenHelper attempts to obtain exclusive access to the database and attempts to do so as
-   * early as possible. On Jelly Bean devices and above (some 98% of devices at time of writing)
-   * this happens naturally during onConfigure. On pre-Jelly Bean devices all other methods ensure
-   * that the configuration is applied before any action is taken.
-   */
-  private static class OpenHelper extends SQLiteOpenHelper {
-    // TODO: when we do schema upgrades in the future we need to make sure both downgrades and
-    // upgrades work as expected, e.g. `up+down+up` is equivalent to `up`.
-    private static int SCHEMA_VERSION = 1;
-
-    private boolean configured = false;
-
-    private OpenHelper(Context context) {
-      super(context, LOCAL_DB_NAME, null, SCHEMA_VERSION);
-    }
-
-    @Override
-    public void onConfigure(SQLiteDatabase db) {
-      // Note that this is only called automatically by the SQLiteOpenHelper base class on Jelly
-      // Bean and above.
-      configured = true;
-
-      db.rawQuery("PRAGMA busy_timeout=0;", new String[0]).close();
-
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-        db.setForeignKeyConstraintsEnabled(true);
-      }
-    }
-
-    private void ensureConfigured(SQLiteDatabase db) {
-      if (!configured) {
-        onConfigure(db);
-      }
-    }
-
-    @Override
-    public void onCreate(SQLiteDatabase db) {
-      ensureConfigured(db);
-      // Create custom id mapping table.
-      db.execSQL(
-          String.format(
-              "CREATE TABLE IF NOT EXISTS %s(%s TEXT NOT NULL, %s TEXT NOT NULL, "
-                  + "%s TEXT NOT NULL, %s TEXT NOT NULL, %s INTEGER NOT NULL, PRIMARY KEY (%s, %s));",
-              TABLE_NAME,
-              GMP_APP_ID_COLUMN_NAME,
-              FIREBASE_APP_NAME_COLUMN_NAME,
-              CUSTOM_INSTALLATION_ID_COLUMN_NAME,
-              INSTANCE_ID_COLUMN_NAME,
-              CACHE_STATUS_COLUMN,
-              GMP_APP_ID_COLUMN_NAME,
-              FIREBASE_APP_NAME_COLUMN_NAME));
-    }
-
-    @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-      ensureConfigured(db);
-    }
-
-    @Override
-    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-      ensureConfigured(db);
-    }
-
-    @Override
-    public void onOpen(SQLiteDatabase db) {
-      ensureConfigured(db);
-    }
-  }
-
-  private final OpenHelper openHelper;
+  private final SharedPreferences prefs;
 
   CustomInstallationIdCache() {
-    // Since different FirebaseApp in the same Android application should
-    // have the same application
-    // context and same dir path, so that use the context of the default
-    // FirebaseApp to create/open
-    // the database.
-    openHelper = new OpenHelper(FirebaseApp.getInstance().getApplicationContext());
-  }
-
-  private SQLiteDatabase getReadableDb() {
-    return openHelper.getReadableDatabase();
-  }
-
-  private SQLiteDatabase getWritableDb() {
-    return openHelper.getWritableDatabase();
+    // Since different FirebaseApp in the same Android application should have the same application
+    // context and same dir path, so that use the context of the default FirebaseApp to create the
+    // shared preferences.
+    prefs =
+        FirebaseApp.getInstance()
+            .getApplicationContext()
+            .getSharedPreferences(SHARED_PREFS_NAME, 0); // private mode
   }
 
   @Nullable
-  CustomInstallationIdCacheEntryValue readCacheEntryValue(FirebaseApp firebaseApp) {
-    String gmpAppId = firebaseApp.getOptions().getApplicationId();
-    String appName = firebaseApp.getName();
-    Cursor cursor =
-        getReadableDb()
-            .query(
-                TABLE_NAME,
-                new String[] {
-                  CUSTOM_INSTALLATION_ID_COLUMN_NAME, INSTANCE_ID_COLUMN_NAME, CACHE_STATUS_COLUMN
-                },
-                QUERY_WHERE_CLAUSE,
-                new String[] {gmpAppId, appName},
-                null,
-                null,
-                null);
-    CustomInstallationIdCacheEntryValue value = null;
-    while (cursor.moveToNext()) {
-      Preconditions.checkArgument(
-          value == null, "Multiple cache entries found for " + "firebase app %s", appName);
-      value =
-          CustomInstallationIdCacheEntryValue.create(
-              cursor.getString(cursor.getColumnIndex(CUSTOM_INSTALLATION_ID_COLUMN_NAME)),
-              cursor.getString(cursor.getColumnIndex(INSTANCE_ID_COLUMN_NAME)),
-              CacheStatus.values()[cursor.getInt(cursor.getColumnIndex(CACHE_STATUS_COLUMN))]);
+  synchronized CustomInstallationIdCacheEntryValue readCacheEntryValue(FirebaseApp firebaseApp) {
+    String cid =
+        prefs.getString(getSharedPreferencesKey(firebaseApp, CUSTOM_INSTALLATION_ID_KEY), null);
+    String iid = prefs.getString(getSharedPreferencesKey(firebaseApp, INSTANCE_ID_KEY), null);
+    int status = prefs.getInt(getSharedPreferencesKey(firebaseApp, CACHE_STATUS_KEY), -1);
+
+    if (Strings.isEmptyOrWhitespace(cid) || Strings.isEmptyOrWhitespace(iid) || status == -1) {
+      return null;
     }
-    return value;
+
+    return CustomInstallationIdCacheEntryValue.create(cid, iid, CacheStatus.values()[status]);
   }
 
-  void insertOrUpdateCacheEntry(
+  synchronized void insertOrUpdateCacheEntry(
       FirebaseApp firebaseApp, CustomInstallationIdCacheEntryValue entryValue) {
-    getWritableDb()
-        .execSQL(
-            String.format(
-                "INSERT OR REPLACE INTO %s(%s, %s, %s, %s, %s) VALUES(%s, %s, %s, %s, %s)",
-                TABLE_NAME,
-                GMP_APP_ID_COLUMN_NAME,
-                FIREBASE_APP_NAME_COLUMN_NAME,
-                CUSTOM_INSTALLATION_ID_COLUMN_NAME,
-                INSTANCE_ID_COLUMN_NAME,
-                CACHE_STATUS_COLUMN,
-                "\"" + firebaseApp.getOptions().getApplicationId() + "\"",
-                "\"" + firebaseApp.getName() + "\"",
-                "\"" + entryValue.getCustomInstallationId() + "\"",
-                "\"" + entryValue.getFirebaseInstanceId() + "\"",
-                entryValue.getCacheStatus().ordinal()));
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putString(
+        getSharedPreferencesKey(firebaseApp, CUSTOM_INSTALLATION_ID_KEY),
+        entryValue.getCustomInstallationId());
+    editor.putString(
+        getSharedPreferencesKey(firebaseApp, INSTANCE_ID_KEY), entryValue.getFirebaseInstanceId());
+    editor.putInt(
+        getSharedPreferencesKey(firebaseApp, CACHE_STATUS_KEY),
+        entryValue.getCacheStatus().ordinal());
+    editor.commit();
+  }
+
+  synchronized void clear(FirebaseApp firebaseApp) {
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.remove(getSharedPreferencesKey(firebaseApp, CUSTOM_INSTALLATION_ID_KEY));
+    editor.remove(getSharedPreferencesKey(firebaseApp, INSTANCE_ID_KEY));
+    editor.remove(getSharedPreferencesKey(firebaseApp, CACHE_STATUS_KEY));
+  }
+
+  private static String getSharedPreferencesKey(FirebaseApp firebaseApp, String key) {
+    return String.format("%s|%s", firebaseApp.getPersistenceKey(), key);
   }
 
   @VisibleForTesting
-  void clear() {
-    getWritableDb().execSQL(String.format("DELETE FROM %s", TABLE_NAME));
+  synchronized void clearAll() {
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.clear();
+    editor.commit();
   }
 }
