@@ -14,6 +14,12 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.docSet;
+import static com.google.firebase.firestore.testutil.TestUtil.key;
+import static org.mockito.Mockito.mock;
+
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
@@ -26,21 +32,12 @@ import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
-
-import org.junit.Assert;
-import org.robolectric.Robolectric;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import androidx.annotation.Nullable;
-
-import static com.google.firebase.firestore.testutil.TestUtil.doc;
-import static com.google.firebase.firestore.testutil.TestUtil.docSet;
-import static com.google.firebase.firestore.testutil.TestUtil.key;
-import static org.mockito.Mockito.mock;
+import org.junit.Assert;
+import org.robolectric.Robolectric;
 
 public class TestUtil {
 
