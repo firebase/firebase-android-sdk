@@ -54,7 +54,7 @@ android {
 dependencies {
   implementation project(path: ":firebase-inappmessaging-display")
   implementation "com.google.firebase:firebase-measurement-connector:18.0.0"
-  implementation('com.google.firebase:firebase-inappmessaging:18.0.0') {
+  implementation('com.google.firebase:firebase-inappmessaging:17.0.3') {
     exclude group: 'com.google.firebase', module: 'firebase-common'
   }
   implementation('com.google.firebase:firebase-analytics:17.0.0') {
