@@ -33,8 +33,7 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
         test.java {
             srcDir 'src/test/kotlin'
-            srcDir '../src/testUtil/java'
-            srcDir '../src/roboUtil/java'
+            srcDir 'src/test/java'
         }
     }
     testOptions.unitTests.includeAndroidResources = true
