@@ -332,11 +332,7 @@ public class ValidationTest {
     List<String> badFieldPaths =
         asList("foo~bar", "foo*bar", "foo/bar", "foo[1", "foo]1", "foo[1]");
     for (String fieldPath : badFieldPaths) {
-      String reason =
-          "Invalid field path ("
-              + fieldPath
-              + "). Paths must not contain '~', '*', '/', '[', or ']'";
-      verifyFieldPathThrows(fieldPath, reason);
+      verifyFieldPathThrows(fieldPath, "Use FieldPath.of() for field names containing '~*/[]'.");
     }
   }
 

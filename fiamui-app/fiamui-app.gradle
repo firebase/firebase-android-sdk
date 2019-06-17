@@ -53,11 +53,11 @@ android {
 
 dependencies {
   implementation project(path: ":firebase-inappmessaging-display")
-  implementation "com.google.firebase:firebase-measurement-connector:17.0.1"
+  implementation "com.google.firebase:firebase-measurement-connector:18.0.0"
   implementation('com.google.firebase:firebase-inappmessaging:17.0.3') {
     exclude group: 'com.google.firebase', module: 'firebase-common'
   }
-  implementation('com.google.firebase:firebase-analytics:16.0.4') {
+  implementation('com.google.firebase:firebase-analytics:17.0.0') {
     exclude group: 'com.google.firebase', module: 'firebase-common'
   }
 
@@ -67,7 +67,7 @@ dependencies {
   implementation "com.google.code.findbugs:jsr305:3.0.2"
   implementation "com.squareup.okhttp:okhttp:2.7.5"
   implementation "com.google.auto.value:auto-value-annotations:1.6.5"
-  implementation "com.google.android.gms:play-services-basement:16.2.0"
+  implementation "com.google.android.gms:play-services-basement:17.0.0"
 
   // The following dependencies are not required to use the FIAM UI library.
   // They are used to make some aspects of the demo app implementation simpler for
