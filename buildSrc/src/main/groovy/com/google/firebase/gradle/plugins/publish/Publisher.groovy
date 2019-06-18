@@ -74,7 +74,7 @@ class Publisher {
         pom.dependencies.dependency.each {
             // remove multidex as it is supposed to be added by final applications and is needed for
             // some libraries only for instrumentation tests to build.
-            if (it.groupId.text() in ['com.android.support', 'androidx'] && it.artifactId.text() == 'multidex') {
+            if (it.groupId.text() in ['com.android.support', 'androidx.multidex'] && it.artifactId.text() == 'multidex') {
                 it.parent().remove(it)
             }
             it.appendNode('type', [:], deps["${it.groupId.text()}:${it.artifactId.text()}"])
