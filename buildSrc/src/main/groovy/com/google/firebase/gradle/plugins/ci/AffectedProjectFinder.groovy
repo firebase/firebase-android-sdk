@@ -25,6 +25,10 @@ class AffectedProjectFinder {
     Set<String> changedPaths;
 
     @Builder
+    AffectedProjectFinder(Project project, List<Pattern> ignorePaths) {
+        this(project, changedPaths(project.rootDir), ignorePaths)
+    }
+
     AffectedProjectFinder(Project project,
                           Set<String> changedPaths,
                           List<Pattern> ignorePaths) {
@@ -47,6 +51,13 @@ class AffectedProjectFinder {
             return projects
         }
         return project.subprojects
+    }
+
+    private static Set<String> changedPaths(File workDir) {
+        return 'git diff --name-only --submodule=diff HEAD@{0} HEAD@{1}'
+                .execute([], workDir)
+                .text
+                .readLines()
     }
 
     /**

@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+
 buildscript {
   repositories {
     google()
@@ -112,6 +116,14 @@ dependencies {
   // Storage
   storageImplementation "com.google.firebase:firebase-auth"
   storageImplementation "com.google.firebase:firebase-storage"
+}
+
+clean.doLast {
+  def paths = Files.newDirectoryStream(Paths.get("."), "build-*")
+
+  for (Path path : paths) {
+    project.delete "$path/"
+  }
 }
 
 apply plugin: "com.google.gms.google-services"

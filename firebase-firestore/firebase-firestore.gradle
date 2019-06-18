@@ -106,13 +106,13 @@ dependencies {
     implementation 'io.grpc:grpc-protobuf-lite:1.21.0'
     implementation 'io.grpc:grpc-okhttp:1.21.0'
     implementation 'io.grpc:grpc-android:1.21.0'
-    implementation 'com.google.android.gms:play-services-basement:16.2.0'
-    implementation 'com.google.android.gms:play-services-tasks:16.0.1'
-    implementation 'com.google.android.gms:play-services-base:16.1.0'
+    implementation 'com.google.android.gms:play-services-basement:17.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'com.google.android.gms:play-services-base:17.0.0'
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
 
     implementation 'com.squareup.okhttp:okhttp:2.7.5'
-    implementation('com.google.firebase:firebase-auth-interop:17.0.0') {
+    implementation('com.google.firebase:firebase-auth-interop:18.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 

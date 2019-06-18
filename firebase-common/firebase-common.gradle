@@ -58,8 +58,8 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.android.gms:play-services-basement:16.2.0'
-    implementation "com.google.android.gms:play-services-tasks:16.0.1"
+    implementation 'com.google.android.gms:play-services-basement:17.0.0'
+    implementation "com.google.android.gms:play-services-tasks:17.0.0"
 
     api 'com.google.auto.value:auto-value-annotations:1.6.5'
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
