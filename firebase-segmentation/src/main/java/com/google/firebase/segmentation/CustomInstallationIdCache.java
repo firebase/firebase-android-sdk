@@ -14,11 +14,16 @@
 
 package com.google.firebase.segmentation;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.Strings;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 class CustomInstallationIdCache {
 
@@ -42,6 +47,7 @@ class CustomInstallationIdCache {
   private static final String CACHE_STATUS_KEY = "Status";
 
   private static CustomInstallationIdCache singleton = null;
+  private final Executor ioExecuter;
   private final SharedPreferences prefs;
 
   static CustomInstallationIdCache getInstance() {
@@ -58,7 +64,9 @@ class CustomInstallationIdCache {
     prefs =
         FirebaseApp.getInstance()
             .getApplicationContext()
-            .getSharedPreferences(SHARED_PREFS_NAME, 0); // private mode
+            .getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE);
+
+    ioExecuter = Executors.newFixedThreadPool(2);
   }
 
   @Nullable
@@ -75,7 +83,7 @@ class CustomInstallationIdCache {
     return CustomInstallationIdCacheEntryValue.create(cid, iid, CacheStatus.values()[status]);
   }
 
-  synchronized void insertOrUpdateCacheEntry(
+  synchronized Task<Boolean> insertOrUpdateCacheEntry(
       FirebaseApp firebaseApp, CustomInstallationIdCacheEntryValue entryValue) {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putString(
@@ -86,24 +94,37 @@ class CustomInstallationIdCache {
     editor.putInt(
         getSharedPreferencesKey(firebaseApp, CACHE_STATUS_KEY),
         entryValue.getCacheStatus().ordinal());
-    editor.commit();
+    return commitSharedPreferencesEditAsync(editor);
   }
 
-  synchronized void clear(FirebaseApp firebaseApp) {
+  synchronized Task<Boolean> clear(FirebaseApp firebaseApp) {
     SharedPreferences.Editor editor = prefs.edit();
     editor.remove(getSharedPreferencesKey(firebaseApp, CUSTOM_INSTALLATION_ID_KEY));
     editor.remove(getSharedPreferencesKey(firebaseApp, INSTANCE_ID_KEY));
     editor.remove(getSharedPreferencesKey(firebaseApp, CACHE_STATUS_KEY));
+    return commitSharedPreferencesEditAsync(editor);
+  }
+
+  @VisibleForTesting
+  synchronized Task<Boolean> clearAll() {
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.clear();
+    return commitSharedPreferencesEditAsync(editor);
   }
 
   private static String getSharedPreferencesKey(FirebaseApp firebaseApp, String key) {
     return String.format("%s|%s", firebaseApp.getPersistenceKey(), key);
   }
 
-  @VisibleForTesting
-  synchronized void clearAll() {
-    SharedPreferences.Editor editor = prefs.edit();
-    editor.clear();
-    editor.commit();
+  private Task<Boolean> commitSharedPreferencesEditAsync(SharedPreferences.Editor editor) {
+    TaskCompletionSource<Boolean> result = new TaskCompletionSource<Boolean>();
+    ioExecuter.execute(
+        new Runnable() {
+          @Override
+          public void run() {
+            result.setResult(editor.commit());
+          }
+        });
+    return result.getTask();
   }
 }

@@ -16,9 +16,11 @@ package com.google.firebase.segmentation;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import org.junit.After;
@@ -50,8 +52,8 @@ public class CustomInstallationIdCacheTest {
   }
 
   @After
-  public void cleanUp() {
-    cache.clearAll();
+  public void cleanUp() throws Exception {
+    Tasks.await(cache.clearAll());
   }
 
   @Test
@@ -61,11 +63,13 @@ public class CustomInstallationIdCacheTest {
   }
 
   @Test
-  public void testUpdateAndReadCacheEntry() {
-    cache.insertOrUpdateCacheEntry(
-        firebaseApp0,
-        CustomInstallationIdCacheEntryValue.create(
-            "123456", "cAAAAAAAAAA", CustomInstallationIdCache.CacheStatus.PENDING));
+  public void testUpdateAndReadCacheEntry() throws Exception {
+    assertTrue(
+        Tasks.await(
+            cache.insertOrUpdateCacheEntry(
+                firebaseApp0,
+                CustomInstallationIdCacheEntryValue.create(
+                    "123456", "cAAAAAAAAAA", CustomInstallationIdCache.CacheStatus.PENDING))));
     CustomInstallationIdCacheEntryValue entryValue = cache.readCacheEntryValue(firebaseApp0);
     assertThat(entryValue.getCustomInstallationId()).isEqualTo("123456");
     assertThat(entryValue.getFirebaseInstanceId()).isEqualTo("cAAAAAAAAAA");
@@ -73,10 +77,12 @@ public class CustomInstallationIdCacheTest {
         .isEqualTo(CustomInstallationIdCache.CacheStatus.PENDING);
     assertNull(cache.readCacheEntryValue(firebaseApp1));
 
-    cache.insertOrUpdateCacheEntry(
-        firebaseApp0,
-        CustomInstallationIdCacheEntryValue.create(
-            "123456", "cAAAAAAAAAA", CustomInstallationIdCache.CacheStatus.SYNCED));
+    assertTrue(
+        Tasks.await(
+            cache.insertOrUpdateCacheEntry(
+                firebaseApp0,
+                CustomInstallationIdCacheEntryValue.create(
+                    "123456", "cAAAAAAAAAA", CustomInstallationIdCache.CacheStatus.SYNCED))));
     entryValue = cache.readCacheEntryValue(firebaseApp0);
     assertThat(entryValue.getCustomInstallationId()).isEqualTo("123456");
     assertThat(entryValue.getFirebaseInstanceId()).isEqualTo("cAAAAAAAAAA");
