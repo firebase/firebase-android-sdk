@@ -17,6 +17,7 @@ package com.google.firebase.segmentation;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.Strings;
 import com.google.android.gms.tasks.Task;
@@ -50,7 +51,7 @@ class CustomInstallationIdCache {
   private final Executor ioExecuter;
   private final SharedPreferences prefs;
 
-  static CustomInstallationIdCache getInstance() {
+  synchronized static CustomInstallationIdCache getInstance() {
     if (singleton == null) {
       singleton = new CustomInstallationIdCache();
     }
@@ -105,7 +106,7 @@ class CustomInstallationIdCache {
     return commitSharedPreferencesEditAsync(editor);
   }
 
-  @VisibleForTesting
+  @RestrictTo(RestrictTo.Scope.TESTS)
   synchronized Task<Boolean> clearAll() {
     SharedPreferences.Editor editor = prefs.edit();
     editor.clear();
