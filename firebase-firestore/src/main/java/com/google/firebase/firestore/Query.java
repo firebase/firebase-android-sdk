@@ -416,7 +416,7 @@ public class Query {
     FieldValue fieldValue;
     com.google.firebase.firestore.model.FieldPath internalPath = fieldPath.getInternalPath();
     if (internalPath.isKeyField()) {
-      if (op == Operator.ARRAY_CONTAINS || op == Operator.ARRAY_CONTAINS_ANY || op == Operator.IN) {
+      if (op == Operator.ARRAY_CONTAINS || op == Operator.ARRAY_CONTAINS_ANY) {
         throw new IllegalArgumentException(
             "Invalid query. You can't perform '"
                 + op.toString()
