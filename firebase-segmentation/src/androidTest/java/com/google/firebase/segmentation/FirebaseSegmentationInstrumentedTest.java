@@ -16,7 +16,7 @@ package com.google.firebase.segmentation;
 
 import static org.junit.Assert.assertNull;
 
-import androidx.test.InstrumentationRegistry;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -39,7 +39,7 @@ public class FirebaseSegmentationInstrumentedTest {
     FirebaseApp.clearInstancesForTest();
     firebaseApp =
         FirebaseApp.initializeApp(
-            InstrumentationRegistry.getContext(),
+            ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder().setApplicationId("1:123456789:android:abcdef").build());
   }
 
