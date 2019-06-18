@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * Instrumented tests for {@link com.google.firebase.segmentation.local.CustomInstallationIdCache}
+ * Instrumented tests for {@link CustomInstallationIdCache}
  */
 @RunWith(AndroidJUnit4.class)
 public class CustomInstallationIdCacheTest {
