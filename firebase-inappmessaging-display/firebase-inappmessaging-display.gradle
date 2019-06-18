@@ -90,3 +90,13 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
 }
+
+//TODO(b/135538715): Include 'Logging.class' back into coverage collection.
+checkCoverage {
+    classDirectories = files([
+            fileTree(dir: "$buildDir/intermediates/javac", excludes: [
+                    '**/R.class', '**/R$*.class', '**/BuildConfig.*',
+                    '**Manifest*.*', '**/Logging.class'
+            ])
+    ])
+}
