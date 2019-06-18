@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.segmentation;
+package com.google.firebase.segmentation.local;
 
 import com.google.auto.value.AutoValue;
-import com.google.firebase.segmentation.CustomInstallationIdCache.CacheStatus;
+import com.google.firebase.segmentation.local.CustomInstallationIdCache.CacheStatus;
 
 /**
  * This class represents a cache entry value in {@link CustomInstallationIdCache}, which contains a
