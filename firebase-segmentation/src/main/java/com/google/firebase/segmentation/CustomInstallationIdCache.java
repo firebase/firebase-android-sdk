@@ -18,7 +18,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.Strings;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -51,7 +50,7 @@ class CustomInstallationIdCache {
   private final Executor ioExecuter;
   private final SharedPreferences prefs;
 
-  synchronized static CustomInstallationIdCache getInstance() {
+  static synchronized CustomInstallationIdCache getInstance() {
     if (singleton == null) {
       singleton = new CustomInstallationIdCache();
     }
