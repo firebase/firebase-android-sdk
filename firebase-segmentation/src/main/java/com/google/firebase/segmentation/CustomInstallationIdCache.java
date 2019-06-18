@@ -41,9 +41,17 @@ class CustomInstallationIdCache {
   private static final String INSTANCE_ID_KEY = "Iid";
   private static final String CACHE_STATUS_KEY = "Status";
 
+  private static CustomInstallationIdCache singleton = null;
   private final SharedPreferences prefs;
 
-  CustomInstallationIdCache() {
+  static CustomInstallationIdCache getInstance() {
+    if (singleton == null) {
+      singleton = new CustomInstallationIdCache();
+    }
+    return singleton;
+  }
+
+  private CustomInstallationIdCache() {
     // Since different FirebaseApp in the same Android application should have the same application
     // context and same dir path, so that use the context of the default FirebaseApp to create the
     // shared preferences.

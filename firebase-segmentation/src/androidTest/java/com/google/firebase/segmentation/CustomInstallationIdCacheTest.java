@@ -46,7 +46,7 @@ public class CustomInstallationIdCacheTest {
             InstrumentationRegistry.getContext(),
             new FirebaseOptions.Builder().setApplicationId("1:987654321:android:abcdef").build(),
             "firebase_app_1");
-    cache = new CustomInstallationIdCache();
+    cache = CustomInstallationIdCache.getInstance();
   }
 
   @After
