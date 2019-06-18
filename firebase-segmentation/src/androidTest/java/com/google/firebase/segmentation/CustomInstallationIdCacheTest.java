@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import androidx.test.InstrumentationRegistry;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -41,11 +41,11 @@ public class CustomInstallationIdCacheTest {
     FirebaseApp.clearInstancesForTest();
     firebaseApp0 =
         FirebaseApp.initializeApp(
-            InstrumentationRegistry.getContext(),
+            ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder().setApplicationId("1:123456789:android:abcdef").build());
     firebaseApp1 =
         FirebaseApp.initializeApp(
-            InstrumentationRegistry.getContext(),
+            ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder().setApplicationId("1:987654321:android:abcdef").build(),
             "firebase_app_1");
     cache = CustomInstallationIdCache.getInstance();
