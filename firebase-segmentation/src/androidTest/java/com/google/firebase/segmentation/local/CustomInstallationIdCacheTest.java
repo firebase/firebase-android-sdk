@@ -28,9 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/**
- * Instrumented tests for {@link CustomInstallationIdCache}
- */
+/** Instrumented tests for {@link CustomInstallationIdCache} */
 @RunWith(AndroidJUnit4.class)
 public class CustomInstallationIdCacheTest {
 
