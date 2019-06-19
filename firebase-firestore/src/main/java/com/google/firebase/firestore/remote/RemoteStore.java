@@ -677,7 +677,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void handleWriteHandshakeError(Status status) {
     hardAssert(!status.isOk(), "Handling write error with status OK.");
-
     // Reset the token if it's a permanent error, signaling the write stream is no longer valid.
     // Note that the handshake does not count as a write: see comments on isPermanentWriteError for
     // details.
