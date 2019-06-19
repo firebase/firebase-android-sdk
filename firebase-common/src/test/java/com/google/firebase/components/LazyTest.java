@@ -46,7 +46,7 @@ public final class LazyTest {
     Object instance = new Object();
     Lazy<Object> lazy = new Lazy<>(instance);
 
-    assertThat(lazy.get()).isSameAs(instance);
+    assertThat(lazy.get()).isSameInstanceAs(instance);
   }
 
   @Test
@@ -56,7 +56,7 @@ public final class LazyTest {
 
     when(mockProvider.get()).thenReturn(instance);
 
-    assertThat(lazy.get()).isSameAs(instance);
+    assertThat(lazy.get()).isSameInstanceAs(instance);
 
     verify(mockProvider, times(1)).get();
   }

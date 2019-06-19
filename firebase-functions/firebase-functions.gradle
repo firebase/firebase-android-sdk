@@ -29,7 +29,7 @@ android {
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
-        minSdkVersion project.minSdkVersion
+        minSdkVersion 16
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -50,16 +50,16 @@ android {
 
 dependencies {
     implementation project(':firebase-common')
-    implementation 'com.google.android.gms:play-services-basement:16.2.0'
-    implementation 'com.google.android.gms:play-services-base:16.1.0'
-    implementation 'com.google.android.gms:play-services-tasks:16.0.1'
-    implementation ('com.google.firebase:firebase-iid:17.0.3') {
+    implementation 'com.google.android.gms:play-services-basement:17.0.0'
+    implementation 'com.google.android.gms:play-services-base:17.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation ('com.google.firebase:firebase-iid:19.0.0') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
     implementation ('com.google.firebase:firebase-auth-interop:17.0.0') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
-    implementation 'com.google.firebase:firebase-iid-interop:16.0.1'
+    implementation 'com.google.firebase:firebase-iid-interop:17.0.0'
 
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
 

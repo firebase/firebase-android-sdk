@@ -23,6 +23,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.google.android.datatransport.cct.CctTransportBackend.getTzOffset;
 import static com.google.android.datatransport.cct.ProtoMatchers.protoMatcher;
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
@@ -47,6 +48,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Config;
+import org.robolectric.annotation.Implementation;
+import org.robolectric.annotation.Implements;
 
 @RunWith(RobolectricTestRunner.class)
 public class CctTransportBackendTest {
@@ -204,5 +208,60 @@ public class CctTransportBackendTest {
     BackendResponse response = backend.send(getBackendRequest());
 
     assertEquals(response, BackendResponse.transientError());
+  }
+
+  @Test
+  public void decorate_whenOnline_shouldProperlyPopulateNetworkInfo() {
+    CctTransportBackend backend =
+        new CctTransportBackend(
+            RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock, 300);
+
+    EventInternal result =
+        backend.decorate(
+            EventInternal.builder()
+                .setEventMillis(INITIAL_WALL_TIME)
+                .setUptimeMillis(INITIAL_UPTIME)
+                .setTransportName("3")
+                .setPayload(PAYLOAD.toByteArray())
+                .build());
+
+    assertThat(result.get(CctTransportBackend.KEY_NETWORK_TYPE))
+        .isEqualTo(String.valueOf(NetworkConnectionInfo.NetworkType.MOBILE_VALUE));
+    assertThat(result.get(CctTransportBackend.KEY_MOBILE_SUBTYPE))
+        .isEqualTo(String.valueOf(NetworkConnectionInfo.MobileSubtype.EDGE_VALUE));
+  }
+
+  @Test
+  @Config(shadows = {OfflineConnectivityManagerShadow.class})
+  public void decorate_whenOffline_shouldProperlyPopulateNetworkInfo() {
+    CctTransportBackend backend =
+        new CctTransportBackend(
+            RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock, 300);
+
+    EventInternal result =
+        backend.decorate(
+            EventInternal.builder()
+                .setEventMillis(INITIAL_WALL_TIME)
+                .setUptimeMillis(INITIAL_UPTIME)
+                .setTransportName("3")
+                .setPayload(PAYLOAD.toByteArray())
+                .build());
+
+    assertThat(result.get(CctTransportBackend.KEY_NETWORK_TYPE))
+        .isEqualTo(String.valueOf(NetworkConnectionInfo.NetworkType.NONE_VALUE));
+    assertThat(result.get(CctTransportBackend.KEY_MOBILE_SUBTYPE))
+        .isEqualTo(
+            String.valueOf(NetworkConnectionInfo.MobileSubtype.UNKNOWN_MOBILE_SUBTYPE_VALUE));
+  }
+
+  // When there is no active network, the ConnectivityManager returns null when
+  // getActiveNetworkInfo() is called.
+  @Implements(ConnectivityManager.class)
+  public static class OfflineConnectivityManagerShadow {
+
+    @Implementation
+    public NetworkInfo getActiveNetworkInfo() {
+      return null;
+    }
   }
 }

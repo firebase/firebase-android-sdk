@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+
 buildscript {
   repositories {
     google()
@@ -88,7 +92,7 @@ apply from: "configure.gradle"
 dependencies {
   // Common
   api "androidx.test:runner:1.2.0"
-  api "com.google.truth:truth:0.44"
+  api "com.google.truth:truth:0.45"
   api "junit:junit:4.12"
 
   implementation "androidx.test:rules:1.2.0"
@@ -112,6 +116,14 @@ dependencies {
   // Storage
   storageImplementation "com.google.firebase:firebase-auth"
   storageImplementation "com.google.firebase:firebase-storage"
+}
+
+clean.doLast {
+  def paths = Files.newDirectoryStream(Paths.get("."), "build-*")
+
+  for (Path path : paths) {
+    project.delete "$path/"
+  }
 }
 
 apply plugin: "com.google.gms.google-services"
