@@ -650,21 +650,20 @@ public class ValidationTest {
         "Invalid Query. 'array_contains_any' filters support a maximum of 10 elements in the value array.");
 
     expectError(
-            () -> testCollection().whereIn("bar", asList("foo", null)),
-            "Invalid Query. 'in' filters cannot contain 'null' in the value array.");
+        () -> testCollection().whereIn("bar", asList("foo", null)),
+        "Invalid Query. 'in' filters cannot contain 'null' in the value array.");
 
     expectError(
-            () -> testCollection().whereArrayContainsAny("bar", asList("foo", null)),
-            "Invalid Query. 'array_contains_any' filters cannot contain 'null' in the value array.");
+        () -> testCollection().whereArrayContainsAny("bar", asList("foo", null)),
+        "Invalid Query. 'array_contains_any' filters cannot contain 'null' in the value array.");
 
     expectError(
-            () -> testCollection().whereIn("bar", asList("foo", Double.NaN)),
-            "Invalid Query. 'in' filters cannot contain 'NaN' in the value array.");
+        () -> testCollection().whereIn("bar", asList("foo", Double.NaN)),
+        "Invalid Query. 'in' filters cannot contain 'NaN' in the value array.");
 
     expectError(
-            () -> testCollection().whereArrayContainsAny("bar", asList("foo", Float.NaN)),
-            "Invalid Query. 'array_contains_any' filters cannot contain 'NaN' in the value array.");
-
+        () -> testCollection().whereArrayContainsAny("bar", asList("foo", Float.NaN)),
+        "Invalid Query. 'array_contains_any' filters cannot contain 'NaN' in the value array.");
   }
 
   @Test
@@ -703,6 +702,12 @@ public class ValidationTest {
     expectError(() -> collection.whereGreaterThanOrEqualTo(FieldPath.documentId(), 1), reason);
 
     reason =
+        "Invalid query. When querying with FieldPath.documentId() you must provide "
+            + "a valid String or DocumentReference, but it was of type: java.util.Arrays$ArrayList";
+    ;
+    expectError(() -> collection.whereIn(FieldPath.documentId(), asList(1, 2)), reason);
+
+    reason =
         "Invalid query. When querying a collection group by FieldPath.documentId(), the value "
             + "provided must result in a valid document path, but 'foo' is not because it has "
             + "an odd number of segments (1).";
@@ -720,9 +725,6 @@ public class ValidationTest {
         "Invalid query. You can't perform 'array_contains_any' queries on FieldPath.documentId().";
     expectError(
         () -> collection.whereArrayContainsAny(FieldPath.documentId(), asList(1, 2)), reason);
-
-    reason = "Invalid query. You can't perform 'in' queries on FieldPath.documentId().";
-    expectError(() -> collection.whereIn(FieldPath.documentId(), asList(1, 2)), reason);
   }
 
   // Helpers

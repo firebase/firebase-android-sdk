@@ -471,15 +471,15 @@ public class Query {
         }
         if (((List) value).contains(null)) {
           throw new IllegalArgumentException(
-                  "Invalid Query. '"
-                          + op.toString()
-                          + "' filters cannot contain 'null' in the value array.");
+              "Invalid Query. '"
+                  + op.toString()
+                  + "' filters cannot contain 'null' in the value array.");
         }
         if (((List) value).contains(Double.NaN) || ((List) value).contains(Float.NaN)) {
           throw new IllegalArgumentException(
-                  "Invalid Query. '"
-                          + op.toString()
-                          + "' filters cannot contain 'NaN' in the value array.");
+              "Invalid Query. '"
+                  + op.toString()
+                  + "' filters cannot contain 'NaN' in the value array.");
         }
       }
       fieldValue = firestore.getDataConverter().parseQueryValue(value);

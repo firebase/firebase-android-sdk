@@ -635,35 +635,35 @@ public final class RemoteSerializerTest {
   @Test
   public void testInSerialization() {
     Query q =
-            Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"))
-                    .filter(filter("tags", "in", asList("pending", "dimond")));
+        Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"))
+            .filter(filter("tags", "in", asList("pending", "dimond")));
     Target actual = serializer.encodeTarget(wrapQueryData(q));
     ArrayValue.Builder inFilterValue =
-            ArrayValue.newBuilder()
-                    .addValues(valueBuilder().setStringValue("pending"))
-                    .addValues(valueBuilder().setStringValue("dimond"));
+        ArrayValue.newBuilder()
+            .addValues(valueBuilder().setStringValue("pending"))
+            .addValues(valueBuilder().setStringValue("dimond"));
 
     StructuredQuery.Builder structuredQueryBuilder =
-            StructuredQuery.newBuilder()
-                    .addFrom(CollectionSelector.newBuilder().setCollectionId("attachments"))
-                    .setWhere(
-                            Filter.newBuilder()
-                                    .setFieldFilter(
-                                            FieldFilter.newBuilder()
-                                                    .setField(FieldReference.newBuilder().setFieldPath("tags"))
-                                                    .setOp(Operator.IN)
-                                                    .setValue(valueBuilder().setArrayValue(inFilterValue))))
-                    .addOrderBy(defaultKeyOrder());
+        StructuredQuery.newBuilder()
+            .addFrom(CollectionSelector.newBuilder().setCollectionId("attachments"))
+            .setWhere(
+                Filter.newBuilder()
+                    .setFieldFilter(
+                        FieldFilter.newBuilder()
+                            .setField(FieldReference.newBuilder().setFieldPath("tags"))
+                            .setOp(Operator.IN)
+                            .setValue(valueBuilder().setArrayValue(inFilterValue))))
+            .addOrderBy(defaultKeyOrder());
     QueryTarget.Builder queryBuilder =
-            QueryTarget.newBuilder()
-                    .setParent("projects/p/databases/d/documents/rooms/1/messages/10")
-                    .setStructuredQuery(structuredQueryBuilder);
+        QueryTarget.newBuilder()
+            .setParent("projects/p/databases/d/documents/rooms/1/messages/10")
+            .setStructuredQuery(structuredQueryBuilder);
     Target expected =
-            Target.newBuilder()
-                    .setQuery(queryBuilder)
-                    .setTargetId(1)
-                    .setResumeToken(ByteString.EMPTY)
-                    .build();
+        Target.newBuilder()
+            .setQuery(queryBuilder)
+            .setTargetId(1)
+            .setResumeToken(ByteString.EMPTY)
+            .build();
 
     assertEquals(expected, actual);
     assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);

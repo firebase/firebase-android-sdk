@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -427,7 +428,9 @@ public class QueryTest {
     // much of anything else interesting to test.
   }
 
+  // TODO(in-queries): Re-enable once emulator support is added to travis.
   @Test
+  @Ignore
   public void testQueriesCanUseInFilters() {
     Map<String, Object> docA = map("zip", 98101);
     Map<String, Object> docB = map("zip", 91102);
@@ -448,7 +451,9 @@ public class QueryTest {
     assertEquals(asList(docF), querySnapshotToValues(snapshot));
   }
 
+  // TODO(in-queries): Re-enable once emulator support is added to travis.
   @Test
+  @Ignore
   public void testQueriesCanUseArrayContainsAnyFilters() {
     Map<String, Object> docA = map("array", asList(42L));
     Map<String, Object> docB = map("array", asList("a", 42L, "c"));
