@@ -69,7 +69,6 @@ android {
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        testInstrumentationRunnerArguments emulator: "false"
     }
 
     sourceSets {
@@ -101,9 +100,9 @@ android {
 
 android.libraryVariants.all { variant ->
     if (findProperty("emulator")) {
-        project.ext.useEmulatorForTests = true;
+        project.ext.useEmulatorForTests = true
     } else {
-        project.ext.useEmulatorForTests = false;
+        project.ext.useEmulatorForTests = false
     }
     variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "$project.ext.useEmulatorForTests")
 }
