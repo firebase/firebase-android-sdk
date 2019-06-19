@@ -157,6 +157,7 @@ class ApkSizeTestProject extends ExternalResource {
 
         Files.createDirectories(dest)
         FileUtils.copyDirectory(src.toFile(), dest.toFile())
+        FileUtils.deleteDirectory(dest.resolve("coverage").toFile())
     }
 
     /** Creates the fake project files for the temporary project. */
