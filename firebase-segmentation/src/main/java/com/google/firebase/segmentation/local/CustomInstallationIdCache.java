@@ -17,27 +17,30 @@ package com.google.firebase.segmentation.local;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
-import androidx.annotation.RestrictTo;
-import com.google.android.gms.common.util.Strings;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-class CustomInstallationIdCache {
+/**
+ * A layer that locally caches a few Firebase Segmentation attributes on top the Segmentation
+ * backend API.
+ */
+public class CustomInstallationIdCache {
 
   // Status of each cache entry
   // NOTE: never change the ordinal of the enum values because the enum values are stored in cache
   // as their ordinal numbers.
-  enum CacheStatus {
+  public enum CacheStatus {
     // Cache entry is synced to Firebase backend
     SYNCED,
-    // Cache entry is waiting for Firebase backend response or pending internal retry for retryable
-    // errors.
-    PENDING,
-    // Cache entry is not accepted by Firebase backend.
-    ERROR,
+    // Cache entry is waiting for Firebase backend response or internal network retry (for update
+    // operation).
+    PENDING_UPDATE,
+    // Cache entry is waiting for Firebase backend response or internal network retry (for clear
+    // operation).
+    PENDING_CLEAR
   }
 
   private static final String SHARED_PREFS_NAME = "CustomInstallationIdCache";
@@ -46,78 +49,58 @@ class CustomInstallationIdCache {
   private static final String INSTANCE_ID_KEY = "Iid";
   private static final String CACHE_STATUS_KEY = "Status";
 
-  private static CustomInstallationIdCache singleton = null;
   private final Executor ioExecuter;
   private final SharedPreferences prefs;
+  private final String persistenceKey;
 
-  static synchronized CustomInstallationIdCache getInstance() {
-    if (singleton == null) {
-      singleton = new CustomInstallationIdCache();
-    }
-    return singleton;
-  }
-
-  private CustomInstallationIdCache() {
-    // Since different FirebaseApp in the same Android application should have the same application
-    // context and same dir path, so that use the context of the default FirebaseApp to create the
-    // shared preferences.
+  public CustomInstallationIdCache(FirebaseApp firebaseApp) {
+    // Different FirebaseApp in the same Android application should have the same application
+    // context and same dir path
     prefs =
-        FirebaseApp.getInstance()
+        firebaseApp
             .getApplicationContext()
             .getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE);
-
+    persistenceKey = firebaseApp.getPersistenceKey();
     ioExecuter = Executors.newFixedThreadPool(2);
   }
 
   @Nullable
-  synchronized CustomInstallationIdCacheEntryValue readCacheEntryValue(FirebaseApp firebaseApp) {
-    String cid =
-        prefs.getString(getSharedPreferencesKey(firebaseApp, CUSTOM_INSTALLATION_ID_KEY), null);
-    String iid = prefs.getString(getSharedPreferencesKey(firebaseApp, INSTANCE_ID_KEY), null);
-    int status = prefs.getInt(getSharedPreferencesKey(firebaseApp, CACHE_STATUS_KEY), -1);
+  public synchronized CustomInstallationIdCacheEntryValue readCacheEntryValue() {
+    String cid = prefs.getString(getSharedPreferencesKey(CUSTOM_INSTALLATION_ID_KEY), null);
+    String iid = prefs.getString(getSharedPreferencesKey(INSTANCE_ID_KEY), null);
+    int status = prefs.getInt(getSharedPreferencesKey(CACHE_STATUS_KEY), -1);
 
-    if (Strings.isEmptyOrWhitespace(cid) || Strings.isEmptyOrWhitespace(iid) || status == -1) {
+    if (cid == null || iid == null || status == -1) {
       return null;
     }
 
     return CustomInstallationIdCacheEntryValue.create(cid, iid, CacheStatus.values()[status]);
   }
 
-  synchronized Task<Boolean> insertOrUpdateCacheEntry(
-      FirebaseApp firebaseApp, CustomInstallationIdCacheEntryValue entryValue) {
+  public synchronized Task<Boolean> insertOrUpdateCacheEntry(
+      CustomInstallationIdCacheEntryValue entryValue) {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putString(
-        getSharedPreferencesKey(firebaseApp, CUSTOM_INSTALLATION_ID_KEY),
-        entryValue.getCustomInstallationId());
-    editor.putString(
-        getSharedPreferencesKey(firebaseApp, INSTANCE_ID_KEY), entryValue.getFirebaseInstanceId());
-    editor.putInt(
-        getSharedPreferencesKey(firebaseApp, CACHE_STATUS_KEY),
-        entryValue.getCacheStatus().ordinal());
+        getSharedPreferencesKey(CUSTOM_INSTALLATION_ID_KEY), entryValue.getCustomInstallationId());
+    editor.putString(getSharedPreferencesKey(INSTANCE_ID_KEY), entryValue.getFirebaseInstanceId());
+    editor.putInt(getSharedPreferencesKey(CACHE_STATUS_KEY), entryValue.getCacheStatus().ordinal());
     return commitSharedPreferencesEditAsync(editor);
   }
 
-  synchronized Task<Boolean> clear(FirebaseApp firebaseApp) {
+  public synchronized Task<Boolean> clear() {
     SharedPreferences.Editor editor = prefs.edit();
-    editor.remove(getSharedPreferencesKey(firebaseApp, CUSTOM_INSTALLATION_ID_KEY));
-    editor.remove(getSharedPreferencesKey(firebaseApp, INSTANCE_ID_KEY));
-    editor.remove(getSharedPreferencesKey(firebaseApp, CACHE_STATUS_KEY));
+    editor.remove(getSharedPreferencesKey(CUSTOM_INSTALLATION_ID_KEY));
+    editor.remove(getSharedPreferencesKey(INSTANCE_ID_KEY));
+    editor.remove(getSharedPreferencesKey(CACHE_STATUS_KEY));
     return commitSharedPreferencesEditAsync(editor);
   }
 
-  @RestrictTo(RestrictTo.Scope.TESTS)
-  synchronized Task<Boolean> clearAll() {
-    SharedPreferences.Editor editor = prefs.edit();
-    editor.clear();
-    return commitSharedPreferencesEditAsync(editor);
-  }
-
-  private static String getSharedPreferencesKey(FirebaseApp firebaseApp, String key) {
-    return String.format("%s|%s", firebaseApp.getPersistenceKey(), key);
+  private String getSharedPreferencesKey(String key) {
+    return String.format("%s|%s", persistenceKey, key);
   }
 
   private Task<Boolean> commitSharedPreferencesEditAsync(SharedPreferences.Editor editor) {
-    TaskCompletionSource<Boolean> result = new TaskCompletionSource<Boolean>();
+    TaskCompletionSource<Boolean> result = new TaskCompletionSource<>();
     ioExecuter.execute(
         new Runnable() {
           @Override
