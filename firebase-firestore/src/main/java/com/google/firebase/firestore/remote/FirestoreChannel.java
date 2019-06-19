@@ -199,7 +199,7 @@ class FirestoreChannel {
                       if (status.isOk()) {
                         tcs.setResult(results);
                       } else {
-                        tcs.setException(Util.exceptionFromStatus(status));
+                        tcs.setException(exceptionFromStatus(status));
                       }
                     }
                   },
@@ -244,7 +244,7 @@ class FirestoreChannel {
                                   Code.INTERNAL));
                         }
                       } else {
-                        tcs.setException(Util.exceptionFromStatus(status));
+                        tcs.setException(exceptionFromStatus(status));
                       }
                     }
                   },
@@ -260,6 +260,17 @@ class FirestoreChannel {
             });
 
     return tcs.getTask();
+  }
+
+  private FirebaseFirestoreException exceptionFromStatus(Status status) {
+    if (Datastore.isSslHandshakeError(status)) {
+      return new FirebaseFirestoreException(
+          Datastore.SSL_DEPENDENCY_ERROR_MESSAGE,
+          Code.fromValue(status.getCode().value()),
+          status.getCause());
+    }
+
+    return Util.exceptionFromStatus(status);
   }
 
   public void invalidateToken() {
