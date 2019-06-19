@@ -587,7 +587,7 @@ public class DocumentSnapshot {
     } else if (value instanceof TimestampValue) {
       return convertTimestamp((TimestampValue) value, options);
     } else if (value instanceof ServerTimestampValue) {
-      return convertServerTimestamp((ServerTimestampValue)value, options);
+      return convertServerTimestamp((ServerTimestampValue) value, options);
     } else {
       return value.value();
     }
