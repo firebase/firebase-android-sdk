@@ -1,13 +1,20 @@
 # Unreleased
+
+# 20.1.0
 - [changed] SSL and gRPC initialization now happens on a separate thread, which
   reduces the time taken to produce the first query result.
-- [fixed] Updated gRPC to 1.21.0. A bug in the prior version would occasionally
-  cause a crash if a network state change occurred concurrently with an RPC.
-  (#428)
 - [feature] Added `clearPersistence()`, which clears the persistent storage
   including pending writes and cached documents. This is intended to help
   write reliable tests (https://github.com/firebase/firebase-js-sdk/issues/449).
 
+# 20.0.0
+- [changed] Migrated from the Android Support Libraries to the Jetpack
+  (AndroidX) Libraries.
+
+# 19.0.2
+- [fixed] Updated gRPC to 1.21.0. A bug in the prior version would occasionally
+  cause a crash if a network state change occurred concurrently with an RPC.
+  (#428)
 
 # 19.0.1
 - [fixed] Fixed an issue that prevented schema migrations for clients with
