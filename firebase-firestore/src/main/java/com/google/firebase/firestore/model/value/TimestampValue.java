@@ -32,17 +32,8 @@ public final class TimestampValue extends FieldValue {
 
   @Override
   @NonNull
-  public Object value() {
+  public Timestamp value() {
     return internalValue;
-  }
-
-  @Override
-  public Object value(FieldValueOptions options) {
-    if (options.areTimestampsInSnapshotsEnabled()) {
-      return internalValue;
-    } else {
-      return internalValue.toDate();
-    }
   }
 
   public Timestamp getInternalValue() {

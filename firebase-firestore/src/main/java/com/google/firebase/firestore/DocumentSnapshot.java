@@ -24,9 +24,10 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.FieldValueOptions;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ReferenceValue;
+import com.google.firebase.firestore.model.value.ServerTimestampValue;
+import com.google.firebase.firestore.model.value.TimestampValue;
 import com.google.firebase.firestore.util.CustomClassMapper;
 import com.google.firebase.firestore.util.Logger;
 import java.util.ArrayList;
@@ -78,6 +79,18 @@ public class DocumentSnapshot {
     PREVIOUS;
 
     static final ServerTimestampBehavior DEFAULT = ServerTimestampBehavior.NONE;
+  }
+
+  /** Holds settings that define field value deserialization options. */
+  static class FieldValueOptions {
+    final ServerTimestampBehavior serverTimestampBehavior;
+    final boolean timestampsInSnapshotsEnabled;
+
+    private FieldValueOptions(
+        ServerTimestampBehavior serverTimestampBehavior, boolean timestampsInSnapshotsEnabled) {
+      this.serverTimestampBehavior = serverTimestampBehavior;
+      this.timestampsInSnapshotsEnabled = timestampsInSnapshotsEnabled;
+    }
   }
 
   private final FirebaseFirestore firestore;
@@ -165,7 +178,7 @@ public class DocumentSnapshot {
         ? null
         : convertObject(
             doc.getData(),
-            FieldValueOptions.create(
+            new FieldValueOptions(
                 serverTimestampBehavior,
                 firestore.getFirestoreSettings().areTimestampsInSnapshotsEnabled()));
   }
@@ -286,7 +299,7 @@ public class DocumentSnapshot {
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
     return getInternal(
         fieldPath.getInternalPath(),
-        FieldValueOptions.create(
+        new FieldValueOptions(
             serverTimestampBehavior,
             firestore.getFirestoreSettings().areTimestampsInSnapshotsEnabled()));
   }
@@ -449,7 +462,7 @@ public class DocumentSnapshot {
     Object maybeDate =
         getInternal(
             FieldPath.fromDotSeparatedPath(field).getInternalPath(),
-            FieldValueOptions.create(
+            new FieldValueOptions(
                 serverTimestampBehavior, /*timestampsInSnapshotsEnabled=*/ false));
     return castTypedValue(maybeDate, field, Date.class);
   }
@@ -492,8 +505,7 @@ public class DocumentSnapshot {
     Object maybeTimestamp =
         getInternal(
             FieldPath.fromDotSeparatedPath(field).getInternalPath(),
-            FieldValueOptions.create(
-                serverTimestampBehavior, /*timestampsInSnapshotsEnabled=*/ true));
+            new FieldValueOptions(serverTimestampBehavior, /*timestampsInSnapshotsEnabled=*/ true));
     return castTypedValue(maybeTimestamp, field, Timestamp.class);
   }
 
@@ -571,27 +583,54 @@ public class DocumentSnapshot {
     } else if (value instanceof ArrayValue) {
       return convertArray((ArrayValue) value, options);
     } else if (value instanceof ReferenceValue) {
-      ReferenceValue referenceValue = (ReferenceValue) value;
-      DocumentKey key = (DocumentKey) referenceValue.value(options);
-      DatabaseId refDatabase = ((ReferenceValue) value).getDatabaseId();
-      DatabaseId database = this.firestore.getDatabaseId();
-      if (!refDatabase.equals(database)) {
-        // TODO: Somehow support foreign references.
-        Logger.warn(
-            "DocumentSnapshot",
-            "Document %s contains a document reference within a different database "
-                + "(%s/%s) which is not supported. It will be treated as a reference in "
-                + "the current database (%s/%s) instead.",
-            key.getPath(),
-            refDatabase.getProjectId(),
-            refDatabase.getDatabaseId(),
-            database.getProjectId(),
-            database.getDatabaseId());
-      }
-      return new DocumentReference(key, firestore);
+      return convertReference((ReferenceValue) value);
+    } else if (value instanceof TimestampValue) {
+      return convertTimestamp((TimestampValue) value, options);
+    } else if (value instanceof ServerTimestampValue) {
+      return convertServerTimestamp((ServerTimestampValue) value, options);
     } else {
-      return value.value(options);
+      return value.value();
     }
+  }
+
+  private Object convertServerTimestamp(ServerTimestampValue value, FieldValueOptions options) {
+    switch (options.serverTimestampBehavior) {
+      case PREVIOUS:
+        return value.getPreviousValue();
+      case ESTIMATE:
+        return value.getLocalWriteTime();
+      default:
+        return value.value();
+    }
+  }
+
+  private Object convertTimestamp(TimestampValue value, FieldValueOptions options) {
+    Timestamp timestamp = value.value();
+    if (options.timestampsInSnapshotsEnabled) {
+      return timestamp;
+    } else {
+      return timestamp.toDate();
+    }
+  }
+
+  private Object convertReference(ReferenceValue value) {
+    DocumentKey key = value.value();
+    DatabaseId refDatabase = value.getDatabaseId();
+    DatabaseId database = this.firestore.getDatabaseId();
+    if (!refDatabase.equals(database)) {
+      // TODO: Somehow support foreign references.
+      Logger.warn(
+          "DocumentSnapshot",
+          "Document %s contains a document reference within a different database "
+              + "(%s/%s) which is not supported. It will be treated as a reference in "
+              + "the current database (%s/%s) instead.",
+          key.getPath(),
+          refDatabase.getProjectId(),
+          refDatabase.getDatabaseId(),
+          database.getProjectId(),
+          database.getDatabaseId());
+    }
+    return new DocumentReference(key, firestore);
   }
 
   private Map<String, Object> convertObject(ObjectValue objectValue, FieldValueOptions options) {
