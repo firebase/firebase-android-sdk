@@ -577,7 +577,7 @@ public final class RemoteSerializerTest {
         Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"))
             .filter(filter("prop", "<", 42))
             .filter(filter("author", "==", "dimond"))
-            .filter(filter("tags", "array-contains", "pending"))
+            .filter(filter("tags", "array-contains", "pending"));
     Target actual = serializer.encodeTarget(wrapQueryData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
