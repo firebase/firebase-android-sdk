@@ -7,8 +7,10 @@
 - [feature] Added `clearPersistence()`, which clears the persistent storage
   including pending writes and cached documents. This is intended to help
   write reliable tests (https://github.com/firebase/firebase-js-sdk/issues/449).
-- [changed] Firestore now provides a clear error message when it fails to load
-  SSL Ciphers during a connection attempt.
+- [changed] Instead of failing silently, Firestore now crahses the client app
+  if it fails to load SSL Ciphers. To avoid these crashes, you must bundle 
+  Conscrupt if you support non-GMSCore devices on Android KitKat or JellyBean 
+  (see https://github.com/grpc/grpc-java/blob/master/SECURITY.md#tls-on-android).
 
 # 19.0.1
 - [fixed] Fixed an issue that prevented schema migrations for clients with
