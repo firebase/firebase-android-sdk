@@ -583,44 +583,54 @@ public class DocumentSnapshot {
     } else if (value instanceof ArrayValue) {
       return convertArray((ArrayValue) value, options);
     } else if (value instanceof ReferenceValue) {
-      ReferenceValue referenceValue = (ReferenceValue) value;
-      DocumentKey key = referenceValue.value();
-      DatabaseId refDatabase = ((ReferenceValue) value).getDatabaseId();
-      DatabaseId database = this.firestore.getDatabaseId();
-      if (!refDatabase.equals(database)) {
-        // TODO: Somehow support foreign references.
-        Logger.warn(
-            "DocumentSnapshot",
-            "Document %s contains a document reference within a different database "
-                + "(%s/%s) which is not supported. It will be treated as a reference in "
-                + "the current database (%s/%s) instead.",
-            key.getPath(),
-            refDatabase.getProjectId(),
-            refDatabase.getDatabaseId(),
-            database.getProjectId(),
-            database.getDatabaseId());
-      }
-      return new DocumentReference(key, firestore);
+      return convertReference((ReferenceValue) value);
     } else if (value instanceof TimestampValue) {
-      Timestamp timestamp = ((TimestampValue) value).value();
-      if (options.timestampsInSnapshotsEnabled) {
-        return timestamp;
-      } else {
-        return timestamp.toDate();
-      }
+      return convertTimestamp((TimestampValue) value, options);
     } else if (value instanceof ServerTimestampValue) {
-      ServerTimestampValue serverTimestampValue = (ServerTimestampValue) value;
-      switch (options.serverTimestampBehavior) {
-        case PREVIOUS:
-          return serverTimestampValue.getPreviousValue();
-        case ESTIMATE:
-          return serverTimestampValue.getLocalWriteTime();
-        default:
-          return value.value();
-      }
+      return convertServerTimestamp((ServerTimestampValue)value, options);
     } else {
       return value.value();
     }
+  }
+
+  private Object convertServerTimestamp(ServerTimestampValue value, FieldValueOptions options) {
+    switch (options.serverTimestampBehavior) {
+      case PREVIOUS:
+        return value.getPreviousValue();
+      case ESTIMATE:
+        return value.getLocalWriteTime();
+      default:
+        return value.value();
+    }
+  }
+
+  private Object convertTimestamp(TimestampValue value, FieldValueOptions options) {
+    Timestamp timestamp = value.value();
+    if (options.timestampsInSnapshotsEnabled) {
+      return timestamp;
+    } else {
+      return timestamp.toDate();
+    }
+  }
+
+  private Object convertReference(ReferenceValue value) {
+    DocumentKey key = value.value();
+    DatabaseId refDatabase = value.getDatabaseId();
+    DatabaseId database = this.firestore.getDatabaseId();
+    if (!refDatabase.equals(database)) {
+      // TODO: Somehow support foreign references.
+      Logger.warn(
+          "DocumentSnapshot",
+          "Document %s contains a document reference within a different database "
+              + "(%s/%s) which is not supported. It will be treated as a reference in "
+              + "the current database (%s/%s) instead.",
+          key.getPath(),
+          refDatabase.getProjectId(),
+          refDatabase.getDatabaseId(),
+          database.getProjectId(),
+          database.getDatabaseId());
+    }
+    return new DocumentReference(key, firestore);
   }
 
   private Map<String, Object> convertObject(ObjectValue objectValue, FieldValueOptions options) {

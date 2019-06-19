@@ -55,9 +55,13 @@ public final class ServerTimestampValue extends FieldValue {
    */
   @Nullable
   public Object getPreviousValue() {
+    if (previousValue instanceof ServerTimestampValue) {
+      return ((ServerTimestampValue) previousValue).getPreviousValue();
+    }
+
     return previousValue != null ? previousValue.value() : null;
   }
-  
+
   public Timestamp getLocalWriteTime() {
     return localWriteTime;
   }
