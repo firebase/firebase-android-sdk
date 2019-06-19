@@ -44,7 +44,7 @@ afterEvaluate {
 // somewhere in the task graph (for instance if you ran
 // ./gradlew test at the root project).
 def isTesting = getGradle().getStartParameter().getTaskNames().any({ String taskName ->
-    def hasProjectTestTask = taskName.contains("$name") &&  ['AndroidTest', 'connectedCheck', 'deviceCheck'].any({ taskName.contains(it)})
+    def hasProjectTestTask = taskName.contains("$name") &&  ['AndroidTest', 'connectedCheck', 'deviceCheck', 'checkChanged'].any({ taskName.contains(it)})
 
     // this is needed for storage test app to build
     def hasStorageAppAssembleTask = taskName == ":firebase-storage:test-app:assembleRelease"
