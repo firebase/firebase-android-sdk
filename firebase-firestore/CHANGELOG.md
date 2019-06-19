@@ -9,8 +9,8 @@
   write reliable tests (https://github.com/firebase/firebase-js-sdk/issues/449).
 - [changed] Instead of failing silently, Firestore now crahses the client app
   if it fails to load SSL Ciphers. To avoid these crashes, you must bundle 
-  Conscrypt if you support non-GMSCore devices on Android KitKat or JellyBean 
-  (see https://github.com/grpc/grpc-java/blob/master/SECURITY.md#tls-on-android).
+  Conscrypt to support non-GMSCore devices on Android KitKat or JellyBean (see
+  https://github.com/grpc/grpc-java/blob/master/SECURITY.md#tls-on-android).
 
 # 19.0.1
 - [fixed] Fixed an issue that prevented schema migrations for clients with
