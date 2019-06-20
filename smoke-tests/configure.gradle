@@ -30,4 +30,23 @@ def configurePlatform() {
   }
 }
 
+def configureRepositories() {
+  def m2repo = "../build/m2repository/"
+  if (project.hasProperty("m2repo")) {
+    m2repo = project.getProperty("m2repo")
+  }
+
+  project.repositories {
+    // This is necessary for Bill of Materials injection. This repository is created by running the
+    // `assembleAllForSmokeTests` task on the main firebase-android-sdk project.
+    maven {
+      url m2repo
+    }
+
+    google()
+    jcenter()
+  }
+}
+
+configureRepositories()
 configurePlatform()

@@ -77,17 +77,6 @@ android {
   }
 }
 
-repositories {
-  google()
-  jcenter()
-
-  // This is necessary for Bill of Materials injection. This repository is created by running the
-  // `publishAllToBuildDir` task on the main firebase-android-sdk project.
-  maven {
-    url "../build/m2repository/"
-  }
-}
-
 apply from: "configure.gradle"
 
 dependencies {
