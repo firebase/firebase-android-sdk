@@ -4,12 +4,19 @@ This repository contains a subset of the Firebase Android SDK source. It
 currently includes the following Firebase libraries, and some of their
 dependencies:
 
+  * `firebase-abt`
   * `firebase-common`
+  * `firebase-common-ktx`
   * `firebase-database`
-  * `firebase-functions`
+  * `firebase-database-collection`
+  * `firebase-datatransport`
   * `firebase-firestore`
-  * `firebase-storage`
+  * `firebase-firestore-ktx`
+  * `firebase-functions`
+  * `firebase-functions-ktx`
   * `firebase-inappmessaging-display`
+  * `firebase-remote-config`
+  * `firebase-storage`
   
 
 Firebase is an app development platform with tools to help you build, grow and
