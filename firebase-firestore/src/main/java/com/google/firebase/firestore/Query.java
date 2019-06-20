@@ -343,9 +343,9 @@ public class Query {
    * @param value The array that contains the values to match.
    * @return The created Query.
    */
+  // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  @PublicApi
-  public Query whereArrayContainsAny(@NonNull String field, @NonNull List<Object> value) {
+  Query whereArrayContainsAny(@NonNull String field, @NonNull List<Object> value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS_ANY, value);
   }
 
@@ -361,9 +361,9 @@ public class Query {
    * @param value The array that contains the values to match.
    * @return The created Query.
    */
+  // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  @PublicApi
-  public Query whereArrayContainsAny(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
+  Query whereArrayContainsAny(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
     return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, value);
   }
 
@@ -378,9 +378,9 @@ public class Query {
    * @param value The array that contains the values to match.
    * @return The created Query.
    */
+  // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  @PublicApi
-  public Query whereIn(@NonNull String field, @NonNull List<Object> value) {
+  Query whereIn(@NonNull String field, @NonNull List<Object> value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.IN, value);
   }
 
@@ -395,9 +395,9 @@ public class Query {
    * @param value The array that contains the values to match.
    * @return The created Query.
    */
+  // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  @PublicApi
-  public Query whereIn(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
+  Query whereIn(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
     return whereHelper(fieldPath, Operator.IN, value);
   }
 
