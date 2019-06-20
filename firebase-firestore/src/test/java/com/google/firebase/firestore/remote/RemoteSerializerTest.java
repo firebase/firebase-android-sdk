@@ -670,14 +670,13 @@ public final class RemoteSerializerTest {
                     .setValue(valueBuilder().setArrayValue(arrayContainsAnyFilterValue))
                     .build())
             .build();
-    
+
     assertEquals(filter, expectedFilter);
   }
 
-  // PORTING NOTE: Isolated array-contains filter test omitted since we seem to have omitted
-  // isolated filter tests on Android (and the encodeRelationFilter() / decodeRelationFilter()
-  // serializer methods are private) in favor of relying on the larger tests. array-contains
-  // encoding / decoding is covered by testEncodesMultipleFiltersOnDeeperCollections().
+  // TODO(PORTING NOTE): Android currently tests most filter serialization (for equals, greater
+  // than, array-contains, etc.) only in testEncodesMultipleFiltersOnDeeperCollections and lacks
+  // isolated filter tests like the other platforms have. We should fix this.
 
   @Test
   public void testEncodesNullFilter() {
