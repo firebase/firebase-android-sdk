@@ -69,9 +69,7 @@ public class FirebaseSegmentationInstrumentedTest {
     firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
-            new FirebaseOptions.Builder()
-                .setApplicationId("1" + ":123456789:android:abcdef")
-                .build());
+            new FirebaseOptions.Builder().setApplicationId("1:123456789:android:abcdef").build());
     actualCache = new CustomInstallationIdCache(firebaseApp);
 
     when(backendClientReturnsOk.updateCustomInstallationId(

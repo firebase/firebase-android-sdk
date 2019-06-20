@@ -75,7 +75,7 @@ public class FirebaseSegmentation {
    */
   @NonNull
   public static FirebaseSegmentation getInstance(@NonNull FirebaseApp app) {
-    Preconditions.checkArgument(app != null, "Null is not a valid value " + "of FirebaseApp.");
+    Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
     return app.get(FirebaseSegmentation.class);
   }
 
