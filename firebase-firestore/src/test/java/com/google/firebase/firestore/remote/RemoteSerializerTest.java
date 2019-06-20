@@ -36,6 +36,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.RelationFilter;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -634,76 +635,43 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testInSerialization() {
-    Query q =
-        Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"))
-            .filter(filter("tags", "in", asList("pending", "dimond")));
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
-    ArrayValue.Builder inFilterValue =
-        ArrayValue.newBuilder()
-            .addValues(valueBuilder().setStringValue("pending"))
-            .addValues(valueBuilder().setStringValue("dimond"));
+    StructuredQuery.Filter filter =
+        serializer.encodeRelationFilter(((RelationFilter) filter("field", "in", asList(42))));
 
-    StructuredQuery.Builder structuredQueryBuilder =
-        StructuredQuery.newBuilder()
-            .addFrom(CollectionSelector.newBuilder().setCollectionId("attachments"))
-            .setWhere(
-                Filter.newBuilder()
-                    .setFieldFilter(
-                        FieldFilter.newBuilder()
-                            .setField(FieldReference.newBuilder().setFieldPath("tags"))
-                            .setOp(Operator.IN)
-                            .setValue(valueBuilder().setArrayValue(inFilterValue))))
-            .addOrderBy(defaultKeyOrder());
-    QueryTarget.Builder queryBuilder =
-        QueryTarget.newBuilder()
-            .setParent("projects/p/databases/d/documents/rooms/1/messages/10")
-            .setStructuredQuery(structuredQueryBuilder);
-    Target expected =
-        Target.newBuilder()
-            .setQuery(queryBuilder)
-            .setTargetId(1)
-            .setResumeToken(ByteString.EMPTY)
+    ArrayValue.Builder inFilterValue =
+        ArrayValue.newBuilder().addValues(valueBuilder().setIntegerValue(42));
+    StructuredQuery.Filter expectedFilter =
+        Filter.newBuilder()
+            .setFieldFilter(
+                FieldFilter.newBuilder()
+                    .setField(FieldReference.newBuilder().setFieldPath("field"))
+                    .setOp(Operator.IN)
+                    .setValue(valueBuilder().setArrayValue(inFilterValue))
+                    .build())
             .build();
 
-    assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(filter, expectedFilter);
   }
 
   @Test
   public void testArrayContainsAnySerialization() {
-    Query q =
-        Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"))
-            .filter(filter("tags", "array-contains-any", asList("pending", "dimond")));
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    StructuredQuery.Filter filter =
+        serializer.encodeRelationFilter(
+            ((RelationFilter) filter("field", "array-contains-any", asList(42))));
+
     ArrayValue.Builder arrayContainsAnyFilterValue =
-        ArrayValue.newBuilder()
-            .addValues(valueBuilder().setStringValue("pending"))
-            .addValues(valueBuilder().setStringValue("dimond"));
-
-    StructuredQuery.Builder structuredQueryBuilder =
-        StructuredQuery.newBuilder()
-            .addFrom(CollectionSelector.newBuilder().setCollectionId("attachments"))
-            .setWhere(
-                Filter.newBuilder()
-                    .setFieldFilter(
-                        FieldFilter.newBuilder()
-                            .setField(FieldReference.newBuilder().setFieldPath("tags"))
-                            .setOp(Operator.ARRAY_CONTAINS_ANY)
-                            .setValue(valueBuilder().setArrayValue(arrayContainsAnyFilterValue))))
-            .addOrderBy(defaultKeyOrder());
-    QueryTarget.Builder queryBuilder =
-        QueryTarget.newBuilder()
-            .setParent("projects/p/databases/d/documents/rooms/1/messages/10")
-            .setStructuredQuery(structuredQueryBuilder);
-    Target expected =
-        Target.newBuilder()
-            .setQuery(queryBuilder)
-            .setTargetId(1)
-            .setResumeToken(ByteString.EMPTY)
+        ArrayValue.newBuilder().addValues(valueBuilder().setIntegerValue(42));
+    StructuredQuery.Filter expectedFilter =
+        Filter.newBuilder()
+            .setFieldFilter(
+                FieldFilter.newBuilder()
+                    .setField(FieldReference.newBuilder().setFieldPath("field"))
+                    .setOp(Operator.ARRAY_CONTAINS_ANY)
+                    .setValue(valueBuilder().setArrayValue(arrayContainsAnyFilterValue))
+                    .build())
             .build();
-
-    assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    
+    assertEquals(filter, expectedFilter);
   }
 
   // PORTING NOTE: Isolated array-contains filter test omitted since we seem to have omitted

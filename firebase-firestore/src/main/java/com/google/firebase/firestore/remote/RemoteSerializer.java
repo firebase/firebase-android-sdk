@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.GeoPoint;
@@ -867,7 +868,8 @@ public final class RemoteSerializer {
     return result;
   }
 
-  private StructuredQuery.Filter encodeRelationFilter(RelationFilter filter) {
+  @VisibleForTesting
+  StructuredQuery.Filter encodeRelationFilter(RelationFilter filter) {
     FieldFilter.Builder proto = FieldFilter.newBuilder();
     proto.setField(encodeFieldPath(filter.getField()));
     proto.setOp(encodeRelationFilterOperator(filter.getOperator()));

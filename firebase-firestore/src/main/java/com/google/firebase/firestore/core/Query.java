@@ -168,8 +168,8 @@ public final class Query {
   }
 
   /**
-   * Checks if any of the provided filter operatorsrelation are included in the query and returns
-   * the first one that is, or null if none are.
+   * Checks if any of the provided filter operators are included in the query and returns the first
+   * one that is, or null if none are.
    */
   @Nullable
   public Operator findOperatorFilter(List<Operator> filterOps) {

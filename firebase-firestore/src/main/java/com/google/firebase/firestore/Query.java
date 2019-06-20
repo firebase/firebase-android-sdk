@@ -355,7 +355,7 @@ public class Query {
    * from the provided array.
    *
    * <p>A Query can have only one whereArrayContainsAny() filter and it cannot be combined with
-   * whereArrayContains() or whereIn()..
+   * whereArrayContains() or whereIn().
    *
    * @param fieldPath The path of the field containing an array to search.
    * @param value The array that contains the values to match.
@@ -369,12 +369,12 @@ public class Query {
 
   /**
    * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value must equal at least one value from the provided array.
+   * specified field and the value must equal one of the values from the provided array.
    *
-   * <p>A Query can have only one whereIn() filter it cannot be combined with
+   * <p>A Query can have only one whereIn() filter, and it cannot be combined with
    * whereArrayContainsAny().
    *
-   * @param field The name of the field containing an array to search.
+   * @param field The name of the field to search.
    * @param value The array that contains the values to match.
    * @return The created Query.
    */
@@ -386,12 +386,12 @@ public class Query {
 
   /**
    * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value must equal at least one value from the provided array.
+   * specified field and the value must equal one of the values from the provided array.
    *
-   * <p>A Query can have only one whereIn() filter it cannot be combined with
+   * <p>A Query can have only one whereIn() filter, and it cannot be combined with
    * whereArrayContainsAny().
    *
-   * @param fieldPath The path of the field containing an array to search.
+   * @param fieldPath The path of the field to search.
    * @param value The array that contains the values to match.
    * @return The created Query.
    */

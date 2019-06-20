@@ -704,7 +704,6 @@ public class ValidationTest {
     reason =
         "Invalid query. When querying with FieldPath.documentId() you must provide "
             + "a valid String or DocumentReference, but it was of type: java.util.Arrays$ArrayList";
-    ;
     expectError(() -> collection.whereIn(FieldPath.documentId(), asList(1, 2)), reason);
 
     reason =
