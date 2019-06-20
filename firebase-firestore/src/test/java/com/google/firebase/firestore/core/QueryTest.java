@@ -160,6 +160,80 @@ public class QueryTest {
   }
 
   @Test
+  public void testInFilters() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("zip", "in", asList(12345)));
+
+    Document document = doc("collection/1", 0, map("zip", 12345));
+    assertTrue(query.matches(document));
+
+    // Value matches in array.
+    document = doc("collection/1", 0, map("zip", asList(12345)));
+    assertFalse(query.matches(document));
+
+    // Non-type match.
+    document = doc("collection/1", 0, map("zip", "12345"));
+    assertFalse(query.matches(document));
+
+    // Nested match.
+    document = doc("collection/1", 0, map("zip", asList("12345", map("zip", 12345))));
+    assertFalse(query.matches(document));
+  }
+
+  @Test
+  public void testInFiltersWithObjectValues() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("zip", "in", asList(map("a", asList(42)))));
+
+    // Containing object in array.
+    Document document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
+    assertFalse(query.matches(document));
+
+    // Containing object.
+    document = doc("collection/1", 0, map("zip", map("a", asList(42))));
+    assertTrue(query.matches(document));
+  }
+
+  @Test
+  public void testArrayContainsAnyFilters() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("zip", "array-contains-any", asList(12345)));
+
+    Document document = doc("collection/1", 0, map("zip", asList(12345)));
+    assertTrue(query.matches(document));
+
+    // Value matches in non-array.
+    document = doc("collection/1", 0, map("zip", 12345));
+    assertFalse(query.matches(document));
+
+    // Non-type match.
+    document = doc("collection/1", 0, map("zip", asList("12345")));
+    assertFalse(query.matches(document));
+
+    // Nested match.
+    document = doc("collection/1", 0, map("zip", asList("12345", map("zip", asList(12345)))));
+    assertFalse(query.matches(document));
+  }
+
+  @Test
+  public void testArrayContainsAnyFiltersWithObjectValues() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("zip", "array-contains-any", asList(map("a", asList(42)))));
+
+    // Containing object in array.
+    Document document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
+    assertTrue(query.matches(document));
+
+    // Containing object.
+    document = doc("collection/1", 0, map("zip", map("a", asList(42))));
+    assertFalse(query.matches(document));
+  }
+
+  @Test
   public void testNaNFilter() {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
