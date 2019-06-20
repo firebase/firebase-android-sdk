@@ -28,7 +28,9 @@ public abstract class Filter {
     EQUAL("=="),
     GREATER_THAN(">"),
     GREATER_THAN_OR_EQUAL(">="),
-    ARRAY_CONTAINS("array_contains");
+    ARRAY_CONTAINS("array_contains"),
+    ARRAY_CONTAINS_ANY("array_contains_any"),
+    IN("in");
 
     private final String text;
 
