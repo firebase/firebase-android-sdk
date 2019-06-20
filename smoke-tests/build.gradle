@@ -67,10 +67,11 @@ android {
     combined {
       java.srcDirs = [
           "src/combined/java",
-	  "src/database/java",
-	  "src/firestore/java",
-	  "src/functions/java",
-	  "src/storage/java",
+          "src/database/java",
+          "src/firestore/java",
+          "src/functions/java",
+          "src/remoteConfig/java",
+          "src/storage/java",
       ]
     }
   }
@@ -103,6 +104,7 @@ dependencies {
   combinedImplementation "com.google.firebase:firebase-database"
   combinedImplementation "com.google.firebase:firebase-firestore"
   combinedImplementation "com.google.firebase:firebase-functions"
+  combinedImplementation "com.google.firebase:firebase-config"
   combinedImplementation "com.google.firebase:firebase-storage"
 
   // Database
