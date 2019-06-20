@@ -237,6 +237,10 @@ public class TestUtil {
       return Operator.GREATER_THAN_OR_EQUAL;
     } else if (s.equals("array-contains")) {
       return Operator.ARRAY_CONTAINS;
+    } else if (s.equals("in")) {
+      return Operator.IN;
+    } else if (s.equals("array-contains-any")) {
+      return Operator.ARRAY_CONTAINS_ANY;
     } else {
       throw new IllegalStateException("Unknown operator: " + s);
     }

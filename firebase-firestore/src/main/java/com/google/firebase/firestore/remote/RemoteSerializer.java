@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.GeoPoint;
@@ -867,7 +868,8 @@ public final class RemoteSerializer {
     return result;
   }
 
-  private StructuredQuery.Filter encodeRelationFilter(RelationFilter filter) {
+  @VisibleForTesting
+  StructuredQuery.Filter encodeRelationFilter(RelationFilter filter) {
     FieldFilter.Builder proto = FieldFilter.newBuilder();
     proto.setField(encodeFieldPath(filter.getField()));
     proto.setOp(encodeRelationFilterOperator(filter.getOperator()));
@@ -927,6 +929,10 @@ public final class RemoteSerializer {
         return FieldFilter.Operator.GREATER_THAN_OR_EQUAL;
       case ARRAY_CONTAINS:
         return FieldFilter.Operator.ARRAY_CONTAINS;
+      case IN:
+        return FieldFilter.Operator.IN;
+      case ARRAY_CONTAINS_ANY:
+        return FieldFilter.Operator.ARRAY_CONTAINS_ANY;
       default:
         throw fail("Unknown operator %d", operator);
     }
@@ -946,6 +952,10 @@ public final class RemoteSerializer {
         return RelationFilter.Operator.GREATER_THAN;
       case ARRAY_CONTAINS:
         return RelationFilter.Operator.ARRAY_CONTAINS;
+      case IN:
+        return RelationFilter.Operator.IN;
+      case ARRAY_CONTAINS_ANY:
+        return RelationFilter.Operator.ARRAY_CONTAINS_ANY;
       default:
         throw fail("Unhandled FieldFilter.operator %d", operator);
     }

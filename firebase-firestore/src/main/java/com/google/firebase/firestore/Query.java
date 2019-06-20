@@ -45,6 +45,7 @@ import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -100,6 +101,12 @@ public class Query {
 
   private void validateNewFilter(Filter filter) {
     if (filter instanceof RelationFilter) {
+      Operator filterOp = ((RelationFilter) filter).getOperator();
+      List<Operator> arrayOps = Arrays.asList(Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY);
+      List<Operator> disjunctiveOps = Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.IN);
+      boolean isArrayOp = arrayOps.contains(filterOp);
+      boolean isDisjunctiveOp = disjunctiveOps.contains(filterOp);
+
       RelationFilter relationFilter = (RelationFilter) filter;
       if (relationFilter.isInequality()) {
         com.google.firebase.firestore.model.FieldPath existingInequality = query.inequalityField();
@@ -117,10 +124,31 @@ public class Query {
         if (firstOrderByField != null) {
           validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
         }
-      } else if (relationFilter.getOperator() == Operator.ARRAY_CONTAINS) {
-        if (query.hasArrayContainsFilter()) {
-          throw new IllegalArgumentException(
-              "Invalid Query. Queries only support having a single array-contains filter.");
+      } else if (isDisjunctiveOp || isArrayOp) {
+        // You can have at most 1 disjunctive filter and 1 array filter. Check if the new filter
+        // conflicts with an existing one.
+        Operator conflictingOp = null;
+        if (isDisjunctiveOp) {
+          conflictingOp = this.query.findOperatorFilter(disjunctiveOps);
+        }
+        if (conflictingOp == null && isArrayOp) {
+          conflictingOp = this.query.findOperatorFilter(arrayOps);
+        }
+        if (conflictingOp != null) {
+          // We special case when it's a duplicate op to give a slightly clearer error message.
+          if (conflictingOp == filterOp) {
+            throw new IllegalArgumentException(
+                "Invalid Query. You cannot use more than one '"
+                    + filterOp.toString()
+                    + "' filter.");
+          } else {
+            throw new IllegalArgumentException(
+                "Invalid Query. You cannot use '"
+                    + filterOp.toString()
+                    + "' filters with '"
+                    + conflictingOp.toString()
+                    + "' filters.");
+          }
         }
       }
     }
@@ -272,9 +300,10 @@ public class Query {
    * specified field, the value must be an array, and that the array must contain the provided
    * value.
    *
-   * <p>A Query can have only one whereArrayContains() filter.
+   * <p>A Query can have only one whereArrayContains() filter and it cannot be combined with
+   * whereArrayContainsAny().
    *
-   * @param field The name of the field containing an array to search
+   * @param field The name of the field containing an array to search.
    * @param value The value that must be contained in the array
    * @return The created Query.
    */
@@ -289,9 +318,10 @@ public class Query {
    * specified field, the value must be an array, and that the array must contain the provided
    * value.
    *
-   * <p>A Query can have only one whereArrayContains() filter.
+   * <p>A Query can have only one whereArrayContains() filter and it cannot be combined with
+   * whereArrayContainsAny().
    *
-   * @param fieldPath The path of the field containing an array to search
+   * @param fieldPath The path of the field containing an array to search.
    * @param value The value that must be contained in the array
    * @return The created Query.
    */
@@ -299,6 +329,76 @@ public class Query {
   @PublicApi
   public Query whereArrayContains(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.ARRAY_CONTAINS, value);
+  }
+
+  /**
+   * Creates and returns a new Query with the additional filter that documents must contain the
+   * specified field, the value must be an array, and that the array must contain at least one value
+   * from the provided array.
+   *
+   * <p>A Query can have only one whereArrayContainsAny() filter and it cannot be combined with
+   * whereArrayContains() or whereIn().
+   *
+   * @param field The name of the field containing an array to search.
+   * @param value The array that contains the values to match.
+   * @return The created Query.
+   */
+  // TODO(in-queries): Expose to public once backend is ready.
+  @NonNull
+  Query whereArrayContainsAny(@NonNull String field, @NonNull List<Object> value) {
+    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS_ANY, value);
+  }
+
+  /**
+   * Creates and returns a new Query with the additional filter that documents must contain the
+   * specified field, the value must be an array, and that the array must contain at least one value
+   * from the provided array.
+   *
+   * <p>A Query can have only one whereArrayContainsAny() filter and it cannot be combined with
+   * whereArrayContains() or whereIn().
+   *
+   * @param fieldPath The path of the field containing an array to search.
+   * @param value The array that contains the values to match.
+   * @return The created Query.
+   */
+  // TODO(in-queries): Expose to public once backend is ready.
+  @NonNull
+  Query whereArrayContainsAny(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
+    return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, value);
+  }
+
+  /**
+   * Creates and returns a new Query with the additional filter that documents must contain the
+   * specified field and the value must equal one of the values from the provided array.
+   *
+   * <p>A Query can have only one whereIn() filter, and it cannot be combined with
+   * whereArrayContainsAny().
+   *
+   * @param field The name of the field to search.
+   * @param value The array that contains the values to match.
+   * @return The created Query.
+   */
+  // TODO(in-queries): Expose to public once backend is ready.
+  @NonNull
+  Query whereIn(@NonNull String field, @NonNull List<Object> value) {
+    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.IN, value);
+  }
+
+  /**
+   * Creates and returns a new Query with the additional filter that documents must contain the
+   * specified field and the value must equal one of the values from the provided array.
+   *
+   * <p>A Query can have only one whereIn() filter, and it cannot be combined with
+   * whereArrayContainsAny().
+   *
+   * @param fieldPath The path of the field to search.
+   * @param value The array that contains the values to match.
+   * @return The created Query.
+   */
+  // TODO(in-queries): Expose to public once backend is ready.
+  @NonNull
+  Query whereIn(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
+    return whereHelper(fieldPath, Operator.IN, value);
   }
 
   /**
@@ -316,10 +416,11 @@ public class Query {
     FieldValue fieldValue;
     com.google.firebase.firestore.model.FieldPath internalPath = fieldPath.getInternalPath();
     if (internalPath.isKeyField()) {
-      if (op == Operator.ARRAY_CONTAINS) {
+      if (op == Operator.ARRAY_CONTAINS || op == Operator.ARRAY_CONTAINS_ANY) {
         throw new IllegalArgumentException(
-            "Invalid query. You can't perform array-contains queries on FieldPath.documentId() "
-                + "since document IDs are not arrays.");
+            "Invalid query. You can't perform '"
+                + op.toString()
+                + "' queries on FieldPath.documentId().");
       }
       if (value instanceof String) {
         String documentKey = (String) value;
@@ -357,6 +458,30 @@ public class Query {
                 + Util.typeName(value));
       }
     } else {
+      if (op == Operator.IN || op == Operator.ARRAY_CONTAINS_ANY) {
+        if (!(value instanceof List) || ((List) value).size() == 0) {
+          throw new IllegalArgumentException(
+              "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
+        }
+        if (((List) value).size() > 10) {
+          throw new IllegalArgumentException(
+              "Invalid Query. '"
+                  + op.toString()
+                  + "' filters support a maximum of 10 elements in the value array.");
+        }
+        if (((List) value).contains(null)) {
+          throw new IllegalArgumentException(
+              "Invalid Query. '"
+                  + op.toString()
+                  + "' filters cannot contain 'null' in the value array.");
+        }
+        if (((List) value).contains(Double.NaN) || ((List) value).contains(Float.NaN)) {
+          throw new IllegalArgumentException(
+              "Invalid Query. '"
+                  + op.toString()
+                  + "' filters cannot contain 'NaN' in the value array.");
+        }
+      }
       fieldValue = firestore.getDataConverter().parseQueryValue(value);
     }
     Filter filter = Filter.create(fieldPath.getInternalPath(), op, fieldValue);
