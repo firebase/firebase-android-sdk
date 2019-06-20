@@ -67,23 +67,13 @@ android {
     combined {
       java.srcDirs = [
           "src/combined/java",
-	  "src/database/java",
-	  "src/firestore/java",
-	  "src/functions/java",
-	  "src/storage/java",
+          "src/database/java",
+          "src/firestore/java",
+          "src/functions/java",
+          "src/remoteConfig/java",
+          "src/storage/java",
       ]
     }
-  }
-}
-
-repositories {
-  google()
-  jcenter()
-
-  // This is necessary for Bill of Materials injection. This repository is created by running the
-  // `publishAllToBuildDir` task on the main firebase-android-sdk project.
-  maven {
-    url "../build/m2repository/"
   }
 }
 
@@ -103,6 +93,7 @@ dependencies {
   combinedImplementation "com.google.firebase:firebase-database"
   combinedImplementation "com.google.firebase:firebase-firestore"
   combinedImplementation "com.google.firebase:firebase-functions"
+  combinedImplementation "com.google.firebase:firebase-config"
   combinedImplementation "com.google.firebase:firebase-storage"
 
   // Database
