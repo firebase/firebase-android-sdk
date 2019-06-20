@@ -79,7 +79,8 @@ public class FirebaseSegmentation {
     return app.get(FirebaseSegmentation.class);
   }
 
-  Task<Void> setCustomInstallationId(@Nullable String customInstallationId) {
+  @NonNull
+  public synchronized Task<Void> setCustomInstallationId(@Nullable String customInstallationId) {
     if (customInstallationId == null) {
       return clearCustomInstallationId();
     }

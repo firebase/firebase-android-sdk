@@ -101,13 +101,7 @@ public class CustomInstallationIdCache {
 
   private Task<Boolean> commitSharedPreferencesEditAsync(SharedPreferences.Editor editor) {
     TaskCompletionSource<Boolean> result = new TaskCompletionSource<>();
-    ioExecuter.execute(
-        new Runnable() {
-          @Override
-          public void run() {
-            result.setResult(editor.commit());
-          }
-        });
+    ioExecuter.execute(() -> result.setResult(editor.commit()));
     return result.getTask();
   }
 }
