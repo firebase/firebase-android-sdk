@@ -45,12 +45,13 @@ public class DocumentSnapshotTest {
     assertNotEquals(base, differentData);
     assertNotEquals(base, fromCache);
 
+    // Note: `base` and `differentData` have the same hash code since we no longer take document
+    // contents into account.
     assertEquals(base.hashCode(), baseDup.hashCode());
     assertEquals(noData.hashCode(), noDataDup.hashCode());
     assertNotEquals(base.hashCode(), noData.hashCode());
     assertNotEquals(noData.hashCode(), base.hashCode());
     assertNotEquals(base.hashCode(), differentPath.hashCode());
-    assertNotEquals(base.hashCode(), differentData.hashCode());
     assertNotEquals(base.hashCode(), fromCache.hashCode());
   }
 }
