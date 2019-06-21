@@ -67,15 +67,6 @@ public class ObjectValue extends FieldValue {
     return res;
   }
 
-  @Override
-  public Map<String, Object> value(FieldValueOptions options) {
-    Map<String, Object> res = new HashMap<>();
-    for (Map.Entry<String, FieldValue> entry : internalValue) {
-      res.put(entry.getKey(), entry.getValue().value(options));
-    }
-    return res;
-  }
-
   public ImmutableSortedMap<String, FieldValue> getInternalValue() {
     return internalValue;
   }

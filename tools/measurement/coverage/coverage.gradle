@@ -22,11 +22,6 @@ task generateCoverageMeasurements(type: GenerateMeasurementsTask) {
     description 'Runs checkCoverage task in all projects and calculates coverage percents.'
     group 'Measurements'
 
-    dependsOn rootProject.allprojects.findAll {
-        it.extensions.findByType(FirebaseLibraryExtension) != null
-    }.collect {
-        it.tasks.withType(JacocoReport)
-    }.flatten()
     reportFile = file("$buildDir/coverage-report.json")
 }
 

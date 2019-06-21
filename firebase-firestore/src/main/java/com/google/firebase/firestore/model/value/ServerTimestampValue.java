@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.model.value;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.util.Assert;
+import com.google.firebase.firestore.DocumentSnapshot;
 import javax.annotation.Nullable;
 
 /**
@@ -47,21 +47,23 @@ public final class ServerTimestampValue extends FieldValue {
     return null;
   }
 
-  @Override
+  /**
+   * Returns the value of the field before this ServerTimestamp was set.
+   *
+   * <p>Preserving the previous values allows the user to display the last resoled value until the
+   * backend responds with the timestamp {@link DocumentSnapshot.ServerTimestampBehavior}.
+   */
   @Nullable
-  public Object value(FieldValueOptions options) {
-    switch (options.getServerTimestampBehavior()) {
-      case PREVIOUS:
-        return previousValue != null ? previousValue.value(options) : null;
-      case ESTIMATE:
-        return new TimestampValue(localWriteTime).value(options);
-      case NONE:
-        return null;
-      default:
-        throw Assert.fail(
-            "Unexpected case for ServerTimestampBehavior: %s",
-            options.getServerTimestampBehavior().name());
+  public Object getPreviousValue() {
+    if (previousValue instanceof ServerTimestampValue) {
+      return ((ServerTimestampValue) previousValue).getPreviousValue();
     }
+
+    return previousValue != null ? previousValue.value() : null;
+  }
+
+  public Timestamp getLocalWriteTime() {
+    return localWriteTime;
   }
 
   @Override

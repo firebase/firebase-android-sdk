@@ -14,7 +14,7 @@
 
 
 def configurePlatform() {
-  def bom = "com.google.firebase:firebase-bom:18.1.0"
+  def bom = "com.google.firebase:firebase-bom:20.0.0"
   if (project.hasProperty("firebase-bom")) {
     bom = project.getProperty("firebase-bom")
   }
@@ -30,4 +30,23 @@ def configurePlatform() {
   }
 }
 
+def configureRepositories() {
+  def m2repo = "../build/m2repository/"
+  if (project.hasProperty("m2repo")) {
+    m2repo = project.getProperty("m2repo")
+  }
+
+  project.repositories {
+    // This is necessary for Bill of Materials injection. This repository is created by running the
+    // `assembleAllForSmokeTests` task on the main firebase-android-sdk project.
+    maven {
+      url m2repo
+    }
+
+    google()
+    jcenter()
+  }
+}
+
+configureRepositories()
 configurePlatform()
