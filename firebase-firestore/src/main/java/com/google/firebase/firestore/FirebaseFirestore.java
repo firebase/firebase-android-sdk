@@ -376,21 +376,22 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Clears the persistent storage. This includes pending writes and cached documents.
+   * Clears the persistent storage, including pending writes and cached documents.
    *
-   * <p>Must be called while the firestore instance is not started (after the app is shutdown or
-   * when the app is first initialized). On startup, this method must be called before other methods
-   * (other than setFirestoreSettings()). If the firestore instance is still running, the Task will
-   * fail with an error code of FAILED_PRECONDITION.
+   * <p>Must be called while the FirebaseFirestore instance is not started (after the app is
+   * shutdown or when the app is first initialized). On startup, this method must be called before
+   * other methods (other than <code>setFirestoreSettings()</code>). If the FirebaseFirestore
+   * instance is still running, the <code>Task</code> will fail with an error code of
+   * <code>FAILED_PRECONDITION</code>.
    *
-   * <p>Note: clearPersistence() is primarily intended to help write reliable tests that use
-   * Firestore. It uses the most efficient mechanism possible for dropping existing data but does
+   * <p>Note: <code>clearPersistence()</code> is primarily intended to help write reliable tests
+   * that use Cloud Firestore. It uses an efficient mechanism for dropping existing data but does
    * not attempt to securely overwrite or otherwise make cached data unrecoverable. For applications
-   * that are sensitive to the disclosure of cache data in between user sessions we strongly
-   * recommend not to enable persistence in the first place.
+   * that are sensitive to the disclosure of cached data in between user sessions, we strongly
+   * recommend not enabling persistence at all.
    *
-   * @return A Task that is resolved once the persistent storage has been cleared. Otherwise, the
-   *     Task is rejected with an error.
+   * @return A <code>Task</code> that is resolved when the persistent storage is cleared. Otherwise,
+   *     the <code>Task</code> is rejected with an error.
    */
   @PublicApi
   public Task<Void> clearPersistence() {
