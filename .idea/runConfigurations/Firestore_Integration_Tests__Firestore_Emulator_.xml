@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Firestore Integration Tests" type="AndroidTestRunConfigurationType" factoryName="Android Instrumented Tests">
+  <configuration default="false" name="Firestore Integration Tests (Firestore Emulator)" type="AndroidTestRunConfigurationType" factoryName="Android Instrumented Tests">
     <module name="firebase-firestore" />
     <option name="TESTING_TYPE" value="1" />
     <option name="INSTRUMENTATION_RUNNER_CLASS" value="" />
@@ -42,9 +42,6 @@
     <Profilers>
       <option name="ADVANCED_PROFILING_ENABLED" value="false" />
     </Profilers>
-    <method>
-      <option name="Android.Gradle.BeforeRunTask" enabled="true" />
-      <option name="com.android.instantApps.provision.BeforeRunTask" enabled="true" clearCache="false" clearProvisionedDevices="false" myTimestamp="1535475311190" />
-    </method>
+    <method />
   </configuration>
 </component>
