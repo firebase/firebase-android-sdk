@@ -22,10 +22,6 @@ firebaseLibrary {
     publishSources = true
 }
 
-ext {
-    useBackendEmulatorForTests = true
-}
-
 protobuf {
     // Configure the protoc executable
     protoc {
@@ -99,7 +95,12 @@ android {
 }
 
 android.libraryVariants.all { variant ->
-    variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "$project.ext.useBackendEmulatorForTests")
+    if (findProperty("useProdBackendForTests")) {
+        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
+    } else {
+        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
+    }
+
 }
 
 dependencies {
