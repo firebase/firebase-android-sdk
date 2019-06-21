@@ -23,12 +23,16 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.util.Executors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Semaphore;
 import javax.annotation.Nullable;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
@@ -118,7 +122,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
-    Map<DocumentKey, Document> results = new HashMap<>();
+    Map<DocumentKey, Document> allDocuments = new ConcurrentHashMap<>();
+
+    int[] pendingTaskCount = new int[] {0};
+    Semaphore completedTasks = new Semaphore(0);
 
     db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
         .binding(prefixPath, prefixSuccessorPath)
@@ -136,20 +143,38 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
                 return;
               }
 
-              MaybeDocument maybeDoc = decodeMaybeDocument(row.getBlob(1));
-              if (!(maybeDoc instanceof Document)) {
-                return;
-              }
+              byte[] rawContents = row.getBlob(1);
 
-              Document doc = (Document) maybeDoc;
-              if (!query.matches(doc)) {
-                return;
-              }
+              ++pendingTaskCount[0];
 
-              results.put(doc.getKey(), doc);
+              // Since scheduling background tasks incurs overhead, we only dispatch to a background
+              // thread if there are still some documents remaining.
+              Executor deserializationExecutor =
+                  row.isLast() ? Executors.DIRECT_EXECUTOR : Executors.BACKGROUND_EXECUTOR;
+              deserializationExecutor.execute(
+                  () -> {
+                    MaybeDocument maybeDoc = decodeMaybeDocument(rawContents);
+                    if (maybeDoc instanceof Document) {
+                      allDocuments.put(maybeDoc.getKey(), (Document) maybeDoc);
+                    }
+                    completedTasks.release();
+                  });
             });
 
-    return ImmutableSortedMap.Builder.fromMap(results, DocumentKey.comparator());
+    try {
+      completedTasks.acquire(pendingTaskCount[0]);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+
+    ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
+        ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
+    for (Map.Entry<DocumentKey, Document> entry : allDocuments.entrySet()) {
+      if (query.matches(entry.getValue())) {
+        matchingDocuments = matchingDocuments.insert(entry.getKey(), entry.getValue());
+      }
+    }
+    return matchingDocuments;
   }
 
   private String pathForKey(DocumentKey key) {
