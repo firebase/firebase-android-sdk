@@ -111,13 +111,9 @@ public final class LocalSerializer {
   /** Decodes a Document proto to the equivalent model. */
   private Document decodeDocument(
       com.google.firestore.v1.Document document, boolean hasCommittedMutations) {
-    DocumentKey key = rpcSerializer.decodeKey(document.getName());
-    ObjectValue value = rpcSerializer.decodeFields(document.getFieldsMap());
-    SnapshotVersion version = rpcSerializer.decodeVersion(document.getUpdateTime());
-    return new Document(
-        key,
-        version,
-        value,
+    return Document.fromProto(
+        this.rpcSerializer,
+        document,
         hasCommittedMutations
             ? Document.DocumentState.COMMITTED_MUTATIONS
             : Document.DocumentState.SYNCED);

@@ -102,7 +102,7 @@ public final class TransformMutation extends Mutation {
     List<FieldValue> transformResults =
         serverTransformResults(doc, mutationResult.getTransformResults());
     ObjectValue newData = transformObject(doc.getData(), transformResults);
-    return new Document(
+    return Document.fromObjectValue(
         getKey(), mutationResult.getVersion(), newData, Document.DocumentState.COMMITTED_MUTATIONS);
   }
 
@@ -119,7 +119,7 @@ public final class TransformMutation extends Mutation {
     Document doc = requireDocument(maybeDoc);
     List<FieldValue> transformResults = localTransformResults(localWriteTime, baseDoc);
     ObjectValue newData = transformObject(doc.getData(), transformResults);
-    return new Document(
+    return Document.fromObjectValue(
         getKey(), doc.getVersion(), newData, Document.DocumentState.LOCAL_MUTATIONS);
   }
 

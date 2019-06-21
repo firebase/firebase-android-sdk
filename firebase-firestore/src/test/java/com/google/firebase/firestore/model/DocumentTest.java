@@ -36,9 +36,9 @@ import org.robolectric.annotation.Config;
 public class DocumentTest {
 
   @Test
-  public void testConstructor() {
+  public void testInstantiation() {
     Document document =
-        new Document(
+        Document.fromObjectValue(
             key("messages/first"), version(1), wrapObject("a", 1), Document.DocumentState.SYNCED);
 
     assertEquals(key("messages/first"), document.getKey());
@@ -56,7 +56,8 @@ public class DocumentTest {
             "owner",
             map("name", "Jonny", "title", "scallywag"));
     Document document =
-        new Document(key("rooms/eros"), version(1), data, Document.DocumentState.SYNCED);
+        Document.fromObjectValue(
+            key("rooms/eros"), version(1), data, Document.DocumentState.SYNCED);
 
     assertEquals("Discuss all the project related stuff", document.getFieldValue(field("desc")));
     assertEquals("scallywag", document.getFieldValue(field("owner.title")));

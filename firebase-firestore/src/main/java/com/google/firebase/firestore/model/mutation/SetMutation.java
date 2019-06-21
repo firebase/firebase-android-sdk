@@ -72,7 +72,8 @@ public final class SetMutation extends Mutation {
     // accepted the mutation so the precondition must have held.
 
     SnapshotVersion version = mutationResult.getVersion();
-    return new Document(getKey(), version, value, Document.DocumentState.COMMITTED_MUTATIONS);
+    return Document.fromObjectValue(
+        getKey(), version, value, Document.DocumentState.COMMITTED_MUTATIONS);
   }
 
   @Nullable
@@ -86,7 +87,8 @@ public final class SetMutation extends Mutation {
     }
 
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
-    return new Document(getKey(), version, value, Document.DocumentState.LOCAL_MUTATIONS);
+    return Document.fromObjectValue(
+        getKey(), version, value, Document.DocumentState.LOCAL_MUTATIONS);
   }
 
   @Nullable

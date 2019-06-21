@@ -161,7 +161,7 @@ public class MutationTest {
             new ServerTimestampValue(timestamp, StringValue.valueOf("bar-value")));
 
     Document expectedDoc =
-        new Document(
+        Document.fromObjectValue(
             key("collection/key"),
             version(0),
             expectedData,

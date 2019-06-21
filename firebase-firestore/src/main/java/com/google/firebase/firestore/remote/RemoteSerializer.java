@@ -405,12 +405,7 @@ public final class RemoteSerializer {
     Assert.hardAssert(
         response.getResultCase().equals(ResultCase.FOUND),
         "Tried to deserialize a found document from a missing document.");
-    DocumentKey key = decodeKey(response.getFound().getName());
-    ObjectValue value = decodeFields(response.getFound().getFieldsMap());
-    SnapshotVersion version = decodeVersion(response.getFound().getUpdateTime());
-    hardAssert(
-        !version.equals(SnapshotVersion.NONE), "Got a document response with no snapshot version");
-    return new Document(key, version, value, Document.DocumentState.SYNCED, response.getFound());
+    return Document.fromProto(this, response.getFound(), Document.DocumentState.SYNCED);
   }
 
   private NoDocument decodeMissingDocument(BatchGetDocumentsResponse response) {
@@ -1041,24 +1036,16 @@ public final class RemoteSerializer {
         DocumentChange docChange = protoChange.getDocumentChange();
         List<Integer> added = docChange.getTargetIdsList();
         List<Integer> removed = docChange.getRemovedTargetIdsList();
-        DocumentKey key = decodeKey(docChange.getDocument().getName());
-        SnapshotVersion version = decodeVersion(docChange.getDocument().getUpdateTime());
-        hardAssert(
-            !version.equals(SnapshotVersion.NONE), "Got a document change without an update time");
-        ObjectValue data = decodeFields(docChange.getDocument().getFieldsMap());
-        // The document may soon be re-serialized back to protos in order to store it in local
-        // persistence. Memoize the encoded form to avoid encoding it again.
         Document document =
-            new Document(
-                key, version, data, Document.DocumentState.SYNCED, docChange.getDocument());
+            Document.fromProto(this, docChange.getDocument(), Document.DocumentState.SYNCED);
         watchChange = new WatchChange.DocumentChange(added, removed, document.getKey(), document);
         break;
       case DOCUMENT_DELETE:
         DocumentDelete docDelete = protoChange.getDocumentDelete();
         removed = docDelete.getRemovedTargetIdsList();
-        key = decodeKey(docDelete.getDocument());
+        DocumentKey key = decodeKey(docDelete.getDocument());
         // Note that version might be unset in which case we use SnapshotVersion.NONE
-        version = decodeVersion(docDelete.getReadTime());
+        SnapshotVersion version = decodeVersion(docDelete.getReadTime());
         NoDocument doc = new NoDocument(key, version, /*hasCommittedMutations=*/ false);
         watchChange =
             new WatchChange.DocumentChange(Collections.emptyList(), removed, doc.getKey(), doc);

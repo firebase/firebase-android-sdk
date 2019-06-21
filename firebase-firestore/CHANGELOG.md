@@ -1,4 +1,6 @@
 # Unreleased
+- [changed] Improved performance for queries that only return a subset of the
+  data in a collection.
 - [changed] Instead of failing silently, Firestore now crashes the client app
   if it fails to load SSL Ciphers. To avoid these crashes, you must bundle 
   Conscrypt to support non-GMSCore devices on Android KitKat or JellyBean (see
