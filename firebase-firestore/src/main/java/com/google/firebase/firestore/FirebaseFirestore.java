@@ -381,8 +381,8 @@ public class FirebaseFirestore {
    * <p>Must be called while the FirebaseFirestore instance is not started (after the app is
    * shutdown or when the app is first initialized). On startup, this method must be called before
    * other methods (other than <code>setFirestoreSettings()</code>). If the FirebaseFirestore
-   * instance is still running, the <code>Task</code> will fail with an error code of
-   * <code>FAILED_PRECONDITION</code>.
+   * instance is still running, the <code>Task</code> will fail with an error code of <code>
+   * FAILED_PRECONDITION</code>.
    *
    * <p>Note: <code>clearPersistence()</code> is primarily intended to help write reliable tests
    * that use Cloud Firestore. It uses an efficient mechanism for dropping existing data but does
