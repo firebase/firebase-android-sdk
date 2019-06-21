@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="FirestoreEmulatorTest" type="GradleRunConfiguration" factoryName="Gradle">
+  <configuration default="false" name="FirestoreProdIntegrationTest" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$/firebase-firestore" />
       <option name="externalSystemIdString" value="GRADLE" />
-      <option name="scriptParameters" value="-Pemulator=true" />
+      <option name="scriptParameters" value="-Pprod=true" />
       <option name="taskDescriptions">
         <list />
       </option>

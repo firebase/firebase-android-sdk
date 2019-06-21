@@ -23,7 +23,7 @@ firebaseLibrary {
 }
 
 ext {
-    useEmulatorForTests = false
+    useEmulatorForTests = true
 }
 
 protobuf {
@@ -99,10 +99,10 @@ android {
 }
 
 android.libraryVariants.all { variant ->
-    if (findProperty("emulator")) {
-        project.ext.useEmulatorForTests = true
-    } else {
+    if (findProperty("prod")) {
         project.ext.useEmulatorForTests = false
+    } else {
+        project.ext.useEmulatorForTests = true
     }
     variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "$project.ext.useEmulatorForTests")
 }
