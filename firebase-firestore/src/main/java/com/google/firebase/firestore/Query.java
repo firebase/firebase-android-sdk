@@ -84,6 +84,77 @@ public class Query {
     return firestore;
   }
 
+  /** Validates the given document ID and returns the corresponding FieldValue. */
+  private FieldValue validateAndCalculateReferenceValue(FieldPath fieldPath, Object value) {
+    com.google.firebase.firestore.model.FieldPath internalPath = fieldPath.getInternalPath();
+    hardAssert(
+        internalPath.isKeyField(),
+        "fieldPath must be a key field to calculate the reference value.");
+    FieldValue fieldValue;
+    if (value instanceof String) {
+      String documentKey = (String) value;
+      if (documentKey.isEmpty()) {
+        throw new IllegalArgumentException(
+            "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
+                + "document ID, but it was an empty string.");
+      }
+      if (!query.isCollectionGroupQuery() && documentKey.contains("/")) {
+        throw new IllegalArgumentException(
+            "Invalid query. When querying a collection by FieldPath.documentId() you must "
+                + "provide a plain document ID, but '"
+                + documentKey
+                + "' contains a '/' character.");
+      }
+      ResourcePath path = query.getPath().append(ResourcePath.fromString(documentKey));
+      if (!DocumentKey.isDocumentKey(path)) {
+        throw new IllegalArgumentException(
+            "Invalid query. When querying a collection group by FieldPath.documentId(), the "
+                + "value provided must result in a valid document path, but '"
+                + path
+                + "' is not because it has an odd number of segments ("
+                + path.length()
+                + ").");
+      }
+      fieldValue =
+          ReferenceValue.valueOf(this.getFirestore().getDatabaseId(), DocumentKey.fromPath(path));
+    } else if (value instanceof DocumentReference) {
+      DocumentReference ref = (DocumentReference) value;
+      fieldValue = ReferenceValue.valueOf(this.getFirestore().getDatabaseId(), ref.getKey());
+    } else {
+      throw new IllegalArgumentException(
+          "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
+              + "String or DocumentReference, but it was of type: "
+              + Util.typeName(value));
+    }
+    return fieldValue;
+  }
+
+  /** Validates that the value passed into a disjunctive filter satisfies all array requirements. */
+  private void validateDisjunctiveOperatorValueArray(Object value, Operator op) {
+    if (!(value instanceof List) || ((List) value).size() == 0) {
+      throw new IllegalArgumentException(
+          "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
+    }
+    if (((List) value).size() > 10) {
+      throw new IllegalArgumentException(
+          "Invalid Query. '"
+              + op.toString()
+              + "' filters support a maximum of 10 elements in the value array.");
+    }
+    if (((List) value).contains(null)) {
+      throw new IllegalArgumentException(
+          "Invalid Query. '"
+              + op.toString()
+              + "' filters cannot contain 'null' in the value array.");
+    }
+    if (((List) value).contains(Double.NaN) || ((List) value).contains(Float.NaN)) {
+      throw new IllegalArgumentException(
+          "Invalid Query. '"
+              + op.toString()
+              + "' filters cannot contain 'NaN' in the value array.");
+    }
+  }
+
   private void validateOrderByFieldMatchesInequality(
       com.google.firebase.firestore.model.FieldPath orderBy,
       com.google.firebase.firestore.model.FieldPath inequality) {
@@ -422,65 +493,19 @@ public class Query {
                 + op.toString()
                 + "' queries on FieldPath.documentId().");
       }
-      if (value instanceof String) {
-        String documentKey = (String) value;
-        if (documentKey.isEmpty()) {
-          throw new IllegalArgumentException(
-              "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
-                  + "document ID, but it was an empty string.");
+      if (op == Operator.IN) {
+        validateDisjunctiveOperatorValueArray(value, op);
+        List referenceList = new ArrayList();
+        for (Object arrayValue : (List) value) {
+          referenceList.add(validateAndCalculateReferenceValue(fieldPath, arrayValue));
         }
-        if (!query.isCollectionGroupQuery() && documentKey.contains("/")) {
-          throw new IllegalArgumentException(
-              "Invalid query. When querying a collection by FieldPath.documentId() you must "
-                  + "provide a plain document ID, but '"
-                  + documentKey
-                  + "' contains a '/' character.");
-        }
-        ResourcePath path = query.getPath().append(ResourcePath.fromString(documentKey));
-        if (!DocumentKey.isDocumentKey(path)) {
-          throw new IllegalArgumentException(
-              "Invalid query. When querying a collection group by FieldPath.documentId(), the "
-                  + "value provided must result in a valid document path, but '"
-                  + path
-                  + "' is not because it has an odd number of segments ("
-                  + path.length()
-                  + ").");
-        }
-        fieldValue =
-            ReferenceValue.valueOf(this.getFirestore().getDatabaseId(), DocumentKey.fromPath(path));
-      } else if (value instanceof DocumentReference) {
-        DocumentReference ref = (DocumentReference) value;
-        fieldValue = ReferenceValue.valueOf(this.getFirestore().getDatabaseId(), ref.getKey());
+        fieldValue = firestore.getDataConverter().parseQueryValue(referenceList);
       } else {
-        throw new IllegalArgumentException(
-            "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
-                + "String or DocumentReference, but it was of type: "
-                + Util.typeName(value));
+        fieldValue = validateAndCalculateReferenceValue(fieldPath, value);
       }
     } else {
       if (op == Operator.IN || op == Operator.ARRAY_CONTAINS_ANY) {
-        if (!(value instanceof List) || ((List) value).size() == 0) {
-          throw new IllegalArgumentException(
-              "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
-        }
-        if (((List) value).size() > 10) {
-          throw new IllegalArgumentException(
-              "Invalid Query. '"
-                  + op.toString()
-                  + "' filters support a maximum of 10 elements in the value array.");
-        }
-        if (((List) value).contains(null)) {
-          throw new IllegalArgumentException(
-              "Invalid Query. '"
-                  + op.toString()
-                  + "' filters cannot contain 'null' in the value array.");
-        }
-        if (((List) value).contains(Double.NaN) || ((List) value).contains(Float.NaN)) {
-          throw new IllegalArgumentException(
-              "Invalid Query. '"
-                  + op.toString()
-                  + "' filters cannot contain 'NaN' in the value array.");
-        }
+        validateDisjunctiveOperatorValueArray(value, op);
       }
       fieldValue = firestore.getDataConverter().parseQueryValue(value);
     }

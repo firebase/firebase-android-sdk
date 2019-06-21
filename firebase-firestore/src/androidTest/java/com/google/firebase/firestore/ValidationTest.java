@@ -702,11 +702,6 @@ public class ValidationTest {
     expectError(() -> collection.whereGreaterThanOrEqualTo(FieldPath.documentId(), 1), reason);
 
     reason =
-        "Invalid query. When querying with FieldPath.documentId() you must provide "
-            + "a valid String or DocumentReference, but it was of type: java.util.Arrays$ArrayList";
-    expectError(() -> collection.whereIn(FieldPath.documentId(), asList(1, 2)), reason);
-
-    reason =
         "Invalid query. When querying a collection group by FieldPath.documentId(), the value "
             + "provided must result in a valid document path, but 'foo' is not because it has "
             + "an odd number of segments (1).";
@@ -724,6 +719,36 @@ public class ValidationTest {
         "Invalid query. You can't perform 'array_contains_any' queries on FieldPath.documentId().";
     expectError(
         () -> collection.whereArrayContainsAny(FieldPath.documentId(), asList(1, 2)), reason);
+  }
+
+  @Test
+  public void queriesUsingInAndDocumentIdMustHaveProperDocumentReferencesInArray() {
+    CollectionReference collection = testCollection();
+    String reason =
+        "Invalid query. When querying with FieldPath.documentId() you must provide "
+            + "a valid document ID, but it was an empty string.";
+    expectError(() -> collection.whereIn(FieldPath.documentId(), asList("")), reason);
+
+    reason =
+        "Invalid query. When querying a collection by FieldPath.documentId() you must provide "
+            + "a plain document ID, but 'foo/bar/baz' contains a '/' character.";
+    expectError(() -> collection.whereIn(FieldPath.documentId(), asList("foo/bar/baz")), reason);
+
+    reason =
+        "Invalid query. When querying with FieldPath.documentId() you must provide "
+            + "a valid String or DocumentReference, but it was of type: java.lang.Integer";
+    expectError(() -> collection.whereIn(FieldPath.documentId(), asList(1, 2)), reason);
+
+    reason =
+        "Invalid query. When querying a collection group by FieldPath.documentId(), the value "
+            + "provided must result in a valid document path, but 'foo' is not because it has "
+            + "an odd number of segments (1).";
+    expectError(
+        () ->
+            testFirestore()
+                .collectionGroup("collection")
+                .whereIn(FieldPath.documentId(), asList("foo")),
+        reason);
   }
 
   // Helpers
