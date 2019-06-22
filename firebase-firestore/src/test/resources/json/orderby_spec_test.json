@@ -252,12 +252,12 @@
           [
             2
           ],
-          "resume-token-1000"
+          "resume-token-1002"
         ]
       },
       {
         "watchSnapshot": {
-          "version": 1000,
+          "version": 1002,
           "targetIds": []
         },
         "expect": [
@@ -356,7 +356,7 @@
                   ]
                 ]
               },
-              "resumeToken": "resume-token-1000"
+              "resumeToken": "resume-token-1002"
             }
           }
         },
@@ -422,12 +422,12 @@
           [
             2
           ],
-          "resume-token-1000"
+          "resume-token-1002"
         ]
       },
       {
         "watchSnapshot": {
-          "version": 1000,
+          "version": 1002,
           "targetIds": []
         },
         "expect": [
