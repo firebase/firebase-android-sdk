@@ -48,7 +48,7 @@ By default, integration tests run against the Firestore emulator.
 The integration tests require that the Firestore emulator is running on port
 8080, which is default when running it via CLI.
 
-  * Ensure that `gogole-services.json` is properly configured.
+  * Ensure that `google-services.json` is properly configured.
   * [Install the Firebase CLI](https://firebase.google.com/docs/cli/).
     ```
     npm install -g firebase-tools
