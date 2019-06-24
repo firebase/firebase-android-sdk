@@ -724,6 +724,8 @@ public class ValidationTest {
   @Test
   public void queriesUsingInAndDocumentIdMustHaveProperDocumentReferencesInArray() {
     CollectionReference collection = testCollection();
+    collection.whereIn(FieldPath.documentId(), asList(collection.getPath()));
+
     String reason =
         "Invalid query. When querying with FieldPath.documentId() you must provide "
             + "a valid document ID, but it was an empty string.";
