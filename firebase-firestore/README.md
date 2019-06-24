@@ -41,7 +41,33 @@ the source root.
 Make sure you have created a Firestore instance for your project, before
 you proceed.
 
-### Run on Local Emulator
+By default, integration tests run against the Firestore emulator.
+
+### Setting up the Firestore Emulator
+
+The integration tests require that the Firestore emulator is running on port
+8080, which is default when running it via CLI.
+
+  * [Install the Firebase CLI](https://firebase.google.com/docs/cli/).
+    ```
+    npm install -g firebase-tools
+    ```
+  * [Install the Firestore
+    emulator](https://firebase.google.com/docs/firestore/security/test-rules-emulator#install_the_emulator).
+    ```
+    firebase setup:emulators:firestore
+    ```
+  * Run the emulator
+    ```
+    firebase serve --only firestore
+    ```
+  * Select the `Firestore Integration Tests (Firestore Emulator)` run
+    configuration to run all integration tests.
+
+To run the integration tests against prod, select `FirestoreProdIntegrationTest`
+run configuration.
+
+### Run on Local Android Emulator
 
 Then simply run:
 ```bash
