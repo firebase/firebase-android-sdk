@@ -15,7 +15,6 @@
 package com.google.firebase.segmentation;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
@@ -48,10 +47,8 @@ public class FirebaseSegmentationRegistrarTest {
 
     FirebaseSegmentation defaultSegmentation = FirebaseSegmentation.getInstance();
     assertNotNull(defaultSegmentation);
-    assertNull(defaultSegmentation.setCustomInstallationId("12345").getResult());
 
     FirebaseSegmentation anotherSegmentation = FirebaseSegmentation.getInstance(anotherApp);
     assertNotNull(anotherSegmentation);
-    assertNull(anotherSegmentation.setCustomInstallationId("ghdjaas").getResult());
   }
 }
