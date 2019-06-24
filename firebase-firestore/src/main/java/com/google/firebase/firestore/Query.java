@@ -353,7 +353,7 @@ public class Query {
                 + op.toString()
                 + "' queries on FieldPath.documentId().");
       } else if (op == Operator.IN) {
-        validateDisjunctiveOperatorValueArray(value, op);
+        validateDisjunctiveFilterElements(value, op);
         List<FieldValue> referenceList = new ArrayList<>();
         for (Object arrayValue : (List) value) {
           referenceList.add(parseDocumentIdValue(arrayValue));
@@ -364,7 +364,7 @@ public class Query {
       }
     } else {
       if (op == Operator.IN || op == Operator.ARRAY_CONTAINS_ANY) {
-        validateDisjunctiveOperatorValueArray(value, op);
+        validateDisjunctiveFilterElements(value, op);
       }
       fieldValue = firestore.getDataConverter().parseQueryValue(value);
     }
@@ -387,20 +387,20 @@ public class Query {
    */
   private ReferenceValue parseDocumentIdValue(Object documentIdValue) {
     if (documentIdValue instanceof String) {
-      String documentKey = (String) documentIdValue;
-      if (documentKey.isEmpty()) {
+      String documentId = (String) documentIdValue;
+      if (documentId.isEmpty()) {
         throw new IllegalArgumentException(
             "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
                 + "document ID, but it was an empty string.");
       }
-      if (!query.isCollectionGroupQuery() && documentKey.contains("/")) {
+      if (!query.isCollectionGroupQuery() && documentId.contains("/")) {
         throw new IllegalArgumentException(
             "Invalid query. When querying a collection by FieldPath.documentId() you must "
                 + "provide a plain document ID, but '"
-                + documentKey
+                + documentId
                 + "' contains a '/' character.");
       }
-      ResourcePath path = query.getPath().append(ResourcePath.fromString(documentKey));
+      ResourcePath path = query.getPath().append(ResourcePath.fromString(documentId));
       if (!DocumentKey.isDocumentKey(path)) {
         throw new IllegalArgumentException(
             "Invalid query. When querying a collection group by FieldPath.documentId(), the "
@@ -424,7 +424,7 @@ public class Query {
   }
 
   /** Validates that the value passed into a disjunctive filter satisfies all array requirements. */
-  private void validateDisjunctiveOperatorValueArray(Object value, Operator op) {
+  private void validateDisjunctiveFilterElements(Object value, Operator op) {
     if (!(value instanceof List) || ((List) value).size() == 0) {
       throw new IllegalArgumentException(
           "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
