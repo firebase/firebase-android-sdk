@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.AccessHelper;
+import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -60,9 +61,9 @@ public class IntegrationTestUtil {
   // Whether the integration tests should run against a local Firestore emulator instead of the
   // Production environment. Note that the Android Emulator treats "10.0.2.2" as its host machine.
   // TODO(mrschmidt): Support multiple envrionments (Emulator, QA, Nightly, Production)
-  private static final boolean CONNECT_TO_EMULATOR = false;
+  private static final boolean CONNECT_TO_EMULATOR = BuildConfig.USE_EMULATOR_FOR_TESTS;
   private static final String EMULATOR_HOST = "10.0.2.2";
-  private static final int EMULATOR_PORT = 8081;
+  private static final int EMULATOR_PORT = 8080;
 
   // Alternate project ID for creating "bad" references. Doesn't actually need to work.
   public static final String BAD_PROJECT_ID = "test-project-2";
@@ -94,7 +95,7 @@ public class IntegrationTestUtil {
           DatabaseId.forProject(provider.projectId()),
           "test-persistenceKey",
           String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT),
-          /*sslEnabled=*/ true);
+          /*sslEnabled=*/ false);
     } else {
       return new DatabaseInfo(
           DatabaseId.forProject(provider.projectId()),
@@ -132,7 +133,7 @@ public class IntegrationTestUtil {
       SSLCertificateSocketFactory insecureFactory =
           (SSLCertificateSocketFactory) SSLCertificateSocketFactory.getInsecure(0, null);
       channelBuilder.sslSocketFactory(insecureFactory);
-
+      channelBuilder.usePlaintext();
       GrpcCallProvider.overrideChannelBuilder(() -> channelBuilder);
     } else {
       settings.setHost(provider.firestoreHost());

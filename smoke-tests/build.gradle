@@ -41,38 +41,11 @@ android {
 
   flavorDimensions "systemUnderTest"
 
+  // TODO(allisonbm92): Switch to the default flavor.
   productFlavors {
     combined {
       dimension "systemUnderTest"
       applicationId "com.google.firebase.testing.combined"
-    }
-
-    database {
-      dimension "systemUnderTest"
-      applicationId "com.google.firebase.testing.database"
-    }
-
-    firestore {
-      dimension "systemUnderTest"
-      applicationId "com.google.firebase.testing.firestore"
-    }
-
-    storage {
-      dimension "systemUnderTest"
-      applicationId "com.google.firebase.testing.storage"
-    }
-  }
-
-  sourceSets {
-    combined {
-      java.srcDirs = [
-          "src/combined/java",
-          "src/database/java",
-          "src/firestore/java",
-          "src/functions/java",
-          "src/remoteConfig/java",
-          "src/storage/java",
-      ]
     }
   }
 }
@@ -95,18 +68,6 @@ dependencies {
   combinedImplementation "com.google.firebase:firebase-functions"
   combinedImplementation "com.google.firebase:firebase-config"
   combinedImplementation "com.google.firebase:firebase-storage"
-
-  // Database
-  databaseImplementation "com.google.firebase:firebase-auth"
-  databaseImplementation "com.google.firebase:firebase-database"
-
-  // Firestore
-  firestoreImplementation "com.google.firebase:firebase-auth"
-  firestoreImplementation "com.google.firebase:firebase-firestore"
-
-  // Storage
-  storageImplementation "com.google.firebase:firebase-auth"
-  storageImplementation "com.google.firebase:firebase-storage"
 }
 
 clean.doLast {
