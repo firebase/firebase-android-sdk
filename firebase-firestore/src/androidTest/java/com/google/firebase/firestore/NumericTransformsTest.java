@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
@@ -157,5 +158,29 @@ public class NumericTransformsTest {
 
     snap = accumulator.awaitRemoteEvent();
     assertEquals(0.111D, snap.getDouble("sum"), DOUBLE_EPSILON);
+  }
+
+  @Test
+  public void serverTimestampAndIncrement() throws ExecutionException, InterruptedException {
+    // This test stacks two pending transforms (a ServerTimestamp and an Increment transform) and
+    // reproduces an the setup that was reported in
+    // https://github.com/firebase/firebase-android-sdk/issues/491
+    // In our original code, a NumericIncrementTransformOperation could cause us to decode the
+    // ServerTimestamp as part of a PatchMutation, which triggered an assertion failure.
+    Tasks.await(docRef.getFirestore().disableNetwork());
+
+    docRef.set(map("val", FieldValue.serverTimestamp()));
+    docRef.set(map("val", FieldValue.increment(1)));
+
+    DocumentSnapshot snap = accumulator.awaitLocalEvent();
+    assertNotNull(snap.getTimestamp("val", DocumentSnapshot.ServerTimestampBehavior.ESTIMATE));
+
+    snap = accumulator.awaitLocalEvent();
+    assertEquals(1, (long) snap.getLong("val"));
+
+    Tasks.await(docRef.getFirestore().enableNetwork());
+
+    snap = accumulator.awaitRemoteEvent();
+    assertEquals(1, (long) snap.getLong("val"));
   }
 }

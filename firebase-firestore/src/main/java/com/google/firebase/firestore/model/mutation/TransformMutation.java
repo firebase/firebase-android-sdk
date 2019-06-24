@@ -25,9 +25,7 @@ import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -123,23 +121,28 @@ public final class TransformMutation extends Mutation {
         getKey(), doc.getVersion(), newData, Document.DocumentState.LOCAL_MUTATIONS);
   }
 
+  @Nullable
   @Override
-  public FieldMask getFieldMask() {
-    Set<FieldPath> fieldMask = new HashSet<>();
-    for (FieldTransform transform : fieldTransforms) {
-      fieldMask.add(transform.getFieldPath());
-    }
-    return FieldMask.fromSet(fieldMask);
-  }
+  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
+    ObjectValue baseValue = null;
 
-  @Override
-  public boolean isIdempotent() {
     for (FieldTransform transform : fieldTransforms) {
-      if (!transform.isIdempotent()) {
-        return false;
+      FieldValue previousValue = null;
+      if (maybeDoc instanceof Document) {
+        previousValue = ((Document) maybeDoc).getField(transform.getFieldPath());
+      }
+
+      FieldValue value = transform.getOperation().computeBaseValue(previousValue);
+      if (value != null) {
+        if (baseValue == null) {
+          baseValue = ObjectValue.emptyObject().set(transform.getFieldPath(), value);
+        } else {
+          baseValue = baseValue.set(transform.getFieldPath(), value);
+        }
       }
     }
-    return true;
+
+    return baseValue;
   }
 
   /**

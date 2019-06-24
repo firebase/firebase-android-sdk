@@ -1,4 +1,7 @@
 # Unreleased
+- [fixed] Fixed an internal assertion that was triggered when a
+  update with a `FieldValue.serverTimestamp()` and an update with a
+  `FieldValue.increment()` were pending for the same document (#491).
 - [changed] Instead of failing silently, Firestore now crashes the client app
   if it fails to load SSL Ciphers. To avoid these crashes, you must bundle 
   Conscrypt to support non-GMSCore devices on Android KitKat or JellyBean (see

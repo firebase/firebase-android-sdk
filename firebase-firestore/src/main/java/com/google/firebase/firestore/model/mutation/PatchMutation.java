@@ -132,8 +132,8 @@ public final class PatchMutation extends Mutation {
 
   @Nullable
   @Override
-  public FieldMask getFieldMask() {
-    return mask;
+  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
+    return null;
   }
 
   /**
@@ -162,10 +162,5 @@ public final class PatchMutation extends Mutation {
       }
     }
     return obj;
-  }
-
-  @Override
-  public boolean isIdempotent() {
-    return true;
   }
 }
