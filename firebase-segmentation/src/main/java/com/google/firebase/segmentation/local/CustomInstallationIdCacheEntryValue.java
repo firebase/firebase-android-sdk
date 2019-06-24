@@ -22,14 +22,14 @@ import com.google.firebase.segmentation.local.CustomInstallationIdCache.CacheSta
  * Firebase instance id, a custom installation id and the cache status of this entry.
  */
 @AutoValue
-abstract class CustomInstallationIdCacheEntryValue {
-  abstract String getCustomInstallationId();
+public abstract class CustomInstallationIdCacheEntryValue {
+  public abstract String getCustomInstallationId();
 
-  abstract String getFirebaseInstanceId();
+  public abstract String getFirebaseInstanceId();
 
-  abstract CacheStatus getCacheStatus();
+  public abstract CacheStatus getCacheStatus();
 
-  static CustomInstallationIdCacheEntryValue create(
+  public static CustomInstallationIdCacheEntryValue create(
       String customInstallationId, String firebaseInstanceId, CacheStatus cacheStatus) {
     return new AutoValue_CustomInstallationIdCacheEntryValue(
         customInstallationId, firebaseInstanceId, cacheStatus);
