@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryMatcher;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -118,6 +119,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
+    QueryMatcher queryMatcher = query.matcher();
+
     Map<DocumentKey, Document> results = new HashMap<>();
 
     db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
@@ -142,7 +145,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
               }
 
               Document doc = (Document) maybeDoc;
-              if (!query.matches(doc)) {
+              if (!queryMatcher.matches(doc)) {
                 return;
               }
 

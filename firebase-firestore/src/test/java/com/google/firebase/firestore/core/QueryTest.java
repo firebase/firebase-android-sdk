@@ -49,9 +49,11 @@ public class QueryTest {
     Document doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"));
 
     Query query = Query.atPath(queryPath);
-    assertTrue(query.matches(doc1));
-    assertFalse(query.matches(doc2));
-    assertFalse(query.matches(doc3));
+    QueryMatcher matcher = query.matcher();
+    
+    assertTrue(matcher.matches(doc1));
+    assertFalse(matcher.matches(doc2));
+    assertFalse(matcher.matches(doc3));
   }
 
   @Test
@@ -63,10 +65,12 @@ public class QueryTest {
     Document doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"));
 
     Query query = Query.atPath(queryPath);
-    assertTrue(query.matches(doc1));
-    assertFalse(query.matches(doc1meta));
-    assertTrue(query.matches(doc2));
-    assertFalse(query.matches(doc3));
+    QueryMatcher matcher = query.matcher();
+    
+    assertTrue(matcher.matches(doc1));
+    assertFalse(matcher.matches(doc1meta));
+    assertTrue(matcher.matches(doc2));
+    assertFalse(matcher.matches(doc3));
   }
 
   @Test
@@ -76,16 +80,22 @@ public class QueryTest {
     Document doc2 = doc("rooms/eros/messages/2", 0, map());
 
     Query query = Query.atPath(queryPath).filter(filter("text", "==", "msg1"));
-    assertTrue(query.matches(doc1));
-    assertFalse(query.matches(doc2));
+    QueryMatcher matcher = query.matcher();
+
+    assertTrue(matcher.matches(doc1));
+    assertFalse(matcher.matches(doc2));
   }
 
   @Test
   public void testPrimitiveValueFilter() {
     Query query1 =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", ">=", 2));
+    QueryMatcher matcher1 = query1.matcher();
+
     Query query2 =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "<=", 2));
+    QueryMatcher matcher2 = query2.matcher();
+
 
     Document doc1 = doc("collection/1", 0, map("sort", 1));
     Document doc2 = doc("collection/2", 0, map("sort", 2));
@@ -93,17 +103,17 @@ public class QueryTest {
     Document doc4 = doc("collection/4", 0, map("sort", false));
     Document doc5 = doc("collection/5", 0, map("sort", "string"));
 
-    assertFalse(query1.matches(doc1));
-    assertTrue(query1.matches(doc2));
-    assertTrue(query1.matches(doc3));
-    assertFalse(query1.matches(doc4));
-    assertFalse(query1.matches(doc5));
+    assertFalse(matcher1.matches(doc1));
+    assertTrue(matcher1.matches(doc2));
+    assertTrue(matcher1.matches(doc3));
+    assertFalse(matcher1.matches(doc4));
+    assertFalse(matcher1.matches(doc5));
 
-    assertTrue(query2.matches(doc1));
-    assertTrue(query2.matches(doc2));
-    assertFalse(query2.matches(doc3));
-    assertFalse(query2.matches(doc4));
-    assertFalse(query2.matches(doc5));
+    assertTrue(matcher2.matches(doc1));
+    assertTrue(matcher2.matches(doc2));
+    assertFalse(matcher2.matches(doc3));
+    assertFalse(matcher2.matches(doc4));
+    assertFalse(matcher2.matches(doc5));
   }
 
   @Test
@@ -111,14 +121,15 @@ public class QueryTest {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("array", "array-contains", 42L));
+    QueryMatcher matcher = query.matcher();
 
     // not an array
     Document document = doc("collection/1", 0, map("array", 1));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
 
     // empty array
     document = doc("collection/1", 0, map("array", asList()));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
 
     // array without element (and make sure it doesn't match in a nested field or a different field)
     document =
@@ -126,11 +137,11 @@ public class QueryTest {
             "collection/1",
             0,
             map("array", asList(41L, "42", map("a", 42L, "b", asList(42L))), "different", 42L));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
 
     // array with element
     document = doc("collection/1", 0, map("array", asList(1L, "2", 42L, map("a", 1L))));
-    assertTrue(query.matches(document));
+    assertTrue(matcher.matches(document));
   }
 
   @Test
@@ -139,6 +150,7 @@ public class QueryTest {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("array", "array-contains", map("a", asList(42))));
+    QueryMatcher matcher = query.matcher();
 
     // array without element
     Document document =
@@ -152,11 +164,11 @@ public class QueryTest {
                     map("a", asList(42L, 43L)),
                     map("b", asList(42L)),
                     map("a", asList(42L), "b", 42L))));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
 
     // array with element
     document = doc("collection/1", 0, map("array", asList(1L, "2", 42L, map("a", asList(42L)))));
-    assertTrue(query.matches(document));
+    assertTrue(matcher.matches(document));
   }
 
   @Test
@@ -164,21 +176,22 @@ public class QueryTest {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("zip", "in", asList(12345)));
+    QueryMatcher matcher = query.matcher();
 
     Document document = doc("collection/1", 0, map("zip", 12345));
-    assertTrue(query.matches(document));
+    assertTrue(matcher.matches(document));
 
     // Value matches in array.
     document = doc("collection/1", 0, map("zip", asList(12345)));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
 
     // Non-type match.
     document = doc("collection/1", 0, map("zip", "12345"));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
 
     // Nested match.
     document = doc("collection/1", 0, map("zip", asList("12345", map("zip", 12345))));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
   }
 
   @Test
@@ -186,14 +199,15 @@ public class QueryTest {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("zip", "in", asList(map("a", asList(42)))));
+    QueryMatcher matcher = query.matcher();
 
     // Containing object in array.
     Document document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
 
     // Containing object.
     document = doc("collection/1", 0, map("zip", map("a", asList(42))));
-    assertTrue(query.matches(document));
+    assertTrue(matcher.matches(document));
   }
 
   @Test
@@ -201,21 +215,22 @@ public class QueryTest {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("zip", "array-contains-any", asList(12345)));
+    QueryMatcher matcher = query.matcher();
 
     Document document = doc("collection/1", 0, map("zip", asList(12345)));
-    assertTrue(query.matches(document));
+    assertTrue(matcher.matches(document));
 
     // Value matches in non-array.
     document = doc("collection/1", 0, map("zip", 12345));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
 
     // Non-type match.
     document = doc("collection/1", 0, map("zip", asList("12345")));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
 
     // Nested match.
     document = doc("collection/1", 0, map("zip", asList("12345", map("zip", asList(12345)))));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
   }
 
   @Test
@@ -223,14 +238,15 @@ public class QueryTest {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("zip", "array-contains-any", asList(map("a", asList(42)))));
+    QueryMatcher matcher = query.matcher();
 
     // Containing object in array.
     Document document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
-    assertTrue(query.matches(document));
+    assertTrue(matcher.matches(document));
 
     // Containing object.
     document = doc("collection/1", 0, map("zip", map("a", asList(42))));
-    assertFalse(query.matches(document));
+    assertFalse(matcher.matches(document));
   }
 
   @Test
@@ -238,34 +254,38 @@ public class QueryTest {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("sort", "==", Double.NaN));
+    QueryMatcher matcher = query.matcher();
+    
     Document doc1 = doc("collection/1", 0, map("sort", Double.NaN));
     Document doc2 = doc("collection/2", 0, map("sort", 2));
     Document doc3 = doc("collection/3", 0, map("sort", 3.1));
     Document doc4 = doc("collection/4", 0, map("sort", false));
     Document doc5 = doc("collection/5", 0, map("sort", "string"));
 
-    assertTrue(query.matches(doc1));
-    assertFalse(query.matches(doc2));
-    assertFalse(query.matches(doc3));
-    assertFalse(query.matches(doc4));
-    assertFalse(query.matches(doc5));
+    assertTrue(matcher.matches(doc1));
+    assertFalse(matcher.matches(doc2));
+    assertFalse(matcher.matches(doc3));
+    assertFalse(matcher.matches(doc4));
+    assertFalse(matcher.matches(doc5));
   }
 
   @Test
   public void testNullFilter() {
     Query query =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "==", null));
+    QueryMatcher matcher = query.matcher();
+
     Document doc1 = doc("collection/1", 0, map("sort", null));
     Document doc2 = doc("collection/2", 0, map("sort", 2));
     Document doc3 = doc("collection/3", 0, map("sort", 3.1));
     Document doc4 = doc("collection/4", 0, map("sort", false));
     Document doc5 = doc("collection/5", 0, map("sort", "string"));
 
-    assertTrue(query.matches(doc1));
-    assertFalse(query.matches(doc2));
-    assertFalse(query.matches(doc3));
-    assertFalse(query.matches(doc4));
-    assertFalse(query.matches(doc5));
+    assertTrue(matcher.matches(doc1));
+    assertFalse(matcher.matches(doc2));
+    assertFalse(matcher.matches(doc3));
+    assertFalse(matcher.matches(doc4));
+    assertFalse(matcher.matches(doc5));
   }
 
   @Test
@@ -281,8 +301,11 @@ public class QueryTest {
   public void testComplexObjectFilters() {
     Query query1 =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "<=", 2));
+    QueryMatcher matcher1 = query1.matcher();
     Query query2 =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", ">=", 2));
+    QueryMatcher matcher2 = query2.matcher();
+
 
     Document doc1 = doc("collection/1", 0, map("sort", 2));
     Document doc2 = doc("collection/2", 0, map("sort", asList()));
@@ -292,26 +315,27 @@ public class QueryTest {
     Document doc6 = doc("collection/6", 0, map("sort", map()));
     Document doc7 = doc("collection/7", 0, map("sort", asList(3, 1)));
 
-    assertTrue(query1.matches(doc1));
-    assertFalse(query1.matches(doc2));
-    assertFalse(query1.matches(doc3));
-    assertFalse(query1.matches(doc4));
-    assertFalse(query1.matches(doc5));
-    assertFalse(query1.matches(doc6));
-    assertFalse(query1.matches(doc7));
+    assertTrue(matcher1.matches(doc1));
+    assertFalse(matcher1.matches(doc2));
+    assertFalse(matcher1.matches(doc3));
+    assertFalse(matcher1.matches(doc4));
+    assertFalse(matcher1.matches(doc5));
+    assertFalse(matcher1.matches(doc6));
+    assertFalse(matcher1.matches(doc7));
 
-    assertTrue(query2.matches(doc1));
-    assertFalse(query2.matches(doc2));
-    assertFalse(query2.matches(doc3));
-    assertFalse(query2.matches(doc4));
-    assertFalse(query2.matches(doc5));
-    assertFalse(query2.matches(doc6));
-    assertFalse(query2.matches(doc7));
+    assertTrue(matcher2.matches(doc1));
+    assertFalse(matcher2.matches(doc2));
+    assertFalse(matcher2.matches(doc3));
+    assertFalse(matcher2.matches(doc4));
+    assertFalse(matcher2.matches(doc5));
+    assertFalse(matcher2.matches(doc6));
+    assertFalse(matcher2.matches(doc7));
   }
 
   @Test
   public void testDoesNotRemoveComplexObjectsWithOrderBy() {
     Query query = Query.atPath(ResourcePath.fromString("collection")).orderBy(orderBy("sort"));
+    QueryMatcher matcher = query.matcher();
 
     Document doc1 = doc("collection/1", 0, map("sort", 2));
     Document doc2 = doc("collection/2", 0, map("sort", asList()));
@@ -319,11 +343,11 @@ public class QueryTest {
     Document doc4 = doc("collection/4", 0, map("sort", map("foo", 2)));
     Document doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")));
 
-    assertTrue(query.matches(doc1));
-    assertTrue(query.matches(doc2));
-    assertTrue(query.matches(doc3));
-    assertTrue(query.matches(doc4));
-    assertTrue(query.matches(doc5));
+    assertTrue(matcher.matches(doc1));
+    assertTrue(matcher.matches(doc2));
+    assertTrue(matcher.matches(doc3));
+    assertTrue(matcher.matches(doc4));
+    assertTrue(matcher.matches(doc5));
   }
 
   @Test
@@ -339,11 +363,13 @@ public class QueryTest {
             filter("tags", "==", asList("foo", true, 1)));
 
     for (Filter filter : matchingFilters) {
-      assertTrue(baseQuery.filter(filter).matches(doc1));
+      QueryMatcher matcher = baseQuery.filter(filter).matcher();
+      assertTrue(matcher.matches(doc1));
     }
 
     for (Filter filter : nonMatchingFilters) {
-      assertFalse(baseQuery.filter(filter).matches(doc1));
+      QueryMatcher matcher = baseQuery.filter(filter).matcher();
+      assertFalse(matcher.matches(doc1));
     }
   }
 
@@ -367,11 +393,13 @@ public class QueryTest {
             filter("tags", "==", map("foo", "foo", "a", 0, "b", true)));
 
     for (Filter filter : matchingFilters) {
-      assertTrue(baseQuery.filter(filter).matches(doc1));
+      QueryMatcher matcher = baseQuery.filter(filter).matcher();
+      assertTrue(matcher.matches(doc1));
     }
 
     for (Filter filter : nonMatchingFilters) {
-      assertFalse(baseQuery.filter(filter).matches(doc1));
+      QueryMatcher matcher = baseQuery.filter(filter).matcher();
+      assertFalse(matcher.matches(doc1));
     }
   }
 

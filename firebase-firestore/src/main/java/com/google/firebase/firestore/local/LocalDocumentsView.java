@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryMatcher;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -202,8 +203,9 @@ final class LocalDocumentsView {
     }
 
     // Finally, filter out any documents that don't actually match the query.
+    QueryMatcher matcher = query.matcher();
     for (Map.Entry<DocumentKey, Document> docEntry : results) {
-      if (!query.matches(docEntry.getValue())) {
+      if (!matcher.matches(docEntry.getValue())) {
         results = results.remove(docEntry.getKey());
       }
     }

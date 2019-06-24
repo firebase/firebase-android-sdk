@@ -25,6 +25,7 @@ import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.core.NaNFilter;
 import com.google.firebase.firestore.core.NullFilter;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryMatcher;
 import com.google.firebase.firestore.core.RelationFilter;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentCollections;
@@ -133,17 +134,16 @@ public class IndexedQueryEngine implements QueryEngine {
    */
   private ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(
       Query query, IndexRange indexRange) {
+    QueryMatcher matcher = query.matcher();
     ImmutableSortedMap<DocumentKey, Document> results = DocumentCollections.emptyDocumentMap();
-    IndexCursor cursor = collectionIndex.getCursor(query.getPath(), indexRange);
-    try {
+
+    try (IndexCursor cursor = collectionIndex.getCursor(query.getPath(), indexRange)) {
       while (cursor.next()) {
         Document document = (Document) localDocuments.getDocument(cursor.getDocumentKey());
-        if (query.matches(document)) {
+        if (matcher.matches(document)) {
           results = results.insert(cursor.getDocumentKey(), document);
         }
       }
-    } finally {
-      cursor.close();
     }
 
     return results;

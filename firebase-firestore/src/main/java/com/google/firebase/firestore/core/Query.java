@@ -330,61 +330,17 @@ public final class Query {
     return memoizedOrderBy;
   }
 
-  private boolean matchesPathAndCollectionGroup(Document doc) {
-    ResourcePath docPath = doc.getKey().getPath();
-    if (collectionGroup != null) {
-      // NOTE: this.path is currently always empty since we don't expose Collection
-      // Group queries rooted at a document path yet.
-      return doc.getKey().hasCollectionId(collectionGroup) && path.isPrefixOf(docPath);
-    } else if (DocumentKey.isDocumentKey(path)) {
-      return path.equals(docPath);
-    } else {
-      return path.isPrefixOf(docPath) && path.length() == docPath.length() - 1;
-    }
-  }
-
-  private boolean matchesFilters(Document doc) {
-    for (Filter filter : filters) {
-      if (!filter.matches(doc)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /** A document must have a value for every ordering clause in order to show up in the results. */
-  private boolean matchesOrderBy(Document doc) {
-    for (OrderBy order : explicitSortOrder) {
-      // order by key always matches
-      if (!order.getField().equals(FieldPath.KEY_PATH) && (doc.getField(order.field) == null)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /** Makes sure a document is within the bounds, if provided. */
-  private boolean matchesBounds(Document doc) {
-    if (startAt != null && !startAt.sortsBeforeDocument(getOrderBy(), doc)) {
-      return false;
-    }
-    if (endAt != null && endAt.sortsBeforeDocument(getOrderBy(), doc)) {
-      return false;
-    }
-    return true;
-  }
-
-  /** Returns true if the document matches the constraints of this query. */
-  public boolean matches(Document doc) {
-    return matchesPathAndCollectionGroup(doc)
-        && matchesOrderBy(doc)
-        && matchesFilters(doc)
-        && matchesBounds(doc);
-  }
-
   /** Returns a comparator that will sort documents according to this Query's sort order. */
   public Comparator<Document> comparator() {
     return new QueryComparator(getOrderBy());
+  }
+
+  /**
+   * Returns a QueryMatcher that matches based on the filters and order by constraints of this
+   * query.
+   */
+  public QueryMatcher matcher() {
+    return QueryMatcher.fromQuery(this);
   }
 
   private static class QueryComparator implements Comparator<Document> {

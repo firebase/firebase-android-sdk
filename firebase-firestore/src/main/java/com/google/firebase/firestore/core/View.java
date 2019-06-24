@@ -72,6 +72,8 @@ public class View {
 
   private final Query query;
 
+  private final QueryMatcher queryMatcher;
+
   private SyncState syncState;
 
   /**
@@ -94,6 +96,7 @@ public class View {
 
   public View(Query query, ImmutableSortedSet<DocumentKey> remoteDocuments) {
     this.query = query;
+    queryMatcher = query.matcher();
     syncState = SyncState.NONE;
     documentSet = DocumentSet.emptySet(query.comparator());
     syncedDocuments = remoteDocuments;
@@ -164,7 +167,7 @@ public class View {
             "Mismatching key in doc change %s != %s",
             key,
             newDoc.getKey());
-        if (!query.matches(newDoc)) {
+        if (!queryMatcher.matches(newDoc)) {
           newDoc = null;
         }
       }
