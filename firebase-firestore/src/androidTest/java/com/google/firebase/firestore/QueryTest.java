@@ -429,32 +429,32 @@ public class QueryTest {
     // much of anything else interesting to test.
   }
 
-  // TODO(in-queries): Re-enable in prod once emulator support is added to travis.
+  // TODO(in-queries): Re-enable in prod once feature lands in backend.
   @Test
   public void testQueriesCanUseInFilters() {
     if (!isRunningAgainstEmulator()) {
       return;
     }
-    Map<String, Object> docA = map("zip", 98101);
-    Map<String, Object> docB = map("zip", 91102);
-    Map<String, Object> docC = map("zip", 98103);
-    Map<String, Object> docD = map("zip", asList(98101));
-    Map<String, Object> docE = map("zip", asList("98101", map("zip", 98101)));
-    Map<String, Object> docF = map("zip", map("code", 500));
+    Map<String, Object> docA = map("zip", 98101L);
+    Map<String, Object> docB = map("zip", 91102L);
+    Map<String, Object> docC = map("zip", 98103L);
+    Map<String, Object> docD = map("zip", asList(98101L));
+    Map<String, Object> docE = map("zip", asList("98101", map("zip", 98101L)));
+    Map<String, Object> docF = map("zip", map("code", 500L));
     CollectionReference collection =
         testCollectionWithDocs(
             map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF));
 
     // Search for zips matching [98101, 98103].
-    QuerySnapshot snapshot = waitFor(collection.whereIn("zip", asList(98101, 98103)).get());
-    assertEquals(asList(docA, docC), querySnapshotToValues (snapshot));
+    QuerySnapshot snapshot = waitFor(collection.whereIn("zip", asList(98101L, 98103L)).get());
+    assertEquals(asList(docA, docC), querySnapshotToValues(snapshot));
 
     // With objects.
-    snapshot = waitFor(collection.whereIn("zip", asList(map("code", 500))).get());
+    snapshot = waitFor(collection.whereIn("zip", asList(map("code", 500L))).get());
     assertEquals(asList(docF), querySnapshotToValues(snapshot));
   }
 
-  // TODO(in-queries): Re-enable in prod once emulator support is added to travis.
+  // TODO(in-queries): Re-enable in prod once feature lands in backend.
   @Test
   public void testQueriesCanUseArrayContainsAnyFilters() {
     if (!isRunningAgainstEmulator()) {
