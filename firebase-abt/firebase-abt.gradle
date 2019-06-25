@@ -54,6 +54,10 @@ android {
             proto {
                 srcDir 'src/proto'
             }
+
+	    resources {
+	        srcDir 'src/proto/com/google/protos'
+	    }
         }
     }
 
