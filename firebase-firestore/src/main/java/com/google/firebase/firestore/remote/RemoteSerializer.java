@@ -106,11 +106,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Serializer that converts to and from Firestore API protos.
- *
- * <p>This class is thread-safe.
- */
+/** Serializer that converts to and from Firestore API protos. */
 public final class RemoteSerializer {
 
   private final DatabaseId databaseId;

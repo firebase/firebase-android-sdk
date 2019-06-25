@@ -35,11 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Serializer for values stored in the LocalStore.
- *
- * <p>This class is thread-safe.
- */
+/** Serializer for values stored in the LocalStore. */
 public final class LocalSerializer {
 
   private final RemoteSerializer rpcSerializer;

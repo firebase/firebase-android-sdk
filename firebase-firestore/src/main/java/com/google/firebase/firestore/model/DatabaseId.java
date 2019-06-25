@@ -16,11 +16,7 @@ package com.google.firebase.firestore.model;
 
 import androidx.annotation.NonNull;
 
-/**
- * Represents a particular database in Firestore.
- *
- * <p>This class is thread-safe.
- */
+/** Represents a particular database in Firestore */
 public final class DatabaseId implements Comparable<DatabaseId> {
   public static final String DEFAULT_DATABASE_ID = "(default)";
 

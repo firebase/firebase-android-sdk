@@ -17,22 +17,23 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.Executors;
+import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Semaphore;
 import javax.annotation.Nullable;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
@@ -122,10 +123,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
-    Map<DocumentKey, Document> allDocuments = new ConcurrentHashMap<>();
-
-    int[] pendingTaskCount = new int[] {0};
-    Semaphore completedTasks = new Semaphore(0);
+    List<Task<Document>> pendingTasks = new ArrayList<>();
 
     db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
         .binding(prefixPath, prefixSuccessorPath)
@@ -145,33 +143,29 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
               byte[] rawContents = row.getBlob(1);
 
-              ++pendingTaskCount[0];
-
-              // Since scheduling background tasks incurs overhead, we only dispatch to a background
-              // thread if there are still some documents remaining.
-              Executor deserializationExecutor =
-                  row.isLast() ? Executors.DIRECT_EXECUTOR : Executors.BACKGROUND_EXECUTOR;
-              deserializationExecutor.execute(
-                  () -> {
-                    MaybeDocument maybeDoc = decodeMaybeDocument(rawContents);
-                    if (maybeDoc instanceof Document) {
-                      allDocuments.put(maybeDoc.getKey(), (Document) maybeDoc);
-                    }
-                    completedTasks.release();
-                  });
+              pendingTasks.add(
+                  Tasks.call(
+                      // Since scheduling background tasks incurs overhead, we only dispatch to a
+                      // background thread if there are still some documents remaining.
+                      row.isLast() ? Executors.DIRECT_EXECUTOR : Executors.BACKGROUND_EXECUTOR,
+                      () -> {
+                        MaybeDocument maybeDoc = decodeMaybeDocument(rawContents);
+                        if (!(maybeDoc instanceof Document)) {
+                          return null;
+                        }
+                        if (!query.matches((Document) maybeDoc)) {
+                          return null;
+                        }
+                        return (Document) maybeDoc;
+                      }));
             });
 
-    try {
-      completedTasks.acquire(pendingTaskCount[0]);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
-
     ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
-        ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
-    for (Map.Entry<DocumentKey, Document> entry : allDocuments.entrySet()) {
-      if (query.matches(entry.getValue())) {
-        matchingDocuments = matchingDocuments.insert(entry.getKey(), entry.getValue());
+        DocumentCollections.emptyDocumentMap();
+    List<Document> results = Util.await(Util.whenAllComplete(pendingTasks));
+    for (Document doc : results) {
+      if (doc != null) {
+        matchingDocuments = matchingDocuments.insert(doc.getKey(), doc);
       }
     }
     return matchingDocuments;
