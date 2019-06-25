@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -431,9 +432,7 @@ public class QueryTest {
   // TODO(in-queries): Re-enable in prod once feature lands in backend.
   @Test
   public void testQueriesCanUseInFilters() {
-    if (!isRunningAgainstEmulator()) {
-      return;
-    }
+    Assume.assumeTrue(isRunningAgainstEmulator());
     Map<String, Object> docA = map("zip", 98101L);
     Map<String, Object> docB = map("zip", 91102L);
     Map<String, Object> docC = map("zip", 98103L);
@@ -456,9 +455,7 @@ public class QueryTest {
   // TODO(in-queries): Re-enable in prod once feature lands in backend.
   @Test
   public void testQueriesCanUseArrayContainsAnyFilters() {
-    if (!isRunningAgainstEmulator()) {
-      return;
-    }
+    Assume.assumeTrue(isRunningAgainstEmulator());
     Map<String, Object> docA = map("array", asList(42L));
     Map<String, Object> docB = map("array", asList("a", 42L, "c"));
     Map<String, Object> docC = map("array", asList(41.999, "42", map("a", asList(42))));
