@@ -161,11 +161,11 @@ public class MutationTest {
             new ServerTimestampValue(timestamp, StringValue.valueOf("bar-value")));
 
     Document expectedDoc =
-        Document.fromObjectValue(
+        new Document(
             key("collection/key"),
             version(0),
-            expectedData,
-            Document.DocumentState.LOCAL_MUTATIONS);
+            Document.DocumentState.LOCAL_MUTATIONS,
+            expectedData);
     assertEquals(expectedDoc, transformedDoc);
   }
 

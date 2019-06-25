@@ -174,23 +174,22 @@ public class TestUtil {
   }
 
   public static Document doc(String key, long version, Map<String, Object> data) {
-    return Document.fromObjectValue(
-        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
+    return new Document(
+        key(key), version(version), Document.DocumentState.SYNCED, wrapObject(data));
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return Document.fromObjectValue(
-        key, version(version), wrapObject(data), Document.DocumentState.SYNCED);
+    return new Document(key, version(version), Document.DocumentState.SYNCED, wrapObject(data));
   }
 
   public static Document doc(
       String key, long version, ObjectValue data, Document.DocumentState documentState) {
-    return Document.fromObjectValue(key(key), version(version), data, documentState);
+    return new Document(key(key), version(version), documentState, data);
   }
 
   public static Document doc(
       String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
-    return Document.fromObjectValue(key(key), version(version), wrapObject(data), documentState);
+    return new Document(key(key), version(version), documentState, wrapObject(data));
   }
 
   public static NoDocument deletedDoc(String key, long version) {

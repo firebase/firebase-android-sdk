@@ -112,8 +112,7 @@ public final class PatchMutation extends Mutation {
 
     SnapshotVersion version = mutationResult.getVersion();
     ObjectValue newData = patchDocument(maybeDoc);
-    return Document.fromObjectValue(
-        getKey(), version, newData, Document.DocumentState.COMMITTED_MUTATIONS);
+    return new Document(getKey(), version, Document.DocumentState.COMMITTED_MUTATIONS, newData);
   }
 
   @Nullable
@@ -128,8 +127,7 @@ public final class PatchMutation extends Mutation {
 
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
     ObjectValue newData = patchDocument(maybeDoc);
-    return Document.fromObjectValue(
-        getKey(), version, newData, Document.DocumentState.LOCAL_MUTATIONS);
+    return new Document(getKey(), version, Document.DocumentState.LOCAL_MUTATIONS, newData);
   }
 
   @Nullable

@@ -38,8 +38,8 @@ public class DocumentTest {
   @Test
   public void testInstantiation() {
     Document document =
-        Document.fromObjectValue(
-            key("messages/first"), version(1), wrapObject("a", 1), Document.DocumentState.SYNCED);
+        new Document(
+            key("messages/first"), version(1), Document.DocumentState.SYNCED, wrapObject("a", 1));
 
     assertEquals(key("messages/first"), document.getKey());
     assertEquals(version(1), document.getVersion());
@@ -56,8 +56,7 @@ public class DocumentTest {
             "owner",
             map("name", "Jonny", "title", "scallywag"));
     Document document =
-        Document.fromObjectValue(
-            key("rooms/eros"), version(1), data, Document.DocumentState.SYNCED);
+        new Document(key("rooms/eros"), version(1), Document.DocumentState.SYNCED, data);
 
     assertEquals("Discuss all the project related stuff", document.getFieldValue(field("desc")));
     assertEquals("scallywag", document.getFieldValue(field("owner.title")));

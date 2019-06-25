@@ -553,8 +553,7 @@ public abstract class LruGarbageCollectorTestCase {
         () -> {
           SnapshotVersion newVersion = version(3);
           Document doc =
-              Document.fromObjectValue(
-                  middleDocToUpdate, newVersion, testValue, Document.DocumentState.SYNCED);
+              new Document(middleDocToUpdate, newVersion, Document.DocumentState.SYNCED, testValue);
           documentCache.add(doc);
           updateTargetInTransaction(middleTarget);
         });

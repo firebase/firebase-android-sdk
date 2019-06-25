@@ -16,18 +16,21 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import com.google.common.base.Function;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firestore.v1.Value;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * Represents a document in Firestore with a key, version, data and whether the data has local
  * mutations applied to it.
  */
-public abstract class Document extends MaybeDocument {
+public final class Document extends MaybeDocument {
 
   /** Describes the `hasPendingWrites` state of a document. */
   public enum DocumentState {
@@ -47,100 +50,95 @@ public abstract class Document extends MaybeDocument {
     return KEY_COMPARATOR;
   }
 
-  /** Creates a new Document from an existing ObjectValue. */
-  public static Document fromObjectValue(
-      DocumentKey key, SnapshotVersion version, ObjectValue data, DocumentState documentState) {
-    return new Document(key, version, documentState) {
-      @Nullable
-      @Override
-      public com.google.firestore.v1.Document getProto() {
-        return null;
-      }
-
-      @Override
-      public ObjectValue getData() {
-        return data;
-      }
-
-      @Nullable
-      @Override
-      public FieldValue getField(FieldPath path) {
-        return data.get(path);
-      }
-    };
-  }
-
-  /**
-   * Creates a new Document from a Proto representation.
-   *
-   * <p>The Proto is only converted to an ObjectValue if the consumer calls `getData()`.
-   */
-  public static Document fromProto(
-      RemoteSerializer serializer,
-      com.google.firestore.v1.Document proto,
-      DocumentState documentState) {
-    DocumentKey key = serializer.decodeKey(proto.getName());
-    SnapshotVersion version = serializer.decodeVersion(proto.getUpdateTime());
-
-    hardAssert(
-        !version.equals(SnapshotVersion.NONE), "Found a document Proto with no snapshot version");
-
-    return new Document(key, version, documentState) {
-      private ObjectValue memoizedData = null;
-
-      @Override
-      public com.google.firestore.v1.Document getProto() {
-        return proto;
-      }
-
-      @Override
-      public ObjectValue getData() {
-        if (memoizedData != null) {
-          return memoizedData;
-        } else {
-          memoizedData = serializer.decodeFields(proto.getFieldsMap());
-          return memoizedData;
-        }
-      }
-
-      @Nullable
-      @Override
-      public FieldValue getField(FieldPath path) {
-        if (memoizedData != null) {
-          return memoizedData.get(path);
-        } else {
-          // Instead of deserializing the full Document proto, we only deserialize the value at
-          // the requested field path. This speeds up Query execution as query filters can discard
-          // documents based on a single field.
-          Value value = proto.getFieldsMap().get(path.getFirstSegment());
-          for (int i = 1; value != null && i < path.length(); ++i) {
-            if (value.getValueTypeCase() != Value.ValueTypeCase.MAP_VALUE) {
-              return null;
-            }
-            value = value.getMapValue().getFieldsMap().get(path.getSegment(i));
-          }
-          return value != null ? serializer.decodeValue(value) : null;
-        }
-      }
-    };
-  }
+  /** A cache for FieldValues that have already been deserialized in `getField()`. */
+  private final Map<FieldPath, FieldValue> fieldValueCache = new ConcurrentHashMap<>();
 
   private final DocumentState documentState;
+  private @Nullable final com.google.firestore.v1.Document proto;
+  private @Nullable final Function<Value, FieldValue> converter;
+  private ObjectValue objectValue;
 
-  private Document(DocumentKey key, SnapshotVersion version, DocumentState documentState) {
+  public Document(
+      DocumentKey key,
+      SnapshotVersion version,
+      DocumentState documentState,
+      ObjectValue objectValue) {
     super(key, version);
     this.documentState = documentState;
+    this.objectValue = objectValue;
+    this.proto = null;
+    this.converter = null;
+  }
+
+  public Document(
+      DocumentKey key,
+      SnapshotVersion version,
+      DocumentState documentState,
+      com.google.firestore.v1.Document proto,
+      Function<com.google.firestore.v1.Value, FieldValue> converter) {
+    super(key, version);
+    this.documentState = documentState;
+    this.proto = proto;
+    this.converter = converter;
   }
 
   /**
    * Memoized serialized form of the document for optimization purposes (avoids repeated
    * serialization). Might be null.
    */
-  public abstract @Nullable com.google.firestore.v1.Document getProto();
+  public @Nullable com.google.firestore.v1.Document getProto() {
+    return proto;
+  }
 
-  public abstract ObjectValue getData();
+  @Nonnull
+  public ObjectValue getData() {
+    if (objectValue == null) {
+      hardAssert(proto != null && converter != null, "Expected proto and converter to be non-null");
 
-  public abstract @Nullable FieldValue getField(FieldPath path);
+      ObjectValue result = ObjectValue.emptyObject();
+      for (Map.Entry<String, com.google.firestore.v1.Value> entry :
+          proto.getFieldsMap().entrySet()) {
+        FieldPath path = FieldPath.fromSingleSegment(entry.getKey());
+        FieldValue value = converter.apply(entry.getValue());
+        result = result.set(path, value);
+      }
+      objectValue = result;
+
+      // Once objectValue is computed, values inside the fieldValueCache are no longer accessed.
+      fieldValueCache.clear();
+    }
+
+    return objectValue;
+  }
+
+  public @Nullable FieldValue getField(FieldPath path) {
+    if (objectValue != null) {
+      return objectValue.get(path);
+    } else {
+      hardAssert(proto != null && converter != null, "Expected proto and converter to be non-null");
+
+      FieldValue fieldValue = fieldValueCache.get(path);
+      if (fieldValue == null) {
+        // Instead of deserializing the full Document proto, we only deserialize the value at
+        // the requested field path. This speeds up Query execution as query filters can discard
+        // documents based on a single field.
+        Value protoValue = proto.getFieldsMap().get(path.getFirstSegment());
+        for (int i = 1; protoValue != null && i < path.length(); ++i) {
+          if (protoValue.getValueTypeCase() != Value.ValueTypeCase.MAP_VALUE) {
+            return null;
+          }
+          protoValue = protoValue.getMapValue().getFieldsMap().get(path.getSegment(i));
+        }
+
+        if (protoValue != null) {
+          fieldValue = converter.apply(protoValue);
+          fieldValueCache.put(path, fieldValue);
+        }
+      }
+
+      return fieldValue;
+    }
+  }
 
   public @Nullable Object getFieldValue(FieldPath path) {
     FieldValue value = getField(path);
