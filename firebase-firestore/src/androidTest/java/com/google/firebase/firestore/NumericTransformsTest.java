@@ -190,7 +190,7 @@ public class NumericTransformsTest {
   @Test
   public void serverTimestampAndIncrement() throws ExecutionException, InterruptedException {
     // This test stacks two pending transforms (a ServerTimestamp and an Increment transform) and
-    // reproduces an the setup that was reported in
+    // reproduces the setup that was reported in
     // https://github.com/firebase/firebase-android-sdk/issues/491
     // In our original code, a NumericIncrementTransformOperation could cause us to decode the
     // ServerTimestamp as part of a PatchMutation, which triggered an assertion failure.

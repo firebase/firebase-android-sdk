@@ -57,7 +57,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
   @Override
   @Nullable
   public FieldValue computeBaseValue(@Nullable FieldValue currentValue) {
-    return null;
+    return null; // Array transforms are idempotent and don't require a base value.
   }
 
   @Override

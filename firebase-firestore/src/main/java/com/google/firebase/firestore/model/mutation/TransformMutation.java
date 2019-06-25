@@ -124,25 +124,25 @@ public final class TransformMutation extends Mutation {
   @Nullable
   @Override
   public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
-    ObjectValue baseValue = null;
+    ObjectValue baseObject = null;
 
     for (FieldTransform transform : fieldTransforms) {
-      FieldValue previousValue = null;
+      FieldValue existingValue = null;
       if (maybeDoc instanceof Document) {
-        previousValue = ((Document) maybeDoc).getField(transform.getFieldPath());
+        existingValue = ((Document) maybeDoc).getField(transform.getFieldPath());
       }
 
-      FieldValue value = transform.getOperation().computeBaseValue(previousValue);
-      if (value != null) {
-        if (baseValue == null) {
-          baseValue = ObjectValue.emptyObject().set(transform.getFieldPath(), value);
+      FieldValue coercedValue = transform.getOperation().computeBaseValue(existingValue);
+      if (coercedValue != null) {
+        if (baseObject == null) {
+          baseObject = ObjectValue.emptyObject().set(transform.getFieldPath(), coercedValue);
         } else {
-          baseValue = baseValue.set(transform.getFieldPath(), value);
+          baseObject = baseObject.set(transform.getFieldPath(), coercedValue);
         }
       }
     }
 
-    return baseValue;
+    return baseObject;
   }
 
   /**

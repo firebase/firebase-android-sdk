@@ -1,5 +1,5 @@
 # Unreleased
-- [fixed] Fixed an internal assertion that was triggered when a
+- [fixed] Fixed an internal assertion that was triggered when an
   update with a `FieldValue.serverTimestamp()` and an update with a
   `FieldValue.increment()` were pending for the same document (#491).
 - [changed] Instead of failing silently, Firestore now crashes the client app

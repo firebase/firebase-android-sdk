@@ -119,12 +119,14 @@ public abstract class Mutation {
    * provided, the mutation is always applied to this base value, even if document has already been
    * updated.
    *
-   * <p>Base values provide consistent behavior for non-idempotent transforms and allow us to return
-   * the same latency-compensated value even if the backend has already applied the mutation. The
-   * base value is null for idempotent mutations, as they can be re-played even if the backend has
+   * <p>The base value is a sparse objects that consists of only the document fields that for which
+   * this mutation contains a non-idempotent transformation (e.g. a numeric increment). The provided
+   * value guarantees consistent behavior for non-idempotent transforms and allow us to return the
+   * same latency-compensated value even if the backend has already applied the mutation. The base
+   * value is null for idempotent mutations, as they can be re-played even if the backend has
    * already applied them.
    *
-   * @return a base value to store along the mutation, or null for idempotent mutations.
+   * @return a base value to store along with the mutation, or null for idempotent mutations.
    */
   @Nullable
   public abstract ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc);

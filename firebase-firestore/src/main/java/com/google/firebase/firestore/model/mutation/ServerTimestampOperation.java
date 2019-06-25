@@ -46,7 +46,7 @@ public class ServerTimestampOperation implements TransformOperation {
   @Nullable
   @Override
   public FieldValue computeBaseValue(@Nullable FieldValue currentValue) {
-    return null;
+    return null; // Server timestamps are idempotent and don't require a base value.
   }
 
   // NOTE: Since we've guaranteed a singleton instance, we can rely on Object's default

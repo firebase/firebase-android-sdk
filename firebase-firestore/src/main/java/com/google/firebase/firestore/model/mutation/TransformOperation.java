@@ -42,7 +42,7 @@ public interface TransformOperation {
   FieldValue applyToRemoteDocument(@Nullable FieldValue previousValue, FieldValue transformResult);
 
   /**
-   * If applicable, returns the base value to persist with this transform. If a base value is
+   * If applicable, returns the base value to persist for this transform. If a base value is
    * provided, the transform operation is always applied to this base value, even if document has
    * already been updated.
    *
@@ -51,7 +51,7 @@ public interface TransformOperation {
    * operation. The base value is null for idempotent transforms, as they can be re-played even if
    * the backend has already applied them.
    *
-   * @return a base value to store along the mutation, or null for idempotent transforms.
+   * @return a base value to store along with the mutation, or null for idempotent transforms.
    */
   @Nullable
   FieldValue computeBaseValue(@Nullable FieldValue previousValue);
