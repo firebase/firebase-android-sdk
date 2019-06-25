@@ -22,6 +22,7 @@ firebaseLibrary {
     publishSources = true
 }
 
+// TODO(issue/568): Remove this once legacy logic is removed from Remote Config.
 protobuf {
     protoc {
         artifact = 'com.google.protobuf:protoc:3.4.0'
