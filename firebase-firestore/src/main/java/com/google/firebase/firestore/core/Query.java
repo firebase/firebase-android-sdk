@@ -167,16 +167,21 @@ public final class Query {
     return null;
   }
 
-  public boolean hasArrayContainsFilter() {
+  /**
+   * Checks if any of the provided filter operators are included in the query and returns the first
+   * one that is, or null if none are.
+   */
+  @Nullable
+  public Operator findOperatorFilter(List<Operator> filterOps) {
     for (Filter filter : filters) {
       if (filter instanceof RelationFilter) {
-        RelationFilter relationFilter = (RelationFilter) filter;
-        if (relationFilter.getOperator() == Operator.ARRAY_CONTAINS) {
-          return true;
+        Operator queryOp = ((RelationFilter) filter).getOperator();
+        if (filterOps.contains(queryOp)) {
+          return queryOp;
         }
       }
     }
-    return false;
+    return null;
   }
 
   /**
