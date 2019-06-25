@@ -18,8 +18,6 @@ import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Continuation;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.cloud.datastore.core.number.NumberComparisonHelper;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -33,7 +31,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Semaphore;
 
 /** A utility class for Firestore */
 public class Util {
@@ -223,41 +220,6 @@ public class Util {
         .post(
             () -> {
               throw exception;
-            });
-  }
-
-  /**
-   * Waits for the given Task to complete.
-   *
-   * <p>Similar to Tasks.await() but can be called from the main thread to support unit testing.
-   */
-  public static <TResult> TResult await(Task<TResult> task) {
-    Semaphore semaphore = new Semaphore(0);
-    task.addOnCompleteListener(Executors.BACKGROUND_EXECUTOR, t -> semaphore.release());
-    try {
-      semaphore.acquire();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
-    return task.getResult();
-  }
-
-  /**
-   * Returns a Task with a list of Tasks that completes successfully when all of the specified Tasks
-   * complete.
-   *
-   * <p>Similar to Tasks.whenAllComplete() but does not schedule the completion on the main thread.
-   */
-  public static <TResult> Task<List<TResult>> whenAllComplete(List<Task<TResult>> tasks) {
-    return Tasks.whenAll(tasks)
-        .continueWithTask(
-            Executors.BACKGROUND_EXECUTOR,
-            t -> {
-              List<TResult> results = new ArrayList<>();
-              for (Task<TResult> task : tasks) {
-                results.add(task.getResult());
-              }
-              return Tasks.forResult(results);
             });
   }
 }

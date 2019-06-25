@@ -17,8 +17,6 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -26,14 +24,14 @@ import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.util.Executors;
-import com.google.firebase.firestore.util.Util;
+import com.google.firebase.firestore.util.TaskQueue;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
@@ -123,7 +121,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
-    List<Task<Document>> pendingTasks = new ArrayList<>();
+    TaskQueue<Document> taskQueue = new TaskQueue<>();
 
     db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
         .binding(prefixPath, prefixSuccessorPath)
@@ -141,38 +139,46 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
                 return;
               }
 
-              byte[] rawContents = row.getBlob(1);
+              byte[] rawDocument = row.getBlob(1);
 
-              pendingTasks.add(
-                  Tasks.call(
-                      // Since scheduling background tasks incurs overhead, we only dispatch to a
-                      // background thread if there are still some documents remaining.
-                      row.isLast() ? Executors.DIRECT_EXECUTOR : Executors.BACKGROUND_EXECUTOR,
-                      () -> {
-                        MaybeDocument maybeDoc = decodeMaybeDocument(rawContents);
-                        if (!(maybeDoc instanceof Document)) {
-                          return null;
-                        }
-                        if (!query.matches((Document) maybeDoc)) {
-                          return null;
-                        }
-                        return (Document) maybeDoc;
-                      }));
+              if (!row.isLast()) {
+                taskQueue.enqueueInBackground(() -> this.processDocumentResult(rawDocument, query));
+              } else {
+                // Enqueue the last document inline so that we don't block on background execution.
+                taskQueue.enqueueInline(() -> this.processDocumentResult(rawDocument, query));
+              }
             });
 
     ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
         DocumentCollections.emptyDocumentMap();
-    List<Document> results = Util.await(Util.whenAllComplete(pendingTasks));
-    for (Document doc : results) {
-      if (doc != null) {
-        matchingDocuments = matchingDocuments.insert(doc.getKey(), doc);
+
+    try {
+      List<Document> results = taskQueue.awaitResults();
+      for (Document doc : results) {
+        if (doc != null) {
+          matchingDocuments = matchingDocuments.insert(doc.getKey(), doc);
+        }
       }
+    } catch (ExecutionException e) {
+      fail(e, "Failed to decode documents from SQLite");
     }
+
     return matchingDocuments;
   }
 
   private String pathForKey(DocumentKey key) {
     return EncodedPath.encode(key.getPath());
+  }
+
+  private @Nullable Document processDocumentResult(byte[] rawDocument, Query query) {
+    MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
+    if (!(maybeDoc instanceof Document)) {
+      return null;
+    }
+    if (!query.matches((Document) maybeDoc)) {
+      return null;
+    }
+    return (Document) maybeDoc;
   }
 
   private MaybeDocument decodeMaybeDocument(byte[] bytes) {
