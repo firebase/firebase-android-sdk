@@ -36,7 +36,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.core.RelationFilter;
+import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -65,7 +65,6 @@ import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.StructuredQuery.CollectionSelector;
 import com.google.firestore.v1.StructuredQuery.CompositeFilter;
 import com.google.firestore.v1.StructuredQuery.Direction;
-import com.google.firestore.v1.StructuredQuery.FieldFilter;
 import com.google.firestore.v1.StructuredQuery.FieldFilter.Operator;
 import com.google.firestore.v1.StructuredQuery.FieldReference;
 import com.google.firestore.v1.StructuredQuery.Filter;
@@ -548,7 +547,7 @@ public final class RemoteSerializerTest {
             .setWhere(
                 Filter.newBuilder()
                     .setFieldFilter(
-                        FieldFilter.newBuilder()
+                        StructuredQuery.FieldFilter.newBuilder()
                             .setField(FieldReference.newBuilder().setFieldPath("prop"))
                             .setOp(Operator.LESS_THAN)
                             .setValue(valueBuilder().setIntegerValue(42))))
@@ -592,7 +591,7 @@ public final class RemoteSerializerTest {
                             .addFilters(
                                 Filter.newBuilder()
                                     .setFieldFilter(
-                                        FieldFilter.newBuilder()
+                                        StructuredQuery.FieldFilter.newBuilder()
                                             .setField(
                                                 FieldReference.newBuilder().setFieldPath("prop"))
                                             .setOp(Operator.LESS_THAN)
@@ -600,7 +599,7 @@ public final class RemoteSerializerTest {
                             .addFilters(
                                 Filter.newBuilder()
                                     .setFieldFilter(
-                                        FieldFilter.newBuilder()
+                                        StructuredQuery.FieldFilter.newBuilder()
                                             .setField(
                                                 FieldReference.newBuilder().setFieldPath("author"))
                                             .setOp(Operator.EQUAL)
@@ -608,7 +607,7 @@ public final class RemoteSerializerTest {
                             .addFilters(
                                 Filter.newBuilder()
                                     .setFieldFilter(
-                                        FieldFilter.newBuilder()
+                                        StructuredQuery.FieldFilter.newBuilder()
                                             .setField(
                                                 FieldReference.newBuilder().setFieldPath("tags"))
                                             .setOp(Operator.ARRAY_CONTAINS)
@@ -636,14 +635,14 @@ public final class RemoteSerializerTest {
   @Test
   public void testInSerialization() {
     StructuredQuery.Filter filter =
-        serializer.encodeRelationFilter(((RelationFilter) filter("field", "in", asList(42))));
+        serializer.encodeFieldFilter(((FieldFilter) filter("field", "in", asList(42))));
 
     ArrayValue.Builder inFilterValue =
         ArrayValue.newBuilder().addValues(valueBuilder().setIntegerValue(42));
     StructuredQuery.Filter expectedFilter =
         Filter.newBuilder()
             .setFieldFilter(
-                FieldFilter.newBuilder()
+                StructuredQuery.FieldFilter.newBuilder()
                     .setField(FieldReference.newBuilder().setFieldPath("field"))
                     .setOp(Operator.IN)
                     .setValue(valueBuilder().setArrayValue(inFilterValue))
@@ -656,15 +655,15 @@ public final class RemoteSerializerTest {
   @Test
   public void testArrayContainsAnySerialization() {
     StructuredQuery.Filter filter =
-        serializer.encodeRelationFilter(
-            ((RelationFilter) filter("field", "array-contains-any", asList(42))));
+        serializer.encodeFieldFilter(
+            ((FieldFilter) filter("field", "array-contains-any", asList(42))));
 
     ArrayValue.Builder arrayContainsAnyFilterValue =
         ArrayValue.newBuilder().addValues(valueBuilder().setIntegerValue(42));
     StructuredQuery.Filter expectedFilter =
         Filter.newBuilder()
             .setFieldFilter(
-                FieldFilter.newBuilder()
+                StructuredQuery.FieldFilter.newBuilder()
                     .setField(FieldReference.newBuilder().setFieldPath("field"))
                     .setOp(Operator.ARRAY_CONTAINS_ANY)
                     .setValue(valueBuilder().setArrayValue(arrayContainsAnyFilterValue))

@@ -48,7 +48,7 @@ public abstract class Filter {
    * Gets a Filter instance for the provided path, operator, and value.
    *
    * <p>Note that if the relation operator is EQUAL and the value is null or NaN, this will return
-   * the appropriate NullFilter or NaNFilter class instead of a RelationFilter.
+   * the appropriate NullFilter or NaNFilter class instead of a FieldFilter.
    */
   public static Filter create(FieldPath path, Operator operator, FieldValue value) {
     if (value.equals(NullValue.nullValue())) {
@@ -66,7 +66,7 @@ public abstract class Filter {
       }
       return new NaNFilter(path);
     } else {
-      return new RelationFilter(path, operator, value);
+      return new FieldFilter(path, operator, value);
     }
   }
 

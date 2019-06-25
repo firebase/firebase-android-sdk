@@ -25,7 +25,7 @@ import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.core.NaNFilter;
 import com.google.firebase.firestore.core.NullFilter;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.core.RelationFilter;
+import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -161,13 +161,13 @@ public class IndexedQueryEngine implements QueryEngine {
     } else if (filter instanceof NaNFilter) {
       return HIGH_SELECTIVITY;
     } else {
-      hardAssert(filter instanceof RelationFilter, "Filter type expected to be RelationFilter");
-      RelationFilter relationFilter = (RelationFilter) filter;
+      hardAssert(filter instanceof FieldFilter, "Filter type expected to be FieldFilter");
+      FieldFilter fieldFilter = (FieldFilter) filter;
 
       double operatorSelectivity =
-          relationFilter.getOperator().equals(Operator.EQUAL) ? HIGH_SELECTIVITY : LOW_SELECTIVITY;
+          fieldFilter.getOperator().equals(Operator.EQUAL) ? HIGH_SELECTIVITY : LOW_SELECTIVITY;
       double typeSelectivity =
-          lowCardinalityTypes.contains(relationFilter.getValue().getClass())
+          lowCardinalityTypes.contains(fieldFilter.getValue().getClass())
               ? LOW_SELECTIVITY
               : HIGH_SELECTIVITY;
 
@@ -216,10 +216,10 @@ public class IndexedQueryEngine implements QueryEngine {
    */
   private static IndexRange convertFilterToIndexRange(Filter filter) {
     IndexRange.Builder indexRange = IndexRange.builder().setFieldPath(filter.getField());
-    if (filter instanceof RelationFilter) {
-      RelationFilter relationFilter = (RelationFilter) filter;
-      FieldValue filterValue = relationFilter.getValue();
-      switch (relationFilter.getOperator()) {
+    if (filter instanceof FieldFilter) {
+      FieldFilter fieldFilter = (FieldFilter) filter;
+      FieldValue filterValue = fieldFilter.getValue();
+      switch (fieldFilter.getOperator()) {
         case EQUAL:
           indexRange.setStart(filterValue).setEnd(filterValue);
           break;

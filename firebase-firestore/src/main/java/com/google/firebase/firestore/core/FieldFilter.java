@@ -25,7 +25,7 @@ import com.google.firebase.firestore.util.Assert;
 import java.util.Arrays;
 
 /** Represents a filter to be applied to query. */
-public class RelationFilter extends Filter {
+public class FieldFilter extends Filter {
   private final Operator operator;
 
   private final FieldValue value;
@@ -36,7 +36,7 @@ public class RelationFilter extends Filter {
    * Creates a new filter that compares fields and values. Only intended to be called from
    * Filter.create().
    */
-  RelationFilter(FieldPath field, Operator operator, FieldValue value) {
+  FieldFilter(FieldPath field, Operator operator, FieldValue value) {
     this.field = field;
     this.operator = operator;
     this.value = value;
@@ -138,10 +138,10 @@ public class RelationFilter extends Filter {
 
   @Override
   public boolean equals(Object o) {
-    if (o == null || !(o instanceof RelationFilter)) {
+    if (o == null || !(o instanceof FieldFilter)) {
       return false;
     }
-    RelationFilter other = (RelationFilter) o;
+    FieldFilter other = (FieldFilter) o;
     return operator == other.operator && field.equals(other.field) && value.equals(other.value);
   }
 

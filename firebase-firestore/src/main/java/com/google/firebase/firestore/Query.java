@@ -29,12 +29,12 @@ import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
+import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.QueryListener;
-import com.google.firebase.firestore.core.RelationFilter;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -465,15 +465,15 @@ public class Query {
   }
 
   private void validateNewFilter(Filter filter) {
-    if (filter instanceof RelationFilter) {
-      Operator filterOp = ((RelationFilter) filter).getOperator();
+    if (filter instanceof FieldFilter) {
+      Operator filterOp = ((FieldFilter) filter).getOperator();
       List<Operator> arrayOps = Arrays.asList(Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY);
       List<Operator> disjunctiveOps = Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.IN);
       boolean isArrayOp = arrayOps.contains(filterOp);
       boolean isDisjunctiveOp = disjunctiveOps.contains(filterOp);
 
-      RelationFilter relationFilter = (RelationFilter) filter;
-      if (relationFilter.isInequality()) {
+      FieldFilter fieldFilter = (FieldFilter) filter;
+      if (fieldFilter.isInequality()) {
         com.google.firebase.firestore.model.FieldPath existingInequality = query.inequalityField();
         com.google.firebase.firestore.model.FieldPath newInequality = filter.getField();
 

@@ -157,10 +157,10 @@ public final class Query {
   @Nullable
   public FieldPath inequalityField() {
     for (Filter filter : filters) {
-      if (filter instanceof RelationFilter) {
-        RelationFilter relationFilter = (RelationFilter) filter;
-        if (relationFilter.isInequality()) {
-          return relationFilter.getField();
+      if (filter instanceof FieldFilter) {
+        FieldFilter fieldfilter = (FieldFilter) filter;
+        if (fieldfilter.isInequality()) {
+          return fieldfilter.getField();
         }
       }
     }
@@ -174,8 +174,8 @@ public final class Query {
   @Nullable
   public Operator findOperatorFilter(List<Operator> filterOps) {
     for (Filter filter : filters) {
-      if (filter instanceof RelationFilter) {
-        Operator queryOp = ((RelationFilter) filter).getOperator();
+      if (filter instanceof FieldFilter) {
+        Operator queryOp = ((FieldFilter) filter).getOperator();
         if (filterOps.contains(queryOp)) {
           return queryOp;
         }
@@ -193,7 +193,7 @@ public final class Query {
   public Query filter(Filter filter) {
     hardAssert(!isDocumentQuery(), "No filter is allowed for document query");
     FieldPath newInequalityField = null;
-    if (filter instanceof RelationFilter && ((RelationFilter) filter).isInequality()) {
+    if (filter instanceof FieldFilter && ((FieldFilter) filter).isInequality()) {
       newInequalityField = filter.getField();
     }
 
