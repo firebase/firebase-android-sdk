@@ -92,6 +92,16 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     testOptions.unitTests.includeAndroidResources = true
+    ext.useProdBackendForTests = false
+}
+
+android.libraryVariants.all { variant ->
+    if (findProperty("useProdBackendForTests")) {
+        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
+    } else {
+        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
+    }
+
 }
 
 dependencies {

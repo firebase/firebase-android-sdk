@@ -36,6 +36,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.RelationFilter;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -632,10 +633,50 @@ public final class RemoteSerializerTest {
     assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
   }
 
-  // PORTING NOTE: Isolated array-contains filter test omitted since we seem to have omitted
-  // isolated filter tests on Android (and the encodeRelationFilter() / decodeRelationFilter()
-  // serializer methods are private) in favor of relying on the larger tests. array-contains
-  // encoding / decoding is covered by testEncodesMultipleFiltersOnDeeperCollections().
+  @Test
+  public void testInSerialization() {
+    StructuredQuery.Filter filter =
+        serializer.encodeRelationFilter(((RelationFilter) filter("field", "in", asList(42))));
+
+    ArrayValue.Builder inFilterValue =
+        ArrayValue.newBuilder().addValues(valueBuilder().setIntegerValue(42));
+    StructuredQuery.Filter expectedFilter =
+        Filter.newBuilder()
+            .setFieldFilter(
+                FieldFilter.newBuilder()
+                    .setField(FieldReference.newBuilder().setFieldPath("field"))
+                    .setOp(Operator.IN)
+                    .setValue(valueBuilder().setArrayValue(inFilterValue))
+                    .build())
+            .build();
+
+    assertEquals(filter, expectedFilter);
+  }
+
+  @Test
+  public void testArrayContainsAnySerialization() {
+    StructuredQuery.Filter filter =
+        serializer.encodeRelationFilter(
+            ((RelationFilter) filter("field", "array-contains-any", asList(42))));
+
+    ArrayValue.Builder arrayContainsAnyFilterValue =
+        ArrayValue.newBuilder().addValues(valueBuilder().setIntegerValue(42));
+    StructuredQuery.Filter expectedFilter =
+        Filter.newBuilder()
+            .setFieldFilter(
+                FieldFilter.newBuilder()
+                    .setField(FieldReference.newBuilder().setFieldPath("field"))
+                    .setOp(Operator.ARRAY_CONTAINS_ANY)
+                    .setValue(valueBuilder().setArrayValue(arrayContainsAnyFilterValue))
+                    .build())
+            .build();
+
+    assertEquals(filter, expectedFilter);
+  }
+
+  // TODO(PORTING NOTE): Android currently tests most filter serialization (for equals, greater
+  // than, array-contains, etc.) only in testEncodesMultipleFiltersOnDeeperCollections and lacks
+  // isolated filter tests like the other platforms have. We should fix this.
 
   @Test
   public void testEncodesNullFilter() {
