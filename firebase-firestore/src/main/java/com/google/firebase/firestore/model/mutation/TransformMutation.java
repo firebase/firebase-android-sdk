@@ -115,7 +115,7 @@ public final class TransformMutation extends Mutation {
     }
 
     Document doc = requireDocument(maybeDoc);
-    List<FieldValue> transformResults = localTransformResults(localWriteTime, baseDoc);
+    List<FieldValue> transformResults = localTransformResults(localWriteTime, maybeDoc, baseDoc);
     ObjectValue newData = transformObject(doc.getData(), transformResults);
     return new Document(
         getKey(), doc.getVersion(), newData, Document.DocumentState.LOCAL_MUTATIONS);
@@ -196,11 +196,12 @@ public final class TransformMutation extends Mutation {
    *
    * @param localWriteTime The local time of the transform mutation (used to generate
    *     ServerTimestampValues).
+   * @param maybeDoc The current state of the document after applying all previous mutations.
    * @param baseDoc The document prior to applying this mutation batch.
    * @return The transform results list.
    */
   private List<FieldValue> localTransformResults(
-      Timestamp localWriteTime, @Nullable MaybeDocument baseDoc) {
+      Timestamp localWriteTime, @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc) {
     ArrayList<FieldValue> transformResults = new ArrayList<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
@@ -210,7 +211,12 @@ public final class TransformMutation extends Mutation {
         previousValue = ((Document) baseDoc).getField(fieldTransform.getFieldPath());
       }
 
-      transformResults.add(transform.applyToLocalView(previousValue, localWriteTime));
+      FieldValue currentValue = null;
+      if (maybeDoc instanceof Document) {
+        currentValue = ((Document) maybeDoc).getField(fieldTransform.getFieldPath());
+      }
+
+      transformResults.add(transform.applyToLocalView(currentValue, previousValue, localWriteTime));
     }
     return transformResults;
   }

@@ -694,4 +694,18 @@ public class MutationTest {
                 map("double", 42.0, "long", 42, "string", 0, "map", 0, "missing", 0)));
     assertEquals(expected, baseValue);
   }
+
+  @Test
+  public void testIncrementTwice() {
+    Document baseDoc = doc("collection/key", 0, map("sum", "0"));
+
+    Map<String, Object> increment = map("sum", FieldValue.increment(1));
+    Mutation transformMutation = transformMutation("collection/key", increment);
+
+    MaybeDocument mutatedDoc =
+        transformMutation.applyToLocalView(baseDoc, baseDoc, Timestamp.now());
+    mutatedDoc = transformMutation.applyToLocalView(mutatedDoc, baseDoc, Timestamp.now());
+
+    assertEquals(wrap(2L), ((Document) mutatedDoc).getField(field("sum")));
+  }
 }

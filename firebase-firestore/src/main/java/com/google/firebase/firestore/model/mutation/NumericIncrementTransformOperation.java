@@ -37,8 +37,11 @@ public class NumericIncrementTransformOperation implements TransformOperation {
   }
 
   @Override
-  public FieldValue applyToLocalView(@Nullable FieldValue previousValue, Timestamp localWriteTime) {
-    NumberValue baseValue = computeBaseValue(previousValue);
+  public FieldValue applyToLocalView(
+      @Nullable FieldValue currentValue,
+      @Nullable FieldValue previousValue,
+      Timestamp localWriteTime) {
+    NumberValue baseValue = computeBaseValue(currentValue);
 
     // Return an integer value only if the previous value and the operand is an integer.
     if (baseValue instanceof IntegerValue && operand instanceof IntegerValue) {

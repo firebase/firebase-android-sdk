@@ -39,8 +39,11 @@ public abstract class ArrayTransformOperation implements TransformOperation {
   }
 
   @Override
-  public FieldValue applyToLocalView(@Nullable FieldValue previousValue, Timestamp localWriteTime) {
-    return apply(previousValue);
+  public FieldValue applyToLocalView(
+      @Nullable FieldValue currentValue,
+      @Nullable FieldValue previousValue,
+      Timestamp localWriteTime) {
+    return apply(currentValue);
   }
 
   @Override

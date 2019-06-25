@@ -161,6 +161,33 @@ public class NumericTransformsTest {
   }
 
   @Test
+  public void incrementTwiceInABatch() {
+    writeInitialData(map("sum", "overwrite"));
+    waitFor(
+        docRef
+            .getFirestore()
+            .batch()
+            .update(docRef, "sum", FieldValue.increment(1))
+            .update(docRef, "sum", FieldValue.increment(1))
+            .commit());
+    expectLocalAndRemoteValue(2L);
+  }
+
+  @Test
+  public void incrementDeleteIncrementInABatch() {
+    writeInitialData(map("sum", "overwrite"));
+    waitFor(
+        docRef
+            .getFirestore()
+            .batch()
+            .update(docRef, "sum", FieldValue.increment(1))
+            .update(docRef, "sum", FieldValue.delete())
+            .update(docRef, "sum", FieldValue.increment(3))
+            .commit());
+    expectLocalAndRemoteValue(3L);
+  }
+
+  @Test
   public void serverTimestampAndIncrement() throws ExecutionException, InterruptedException {
     // This test stacks two pending transforms (a ServerTimestamp and an Increment transform) and
     // reproduces an the setup that was reported in

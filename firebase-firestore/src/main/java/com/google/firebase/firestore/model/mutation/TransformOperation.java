@@ -21,10 +21,19 @@ import javax.annotation.Nullable;
 /** A transform within a TransformMutation. */
 public interface TransformOperation {
   /**
-   * Computes the local transform result against the provided previousValue, optionally using the
-   * provided localWriteTime.
+   * Computes the local transform result against the provided currentValue, optionally using the
+   * provided previousValue and localWriteTime.
+   *
+   * @param currentValue The value at the time this transform is applied. The currentValue depends
+   *     on the previous mutations in the MutationBatch.
+   * @param previousValue The value of the field prior to applying this MutationBatch, which is
+   *     optionally surfaced as the previous value to the user (e.g. via ServerTimestampBehavior).
+   * @param localWriteTime The local write time when the MutationBatch was committed.
    */
-  FieldValue applyToLocalView(@Nullable FieldValue previousValue, Timestamp localWriteTime);
+  FieldValue applyToLocalView(
+      @Nullable FieldValue currentValue,
+      @Nullable FieldValue previousValue,
+      Timestamp localWriteTime);
 
   /**
    * Computes a final transform result after the transform has been acknowledged by the server,
