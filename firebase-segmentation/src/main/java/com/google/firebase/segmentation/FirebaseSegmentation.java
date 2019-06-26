@@ -135,6 +135,7 @@ public class FirebaseSegmentation {
                 String iidToken = instanceIdResultTask.getResult().getToken();
                 return backendServiceClient.updateCustomInstallationId(
                     Utils.getProjectNumberFromAppId(firebaseApp.getOptions().getApplicationId()),
+                    firebaseApp.getOptions().getApiKey(),
                     customInstallationId,
                     iid,
                     iidToken);
@@ -154,7 +155,9 @@ public class FirebaseSegmentation {
                           customInstallationId,
                           instanceIdResultTask.getResult().getId(),
                           CustomInstallationIdCache.CacheStatus.SYNCED));
-                case ALREADY_EXISTS:
+                case HTTP_CLIENT_ERROR:
+                  throw new SetCustomInstallationIdException(Status.CLIENT_ERROR);
+                case CONFLICT:
                   throw new SetCustomInstallationIdException(
                       Status.DUPLICATED_CUSTOM_INSTALLATION_ID);
                 default:
@@ -209,6 +212,7 @@ public class FirebaseSegmentation {
                 String iidToken = instanceIdResultTask.getResult().getToken();
                 return backendServiceClient.clearCustomInstallationId(
                     Utils.getProjectNumberFromAppId(firebaseApp.getOptions().getApplicationId()),
+                    firebaseApp.getOptions().getApiKey(),
                     iid,
                     iidToken);
               } else {
@@ -220,10 +224,13 @@ public class FirebaseSegmentation {
     Task<Boolean> finalUpdateCacheResultTask =
         backendRequestResultTask.onSuccessTask(
             backendRequestResult -> {
-              if (backendRequestResult == Code.OK) {
-                return localCache.clear();
-              } else {
-                throw new SetCustomInstallationIdException(Status.BACKEND_ERROR);
+              switch (backendRequestResult) {
+                case OK:
+                  return localCache.clear();
+                case HTTP_CLIENT_ERROR:
+                  throw new SetCustomInstallationIdException(Status.CLIENT_ERROR);
+                default:
+                  throw new SetCustomInstallationIdException(Status.BACKEND_ERROR);
               }
             });
 
