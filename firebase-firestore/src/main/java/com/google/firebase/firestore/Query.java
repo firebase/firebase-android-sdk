@@ -368,7 +368,7 @@ public class Query {
       }
       fieldValue = firestore.getDataConverter().parseQueryValue(value);
     }
-    Filter filter = Filter.create(fieldPath.getInternalPath(), op, fieldValue);
+    Filter filter = FieldFilter.create(fieldPath.getInternalPath(), op, fieldValue);
     validateNewFilter(filter);
     return new Query(query.filter(filter), firestore);
   }

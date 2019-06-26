@@ -222,7 +222,7 @@ public class TestUtil {
   }
 
   public static FieldFilter filter(String key, String operator, Object value) {
-    Filter filter = Filter.create(field(key), operatorFromString(operator), wrap(value));
+    Filter filter = FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
     if (filter instanceof FieldFilter) {
       return (FieldFilter) filter;
     } else {

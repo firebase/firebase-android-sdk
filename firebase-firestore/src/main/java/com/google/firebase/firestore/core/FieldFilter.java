@@ -14,9 +14,15 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.value.ArrayValue;
+import com.google.firebase.firestore.model.value.DoubleValue;
 import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.NullValue;
+import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.util.Assert;
 import java.util.Arrays;
 
@@ -32,7 +38,7 @@ public class FieldFilter extends Filter {
    * Creates a new filter that compares fields and values. Only intended to be called from
    * Filter.create().
    */
-  FieldFilter(FieldPath field, Operator operator, FieldValue value) {
+  protected FieldFilter(FieldPath field, Operator operator, FieldValue value) {
     this.field = field;
     this.operator = operator;
     this.value = value;
@@ -49,6 +55,52 @@ public class FieldFilter extends Filter {
 
   public FieldValue getValue() {
     return value;
+  }
+
+  /**
+   * Gets a Filter instance for the provided path, operator, and value.
+   *
+   * <p>Note that if the relation operator is EQUAL and the value is null or NaN, this will return
+   * the appropriate NullFilter or NaNFilter class instead of a FieldFilter.
+   */
+  public static FieldFilter create(FieldPath path, Operator operator, FieldValue value) {
+    if (path.isKeyField()) {
+      hardAssert(
+          value instanceof ReferenceValue,
+          "Comparing on key, but filter value not a ReferenceValue");
+      hardAssert(
+          operator != Operator.ARRAY_CONTAINS
+              && operator != Operator.ARRAY_CONTAINS_ANY
+              && operator != Operator.IN,
+          operator.toString() + "queries don't make sense on document keys");
+      return new KeyFieldFilter(path, operator, (ReferenceValue) value);
+    } else if (value.equals(NullValue.nullValue())) {
+      if (operator != Filter.Operator.EQUAL) {
+        throw new IllegalArgumentException(
+            "Invalid Query. You can only perform equality comparisons on null (via "
+                + "whereEqualTo()).");
+      }
+      return new FieldFilter(path, operator, value);
+    } else if (value.equals(DoubleValue.NaN)) {
+      if (operator != Filter.Operator.EQUAL) {
+        throw new IllegalArgumentException(
+            "Invalid Query. You can only perform equality comparisons on NaN (via "
+                + "whereEqualTo()).");
+      }
+      return new FieldFilter(path, operator, value);
+    } else if (operator == Operator.ARRAY_CONTAINS) {
+      return new ArrayContainsFilter(path, value);
+    } else if (operator == Operator.IN) {
+      hardAssert(value instanceof ArrayValue, "IN filter has invalid value: " + value.toString());
+      return new InFilter(path, (ArrayValue) value);
+    } else if (operator == Operator.ARRAY_CONTAINS_ANY) {
+      hardAssert(
+          value instanceof ArrayValue,
+          "ARRAY_CONTAINS_ANY filter has invalid value: " + value.toString());
+      return new ArrayContainsAnyFilter(path, (ArrayValue) value);
+    } else {
+      return new FieldFilter(path, operator, value);
+    }
   }
 
   @Override

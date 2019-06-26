@@ -25,8 +25,6 @@ import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
-import com.google.firebase.firestore.core.NaNFilter;
-import com.google.firebase.firestore.core.NullFilter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
@@ -818,9 +816,7 @@ public final class RemoteSerializer {
     List<StructuredQuery.Filter> protos = new ArrayList<>(filters.size());
     for (Filter filter : filters) {
       if (filter instanceof FieldFilter) {
-        protos.add(encodeFieldFilter((FieldFilter) filter));
-      } else {
-        protos.add(encodeUnaryFilter(filter));
+        protos.add(encodeUnaryOrFieldFilter((FieldFilter) filter));
       }
     }
     if (filters.size() == 1) {
@@ -868,7 +864,18 @@ public final class RemoteSerializer {
   }
 
   @VisibleForTesting
-  StructuredQuery.Filter encodeFieldFilter(FieldFilter filter) {
+  StructuredQuery.Filter encodeUnaryOrFieldFilter(FieldFilter filter) {
+    if (filter.getOperator() == Filter.Operator.EQUAL) {
+      UnaryFilter.Builder unaryProto = UnaryFilter.newBuilder();
+      unaryProto.setField(encodeFieldPath(filter.getField()));
+      if (filter.getValue().equals(DoubleValue.NaN)) {
+        unaryProto.setOp(UnaryFilter.Operator.IS_NAN);
+        return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
+      } else if (filter.getValue().equals(NullValue.nullValue())) {
+        unaryProto.setOp(UnaryFilter.Operator.IS_NULL);
+        return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
+      }
+    }
     StructuredQuery.FieldFilter.Builder proto = StructuredQuery.FieldFilter.newBuilder();
     proto.setField(encodeFieldPath(filter.getField()));
     proto.setOp(encodeFieldFilterOperator(filter.getOperator()));
@@ -880,30 +887,17 @@ public final class RemoteSerializer {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     FieldFilter.Operator filterOperator = decodeFieldFilterOperator(proto.getOp());
     FieldValue value = decodeValue(proto.getValue());
-    return Filter.create(fieldPath, filterOperator, value);
-  }
-
-  private StructuredQuery.Filter encodeUnaryFilter(Filter filter) {
-    UnaryFilter.Builder proto = UnaryFilter.newBuilder();
-    proto.setField(encodeFieldPath(filter.getField()));
-    if (filter instanceof NaNFilter) {
-      proto.setOp(UnaryFilter.Operator.IS_NAN);
-    } else if (filter instanceof NullFilter) {
-      proto.setOp(UnaryFilter.Operator.IS_NULL);
-    } else {
-      throw fail("Unrecognized filter: %s", filter.getCanonicalId());
-    }
-    return StructuredQuery.Filter.newBuilder().setUnaryFilter(proto).build();
+    return FieldFilter.create(fieldPath, filterOperator, value);
   }
 
   private Filter decodeUnaryFilter(StructuredQuery.UnaryFilter proto) {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     switch (proto.getOp()) {
       case IS_NAN:
-        return new NaNFilter(fieldPath);
+        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, DoubleValue.NaN);
 
       case IS_NULL:
-        return new NullFilter(fieldPath);
+        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, NullValue.nullValue());
 
       default:
         throw fail("Unrecognized UnaryFilter.operator %d", proto.getOp());

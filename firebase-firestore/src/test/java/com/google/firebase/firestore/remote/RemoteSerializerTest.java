@@ -635,7 +635,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testInSerialization() {
     StructuredQuery.Filter filter =
-        serializer.encodeFieldFilter(((FieldFilter) filter("field", "in", asList(42))));
+        serializer.encodeUnaryOrFieldFilter(((FieldFilter) filter("field", "in", asList(42))));
 
     ArrayValue.Builder inFilterValue =
         ArrayValue.newBuilder().addValues(valueBuilder().setIntegerValue(42));
@@ -655,7 +655,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testArrayContainsAnySerialization() {
     StructuredQuery.Filter filter =
-        serializer.encodeFieldFilter(
+        serializer.encodeUnaryOrFieldFilter(
             ((FieldFilter) filter("field", "array-contains-any", asList(42))));
 
     ArrayValue.Builder arrayContainsAnyFilterValue =
