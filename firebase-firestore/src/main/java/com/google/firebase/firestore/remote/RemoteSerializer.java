@@ -883,7 +883,8 @@ public final class RemoteSerializer {
     return StructuredQuery.Filter.newBuilder().setFieldFilter(proto).build();
   }
 
-  private Filter decodeFieldFilter(StructuredQuery.FieldFilter proto) {
+  @VisibleForTesting
+  FieldFilter decodeFieldFilter(StructuredQuery.FieldFilter proto) {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     FieldFilter.Operator filterOperator = decodeFieldFilterOperator(proto.getOp());
     FieldValue value = decodeValue(proto.getValue());

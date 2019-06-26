@@ -29,12 +29,14 @@ public class ArrayContainsAnyFilter extends FieldFilter {
   public boolean matches(Document doc) {
     ArrayValue arrayValue = (ArrayValue) getValue();
     FieldValue other = doc.getField(getField());
-    boolean containsValue = false;
+    if (!(other instanceof ArrayValue)) {
+      return false;
+    }
     for (FieldValue val : ((ArrayValue) other).getInternalValue()) {
       if (arrayValue.getInternalValue().contains(val)) {
-        containsValue = true;
+        return true;
       }
     }
-    return other instanceof ArrayValue && containsValue;
+    return false;
   }
 }
