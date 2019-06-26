@@ -454,6 +454,26 @@ public class QueryTest {
 
   // TODO(in-queries): Re-enable in prod once feature lands in backend.
   @Test
+  public void testQueriesCanUseInFiltersWithDocIds() {
+    Assume.assumeTrue(isRunningAgainstEmulator());
+    Map<String, String> docA = map("key", "aa");
+    Map<String, String> docB = map("key", "ab");
+    Map<String, String> docC = map("key", "ba");
+    Map<String, String> docD = map("key", "bb");
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "aa", docA,
+            "ab", docB,
+            "ba", docC,
+            "bb", docD);
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+    QuerySnapshot docs =
+        waitFor(collection.whereIn(FieldPath.documentId(), asList("aa", "ab")).get());
+    assertEquals(asList(docA, docB), querySnapshotToValues(docs));
+  }
+
+  // TODO(in-queries): Re-enable in prod once feature lands in backend.
+  @Test
   public void testQueriesCanUseArrayContainsAnyFilters() {
     Assume.assumeTrue(isRunningAgainstEmulator());
     Map<String, Object> docA = map("array", asList(42L));

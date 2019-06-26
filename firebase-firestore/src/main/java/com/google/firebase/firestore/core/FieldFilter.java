@@ -65,15 +65,20 @@ public class FieldFilter extends Filter {
    */
   public static FieldFilter create(FieldPath path, Operator operator, FieldValue value) {
     if (path.isKeyField()) {
-      hardAssert(
-          value instanceof ReferenceValue,
-          "Comparing on key, but filter value not a ReferenceValue");
-      hardAssert(
-          operator != Operator.ARRAY_CONTAINS
-              && operator != Operator.ARRAY_CONTAINS_ANY
-              && operator != Operator.IN,
-          operator.toString() + "queries don't make sense on document keys");
-      return new KeyFieldFilter(path, operator, (ReferenceValue) value);
+      if (operator == Operator.IN) {
+        hardAssert(
+            value instanceof ArrayValue,
+            "Comparing on key with IN, but an array value was not a RefValue");
+        return new KeyFieldInFilter(path, (ArrayValue) value);
+      } else {
+        hardAssert(
+            value instanceof ReferenceValue,
+            "Comparing on key, but filter value not a ReferenceValue");
+        hardAssert(
+            operator != Operator.ARRAY_CONTAINS && operator != Operator.ARRAY_CONTAINS_ANY,
+            operator.toString() + "queries don't make sense on document keys");
+        return new KeyFieldFilter(path, operator, (ReferenceValue) value);
+      }
     } else if (value.equals(NullValue.nullValue())) {
       if (operator != Filter.Operator.EQUAL) {
         throw new IllegalArgumentException(
