@@ -172,12 +172,12 @@ public final class Query {
    * one that is, or null if none are.
    */
   @Nullable
-  public Operator findOperatorFilter(List<Operator> filterOps) {
+  public Operator findFilterOperator(List<Operator> operators) {
     for (Filter filter : filters) {
       if (filter instanceof FieldFilter) {
-        Operator queryOp = ((FieldFilter) filter).getOperator();
-        if (filterOps.contains(queryOp)) {
-          return queryOp;
+        Operator filterOp = ((FieldFilter) filter).getOperator();
+        if (operators.contains(filterOp)) {
+          return filterOp;
         }
       }
     }

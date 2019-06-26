@@ -73,7 +73,7 @@ public class FieldFilter extends Filter {
       case GREATER_THAN_OR_EQUAL:
         return comp >= 0;
       default:
-        throw Assert.fail("Unknown operator: %s", operator);
+        throw Assert.fail("Unknown FieldFilter operator: %s", operator);
     }
   }
 

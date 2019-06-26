@@ -494,10 +494,10 @@ public class Query {
         // conflicts with an existing one.
         Operator conflictingOp = null;
         if (isDisjunctiveOp) {
-          conflictingOp = this.query.findOperatorFilter(disjunctiveOps);
+          conflictingOp = this.query.findFilterOperator(disjunctiveOps);
         }
         if (conflictingOp == null && isArrayOp) {
-          conflictingOp = this.query.findOperatorFilter(arrayOps);
+          conflictingOp = this.query.findFilterOperator(arrayOps);
         }
         if (conflictingOp != null) {
           // We special case when it's a duplicate op to give a slightly clearer error message.
