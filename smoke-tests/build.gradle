@@ -39,6 +39,16 @@ android {
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  buildTypes {
+    release {
+      minifyEnabled true
+      shrinkResources true
+      signingConfig signingConfigs.debug
+      proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "smoke-test-rules.pro"
+      testProguardFiles "infrastructure-rules.pro"
+    }
+  }
+
   flavorDimensions "systemUnderTest"
 
   // TODO(allisonbm92): Switch to the default flavor.
@@ -48,26 +58,34 @@ android {
       applicationId "com.google.firebase.testing.combined"
     }
   }
+
+  // TODO(allisonbm92): Enable the Inapp Messaging test after the next release. The current release
+  // is incompatible with the head state of AB Testing (required by Remote Config).
+  sourceSets.combined.java.filter.exclude "**/inappmessaging/**"
 }
 
 apply from: "configure.gradle"
 
 dependencies {
   // Common
-  api "androidx.test:runner:1.2.0"
-  api "com.google.truth:truth:0.45"
-  api "junit:junit:4.12"
-
   implementation "androidx.test:rules:1.2.0"
+  implementation "androidx.test:runner:1.2.0"
   implementation "com.google.firebase:firebase-common"
+  implementation "com.google.truth:truth:0.44"
+  implementation "junit:junit:4.12"
 
   // All
   combinedImplementation "com.google.firebase:firebase-auth"
   combinedImplementation "com.google.firebase:firebase-database"
   combinedImplementation "com.google.firebase:firebase-firestore"
   combinedImplementation "com.google.firebase:firebase-functions"
+//  combinedImplementation "com.google.firebase:firebase-inappmessaging"
   combinedImplementation "com.google.firebase:firebase-config"
   combinedImplementation "com.google.firebase:firebase-storage"
+
+  androidTestImplementation "androidx.test:core:1.2.0"
+  androidTestImplementation "androidx.test:runner:1.2.0"
+  androidTestImplementation "junit:junit:4.12"
 }
 
 clean.doLast {
