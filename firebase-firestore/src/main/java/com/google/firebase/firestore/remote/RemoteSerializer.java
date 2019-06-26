@@ -23,13 +23,13 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.core.Bound;
+import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.NaNFilter;
 import com.google.firebase.firestore.core.NullFilter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -914,7 +914,8 @@ public final class RemoteSerializer {
     return FieldReference.newBuilder().setFieldPath(field.canonicalString()).build();
   }
 
-  private StructuredQuery.FieldFilter.Operator encodeFieldFilterOperator(FieldFilter.Operator operator) {
+  private StructuredQuery.FieldFilter.Operator encodeFieldFilterOperator(
+      FieldFilter.Operator operator) {
     switch (operator) {
       case LESS_THAN:
         return StructuredQuery.FieldFilter.Operator.LESS_THAN;
@@ -937,7 +938,8 @@ public final class RemoteSerializer {
     }
   }
 
-  private FieldFilter.Operator decodeFieldFilterOperator(StructuredQuery.FieldFilter.Operator operator) {
+  private FieldFilter.Operator decodeFieldFilterOperator(
+      StructuredQuery.FieldFilter.Operator operator) {
     switch (operator) {
       case LESS_THAN:
         return FieldFilter.Operator.LESS_THAN;

@@ -17,7 +17,6 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
@@ -57,21 +56,8 @@ public class FieldFilter extends Filter {
 
   @Override
   public boolean matches(Document doc) {
-    if (this.field.isKeyField()) {
-      Object refValue = value.value();
-      hardAssert(
-          refValue instanceof DocumentKey, "Comparing on key, but filter value not a DocumentKey");
-      hardAssert(
-          operator != Operator.ARRAY_CONTAINS
-              && operator != Operator.ARRAY_CONTAINS_ANY
-              && operator != Operator.IN,
-          "'" + operator.toString() + "' queries don't make sense on document keys.");
-      int comparison = DocumentKey.comparator().compare(doc.getKey(), (DocumentKey) refValue);
-      return matchesComparison(comparison);
-    } else {
-      FieldValue value = doc.getField(field);
-      return value != null && matchesValue(doc.getField(field));
-    }
+    FieldValue value = doc.getField(field);
+    return value != null && matchesValue(doc.getField(field));
   }
 
   private boolean matchesValue(FieldValue other) {
@@ -98,7 +84,7 @@ public class FieldFilter extends Filter {
     }
   }
 
-  private boolean matchesComparison(int comp) {
+  protected boolean matchesComparison(int comp) {
     switch (operator) {
       case LESS_THAN:
         return comp < 0;

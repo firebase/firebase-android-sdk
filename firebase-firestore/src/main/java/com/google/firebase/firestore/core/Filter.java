@@ -14,11 +14,14 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.DoubleValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.NullValue;
+import com.google.firebase.firestore.model.value.ReferenceValue;
 
 /** Interface used for all query filters. */
 public abstract class Filter {
@@ -51,7 +54,17 @@ public abstract class Filter {
    * the appropriate NullFilter or NaNFilter class instead of a FieldFilter.
    */
   public static Filter create(FieldPath path, Operator operator, FieldValue value) {
-    if (value.equals(NullValue.nullValue())) {
+    if (path.isKeyField()) {
+      hardAssert(
+          value instanceof ReferenceValue,
+          "Comparing on key, but filter value not a ReferenceValue");
+      hardAssert(
+          operator != Operator.ARRAY_CONTAINS
+              && operator != Operator.ARRAY_CONTAINS_ANY
+              && operator != Operator.IN,
+          operator.toString() + "queries don't make sense on document keys");
+      return new KeyFieldFilter(path, operator, (ReferenceValue) value);
+    } else if (value.equals(NullValue.nullValue())) {
       if (operator != Filter.Operator.EQUAL) {
         throw new IllegalArgumentException(
             "Invalid Query. You can only perform equality comparisons on null (via "
