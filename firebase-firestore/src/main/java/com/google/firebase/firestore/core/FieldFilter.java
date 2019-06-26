@@ -14,11 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.util.Assert;
 import java.util.Arrays;
@@ -56,27 +53,11 @@ public class FieldFilter extends Filter {
 
   @Override
   public boolean matches(Document doc) {
-    FieldValue value = doc.getField(field);
-    return value != null && matchesValue(doc.getField(field));
-  }
-
-  private boolean matchesValue(FieldValue other) {
-    if (operator == Operator.ARRAY_CONTAINS_ANY) {
-      hardAssert(
-          value instanceof ArrayValue, "'array_contains_any' filter has invalid value: " + value);
-      if (other instanceof ArrayValue) {
-        for (FieldValue val : ((ArrayValue) other).getInternalValue()) {
-          if (((ArrayValue) value).getInternalValue().contains(val)) {
-            return true;
-          }
-        }
-      }
-      return false;
-    } else {
-      // Only compare types with matching backend order (such as double and int).
-      return value.typeOrder() == other.typeOrder()
-          && matchesComparison(other.compareTo(this.value));
-    }
+    FieldValue other = doc.getField(field);
+    // Only compare types with matching backend order (such as double and int).
+    return other != null
+        && value.typeOrder() == other.typeOrder()
+        && this.matchesComparison(other.compareTo(value));
   }
 
   protected boolean matchesComparison(int comp) {

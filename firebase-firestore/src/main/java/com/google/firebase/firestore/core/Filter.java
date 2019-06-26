@@ -84,6 +84,11 @@ public abstract class Filter {
     } else if (operator == Operator.IN) {
       hardAssert(value instanceof ArrayValue, "IN filter has invalid value: " + value.toString());
       return new InFilter(path, (ArrayValue) value);
+    } else if (operator == Operator.ARRAY_CONTAINS_ANY) {
+      hardAssert(
+          value instanceof ArrayValue,
+          "ARRAY_CONTAINS_ANY filter has invalid value: " + value.toString());
+      return new ArrayContainsAnyFilter(path, (ArrayValue) value);
     } else {
       return new FieldFilter(path, operator, value);
     }
