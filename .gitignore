@@ -7,3 +7,8 @@ local.properties
 google-services.json
 /build.gradle
 _artifacts
+# VS code/extension files
+.project
+.classpath
+org.eclipse.buildship.core.prefs
+bin/

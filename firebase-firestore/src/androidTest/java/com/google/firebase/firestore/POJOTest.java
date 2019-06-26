@@ -201,6 +201,28 @@ public class POJOTest {
     }
   }
 
+  public static final class POJOWithDocumentIdAnnotation {
+    String str;
+    @DocumentId public DocumentReference autoPopulatedReference;
+    @DocumentId String docReferenceId;
+
+    public String getDocReferenceId() {
+      return docReferenceId;
+    }
+
+    public void setDocReferenceId(String id) {
+      this.docReferenceId = id;
+    }
+
+    public String getStr() {
+      return str;
+    }
+
+    public void setStr(String str) {
+      this.str = str;
+    }
+  }
+
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();
@@ -214,6 +236,19 @@ public class POJOTest {
     DocumentSnapshot doc = waitFor(reference.get());
     POJO otherData = doc.toObject(POJO.class);
     assertEquals(data, otherData);
+  }
+
+  @Test
+  public void testDocumentIdAnnotation() {
+    CollectionReference collection = testCollection();
+    POJOWithDocumentIdAnnotation data = new POJOWithDocumentIdAnnotation();
+    data.setStr("name");
+    DocumentReference reference = waitFor(collection.add(data));
+    DocumentSnapshot doc = waitFor(reference.get());
+    POJOWithDocumentIdAnnotation readFromStore = doc.toObject(POJOWithDocumentIdAnnotation.class);
+    assertEquals("name", readFromStore.getStr());
+    assertEquals(reference, readFromStore.autoPopulatedReference);
+    assertEquals(reference.getPath().endsWith(readFromStore.getDocReferenceId()), true);
   }
 
   @Test
