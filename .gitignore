@@ -12,3 +12,4 @@ _artifacts
 .classpath
 org.eclipse.buildship.core.prefs
 bin/
+.vscode/
