@@ -206,6 +206,12 @@ public class POJOTest {
     @DocumentId public DocumentReference autoPopulatedReference;
     @DocumentId String docReferenceId;
 
+    static class NestedPOJO {
+      @DocumentId public DocumentReference autoPopulatedReference;
+    }
+
+    public NestedPOJO nested = new NestedPOJO();
+
     public String getDocReferenceId() {
       return docReferenceId;
     }
@@ -248,7 +254,8 @@ public class POJOTest {
     POJOWithDocumentIdAnnotation readFromStore = doc.toObject(POJOWithDocumentIdAnnotation.class);
     assertEquals("name", readFromStore.getStr());
     assertEquals(reference, readFromStore.autoPopulatedReference);
-    assertEquals(reference.getPath().endsWith(readFromStore.getDocReferenceId()), true);
+    assertEquals(reference, readFromStore.nested.autoPopulatedReference);
+    assertEquals(reference.getId(), readFromStore.getDocReferenceId());
   }
 
   @Test

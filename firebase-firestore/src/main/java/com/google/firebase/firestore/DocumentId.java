@@ -27,21 +27,21 @@ import java.lang.annotation.Target;
  *
  * <ul>
  *   Any of the following will throw a runtime exception:
- *   <li>This annotation is applied to properties of a type other than String or {@link
+ *   <li>This annotation is applied to a property of a type other than String or {@link
  *       DocumentReference}.
- *   <li>This annotation is applied to a property that is not writeable (for example, a Java Bean
+ *   <li>This annotation is applied to a property that is not writable (for example, a Java Bean
  *       getter without a backing field).
- *   <li>There are conflicts between this annotation and property name matches. For example, if a
- *       POJO has a field `firstName` annotated by @DocumentId, and there is a property from the
- *       document named `firstName` as well, an exception is thrown when you try to read the
- *       document into the POJO via {@link DocumentSnapshot#toObject} or {@link
+ *   <li>This annotation is applied to a property with a name that conflicts with a read document
+ *       field. For example, if a POJO has a field `firstName` annotated by @DocumentId, and there
+ *       is a property from the document named `firstName` as well, an exception is thrown when you
+ *       try to read the document into the POJO via {@link DocumentSnapshot#toObject} or {@link
  *       DocumentReference#get}.
  *   <li>
  * </ul>
  *
  * <p>When using a POJO to write to a document (via {@link DocumentReference#set} or @{@link
- * WriteBatch#set}), the property annotated by @DocumentId is ignored, which allows writes to any
- * documents that are not the origin of the POJO.
+ * WriteBatch#set}), the property annotated by @DocumentId is ignored, which allows writing the POJO
+ * back to any document, even if it's not the origin of the POJO.
  */
 @PublicApi
 @Retention(RetentionPolicy.RUNTIME)
