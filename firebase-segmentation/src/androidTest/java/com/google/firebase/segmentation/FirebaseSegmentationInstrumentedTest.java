@@ -69,19 +69,24 @@ public class FirebaseSegmentationInstrumentedTest {
     firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
-            new FirebaseOptions.Builder().setApplicationId("1:123456789:android:abcdef").build());
+            new FirebaseOptions.Builder()
+                .setApplicationId("1:123456789:android:abcdef")
+                .setApiKey("api_key")
+                .build());
     actualCache = new CustomInstallationIdCache(firebaseApp);
 
     when(backendClientReturnsOk.updateCustomInstallationId(
-            anyLong(), anyString(), anyString(), anyString()))
+            anyLong(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(Tasks.forResult(SegmentationServiceClient.Code.OK));
-    when(backendClientReturnsOk.clearCustomInstallationId(anyLong(), anyString(), anyString()))
+    when(backendClientReturnsOk.clearCustomInstallationId(
+            anyLong(), anyString(), anyString(), anyString()))
         .thenReturn(Tasks.forResult(SegmentationServiceClient.Code.OK));
     when(backendClientReturnsError.updateCustomInstallationId(
+            anyLong(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(Tasks.forResult(SegmentationServiceClient.Code.SERVER_ERROR));
+    when(backendClientReturnsError.clearCustomInstallationId(
             anyLong(), anyString(), anyString(), anyString()))
-        .thenReturn(Tasks.forResult(SegmentationServiceClient.Code.SERVER_INTERNAL_ERROR));
-    when(backendClientReturnsError.clearCustomInstallationId(anyLong(), anyString(), anyString()))
-        .thenReturn(Tasks.forResult(SegmentationServiceClient.Code.SERVER_INTERNAL_ERROR));
+        .thenReturn(Tasks.forResult(SegmentationServiceClient.Code.SERVER_ERROR));
     when(firebaseInstanceId.getInstanceId())
         .thenReturn(
             Tasks.forResult(
