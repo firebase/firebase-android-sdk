@@ -50,13 +50,13 @@ public final class Document extends MaybeDocument {
     return KEY_COMPARATOR;
   }
 
-  /** A cache for FieldValues that have already been deserialized in `getField()`. */
-  private final Map<FieldPath, FieldValue> fieldValueCache = new ConcurrentHashMap<>();
-
   private final DocumentState documentState;
   private @Nullable final com.google.firestore.v1.Document proto;
   private @Nullable final Function<Value, FieldValue> converter;
-  private ObjectValue objectValue;
+  private @Nullable ObjectValue objectValue;
+
+  /** A cache for FieldValues that have already been deserialized in `getField()`. */
+  private @Nullable Map<FieldPath, FieldValue> fieldValueCache;
 
   public Document(
       DocumentKey key,
@@ -105,7 +105,7 @@ public final class Document extends MaybeDocument {
       objectValue = result;
 
       // Once objectValue is computed, values inside the fieldValueCache are no longer accessed.
-      fieldValueCache.clear();
+      fieldValueCache = null;
     }
 
     return objectValue;
@@ -116,6 +116,12 @@ public final class Document extends MaybeDocument {
       return objectValue.get(path);
     } else {
       hardAssert(proto != null && converter != null, "Expected proto and converter to be non-null");
+
+      if (fieldValueCache == null) {
+        // TODO(b/136090445): Remove the cache when `getField` is no longer called during Query
+        // ordering.
+        fieldValueCache = new ConcurrentHashMap<>();
+      }
 
       FieldValue fieldValue = fieldValueCache.get(path);
       if (fieldValue == null) {
