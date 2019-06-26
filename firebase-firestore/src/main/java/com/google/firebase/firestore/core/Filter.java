@@ -78,6 +78,8 @@ public abstract class Filter {
                 + "whereEqualTo()).");
       }
       return new NaNFilter(path);
+    } else if (operator == Operator.ARRAY_CONTAINS) {
+      return new ArrayContainsFilter(path, value);
     } else {
       return new FieldFilter(path, operator, value);
     }

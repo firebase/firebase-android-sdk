@@ -61,9 +61,7 @@ public class FieldFilter extends Filter {
   }
 
   private boolean matchesValue(FieldValue other) {
-    if (operator == Operator.ARRAY_CONTAINS) {
-      return other instanceof ArrayValue && ((ArrayValue) other).getInternalValue().contains(value);
-    } else if (operator == Operator.IN) {
+    if (operator == Operator.IN) {
       hardAssert(value instanceof ArrayValue, "'in' filter has invalid value: " + value);
       return ((ArrayValue) value).getInternalValue().contains(other);
     } else if (operator == Operator.ARRAY_CONTAINS_ANY) {
