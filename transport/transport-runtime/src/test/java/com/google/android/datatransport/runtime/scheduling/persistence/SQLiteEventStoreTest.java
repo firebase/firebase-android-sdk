@@ -53,7 +53,15 @@ public class SQLiteEventStoreTest {
   private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG);
 
   private static SQLiteEventStore newStoreWithConfig(Clock clock, EventStoreConfig config) {
-    return new SQLiteEventStore(RuntimeEnvironment.application, clock, new UptimeClock(), config);
+    return new SQLiteEventStore(
+        clock,
+        new UptimeClock(),
+        config,
+        new SchemaManager(
+            RuntimeEnvironment.application,
+            EventStoreModule.CREATE_EVENTS_SQL_V1,
+            EventStoreModule.CREATE_EVENT_METADATA_SQL_V1,
+            EventStoreModule.CREATE_CONTEXTS_SQL_V1));
   }
 
   @Test

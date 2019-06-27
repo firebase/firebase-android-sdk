@@ -18,9 +18,37 @@ import com.google.android.datatransport.runtime.synchronization.SynchronizationG
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
+import javax.inject.Named;
 
 @Module
 public abstract class EventStoreModule {
+  static final String CREATE_EVENTS_SQL_V1 =
+      "CREATE TABLE events "
+          + "(_id INTEGER PRIMARY KEY,"
+          + " context_id INTEGER NOT NULL,"
+          + " transport_name TEXT NOT NULL,"
+          + " timestamp_ms INTEGER NOT NULL,"
+          + " uptime_ms INTEGER NOT NULL,"
+          + " payload BLOB NOT NULL,"
+          + " code INTEGER,"
+          + " num_attempts INTEGER NOT NULL,"
+          + "FOREIGN KEY (context_id) REFERENCES transport_contexts(_id) ON DELETE CASCADE)";
+
+  static final String CREATE_EVENT_METADATA_SQL_V1 =
+      "CREATE TABLE event_metadata "
+          + "(_id INTEGER PRIMARY KEY,"
+          + " event_id INTEGER NOT NULL,"
+          + " name TEXT NOT NULL,"
+          + " value TEXT NOT NULL,"
+          + "FOREIGN KEY (event_id) REFERENCES events(_id) ON DELETE CASCADE)";
+
+  static final String CREATE_CONTEXTS_SQL_V1 =
+      "CREATE TABLE transport_contexts "
+          + "(_id INTEGER PRIMARY KEY,"
+          + " backend_name TEXT NOT NULL,"
+          + " priority INTEGER NOT NULL,"
+          + " next_request_ms INTEGER NOT NULL)";
+
   @Provides
   static EventStoreConfig storeConfig() {
     return EventStoreConfig.DEFAULT;
@@ -31,4 +59,22 @@ public abstract class EventStoreModule {
 
   @Binds
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
+
+  @Provides
+  @Named("CREATE_EVENTS_SQL")
+  static String createEventsSql() {
+    return CREATE_EVENTS_SQL_V1;
+  }
+
+  @Provides
+  @Named("CREATE_EVENT_METADATA_SQL")
+  static String createEventMetadataSql() {
+    return CREATE_EVENT_METADATA_SQL_V1;
+  }
+
+  @Provides
+  @Named("CREATE_CONTEXTS_SQL")
+  static String createContextsSql() {
+    return CREATE_CONTEXTS_SQL_V1;
+  }
 }

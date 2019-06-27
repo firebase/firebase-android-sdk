@@ -15,12 +15,9 @@
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabaseLockedException;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.os.Build;
 import android.os.SystemClock;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -52,19 +49,19 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   private static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
 
-  private final OpenHelper openHelper;
+  private final SchemaManager schemaManager;
   private final Clock wallClock;
   private final Clock monotonicClock;
   private final EventStoreConfig config;
 
   @Inject
   SQLiteEventStore(
-      Context applicationContext,
       @WallTime Clock wallClock,
       @Monotonic Clock clock,
-      EventStoreConfig config) {
+      EventStoreConfig config,
+      SchemaManager schemaManager) {
 
-    this.openHelper = new OpenHelper(applicationContext);
+    this.schemaManager = schemaManager;
     this.wallClock = wallClock;
     this.monotonicClock = clock;
     this.config = config;
@@ -72,7 +69,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   private SQLiteDatabase getDb() {
     return retryIfDbLocked(
-        openHelper::getWritableDatabase,
+        schemaManager::getWritableDatabase,
         ex -> {
           throw new SynchronizationException("Timed out while trying to open db.", ex);
         });
@@ -272,7 +269,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   @Override
   public void close() {
-    openHelper.close();
+    schemaManager.close();
   }
 
   /** Loads all events for a backend. */
@@ -466,95 +463,6 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
       return function.apply(c);
     } finally {
       c.close();
-    }
-  }
-
-  private static class OpenHelper extends SQLiteOpenHelper {
-    // TODO: when we do schema upgrades in the future we need to make sure both downgrades and
-    // upgrades work as expected, e.g. `up+down+up` is equivalent to `up`.
-    private static int SCHEMA_VERSION = 1;
-    private static String DB_NAME = "com.google.android.datatransport.events";
-    private static String CREATE_EVENTS_SQL =
-        "CREATE TABLE events "
-            + "(_id INTEGER PRIMARY KEY,"
-            + " context_id INTEGER NOT NULL,"
-            + " transport_name TEXT NOT NULL,"
-            + " timestamp_ms INTEGER NOT NULL,"
-            + " uptime_ms INTEGER NOT NULL,"
-            + " payload BLOB NOT NULL,"
-            + " code INTEGER,"
-            + " num_attempts INTEGER NOT NULL,"
-            + "FOREIGN KEY (context_id) REFERENCES transport_contexts(_id) ON DELETE CASCADE)";
-
-    private static String CREATE_EVENT_METADATA_SQL =
-        "CREATE TABLE event_metadata "
-            + "(_id INTEGER PRIMARY KEY,"
-            + " event_id INTEGER NOT NULL,"
-            + " name TEXT NOT NULL,"
-            + " value TEXT NOT NULL,"
-            + "FOREIGN KEY (event_id) REFERENCES events(_id) ON DELETE CASCADE)";
-
-    private static String CREATE_CONTEXTS_SQL =
-        "CREATE TABLE transport_contexts "
-            + "(_id INTEGER PRIMARY KEY,"
-            + " backend_name TEXT NOT NULL,"
-            + " priority INTEGER NOT NULL,"
-            + " next_request_ms INTEGER NOT NULL)";
-
-    private static String CREATE_EVENT_BACKEND_INDEX =
-        "CREATE INDEX events_backend_id on events(context_id)";
-
-    private static String CREATE_CONTEXT_BACKEND_PRIORITY_INDEX =
-        "CREATE UNIQUE INDEX contexts_backend_priority on transport_contexts(backend_name, priority)";
-
-    private boolean configured = false;
-
-    private OpenHelper(Context context) {
-      super(context, DB_NAME, null, SCHEMA_VERSION);
-    }
-
-    @Override
-    public void onConfigure(SQLiteDatabase db) {
-      // Note that this is only called automatically by the SQLiteOpenHelper base class on Jelly
-      // Bean and above.
-      configured = true;
-
-      db.rawQuery("PRAGMA busy_timeout=0;", new String[0]).close();
-
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-        db.setForeignKeyConstraintsEnabled(true);
-      }
-    }
-
-    private void ensureConfigured(SQLiteDatabase db) {
-      if (!configured) {
-        onConfigure(db);
-      }
-    }
-
-    @Override
-    public void onCreate(SQLiteDatabase db) {
-      ensureConfigured(db);
-      db.execSQL(CREATE_EVENTS_SQL);
-      db.execSQL(CREATE_EVENT_METADATA_SQL);
-      db.execSQL(CREATE_CONTEXTS_SQL);
-      db.execSQL(CREATE_EVENT_BACKEND_INDEX);
-      db.execSQL(CREATE_CONTEXT_BACKEND_PRIORITY_INDEX);
-    }
-
-    @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-      ensureConfigured(db);
-    }
-
-    @Override
-    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-      ensureConfigured(db);
-    }
-
-    @Override
-    public void onOpen(SQLiteDatabase db) {
-      ensureConfigured(db);
     }
   }
 }
