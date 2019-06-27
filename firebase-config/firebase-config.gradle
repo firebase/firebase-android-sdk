@@ -50,6 +50,11 @@ protobuf {
     }
 }
 
+firebaseLibrary {
+    testLab.enabled = true
+    publishSources = true
+}
+
 android {
     compileSdkVersion project.targetSdkVersion
     defaultConfig {

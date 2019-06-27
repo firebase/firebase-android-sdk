@@ -14,34 +14,11 @@
 
 plugins {
     id 'firebase-library'
-    id 'com.google.protobuf'
 }
 
 firebaseLibrary {
     testLab.enabled = false
     publishSources = true
-}
-
-// TODO(issue/568): Remove this once legacy logic is removed from Remote Config.
-protobuf {
-    protoc {
-        artifact = 'com.google.protobuf:protoc:3.4.0'
-    }
-    plugins {
-        javalite {
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
-        }
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                remove java
-            }
-            task.plugins {
-                javalite {}
-            }
-        }
-    }
 }
 
 android {
@@ -51,13 +28,12 @@ android {
     }
     sourceSets {
         main {
-            proto {
-                srcDir 'src/proto'
+            java {
             }
-
-	    resources {
-	        srcDir 'src/proto/com/google/protos'
-	    }
+        }
+        test {
+            java {
+            }
         }
     }
 
@@ -85,7 +61,6 @@ dependencies {
     implementation ('com.google.firebase:firebase-measurement-connector:18.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
-    implementation 'com.google.protobuf:protobuf-lite:3.0.1'
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'com.google.truth:truth:0.44'
     testImplementation 'junit:junit:4.13-beta-2'

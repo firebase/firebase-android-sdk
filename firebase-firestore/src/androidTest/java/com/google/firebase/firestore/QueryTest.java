@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
@@ -39,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
-import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -429,33 +428,33 @@ public class QueryTest {
     // much of anything else interesting to test.
   }
 
-  // TODO(in-queries): Re-enable in prod once feature lands in backend.
+  // TODO(in-queries): Re-enable once emulator support is added to travis.
   @Test
+  @Ignore
   public void testQueriesCanUseInFilters() {
-    Assume.assumeTrue(isRunningAgainstEmulator());
-    Map<String, Object> docA = map("zip", 98101L);
-    Map<String, Object> docB = map("zip", 91102L);
-    Map<String, Object> docC = map("zip", 98103L);
-    Map<String, Object> docD = map("zip", asList(98101L));
-    Map<String, Object> docE = map("zip", asList("98101", map("zip", 98101L)));
-    Map<String, Object> docF = map("zip", map("code", 500L));
+    Map<String, Object> docA = map("zip", 98101);
+    Map<String, Object> docB = map("zip", 91102);
+    Map<String, Object> docC = map("zip", 98103);
+    Map<String, Object> docD = map("zip", asList(98101));
+    Map<String, Object> docE = map("zip", asList("98101", map("zip", 98101)));
+    Map<String, Object> docF = map("zip", map("code", 500));
     CollectionReference collection =
         testCollectionWithDocs(
             map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF));
 
     // Search for zips matching [98101, 98103].
-    QuerySnapshot snapshot = waitFor(collection.whereIn("zip", asList(98101L, 98103L)).get());
+    QuerySnapshot snapshot = waitFor(collection.whereIn("zip", asList(98101, 98103)).get());
     assertEquals(asList(docA, docC), querySnapshotToValues(snapshot));
 
     // With objects.
-    snapshot = waitFor(collection.whereIn("zip", asList(map("code", 500L))).get());
+    snapshot = waitFor(collection.whereIn("zip", asList(map("code", 500))).get());
     assertEquals(asList(docF), querySnapshotToValues(snapshot));
   }
 
-  // TODO(in-queries): Re-enable in prod once feature lands in backend.
+  // TODO(in-queries): Re-enable once emulator support is added to travis.
   @Test
+  @Ignore
   public void testQueriesCanUseArrayContainsAnyFilters() {
-    Assume.assumeTrue(isRunningAgainstEmulator());
     Map<String, Object> docA = map("array", asList(42L));
     Map<String, Object> docB = map("array", asList("a", 42L, "c"));
     Map<String, Object> docC = map("array", asList(41.999, "42", map("a", asList(42))));
