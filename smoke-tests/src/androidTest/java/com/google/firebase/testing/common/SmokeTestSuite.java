@@ -17,7 +17,7 @@ package com.google.firebase.testing.common;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import androidx.test.InstrumentationRegistry;
+import androidx.test.core.app.ApplicationProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -69,7 +69,7 @@ public class SmokeTestSuite extends ParentRunner<Runner> {
   }
 
   private static List<Class<?>> getTestClasses() throws InitializationError {
-    Context ctx = InstrumentationRegistry.getTargetContext();
+    Context ctx = ApplicationProvider.getApplicationContext();
     return getTestClasses(ctx);
   }
 

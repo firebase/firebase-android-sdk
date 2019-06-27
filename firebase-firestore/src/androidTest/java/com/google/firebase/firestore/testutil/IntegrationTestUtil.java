@@ -422,4 +422,8 @@ public class IntegrationTestUtil {
     }
     return result;
   }
+
+  public static boolean isRunningAgainstEmulator() {
+    return CONNECT_TO_EMULATOR;
+  }
 }
