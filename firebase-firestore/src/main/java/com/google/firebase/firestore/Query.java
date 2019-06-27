@@ -898,7 +898,7 @@ public class Query {
               }
 
               try {
-                // This drain should be very short; we're just forcing synchronization between this
+                // This await should be very short; we're just forcing synchronization between this
                 // block and the outer registration.setResult.
                 ListenerRegistration actualRegistration = Tasks.await(registration.getTask());
 

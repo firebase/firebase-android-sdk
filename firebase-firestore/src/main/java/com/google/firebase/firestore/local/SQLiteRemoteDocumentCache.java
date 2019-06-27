@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-
 import javax.annotation.Nullable;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
@@ -122,11 +121,11 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
-
-    ImmutableSortedMap<DocumentKey, Document>[] matchingDocuments = (ImmutableSortedMap<DocumentKey, Document>[])
-            new ImmutableSortedMap[] { DocumentCollections.emptyDocumentMap() };
-
     SQLitePersistence.BackgroundQueue backgroundQueue = new SQLitePersistence.BackgroundQueue();
+
+    ImmutableSortedMap<DocumentKey, Document>[] matchingDocuments =
+        (ImmutableSortedMap<DocumentKey, Document>[])
+            new ImmutableSortedMap[] {DocumentCollections.emptyDocumentMap()};
 
     db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
         .binding(prefixPath, prefixSuccessorPath)
@@ -149,14 +148,17 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
               // Since scheduling background tasks incurs overhead, we only dispatch to a background
               // thread if there are still some documents remaining.
               Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
-              executor.execute(() -> {
-                  @Nullable Document doc = this.processDocumentResult(rawDocument, query);
-                  if (doc != null) {
-                    synchronized (SQLiteRemoteDocumentCache.this) {
-                      matchingDocuments[0] = matchingDocuments[0].insert(doc.getKey(), doc);
+              executor.execute(
+                  () -> {
+                    MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
+
+                    if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
+                      synchronized (SQLiteRemoteDocumentCache.this) {
+                        matchingDocuments[0] =
+                            matchingDocuments[0].insert(maybeDoc.getKey(), (Document) maybeDoc);
+                      }
                     }
-                  }
-                });
+                  });
             });
 
     try {
@@ -166,17 +168,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
 
     return matchingDocuments[0];
-  }
-
-  private @Nullable Document processDocumentResult(byte[] rawDocument, Query query) {
-    MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
-    if (!(maybeDoc instanceof Document)) {
-      return null;
-    }
-    if (!query.matches((Document) maybeDoc)) {
-      return null;
-    }
-    return (Document) maybeDoc;
   }
 
   private String pathForKey(DocumentKey key) {

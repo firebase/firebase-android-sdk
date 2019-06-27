@@ -18,15 +18,33 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 
-public class ThrottledForwardingExecutor implements Executor {
+/**
+ * An executor that forwards executions to another executor, but caps the number of pending
+ * operations. Tasks scheduled past the specified limit are directly invoked on the calling thread,
+ * reducing the total memory consumed by pending tasks.
+ */
+class ThrottledForwardingExecutor implements Executor {
   private final Executor executor;
   private final Semaphore availableSlots;
 
-  public ThrottledForwardingExecutor(int maximumConcurrency, Executor executor) {
+  /**
+   * Instantiates a new ThrottledForwardingExecutor.
+   *
+   * @param maximumConcurrency The maximum number of pending tasks to schedule on the provided
+   *     executor.
+   * @param executor The executor to forward tasks to.
+   */
+  ThrottledForwardingExecutor(int maximumConcurrency, Executor executor) {
     this.availableSlots = new Semaphore(maximumConcurrency);
     this.executor = executor;
   }
 
+  /**
+   * Forwards a task to the provided executor if the current number of pending tasks is less than
+   * the configured limit. Otherwise, executes the task directly.
+   *
+   * @param command The task to run.
+   */
   @Override
   public void execute(Runnable command) {
     if (availableSlots.tryAcquire()) {
