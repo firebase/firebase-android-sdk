@@ -71,9 +71,10 @@ public class QuerySnapshotTest {
     assertNotEquals(foo, noPendingWrites);
     assertNotEquals(foo, fromCache);
 
+    // Note: `foo` and `differentDoc` have the same hash code since we no longer take document
+    // contents into account.
     assertEquals(foo.hashCode(), fooDup.hashCode());
     assertNotEquals(foo.hashCode(), differentPath.hashCode());
-    assertNotEquals(foo.hashCode(), differentDoc.hashCode());
     assertNotEquals(foo.hashCode(), noPendingWrites.hashCode());
     assertNotEquals(foo.hashCode(), fromCache.hashCode());
   }

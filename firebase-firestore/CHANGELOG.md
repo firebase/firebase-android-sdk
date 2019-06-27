@@ -2,10 +2,15 @@
 - [fixed] Fixed an internal assertion that was triggered when an
   update with a `FieldValue.serverTimestamp()` and an update with a
   `FieldValue.increment()` were pending for the same document (#491).
+- [changed] Improved performance for queries with filters that only return a
+  small subset of the documents in a collection.
 - [changed] Instead of failing silently, Firestore now crashes the client app
   if it fails to load SSL Ciphers. To avoid these crashes, you must bundle 
   Conscrypt to support non-GMSCore devices on Android KitKat or JellyBean (see
   https://github.com/grpc/grpc-java/blob/master/SECURITY.md#tls-on-android).
+- [feature] Added a `@DocumentId` annotation which can be used on a
+  `DocumentReference` or `String` property in a POJO to indicate that the SDK
+  should automatically populate it with the document's ID.
 
 # 20.1.0
 - [changed] SSL and gRPC initialization now happens on a separate thread, which
