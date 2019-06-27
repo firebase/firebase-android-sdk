@@ -220,6 +220,7 @@ public class CallTest {
 
     HttpsCallableReference function =
         functions.getHttpsCallable("timeoutTest").withTimeout(10, TimeUnit.MILLISECONDS);
+    assertEquals(10, function.getTimeout());
     Task<HttpsCallableResult> result = function.call();
     ExecutionException exe = assertThrows(ExecutionException.class, () -> Tasks.await(result));
     Throwable cause = exe.getCause();
