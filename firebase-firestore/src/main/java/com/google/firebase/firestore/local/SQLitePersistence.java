@@ -336,7 +336,7 @@ public final class SQLitePersistence extends Persistence {
 
   /**
    * A simple queue that executes tasks in parallel on the Android's AsyncTask.THREAD_POOL_EXECUTOR
-   * and allows to block on their completion.
+   * and supports blocking on their completion.
    *
    * <p>This class is not thread-safe. In particular, `execute()` and `drain()` should not be called
    * from parallel threads.
