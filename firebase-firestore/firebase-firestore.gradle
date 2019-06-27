@@ -30,7 +30,7 @@ protobuf {
     }
     plugins {
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.16.1'
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.21.0'
         }
         javalite {
             // The codegen for lite comes as a separate artifact
@@ -64,7 +64,7 @@ android {
         minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled true
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     sourceSets {
@@ -92,6 +92,16 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     testOptions.unitTests.includeAndroidResources = true
+    ext.useProdBackendForTests = false
+}
+
+android.libraryVariants.all { variant ->
+    if (findProperty("useProdBackendForTests")) {
+        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
+    } else {
+        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
+    }
+
 }
 
 dependencies {
@@ -102,41 +112,42 @@ dependencies {
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
 
-    implementation 'io.grpc:grpc-stub:1.16.1'
-    implementation 'io.grpc:grpc-protobuf-lite:1.16.1'
-    implementation 'io.grpc:grpc-okhttp:1.16.1'
-    implementation 'io.grpc:grpc-android:1.16.1'
-    implementation "com.google.android.gms:play-services-basement:$playServicesVersion"
-    implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
-    implementation "com.google.android.gms:play-services-base:$playServicesVersion"
-
+    implementation 'io.grpc:grpc-stub:1.21.0'
+    implementation 'io.grpc:grpc-protobuf-lite:1.21.0'
+    implementation 'io.grpc:grpc-okhttp:1.21.0'
+    implementation 'io.grpc:grpc-android:1.21.0'
+    implementation 'com.google.android.gms:play-services-basement:17.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'com.google.android.gms:play-services-base:17.0.0'
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
 
     implementation 'com.squareup.okhttp:okhttp:2.7.5'
-    implementation('com.google.firebase:firebase-auth-interop:16.0.1') {
+    implementation('com.google.firebase:firebase-auth-interop:18.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
     testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:2.21.0'
+    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
-    androidTestImplementation "com.android.support:support-annotations:$supportAnnotationsVersion"
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test:rules:1.0.2'
+    androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
+    androidTestImplementation "androidx.annotation:annotation:1.1.0"
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test:rules:1.2.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
 }
 
 gradle.projectsEvaluated {
     tasks.withType(JavaCompile) {
-        // TODO(rsgowman): Also add "-Xlint:unchecked". But currently that
+        // TODO(wuandy): Also add "-Xlint:unchecked". But currently that
         // enables 100+ warnings due to our generated source code.
-        options.compilerArgs << "-Xlint:deprecation"
+        options.compilerArgs << "-Xlint:deprecation" << "-Werror"
     }
 }
 

@@ -17,18 +17,17 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.core.Bound;
+import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
-import com.google.firebase.firestore.core.NaNFilter;
-import com.google.firebase.firestore.core.NullFilter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.core.RelationFilter;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -83,7 +82,6 @@ import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.StructuredQuery.CollectionSelector;
 import com.google.firestore.v1.StructuredQuery.CompositeFilter;
-import com.google.firestore.v1.StructuredQuery.FieldFilter;
 import com.google.firestore.v1.StructuredQuery.FieldReference;
 import com.google.firestore.v1.StructuredQuery.Filter.FilterTypeCase;
 import com.google.firestore.v1.StructuredQuery.Order;
@@ -406,11 +404,11 @@ public final class RemoteSerializer {
         response.getResultCase().equals(ResultCase.FOUND),
         "Tried to deserialize a found document from a missing document.");
     DocumentKey key = decodeKey(response.getFound().getName());
-    ObjectValue value = decodeFields(response.getFound().getFieldsMap());
     SnapshotVersion version = decodeVersion(response.getFound().getUpdateTime());
     hardAssert(
         !version.equals(SnapshotVersion.NONE), "Got a document response with no snapshot version");
-    return new Document(key, version, value, Document.DocumentState.SYNCED, response.getFound());
+    return new Document(
+        key, version, Document.DocumentState.SYNCED, response.getFound(), this::decodeValue);
   }
 
   private NoDocument decodeMissingDocument(BatchGetDocumentsResponse response) {
@@ -817,10 +815,8 @@ public final class RemoteSerializer {
   private StructuredQuery.Filter encodeFilters(List<Filter> filters) {
     List<StructuredQuery.Filter> protos = new ArrayList<>(filters.size());
     for (Filter filter : filters) {
-      if (filter instanceof RelationFilter) {
-        protos.add(encodeRelationFilter((RelationFilter) filter));
-      } else {
-        protos.add(encodeUnaryFilter(filter));
+      if (filter instanceof FieldFilter) {
+        protos.add(encodeUnaryOrFieldFilter((FieldFilter) filter));
       }
     }
     if (filters.size() == 1) {
@@ -852,7 +848,7 @@ public final class RemoteSerializer {
           throw fail("Nested composite filters are not supported.");
 
         case FIELD_FILTER:
-          result.add(decodeRelationFilter(filter.getFieldFilter()));
+          result.add(decodeFieldFilter(filter.getFieldFilter()));
           break;
 
         case UNARY_FILTER:
@@ -867,42 +863,42 @@ public final class RemoteSerializer {
     return result;
   }
 
-  private StructuredQuery.Filter encodeRelationFilter(RelationFilter filter) {
-    FieldFilter.Builder proto = FieldFilter.newBuilder();
+  @VisibleForTesting
+  StructuredQuery.Filter encodeUnaryOrFieldFilter(FieldFilter filter) {
+    if (filter.getOperator() == Filter.Operator.EQUAL) {
+      UnaryFilter.Builder unaryProto = UnaryFilter.newBuilder();
+      unaryProto.setField(encodeFieldPath(filter.getField()));
+      if (filter.getValue().equals(DoubleValue.NaN)) {
+        unaryProto.setOp(UnaryFilter.Operator.IS_NAN);
+        return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
+      } else if (filter.getValue().equals(NullValue.nullValue())) {
+        unaryProto.setOp(UnaryFilter.Operator.IS_NULL);
+        return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
+      }
+    }
+    StructuredQuery.FieldFilter.Builder proto = StructuredQuery.FieldFilter.newBuilder();
     proto.setField(encodeFieldPath(filter.getField()));
-    proto.setOp(encodeRelationFilterOperator(filter.getOperator()));
+    proto.setOp(encodeFieldFilterOperator(filter.getOperator()));
     proto.setValue(encodeValue(filter.getValue()));
     return StructuredQuery.Filter.newBuilder().setFieldFilter(proto).build();
   }
 
-  private Filter decodeRelationFilter(StructuredQuery.FieldFilter proto) {
+  @VisibleForTesting
+  FieldFilter decodeFieldFilter(StructuredQuery.FieldFilter proto) {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
-    RelationFilter.Operator filterOperator = decodeRelationFilterOperator(proto.getOp());
+    FieldFilter.Operator filterOperator = decodeFieldFilterOperator(proto.getOp());
     FieldValue value = decodeValue(proto.getValue());
-    return Filter.create(fieldPath, filterOperator, value);
-  }
-
-  private StructuredQuery.Filter encodeUnaryFilter(Filter filter) {
-    UnaryFilter.Builder proto = UnaryFilter.newBuilder();
-    proto.setField(encodeFieldPath(filter.getField()));
-    if (filter instanceof NaNFilter) {
-      proto.setOp(UnaryFilter.Operator.IS_NAN);
-    } else if (filter instanceof NullFilter) {
-      proto.setOp(UnaryFilter.Operator.IS_NULL);
-    } else {
-      throw fail("Unrecognized filter: %s", filter.getCanonicalId());
-    }
-    return StructuredQuery.Filter.newBuilder().setUnaryFilter(proto).build();
+    return FieldFilter.create(fieldPath, filterOperator, value);
   }
 
   private Filter decodeUnaryFilter(StructuredQuery.UnaryFilter proto) {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     switch (proto.getOp()) {
       case IS_NAN:
-        return new NaNFilter(fieldPath);
+        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, DoubleValue.NaN);
 
       case IS_NULL:
-        return new NullFilter(fieldPath);
+        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, NullValue.nullValue());
 
       default:
         throw fail("Unrecognized UnaryFilter.operator %d", proto.getOp());
@@ -913,7 +909,32 @@ public final class RemoteSerializer {
     return FieldReference.newBuilder().setFieldPath(field.canonicalString()).build();
   }
 
-  private FieldFilter.Operator encodeRelationFilterOperator(RelationFilter.Operator operator) {
+  private StructuredQuery.FieldFilter.Operator encodeFieldFilterOperator(
+      FieldFilter.Operator operator) {
+    switch (operator) {
+      case LESS_THAN:
+        return StructuredQuery.FieldFilter.Operator.LESS_THAN;
+      case LESS_THAN_OR_EQUAL:
+        return StructuredQuery.FieldFilter.Operator.LESS_THAN_OR_EQUAL;
+      case EQUAL:
+        return StructuredQuery.FieldFilter.Operator.EQUAL;
+      case GREATER_THAN:
+        return StructuredQuery.FieldFilter.Operator.GREATER_THAN;
+      case GREATER_THAN_OR_EQUAL:
+        return StructuredQuery.FieldFilter.Operator.GREATER_THAN_OR_EQUAL;
+      case ARRAY_CONTAINS:
+        return StructuredQuery.FieldFilter.Operator.ARRAY_CONTAINS;
+      case IN:
+        return StructuredQuery.FieldFilter.Operator.IN;
+      case ARRAY_CONTAINS_ANY:
+        return StructuredQuery.FieldFilter.Operator.ARRAY_CONTAINS_ANY;
+      default:
+        throw fail("Unknown operator %d", operator);
+    }
+  }
+
+  private FieldFilter.Operator decodeFieldFilterOperator(
+      StructuredQuery.FieldFilter.Operator operator) {
     switch (operator) {
       case LESS_THAN:
         return FieldFilter.Operator.LESS_THAN;
@@ -921,31 +942,16 @@ public final class RemoteSerializer {
         return FieldFilter.Operator.LESS_THAN_OR_EQUAL;
       case EQUAL:
         return FieldFilter.Operator.EQUAL;
-      case GREATER_THAN:
-        return FieldFilter.Operator.GREATER_THAN;
       case GREATER_THAN_OR_EQUAL:
         return FieldFilter.Operator.GREATER_THAN_OR_EQUAL;
+      case GREATER_THAN:
+        return FieldFilter.Operator.GREATER_THAN;
       case ARRAY_CONTAINS:
         return FieldFilter.Operator.ARRAY_CONTAINS;
-      default:
-        throw fail("Unknown operator %d", operator);
-    }
-  }
-
-  private RelationFilter.Operator decodeRelationFilterOperator(FieldFilter.Operator operator) {
-    switch (operator) {
-      case LESS_THAN:
-        return RelationFilter.Operator.LESS_THAN;
-      case LESS_THAN_OR_EQUAL:
-        return RelationFilter.Operator.LESS_THAN_OR_EQUAL;
-      case EQUAL:
-        return RelationFilter.Operator.EQUAL;
-      case GREATER_THAN_OR_EQUAL:
-        return RelationFilter.Operator.GREATER_THAN_OR_EQUAL;
-      case GREATER_THAN:
-        return RelationFilter.Operator.GREATER_THAN;
-      case ARRAY_CONTAINS:
-        return RelationFilter.Operator.ARRAY_CONTAINS;
+      case IN:
+        return FieldFilter.Operator.IN;
+      case ARRAY_CONTAINS_ANY:
+        return FieldFilter.Operator.ARRAY_CONTAINS_ANY;
       default:
         throw fail("Unhandled FieldFilter.operator %d", operator);
     }
@@ -1045,12 +1051,13 @@ public final class RemoteSerializer {
         SnapshotVersion version = decodeVersion(docChange.getDocument().getUpdateTime());
         hardAssert(
             !version.equals(SnapshotVersion.NONE), "Got a document change without an update time");
-        ObjectValue data = decodeFields(docChange.getDocument().getFieldsMap());
-        // The document may soon be re-serialized back to protos in order to store it in local
-        // persistence. Memoize the encoded form to avoid encoding it again.
         Document document =
             new Document(
-                key, version, data, Document.DocumentState.SYNCED, docChange.getDocument());
+                key,
+                version,
+                Document.DocumentState.SYNCED,
+                docChange.getDocument(),
+                this::decodeValue);
         watchChange = new WatchChange.DocumentChange(added, removed, document.getKey(), document);
         break;
       case DOCUMENT_DELETE:

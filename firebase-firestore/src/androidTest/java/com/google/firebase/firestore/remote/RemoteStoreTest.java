@@ -16,8 +16,8 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.OnlineState;
@@ -44,22 +44,28 @@ public class RemoteStoreTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             null,
-            InstrumentationRegistry.getContext());
+            ApplicationProvider.getApplicationContext());
     Semaphore networkChangeSemaphore = new Semaphore(0);
     RemoteStore.RemoteStoreCallback callback =
         new RemoteStore.RemoteStoreCallback() {
+          @Override
           public void handleRemoteEvent(RemoteEvent remoteEvent) {}
 
+          @Override
           public void handleRejectedListen(int targetId, Status error) {}
 
+          @Override
           public void handleSuccessfulWrite(MutationBatchResult successfulWrite) {}
 
+          @Override
           public void handleRejectedWrite(int batchId, Status error) {}
 
+          @Override
           public void handleOnlineStateChange(OnlineState onlineState) {
             networkChangeSemaphore.release();
           }
 
+          @Override
           public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
             return null;
           }
@@ -90,7 +96,7 @@ public class RemoteStoreTest {
     waitFor(testQueue.enqueue(() -> {}));
   }
 
-  class FakeConnectivityMonitor implements ConnectivityMonitor {
+  static class FakeConnectivityMonitor implements ConnectivityMonitor {
     private Consumer<NetworkStatus> callback = null;
 
     @Override

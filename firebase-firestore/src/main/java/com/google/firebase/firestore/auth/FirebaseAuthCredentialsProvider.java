@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.auth;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.GetTokenResult;

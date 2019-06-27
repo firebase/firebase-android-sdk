@@ -24,7 +24,7 @@ android {
     targetSdkVersion project.targetSdkVersion
     versionCode 1
     versionName "1.0"
-    testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     multiDexEnabled true
   }
 
@@ -53,26 +53,29 @@ android {
 
 dependencies {
   implementation project(path: ":firebase-inappmessaging-display")
-  implementation "com.google.firebase:firebase-measurement-connector:17.0.1"
+  implementation "com.google.firebase:firebase-measurement-connector:18.0.0"
   implementation('com.google.firebase:firebase-inappmessaging:17.0.3') {
     exclude group: 'com.google.firebase', module: 'firebase-common'
   }
-  implementation('com.google.firebase:firebase-analytics:16.0.4') {
+  implementation('com.google.firebase:firebase-analytics:17.0.0') {
     exclude group: 'com.google.firebase', module: 'firebase-common'
   }
 
   implementation "com.android.installreferrer:installreferrer:1.0"
-  implementation "com.android.support:design:27.1.1"
-  implementation "com.android.support:appcompat-v7:27.1.1"
+  implementation 'com.google.android.material:material:1.0.0'
+  implementation 'androidx.appcompat:appcompat:1.0.2'
+  implementation "com.google.code.findbugs:jsr305:3.0.2"
+  implementation "com.squareup.okhttp:okhttp:2.7.5"
+  implementation "com.google.auto.value:auto-value-annotations:1.6.5"
+  implementation "com.google.android.gms:play-services-basement:17.0.0"
 
   // The following dependencies are not required to use the FIAM UI library.
   // They are used to make some aspects of the demo app implementation simpler for
   // demonstrative purposes, and you may find them useful in your own apps; YMMV.
   implementation 'me.priyesh:chroma:1.0.2'
-  implementation "com.jakewharton:butterknife:8.8.1"
-  implementation "com.jakewharton:butterknife-compiler:8.8.1"
-  annotationProcessor "com.jakewharton:butterknife-compiler:8.8.1"
+  implementation "com.jakewharton:butterknife:10.1.0"
+  annotationProcessor "com.jakewharton:butterknife-compiler:10.1.0"
 
-  androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-  androidTestImplementation 'com.android.support.test:rules:1.0.2'
+  androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+  androidTestImplementation 'androidx.test:rules:1.2.0'
 }

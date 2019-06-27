@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import androidx.annotation.NonNull;
 import com.google.firebase.annotations.PublicApi;
 import java.util.Date;
 
@@ -37,7 +38,7 @@ import java.util.Date;
 @PublicApi
 public final class Timestamp implements Comparable<Timestamp>, Parcelable {
 
-  @PublicApi
+  @PublicApi @NonNull
   public static final Parcelable.Creator<Timestamp> CREATOR =
       new Parcelable.Creator<Timestamp>() {
         @Override
@@ -89,6 +90,7 @@ public final class Timestamp implements Comparable<Timestamp>, Parcelable {
 
   /** Creates a new timestamp with the current date, with millisecond precision. */
   @PublicApi
+  @NonNull
   public static Timestamp now() {
     return new Timestamp(new Date());
   }
@@ -107,6 +109,7 @@ public final class Timestamp implements Comparable<Timestamp>, Parcelable {
 
   /** Returns a new Date corresponding to this timestamp. This may lose precision. */
   @PublicApi
+  @NonNull
   public Date toDate() {
     return new Date(seconds * 1000 + (nanoseconds / 1000000));
   }

@@ -22,7 +22,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,21 +32,17 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.UserManager;
-import android.support.annotation.NonNull;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.common.base.Defaults;
-import com.google.firebase.FirebaseApp.IdTokenListener;
-import com.google.firebase.FirebaseApp.IdTokenListenersCountChangedListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.components.EagerSdkVerifier;
 import com.google.firebase.components.InitTracker;
 import com.google.firebase.components.TestComponentOne;
 import com.google.firebase.components.TestComponentTwo;
 import com.google.firebase.components.TestUserAgentDependentComponent;
-import com.google.firebase.internal.InternalTokenResult;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import com.google.firebase.testing.FirebaseAppRule;
 import java.lang.reflect.InvocationTargetException;
@@ -56,9 +51,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
@@ -147,10 +140,12 @@ public class FirebaseAppTest {
     String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
     Arrays.sort(actualUserAgent);
 
-    // After sorting the user agents are expected to be {"fire-android/", "fire-core/x.y.z",
-    // "test-component/1.2.3"}
-    assertThat(actualUserAgent[0]).contains("fire-android");
-    assertThat(actualUserAgent[1]).contains("fire-core");
+    // After sorting the user agents are expected to be {"fire-android/", "fire-auth/x.y.z",
+    // "fire-core/x.y.z", "test-component/1.2.3"}
+    assertThat(actualUserAgent[0]).contains("fire-analytics");
+    assertThat(actualUserAgent[1]).contains("fire-android");
+    assertThat(actualUserAgent[2]).contains("fire-auth");
+    assertThat(actualUserAgent[3]).contains("fire-core");
   }
 
   @Test
@@ -200,30 +195,6 @@ public class FirebaseAppTest {
     backgroundDetector.onActivityResumed(null);
     backgroundDetector.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN);
     assertThat(callbackCount.get()).isEqualTo(2);
-  }
-
-  @Test
-  public void testDefaultIdTokenListenersCountChangedListener() {
-    FirebaseApp firebaseApp = FirebaseApp.initializeApp(targetContext, OPTIONS, "myApp");
-    IdTokenListenersCountChangedListener listenersCountChangedListener =
-        mock(IdTokenListenersCountChangedListener.class);
-
-    // When registering, should fire
-    firebaseApp.setIdTokenListenersCountChangedListener(listenersCountChangedListener);
-    verify(listenersCountChangedListener).onListenerCountChanged(0);
-
-    IdTokenListener listener =
-        tokenResult -> {
-          // do nothing
-        };
-
-    // On number changed, should fire
-    firebaseApp.addIdTokenListener(listener);
-    verify(listenersCountChangedListener).onListenerCountChanged(1);
-
-    // On removal, should fire
-    firebaseApp.removeIdTokenListener(listener);
-    verify(listenersCountChangedListener, times(2)).onListenerCountChanged(0);
   }
 
   @Test
@@ -280,7 +251,6 @@ public class FirebaseAppTest {
     // delete and hidden methods shouldn't throw even after delete.
     Collection<String> allowedToCallAfterDelete =
         Arrays.asList(
-            "addIdTokenChangeListener",
             "addBackgroundStateChangeListener",
             "delete",
             "equals",
@@ -288,9 +258,6 @@ public class FirebaseAppTest {
             "getPersistenceKey",
             "hashCode",
             "isDefaultApp",
-            "setIdTokenListenersCountChangedListener",
-            "notifyIdTokenListeners",
-            "removeIdTokenChangeListener",
             "removeBackgroundStateChangeListener",
             "setTokenProvider",
             "toString");
@@ -382,18 +349,18 @@ public class FirebaseAppTest {
 
     Context appContext = mockContext.getApplicationContext();
 
-    assertThat(firebaseApp.get(Context.class)).isSameAs(appContext);
-    assertThat(firebaseApp.get(FirebaseApp.class)).isSameAs(firebaseApp);
+    assertThat(firebaseApp.get(Context.class)).isSameInstanceAs(appContext);
+    assertThat(firebaseApp.get(FirebaseApp.class)).isSameInstanceAs(firebaseApp);
 
     TestComponentOne one = firebaseApp.get(TestComponentOne.class);
     assertThat(one).isNotNull();
-    assertThat(one.getContext()).isSameAs(appContext);
+    assertThat(one.getContext()).isSameInstanceAs(appContext);
 
     TestComponentTwo two = firebaseApp.get(TestComponentTwo.class);
     assertThat(two).isNotNull();
-    assertThat(two.getApp()).isSameAs(firebaseApp);
-    assertThat(two.getOptions()).isSameAs(firebaseApp.getOptions());
-    assertThat(two.getOne()).isSameAs(one);
+    assertThat(two.getApp()).isSameInstanceAs(firebaseApp);
+    assertThat(two.getOptions()).isSameInstanceAs(firebaseApp.getOptions());
+    assertThat(two.getOne()).isSameInstanceAs(one);
   }
 
   @Test
@@ -422,38 +389,6 @@ public class FirebaseAppTest {
 
     assertThat(sdkVerifier.isAuthInitialized()).isTrue();
     assertThat(sdkVerifier.isAnalyticsInitialized()).isTrue();
-  }
-
-  public static class DefaultIdTokenListener implements IdTokenListener {
-    private Map<IdTokenListener, Integer> calls;
-
-    public DefaultIdTokenListener(Map<IdTokenListener, Integer> calls) {
-      this.calls = calls;
-    }
-
-    @Override
-    public void onIdTokenChanged(@NonNull InternalTokenResult tokenResult) {
-      if (!calls.containsKey(this)) {
-        calls.put(this, 0);
-      }
-      calls.put(this, calls.get(this) + 1);
-    }
-  };
-
-  @Test
-  public void testIdTokenListener() {
-    Context mockContext = createForwardingMockContext();
-    FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
-    Map<IdTokenListener, Integer> calls = new HashMap<>();
-    IdTokenListener listener1 = new DefaultIdTokenListener(calls);
-    IdTokenListener listener2 = new DefaultIdTokenListener(calls);
-    firebaseApp.addIdTokenListener(listener1);
-    firebaseApp.addIdTokenListener(listener2);
-    firebaseApp.notifyIdTokenListeners(null);
-    firebaseApp.removeIdTokenListener(listener2);
-    firebaseApp.notifyIdTokenListeners(null);
-    assertThat(calls.get(listener2)).isEqualTo(1);
-    assertThat(calls.get(listener1)).isEqualTo(2);
   }
 
   /** Returns mock context that forwards calls to targetContext and localBroadcastManager. */

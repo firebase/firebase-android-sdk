@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
@@ -33,6 +33,7 @@ import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.TestAccessHelper;
 import com.google.firebase.firestore.UserDataConverter;
+import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
@@ -175,21 +176,21 @@ public class TestUtil {
 
   public static Document doc(String key, long version, Map<String, Object> data) {
     return new Document(
-        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
+        key(key), version(version), Document.DocumentState.SYNCED, wrapObject(data));
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key, version(version), wrapObject(data), Document.DocumentState.SYNCED);
+    return new Document(key, version(version), Document.DocumentState.SYNCED, wrapObject(data));
   }
 
   public static Document doc(
       String key, long version, ObjectValue data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), data, documentState);
+    return new Document(key(key), version(version), documentState, data);
   }
 
   public static Document doc(
       String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), wrapObject(data), documentState);
+    return new Document(key(key), version(version), documentState, wrapObject(data));
   }
 
   public static NoDocument deletedDoc(String key, long version) {
@@ -220,8 +221,13 @@ public class TestUtil {
     return keySet;
   }
 
-  public static Filter filter(String key, String operator, Object value) {
-    return Filter.create(field(key), operatorFromString(operator), wrap(value));
+  public static FieldFilter filter(String key, String operator, Object value) {
+    Filter filter = FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
+    if (filter instanceof FieldFilter) {
+      return (FieldFilter) filter;
+    } else {
+      throw new IllegalArgumentException("Unrecognized filter: " + filter.toString());
+    }
   }
 
   public static Operator operatorFromString(String s) {
@@ -237,6 +243,10 @@ public class TestUtil {
       return Operator.GREATER_THAN_OR_EQUAL;
     } else if (s.equals("array-contains")) {
       return Operator.ARRAY_CONTAINS;
+    } else if (s.equals("in")) {
+      return Operator.IN;
+    } else if (s.equals("array-contains-any")) {
+      return Operator.ARRAY_CONTAINS_ANY;
     } else {
       throw new IllegalStateException("Unknown operator: " + s);
     }

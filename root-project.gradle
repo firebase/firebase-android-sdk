@@ -46,12 +46,13 @@ ext {
     supportAnnotationsVersion = '28.0.0'
     errorproneVersion = '2.3.2'
     errorproneJavacVersion = '9+181-r4173-1'
-    googleTruthVersion = '0.40'
+    googleTruthVersion = '0.45'
     robolectricVersion = '4.1'
 }
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
+apply plugin: com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.metrics.MetricsPlugin
 
 firebaseContinuousIntegration {
@@ -104,8 +105,10 @@ configure(subprojects) {
           'description': 'Generates JaCoCo unit test coverage reports.'], checkCoverage) {
         def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**Manifest*.*']
         classDirectories = files([
-            fileTree(dir: "$buildDir/intermediates/javac", excludes: excludes),
-            fileTree(dir: "$buildDir/tmp/kotlin-classes", excludes: excludes)
+            fileTree(dir: "$buildDir/intermediates/javac/release", excludes: excludes),
+            fileTree(dir: "$buildDir/intermediates/javac/releaseUnitTest", excludes: excludes),
+            fileTree(dir: "$buildDir/tmp/kotlin-classes/release", excludes: excludes),
+            fileTree(dir: "$buildDir/tmp/kotlin-classes/releaseUnitTest", excludes: excludes),
         ])
         sourceDirectories = files(['src/main/java', 'src/main/kotlin'])
         executionData = fileTree(dir: "$buildDir", includes: ['jacoco/*.exec'])
@@ -139,34 +142,6 @@ configure(subprojects) {
     }
 }
 
-/**
- * Disable "debug" build type for all subprojects.
- *
- * They are identical to "release" and are not used in either release or smoke tests. Disabling them
- * to reduce the number of tests we run on pre/post-submit.
- */
-configure(subprojects) {
-    afterEvaluate { Project sub ->
-        if (!sub.plugins.hasPlugin('com.android.library') && !sub.plugins.hasPlugin('com.android.application')) {
-            return
-        }
-
-        sub.android {
-            testBuildType "release"
-            variantFilter { variant ->
-                def buildTypeName = variant.buildType*.name
-                if (buildTypeName.contains('debug')) {
-                    setIgnore(true)
-                }
-            }
-            buildTypes {
-                // In the case of and android library signing config only affects instrumentation test APK.
-                // We need it signed with default debug credentials in order for FTL to accept the APK.
-                release.signingConfig = debug.signingConfig
-            }
-        }
-    }
-}
 
 /**
  * Configure "Preguarding" and Desugaring for the subprojects.

@@ -16,7 +16,10 @@ package com.google.firebase.storage;
 
 import android.annotation.TargetApi;
 import android.net.Uri;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import com.google.android.gms.common.internal.Preconditions;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -35,9 +38,7 @@ public class TestCommandHelper {
 
   private static final Executor executor = ExecutorProviderHelper.getInstance();
 
-  public static Task<StringBuilder> testDownloadUrl() {
-    final StorageReference ref = FirebaseStorage.getInstance().getReference("flubbertest.txt");
-
+  public static Task<StringBuilder> testDownloadUrl(StorageReference ref) {
     TaskCompletionSource<StringBuilder> result = new TaskCompletionSource<>();
     StringBuilder builder = new StringBuilder();
     builder.append("Getting Download Url.\n");
@@ -54,7 +55,7 @@ public class TestCommandHelper {
     return result.getTask();
   }
 
-  private static Task<StringBuilder> getMetadata(StorageReference ref) {
+  static Task<StringBuilder> getMetadata(StorageReference ref) {
     TaskCompletionSource<StringBuilder> result = new TaskCompletionSource<>();
     StringBuilder builder = new StringBuilder();
     builder.append("Getting Metadata.\n");
@@ -182,7 +183,7 @@ public class TestCommandHelper {
     builder.append("getSizeBytes:").append(Long.toString(metadata.getSizeBytes())).append("\n");
     builder.append("getReference:").append(metadata.getReference().getName()).append("\n");
     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
-    sdf.setTimeZone(TimeZone.getTimeZone("PST"));
+    sdf.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
     builder
         .append("getCreationTimeMillis:")
         .append(sdf.format(new Date(metadata.getCreationTimeMillis())))
@@ -222,5 +223,82 @@ public class TestCommandHelper {
               .append(se.getCause() != null ? se.getCause().toString() : "no cause");
         });
     return result.continueWith(task -> builder);
+  }
+
+  public static Task<StringBuilder> listFiles(int pageSize, int pageCount) {
+    final StorageReference reference = FirebaseStorage.getInstance().getReference("smallDirectory");
+
+    TaskCompletionSource<StringBuilder> result = new TaskCompletionSource<>();
+    StringBuilder builder = new StringBuilder();
+
+    int[] pagesReceived = new int[] {0};
+
+    Task<ListResult> listFiles = reference.list(pageSize);
+
+    listFiles.addOnCompleteListener(
+        executor,
+        new OnCompleteListener<ListResult>() {
+          @Override
+          public void onComplete(@NonNull Task<ListResult> task) {
+            ++pagesReceived[0];
+
+            ListResult listResult = task.getResult();
+
+            builder.append("\nlist:");
+            builder.append("\n  onComplete:Success=").append(task.isSuccessful());
+
+            if (task.isSuccessful()) {
+              builder.append("\n  Received Prefixes:");
+              for (StorageReference prefix : listResult.getPrefixes()) {
+                builder.append("\n    ").append(prefix.getPath());
+              }
+              builder.append("\n  Received Items:");
+              for (StorageReference item : listResult.getItems()) {
+                builder.append("\n    ").append(item.getPath());
+              }
+              builder.append("\n  Page Token:").append(listResult.getPageToken());
+            }
+
+            if (pagesReceived[0] == pageCount) {
+              result.setResult(builder);
+            } else {
+              reference.list(pageSize, listResult.getPageToken()).addOnCompleteListener(this);
+            }
+          }
+        });
+    return result.getTask();
+  }
+
+  public static Task<StringBuilder> listAllFiles() {
+    final StorageReference reference = FirebaseStorage.getInstance().getReference("largeDirectory");
+
+    TaskCompletionSource<StringBuilder> result = new TaskCompletionSource<>();
+    StringBuilder builder = new StringBuilder();
+
+    Task<ListResult> listFiles = reference.listAll();
+
+    listFiles.addOnCompleteListener(
+        executor,
+        task -> {
+          ListResult listResult = task.getResult();
+
+          builder.append("\nlistAll:");
+          builder.append("\n  onComplete:Success=").append(task.isSuccessful());
+
+          if (task.isSuccessful()) {
+            builder.append("\n  Received Prefixes:");
+            for (StorageReference prefix : listResult.getPrefixes()) {
+              builder.append("\n    ").append(prefix.getPath());
+            }
+            builder.append("\n  Received Items:");
+            for (StorageReference item : listResult.getItems()) {
+              builder.append("\n    ").append(item.getPath());
+            }
+            Preconditions.checkState(listResult.getPageToken() == null);
+          }
+
+          result.setResult(builder);
+        });
+    return result.getTask();
   }
 }

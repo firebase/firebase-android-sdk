@@ -19,13 +19,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.future.ReadFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -150,7 +151,7 @@ public class InfoTest {
     try {
       ReadFuture.untilEquals(refDup.child(".info/connected"), true)
           .timedGet(1500, TimeUnit.MILLISECONDS);
-      assert (false); // We should never get here!
+      Assert.fail();
     } catch (TimeoutException e) { //
     }
 

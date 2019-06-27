@@ -17,7 +17,7 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.content.Context;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -75,7 +75,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
-  private volatile boolean isShutdown = false;
+  private volatile boolean clientShutdown = false;
 
   // LRU-related
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
@@ -140,15 +140,19 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     credentialsProvider.removeChangeListener();
     return asyncQueue.enqueue(
         () -> {
-          if (!this.isShutdown) {
+          if (!this.clientShutdown) {
             remoteStore.shutdown();
             persistence.shutdown();
             if (lruScheduler != null) {
               lruScheduler.stop();
             }
-            this.isShutdown = true;
+            this.clientShutdown = true;
           }
         });
+  }
+
+  public boolean isShutdown() {
+    return this.clientShutdown;
   }
 
   /** Starts listening to a query. */
@@ -268,7 +272,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   }
 
   private void verifyNotShutdown() {
-    if (this.isShutdown) {
+    if (this.clientShutdown) {
       throw new IllegalArgumentException("The client has already been shutdown");
     }
   }

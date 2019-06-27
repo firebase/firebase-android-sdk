@@ -16,7 +16,7 @@ package com.google.firebase.database;
 
 // Server values
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.database.core.ServerValues;
 import java.util.Collections;

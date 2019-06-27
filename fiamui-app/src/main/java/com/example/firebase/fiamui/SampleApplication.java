@@ -14,7 +14,7 @@
 
 package com.example.firebase.fiamui;
 
-import android.support.multidex.MultiDexApplication;
+import androidx.multidex.MultiDexApplication;
 
 public class SampleApplication extends MultiDexApplication {
   @Override

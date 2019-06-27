@@ -31,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import android.util.Pair;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.collect.Sets;
@@ -94,7 +95,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.util.concurrent.RoboExecutorService;
 
 /**
@@ -122,6 +122,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
   // TODO: Make this configurable with JUnit options.
   private static final boolean RUN_BENCHMARK_TESTS = false;
+  private static final String BENCHMARK_TAG = "benchmark";
 
   // Disables all other tests; useful for debugging. Multiple tests can have
   // this tag and they'll all be run (but all others won't).
@@ -133,7 +134,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private static final Set<String> DISABLED_TAGS =
       RUN_BENCHMARK_TESTS
           ? Sets.newHashSet("no-android", "multi-client")
-          : Sets.newHashSet("no-android", "benchmark", "multi-client");
+          : Sets.newHashSet("no-android", BENCHMARK_TAG, "multi-client");
 
   private boolean garbageCollectionEnabled;
   private boolean networkEnabled = true;
@@ -266,10 +267,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     queue = new AsyncQueue();
 
     // Set up the sync engine and various stores.
-    datastore = new MockDatastore(queue, RuntimeEnvironment.application);
+    datastore = new MockDatastore(queue, ApplicationProvider.getApplicationContext());
 
     ConnectivityMonitor connectivityMonitor =
-        new AndroidConnectivityMonitor(RuntimeEnvironment.application);
+        new AndroidConnectivityMonitor(ApplicationProvider.getApplicationContext());
     remoteStore = new RemoteStore(this, localStore, datastore, queue, connectivityMonitor);
     syncEngine = new SyncEngine(localStore, remoteStore, currentUser);
     eventManager = new EventManager(syncEngine);
@@ -1063,13 +1064,19 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         Set<String> tags = getTestTags(testJSON);
 
         boolean runTest = shouldRunTest(tags) && (!exclusiveMode || tags.contains(EXCLUSIVE_TAG));
+        boolean measureRuntime = tags.contains(BENCHMARK_TAG);
         if (runTest) {
+          long start = System.currentTimeMillis();
           try {
-            info("  Spec test: " + name);
+            info("Spec test: " + name);
             runSteps(steps, config);
             ranAtLeastOneTest = true;
           } catch (AssertionError e) {
             throw new AssertionError("Spec test failure: " + name, e);
+          }
+          long end = System.currentTimeMillis();
+          if (measureRuntime) {
+            info("Runtime: " + (end - start) + " ms");
           }
         } else {
           info("  [SKIPPED] Spec test: " + name);

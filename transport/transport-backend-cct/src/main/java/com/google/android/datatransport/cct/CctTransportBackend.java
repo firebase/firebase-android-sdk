@@ -18,7 +18,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.cct.proto.AndroidClientInfo;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
 import com.google.android.datatransport.cct.proto.ClientInfo;
@@ -27,6 +27,7 @@ import com.google.android.datatransport.cct.proto.LogRequest;
 import com.google.android.datatransport.cct.proto.LogResponse;
 import com.google.android.datatransport.cct.proto.NetworkConnectionInfo;
 import com.google.android.datatransport.cct.proto.NetworkConnectionInfo.MobileSubtype;
+import com.google.android.datatransport.cct.proto.NetworkConnectionInfo.NetworkType;
 import com.google.android.datatransport.cct.proto.QosTierConfiguration;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
@@ -65,6 +66,9 @@ final class CctTransportBackend implements TransportBackend {
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
   private static final String PROTOBUF_CONTENT_TYPE = "application/x-protobuf";
 
+  @VisibleForTesting static final String KEY_NETWORK_TYPE = "net-type";
+  @VisibleForTesting static final String KEY_MOBILE_SUBTYPE = "mobile-subtype";
+
   private static final String KEY_SDK_VERSION = "sdk-version";
   private static final String KEY_MODEL = "model";
   private static final String KEY_HARDWARE = "hardware";
@@ -73,8 +77,6 @@ final class CctTransportBackend implements TransportBackend {
   private static final String KEY_OS_BUILD = "os-uild";
   private static final String KEY_MANUFACTURER = "manufacturer";
   private static final String KEY_FINGERPRINT = "fingerprint";
-  private static final String KEY_NETWORK_TYPE = "net-type";
-  private static final String KEY_MOBILE_SUBTYPE = "mobile-subtype";
   private static final String KEY_TIMEZONE_OFFSET = "tz-offset";
 
   private final ConnectivityManager connectivityManager;
@@ -125,12 +127,25 @@ final class CctTransportBackend implements TransportBackend {
         .addMetadata(KEY_MANUFACTURER, Build.MANUFACTURER)
         .addMetadata(KEY_FINGERPRINT, Build.FINGERPRINT)
         .addMetadata(KEY_TIMEZONE_OFFSET, getTzOffset())
-        .addMetadata(KEY_NETWORK_TYPE, networkInfo.getType())
-        .addMetadata(KEY_MOBILE_SUBTYPE, toSubtypeValue(networkInfo.getSubtype()))
+        .addMetadata(KEY_NETWORK_TYPE, getNetTypeValue(networkInfo))
+        .addMetadata(KEY_MOBILE_SUBTYPE, getNetSubtypeValue(networkInfo))
         .build();
   }
 
-  private int toSubtypeValue(int subtype) {
+  private static int getNetTypeValue(NetworkInfo networkInfo) {
+    // when the device is not connected networkInfo returned by ConnectivityManger is null.
+    if (networkInfo == null) {
+      return NetworkType.NONE_VALUE;
+    }
+    return networkInfo.getType();
+  }
+
+  private static int getNetSubtypeValue(NetworkInfo networkInfo) {
+    // when the device is not connected networkInfo returned by ConnectivityManger is null.
+    if (networkInfo == null) {
+      return MobileSubtype.UNKNOWN_MOBILE_SUBTYPE_VALUE;
+    }
+    int subtype = networkInfo.getSubtype();
     if (subtype == -1) {
       return MobileSubtype.COMBINED_VALUE;
     }

@@ -16,7 +16,7 @@ package com.google.firebase.components;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
-import android.support.annotation.GuardedBy;
+import androidx.annotation.GuardedBy;
 import com.google.firebase.events.Event;
 import com.google.firebase.events.EventHandler;
 import com.google.firebase.events.Publisher;

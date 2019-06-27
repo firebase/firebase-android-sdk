@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.ApiUtil.newInstance;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.FieldValue;
@@ -91,10 +92,12 @@ public class CustomClassMapper {
    *
    * @param object The representation of the JSON data
    * @param clazz The class of the object to convert to
+   * @param docRef The value to set to {@link DocumentId} annotated fields in the custom class.
    * @return The POJO object.
    */
-  public static <T> T convertToCustomClass(Object object, Class<T> clazz) {
-    return deserializeToClass(object, clazz, ErrorPath.EMPTY);
+  public static <T> T convertToCustomClass(
+      Object object, Class<T> clazz, DocumentReference docRef) {
+    return deserializeToClass(object, clazz, new DeserializeContext(ErrorPath.EMPTY, docRef));
   }
 
   private static <T> Object serialize(T o) {
@@ -177,17 +180,18 @@ public class CustomClassMapper {
   }
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-  private static <T> T deserializeToType(Object o, Type type, ErrorPath path) {
+  private static <T> T deserializeToType(Object o, Type type, DeserializeContext context) {
     if (o == null) {
       return null;
     } else if (type instanceof ParameterizedType) {
-      return deserializeToParameterizedType(o, (ParameterizedType) type, path);
+      return deserializeToParameterizedType(o, (ParameterizedType) type, context);
     } else if (type instanceof Class) {
-      return deserializeToClass(o, (Class<T>) type, path);
+      return deserializeToClass(o, (Class<T>) type, context);
     } else if (type instanceof WildcardType) {
       Type[] lowerBounds = ((WildcardType) type).getLowerBounds();
       if (lowerBounds.length > 0) {
-        throw deserializeError(path, "Generic lower-bounded wildcard types are not supported");
+        throw deserializeError(
+            context.errorPath, "Generic lower-bounded wildcard types are not supported");
       }
 
       // Upper bounded wildcards are of the form <? extends Foo>. Multiple upper bounds are allowed
@@ -196,62 +200,63 @@ public class CustomClassMapper {
       // has at least an upper bound of Object.
       Type[] upperBounds = ((WildcardType) type).getUpperBounds();
       hardAssert(upperBounds.length > 0, "Unexpected type bounds on wildcard " + type);
-      return deserializeToType(o, upperBounds[0], path);
+      return deserializeToType(o, upperBounds[0], context);
     } else if (type instanceof TypeVariable) {
       // As above, TypeVariables always have at least one upper bound of Object.
       Type[] upperBounds = ((TypeVariable<?>) type).getBounds();
       hardAssert(upperBounds.length > 0, "Unexpected type bounds on type variable " + type);
-      return deserializeToType(o, upperBounds[0], path);
+      return deserializeToType(o, upperBounds[0], context);
 
     } else if (type instanceof GenericArrayType) {
-      throw deserializeError(path, "Generic Arrays are not supported, please use Lists instead");
+      throw deserializeError(
+          context.errorPath, "Generic Arrays are not supported, please use Lists instead");
     } else {
-      throw deserializeError(path, "Unknown type encountered: " + type);
+      throw deserializeError(context.errorPath, "Unknown type encountered: " + type);
     }
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> T deserializeToClass(Object o, Class<T> clazz, ErrorPath path) {
+  private static <T> T deserializeToClass(Object o, Class<T> clazz, DeserializeContext context) {
     if (o == null) {
       return null;
     } else if (clazz.isPrimitive()
         || Number.class.isAssignableFrom(clazz)
         || Boolean.class.isAssignableFrom(clazz)
         || Character.class.isAssignableFrom(clazz)) {
-      return deserializeToPrimitive(o, clazz, path);
+      return deserializeToPrimitive(o, clazz, context);
     } else if (String.class.isAssignableFrom(clazz)) {
-      return (T) convertString(o, path);
+      return (T) convertString(o, context);
     } else if (Date.class.isAssignableFrom(clazz)) {
-      return (T) convertDate(o, path);
+      return (T) convertDate(o, context);
     } else if (Timestamp.class.isAssignableFrom(clazz)) {
-      return (T) convertTimestamp(o, path);
+      return (T) convertTimestamp(o, context);
     } else if (Blob.class.isAssignableFrom(clazz)) {
-      return (T) convertBlob(o, path);
+      return (T) convertBlob(o, context);
     } else if (GeoPoint.class.isAssignableFrom(clazz)) {
-      return (T) convertGeoPoint(o, path);
+      return (T) convertGeoPoint(o, context);
     } else if (DocumentReference.class.isAssignableFrom(clazz)) {
-      return (T) convertDocumentReference(o, path);
+      return (T) convertDocumentReference(o, context);
     } else if (clazz.isArray()) {
       throw deserializeError(
-          path, "Converting to Arrays is not supported, please use Lists instead");
+          context.errorPath, "Converting to Arrays is not supported, please use Lists instead");
     } else if (clazz.getTypeParameters().length > 0) {
       throw deserializeError(
-          path,
+          context.errorPath,
           "Class "
               + clazz.getName()
               + " has generic type parameters, please use GenericTypeIndicator instead");
     } else if (clazz.equals(Object.class)) {
       return (T) o;
     } else if (clazz.isEnum()) {
-      return deserializeToEnum(o, clazz, path);
+      return deserializeToEnum(o, clazz, context);
     } else {
-      return convertBean(o, clazz, path);
+      return convertBean(o, clazz, context);
     }
   }
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   private static <T> T deserializeToParameterizedType(
-      Object o, ParameterizedType type, ErrorPath path) {
+      Object o, ParameterizedType type, DeserializeContext context) {
     // getRawType should always return a Class<?>
     Class<?> rawType = (Class<?>) type.getRawType();
     if (List.class.isAssignableFrom(rawType)) {
@@ -260,32 +265,40 @@ public class CustomClassMapper {
         List<Object> list = (List<Object>) o;
         List<Object> result = new ArrayList<>(list.size());
         for (int i = 0; i < list.size(); i++) {
-          result.add(deserializeToType(list.get(i), genericType, path.child("[" + i + "]")));
+          result.add(
+              deserializeToType(
+                  list.get(i),
+                  genericType,
+                  context.newInstanceWithErrorPath(context.errorPath.child("[" + i + "]"))));
         }
         return (T) result;
       } else {
-        throw deserializeError(path, "Expected a List, but got a " + o.getClass());
+        throw deserializeError(context.errorPath, "Expected a List, but got a " + o.getClass());
       }
     } else if (Map.class.isAssignableFrom(rawType)) {
       Type keyType = type.getActualTypeArguments()[0];
       Type valueType = type.getActualTypeArguments()[1];
       if (!keyType.equals(String.class)) {
         throw deserializeError(
-            path,
+            context.errorPath,
             "Only Maps with string keys are supported, but found Map with key type " + keyType);
       }
-      Map<String, Object> map = expectMap(o, path);
+      Map<String, Object> map = expectMap(o, context);
       HashMap<String, Object> result = new HashMap<>();
       for (Map.Entry<String, Object> entry : map.entrySet()) {
         result.put(
             entry.getKey(),
-            deserializeToType(entry.getValue(), valueType, path.child(entry.getKey())));
+            deserializeToType(
+                entry.getValue(),
+                valueType,
+                context.newInstanceWithErrorPath(context.errorPath.child(entry.getKey()))));
       }
       return (T) result;
     } else if (Collection.class.isAssignableFrom(rawType)) {
-      throw deserializeError(path, "Collections are not supported, please use Lists instead");
+      throw deserializeError(
+          context.errorPath, "Collections are not supported, please use Lists instead");
     } else {
-      Map<String, Object> map = expectMap(o, path);
+      Map<String, Object> map = expectMap(o, context);
       BeanMapper<T> mapper = (BeanMapper<T>) loadOrCreateBeanMapperForClass(rawType);
       HashMap<TypeVariable<Class<T>>, Type> typeMapping = new HashMap<>();
       TypeVariable<Class<T>>[] typeVariables = mapper.clazz.getTypeParameters();
@@ -296,31 +309,33 @@ public class CustomClassMapper {
       for (int i = 0; i < typeVariables.length; i++) {
         typeMapping.put(typeVariables[i], types[i]);
       }
-      return mapper.deserialize(map, typeMapping, path);
+      return mapper.deserialize(map, typeMapping, context);
     }
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> T deserializeToPrimitive(Object o, Class<T> clazz, ErrorPath path) {
+  private static <T> T deserializeToPrimitive(
+      Object o, Class<T> clazz, DeserializeContext context) {
     if (Integer.class.isAssignableFrom(clazz) || int.class.isAssignableFrom(clazz)) {
-      return (T) convertInteger(o, path);
+      return (T) convertInteger(o, context);
     } else if (Boolean.class.isAssignableFrom(clazz) || boolean.class.isAssignableFrom(clazz)) {
-      return (T) convertBoolean(o, path);
+      return (T) convertBoolean(o, context);
     } else if (Double.class.isAssignableFrom(clazz) || double.class.isAssignableFrom(clazz)) {
-      return (T) convertDouble(o, path);
+      return (T) convertDouble(o, context);
     } else if (Long.class.isAssignableFrom(clazz) || long.class.isAssignableFrom(clazz)) {
-      return (T) convertLong(o, path);
+      return (T) convertLong(o, context);
     } else if (Float.class.isAssignableFrom(clazz) || float.class.isAssignableFrom(clazz)) {
-      return (T) (Float) convertDouble(o, path).floatValue();
+      return (T) (Float) convertDouble(o, context).floatValue();
     } else {
       throw deserializeError(
-          path,
+          context.errorPath,
           String.format("Deserializing values to %s is not supported", clazz.getSimpleName()));
     }
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> T deserializeToEnum(Object object, Class<T> clazz, ErrorPath path) {
+  private static <T> T deserializeToEnum(
+      Object object, Class<T> clazz, DeserializeContext context) {
     if (object instanceof String) {
       String value = (String) object;
       // We cast to Class without generics here since we can't prove the bound
@@ -342,12 +357,12 @@ public class CustomClassMapper {
         return (T) Enum.valueOf((Class) clazz, value);
       } catch (IllegalArgumentException e) {
         throw deserializeError(
-            path,
+            context.errorPath,
             "Could not find enum value of " + clazz.getName() + " for value \"" + value + "\"");
       }
     } else {
       throw deserializeError(
-          path,
+          context.errorPath,
           "Expected a String while deserializing to enum "
               + clazz
               + " but got a "
@@ -368,17 +383,17 @@ public class CustomClassMapper {
   }
 
   @SuppressWarnings("unchecked")
-  private static Map<String, Object> expectMap(Object object, ErrorPath path) {
+  private static Map<String, Object> expectMap(Object object, DeserializeContext context) {
     if (object instanceof Map) {
       // TODO: runtime validation of keys?
       return (Map<String, Object>) object;
     } else {
       throw deserializeError(
-          path, "Expected a Map while deserializing, but got a " + object.getClass());
+          context.errorPath, "Expected a Map while deserializing, but got a " + object.getClass());
     }
   }
 
-  private static Integer convertInteger(Object o, ErrorPath path) {
+  private static Integer convertInteger(Object o, DeserializeContext context) {
     if (o instanceof Integer) {
       return (Integer) o;
     } else if (o instanceof Long || o instanceof Double) {
@@ -387,18 +402,19 @@ public class CustomClassMapper {
         return ((Number) o).intValue();
       } else {
         throw deserializeError(
-            path,
+            context.errorPath,
             "Numeric value out of 32-bit integer range: "
                 + value
                 + ". Did you mean to use a long or double instead of an int?");
       }
     } else {
       throw deserializeError(
-          path, "Failed to convert a value of type " + o.getClass().getName() + " to int");
+          context.errorPath,
+          "Failed to convert a value of type " + o.getClass().getName() + " to int");
     }
   }
 
-  private static Long convertLong(Object o, ErrorPath path) {
+  private static Long convertLong(Object o, DeserializeContext context) {
     if (o instanceof Integer) {
       return ((Integer) o).longValue();
     } else if (o instanceof Long) {
@@ -409,18 +425,19 @@ public class CustomClassMapper {
         return value.longValue();
       } else {
         throw deserializeError(
-            path,
+            context.errorPath,
             "Numeric value out of 64-bit long range: "
                 + value
                 + ". Did you mean to use a double instead of a long?");
       }
     } else {
       throw deserializeError(
-          path, "Failed to convert a value of type " + o.getClass().getName() + " to long");
+          context.errorPath,
+          "Failed to convert a value of type " + o.getClass().getName() + " to long");
     }
   }
 
-  private static Double convertDouble(Object o, ErrorPath path) {
+  private static Double convertDouble(Object o, DeserializeContext context) {
     if (o instanceof Integer) {
       return ((Integer) o).doubleValue();
     } else if (o instanceof Long) {
@@ -430,7 +447,7 @@ public class CustomClassMapper {
         return doubleValue;
       } else {
         throw deserializeError(
-            path,
+            context.errorPath,
             "Loss of precision while converting number to "
                 + "double: "
                 + o
@@ -440,85 +457,92 @@ public class CustomClassMapper {
       return (Double) o;
     } else {
       throw deserializeError(
-          path, "Failed to convert a value of type " + o.getClass().getName() + " to double");
+          context.errorPath,
+          "Failed to convert a value of type " + o.getClass().getName() + " to double");
     }
   }
 
-  private static Boolean convertBoolean(Object o, ErrorPath path) {
+  private static Boolean convertBoolean(Object o, DeserializeContext context) {
     if (o instanceof Boolean) {
       return (Boolean) o;
     } else {
       throw deserializeError(
-          path, "Failed to convert value of type " + o.getClass().getName() + " to boolean");
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to boolean");
     }
   }
 
-  private static String convertString(Object o, ErrorPath path) {
+  private static String convertString(Object o, DeserializeContext context) {
     if (o instanceof String) {
       return (String) o;
     } else {
       throw deserializeError(
-          path, "Failed to convert value of type " + o.getClass().getName() + " to String");
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to String");
     }
   }
 
-  private static Date convertDate(Object o, ErrorPath path) {
+  private static Date convertDate(Object o, DeserializeContext context) {
     if (o instanceof Date) {
       return (Date) o;
     } else if (o instanceof Timestamp) {
       return ((Timestamp) o).toDate();
     } else {
       throw deserializeError(
-          path, "Failed to convert value of type " + o.getClass().getName() + " to Date");
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to Date");
     }
   }
 
-  private static Timestamp convertTimestamp(Object o, ErrorPath path) {
+  private static Timestamp convertTimestamp(Object o, DeserializeContext context) {
     if (o instanceof Timestamp) {
       return (Timestamp) o;
     } else if (o instanceof Date) {
       return new Timestamp((Date) o);
     } else {
       throw deserializeError(
-          path, "Failed to convert value of type " + o.getClass().getName() + " to Timestamp");
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to Timestamp");
     }
   }
 
-  private static Blob convertBlob(Object o, ErrorPath path) {
+  private static Blob convertBlob(Object o, DeserializeContext context) {
     if (o instanceof Blob) {
       return (Blob) o;
     } else {
       throw deserializeError(
-          path, "Failed to convert value of type " + o.getClass().getName() + " to Blob");
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to Blob");
     }
   }
 
-  private static GeoPoint convertGeoPoint(Object o, ErrorPath path) {
+  private static GeoPoint convertGeoPoint(Object o, DeserializeContext context) {
     if (o instanceof GeoPoint) {
       return (GeoPoint) o;
     } else {
       throw deserializeError(
-          path, "Failed to convert value of type " + o.getClass().getName() + " to GeoPoint");
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to GeoPoint");
     }
   }
 
-  private static DocumentReference convertDocumentReference(Object o, ErrorPath path) {
+  private static DocumentReference convertDocumentReference(Object o, DeserializeContext context) {
     if (o instanceof DocumentReference) {
       return (DocumentReference) o;
     } else {
       throw deserializeError(
-          path,
+          context.errorPath,
           "Failed to convert value of type " + o.getClass().getName() + " to DocumentReference");
     }
   }
 
-  private static <T> T convertBean(Object o, Class<T> clazz, ErrorPath path) {
+  private static <T> T convertBean(Object o, Class<T> clazz, DeserializeContext context) {
     BeanMapper<T> mapper = loadOrCreateBeanMapperForClass(clazz);
     if (o instanceof Map) {
-      return mapper.deserialize(expectMap(o, path), path);
+      return mapper.deserialize(expectMap(o, context), context);
     } else {
       throw deserializeError(
-          path,
+          context.errorPath,
           "Can't convert object of type " + o.getClass().getName() + " to type " + clazz.getName());
     }
   }
@@ -539,20 +563,35 @@ public class CustomClassMapper {
     return new RuntimeException(reason);
   }
 
+  // Helper class to convert from maps to custom objects (Beans), and vice versa.
   private static class BeanMapper<T> {
     private final Class<T> clazz;
     private final Constructor<T> constructor;
+    // Whether to throw exception if there are properties we don't know how to set to
+    // custom object fields/setters during deserialization.
     private final boolean throwOnUnknownProperties;
+    // Whether to log a message if there are properties we don't know how to set to
+    // custom object fields/setters during deserialization.
     private final boolean warnOnUnknownProperties;
+
     // Case insensitive mapping of properties to their case sensitive versions
     private final Map<String, String> properties;
 
+    // Below are maps to find getter/setter/field from a given property name.
+    // A property name is the name annotated by @PropertyName, if exists; or their property name
+    // following the Java Bean convention: field name is kept as-is while getters/setters will have
+    // their prefixes removed. See method propertyName for details.
     private final Map<String, Method> getters;
     private final Map<String, Method> setters;
     private final Map<String, Field> fields;
 
-    // A list of any properties that were annotated with @ServerTimestamp.
+    // A set of property names that were annotated with @ServerTimestamp.
     private final HashSet<String> serverTimestamps;
+
+    // A set of property names that were annotated with @DocumentId. These properties will be
+    // populated with document ID values during deserialization, and be skipped during
+    // serialization.
+    private final HashSet<String> documentIdPropertyNames;
 
     BeanMapper(Class<T> clazz) {
       this.clazz = clazz;
@@ -565,6 +604,7 @@ public class CustomClassMapper {
       fields = new HashMap<>();
 
       serverTimestamps = new HashSet<>();
+      documentIdPropertyNames = new HashSet<>();
 
       Constructor<T> constructor;
       try {
@@ -673,6 +713,18 @@ public class CustomClassMapper {
       if (properties.isEmpty()) {
         throw new RuntimeException("No properties to serialize found on class " + clazz.getName());
       }
+
+      // Make sure we can write to @DocumentId annotated properties before proceeding.
+      for (String docIdProperty : documentIdPropertyNames) {
+        if (!setters.containsKey(docIdProperty) && !fields.containsKey(docIdProperty)) {
+          throw new RuntimeException(
+              "@DocumentId is annotated on property "
+                  + docIdProperty
+                  + " of class "
+                  + clazz.getName()
+                  + " but no field or public setter was found");
+        }
+      }
     }
 
     private void addProperty(String property) {
@@ -685,15 +737,17 @@ public class CustomClassMapper {
       }
     }
 
-    T deserialize(Map<String, Object> values, ErrorPath path) {
-      return deserialize(values, Collections.emptyMap(), path);
+    T deserialize(Map<String, Object> values, DeserializeContext context) {
+      return deserialize(values, Collections.emptyMap(), context);
     }
 
     T deserialize(
-        Map<String, Object> values, Map<TypeVariable<Class<T>>, Type> types, ErrorPath path) {
+        Map<String, Object> values,
+        Map<TypeVariable<Class<T>>, Type> types,
+        DeserializeContext context) {
       if (constructor == null) {
         throw deserializeError(
-            path,
+            context.errorPath,
             "Class "
                 + clazz.getName()
                 + " does not define a no-argument constructor. If you are using ProGuard, make "
@@ -701,9 +755,10 @@ public class CustomClassMapper {
       }
 
       T instance = newInstance(constructor);
+      HashSet<String> deserialzedProperties = new HashSet<>();
       for (Map.Entry<String, Object> entry : values.entrySet()) {
         String propertyName = entry.getKey();
-        ErrorPath childPath = path.child(propertyName);
+        ErrorPath childPath = context.errorPath.child(propertyName);
         if (setters.containsKey(propertyName)) {
           Method setter = setters.get(propertyName);
           Type[] params = setter.getGenericParameterTypes();
@@ -712,18 +767,22 @@ public class CustomClassMapper {
           }
           Type resolvedType = resolveType(params[0], types);
           Object value =
-              CustomClassMapper.deserializeToType(entry.getValue(), resolvedType, childPath);
+              CustomClassMapper.deserializeToType(
+                  entry.getValue(), resolvedType, context.newInstanceWithErrorPath(childPath));
           invoke(setter, instance, value);
+          deserialzedProperties.add(propertyName);
         } else if (fields.containsKey(propertyName)) {
           Field field = fields.get(propertyName);
           Type resolvedType = resolveType(field.getGenericType(), types);
           Object value =
-              CustomClassMapper.deserializeToType(entry.getValue(), resolvedType, childPath);
+              CustomClassMapper.deserializeToType(
+                  entry.getValue(), resolvedType, context.newInstanceWithErrorPath(childPath));
           try {
             field.set(instance, value);
           } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
           }
+          deserialzedProperties.add(propertyName);
         } else {
           String message =
               "No setter/field for " + propertyName + " found on class " + clazz.getName();
@@ -737,7 +796,56 @@ public class CustomClassMapper {
           }
         }
       }
+      populateDocumentIdProperties(types, context, instance, deserialzedProperties);
+
       return instance;
+    }
+
+    // Populate @DocumentId annotated fields. If there is a conflict (@DocumentId annotation is
+    // applied to a property that is already deserialized from the firestore document)
+    // a runtime exception will be thrown.
+    private void populateDocumentIdProperties(
+        Map<TypeVariable<Class<T>>, Type> types,
+        DeserializeContext context,
+        T instance,
+        HashSet<String> deserialzedProperties) {
+      for (String docIdPropertyName : documentIdPropertyNames) {
+        if (deserialzedProperties.contains(docIdPropertyName)) {
+          String message =
+              "'"
+                  + docIdPropertyName
+                  + "' was found from document "
+                  + context.documentRef.getPath()
+                  + ", cannot apply @DocumentId on this property for class "
+                  + clazz.getName();
+          throw new RuntimeException(message);
+        }
+        ErrorPath childPath = context.errorPath.child(docIdPropertyName);
+        if (setters.containsKey(docIdPropertyName)) {
+          Method setter = setters.get(docIdPropertyName);
+          Type[] params = setter.getGenericParameterTypes();
+          if (params.length != 1) {
+            throw deserializeError(childPath, "Setter does not have exactly one parameter");
+          }
+          Type resolvedType = resolveType(params[0], types);
+          if (resolvedType == String.class) {
+            invoke(setter, instance, context.documentRef.getId());
+          } else {
+            invoke(setter, instance, context.documentRef);
+          }
+        } else {
+          Field docIdField = fields.get(docIdPropertyName);
+          try {
+            if (docIdField.getType() == String.class) {
+              docIdField.set(instance, context.documentRef.getId());
+            } else {
+              docIdField.set(instance, context.documentRef);
+            }
+          } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }
     }
 
     private Type resolveType(Type type, Map<TypeVariable<Class<T>>, Type> types) {
@@ -754,6 +862,7 @@ public class CustomClassMapper {
     }
 
     Map<String, Object> serialize(T object, ErrorPath path) {
+      // TODO(wuandy): Add logic to skip @DocumentId annotated fields in serialization.
       if (!clazz.isAssignableFrom(object.getClass())) {
         throw new IllegalArgumentException(
             "Can't serialize object of class "
@@ -763,6 +872,11 @@ public class CustomClassMapper {
       }
       Map<String, Object> result = new HashMap<>();
       for (String property : properties.values()) {
+        // Skip @DocumentId annotated properties;
+        if (documentIdPropertyNames.contains(property)) {
+          continue;
+        }
+
         Object propertyValue;
         if (getters.containsKey(property)) {
           Method getter = getters.get(property);
@@ -805,6 +919,12 @@ public class CustomClassMapper {
         }
         serverTimestamps.add(propertyName(field));
       }
+
+      if (field.isAnnotationPresent(DocumentId.class)) {
+        Class<?> fieldType = field.getType();
+        ensureValidDocumentIdType("Field", "is", fieldType);
+        documentIdPropertyNames.add(propertyName(field));
+      }
     }
 
     private void applyGetterAnnotations(Method method) {
@@ -820,6 +940,13 @@ public class CustomClassMapper {
         }
         serverTimestamps.add(propertyName(method));
       }
+
+      // Even though the value will be skipped, we still check for type matching for consistency.
+      if (method.isAnnotationPresent(DocumentId.class)) {
+        Class<?> returnType = method.getReturnType();
+        ensureValidDocumentIdType("Method", "returns", returnType);
+        documentIdPropertyNames.add(propertyName(method));
+      }
     }
 
     private void applySetterAnnotations(Method method) {
@@ -829,6 +956,24 @@ public class CustomClassMapper {
                 + method.getName()
                 + " is annotated with @ServerTimestamp but should not be. @ServerTimestamp can"
                 + " only be applied to fields and getters, not setters.");
+      }
+
+      if (method.isAnnotationPresent(DocumentId.class)) {
+        Class<?> paramType = method.getParameterTypes()[0];
+        ensureValidDocumentIdType("Method", "accepts", paramType);
+        documentIdPropertyNames.add(propertyName(method));
+      }
+    }
+
+    private void ensureValidDocumentIdType(String fieldDescription, String operation, Type type) {
+      if (type != String.class && type != DocumentReference.class) {
+        throw new IllegalArgumentException(
+            fieldDescription
+                + " is annotated with @DocumentId but "
+                + operation
+                + " "
+                + type
+                + " instead of String or DocumentReference.");
       }
     }
 
@@ -1009,6 +1154,25 @@ public class CustomClassMapper {
         // This is not very efficient, but it's only hit if there's an error.
         return parent.toString() + "." + name;
       }
+    }
+  }
+
+  /** Holds information a deserialization operation needs to complete the job. */
+  static class DeserializeContext {
+
+    /** Current path to the field being deserialized, used for better error messages. */
+    final ErrorPath errorPath;
+
+    /** Value used to set to {@link DocumentId} annotated fields during deserialization, if any. */
+    final DocumentReference documentRef;
+
+    DeserializeContext(ErrorPath path, DocumentReference docRef) {
+      errorPath = path;
+      documentRef = docRef;
+    }
+
+    DeserializeContext newInstanceWithErrorPath(ErrorPath newPath) {
+      return new DeserializeContext(newPath, documentRef);
     }
   }
 }

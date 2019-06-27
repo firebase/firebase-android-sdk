@@ -16,16 +16,17 @@ package com.google.firebase.firestore.testutil;
 
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.util.Util.autoId;
-import static junit.framework.Assert.assertNull;
+import static org.junit.Assert.assertNull;
 
 import android.content.Context;
 import android.net.SSLCertificateSocketFactory;
 import android.os.StrictMode;
-import android.support.test.InstrumentationRegistry;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.AccessHelper;
+import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -38,7 +39,7 @@ import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.remote.Datastore;
+import com.google.firebase.firestore.remote.GrpcCallProvider;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
@@ -60,10 +61,9 @@ public class IntegrationTestUtil {
   // Whether the integration tests should run against a local Firestore emulator instead of the
   // Production environment. Note that the Android Emulator treats "10.0.2.2" as its host machine.
   // TODO(mrschmidt): Support multiple envrionments (Emulator, QA, Nightly, Production)
-  private static final boolean CONNECT_TO_EMULATOR = false;
-
+  private static final boolean CONNECT_TO_EMULATOR = BuildConfig.USE_EMULATOR_FOR_TESTS;
   private static final String EMULATOR_HOST = "10.0.2.2";
-  private static final int EMULATOR_PORT = 8081;
+  private static final int EMULATOR_PORT = 8080;
 
   // Alternate project ID for creating "bad" references. Doesn't actually need to work.
   public static final String BAD_PROJECT_ID = "test-project-2";
@@ -95,7 +95,7 @@ public class IntegrationTestUtil {
           DatabaseId.forProject(provider.projectId()),
           "test-persistenceKey",
           String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT),
-          /*sslEnabled=*/ true);
+          /*sslEnabled=*/ false);
     } else {
       return new DatabaseInfo(
           DatabaseId.forProject(provider.projectId()),
@@ -133,8 +133,8 @@ public class IntegrationTestUtil {
       SSLCertificateSocketFactory insecureFactory =
           (SSLCertificateSocketFactory) SSLCertificateSocketFactory.getInsecure(0, null);
       channelBuilder.sslSocketFactory(insecureFactory);
-
-      Datastore.overrideChannelBuilder(() -> channelBuilder);
+      channelBuilder.usePlaintext();
+      GrpcCallProvider.overrideChannelBuilder(() -> channelBuilder);
     } else {
       settings.setHost(provider.firestoreHost());
     }
@@ -243,7 +243,7 @@ public class IntegrationTestUtil {
     // TODO: Remove this once this is ready to ship.
     Persistence.INDEXING_SUPPORT_ENABLED = true;
 
-    Context context = InstrumentationRegistry.getContext();
+    Context context = ApplicationProvider.getApplicationContext();
     DatabaseId databaseId = DatabaseId.forDatabase(projectId, DatabaseId.DEFAULT_DATABASE_ID);
 
     ensureStrictMode();
@@ -411,11 +411,19 @@ public class IntegrationTestUtil {
     return firestoreStatus.get(firestore);
   }
 
+  public static void removeFirestore(FirebaseFirestore firestore) {
+    firestoreStatus.remove(firestore);
+  }
+
   public static Map<String, Object> toDataMap(QuerySnapshot qrySnap) {
     Map<String, Object> result = new HashMap<>();
     for (DocumentSnapshot docSnap : qrySnap.getDocuments()) {
       result.put(docSnap.getId(), docSnap.getData());
     }
     return result;
+  }
+
+  public static boolean isRunningAgainstEmulator() {
+    return CONNECT_TO_EMULATOR;
   }
 }

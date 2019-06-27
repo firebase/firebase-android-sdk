@@ -14,18 +14,18 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.remote.Datastore.SSL_DEPENDENCY_ERROR_MESSAGE;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.remote.Stream.StreamCallback;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.ExponentialBackoff;
-import com.google.firebase.firestore.util.FirestoreChannel;
-import com.google.firebase.firestore.util.IncomingStreamObserver;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firebase.firestore.util.Util;
 import io.grpc.ClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -121,13 +121,15 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     }
 
     @Override
-    public void onReady() {
+    public void onOpen() {
       dispatcher.run(
-          () ->
-              Logger.debug(
-                  AbstractStream.this.getClass().getSimpleName(),
-                  "(%x) Stream is ready",
-                  System.identityHashCode(AbstractStream.this)));
+          () -> {
+            Logger.debug(
+                AbstractStream.this.getClass().getSimpleName(),
+                "(%x) Stream is open",
+                System.identityHashCode(AbstractStream.this));
+            AbstractStream.this.onOpen();
+          });
     }
 
     @Override
@@ -244,17 +246,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     StreamObserver streamObserver = new StreamObserver(closeGuardedRunner);
     call = firestoreChannel.runBidiStreamingRpc(methodDescriptor, streamObserver);
 
-    // Note that Starting is only used as intermediate state until onOpen is called asynchronously,
-    // since auth handled transparently by gRPC
     state = State.Starting;
-
-    workerQueue.enqueueAndForget(
-        () ->
-            closeGuardedRunner.run(
-                () -> {
-                  state = State.Open;
-                  this.listener.onOpen();
-                }));
   }
 
   /**
@@ -278,6 +270,13 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
         finalState == State.Error || status.equals(Status.OK),
         "Can't provide an error when not in an error state.");
     workerQueue.verifyIsCurrentThread();
+
+    if (Datastore.isSslHandshakeError(status)) {
+      // The Android device is missing required SSL Ciphers. This error is non-recoverable and must
+      // be addressed by the app developer (see https://bit.ly/2XFpdma).
+      Util.crashMainThread(
+          new IllegalStateException(SSL_DEPENDENCY_ERROR_MESSAGE, status.getCause()));
+    }
 
     // Cancel any outstanding timers (they're guaranteed not to execute).
     cancelIdleCheck();
@@ -386,6 +385,12 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     // prevent cases where we retry without a backoff accidentally, we set the stream to error
     // in all cases.
     close(State.Error, status);
+  }
+
+  /** Marks the stream as available. */
+  private void onOpen() {
+    state = State.Open;
+    this.listener.onOpen();
   }
 
   public abstract void onNext(RespT change);

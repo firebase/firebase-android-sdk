@@ -14,6 +14,7 @@
 
 package com.google.firebase.storage.network;
 
+/** Installs the Network Mock used by the unit tests. */
 public class NetworkLayerMock {
   public static MockConnectionFactory ensureNetworkMock(String testName, boolean isBinary) {
     MockConnectionFactory mockConnectionFactory = new MockConnectionFactory(testName, isBinary);

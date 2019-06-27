@@ -1,6 +1,6 @@
 // Copyright 2018 Google LLC
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,141 +14,175 @@
 
 package com.google.firebase.gradle.plugins.license
 
+import java.io.IOException
 import org.jsoup.Jsoup
 import org.jsoup.examples.HtmlToPlainText
+import org.jsoup.nodes.Document
 
 /**
  * Parse licenses from remote urls*/
-interface RemoteLicenseFetcher extends Serializable {
-  static final TEXT_FORMATTER = new HtmlToPlainText()
+abstract class RemoteLicenseFetcher implements Serializable {
+  private static final HtmlToPlainText TEXT_FORMATTER = new HtmlToPlainText()
 
-  URI getServiceUri()
+  private final String remoteUrl
 
-  String get()
+  protected RemoteLicenseFetcher(String remoteUrl) {
+    this.remoteUrl = remoteUrl
+  }
 
-  static final class AndroidSdkTermsFetcher implements RemoteLicenseFetcher {
-    private URI ANDROID_SDK_TERMS_URI = URI.create("https://developer.android.com/studio/terms.html")
+  public final String getRemoteUrl() {
+    return remoteUrl
+  }
 
-    @Override
-    URI getServiceUri() {
-      ANDROID_SDK_TERMS_URI
+  /**
+   * Downloads and returns the text of the license.
+   *
+   * <p>This method will try at most three times to download the license. Failures will be silently
+   * ignored if the license can be successfully downloaded on the second or third attempt. This
+   * method performs a simple, linear backoff in the case of failures to improve chances of
+   * successful connections.
+   */
+  public final String getText() {
+    IOException storedEx = null
+
+    for (int i = 0; i < 3; ++i) {
+      try {
+        if (i > 0) {
+          Thread.sleep(i * 1000)
+        }
+
+        return getTextAttempt()
+      } catch (IOException ex) {
+        if (storedEx == null) {
+          storedEx = ex
+        } else {
+          storedEx.addSuppressed(ex)
+        }
+      }
+    }
+
+    throw storedEx
+  }
+
+  /** Attempts to download and extract the license exactly once. */
+  abstract String getTextAttempt()
+
+  static final class AndroidSdkTermsFetcher extends RemoteLicenseFetcher {
+
+    AndroidSdkTermsFetcher() {
+      super("https://developer.android.com/studio/terms.html")
     }
 
     @Override
-    String get() {
-      def doc = Jsoup.connect(ANDROID_SDK_TERMS_URI.toString()).get()
-
-      TEXT_FORMATTER.getPlainText(doc.select('#body-content > div.jd-descr > div')[0])
+    String getTextAttempt() {
+      // TODO(vkryachko, allisonbm92): Fix this silent failure.
+      // This evaluates to an empty string. The HTML for this page must have changed since this
+      // filter was original written. Interestingly, this is a hard-failure if run from Java.
+      def doc = Jsoup.connect(getRemoteUrl()).get()
+      return TEXT_FORMATTER.getPlainText(doc.select("#body-content > div.jd-descr > div")[0])
     }
   }
 
-  static final class Apache2LicenseFetcher implements RemoteLicenseFetcher {
-    private URI APACHE_2_LICENSE_URI = URI.create("http://www.apache.org/licenses/LICENSE-2.0.txt")
+  static final class Apache2LicenseFetcher extends RemoteLicenseFetcher {
 
-    @Override
-    URI getServiceUri() {
-      APACHE_2_LICENSE_URI
+    Apache2LicenseFetcher() {
+      super("http://www.apache.org/licenses/LICENSE-2.0.txt")
     }
 
     @Override
-    String get() {
-      APACHE_2_LICENSE_URI.toURL().getText()
+    String getTextAttempt() {
+      return getRemoteUrl().toURL().getText()
     }
   }
 
-  static final class BSDLicenseFetcher implements RemoteLicenseFetcher {
-    private URI BSD_LICENSE_URI = URI.create("http://www.opensource.org/licenses/bsd-license.php")
+  static final class AnotherApache2LicenseFetcher extends RemoteLicenseFetcher {
 
-    @Override
-    URI getServiceUri() {
-      BSD_LICENSE_URI
+    AnotherApache2LicenseFetcher() {
+      super("https://opensource.org/licenses/Apache-2.0")
     }
 
     @Override
-    String get() {
-      def doc = Jsoup.connect(BSD_LICENSE_URI.toString()).get()
-
-      TEXT_FORMATTER.getPlainText(doc.select('#content-wrapper')[0])
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
+      return TEXT_FORMATTER.getPlainText(doc.select("#content-wrapper").get(0))
     }
   }
 
-  static final class AnotherApache2LicenseFetcher implements RemoteLicenseFetcher {
-    private URI APACHE_2_LICENSE_URI = URI.create("https://opensource.org/licenses/Apache-2.0")
+  static final class YetAnotherApache2LicenseFetcher extends RemoteLicenseFetcher {
 
-    @Override
-    URI getServiceUri() {
-      APACHE_2_LICENSE_URI
+    YetAnotherApache2LicenseFetcher() {
+      super("http://www.apache.org/licenses/LICENSE-2.0")
     }
 
     @Override
-    String get() {
-      def doc = Jsoup.connect(APACHE_2_LICENSE_URI.toString()).get()
-
-      TEXT_FORMATTER.getPlainText(doc.select('#content-wrapper'))
+    String getTextAttempt() {
+      return getRemoteUrl().toURL().getText()
     }
   }
 
-  static final class CreativeCommonsLicenseFetcher implements RemoteLicenseFetcher {
-    private URI CREATIVE_COMMONS_LICENSE_URI = URI.create("http://creativecommons.org/publicdomain/zero/1.0/")
+  static final class BSDLicenseFetcher extends RemoteLicenseFetcher {
 
-    @Override
-    URI getServiceUri() {
-      CREATIVE_COMMONS_LICENSE_URI
+    BSDLicenseFetcher() {
+      super("http://www.opensource.org/licenses/bsd-license.php")
     }
 
     @Override
-    String get() {
-      def doc = Jsoup.connect(CREATIVE_COMMONS_LICENSE_URI.toString()).get()
-
-      TEXT_FORMATTER.getPlainText(doc.select('#deed'))
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
+      return TEXT_FORMATTER.getPlainText(doc.select("#content-wrapper").get(0))
     }
   }
 
-  static final class MITLicenseFetcher implements RemoteLicenseFetcher {
-    private URI MIT_LICENSE_URI = URI.create("http://www.opensource.org/licenses/mit-license.php")
+  static final class CreativeCommonsLicenseFetcher extends RemoteLicenseFetcher {
 
-    @Override
-    URI getServiceUri() {
-      MIT_LICENSE_URI
+    CreativeCommonsLicenseFetcher() {
+      super("http://creativecommons.org/publicdomain/zero/1.0/")
     }
 
     @Override
-    String get() {
-      def doc = Jsoup.connect(MIT_LICENSE_URI.toString()).get()
-
-      TEXT_FORMATTER.getPlainText(doc.select('#content-wrapper'))
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
+      return TEXT_FORMATTER.getPlainText(doc.select("#deed").get(0))
     }
   }
 
-  static final class AnotherMITLicenseFetcher implements RemoteLicenseFetcher {
-    private URI MIT_LICENSE_URI = URI.create("http://opensource.org/licenses/MIT")
+  static final class MITLicenseFetcher extends RemoteLicenseFetcher {
 
-    @Override
-    URI getServiceUri() {
-      MIT_LICENSE_URI
+    MITLicenseFetcher() {
+      super("http://www.opensource.org/licenses/mit-license.php")
     }
 
     @Override
-    String get() {
-      def doc = Jsoup.connect(MIT_LICENSE_URI.toString()).get()
-
-      TEXT_FORMATTER.getPlainText(doc.select('#content-wrapper'))
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
+      return TEXT_FORMATTER.getPlainText(doc.select("#content-wrapper").get(0))
     }
   }
 
-  static final class GnuClasspathLicenseFetcher implements RemoteLicenseFetcher {
-    private URI GNU_CLASSPATH_LICENSE_URI = URI.create("http://www.gnu.org/software/classpath/license.html")
+  static final class AnotherMITLicenseFetcher extends RemoteLicenseFetcher {
 
-    @Override
-    URI getServiceUri() {
-      GNU_CLASSPATH_LICENSE_URI
+    AnotherMITLicenseFetcher() {
+      super("http://opensource.org/licenses/MIT")
     }
 
     @Override
-    String get() {
-      def doc = Jsoup.connect(GNU_CLASSPATH_LICENSE_URI.toString()).get()
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
+      return TEXT_FORMATTER.getPlainText(doc.select("#content-wrapper").get(0))
+    }
+  }
 
-      TEXT_FORMATTER.getPlainText(doc.select('body > table > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > en > blockquote'))
+  static final class GnuClasspathLicenseFetcher extends RemoteLicenseFetcher {
+
+    // TODO(allisonbm92, vkryachko): Fetch the actual license. This only fetches the extension.
+    GnuClasspathLicenseFetcher() {
+      super("http://www.gnu.org/software/classpath/license.html")
+    }
+
+    @Override
+    String getTextAttempt() {
+      def doc = Jsoup.connect(getRemoteUrl()).get()
+      return TEXT_FORMATTER.getPlainText(doc.select("body > table > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > en > blockquote").get(0))
     }
   }
 }

@@ -14,7 +14,7 @@
 
 package com.google.firebase.functions;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /** The metadata about the client that should automatically be included in function calls. */
 class HttpsCallableContext {

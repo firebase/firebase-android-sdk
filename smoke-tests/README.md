@@ -7,10 +7,20 @@ interfaces. However, the tests should strive to remain similar to real use
 cases. As such, these tests run on devices or emulators (no Robolectric). This
 is a work in progress, and the following list shows what is complete:
 
-- [ ] Create first set of tests to replace old test apps.
-- [ ] Reliably run smoke tests on CI.
+- [x] Create first set of tests to replace old test apps.
+- [x] Reliably run smoke tests on CI.
 - [ ] Support version matrices.
 - [ ] Extend to collect system health metrics.
+
+# Running the Tests
+
+The tests may be run locally with the command `../gradlew
+connectedCombinedDebugCheck`. The combined flavor includes all supported test
+cases. Optionally, other flavors (explained below) may be used to run a subset
+of the tests. Additionally, the test suite uses a Bill of Materials to specify
+Firebase versions. This may be configured using the `-Pfirebase-bom`
+command-line parameter. The value must be a valid Bill of Materials artifact.
+The default is `com.google.firebase:firebase-bom:18.1.0`.
 
 # Project Structure
 

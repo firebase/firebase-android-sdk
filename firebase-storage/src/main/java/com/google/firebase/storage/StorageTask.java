@@ -15,10 +15,10 @@
 package com.google.firebase.storage;
 
 import android.app.Activity;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.CancellationToken;
@@ -41,8 +41,8 @@ import java.util.concurrent.Executor;
 /** A controllable Task that has a synchronized state machine. */
 @SuppressWarnings({"unused", "TypeParameterUnusedInFormals"})
 @PublicApi
-public abstract class StorageTask<TResult extends StorageTask.ProvideError>
-    extends ControllableTask<TResult> {
+public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
+    extends ControllableTask<ResultT> {
   private static final String TAG = "StorageTask";
   static final int INTERNAL_STATE_NOT_STARTED = 1;
   static final int INTERNAL_STATE_QUEUED = 2;
@@ -113,10 +113,10 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
                 INTERNAL_STATE_CANCELED, INTERNAL_STATE_FAILURE, INTERNAL_STATE_SUCCESS)));
   }
 
-  protected final Object mSyncObject = new Object();
+  protected final Object syncObject = new Object();
 
   @VisibleForTesting
-  final TaskListenerImpl<OnSuccessListener<? super TResult>, TResult> successManager =
+  final TaskListenerImpl<OnSuccessListener<? super ResultT>, ResultT> successManager =
       new TaskListenerImpl<>(
           this,
           STATES_SUCCESS,
@@ -126,7 +126,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
           });
 
   @VisibleForTesting
-  final TaskListenerImpl<OnFailureListener, TResult> failureManager =
+  final TaskListenerImpl<OnFailureListener, ResultT> failureManager =
       new TaskListenerImpl<>(
           this,
           STATES_FAILURE,
@@ -136,7 +136,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
           });
 
   @VisibleForTesting
-  final TaskListenerImpl<OnCompleteListener<TResult>, TResult> completeListener =
+  final TaskListenerImpl<OnCompleteListener<ResultT>, ResultT> completeListener =
       new TaskListenerImpl<>(
           this,
           STATES_COMPLETE,
@@ -146,7 +146,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
           });
 
   @VisibleForTesting
-  final TaskListenerImpl<OnCanceledListener, TResult> cancelManager =
+  final TaskListenerImpl<OnCanceledListener, ResultT> cancelManager =
       new TaskListenerImpl<>(
           this,
           STATES_CANCELED,
@@ -156,15 +156,15 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
           });
 
   @VisibleForTesting
-  final TaskListenerImpl<OnProgressListener<? super TResult>, TResult> progressManager =
+  final TaskListenerImpl<OnProgressListener<? super ResultT>, ResultT> progressManager =
       new TaskListenerImpl<>(this, STATES_INPROGRESS, OnProgressListener::onProgress);
 
   @VisibleForTesting
-  final TaskListenerImpl<OnPausedListener<? super TResult>, TResult> pausedManager =
+  final TaskListenerImpl<OnPausedListener<? super ResultT>, ResultT> pausedManager =
       new TaskListenerImpl<>(this, STATES_PAUSED, OnPausedListener::onPaused);
 
   private volatile int currentState;
-  private TResult finalResult;
+  private ResultT finalResult;
 
   protected StorageTask() {
     currentState = INTERNAL_STATE_NOT_STARTED;
@@ -279,7 +279,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    */
   @Override
   @PublicApi
-  public TResult getResult() {
+  public ResultT getResult() {
     if (getFinalResult() == null) {
       throw new IllegalStateException();
     }
@@ -299,7 +299,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    */
   @Override
   @PublicApi
-  public <X extends Throwable> TResult getResult(@NonNull Class<X> exceptionType) throws X {
+  public <X extends Throwable> ResultT getResult(@NonNull Class<X> exceptionType) throws X {
     if (getFinalResult() == null) {
       throw new IllegalStateException();
     }
@@ -332,7 +332,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    * execution and may not be the final result..
    */
   @PublicApi
-  public TResult getSnapshot() {
+  public ResultT getSnapshot() {
     return snapState();
   }
 
@@ -344,20 +344,20 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
 
   @VisibleForTesting
   Object getSyncObject() {
-    return mSyncObject;
+    return syncObject;
   }
 
   @NonNull
   @VisibleForTesting
-  TResult snapState() {
-    synchronized (mSyncObject) {
+  ResultT snapState() {
+    synchronized (syncObject) {
       return snapStateImpl();
     }
   }
 
   @NonNull
   @VisibleForTesting
-  abstract TResult snapStateImpl();
+  abstract ResultT snapStateImpl();
 
   /**
    * Tries to change the current state into one of the requested states. State transitions are
@@ -370,7 +370,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
     HashMap<Integer, HashSet<Integer>> table =
         userInitiated ? ValidUserInitiatedStateChanges : ValidTaskInitiatedStateChanges;
 
-    synchronized (mSyncObject) {
+    synchronized (syncObject) {
       for (int newState : requestedStates) {
         HashSet<Integer> validStates = table.get(getInternalState());
         if (validStates != null && validStates.contains(newState)) {
@@ -395,6 +395,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
             case INTERNAL_STATE_CANCELED:
               onCanceled();
               break;
+            default: // fall out
           }
           successManager.onInternalStateChanged();
           failureManager.onInternalStateChanged();
@@ -455,7 +456,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @PublicApi
   protected void onCanceled() {}
 
-  private TResult getFinalResult() {
+  private ResultT getFinalResult() {
     if (finalResult != null) {
       return finalResult;
     }
@@ -477,8 +478,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    */
   @Override
   @PublicApi
-  public StorageTask<TResult> addOnPausedListener(
-      @NonNull OnPausedListener<? super TResult> listener) {
+  public StorageTask<ResultT> addOnPausedListener(
+      @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
     pausedManager.addListener(null, null, listener);
     return this;
@@ -492,8 +493,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    */
   @Override
   @PublicApi
-  public StorageTask<TResult> addOnPausedListener(
-      @NonNull Executor executor, @NonNull OnPausedListener<? super TResult> listener) {
+  public StorageTask<ResultT> addOnPausedListener(
+      @NonNull Executor executor, @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
     Preconditions.checkNotNull(executor);
     pausedManager.addListener(null, executor, listener);
@@ -511,8 +512,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    */
   @Override
   @PublicApi
-  public StorageTask<TResult> addOnPausedListener(
-      @NonNull Activity activity, @NonNull OnPausedListener<? super TResult> listener) {
+  public StorageTask<ResultT> addOnPausedListener(
+      @NonNull Activity activity, @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
     Preconditions.checkNotNull(activity);
     pausedManager.addListener(activity, null, listener);
@@ -521,8 +522,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @PublicApi
-  public StorageTask<TResult> removeOnPausedListener(
-      @NonNull OnPausedListener<? super TResult> listener) {
+  public StorageTask<ResultT> removeOnPausedListener(
+      @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
     pausedManager.removeListener(listener);
     return this;
@@ -535,8 +536,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    */
   @Override
   @PublicApi
-  public StorageTask<TResult> addOnProgressListener(
-      @NonNull OnProgressListener<? super TResult> listener) {
+  public StorageTask<ResultT> addOnProgressListener(
+      @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
     progressManager.addListener(null, null, listener);
     return this;
@@ -550,8 +551,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    */
   @Override
   @PublicApi
-  public StorageTask<TResult> addOnProgressListener(
-      @NonNull Executor executor, @NonNull OnProgressListener<? super TResult> listener) {
+  public StorageTask<ResultT> addOnProgressListener(
+      @NonNull Executor executor, @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
     Preconditions.checkNotNull(executor);
     progressManager.addListener(null, executor, listener);
@@ -567,8 +568,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    */
   @Override
   @PublicApi
-  public StorageTask<TResult> addOnProgressListener(
-      @NonNull Activity activity, @NonNull OnProgressListener<? super TResult> listener) {
+  public StorageTask<ResultT> addOnProgressListener(
+      @NonNull Activity activity, @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
     Preconditions.checkNotNull(activity);
     progressManager.addListener(activity, null, listener);
@@ -577,8 +578,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @PublicApi
-  public StorageTask<TResult> removeOnProgressListener(
-      @NonNull OnProgressListener<? super TResult> listener) {
+  public StorageTask<ResultT> removeOnProgressListener(
+      @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
     progressManager.removeListener(listener);
     return this;
@@ -595,8 +596,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @Override
   @NonNull
   @PublicApi
-  public StorageTask<TResult> addOnSuccessListener(
-      @NonNull OnSuccessListener<? super TResult> listener) {
+  public StorageTask<ResultT> addOnSuccessListener(
+      @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
     successManager.addListener(null, null, listener);
     return this;
@@ -617,8 +618,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @Override
   @NonNull
   @PublicApi
-  public StorageTask<TResult> addOnSuccessListener(
-      @NonNull Executor executor, @NonNull OnSuccessListener<? super TResult> listener) {
+  public StorageTask<ResultT> addOnSuccessListener(
+      @NonNull Executor executor, @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(executor);
     Preconditions.checkNotNull(listener);
     successManager.addListener(null, executor, listener);
@@ -641,8 +642,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @Override
   @NonNull
   @PublicApi
-  public StorageTask<TResult> addOnSuccessListener(
-      @NonNull Activity activity, @NonNull OnSuccessListener<? super TResult> listener) {
+  public StorageTask<ResultT> addOnSuccessListener(
+      @NonNull Activity activity, @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(activity);
     Preconditions.checkNotNull(listener);
     successManager.addListener(activity, null, listener);
@@ -651,8 +652,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @PublicApi
-  public StorageTask<TResult> removeOnSuccessListener(
-      @NonNull OnSuccessListener<? super TResult> listener) {
+  public StorageTask<ResultT> removeOnSuccessListener(
+      @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
     successManager.removeListener(listener);
     return this;
@@ -672,7 +673,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @Override
   @NonNull
   @PublicApi
-  public StorageTask<TResult> addOnFailureListener(@NonNull OnFailureListener listener) {
+  public StorageTask<ResultT> addOnFailureListener(@NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
     failureManager.addListener(null, null, listener);
     return this;
@@ -692,7 +693,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @Override
   @NonNull
   @PublicApi
-  public StorageTask<TResult> addOnFailureListener(
+  public StorageTask<ResultT> addOnFailureListener(
       @NonNull Executor executor, @NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
     Preconditions.checkNotNull(executor);
@@ -716,7 +717,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @Override
   @NonNull
   @PublicApi
-  public StorageTask<TResult> addOnFailureListener(
+  public StorageTask<ResultT> addOnFailureListener(
       @NonNull Activity activity, @NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
     Preconditions.checkNotNull(activity);
@@ -727,7 +728,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @PublicApi
-  public StorageTask<TResult> removeOnFailureListener(@NonNull OnFailureListener listener) {
+  public StorageTask<ResultT> removeOnFailureListener(@NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
     failureManager.removeListener(listener);
     return this;
@@ -747,7 +748,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @Override
   @NonNull
   @PublicApi
-  public StorageTask<TResult> addOnCompleteListener(@NonNull OnCompleteListener<TResult> listener) {
+  public StorageTask<ResultT> addOnCompleteListener(@NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
     completeListener.addListener(null, null, listener);
     return this;
@@ -767,24 +768,14 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @Override
   @NonNull
   @PublicApi
-  public StorageTask<TResult> addOnCompleteListener(
-      @NonNull Executor executor, @NonNull OnCompleteListener<TResult> listener) {
+  public StorageTask<ResultT> addOnCompleteListener(
+      @NonNull Executor executor, @NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
     Preconditions.checkNotNull(executor);
 
     completeListener.addListener(null, executor, listener);
     return this;
   }
-
-  /** Removes a listener. */
-  @PublicApi
-  public StorageTask<TResult> removeOnCompleteListener(
-      @NonNull OnCompleteListener<TResult> listener) {
-    Preconditions.checkNotNull(listener);
-    completeListener.removeListener(listener);
-    return this;
-  }
-
   /**
    * Adds a listener that is called when the Task succeeds or fails.
    *
@@ -800,12 +791,21 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @Override
   @NonNull
   @PublicApi
-  public StorageTask<TResult> addOnCompleteListener(
-      @NonNull Activity activity, @NonNull OnCompleteListener<TResult> listener) {
+  public StorageTask<ResultT> addOnCompleteListener(
+      @NonNull Activity activity, @NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
     Preconditions.checkNotNull(activity);
 
     completeListener.addListener(activity, null, listener);
+    return this;
+  }
+
+  /** Removes a listener. */
+  @PublicApi
+  public StorageTask<ResultT> removeOnCompleteListener(
+      @NonNull OnCompleteListener<ResultT> listener) {
+    Preconditions.checkNotNull(listener);
+    completeListener.removeListener(listener);
     return this;
   }
 
@@ -821,7 +821,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @NonNull
   @Override
   @PublicApi
-  public StorageTask<TResult> addOnCanceledListener(@NonNull OnCanceledListener listener) {
+  public StorageTask<ResultT> addOnCanceledListener(@NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
     cancelManager.addListener(null, null, listener);
     return this;
@@ -839,7 +839,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @NonNull
   @Override
   @PublicApi
-  public StorageTask<TResult> addOnCanceledListener(
+  public StorageTask<ResultT> addOnCanceledListener(
       @NonNull Executor executor, @NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
     Preconditions.checkNotNull(executor);
@@ -861,7 +861,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @NonNull
   @Override
   @PublicApi
-  public StorageTask<TResult> addOnCanceledListener(
+  public StorageTask<ResultT> addOnCanceledListener(
       @NonNull Activity activity, @NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
     Preconditions.checkNotNull(activity);
@@ -871,7 +871,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @PublicApi
-  public StorageTask<TResult> removeOnCanceledListener(@NonNull OnCanceledListener listener) {
+  public StorageTask<ResultT> removeOnCanceledListener(@NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
     cancelManager.removeListener(listener);
     return this;
@@ -888,8 +888,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @NonNull
   @Override
   @PublicApi
-  public <TContinuationResult> Task<TContinuationResult> continueWith(
-      @NonNull Continuation<TResult, TContinuationResult> continuation) {
+  public <ContinuationResultT> Task<ContinuationResultT> continueWith(
+      @NonNull Continuation<ResultT, ContinuationResultT> continuation) {
     return continueWithImpl(null, continuation);
   }
 
@@ -903,23 +903,23 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @NonNull
   @Override
   @PublicApi
-  public <TContinuationResult> Task<TContinuationResult> continueWith(
+  public <ContinuationResultT> Task<ContinuationResultT> continueWith(
       @NonNull final Executor executor,
-      @NonNull final Continuation<TResult, TContinuationResult> continuation) {
+      @NonNull final Continuation<ResultT, ContinuationResultT> continuation) {
     return continueWithImpl(executor, continuation);
   }
 
   @NonNull
-  private <TContinuationResult> Task<TContinuationResult> continueWithImpl(
+  private <ContinuationResultT> Task<ContinuationResultT> continueWithImpl(
       @Nullable final Executor executor,
-      @NonNull final Continuation<TResult, TContinuationResult> continuation) {
+      @NonNull final Continuation<ResultT, ContinuationResultT> continuation) {
 
-    final TaskCompletionSource<TContinuationResult> source = new TaskCompletionSource<>();
+    final TaskCompletionSource<ContinuationResultT> source = new TaskCompletionSource<>();
     completeListener.addListener(
         null,
         executor,
         task -> {
-          TContinuationResult result;
+          ContinuationResultT result;
           try {
             result = continuation.then(StorageTask.this);
           } catch (RuntimeExecutionException e) {
@@ -951,8 +951,8 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @NonNull
   @Override
   @PublicApi
-  public <TContinuationResult> Task<TContinuationResult> continueWithTask(
-      @NonNull Continuation<TResult, Task<TContinuationResult>> continuation) {
+  public <ContinuationResultT> Task<ContinuationResultT> continueWithTask(
+      @NonNull Continuation<ResultT, Task<ContinuationResultT>> continuation) {
     return continueWithTaskImpl(null, continuation);
   }
 
@@ -966,9 +966,9 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   @NonNull
   @Override
   @PublicApi
-  public <TContinuationResult> Task<TContinuationResult> continueWithTask(
+  public <ContinuationResultT> Task<ContinuationResultT> continueWithTask(
       @NonNull final Executor executor,
-      @NonNull final Continuation<TResult, Task<TContinuationResult>> continuation) {
+      @NonNull final Continuation<ResultT, Task<ContinuationResultT>> continuation) {
     return continueWithTaskImpl(executor, continuation);
   }
 
@@ -982,13 +982,13 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    * <p>If the previous Task is canceled, the returned Task will also be canceled and the
    * SuccessContinuation would not execute.
    *
-   * @see SuccessContinuation#then(TResult)
+   * @see SuccessContinuation#then(ResultT)
    */
   @NonNull
   @Override
   @PublicApi
-  public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
-      @NonNull SuccessContinuation<TResult, TContinuationResult> continuation) {
+  public <ContinuationResultT> Task<ContinuationResultT> onSuccessTask(
+      @NonNull SuccessContinuation<ResultT, ContinuationResultT> continuation) {
     return successTaskImpl(null, continuation);
   }
 
@@ -1001,30 +1001,30 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
    * SuccessContinuation would not execute.
    *
    * @param executor the executor to use to call the SuccessContinuation
-   * @see SuccessContinuation#then(TResult)
+   * @see SuccessContinuation#then(ResultT)
    */
   @NonNull
   @Override
   @PublicApi
-  public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
+  public <ContinuationResultT> Task<ContinuationResultT> onSuccessTask(
       @NonNull Executor executor,
-      @NonNull SuccessContinuation<TResult, TContinuationResult> continuation) {
+      @NonNull SuccessContinuation<ResultT, ContinuationResultT> continuation) {
     return successTaskImpl(executor, continuation);
   }
 
   @NonNull
-  private <TContinuationResult> Task<TContinuationResult> continueWithTaskImpl(
+  private <ContinuationResultT> Task<ContinuationResultT> continueWithTaskImpl(
       @Nullable final Executor executor,
-      @NonNull final Continuation<TResult, Task<TContinuationResult>> continuation) {
+      @NonNull final Continuation<ResultT, Task<ContinuationResultT>> continuation) {
     final CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
     final CancellationToken cancellationToken = cancellationTokenSource.getToken();
-    final TaskCompletionSource<TContinuationResult> source =
+    final TaskCompletionSource<ContinuationResultT> source =
         new TaskCompletionSource<>(cancellationToken);
     completeListener.addListener(
         null,
         executor,
         task -> {
-          Task<TContinuationResult> resultTask;
+          Task<ContinuationResultT> resultTask;
           try {
             resultTask = continuation.then(StorageTask.this);
           } catch (RuntimeExecutionException e) {
@@ -1055,19 +1055,19 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
   }
 
   @NonNull
-  private <TContinuationResult> Task<TContinuationResult> successTaskImpl(
+  private <ContinuationResultT> Task<ContinuationResultT> successTaskImpl(
       @Nullable final Executor executor,
-      @NonNull final SuccessContinuation<TResult, TContinuationResult> continuation) {
+      @NonNull final SuccessContinuation<ResultT, ContinuationResultT> continuation) {
     final CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
     final CancellationToken cancellationToken = cancellationTokenSource.getToken();
-    final TaskCompletionSource<TContinuationResult> source =
+    final TaskCompletionSource<ContinuationResultT> source =
         new TaskCompletionSource<>(cancellationToken);
 
     successManager.addListener(
         null,
         executor,
         result -> {
-          Task<TContinuationResult> resultTask;
+          Task<ContinuationResultT> resultTask;
           try {
             resultTask = continuation.then(result);
           } catch (RuntimeExecutionException e) {
@@ -1190,7 +1190,7 @@ public abstract class StorageTask<TResult extends StorageTask.ProvideError>
     /** Returns the {@link StorageTask} for this state. */
     @NonNull
     @PublicApi
-    public StorageTask<TResult> getTask() {
+    public StorageTask<ResultT> getTask() {
       return StorageTask.this;
     }
 

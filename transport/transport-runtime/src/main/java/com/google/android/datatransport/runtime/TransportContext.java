@@ -14,7 +14,7 @@
 
 package com.google.android.datatransport.runtime;
 
-import android.support.annotation.RestrictTo;
+import androidx.annotation.RestrictTo;
 import com.google.android.datatransport.Priority;
 import com.google.auto.value.AutoValue;
 

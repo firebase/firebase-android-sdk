@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.model.value;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.Timestamp;
 
 /** A wrapper for Date values in Timestamp. */
@@ -30,17 +31,9 @@ public final class TimestampValue extends FieldValue {
   }
 
   @Override
-  public Object value() {
+  @NonNull
+  public Timestamp value() {
     return internalValue;
-  }
-
-  @Override
-  public Object value(FieldValueOptions options) {
-    if (options.areTimestampsInSnapshotsEnabled()) {
-      return internalValue;
-    } else {
-      return internalValue.toDate();
-    }
   }
 
   public Timestamp getInternalValue() {

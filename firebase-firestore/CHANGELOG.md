@@ -1,4 +1,31 @@
 # Unreleased
+- [changed] Improved performance for queries with filters that only return a
+  small subset of the documents in a collection.
+- [changed] Instead of failing silently, Firestore now crashes the client app
+  if it fails to load SSL Ciphers. To avoid these crashes, you must bundle 
+  Conscrypt to support non-GMSCore devices on Android KitKat or JellyBean (see
+  https://github.com/grpc/grpc-java/blob/master/SECURITY.md#tls-on-android).
+- [feature] Added a `@DocumentId` annotation which can be used on a
+  `DocumentReference` or `String` property in a POJO to indicate that the SDK
+  should automatically populate it with the document's ID.
+
+# 20.1.0
+- [changed] SSL and gRPC initialization now happens on a separate thread, which
+  reduces the time taken to produce the first query result.
+- [feature] Added `clearPersistence()`, which clears the persistent storage
+  including pending writes and cached documents. This is intended to help
+  write reliable tests (https://github.com/firebase/firebase-js-sdk/issues/449).
+
+# 20.0.0
+- [changed] Migrated from the Android Support Libraries to the Jetpack
+  (AndroidX) Libraries.
+
+# 19.0.2
+- [fixed] Updated gRPC to 1.21.0. A bug in the prior version would occasionally
+  cause a crash if a network state change occurred concurrently with an RPC.
+  (#428)
+
+# 19.0.1
 - [fixed] Fixed an issue that prevented schema migrations for clients with
   large offline datasets (#370).
 

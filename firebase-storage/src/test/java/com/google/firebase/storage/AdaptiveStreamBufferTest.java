@@ -21,7 +21,7 @@ import com.google.firebase.storage.internal.AdaptiveStreamBuffer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,7 +30,7 @@ import org.robolectric.annotation.Config;
 
 /** Tests for {@link AdaptiveStreamBuffer}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
 public class AdaptiveStreamBufferTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);

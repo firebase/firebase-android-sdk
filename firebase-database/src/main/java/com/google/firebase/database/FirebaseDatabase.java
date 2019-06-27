@@ -16,8 +16,8 @@ package com.google.firebase.database;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
-import android.support.annotation.NonNull;
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.annotations.PublicApi;

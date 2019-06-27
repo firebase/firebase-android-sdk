@@ -15,9 +15,9 @@
 package com.google.firebase.firestore.local;
 
 import android.content.Context;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.remote.RemoteSerializer;
-import org.robolectric.RuntimeEnvironment;
 
 public final class PersistenceTestHelpers {
 
@@ -32,7 +32,7 @@ public final class PersistenceTestHelpers {
       String name, LruGarbageCollector.Params params) {
     DatabaseId databaseId = DatabaseId.forProject("projectId");
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
-    Context context = RuntimeEnvironment.application;
+    Context context = ApplicationProvider.getApplicationContext();
     SQLitePersistence persistence =
         new SQLitePersistence(context, name, databaseId, serializer, params);
     persistence.start();

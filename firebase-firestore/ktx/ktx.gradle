@@ -19,10 +19,11 @@ plugins {
 
 firebaseLibrary {
     releaseWith project(':firebase-firestore')
+    publishSources = true
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion 28
     defaultConfig {
         minSdkVersion project.minSdkVersion
         multiDexEnabled true
@@ -33,24 +34,25 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
         test.java {
             srcDir 'src/test/kotlin'
-            srcDir '../src/testUtil/java'
-            srcDir '../src/roboUtil/java'
+            srcDir 'src/test/java'
         }
     }
     testOptions.unitTests.includeAndroidResources = true
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
-
     implementation project(':firebase-common')
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-firestore')
-    implementation 'com.android.support:support-annotations:28.0.0'
-
+    implementation 'androidx.annotation:annotation:1.1.0'
     testImplementation project(':firebase-database-collection')
-    testImplementation 'org.mockito:mockito-core:2.21.0'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
+    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.android.gms:play-services-tasks:16.0.1'
     testImplementation 'com.google.protobuf:protobuf-lite:3.0.1'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"

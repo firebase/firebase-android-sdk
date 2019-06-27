@@ -21,8 +21,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import com.google.firebase.firestore.DocumentId;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.PropertyName;
+import com.google.firebase.firestore.TestUtil;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -169,6 +172,13 @@ public class MapperTest {
 
     public String getValue() {
       return "getter:" + this.value;
+    }
+  }
+
+  @ThrowOnExtraProperties
+  private static class GetterBeanNoField {
+    public String getValue() {
+      return "getter:value";
     }
   }
 
@@ -898,8 +908,12 @@ public class MapperTest {
   }
 
   private static <T> T deserialize(String jsonString, Class<T> clazz) {
+    return deserialize(jsonString, clazz, /*docRef=*/ null);
+  }
+
+  private static <T> T deserialize(String jsonString, Class<T> clazz, DocumentReference docRef) {
     Map<String, Object> json = fromSingleQuotedString(jsonString);
-    return CustomClassMapper.convertToCustomClass(json, clazz);
+    return CustomClassMapper.convertToCustomClass(json, clazz, docRef);
   }
 
   private static Object serialize(Object object) {
@@ -917,6 +931,15 @@ public class MapperTest {
     } catch (RuntimeException e) {
       assertThat(e).hasMessageThat().contains(partialMessage);
     }
+  }
+
+  private static <T> T convertToCustomClass(
+      Object object, Class<T> clazz, DocumentReference docRef) {
+    return CustomClassMapper.convertToCustomClass(object, clazz, docRef);
+  }
+
+  private static <T> T convertToCustomClass(Object object, Class<T> clazz) {
+    return CustomClassMapper.convertToCustomClass(object, clazz, null);
   }
 
   @Test
@@ -1339,8 +1362,7 @@ public class MapperTest {
   public void beansCanContainUpperBoundedMaps() {
     Date date = new Date(1491847082123L);
     Map<String, Object> source = map("values", map("foo", date));
-    UpperBoundedMapBean bean =
-        CustomClassMapper.convertToCustomClass(source, UpperBoundedMapBean.class);
+    UpperBoundedMapBean bean = convertToCustomClass(source, UpperBoundedMapBean.class);
     Map<String, Object> expected = map("foo", date);
     assertEquals(expected, bean.values);
   }
@@ -1349,8 +1371,7 @@ public class MapperTest {
   public void beansCanContainMultiBoundedMaps() {
     Date date = new Date(1491847082123L);
     Map<String, Object> source = map("map", map("values", map("foo", date)));
-    MultiBoundedMapHolderBean bean =
-        CustomClassMapper.convertToCustomClass(source, MultiBoundedMapHolderBean.class);
+    MultiBoundedMapHolderBean bean = convertToCustomClass(source, MultiBoundedMapHolderBean.class);
 
     Map<String, Object> expected = map("foo", date);
     assertEquals(expected, bean.map.values);
@@ -1367,7 +1388,7 @@ public class MapperTest {
   public void beansCanContainUnboundedTypeVariableMaps() {
     Map<String, Object> source = map("map", map("values", map("foo", "bar")));
     UnboundedTypeVariableMapHolderBean bean =
-        CustomClassMapper.convertToCustomClass(source, UnboundedTypeVariableMapHolderBean.class);
+        convertToCustomClass(source, UnboundedTypeVariableMapHolderBean.class);
 
     Map<String, Object> expected = map("foo", "bar");
     assertEquals(expected, bean.map.values);
@@ -1488,6 +1509,21 @@ public class MapperTest {
     GetterBean bean = new GetterBean();
     bean.value = "foo";
     assertJson("{'value': 'getter:foo'}", serialize(bean));
+  }
+
+  @Test
+  public void serializeGetterBeanWithNoBackingField() {
+    GetterBeanNoField bean = new GetterBeanNoField();
+    assertJson("{'value': 'getter:value'}", serialize(bean));
+  }
+
+  @Test
+  public void deserializeGetterBeanWithNoBackingFieldThrows() {
+    assertExceptionContains(
+        "No setter/field",
+        () -> {
+          deserialize("{'value': 'foo'}", GetterBeanNoField.class);
+        });
   }
 
   @Test
@@ -1823,24 +1859,24 @@ public class MapperTest {
 
   @Test
   public void objectClassCanBePassedInAtTopLevel() {
-    assertEquals("foo", CustomClassMapper.convertToCustomClass("foo", Object.class));
-    assertEquals(1, CustomClassMapper.convertToCustomClass(1, Object.class));
-    assertEquals(1L, CustomClassMapper.convertToCustomClass(1L, Object.class));
-    assertEquals(true, CustomClassMapper.convertToCustomClass(true, Object.class));
-    assertEquals(1.1, CustomClassMapper.convertToCustomClass(1.1, Object.class));
+    assertEquals("foo", convertToCustomClass("foo", Object.class));
+    assertEquals(1, convertToCustomClass(1, Object.class));
+    assertEquals(1L, convertToCustomClass(1L, Object.class));
+    assertEquals(true, convertToCustomClass(true, Object.class));
+    assertEquals(1.1, convertToCustomClass(1.1, Object.class));
     List<String> fooList = Collections.singletonList("foo");
-    assertEquals(fooList, CustomClassMapper.convertToCustomClass(fooList, Object.class));
+    assertEquals(fooList, convertToCustomClass(fooList, Object.class));
     Map<String, String> fooMap = Collections.singletonMap("foo", "bar");
-    assertEquals(fooMap, CustomClassMapper.convertToCustomClass(fooMap, Object.class));
+    assertEquals(fooMap, convertToCustomClass(fooMap, Object.class));
   }
 
   @Test
   public void primitiveClassesCanBePassedInTopLevel() {
-    assertEquals("foo", CustomClassMapper.convertToCustomClass("foo", String.class));
-    assertEquals((Integer) 1, CustomClassMapper.convertToCustomClass(1, Integer.class));
-    assertEquals((Long) 1L, CustomClassMapper.convertToCustomClass(1L, Long.class));
-    assertEquals(true, CustomClassMapper.convertToCustomClass(true, Boolean.class));
-    assertEquals((Double) 1.1, CustomClassMapper.convertToCustomClass(1.1, Double.class));
+    assertEquals("foo", convertToCustomClass("foo", String.class));
+    assertEquals((Integer) 1, convertToCustomClass(1, Integer.class));
+    assertEquals((Long) 1L, convertToCustomClass(1L, Long.class));
+    assertEquals(true, convertToCustomClass(true, Boolean.class));
+    assertEquals((Double) 1.1, convertToCustomClass(1.1, Double.class));
   }
 
   @Test
@@ -1848,7 +1884,7 @@ public class MapperTest {
     assertExceptionContains(
         "Class java.util.List has generic type parameters, please use GenericTypeIndicator "
             + "instead",
-        () -> CustomClassMapper.convertToCustomClass(Collections.singletonList("foo"), List.class));
+        () -> convertToCustomClass(Collections.singletonList("foo"), List.class));
   }
 
   @Test
@@ -1856,30 +1892,27 @@ public class MapperTest {
     assertExceptionContains(
         "Class java.util.Map has generic type parameters, please use GenericTypeIndicator "
             + "instead",
-        () ->
-            CustomClassMapper.convertToCustomClass(
-                Collections.singletonMap("foo", "bar"), Map.class));
+        () -> convertToCustomClass(Collections.singletonMap("foo", "bar"), Map.class));
   }
 
   @Test
   public void passingInCharacterTopLevelThrows() {
     assertExceptionContains(
         "Deserializing values to Character is not supported",
-        () -> CustomClassMapper.convertToCustomClass('1', Character.class));
+        () -> convertToCustomClass('1', Character.class));
   }
 
   @Test
   public void passingInShortTopLevelThrows() {
     assertExceptionContains(
         "Deserializing values to Short is not supported",
-        () -> CustomClassMapper.convertToCustomClass(1, Short.class));
+        () -> convertToCustomClass(1, Short.class));
   }
 
   @Test
   public void passingInByteTopLevelThrows() {
     assertExceptionContains(
-        "Deserializing values to Byte is not supported",
-        () -> CustomClassMapper.convertToCustomClass(1, Byte.class));
+        "Deserializing values to Byte is not supported", () -> convertToCustomClass(1, Byte.class));
   }
 
   @Test
@@ -1916,13 +1949,13 @@ public class MapperTest {
 
   @Test
   public void allowNullEverywhere() {
-    assertNull(CustomClassMapper.convertToCustomClass(null, Integer.class));
-    assertNull(CustomClassMapper.convertToCustomClass(null, String.class));
-    assertNull(CustomClassMapper.convertToCustomClass(null, Double.class));
-    assertNull(CustomClassMapper.convertToCustomClass(null, Long.class));
-    assertNull(CustomClassMapper.convertToCustomClass(null, Boolean.class));
-    assertNull(CustomClassMapper.convertToCustomClass(null, StringBean.class));
-    assertNull(CustomClassMapper.convertToCustomClass(null, Object.class));
+    assertNull(convertToCustomClass(null, Integer.class));
+    assertNull(convertToCustomClass(null, String.class));
+    assertNull(convertToCustomClass(null, Double.class));
+    assertNull(convertToCustomClass(null, Long.class));
+    assertNull(convertToCustomClass(null, Boolean.class));
+    assertNull(convertToCustomClass(null, StringBean.class));
+    assertNull(convertToCustomClass(null, Object.class));
   }
 
   @Test
@@ -2233,7 +2266,7 @@ public class MapperTest {
     Object serialized = Collections.singletonMap("value", (short) 1);
 
     try {
-      CustomClassMapper.convertToCustomClass(serialized, ShortBean.class);
+      convertToCustomClass(serialized, ShortBean.class);
       fail("should have thrown");
     } catch (RuntimeException e) {
       assertEquals(
@@ -2241,5 +2274,190 @@ public class MapperTest {
               + "(found in field 'value')",
           e.getMessage());
     }
+  }
+
+  // Bean definitions with @DocumentId applied to wrong type.
+  private static class FieldWithDocumentIdOnWrongTypeBean {
+    @DocumentId public Integer intField;
+  }
+
+  private static class GetterWithDocumentIdOnWrongTypeBean {
+    private int intField = 100;
+
+    @DocumentId
+    public int getIntField() {
+      return intField;
+    }
+  }
+
+  private static class PropertyWithDocumentIdOnWrongTypeBean {
+    @PropertyName("intField")
+    @DocumentId
+    public int intField = 100;
+  }
+
+  @Test
+  public void documentIdAnnotateWrongTypeThrows() {
+    final String expectedErrorMessage = "instead of String or DocumentReference";
+    assertExceptionContains(
+        expectedErrorMessage, () -> serialize(new FieldWithDocumentIdOnWrongTypeBean()));
+    assertExceptionContains(
+        expectedErrorMessage,
+        () -> deserialize("{'intField': 1}", FieldWithDocumentIdOnWrongTypeBean.class));
+
+    assertExceptionContains(
+        expectedErrorMessage, () -> serialize(new GetterWithDocumentIdOnWrongTypeBean()));
+    assertExceptionContains(
+        expectedErrorMessage,
+        () -> deserialize("{'intField': 1}", GetterWithDocumentIdOnWrongTypeBean.class));
+
+    assertExceptionContains(
+        expectedErrorMessage, () -> serialize(new PropertyWithDocumentIdOnWrongTypeBean()));
+    assertExceptionContains(
+        expectedErrorMessage,
+        () -> deserialize("{'intField': 1}", PropertyWithDocumentIdOnWrongTypeBean.class));
+  }
+
+  private static class GetterWithoutBackingFieldOnDocumentIdBean {
+    @DocumentId
+    public String getDocId() {
+      return "doc-id";
+    }
+  }
+
+  @Test
+  public void documentIdAnnotateReadOnlyThrows() {
+    final String expectedErrorMessage = "but no field or public setter was found";
+    // Serialization.
+    GetterWithoutBackingFieldOnDocumentIdBean bean =
+        new GetterWithoutBackingFieldOnDocumentIdBean();
+    assertExceptionContains(expectedErrorMessage, () -> serialize(bean));
+
+    // Deserialization.
+    assertExceptionContains(
+        expectedErrorMessage,
+        () -> deserialize("{'docId': 'id'}", GetterWithoutBackingFieldOnDocumentIdBean.class));
+  }
+
+  private static class DocumentIdOnStringField {
+    @DocumentId public String docId = "doc-id";
+  }
+
+  private static class DocumentIdOnStringFieldAsProperty {
+    @PropertyName("docIdProperty")
+    @DocumentId
+    public String docId = "doc-id";
+
+    @PropertyName("anotherProperty")
+    public int someOtherProperty = 0;
+  }
+
+  private static class DocumentIdOnDocRefGetter {
+    private DocumentReference docRef;
+
+    @DocumentId
+    public DocumentReference getDocRef() {
+      return docRef;
+    }
+
+    public void setDocRef(DocumentReference ref) {
+      docRef = ref;
+    }
+  }
+
+  private static class DocumentIdOnInheritedDocRefSetter extends DocumentIdOnDocRefGetter {
+
+    private DocumentReference inheritedDocRef;
+
+    @DocumentId
+    public DocumentReference getInheritedDocRef() {
+      return inheritedDocRef;
+    }
+
+    public void setInheritedDocRef(DocumentReference ref) {
+      inheritedDocRef = ref;
+    }
+  }
+
+  private static class DocumentIdOnNestedObjects {
+    @PropertyName("nestedDocIdHolder")
+    public DocumentIdOnStringField nestedDocIdHolder;
+  }
+
+  @Test
+  public void documentIdsDeserialize() {
+    DocumentReference ref = TestUtil.documentReference("coll/doc123");
+
+    assertEquals("doc123", deserialize("{}", DocumentIdOnStringField.class, ref).docId);
+
+    DocumentIdOnStringFieldAsProperty target =
+        deserialize("{'anotherProperty': 100}", DocumentIdOnStringFieldAsProperty.class, ref);
+    assertEquals("doc123", target.docId);
+    assertEquals(100, target.someOtherProperty);
+
+    assertEquals(ref, deserialize("{}", DocumentIdOnDocRefGetter.class, ref).getDocRef());
+
+    DocumentIdOnInheritedDocRefSetter target1 =
+        deserialize("{}", DocumentIdOnInheritedDocRefSetter.class, ref);
+    assertEquals(ref, target1.getInheritedDocRef());
+    assertEquals(ref, target1.getDocRef());
+
+    assertEquals(
+        "doc123",
+        deserialize("{'nestedDocIdHolder': {}}", DocumentIdOnNestedObjects.class, ref)
+            .nestedDocIdHolder
+            .docId);
+  }
+
+  @Test
+  public void documentIdsRoundTrip() {
+    // Implicitly verifies @DocumentId is ignored during serialization.
+
+    DocumentReference ref = TestUtil.documentReference("coll/doc123");
+
+    assertEquals(
+        Collections.emptyMap(), serialize(deserialize("{}", DocumentIdOnStringField.class, ref)));
+
+    assertEquals(
+        Collections.singletonMap("anotherProperty", 100),
+        serialize(
+            deserialize("{'anotherProperty': 100}", DocumentIdOnStringFieldAsProperty.class, ref)));
+
+    assertEquals(
+        Collections.emptyMap(), serialize(deserialize("{}", DocumentIdOnDocRefGetter.class, ref)));
+
+    assertEquals(
+        Collections.emptyMap(),
+        serialize(deserialize("{}", DocumentIdOnInheritedDocRefSetter.class, ref)));
+
+    assertEquals(
+        Collections.singletonMap("nestedDocIdHolder", Collections.emptyMap()),
+        serialize(deserialize("{'nestedDocIdHolder': {}}", DocumentIdOnNestedObjects.class, ref)));
+  }
+
+  @Test
+  public void documentIdsDeserializeConflictThrows() {
+    final String expectedErrorMessage = "cannot apply @DocumentId on this property";
+    DocumentReference ref = TestUtil.documentReference("coll/doc123");
+
+    assertExceptionContains(
+        expectedErrorMessage,
+        () -> deserialize("{'docId': 'toBeOverwritten'}", DocumentIdOnStringField.class, ref));
+
+    assertExceptionContains(
+        expectedErrorMessage,
+        () ->
+            deserialize(
+                "{'docIdProperty': 'toBeOverwritten', 'anotherProperty': 100}",
+                DocumentIdOnStringFieldAsProperty.class,
+                ref));
+
+    assertExceptionContains(
+        expectedErrorMessage,
+        () ->
+            deserialize(
+                "{'nestedDocIdHolder': {'docId': 'toBeOverwritten'}}",
+                DocumentIdOnNestedObjects.class,
+                ref));
   }
 }

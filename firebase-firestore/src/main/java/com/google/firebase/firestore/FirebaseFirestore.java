@@ -17,12 +17,9 @@ package com.google.firebase.firestore;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesRepairableException;
-import com.google.android.gms.security.ProviderInstaller;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -30,6 +27,7 @@ import com.google.common.base.Function;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
@@ -52,6 +50,7 @@ import java.util.concurrent.Executor;
  */
 @PublicApi
 public class FirebaseFirestore {
+
   private static final String TAG = "FirebaseFirestore";
   private final Context context;
   // This is also used as private lock object for this instance. There is nothing inherent about
@@ -61,12 +60,9 @@ public class FirebaseFirestore {
   private final CredentialsProvider credentialsProvider;
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
-
+  private final UserDataConverter dataConverter;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
-  private final UserDataConverter dataConverter;
-
-  private boolean clientRunning;
 
   @NonNull
   @PublicApi
@@ -114,16 +110,6 @@ public class FirebaseFirestore {
     } else {
       provider = new FirebaseAuthCredentialsProvider(authProvider);
     }
-
-    queue.enqueueAndForget(
-        () -> {
-          try {
-            ProviderInstaller.installIfNeeded(context);
-          } catch (GooglePlayServicesNotAvailableException
-              | GooglePlayServicesRepairableException e) {
-            Logger.warn("Firestore", "Failed to update ssl context");
-          }
-        });
 
     // Firestore uses a different database for each app name. Note that we don't use
     // app.getPersistenceKey() here because it includes the application ID which is related
@@ -190,7 +176,6 @@ public class FirebaseFirestore {
       if (client != null) {
         return;
       }
-      this.clientRunning = true;
       DatabaseInfo databaseInfo =
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
@@ -348,7 +333,6 @@ public class FirebaseFirestore {
   Task<Void> shutdown() {
     // The client must be initialized to ensure that all subsequent API usage throws an exception.
     this.ensureClientConfigured();
-    this.clientRunning = false;
     return client.shutdown();
   }
 
@@ -392,22 +376,34 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Clears the persistent storage.
+   * Clears the persistent storage, including pending writes and cached documents.
    *
-   * <p>Must be called while the client is not started (after the app is shutdown or when the app is
-   * first initialized). On startup, this method must be called before other methods (other than
-   * setFirestoreSettings()).
+   * <p>Must be called while the FirebaseFirestore instance is not started (after the app is
+   * shutdown or when the app is first initialized). On startup, this method must be called before
+   * other methods (other than <code>setFirestoreSettings()</code>). If the FirebaseFirestore
+   * instance is still running, the <code>Task</code> will fail with an error code of <code>
+   * FAILED_PRECONDITION</code>.
    *
-   * @throws IllegalStateException if the client is still running.
+   * <p>Note: <code>clearPersistence()</code> is primarily intended to help write reliable tests
+   * that use Cloud Firestore. It uses an efficient mechanism for dropping existing data but does
+   * not attempt to securely overwrite or otherwise make cached data unrecoverable. For applications
+   * that are sensitive to the disclosure of cached data in between user sessions, we strongly
+   * recommend not enabling persistence at all.
+   *
+   * @return A <code>Task</code> that is resolved when the persistent storage is cleared. Otherwise,
+   *     the <code>Task</code> is rejected with an error.
    */
-  Task<Void> clearPersistence() {
-    if (this.clientRunning) {
-      throw new IllegalStateException("Persistence cannot be cleared while the client is running.");
-    }
+  @PublicApi
+  public Task<Void> clearPersistence() {
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(
         () -> {
           try {
+            if (client != null && !client.isShutdown()) {
+              throw new FirebaseFirestoreException(
+                  "Persistence cannot be cleared while the firestore instance is running.",
+                  Code.FAILED_PRECONDITION);
+            }
             SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
             source.setResult(null);
           } catch (FirebaseFirestoreException e) {

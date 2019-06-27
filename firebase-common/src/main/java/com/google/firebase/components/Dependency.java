@@ -14,7 +14,7 @@
 
 package com.google.firebase.components;
 
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.internal.Preconditions;
 import java.lang.annotation.Retention;

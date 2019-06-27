@@ -14,8 +14,12 @@
 
 package com.google.firebase.gradle.plugins.publish
 
+import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.publish.maven.MavenPublication
 
 /** Handles publication versioning and pom validation upon release. */
@@ -25,8 +29,8 @@ class Publisher {
         RELEASE,
         SNAPSHOT
     }
-    private final Mode mode;
-    private final Set<Project> projectsToPublish;
+    private final Mode mode
+    private final Set<Project> projectsToPublish
 
     Publisher(Mode mode, Set<Project> projectsToPublish) {
         this.mode = mode
@@ -37,6 +41,7 @@ class Publisher {
         publication.pom.withXml {
             def rootNode = asNode()
             validatePomXml(project, rootNode)
+            processDependencies(project, rootNode)
         }
     }
 
@@ -51,7 +56,7 @@ class Publisher {
         return UNRELEASED_VERSION
     }
 
-    private void validatePomXml(Project p, Node pom) {
+    private static void validatePomXml(Project p, Node pom) {
         def unreleased = pom.dependencies.dependency.findAll { it.version.text() == UNRELEASED_VERSION }
                 .collect { "${it.groupId.text()}:${it.artifactId.text()}"}
         if(unreleased) {
@@ -61,6 +66,61 @@ class Publisher {
 
     private static String renderVersion(String baseVersion, Mode mode) {
         return "${baseVersion}${mode == Mode.SNAPSHOT ? '-SNAPSHOT' : ''}"
+    }
+
+    private static void processDependencies(Project project, Node pom) {
+        def deps = getDependencyTypes(project)
+
+        pom.dependencies.dependency.each {
+            // remove multidex as it is supposed to be added by final applications and is needed for
+            // some libraries only for instrumentation tests to build.
+            if (it.groupId.text() in ['com.android.support', 'androidx.multidex'] && it.artifactId.text() == 'multidex') {
+                it.parent().remove(it)
+            }
+            it.appendNode('type', [:], deps["${it.groupId.text()}:${it.artifactId.text()}"])
+
+            // change scope to compile to preserve existing behavior
+            it.scope.replaceNode {
+                createNode('scope', 'compile')
+            }
+        }
+    }
+
+    private static Map<String, String> getDependencyTypes(Project project) {
+        def dummyDependencyConfiguration = project.configurations.create('publisherDummyConfig')
+        def nonProjectDependencies = project.configurations.releaseRuntimeClasspath.allDependencies.findAll {
+            !(it instanceof ProjectDependency)
+        }
+        dummyDependencyConfiguration.dependencies.addAll(nonProjectDependencies)
+        try {
+            return project.configurations.releaseRuntimeClasspath.getAllDependencies().collectEntries {
+                getType(dummyDependencyConfiguration, it)
+            }
+        } finally {
+            project.configurations.remove(dummyDependencyConfiguration)
+        }
+
+    }
+
+    private static def getType(Configuration config, Dependency d) {
+        if (d instanceof ProjectDependency) {
+            // we currently only support aar libraries to be produced in this repository
+            def library = getFirebaseLibrary(d.dependencyProject)
+            return [("${library.groupId.get()}:${library.artifactId.get()}" as String): 'aar']
+        }
+        String path = config.find {
+            it.absolutePath.matches(".*\\Q$d.group/$d.name/$d.version/\\E[a-zA-Z0-9]+/\\Q$d.name-$d.version.\\E[aj]ar")
+        }?.absolutePath
+
+        if (path && path.endsWith (".aar")) {
+            return [("$d.group:$d.name" as String): 'aar']
+        } else {
+            return [("$d.group:$d.name" as String): 'jar']
+        }
+    }
+
+    private static FirebaseLibraryExtension getFirebaseLibrary(Project project) {
+        return project.extensions.getByType(FirebaseLibraryExtension.class);
     }
 
 }

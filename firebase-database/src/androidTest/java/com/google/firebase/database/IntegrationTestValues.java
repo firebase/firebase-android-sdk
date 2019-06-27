@@ -15,7 +15,7 @@
 package com.google.firebase.database;
 
 import android.content.Context;
-import android.support.test.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 
 public class IntegrationTestValues {
   private static final String TEST_ALT_NAMESPACE = "https://test.firebaseio.com";

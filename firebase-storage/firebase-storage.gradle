@@ -20,6 +20,7 @@ plugins {
 firebaseLibrary {
     testLab.enabled = true
     publishJavadoc = true
+    publishSources = true
 }
 
 android {
@@ -33,7 +34,7 @@ android {
         minSdkVersion project.minSdkVersion
         multiDexEnabled true
         versionName version
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -45,8 +46,8 @@ android {
     sourceSets {
         androidTest {
             java {
-                srcDir 'src/androidTest'
-                srcDir 'src/testUtil'
+                srcDir 'src/androidTest/java'
+                srcDir 'src/testUtil/java'
                 //We need this since FirebaseApp rule is externalized
                 //TODO(ashwinraghav) b/113079738
                 srcDir '../firebase-common/src/testUtil'
@@ -76,23 +77,23 @@ android {
 dependencies {
     implementation project(':firebase-common')
 
-    implementation "com.google.android.gms:play-services-base:$playServicesVersion"
-    implementation "com.google.android.gms:play-services-tasks:$playServicesVersion"
-    implementation('com.google.firebase:firebase-auth-interop:16.0.1') {
+    implementation 'com.google.android.gms:play-services-base:17.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation('com.google.firebase:firebase-auth-interop:18.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
-    androidTestImplementation "com.android.support:support-annotations:$supportAnnotationsVersion"
-    androidTestImplementation 'com.android.support.test:rules:1.0.2'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation "androidx.annotation:annotation:1.1.0"
+    androidTestImplementation 'androidx.test:rules:1.2.0'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'junit:junit:4.12'
 
     testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:2.21.0'
+    testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'com.android.support.test:rules:1.0.2'
+    testImplementation 'androidx.test:rules:1.2.0'
 }
 
 // ==========================================================================

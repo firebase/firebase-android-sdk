@@ -31,14 +31,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
 public class StorageReferenceTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);
@@ -263,18 +262,38 @@ public class StorageReferenceTest {
   @Test
   public void downloadUrl() throws Exception {
     MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("downloadUrl", true);
+    final StorageReference ref = FirebaseStorage.getInstance().getReference("flubbertest.txt");
+    Task<StringBuilder> task = TestCommandHelper.testDownloadUrl(ref);
 
-    Task<StringBuilder> task = TestCommandHelper.testDownloadUrl();
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("downloadUrl", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("downloadUrl", task.getResult().toString());
+  }
+
+  @Test
+  public void downloadUrlBucketRoot() throws Exception {
+    final StorageReference ref = FirebaseStorage.getInstance().getReference();
+
+    boolean thrown = false;
+    try {
+      TestCommandHelper.testDownloadUrl(ref);
+    } catch (IllegalArgumentException e) {
+      thrown = true;
     }
-    Assert.fail();
+    Assert.assertTrue(thrown);
+  }
+
+  @Test
+  public void getMetadataBucketRoot() throws Exception {
+    final StorageReference ref = FirebaseStorage.getInstance().getReference();
+
+    boolean thrown = false;
+    try {
+      TestCommandHelper.getMetadata(ref);
+    } catch (IllegalArgumentException e) {
+      thrown = true;
+    }
+    Assert.assertTrue(thrown);
   }
 }

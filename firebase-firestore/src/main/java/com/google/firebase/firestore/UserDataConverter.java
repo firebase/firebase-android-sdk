@@ -17,7 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.support.annotation.RestrictTo;
+import androidx.annotation.RestrictTo;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue.ArrayRemoveFieldValue;
 import com.google.firebase.firestore.FieldValue.ArrayUnionFieldValue;
@@ -73,14 +73,23 @@ public final class UserDataConverter {
     this.databaseId = databaseId;
   }
 
-  /** Parse document data from a non-merge set() call. */
+  /**
+   * Parse document data from a non-merge set() call.
+   *
+   * @param input A map or POJO object representing document data.
+   */
   public ParsedSetData parseSetData(Object input) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Set);
     ObjectValue updateData = convertAndParseDocumentData(input, accumulator.rootContext());
     return accumulator.toSetData(updateData);
   }
 
-  /** Parse document data from a set() call with SetOptions.merge() set. */
+  /**
+   * Parse document data from a set() call with SetOptions.merge() set.
+   *
+   * @param input A map or POJO object representing document data.
+   * @param fieldMask A {@link FieldMask} object representing the fields to be merged.
+   */
   public ParsedSetData parseMergeData(Object input, @Nullable FieldMask fieldMask) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.MergeSet);
     ObjectValue updateData = convertAndParseDocumentData(input, accumulator.rootContext());

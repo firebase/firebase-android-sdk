@@ -14,7 +14,7 @@
 
 package com.google.firebase.functions;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.auth.internal.InternalAuthProvider;
