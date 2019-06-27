@@ -466,13 +466,13 @@ public class Query {
 
   private void validateNewFilter(Filter filter) {
     if (filter instanceof FieldFilter) {
-      Operator filterOp = ((FieldFilter) filter).getOperator();
+      FieldFilter fieldFilter = (FieldFilter) filter;
+      Operator filterOp = fieldFilter.getOperator();
       List<Operator> arrayOps = Arrays.asList(Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY);
       List<Operator> disjunctiveOps = Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.IN);
       boolean isArrayOp = arrayOps.contains(filterOp);
       boolean isDisjunctiveOp = disjunctiveOps.contains(filterOp);
 
-      FieldFilter fieldFilter = (FieldFilter) filter;
       if (fieldFilter.isInequality()) {
         com.google.firebase.firestore.model.FieldPath existingInequality = query.inequalityField();
         com.google.firebase.firestore.model.FieldPath newInequality = filter.getField();
