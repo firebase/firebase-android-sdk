@@ -28,8 +28,8 @@ public class KeyFieldInFilter extends FieldFilter {
     ArrayValue arrayValue = (ArrayValue) getValue();
     for (FieldValue refValue : arrayValue.getInternalValue()) {
       hardAssert(
-              refValue instanceof ReferenceValue,
-              "Comparing on key with IN, but an array value was not a ReferenceValue");
+          refValue instanceof ReferenceValue,
+          "Comparing on key with IN, but an array value was not a ReferenceValue");
     }
   }
 
