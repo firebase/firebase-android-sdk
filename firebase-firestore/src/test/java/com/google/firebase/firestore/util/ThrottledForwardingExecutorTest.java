@@ -34,7 +34,7 @@ public class ThrottledForwardingExecutorTest {
     ThrottledForwardingExecutor throttledExecutor =
         new ThrottledForwardingExecutor(maximumConcurrency, countingExecutor);
 
-    // Schedule more than `maximumConcurrency` parallel task and block until all scheduling has
+    // Schedule more than `maximumConcurrency` parallel tasks and wait until all scheduling has
     // finished.
     int numTasks = maximumConcurrency + 1;
     CountDownLatch schedulingLatch = new CountDownLatch(1);
@@ -44,7 +44,8 @@ public class ThrottledForwardingExecutorTest {
           () -> {
             try {
               if (currentTask < maximumConcurrency) {
-                // Only block if we are running on the forwarded executor.
+                // Block if we are running on the forwarded executor. We can't block the thread that
+                // is running this test.
                 schedulingLatch.await();
               }
               completedTasks.release();
