@@ -1,6 +1,7 @@
 # Unreleased
-- [changed] Improved performance of queries with large result sets by up to
-  60%.
+- [changed] Improved performance of queries with large result sets.
+- [changed] Improved performance for queries with filters that only return a
+  small subset of the documents in a collection.
 - [changed] Instead of failing silently, Firestore now crashes the client app
   if it fails to load SSL Ciphers. To avoid these crashes, you must bundle 
   Conscrypt to support non-GMSCore devices on Android KitKat or JellyBean (see
