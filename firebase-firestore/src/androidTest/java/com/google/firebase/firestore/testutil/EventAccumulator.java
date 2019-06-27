@@ -49,7 +49,7 @@ public class EventAccumulator<T> {
 
   public List<T> await(int numEvents) {
     synchronized (this) {
-      hardAssert(completion == null, "calling await while another await is running");
+      hardAssert(completion == null, "calling drain while another drain is running");
       completion = new TaskCompletionSource<>();
       maxEvents = maxEvents + numEvents;
       checkFulfilled();

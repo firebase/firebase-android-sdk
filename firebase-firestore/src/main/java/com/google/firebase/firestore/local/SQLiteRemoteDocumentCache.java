@@ -24,14 +24,15 @@ import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.util.TaskQueue;
+import com.google.firebase.firestore.util.Executors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+
 import javax.annotation.Nullable;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
@@ -121,7 +122,11 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
-    TaskQueue<Document> taskQueue = new TaskQueue<>();
+
+    ImmutableSortedMap<DocumentKey, Document>[] matchingDocuments = (ImmutableSortedMap<DocumentKey, Document>[])
+            new ImmutableSortedMap[] { DocumentCollections.emptyDocumentMap() };
+
+    SQLitePersistence.BackgroundQueue backgroundQueue = new SQLitePersistence.BackgroundQueue();
 
     db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
         .binding(prefixPath, prefixSuccessorPath)
@@ -141,33 +146,26 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
               byte[] rawDocument = row.getBlob(1);
 
-              if (!row.isLast()) {
-                taskQueue.enqueueInBackground(() -> this.processDocumentResult(rawDocument, query));
-              } else {
-                // Enqueue the last document inline so that we don't block on background execution.
-                taskQueue.enqueueInline(() -> this.processDocumentResult(rawDocument, query));
-              }
+              // Since scheduling background tasks incurs overhead, we only dispatch to a background
+              // thread if there are still some documents remaining.
+              Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
+              executor.execute(() -> {
+                  @Nullable Document doc = this.processDocumentResult(rawDocument, query);
+                  if (doc != null) {
+                    synchronized (SQLiteRemoteDocumentCache.this) {
+                      matchingDocuments[0] = matchingDocuments[0].insert(doc.getKey(), doc);
+                    }
+                  }
+                });
             });
 
-    ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
-        DocumentCollections.emptyDocumentMap();
-
     try {
-      List<Document> results = taskQueue.awaitResults();
-      for (Document doc : results) {
-        if (doc != null) {
-          matchingDocuments = matchingDocuments.insert(doc.getKey(), doc);
-        }
-      }
-    } catch (ExecutionException e) {
-      fail(e, "Failed to decode documents from SQLite");
+      backgroundQueue.drain();
+    } catch (InterruptedException e) {
+      fail("Interrupted while deserializing documents", e);
     }
 
-    return matchingDocuments;
-  }
-
-  private String pathForKey(DocumentKey key) {
-    return EncodedPath.encode(key.getPath());
+    return matchingDocuments[0];
   }
 
   private @Nullable Document processDocumentResult(byte[] rawDocument, Query query) {
@@ -179,6 +177,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       return null;
     }
     return (Document) maybeDoc;
+  }
+
+  private String pathForKey(DocumentKey key) {
+    return EncodedPath.encode(key.getPath());
   }
 
   private MaybeDocument decodeMaybeDocument(byte[] bytes) {

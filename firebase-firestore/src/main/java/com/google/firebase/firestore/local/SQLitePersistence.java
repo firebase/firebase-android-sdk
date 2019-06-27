@@ -34,9 +34,11 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.Consumer;
+import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.FileUtil;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -45,6 +47,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Semaphore;
+
 import javax.annotation.Nullable;
 
 /**
@@ -328,6 +333,34 @@ public final class SQLitePersistence extends Persistence {
     @Override
     public void onOpen(SQLiteDatabase db) {
       ensureConfigured(db);
+    }
+  }
+
+  /**
+   * A simple queue that executes task in parallel on the Android's AsyncTask.THREAD_POOL_EXECUTOR
+   * and allows to block on their execution.
+   *
+   * This class is not thread-safe. In particular, `execute()` and `drain()` should not be called
+   * from parallel threads.
+   */
+  static class BackgroundQueue implements Executor {
+    private Semaphore completedTasks = new Semaphore(0);
+    private int pendingTaskCount = 0;
+
+    /** Enqueue a task on Android's THREAD_POOL_EXECUTOR. */
+    @Override
+    public void execute(Runnable task) {
+      ++pendingTaskCount;
+      Executors.BACKGROUND_EXECUTOR.execute(() -> {
+        task.run();
+        completedTasks.release();
+      });
+    }
+
+    /** Wait for all currently scheduled tasks to drain. */
+    void drain() throws InterruptedException {
+      completedTasks.acquire(pendingTaskCount);
+      pendingTaskCount = 0;
     }
   }
 
