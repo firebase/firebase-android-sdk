@@ -108,6 +108,15 @@ public class HttpsCallableReference {
   }
 
   /**
+   * Returns the timeout for calls from this instance of Functions.
+   *
+   * @return The timeout, in milliseconds.
+   */
+  public long getTimeout() {
+    return options.getTimeout();
+  }
+
+  /**
    * Creates a new reference with the given timeout for calls. The default is 60 seconds.
    *
    * @param timeout The length of the timeout, in the given units.
