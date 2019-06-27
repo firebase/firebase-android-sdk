@@ -33,6 +33,7 @@ import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.TestAccessHelper;
 import com.google.firebase.firestore.UserDataConverter;
+import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
@@ -220,8 +221,13 @@ public class TestUtil {
     return keySet;
   }
 
-  public static Filter filter(String key, String operator, Object value) {
-    return Filter.create(field(key), operatorFromString(operator), wrap(value));
+  public static FieldFilter filter(String key, String operator, Object value) {
+    Filter filter = FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
+    if (filter instanceof FieldFilter) {
+      return (FieldFilter) filter;
+    } else {
+      throw new IllegalArgumentException("Unrecognized filter: " + filter.toString());
+    }
   }
 
   public static Operator operatorFromString(String s) {
