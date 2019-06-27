@@ -207,16 +207,18 @@ public final class TransformMutation extends Mutation {
       TransformOperation transform = fieldTransform.getOperation();
 
       FieldValue previousValue = null;
-      if (baseDoc instanceof Document) {
+      if (maybeDoc instanceof Document) {
+        previousValue = ((Document) maybeDoc).getField(fieldTransform.getFieldPath());
+      }
+
+      if (previousValue == null && baseDoc instanceof Document) {
+        // If the current document does not contain a value for the mutated field, use the value
+        // that existed before applying this mutation batch. This solves an edge case where a
+        // PatchMutation clears the values in a nested map before the TransformMutation is applied.
         previousValue = ((Document) baseDoc).getField(fieldTransform.getFieldPath());
       }
 
-      FieldValue currentValue = null;
-      if (maybeDoc instanceof Document) {
-        currentValue = ((Document) maybeDoc).getField(fieldTransform.getFieldPath());
-      }
-
-      transformResults.add(transform.applyToLocalView(currentValue, previousValue, localWriteTime));
+      transformResults.add(transform.applyToLocalView(previousValue, localWriteTime));
     }
     return transformResults;
   }

@@ -30,10 +30,7 @@ public class ServerTimestampOperation implements TransformOperation {
   }
 
   @Override
-  public FieldValue applyToLocalView(
-      @Nullable FieldValue currentValue,
-      @Nullable FieldValue previousValue,
-      Timestamp localWriteTime) {
+  public FieldValue applyToLocalView(@Nullable FieldValue previousValue, Timestamp localWriteTime) {
     return new ServerTimestampValue(localWriteTime, previousValue);
   }
 
