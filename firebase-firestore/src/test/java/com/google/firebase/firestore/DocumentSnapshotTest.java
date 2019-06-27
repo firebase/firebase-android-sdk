@@ -45,8 +45,9 @@ public class DocumentSnapshotTest {
     assertNotEquals(base, differentData);
     assertNotEquals(base, fromCache);
 
-    // Note: `base` and `differentData` have the same hash code since we no longer take document
-    // contents into account.
+    // The assertions below that hash codes of different values are not equal is not something that
+    // we guarantee. In particular `base` and `differentData` have a hash collision because we
+    // don't use data in the hashCode.
     assertEquals(base.hashCode(), baseDup.hashCode());
     assertEquals(noData.hashCode(), noDataDup.hashCode());
     assertNotEquals(base.hashCode(), noData.hashCode());

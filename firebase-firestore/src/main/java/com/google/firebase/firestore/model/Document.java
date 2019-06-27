@@ -183,6 +183,7 @@ public final class Document extends MaybeDocument {
 
   @Override
   public int hashCode() {
+    // Note: We deliberately decided to omit `getData()` since its computation is expensive.
     int result = getKey().hashCode();
     result = 31 * result + getVersion().hashCode();
     result = 31 * result + documentState.hashCode();
