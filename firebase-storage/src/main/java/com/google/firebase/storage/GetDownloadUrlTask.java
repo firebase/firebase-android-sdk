@@ -60,7 +60,7 @@ class GetDownloadUrlTask implements Runnable {
 
     if (!TextUtils.isEmpty(downloadTokens)) {
       String downloadToken = downloadTokens.split(",", -1)[0];
-      String baseURL = NetworkRequest.getdefaultURL(storageRef.getStorageUri());
+      String baseURL = NetworkRequest.getDefaultURL(storageRef.getStorageUri());
       return Uri.parse(baseURL + "?alt=media&token=" + downloadToken);
     }
 
