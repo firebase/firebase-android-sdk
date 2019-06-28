@@ -18,35 +18,19 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
 import javax.inject.Inject;
-import javax.inject.Named;
 
 final class SchemaManager extends SQLiteOpenHelper {
   // TODO: when we do schema upgrades in the future we need to make sure both downgrades and
   // upgrades work as expected, e.g. `up+down+up` is equivalent to `up`.
   private static int SCHEMA_VERSION = 1;
   private static final String DB_NAME = "com.google.android.datatransport.events";
-  private final String createEventsSql;
-  private final String createEventMetadataSql;
-  private final String createContextsSql;
-
-  private static final String CREATE_EVENT_BACKEND_INDEX =
-      "CREATE INDEX events_backend_id on events(context_id)";
-
-  private static final String CREATE_CONTEXT_BACKEND_PRIORITY_INDEX =
-      "CREATE UNIQUE INDEX contexts_backend_priority on transport_contexts(backend_name, priority)";
-
+  private final DatabaseBootstrapClient databaseBootstrapClient;
   private boolean configured = false;
 
   @Inject
-  SchemaManager(
-      Context context,
-      @Named("CREATE_EVENTS_SQL") String createEventsSql,
-      @Named("CREATE_EVENT_METADATA_SQL") String createEventMetadataSql,
-      @Named("CREATE_CONTEXTS_SQL") String createContextsSql) {
+  SchemaManager(Context context, DatabaseBootstrapClient databaseBootstrapClient) {
     super(context, DB_NAME, null, SCHEMA_VERSION);
-    this.createEventsSql = createEventsSql;
-    this.createEventMetadataSql = createEventMetadataSql;
-    this.createContextsSql = createContextsSql;
+    this.databaseBootstrapClient = databaseBootstrapClient;
   }
 
   @Override
@@ -71,11 +55,7 @@ final class SchemaManager extends SQLiteOpenHelper {
   @Override
   public void onCreate(SQLiteDatabase db) {
     ensureConfigured(db);
-    db.execSQL(createEventsSql);
-    db.execSQL(createEventMetadataSql);
-    db.execSQL(createContextsSql);
-    db.execSQL(CREATE_EVENT_BACKEND_INDEX);
-    db.execSQL(CREATE_CONTEXT_BACKEND_PRIORITY_INDEX);
+    databaseBootstrapClient.bootstrap(db);
   }
 
   @Override

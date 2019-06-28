@@ -55,13 +55,20 @@ public class SchemaManagerTest {
   private final SchemaManager schemaManager;
 
   public SchemaManagerTest(
-      String createEventsSql, String createEventMetadataSql, String createContextsSql) {
+      String createEventsSql,
+      String createEventMetadataSql,
+      String createContextsSql,
+      String createEventBackendIndex,
+      String createContextBackendPriorityIndex) {
     schemaManager =
         new SchemaManager(
             RuntimeEnvironment.application,
-            createEventsSql,
-            createEventMetadataSql,
-            createContextsSql);
+            new DatabaseBootstrapClient(
+                createEventsSql,
+                createEventMetadataSql,
+                createContextsSql,
+                createEventBackendIndex,
+                createContextBackendPriorityIndex));
   }
 
   @Before
@@ -76,6 +83,9 @@ public class SchemaManagerTest {
           {
             EventStoreModule.CREATE_EVENTS_SQL_V1,
             EventStoreModule.CREATE_EVENT_METADATA_SQL_V1,
+            EventStoreModule.CREATE_CONTEXTS_SQL_V1,
+            EventStoreModule.CREATE_CONTEXTS_SQL_V1,
+            EventStoreModule.CREATE_EVENT_BACKEND_INDEX_V1,
             EventStoreModule.CREATE_CONTEXTS_SQL_V1
           }
         });

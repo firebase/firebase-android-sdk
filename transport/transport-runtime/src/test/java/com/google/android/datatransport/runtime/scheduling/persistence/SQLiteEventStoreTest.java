@@ -59,9 +59,12 @@ public class SQLiteEventStoreTest {
         config,
         new SchemaManager(
             RuntimeEnvironment.application,
-            EventStoreModule.CREATE_EVENTS_SQL_V1,
-            EventStoreModule.CREATE_EVENT_METADATA_SQL_V1,
-            EventStoreModule.CREATE_CONTEXTS_SQL_V1));
+            new DatabaseBootstrapClient(
+                EventStoreModule.CREATE_EVENTS_SQL_V1,
+                EventStoreModule.CREATE_EVENT_METADATA_SQL_V1,
+                EventStoreModule.CREATE_CONTEXTS_SQL_V1,
+                EventStoreModule.CREATE_EVENT_BACKEND_INDEX_V1,
+                EventStoreModule.CREATE_CONTEXTS_SQL_V1)));
   }
 
   @Test

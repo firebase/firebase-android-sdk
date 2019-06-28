@@ -49,6 +49,12 @@ public abstract class EventStoreModule {
           + " priority INTEGER NOT NULL,"
           + " next_request_ms INTEGER NOT NULL)";
 
+  static final String CREATE_EVENT_BACKEND_INDEX_V1 =
+      "CREATE INDEX events_backend_id on events(context_id)";
+
+  static final String CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1 =
+      "CREATE UNIQUE INDEX contexts_backend_priority on transport_contexts(backend_name, priority)";
+
   @Provides
   static EventStoreConfig storeConfig() {
     return EventStoreConfig.DEFAULT;
@@ -76,5 +82,17 @@ public abstract class EventStoreModule {
   @Named("CREATE_CONTEXTS_SQL")
   static String createContextsSql() {
     return CREATE_CONTEXTS_SQL_V1;
+  }
+
+  @Provides
+  @Named("CREATE_EVENT_BACKEND_INDEX")
+  static String getCreateEventBackendIndex() {
+    return CREATE_EVENT_BACKEND_INDEX_V1;
+  }
+
+  @Provides
+  @Named("CREATE_CONTEXT_BACKEND_PRIORITY_INDEX")
+  static String createEventBackendPriorityIndex() {
+    return CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1;
   }
 }
