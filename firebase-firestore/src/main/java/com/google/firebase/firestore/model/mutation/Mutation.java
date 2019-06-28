@@ -21,6 +21,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.value.ObjectValue;
 import javax.annotation.Nullable;
 
 /**
@@ -113,6 +114,23 @@ public abstract class Mutation {
   public abstract MaybeDocument applyToLocalView(
       @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime);
 
+  /**
+   * If applicable, returns the base value to persist with this mutation. If a base value is
+   * provided, the mutation is always applied to this base value, even if document has already been
+   * updated.
+   *
+   * <p>The base value is a sparse object that consists of only the document fields for which this
+   * mutation contains a non-idempotent transformation (e.g. a numeric increment). The provided
+   * value guarantees consistent behavior for non-idempotent transforms and allow us to return the
+   * same latency-compensated value even if the backend has already applied the mutation. The base
+   * value is null for idempotent mutations, as they can be re-played even if the backend has
+   * already applied them.
+   *
+   * @return a base value to store along with the mutation, or null for idempotent mutations.
+   */
+  @Nullable
+  public abstract ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc);
+
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
     return key.equals(other.key) && precondition.equals(other.precondition);
@@ -148,15 +166,4 @@ public abstract class Mutation {
       return SnapshotVersion.NONE;
     }
   }
-
-  /**
-   * If applicable, returns the field mask for this mutation. Fields that are not included in this
-   * field mask are not modified when this mutation is applied. Mutations that replace all document
-   * values return 'null'.
-   */
-  @Nullable
-  public abstract FieldMask getFieldMask();
-
-  /** Returns whether all operations in the mutation are idempotent. */
-  public abstract boolean isIdempotent();
 }
