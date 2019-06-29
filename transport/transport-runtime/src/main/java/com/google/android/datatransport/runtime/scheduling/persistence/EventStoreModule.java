@@ -18,11 +18,23 @@ import com.google.android.datatransport.runtime.synchronization.SynchronizationG
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
+import java.util.Collections;
 import javax.inject.Named;
 
 @Module
 public abstract class EventStoreModule {
-  static final String CREATE_EVENTS_SQL_V1 =
+  // Schema migration guidelines
+  // 1. Copy the SQL statements to create the tables and change as necessary. Rename variables to
+  // fit the format {}_SQL_Vn
+  // 2. Move the legacy SQL statements into the LegacySQL.java test class to reference in tests.
+  // 3. Write the Migration for existing clients, assign to variable name migrateToVn and add it to
+  // the collection injected into DatabaseMigrationClient
+  // 4. Write tests that cover the following scenarios
+  //    4a. Migrating versions V1..Vn-1 to Vn
+  //    4b. Bootstrapping the table at Vn
+
+  // Note: 4. Migrations handle only upgrades. Downgrades will drop and recreate all tables/indices.
+  static final String CREATE_EVENTS_SQL_V2 =
       "CREATE TABLE events "
           + "(_id INTEGER PRIMARY KEY,"
           + " context_id INTEGER NOT NULL,"
@@ -34,7 +46,7 @@ public abstract class EventStoreModule {
           + " num_attempts INTEGER NOT NULL,"
           + "FOREIGN KEY (context_id) REFERENCES transport_contexts(_id) ON DELETE CASCADE)";
 
-  static final String CREATE_EVENT_METADATA_SQL_V1 =
+  static final String CREATE_EVENT_METADATA_SQL_V2 =
       "CREATE TABLE event_metadata "
           + "(_id INTEGER PRIMARY KEY,"
           + " event_id INTEGER NOT NULL,"
@@ -42,18 +54,35 @@ public abstract class EventStoreModule {
           + " value TEXT NOT NULL,"
           + "FOREIGN KEY (event_id) REFERENCES events(_id) ON DELETE CASCADE)";
 
-  static final String CREATE_CONTEXTS_SQL_V1 =
+  static final String CREATE_CONTEXTS_SQL_V2 =
       "CREATE TABLE transport_contexts "
           + "(_id INTEGER PRIMARY KEY,"
           + " backend_name TEXT NOT NULL,"
           + " priority INTEGER NOT NULL,"
-          + " next_request_ms INTEGER NOT NULL)";
+          + " next_request_ms INTEGER NOT NULL,"
+          + " extras BLOB)";
 
-  static final String CREATE_EVENT_BACKEND_INDEX_V1 =
+  static final String CREATE_EVENT_BACKEND_INDEX_V2 =
       "CREATE INDEX events_backend_id on events(context_id)";
 
-  static final String CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1 =
-      "CREATE UNIQUE INDEX contexts_backend_priority on transport_contexts(backend_name, priority)";
+  static final String CREATE_CONTEXT_BACKEND_PRIORITY_EXTRAS_INDEX_V2 =
+      "CREATE UNIQUE INDEX contexts_backend_priority_extras on transport_contexts(backend_name, priority, extras)";
+
+  static final String DROP_EVENTS_SQL = "DROP TABLE events";
+
+  static final String DROP_EVENT_METADATA_SQL = "DROP TABLE event_metadata";
+
+  static final String DROP_CONTEXTS_SQL = "DROP TABLE transport_contexts";
+
+  static final DatabaseMigrationClient.Migration MIGRATE_TO_V2 =
+      (db, fromVersion, toVersion) -> {
+        if (fromVersion == 1 && toVersion == 2) {
+          db.execSQL("ALTER TABLE transport_contexts ADD COLUMN extras BLOB");
+          db.execSQL(
+              "CREATE UNIQUE INDEX contexts_backend_priority_extras on transport_contexts(backend_name, priority, extras)");
+          db.execSQL("DROP INDEX contexts_backend_priority");
+        }
+      };
 
   @Provides
   static EventStoreConfig storeConfig() {
@@ -69,30 +98,53 @@ public abstract class EventStoreModule {
   @Provides
   @Named("CREATE_EVENTS_SQL")
   static String createEventsSql() {
-    return CREATE_EVENTS_SQL_V1;
+    return CREATE_EVENTS_SQL_V2;
   }
 
   @Provides
   @Named("CREATE_EVENT_METADATA_SQL")
   static String createEventMetadataSql() {
-    return CREATE_EVENT_METADATA_SQL_V1;
+    return CREATE_EVENT_METADATA_SQL_V2;
   }
 
   @Provides
   @Named("CREATE_CONTEXTS_SQL")
   static String createContextsSql() {
-    return CREATE_CONTEXTS_SQL_V1;
+    return CREATE_CONTEXTS_SQL_V2;
   }
 
   @Provides
   @Named("CREATE_EVENT_BACKEND_INDEX")
   static String getCreateEventBackendIndex() {
-    return CREATE_EVENT_BACKEND_INDEX_V1;
+    return CREATE_EVENT_BACKEND_INDEX_V2;
   }
 
   @Provides
   @Named("CREATE_CONTEXT_BACKEND_PRIORITY_INDEX")
   static String createEventBackendPriorityIndex() {
-    return CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1;
+    return CREATE_CONTEXT_BACKEND_PRIORITY_EXTRAS_INDEX_V2;
+  }
+
+  @Provides
+  @Named("DROP_EVENTS_SQL")
+  static String dropEventsSQL() {
+    return DROP_EVENTS_SQL;
+  }
+
+  @Provides
+  @Named("DROP_EVENT_METADATA_SQL")
+  static String dropEventMetadataSql() {
+    return DROP_EVENT_METADATA_SQL;
+  }
+
+  @Provides
+  @Named("DROP_CONTEXTS_SQL")
+  static String dropContextsSql() {
+    return DROP_CONTEXTS_SQL;
+  }
+
+  @Provides
+  static DatabaseMigrationClient createDatabaseMigrationClient() {
+    return new DatabaseMigrationClient(Collections.singletonList(MIGRATE_TO_V2));
   }
 }

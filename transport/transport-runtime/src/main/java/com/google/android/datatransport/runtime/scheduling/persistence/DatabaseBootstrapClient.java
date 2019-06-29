@@ -25,18 +25,28 @@ class DatabaseBootstrapClient {
   private final String createEventBackendIndex;
   private final String createContextBackedPriorityIndex;
 
+  private final String dropEventsSql;
+  private final String dropEventMetadataSql;
+  private final String dropContextsSql;
+
   @Inject
   DatabaseBootstrapClient(
       @Named("CREATE_EVENTS_SQL") String createEventsSql,
       @Named("CREATE_EVENT_METADATA_SQL") String createEventMetadataSql,
       @Named("CREATE_CONTEXTS_SQL") String createContextsSql,
       @Named("CREATE_EVENT_BACKEND_INDEX") String createEventBackendIndex,
-      @Named("CREATE_CONTEXT_BACKEND_PRIORITY_INDEX") String createContextBackendPriorityIndex) {
+      @Named("CREATE_CONTEXT_BACKEND_PRIORITY_INDEX") String createContextBackendPriorityIndex,
+      @Named("DROP_EVENTS_SQL") String dropEventsSql,
+      @Named("DROP_EVENT_METADATA_SQL") String dropEventMetadataSql,
+      @Named("DROP_CONTEXTS_SQL") String dropContextsSql) {
     this.createEventsSql = createEventsSql;
     this.createEventMetadataSql = createEventMetadataSql;
     this.createContextsSql = createContextsSql;
     this.createEventBackendIndex = createEventBackendIndex;
     this.createContextBackedPriorityIndex = createContextBackendPriorityIndex;
+    this.dropEventsSql = dropEventsSql;
+    this.dropEventMetadataSql = dropEventMetadataSql;
+    this.dropContextsSql = dropContextsSql;
   }
 
   void bootstrap(SQLiteDatabase db) {
@@ -45,5 +55,12 @@ class DatabaseBootstrapClient {
     db.execSQL(createContextsSql);
     db.execSQL(createEventBackendIndex);
     db.execSQL(createContextBackedPriorityIndex);
+  }
+
+  void teardown(SQLiteDatabase db) {
+    db.execSQL(dropEventsSql);
+    db.execSQL(dropEventMetadataSql);
+    db.execSQL(dropContextsSql);
+    // Indices are dropped automatically when the tables are dropped
   }
 }

@@ -78,7 +78,6 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   @Override
   @Nullable
   public PersistedEvent persist(TransportContext transportContext, EventInternal event) {
-
     long newRowId =
         inTransaction(
             db -> {
@@ -127,6 +126,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     record.put("backend_name", transportContext.getBackendName());
     record.put("priority", transportContext.getPriority().ordinal());
     record.put("next_request_ms", 0);
+    //    record.put("extras", transportContext.getExtras());
+
     return db.insert("transport_contexts", null, record);
   }
 

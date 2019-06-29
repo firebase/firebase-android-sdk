@@ -24,13 +24,18 @@ final class SchemaManager extends SQLiteOpenHelper {
   // upgrades work as expected, e.g. `up+down+up` is equivalent to `up`.
   private static int SCHEMA_VERSION = 1;
   private static final String DB_NAME = "com.google.android.datatransport.events";
-  private final DatabaseBootstrapClient databaseBootstrapClient;
+  private final DatabaseBootstrapClient bootstrapClient;
+  private final DatabaseMigrationClient migrationClient;
   private boolean configured = false;
 
   @Inject
-  SchemaManager(Context context, DatabaseBootstrapClient databaseBootstrapClient) {
+  SchemaManager(
+      Context context,
+      DatabaseBootstrapClient bootstrapClient,
+      DatabaseMigrationClient migrationClient) {
     super(context, DB_NAME, null, SCHEMA_VERSION);
-    this.databaseBootstrapClient = databaseBootstrapClient;
+    this.bootstrapClient = bootstrapClient;
+    this.migrationClient = migrationClient;
   }
 
   @Override
@@ -55,17 +60,19 @@ final class SchemaManager extends SQLiteOpenHelper {
   @Override
   public void onCreate(SQLiteDatabase db) {
     ensureConfigured(db);
-    databaseBootstrapClient.bootstrap(db);
+    bootstrapClient.bootstrap(db);
   }
 
   @Override
   public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
     ensureConfigured(db);
+    migrationClient.upgrade(db, oldVersion, newVersion);
   }
 
   @Override
   public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-    ensureConfigured(db);
+    bootstrapClient.teardown(db);
+    onCreate(db);
   }
 
   @Override
