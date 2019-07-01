@@ -13,30 +13,27 @@
 // limitations under the License.
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_CONTEXTS_SQL_V1;
+import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1;
+import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENTS_SQL_V1;
+import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENT_BACKEND_INDEX_V1;
+import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENT_METADATA_SQL_V1;
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
-import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
-import java.util.Arrays;
-import java.util.Collection;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.ParameterizedRobolectricTestRunner;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
-@RunWith(ParameterizedRobolectricTestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 public class SchemaManagerTest {
-
-  private static final TransportContext TRANSPORT_CONTEXT =
-      TransportContext.builder().setBackendName("backend1").build();
-  private static final TransportContext ANOTHER_TRANSPORT_CONTEXT =
-      TransportContext.builder().setBackendName("backend2").build();
-  private static final EventInternal EVENT =
+  private static final TransportContext CONTEXT1 =
+      TransportContext.builder().setBackendName("b1").build();
+  private static final EventInternal EVENT1 =
       EventInternal.builder()
           .setTransportName("42")
           .setEventMillis(1)
@@ -45,69 +42,33 @@ public class SchemaManagerTest {
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();
+  private static final EventInternal EVENT2 =
+      EVENT1.toBuilder().setPayload("World".getBytes()).build();
 
   private static final long HOUR = 60 * 60 * 1000;
   private static final EventStoreConfig CONFIG =
       EventStoreConfig.DEFAULT.toBuilder().setLoadBatchSize(5).setEventCleanUpAge(HOUR).build();
 
   private final TestClock clock = new TestClock(1);
-  private SQLiteEventStore store;
-  private final SchemaManager schemaManager;
 
-  public SchemaManagerTest(
-      String createEventsSql,
-      String createEventMetadataSql,
-      String createContextsSql,
-      String createEventBackendIndex,
-      String createContextBackendPriorityIndex) {
-    schemaManager =
-        new SchemaManager(
-            RuntimeEnvironment.application,
-            new DatabaseBootstrapClient(
-                createEventsSql,
-                createEventMetadataSql,
-                createContextsSql,
-                createEventBackendIndex,
-                createContextBackendPriorityIndex));
-  }
-
-  @Before
-  public void initialize() {
-    store = newStoreWithConfig(clock, CONFIG, schemaManager);
-  }
-
-  @ParameterizedRobolectricTestRunner.Parameters
-  public static Collection primeNumbers() {
-    return Arrays.asList(
-        new Object[][] {
-          {
-            EventStoreModule.CREATE_EVENTS_SQL_V1,
-            EventStoreModule.CREATE_EVENT_METADATA_SQL_V1,
-            EventStoreModule.CREATE_CONTEXTS_SQL_V1,
-            EventStoreModule.CREATE_CONTEXTS_SQL_V1,
-            EventStoreModule.CREATE_EVENT_BACKEND_INDEX_V1,
-            EventStoreModule.CREATE_CONTEXTS_SQL_V1
-          }
-        });
-  }
+  private final DatabaseBootstrapClient V1_BOOTSTRAP_CLIENT =
+      new DatabaseBootstrapClient(
+          CREATE_EVENTS_SQL_V1,
+          CREATE_EVENT_METADATA_SQL_V1,
+          CREATE_CONTEXTS_SQL_V1,
+          CREATE_EVENT_BACKEND_INDEX_V1,
+          CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1);
 
   @Test
-  public void persist_withEventsOfDifferentPriority_shouldEndBeStoredUnderDifferentContexts() {
-    TransportContext ctx1 = TRANSPORT_CONTEXT;
-    TransportContext ctx2 = TRANSPORT_CONTEXT.withPriority(Priority.VERY_LOW);
+  public void persist_correctlyRoundTrips() {
+    SchemaManager schemaManager =
+        new SchemaManager(RuntimeEnvironment.application, V1_BOOTSTRAP_CLIENT);
+    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
 
-    EventInternal event1 = EVENT;
-    EventInternal event2 = EVENT.toBuilder().setPayload("World".getBytes()).build();
+    PersistedEvent newEvent = store.persist(CONTEXT1, EVENT1);
+    Iterable<PersistedEvent> events = store.loadBatch(CONTEXT1);
 
-    PersistedEvent newEvent1 = store.persist(ctx1, event1);
-    PersistedEvent newEvent2 = store.persist(ctx2, event2);
-
-    assertThat(store.loadBatch(ctx1)).containsExactly(newEvent1);
-    assertThat(store.loadBatch(ctx2)).containsExactly(newEvent2);
-  }
-
-  private SQLiteEventStore newStoreWithConfig(
-      Clock clock, EventStoreConfig config, SchemaManager schemaManager) {
-    return new SQLiteEventStore(clock, new UptimeClock(), config, schemaManager);
+    assertThat(newEvent.getEvent()).isEqualTo(EVENT1);
+    assertThat(events).containsExactly(newEvent);
   }
 }
