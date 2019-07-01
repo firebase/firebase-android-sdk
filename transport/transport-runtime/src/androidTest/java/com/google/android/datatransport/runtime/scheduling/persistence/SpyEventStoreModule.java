@@ -25,7 +25,6 @@ import com.google.android.datatransport.runtime.synchronization.SynchronizationG
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
-
 import javax.inject.Named;
 import javax.inject.Singleton;
 
