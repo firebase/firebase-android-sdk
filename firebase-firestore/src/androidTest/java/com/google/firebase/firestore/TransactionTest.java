@@ -55,9 +55,7 @@ public class TransactionTest {
     Exception e = waitForException(firestore.runTransaction(transaction -> transaction.get(doc)));
     // We currently require every document read to also be written.
     // TODO: Fix this check once we drop that requirement.
-    assertEquals("Transaction failed all retries.", e.getMessage());
-    assertEquals(
-        "Every document read in a transaction must also be written.", e.getCause().getMessage());
+    assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 
   @Test
@@ -239,8 +237,7 @@ public class TransactionTest {
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
     assertTrue(e instanceof FirebaseFirestoreException);
-    assertEquals(
-        FirebaseFirestoreException.Code.ABORTED, ((FirebaseFirestoreException) e).getCode());
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
   }
 
   @Test
@@ -437,9 +434,7 @@ public class TransactionTest {
     // assertEquals(1234, snapshot.getDouble("count"));
     // snapshot = waitFor(doc2.get());
     // assertEquals(16, snapshot.getDouble("count"));
-    assertEquals("Transaction failed all retries.", e.getMessage());
-    assertEquals(
-        "Every document read in a transaction must also be written.", e.getCause().getMessage());
+    assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 
   @Test
@@ -489,9 +484,7 @@ public class TransactionTest {
     // We currently require every document read to also be written.
     // TODO: Add this check back once we drop that.
     // assertEquals("bar", snapshot.getString("foo"));
-    assertEquals("Transaction failed all retries.", e.getMessage());
-    assertEquals(
-        "Every document read in a transaction must also be written.", e.getCause().getMessage());
+    assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 
   @Test
