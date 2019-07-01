@@ -17,7 +17,9 @@ package com.google.android.datatransport.runtime;
 import androidx.annotation.Nullable;
 
 public interface Destination {
-  /** Name that can be used to discover the backend */
+  /**
+   *  Name that can be used to discover the backend
+   */
   String getName();
 
   /**
