@@ -21,6 +21,7 @@ import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.Context;
 import android.os.PersistableBundle;
+import android.util.Base64;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
@@ -133,6 +134,19 @@ public class JobInfoSchedulerTest {
     assertThat(bundle.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(2);
     assertThat(bundle.get(JobInfoScheduler.BACKEND_NAME))
         .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
+  }
+
+  @Test
+  public void schedule_whenExtrasEvailable_transmitsExtras() {
+    String extras = "e1";
+    TransportContext transportContext =
+        TransportContext.builder().setBackendName("backend1").setExtras(extras.getBytes()).build();
+    store.recordNextCallTime(transportContext, 1000000);
+    scheduler.schedule(transportContext, 1);
+    JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
+    PersistableBundle bundle = jobInfo.getExtras();
+    assertThat(bundle.get(JobInfoScheduler.EXTRAS))
+        .isEqualTo(Base64.encodeToString(extras.getBytes(), Base64.DEFAULT));
   }
 
   @Test
