@@ -13,19 +13,7 @@
 // limitations under the License.
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_CONTEXTS_SQL_V2;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_CONTEXT_BACKEND_PRIORITY_EXTRAS_INDEX_V2;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENTS_SQL_V2;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENT_BACKEND_INDEX_V2;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENT_METADATA_SQL_V2;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.DROP_CONTEXTS_SQL;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.DROP_EVENTS_SQL;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.DROP_EVENT_METADATA_SQL;
-import static com.google.android.datatransport.runtime.scheduling.persistence.LegacySQL.CREATE_CONTEXTS_SQL_V1;
-import static com.google.android.datatransport.runtime.scheduling.persistence.LegacySQL.CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1;
-import static com.google.android.datatransport.runtime.scheduling.persistence.LegacySQL.CREATE_EVENTS_SQL_V1;
-import static com.google.android.datatransport.runtime.scheduling.persistence.LegacySQL.CREATE_EVENT_BACKEND_INDEX_V1;
-import static com.google.android.datatransport.runtime.scheduling.persistence.LegacySQL.CREATE_EVENT_METADATA_SQL_V1;
+import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.content.ContentValues;
@@ -35,7 +23,6 @@ import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
-import edu.emory.mathcs.backport.java.util.Collections;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -73,35 +60,9 @@ public class SchemaManagerTest {
 
   private final TestClock clock = new TestClock(1);
 
-  private final DatabaseBootstrapClient V1_BOOTSTRAP_CLIENT =
-      new DatabaseBootstrapClient(
-          CREATE_EVENTS_SQL_V1,
-          CREATE_EVENT_METADATA_SQL_V1,
-          CREATE_CONTEXTS_SQL_V1,
-          CREATE_EVENT_BACKEND_INDEX_V1,
-          CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1,
-          DROP_EVENTS_SQL,
-          DROP_EVENT_METADATA_SQL,
-          DROP_CONTEXTS_SQL);
-
-  private final DatabaseBootstrapClient V2_BOOTSTRAP_CLIENT =
-      new DatabaseBootstrapClient(
-          CREATE_EVENTS_SQL_V2,
-          CREATE_EVENT_METADATA_SQL_V2,
-          CREATE_CONTEXTS_SQL_V2,
-          CREATE_EVENT_BACKEND_INDEX_V2,
-          CREATE_CONTEXT_BACKEND_PRIORITY_EXTRAS_INDEX_V2,
-          DROP_EVENTS_SQL,
-          DROP_EVENT_METADATA_SQL,
-          DROP_CONTEXTS_SQL);
-
-  private final DatabaseMigrationClient V2_MIGRATION =
-      new DatabaseMigrationClient(Collections.singletonList(EventStoreModule.MIGRATE_TO_V2));
-
   @Test
   public void persist_correctlyRoundTrips() {
-    SchemaManager schemaManager =
-        new SchemaManager(RuntimeEnvironment.application, V1_BOOTSTRAP_CLIENT, V2_MIGRATION);
+    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, SCHEMA_VERSION);
     SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
 
     PersistedEvent newEvent = store.persist(CONTEXT1, EVENT1);
@@ -112,42 +73,47 @@ public class SchemaManagerTest {
   }
 
   @Test
-  public void upgrading_emptyDatabase_allowsPersistsAfterUpgrade() {
-    SchemaManager schemaManager =
-        new SchemaManager(RuntimeEnvironment.application, V1_BOOTSTRAP_CLIENT, V2_MIGRATION);
+  public void upgradingV1ToV2_emptyDatabase_allowsPersistsAfterUpgrade() {
+    int oldVersion = 1;
+    int newVersion = 2;
+    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
+
     SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
 
-    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), 1, 2);
+    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, newVersion);
     PersistedEvent newEvent1 = store.persist(CONTEXT1, EVENT1);
 
     assertThat(store.loadBatch(CONTEXT1)).containsExactly(newEvent1);
   }
 
   @Test
-  public void upgradeding_nonEmptyDB_preservesValues() {
-    SchemaManager schemaManager =
-        new SchemaManager(RuntimeEnvironment.application, V1_BOOTSTRAP_CLIENT, V2_MIGRATION);
+  public void upgradingV1ToV2_nonEmptyDB_isLossless() {
+    int oldVersion = 1;
+    int newVersion = 2;
+    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
     SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
     // We simulate operations as done by an older SQLLiteEventStore at V1
     // We cannot simulate older operations with a newer client
     PersistedEvent event1 = simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);
 
     // Upgrade to V2
-    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), 1, 2);
+    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, newVersion);
 
     assertThat(store.loadBatch(CONTEXT1)).containsExactly(event1);
   }
 
   @Test
   public void downgradeFromAFutureVersion_withEmptyDB_allowsPersistanceAfterMigration() {
-    SchemaManager schemaManager =
-        new SchemaManager(RuntimeEnvironment.application, V2_BOOTSTRAP_CLIENT, V2_MIGRATION);
+    int newVersion = 2;
+    int futureVersion = 3;
+    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, futureVersion);
+
     SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
     // We simulate operations as done by an older SQLLiteEventStore at V1
     // We cannot simulate older operations with a newer client
     simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);
 
-    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), 3, 2);
+    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), futureVersion, newVersion);
     PersistedEvent event2 = store.persist(CONTEXT2, EVENT2);
 
     assertThat(store.loadBatch(CONTEXT2)).containsExactly(event2);
@@ -155,12 +121,13 @@ public class SchemaManagerTest {
 
   @Test
   public void downgradeFromAFutureVersion_withNonEmptyDB_isLossy() {
-    SchemaManager schemaManager =
-        new SchemaManager(RuntimeEnvironment.application, V2_BOOTSTRAP_CLIENT, V2_MIGRATION);
+    int newVersion = 2;
+    int futureVersion = 3;
+    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, futureVersion);
     SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
     PersistedEvent event1 = store.persist(CONTEXT1, EVENT1);
 
-    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), 3, 2);
+    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), futureVersion, newVersion);
 
     assertThat(store.loadBatch(CONTEXT1)).doesNotContain(event1);
   }

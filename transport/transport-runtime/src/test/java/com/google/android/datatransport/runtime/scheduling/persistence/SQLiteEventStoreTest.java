@@ -60,16 +60,11 @@ public class SQLiteEventStoreTest {
         config,
         new SchemaManager(
             RuntimeEnvironment.application,
-            new DatabaseBootstrapClient(
-                CREATE_EVENTS_SQL_V2,
-                CREATE_EVENT_METADATA_SQL_V2,
-                CREATE_CONTEXTS_SQL_V2,
-                CREATE_EVENT_BACKEND_INDEX_V2,
-                CREATE_CONTEXT_BACKEND_PRIORITY_EXTRAS_INDEX_V2,
-                DROP_EVENTS_SQL,
-                DROP_EVENT_METADATA_SQL,
-                DROP_CONTEXTS_SQL),
-            new DatabaseMigrationClient(Collections.singletonList(MIGRATE_TO_V2))));
+            Arrays.asList(EventStoreModule.MIGRATE_TO_V1, EventStoreModule.MIGRATE_TO_V2),
+            DROP_EVENTS_SQL,
+            DROP_EVENT_METADATA_SQL,
+            DROP_CONTEXTS_SQL,
+            SCHEMA_VERSION));
   }
 
   @Test

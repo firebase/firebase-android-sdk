@@ -14,21 +14,12 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_CONTEXTS_SQL_V2;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_CONTEXT_BACKEND_PRIORITY_EXTRAS_INDEX_V2;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENTS_SQL_V2;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENT_BACKEND_INDEX_V2;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENT_METADATA_SQL_V2;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.DROP_CONTEXTS_SQL;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.DROP_EVENTS_SQL;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.DROP_EVENT_METADATA_SQL;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.MIGRATE_TO_V2;
+import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
-import java.util.Collections;
 import javax.inject.Named;
 
 @Module
@@ -54,55 +45,8 @@ public abstract class TestEventStoreModule {
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
 
   @Provides
-  @Named("CREATE_EVENTS_SQL")
-  static String createEventsSql() {
-    return CREATE_EVENTS_SQL_V2;
-  }
-
-  @Provides
-  @Named("CREATE_EVENT_METADATA_SQL")
-  static String createEventMetadataSql() {
-    return CREATE_EVENT_METADATA_SQL_V2;
-  }
-
-  @Provides
-  @Named("CREATE_CONTEXTS_SQL")
-  static String createContextsSql() {
-    return CREATE_CONTEXTS_SQL_V2;
-  }
-
-  @Provides
-  @Named("CREATE_EVENT_BACKEND_INDEX")
-  static String getCreateEventBackendIndex() {
-    return CREATE_EVENT_BACKEND_INDEX_V2;
-  }
-
-  @Provides
-  @Named("CREATE_CONTEXT_BACKEND_PRIORITY_INDEX")
-  static String createEventBackendPriorityIndex() {
-    return CREATE_CONTEXT_BACKEND_PRIORITY_EXTRAS_INDEX_V2;
-  }
-
-  @Provides
-  @Named("DROP_EVENTS_SQL")
-  static String dropEventsSQL() {
-    return DROP_EVENTS_SQL;
-  }
-
-  @Provides
-  @Named("DROP_EVENT_METADATA_SQL")
-  static String dropEventMetadataSql() {
-    return DROP_EVENT_METADATA_SQL;
-  }
-
-  @Provides
-  @Named("DROP_CONTEXTS_SQL")
-  static String dropContextsSql() {
-    return DROP_CONTEXTS_SQL;
-  }
-
-  @Provides
-  static DatabaseMigrationClient createDatabaseMigrationClient() {
-    return new DatabaseMigrationClient(Collections.singletonList(MIGRATE_TO_V2));
+  @Named("SCHEMA_VERSION")
+  static int schemaVersion() {
+    return SCHEMA_VERSION;
   }
 }
