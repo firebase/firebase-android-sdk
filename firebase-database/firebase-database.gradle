@@ -73,6 +73,7 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-database-collection')
 
+    implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-basement:17.0.0'
     implementation 'com.google.android.gms:play-services-base:17.0.0'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
