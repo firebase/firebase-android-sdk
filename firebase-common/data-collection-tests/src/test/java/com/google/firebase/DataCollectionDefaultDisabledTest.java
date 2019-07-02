@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,14 +20,12 @@ import static com.google.firebase.DataCollectionTestUtil.setSharedPreferencesTo;
 import static com.google.firebase.DataCollectionTestUtil.withApp;
 
 import android.content.SharedPreferences;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(manifest = "NoAutoDataCollectionAndroidManifest.xml")
+@RunWith(AndroidJUnit4.class)
 public class DataCollectionDefaultDisabledTest {
 
   @Test
