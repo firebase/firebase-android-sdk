@@ -435,7 +435,7 @@ public class TransactionTest {
     // assertEquals(1234, snapshot.getDouble("count"));
     // snapshot = waitFor(doc2.get());
     // assertEquals(16, snapshot.getDouble("count"));
-    assertEquals(Code.FAILED_PRECONDITION, ((FirebaseFirestoreException) e).getCode());
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
     assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 
@@ -486,7 +486,7 @@ public class TransactionTest {
     // We currently require every document read to also be written.
     // TODO: Add this check back once we drop that.
     // assertEquals("bar", snapshot.getString("foo"));
-    assertEquals(Code.FAILED_PRECONDITION, ((FirebaseFirestoreException) e).getCode());
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
     assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 

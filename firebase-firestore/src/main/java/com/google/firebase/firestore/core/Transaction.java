@@ -73,7 +73,7 @@ public class Transaction {
       if (!existingVersion.equals(doc.getVersion())) {
         // This transaction will fail no matter what.
         throw new FirebaseFirestoreException(
-            "Document version changed between two reads.", Code.FAILED_PRECONDITION);
+            "Document version changed between two reads.", Code.INVALID_ARGUMENT);
       }
     } else {
       readVersions.put(doc.getKey(), docVersion);
@@ -88,13 +88,13 @@ public class Transaction {
     if (committed) {
       return Tasks.forException(
           new FirebaseFirestoreException(
-              "Transaction has already completed.", Code.FAILED_PRECONDITION));
+              "Transaction has already completed.", Code.INVALID_ARGUMENT));
     }
     if (mutations.size() != 0) {
       return Tasks.forException(
           new FirebaseFirestoreException(
               "Firestore transactions require all reads to be executed before all writes.",
-              Code.FAILED_PRECONDITION));
+              Code.INVALID_ARGUMENT));
     }
     return datastore
         .lookup(keys)
@@ -169,7 +169,7 @@ public class Transaction {
     if (committed) {
       return Tasks.forException(
           new FirebaseFirestoreException(
-              "Transaction has already completed.", Code.FAILED_PRECONDITION));
+              "Transaction has already completed.", Code.INVALID_ARGUMENT));
     }
     HashSet<DocumentKey> unwritten = new HashSet<>(readVersions.keySet());
     // For each mutation, note that the doc was written.
@@ -179,8 +179,7 @@ public class Transaction {
     if (unwritten.size() > 0) {
       return Tasks.forException(
           new FirebaseFirestoreException(
-              "Every document read in a transaction must also be written.",
-              Code.FAILED_PRECONDITION));
+              "Every document read in a transaction must also be written.", Code.INVALID_ARGUMENT));
     }
     committed = true;
     return datastore
