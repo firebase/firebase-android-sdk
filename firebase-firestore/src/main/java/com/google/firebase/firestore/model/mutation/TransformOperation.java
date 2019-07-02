@@ -16,6 +16,7 @@ package com.google.firebase.firestore.model.mutation;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.value.FieldValue;
+import javax.annotation.Nullable;
 
 /** A transform within a TransformMutation. */
 public interface TransformOperation {
@@ -23,14 +24,26 @@ public interface TransformOperation {
    * Computes the local transform result against the provided previousValue, optionally using the
    * provided localWriteTime.
    */
-  FieldValue applyToLocalView(FieldValue previousValue, Timestamp localWriteTime);
+  FieldValue applyToLocalView(@Nullable FieldValue previousValue, Timestamp localWriteTime);
 
   /**
    * Computes a final transform result after the transform has been acknowledged by the server,
    * potentially using the server-provided transformResult.
    */
-  FieldValue applyToRemoteDocument(FieldValue previousValue, FieldValue transformResult);
+  FieldValue applyToRemoteDocument(@Nullable FieldValue previousValue, FieldValue transformResult);
 
-  /** Returns whether this field transform is idempotent. */
-  boolean isIdempotent();
+  /**
+   * If applicable, returns the base value to persist for this transform. If a base value is
+   * provided, the transform operation is always applied to this base value, even if document has
+   * already been updated.
+   *
+   * <p>Base values provide consistent behavior for non-idempotent transforms and allow us to return
+   * the same latency-compensated value even if the backend has already applied the transform
+   * operation. The base value is null for idempotent transforms, as they can be re-played even if
+   * the backend has already applied them.
+   *
+   * @return a base value to store along with the mutation, or null for idempotent transforms.
+   */
+  @Nullable
+  FieldValue computeBaseValue(@Nullable FieldValue previousValue);
 }

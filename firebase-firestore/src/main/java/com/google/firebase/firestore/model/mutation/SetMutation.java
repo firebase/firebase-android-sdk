@@ -89,19 +89,14 @@ public final class SetMutation extends Mutation {
     return new Document(getKey(), version, Document.DocumentState.LOCAL_MUTATIONS, value);
   }
 
-  @Nullable
-  @Override
-  public FieldMask getFieldMask() {
-    return null;
-  }
-
   /** Returns the object value to use when setting the document. */
   public ObjectValue getValue() {
     return value;
   }
 
+  @Nullable
   @Override
-  public boolean isIdempotent() {
-    return true;
+  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
+    return null;
   }
 }

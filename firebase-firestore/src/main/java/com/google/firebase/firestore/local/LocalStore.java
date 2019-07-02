@@ -28,7 +28,6 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
@@ -212,24 +211,17 @@ public final class LocalStore {
           // transform.
           List<Mutation> baseMutations = new ArrayList<>();
           for (Mutation mutation : mutations) {
-            MaybeDocument maybeDocument = existingDocuments.get(mutation.getKey());
-            if (!mutation.isIdempotent()) {
-              // Theoretically, we should only include non-idempotent fields in this field mask as
-              // this mask is used to populate the base state for all DocumentTransforms.  By
-              // including all fields, we incorrectly prevent rebasing of idempotent transforms
-              // (such as `arrayUnion()`) when any non-idempotent transforms are present.
-              FieldMask fieldMask = mutation.getFieldMask();
-              if (fieldMask != null) {
-                ObjectValue baseValues =
-                    (maybeDocument instanceof Document)
-                        ? fieldMask.applyTo(((Document) maybeDocument).getData())
-                        : ObjectValue.emptyObject();
-                // NOTE: The base state should only be applied if there's some existing
-                // document to override, so use a Precondition of exists=true
-                baseMutations.add(
-                    new PatchMutation(
-                        mutation.getKey(), baseValues, fieldMask, Precondition.exists(true)));
-              }
+            ObjectValue baseValue =
+                mutation.extractBaseValue(existingDocuments.get(mutation.getKey()));
+            if (baseValue != null) {
+              // NOTE: The base state should only be applied if there's some existing
+              // document to override, so use a Precondition of exists=true
+              baseMutations.add(
+                  new PatchMutation(
+                      mutation.getKey(),
+                      baseValue,
+                      baseValue.getFieldMask(),
+                      Precondition.exists(true)));
             }
           }
 

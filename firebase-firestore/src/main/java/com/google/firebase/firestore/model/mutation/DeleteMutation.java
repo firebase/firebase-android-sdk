@@ -21,6 +21,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.value.ObjectValue;
 import javax.annotation.Nullable;
 
 /** Represents a Delete operation */
@@ -85,12 +86,7 @@ public final class DeleteMutation extends Mutation {
 
   @Nullable
   @Override
-  public FieldMask getFieldMask() {
+  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
     return null;
-  }
-
-  @Override
-  public boolean isIdempotent() {
-    return true;
   }
 }
