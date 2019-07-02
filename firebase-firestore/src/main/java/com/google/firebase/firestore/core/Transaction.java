@@ -137,6 +137,7 @@ public class Transaction {
   private Precondition preconditionForUpdate(DocumentKey key) {
     @Nullable SnapshotVersion version = this.readVersions.get(key);
     if (version != null && !version.equals(SnapshotVersion.NONE)) {
+      // Document exists, just base precondition on document update time.
       return Precondition.updateTime(version);
     } else {
       // Document was not read, so we just use the preconditions for a blind write.
