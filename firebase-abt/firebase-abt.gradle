@@ -20,6 +20,7 @@ plugins {
 firebaseLibrary {
     testLab.enabled = false
     publishSources = true
+    staticAnalysis.disableKotlinInteropLint()
 }
 
 // TODO(issue/568): Remove this once legacy logic is removed from Remote Config.

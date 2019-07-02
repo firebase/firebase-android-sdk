@@ -129,4 +129,8 @@ public class FirebaseLibraryExtension {
       customizePomAction.execute(pom);
     }
   }
+
+  public void staticAnalysis(Action<FirebaseStaticAnalysis> action) {
+    action.execute(staticAnalysis);
+  }
 }

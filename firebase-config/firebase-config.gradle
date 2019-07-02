@@ -22,6 +22,7 @@ plugins {
 firebaseLibrary {
     testLab.enabled = true
     publishSources = true
+    staticAnalysis.disableKotlinInteropLint()
 }
 
 protobuf {
