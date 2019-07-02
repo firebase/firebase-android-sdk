@@ -104,14 +104,25 @@ android.libraryVariants.all { variant ->
 
 }
 
+configurations.all {
+    if(it.name.contains('AndroidTestRuntimeClasspath')) {
+        it.resolutionStrategy {
+            force 'org.checkerframework:checker-compat-qual:2.5.5'
+            force 'com.google.guava:guava:27.0.1-android'
+        }
+    }
+}
+
 dependencies {
     implementation project(':firebase-common')
     implementation project(':protolite-well-known-types')
     implementation project(':firebase-database-collection')
 
+
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
 
+    implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'io.grpc:grpc-stub:1.21.0'
     implementation 'io.grpc:grpc-protobuf-lite:1.21.0'
     implementation 'io.grpc:grpc-okhttp:1.21.0'
