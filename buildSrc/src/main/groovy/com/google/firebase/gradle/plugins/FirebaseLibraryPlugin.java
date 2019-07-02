@@ -77,16 +77,20 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
         .all(
             c -> {
               if ("annotationProcessor".equals(c.getName())) {
-                project
-                    .getDependencies()
-                    .add("annotationProcessor", project.project(":tools:errorprone"));
+                for (String checkProject : library.staticAnalysis.errorproneCheckProjects) {
+                  project
+                      .getDependencies()
+                      .add("annotationProcessor", project.project(checkProject));
+                }
               }
               if ("lintChecks".equals(c.getName())) {
-                project.getDependencies().add("lintChecks", project.project(":tools:lint"));
+                for (String checkProject : library.staticAnalysis.androidLintCheckProjects) {
+                  project.getDependencies().add("lintChecks", project.project(checkProject));
+                }
               }
             });
 
-    if (!library.kotlinInteropLint) {
+    if (!library.staticAnalysis.kotlinInteropLint) {
       android.lintOptions(
           lintOptions ->
               lintOptions.disable(

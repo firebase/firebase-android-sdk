@@ -38,8 +38,8 @@ public class FirebaseLibraryExtension {
   /** Indicates whether sources are published alongside the library. */
   public boolean publishSources;
 
-  /** Indicates whether Kotlin Interop Lint checks are enabled for public APIs of the library. */
-  public boolean kotlinInteropLint = false;
+  /** Static analysis configuration. */
+  public final FirebaseStaticAnalysis staticAnalysis = new FirebaseStaticAnalysis();
 
   /** Firebase Test Lab configuration/ */
   public final FirebaseTestLabExtension testLab;
