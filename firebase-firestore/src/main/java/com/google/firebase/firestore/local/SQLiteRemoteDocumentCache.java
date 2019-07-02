@@ -24,6 +24,7 @@ import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Executors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
@@ -121,7 +122,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
-    SQLitePersistence.BackgroundQueue backgroundQueue = new SQLitePersistence.BackgroundQueue();
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
 
     ImmutableSortedMap<DocumentKey, Document>[] matchingDocuments =
         (ImmutableSortedMap<DocumentKey, Document>[])
