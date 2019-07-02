@@ -60,7 +60,7 @@ public abstract class EventStoreModule {
           + " backend_name TEXT NOT NULL,"
           + " priority INTEGER NOT NULL,"
           + " next_request_ms INTEGER NOT NULL,"
-          + " extras BLOB)";
+          + " extras TEXT)";
 
   static final String CREATE_EVENT_BACKEND_INDEX_V2 =
       "CREATE INDEX events_backend_id on events(context_id)";
@@ -77,7 +77,7 @@ public abstract class EventStoreModule {
   static final DatabaseMigrationClient.Migration MIGRATE_TO_V2 =
       (db, fromVersion, toVersion) -> {
         if (fromVersion == 1 && toVersion == 2) {
-          db.execSQL("ALTER TABLE transport_contexts ADD COLUMN extras BLOB");
+          db.execSQL("ALTER TABLE transport_contexts ADD COLUMN extras TEXT");
           db.execSQL(
               "CREATE UNIQUE INDEX contexts_backend_priority_extras on transport_contexts(backend_name, priority, extras)");
           db.execSQL("DROP INDEX contexts_backend_priority");

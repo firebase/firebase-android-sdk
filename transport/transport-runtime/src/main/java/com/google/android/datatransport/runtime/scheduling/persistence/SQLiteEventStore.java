@@ -14,6 +14,9 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import static android.util.Base64.DEFAULT;
+import static android.util.Base64.encodeToString;
+
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -30,6 +33,7 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -126,22 +130,33 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     record.put("backend_name", transportContext.getBackendName());
     record.put("priority", transportContext.getPriority().ordinal());
     record.put("next_request_ms", 0);
-    //    record.put("extras", transportContext.getExtras());
+    if (transportContext.getExtras() != null) {
+      record.put("extras", encodeToString(transportContext.getExtras(), DEFAULT));
+    }
 
     return db.insert("transport_contexts", null, record);
   }
 
   @Nullable
   private Long getTransportContextId(SQLiteDatabase db, TransportContext transportContext) {
+    final StringBuilder selection = new StringBuilder("backend_name = ? and priority = ?");
+    ArrayList<String> selectionArgs =
+        new ArrayList<>(
+            Arrays.asList(
+                transportContext.getBackendName(),
+                String.valueOf(transportContext.getPriority().ordinal())));
+
+    if (transportContext.getExtras() != null) {
+      selection.append("and extras = ?");
+      selectionArgs.add(encodeToString(transportContext.getExtras(), DEFAULT));
+    }
+
     return tryWithCursor(
         db.query(
             "transport_contexts",
             new String[] {"_id"},
-            "backend_name = ? and priority = ?",
-            new String[] {
-              transportContext.getBackendName(),
-              String.valueOf(transportContext.getPriority().ordinal())
-            },
+            selection.toString(),
+            selectionArgs.toArray(new String[0]),
             null,
             null,
             null),
