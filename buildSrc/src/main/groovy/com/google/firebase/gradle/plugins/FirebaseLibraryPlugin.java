@@ -56,6 +56,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
 
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab));
 
+    setupStaticAnalysis(project, android, firebaseLibrary);
+
     // reduce the likelihood of kotlin module files colliding.
     project
         .getTasks()
@@ -66,6 +68,33 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                     .getKotlinOptions()
                     .setFreeCompilerArgs(
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
+  }
+
+  private static void setupStaticAnalysis(
+      Project project, LibraryExtension android, FirebaseLibraryExtension library) {
+    project
+        .getConfigurations()
+        .all(
+            c -> {
+              if ("annotationProcessor".equals(c.getName())) {
+                project
+                    .getDependencies()
+                    .add("annotationProcessor", project.project(":tools:errorprone"));
+              }
+              if ("lintChecks".equals(c.getName())) {
+                project.getDependencies().add("lintChecks", project.project(":tools:lint"));
+              }
+            });
+
+    if (!library.kotlinInteropLint) {
+      android.lintOptions(
+          lintOptions ->
+              lintOptions.disable(
+                  "FirebaseNoHardKeywords",
+                  "FirebaseLambdaLast",
+                  "FirebaseUnknownNullness",
+                  "FirebaseKotlinPropertyAccess"));
+    }
   }
 
   private static String kotlinModuleName(Project project) {
