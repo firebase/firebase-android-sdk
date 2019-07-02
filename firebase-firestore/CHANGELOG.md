@@ -1,7 +1,8 @@
 # Unreleased
-- [fixed] Fixed an internal assertion that was triggered when an
-  update with a `FieldValue.serverTimestamp()` and an update with a
+- [fixed] Fixed an internal assertion that was triggered when an update
+  with a `FieldValue.serverTimestamp()` and an update with a
   `FieldValue.increment()` were pending for the same document (#491).
+- [changed] Improved performance of queries with large result sets.
 - [changed] Improved performance for queries with filters that only return a
   small subset of the documents in a collection.
 - [changed] Instead of failing silently, Firestore now crashes the client app

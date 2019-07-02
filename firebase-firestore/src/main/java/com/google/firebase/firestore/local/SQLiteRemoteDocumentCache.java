@@ -20,15 +20,19 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.util.BackgroundQueue;
+import com.google.firebase.firestore.util.Executors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
@@ -118,7 +122,11 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
-    Map<DocumentKey, Document> results = new HashMap<>();
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
+
+    ImmutableSortedMap<DocumentKey, Document>[] matchingDocuments =
+        (ImmutableSortedMap<DocumentKey, Document>[])
+            new ImmutableSortedMap[] {DocumentCollections.emptyDocumentMap()};
 
     db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
         .binding(prefixPath, prefixSuccessorPath)
@@ -136,20 +144,31 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
                 return;
               }
 
-              MaybeDocument maybeDoc = decodeMaybeDocument(row.getBlob(1));
-              if (!(maybeDoc instanceof Document)) {
-                return;
-              }
+              byte[] rawDocument = row.getBlob(1);
 
-              Document doc = (Document) maybeDoc;
-              if (!query.matches(doc)) {
-                return;
-              }
+              // Since scheduling background tasks incurs overhead, we only dispatch to a background
+              // thread if there are still some documents remaining.
+              Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
+              executor.execute(
+                  () -> {
+                    MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
 
-              results.put(doc.getKey(), doc);
+                    if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
+                      synchronized (SQLiteRemoteDocumentCache.this) {
+                        matchingDocuments[0] =
+                            matchingDocuments[0].insert(maybeDoc.getKey(), (Document) maybeDoc);
+                      }
+                    }
+                  });
             });
 
-    return ImmutableSortedMap.Builder.fromMap(results, DocumentKey.comparator());
+    try {
+      backgroundQueue.drain();
+    } catch (InterruptedException e) {
+      fail("Interrupted while deserializing documents", e);
+    }
+
+    return matchingDocuments[0];
   }
 
   private String pathForKey(DocumentKey key) {
