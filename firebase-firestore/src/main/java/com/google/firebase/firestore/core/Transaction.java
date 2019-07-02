@@ -93,7 +93,8 @@ public class Transaction {
     if (mutations.size() != 0) {
       return Tasks.forException(
           new FirebaseFirestoreException(
-              "Transactions lookups are invalid after writes.", Code.FAILED_PRECONDITION));
+              "Firestore transactions require all reads to be executed before all writes.",
+              Code.FAILED_PRECONDITION));
     }
     return datastore
         .lookup(keys)
@@ -135,11 +136,7 @@ public class Transaction {
    */
   private Precondition preconditionForUpdate(DocumentKey key) {
     @Nullable SnapshotVersion version = this.readVersions.get(key);
-    if (version != null && version.equals(SnapshotVersion.NONE)) {
-      // The document to update doesn't exist, so fail the transaction.
-      throw new IllegalStateException("Can't update a document that doesn't exist.");
-    } else if (version != null) {
-      // Document exists, base precondition on document update time.
+    if (version != null && !version.equals(SnapshotVersion.NONE)) {
       return Precondition.updateTime(version);
     } else {
       // Document was not read, so we just use the preconditions for a blind write.

@@ -181,9 +181,9 @@ public class TransactionTest {
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
-    // TODO: should this really be raised as a FirebaseFirestoreException?
-    // Note that this test might change if transaction.get throws a FirebaseFirestoreException.
-    assertTrue(e instanceof IllegalStateException);
+    assertTrue(e instanceof FirebaseFirestoreException);
+    // This is the error surfaced by the backend.
+    assertEquals(Code.NOT_FOUND, ((FirebaseFirestoreException) e).getCode());
   }
 
   @Test
@@ -208,9 +208,9 @@ public class TransactionTest {
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
-    // TODO: should this really be raised as a FirebaseFirestoreException?
-    // Note that this test might change if transaction.update throws a FirebaseFirestoreException.
-    assertTrue(e instanceof IllegalStateException);
+    assertTrue(e instanceof FirebaseFirestoreException);
+    // This is the error surfaced by the backend.
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
   }
 
   @Test
@@ -237,6 +237,7 @@ public class TransactionTest {
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
     assertTrue(e instanceof FirebaseFirestoreException);
+    // This is the error surfaced by the backend.
     assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
   }
 
@@ -434,6 +435,7 @@ public class TransactionTest {
     // assertEquals(1234, snapshot.getDouble("count"));
     // snapshot = waitFor(doc2.get());
     // assertEquals(16, snapshot.getDouble("count"));
+    assertEquals(Code.FAILED_PRECONDITION, ((FirebaseFirestoreException) e).getCode());
     assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 
@@ -484,6 +486,7 @@ public class TransactionTest {
     // We currently require every document read to also be written.
     // TODO: Add this check back once we drop that.
     // assertEquals("bar", snapshot.getString("foo"));
+    assertEquals(Code.FAILED_PRECONDITION, ((FirebaseFirestoreException) e).getCode());
     assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 
