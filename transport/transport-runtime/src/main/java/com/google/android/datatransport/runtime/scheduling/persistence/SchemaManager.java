@@ -147,14 +147,16 @@ final class SchemaManager extends SQLiteOpenHelper {
   }
 
   private void upgrade(SQLiteDatabase db, int fromVersion, int toVersion) {
-    throw new RuntimeException(
-        "Migration from "
-            + fromVersion
-            + " to "
-            + toVersion
-            + " was requested, but cannot be performed. Only "
-            + INCREMENTAL_MIGRATIONS.size()
-            + " migrations are provided");
+    if(toVersion < INCREMENTAL_MIGRATIONS.size()) {
+      throw new RuntimeException(
+              "Migration from "
+                      + fromVersion
+                      + " to "
+                      + toVersion
+                      + " was requested, but cannot be performed. Only "
+                      + INCREMENTAL_MIGRATIONS.size()
+                      + " migrations are provided");
+    }
     for (int version = fromVersion; version < toVersion; version++) {
       INCREMENTAL_MIGRATIONS.get(version).upgrade(db);
     }

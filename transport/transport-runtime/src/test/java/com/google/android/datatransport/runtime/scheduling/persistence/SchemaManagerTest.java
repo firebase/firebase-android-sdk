@@ -132,6 +132,15 @@ public class SchemaManagerTest {
     assertThat(store.loadBatch(CONTEXT1)).doesNotContain(event1);
   }
 
+  @Test(expected = RuntimeException.class)
+  public void upgaden_toANonExistentVersion_fails() {
+    int oldVersion = 1;
+    int nonExistentVersion = 1000;
+    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
+
+    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, nonExistentVersion);
+  }
+
   private PersistedEvent simulatedPersistOnV1Database(
       SchemaManager schemaManager, TransportContext transportContext, EventInternal eventInternal) {
     SQLiteDatabase db = schemaManager.getWritableDatabase();
