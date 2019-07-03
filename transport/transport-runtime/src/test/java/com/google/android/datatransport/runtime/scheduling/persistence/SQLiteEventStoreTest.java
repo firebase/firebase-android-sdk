@@ -59,9 +59,7 @@ public class SQLiteEventStoreTest {
         clock,
         new UptimeClock(),
         config,
-        new SchemaManager(
-            RuntimeEnvironment.application,
-            SCHEMA_VERSION));
+        new SchemaManager(RuntimeEnvironment.application, SCHEMA_VERSION));
   }
 
   @Test
