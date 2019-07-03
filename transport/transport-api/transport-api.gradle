@@ -16,7 +16,10 @@ plugins {
     id 'firebase-library'
 }
 
-firebaseLibrary.publishJavadoc = false
+firebaseLibrary{
+    publishJavadoc = false
+    staticAnalysis.disableKotlinInteropLint()
+}
 
 android {
     compileSdkVersion 28

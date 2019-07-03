@@ -127,19 +127,6 @@ configure(subprojects) {
     }
 
     apply plugin: "org.jlleitschuh.gradle.ktlint"
-
-    // Adds firebase custom errorprone checks to the annotation processor classpath.
-    configurations.whenObjectAdded {
-        if (it.name == 'annotationProcessor' && project != project(':tools:errorprone')) {
-            dependencies {
-                annotationProcessor project(':tools:errorprone')
-            }
-        } else if (it.name == 'lintChecks' && project != project(':tools:lint')) {
-            dependencies {
-                lintChecks project(':tools:lint')
-            }
-        }
-    }
 }
 
 

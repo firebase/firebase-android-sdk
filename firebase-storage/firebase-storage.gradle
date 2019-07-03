@@ -21,6 +21,7 @@ firebaseLibrary {
     testLab.enabled = true
     publishJavadoc = true
     publishSources = true
+    staticAnalysis.disableKotlinInteropLint()
 }
 
 android {
