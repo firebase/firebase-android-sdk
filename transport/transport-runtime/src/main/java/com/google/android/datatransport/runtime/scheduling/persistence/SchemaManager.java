@@ -147,7 +147,7 @@ final class SchemaManager extends SQLiteOpenHelper {
   }
 
   private void upgrade(SQLiteDatabase db, int fromVersion, int toVersion) {
-    if (toVersion < INCREMENTAL_MIGRATIONS.size()) {
+    if (toVersion > INCREMENTAL_MIGRATIONS.size()) {
       throw new RuntimeException(
           "Migration from "
               + fromVersion

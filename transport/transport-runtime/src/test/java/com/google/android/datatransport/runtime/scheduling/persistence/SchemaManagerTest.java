@@ -103,37 +103,36 @@ public class SchemaManagerTest {
   }
 
   @Test
-  public void downgradeFromAFutureVersion_withEmptyDB_allowsPersistanceAfterMigration() {
-    int newVersion = 2;
-    int futureVersion = 3;
-    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, futureVersion);
+  public void downgradeV2ToV1_withEmptyDB_allowsPersistanceAfterMigration() {
+    int fromVersion = 2;
+    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, fromVersion);
 
     SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
     // We simulate operations as done by an older SQLLiteEventStore at V1
     // We cannot simulate older operations with a newer client
     simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);
 
-    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), futureVersion, newVersion);
+    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), fromVersion, -1);
     PersistedEvent event2 = store.persist(CONTEXT2, EVENT2);
 
     assertThat(store.loadBatch(CONTEXT2)).containsExactly(event2);
   }
 
   @Test
-  public void downgradeFromAFutureVersion_withNonEmptyDB_isLossy() {
-    int newVersion = 2;
-    int futureVersion = 3;
-    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, futureVersion);
+  public void downgradeV2ToV1_withNonEmptyDB_isLossy() {
+    int fromVersion = 2;
+    int toVersion = fromVersion - 1;
+    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, fromVersion);
     SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
     PersistedEvent event1 = store.persist(CONTEXT1, EVENT1);
 
-    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), futureVersion, newVersion);
+    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), toVersion, fromVersion);
 
     assertThat(store.loadBatch(CONTEXT1)).doesNotContain(event1);
   }
 
   @Test(expected = RuntimeException.class)
-  public void upgaden_toANonExistentVersion_fails() {
+  public void upgrade_toANonExistentVersion_fails() {
     int oldVersion = 1;
     int nonExistentVersion = 1000;
     SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
