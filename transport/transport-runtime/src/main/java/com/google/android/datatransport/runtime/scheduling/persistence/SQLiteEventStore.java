@@ -14,14 +14,13 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import static android.util.Base64.DEFAULT;
-import static android.util.Base64.encodeToString;
-
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabaseLockedException;
 import android.os.SystemClock;
+import android.util.Base64;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
@@ -131,7 +130,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     record.put("priority", transportContext.getPriority().ordinal());
     record.put("next_request_ms", 0);
     if (transportContext.getExtras() != null) {
-      record.put("extras", encodeToString(transportContext.getExtras(), DEFAULT));
+      record.put("extras", Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
     }
 
     return db.insert("transport_contexts", null, record);
@@ -148,7 +147,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
     if (transportContext.getExtras() != null) {
       selection.append(" and extras = ?");
-      selectionArgs.add(encodeToString(transportContext.getExtras(), DEFAULT));
+      selectionArgs.add(Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
     }
 
     return tryWithCursor(

@@ -147,12 +147,8 @@ final class SchemaManager extends SQLiteOpenHelper {
   }
 
   private void upgrade(SQLiteDatabase db, int fromVersion, int toVersion) {
-    int highestVersion = INCREMENTAL_MIGRATIONS.size();
-
-    for (int version = 1; version <= highestVersion; version++) {
-      if (fromVersion < version && toVersion >= version) {
-        INCREMENTAL_MIGRATIONS.get(version - 1).upgrade(db);
-      }
+    for (int version = fromVersion; version < toVersion; version++) {
+      INCREMENTAL_MIGRATIONS.get(version).upgrade(db);
     }
   }
 
