@@ -77,7 +77,9 @@ public class GrpcCallProvider {
             () -> {
               ManagedChannel channel = initChannel(context, databaseInfo);
               FirestoreGrpc.FirestoreStub firestoreStub =
-                  FirestoreGrpc.newStub(channel).withCallCredentials(firestoreHeaders);
+                  FirestoreGrpc.newStub(channel)
+                      .withCallCredentials(firestoreHeaders)
+                      .withExecutor(asyncQueue.getExecutor());
               callOptions = firestoreStub.getCallOptions();
               return channel;
             });
