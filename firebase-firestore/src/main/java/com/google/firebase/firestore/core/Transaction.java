@@ -136,7 +136,10 @@ public class Transaction {
    */
   private Precondition preconditionForUpdate(DocumentKey key) {
     @Nullable SnapshotVersion version = this.readVersions.get(key);
-    if (version != null && !version.equals(SnapshotVersion.NONE)) {
+    if (version != null && version.equals(SnapshotVersion.NONE)) {
+      // The document to update doesn't exist, so fail the transaction.
+      throw new IllegalStateException("Can't update a document that doesn't exist.");
+    } else if (version != null) {
       // Document exists, just base precondition on document update time.
       return Precondition.updateTime(version);
     } else {
@@ -171,6 +174,7 @@ public class Transaction {
           new FirebaseFirestoreException(
               "Transaction has already completed.", Code.INVALID_ARGUMENT));
     }
+
     HashSet<DocumentKey> unwritten = new HashSet<>(readVersions.keySet());
     // For each mutation, note that the doc was written.
     for (Mutation mutation : mutations) {

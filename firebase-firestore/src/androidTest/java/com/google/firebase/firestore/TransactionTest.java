@@ -181,9 +181,7 @@ public class TransactionTest {
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
-    assertTrue(e instanceof FirebaseFirestoreException);
-    // This is the error surfaced by the backend.
-    assertEquals(Code.NOT_FOUND, ((FirebaseFirestoreException) e).getCode());
+    assertEquals("Can't update a document that doesn't exist.", e.getMessage());
   }
 
   @Test
@@ -208,9 +206,7 @@ public class TransactionTest {
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
-    assertTrue(e instanceof FirebaseFirestoreException);
-    // This is the error surfaced by the backend.
-    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
+    assertEquals("Can't update a document that doesn't exist.", e.getMessage());
   }
 
   @Test
@@ -475,6 +471,37 @@ public class TransactionTest {
                   return transaction.get(doc);
                 }));
     assertNotNull(e);
+  }
+
+  @Test
+  public void testReadandUpdateNonExistentDocumentWithExternalWrite() {
+    final FirebaseFirestore firestore = testFirestore();
+    DocumentReference doc = firestore.collection("nonexistent").document();
+    AtomicInteger counter = new AtomicInteger(0);
+
+    // Make a transaction that will fail
+    Task<Void> transactionTask =
+        firestore.runTransaction(
+            transaction -> {
+              counter.incrementAndGet();
+              // Get and update a document that doesn't exist so that the transaction fails
+              transaction.get(doc);
+              // Do a write outside of the transaction.
+              doc.set(map("count", Math.random()));
+              // Now try to update the other doc from within the transaction.
+              // This should fail, because the document didn't exist at the
+              // start of the transaction.
+              transaction.update(doc, "count", "16");
+              fail("transaction.update should fail");
+              return null;
+            });
+
+    waitForException(transactionTask);
+    assertFalse(transactionTask.isSuccessful());
+    Exception e = transactionTask.getException();
+    assertEquals("Can't update a document that doesn't exist.", e.getMessage());
+    // The transaction should not be retried after the initial failure.
+    assertEquals(1, counter.get());
   }
 
   @Test
