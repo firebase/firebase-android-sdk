@@ -75,32 +75,24 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   static int SCHEMA_VERSION = 2;
 
-  static final SchemaManager.Migration MIGRATE_TO_V1 =
-      (db, fromVersion, toVersion) -> {
-        if (fromVersion < 1 && toVersion >= 1) {
-          db.execSQL(CREATE_EVENTS_SQL_V1);
-          db.execSQL(CREATE_EVENT_METADATA_SQL_V1);
-          db.execSQL(CREATE_CONTEXTS_SQL_V1);
-          db.execSQL(CREATE_EVENT_BACKEND_INDEX_V1);
-          db.execSQL(CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1);
-        }
+  private static final SchemaManager.Migration MIGRATE_TO_V1 =
+      (db) -> {
+        db.execSQL(CREATE_EVENTS_SQL_V1);
+        db.execSQL(CREATE_EVENT_METADATA_SQL_V1);
+        db.execSQL(CREATE_CONTEXTS_SQL_V1);
+        db.execSQL(CREATE_EVENT_BACKEND_INDEX_V1);
+        db.execSQL(CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1);
       };
 
-  static final SchemaManager.Migration MIGRATE_TO_V2 =
-      (db, fromVersion, toVersion) -> {
-        if (fromVersion < 2 && toVersion >= 2) {
-          db.execSQL("ALTER TABLE transport_contexts ADD COLUMN extras TEXT");
-          db.execSQL(
-              "CREATE UNIQUE INDEX contexts_backend_priority_extras on transport_contexts(backend_name, priority, extras)");
-          db.execSQL("DROP INDEX contexts_backend_priority");
-        }
+  private static final SchemaManager.Migration MIGRATE_TO_V2 =
+      (db) -> {
+        db.execSQL("ALTER TABLE transport_contexts ADD COLUMN extras BLOB");
+        db.execSQL(
+            "CREATE UNIQUE INDEX contexts_backend_priority_extras on transport_contexts(backend_name, priority, extras)");
+        db.execSQL("DROP INDEX contexts_backend_priority");
       };
 
-  static final List<Migration> INCREMENTAL_MIGRATIONS;
-
-  static {
-    INCREMENTAL_MIGRATIONS = Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2);
-  }
+  static final List<Migration> INCREMENTAL_MIGRATIONS = Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2);
 
   @Inject
   SchemaManager(Context context, @Named("SCHEMA_VERSION") int schemaVersion) {
@@ -155,12 +147,16 @@ final class SchemaManager extends SQLiteOpenHelper {
   }
 
   private void upgrade(SQLiteDatabase db, int fromVersion, int toVersion) {
-    for (Migration m : INCREMENTAL_MIGRATIONS) {
-      m.upgrade(db, fromVersion, toVersion);
+    int highestVersion = INCREMENTAL_MIGRATIONS.size();
+
+    for (int version = 1; version <= highestVersion; version++) {
+      if (fromVersion < version && toVersion >= version) {
+        INCREMENTAL_MIGRATIONS.get(version - 1).upgrade(db);
+      }
     }
   }
 
   public interface Migration {
-    void upgrade(SQLiteDatabase db, int fromVersion, int toVersion);
+    void upgrade(SQLiteDatabase db);
   }
 }

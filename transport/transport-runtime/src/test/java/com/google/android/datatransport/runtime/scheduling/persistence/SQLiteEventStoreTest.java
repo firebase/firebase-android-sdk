@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.*;
+import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.android.datatransport.Priority;
@@ -60,10 +61,6 @@ public class SQLiteEventStoreTest {
         config,
         new SchemaManager(
             RuntimeEnvironment.application,
-            Arrays.asList(EventStoreModule.MIGRATE_TO_V1, EventStoreModule.MIGRATE_TO_V2),
-            DROP_EVENTS_SQL,
-            DROP_EVENT_METADATA_SQL,
-            DROP_CONTEXTS_SQL,
             SCHEMA_VERSION));
   }
 

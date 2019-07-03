@@ -147,7 +147,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
                 String.valueOf(transportContext.getPriority().ordinal())));
 
     if (transportContext.getExtras() != null) {
-      selection.append("and extras = ?");
+      selection.append(" and extras = ?");
       selectionArgs.add(encodeToString(transportContext.getExtras(), DEFAULT));
     }
 
