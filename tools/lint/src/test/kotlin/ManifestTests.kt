@@ -19,6 +19,7 @@ import com.android.tools.lint.checks.infrastructure.TestLintResult
 import com.android.tools.lint.checks.infrastructure.TestResultChecker
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
+import com.google.firebase.lint.checks.ManifestElementHasNoExportedAttributeDetector.Component
 import java.lang.AssertionError
 
 internal fun manifestWith(cmp: Component, exported: Boolean? = null): String {
@@ -76,5 +77,5 @@ class Test : LintDetectorTest() {
 
     override fun getDetector(): Detector = ManifestElementHasNoExportedAttributeDetector()
 
-    override fun getIssues(): MutableList<Issue> = mutableListOf(EXPORTED_MISSING_ISSUE)
+    override fun getIssues(): MutableList<Issue> = mutableListOf(ManifestElementHasNoExportedAttributeDetector.EXPORTED_MISSING_ISSUE)
 }

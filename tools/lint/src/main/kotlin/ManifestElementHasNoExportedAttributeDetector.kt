@@ -15,8 +15,6 @@
 package com.google.firebase.lint.checks
 
 import com.android.SdkConstants
-import com.android.tools.lint.client.api.IssueRegistry
-import com.android.tools.lint.detector.api.CURRENT_API
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
@@ -27,35 +25,27 @@ import com.android.tools.lint.detector.api.XmlContext
 import com.android.tools.lint.detector.api.XmlScanner
 import org.w3c.dom.Element
 
-class CheckRegistry : IssueRegistry() {
-    override val issues: List<Issue>
-        get() = listOf(EXPORTED_MISSING_ISSUE)
-
-    override val api: Int
-        get() = CURRENT_API
-    override val minApi: Int
-        get() = 2
-}
-
-internal val EXPORTED_MISSING_ISSUE: Issue = Issue.create(
-        "ManifestElementHasNoExportedAttribute",
-        "`android:exported` attribute missing on element",
-        "Leaving this attribute out may unintentionally lead to an exported component, please " +
-                "specify the value explicitly.",
-        Category.SECURITY,
-        1,
-        Severity.ERROR,
-        Implementation(ManifestElementHasNoExportedAttributeDetector::class.java, Scope.MANIFEST_SCOPE))
-
-enum class Component(val xmlName: String) {
-    ACTIVITY("activity"),
-    ACTIVITY_ALIAS("activity-alias"),
-    PROVIDER("provider"),
-    RECEIVER("receiver"),
-    SERVICE("service"),
-}
-
 class ManifestElementHasNoExportedAttributeDetector : Detector(), XmlScanner {
+
+    enum class Component(val xmlName: String) {
+        ACTIVITY("activity"),
+        ACTIVITY_ALIAS("activity-alias"),
+        PROVIDER("provider"),
+        RECEIVER("receiver"),
+        SERVICE("service"),
+    }
+
+    companion object {
+        internal val EXPORTED_MISSING_ISSUE: Issue = Issue.create(
+                "ManifestElementHasNoExportedAttribute",
+                "`android:exported` attribute missing on element",
+                "Leaving this attribute out may unintentionally lead to an exported component, please " +
+                        "specify the value explicitly.",
+                Category.SECURITY,
+                1,
+                Severity.ERROR,
+                Implementation(ManifestElementHasNoExportedAttributeDetector::class.java, Scope.MANIFEST_SCOPE))
+    }
 
     override fun getApplicableElements(): Collection<String>? = Component.values().map { it.xmlName }
 
