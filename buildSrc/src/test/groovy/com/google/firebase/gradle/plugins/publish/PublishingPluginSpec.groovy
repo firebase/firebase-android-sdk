@@ -32,7 +32,7 @@ class PublishingPluginSpec extends Specification {
         firebaseLibrary {
           staticAnalysis {
             errorproneCheckProjects = []
-            androidLintCheckProjects []
+            androidLintCheckProjects = []
           }
         }
         group = '${group}'

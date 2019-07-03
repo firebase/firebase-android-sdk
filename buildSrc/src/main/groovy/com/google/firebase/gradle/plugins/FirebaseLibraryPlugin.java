@@ -83,23 +83,28 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
 
   private static void setupStaticAnalysis(
       Project project, LibraryExtension android, FirebaseLibraryExtension library) {
-    project
-        .getConfigurations()
-        .all(
-            c -> {
-              if ("annotationProcessor".equals(c.getName())) {
-                for (String checkProject : library.staticAnalysis.errorproneCheckProjects) {
-                  project
-                      .getDependencies()
-                      .add("annotationProcessor", project.project(checkProject));
-                }
-              }
-              if ("lintChecks".equals(c.getName())) {
-                for (String checkProject : library.staticAnalysis.androidLintCheckProjects) {
-                  project.getDependencies().add("lintChecks", project.project(checkProject));
-                }
-              }
-            });
+    project.afterEvaluate(
+        p ->
+            project
+                .getConfigurations()
+                .all(
+                    c -> {
+                      if ("annotationProcessor".equals(c.getName())) {
+                        for (String checkProject : library.staticAnalysis.errorproneCheckProjects) {
+                          project
+                              .getDependencies()
+                              .add("annotationProcessor", project.project(checkProject));
+                        }
+                      }
+                      if ("lintChecks".equals(c.getName())) {
+                        for (String checkProject :
+                            library.staticAnalysis.androidLintCheckProjects) {
+                          project
+                              .getDependencies()
+                              .add("lintChecks", project.project(checkProject));
+                        }
+                      }
+                    }));
 
     library.staticAnalysis.subscribeToKotlinInteropLintDisabled(
         () ->
