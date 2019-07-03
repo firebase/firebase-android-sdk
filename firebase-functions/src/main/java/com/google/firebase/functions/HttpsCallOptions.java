@@ -39,6 +39,15 @@ class HttpsCallOptions {
     this.timeoutUnits = units;
   }
 
+  /**
+   * Returns the timeout for calls from this instance of Functions.
+   *
+   * @return The timeout, in milliseconds.
+   */
+  public long getTimeout() {
+    return timeoutUnits.toMillis(timeout);
+  }
+
   /** Creates a new OkHttpClient with these options applied to it. */
   OkHttpClient apply(OkHttpClient client) {
     return client.newBuilder().callTimeout(timeout, timeoutUnits).build();
