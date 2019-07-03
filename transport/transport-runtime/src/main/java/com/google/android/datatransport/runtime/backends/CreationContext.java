@@ -15,6 +15,9 @@
 package com.google.android.datatransport.runtime.backends;
 
 import android.content.Context;
+
+import androidx.annotation.Nullable;
+
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.auto.value.AutoValue;
 
@@ -40,4 +43,8 @@ public abstract class CreationContext {
       Context applicationContext, Clock wallClock, Clock monotonicClock) {
     return new AutoValue_CreationContext(applicationContext, wallClock, monotonicClock);
   }
+  /** Returns the backend name. */
+  @Nullable
+  public abstract String getBackendName();
+
 }

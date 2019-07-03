@@ -22,16 +22,25 @@ import com.google.android.datatransport.runtime.backends.TransportBackend;
 
 @Keep
 public class CctBackendFactory implements BackendFactory {
-  private static final String URL =
+  private static final String CCT_URL =
       mergeStrings("hts/frbslgiggolai.o/0clgbth", "tp:/ieaeogn.ogepscmvc/o/ac");
+
+  private static final String FLG_URL = "https://foo.com/url";
 
   @Override
   public TransportBackend create(CreationContext creationContext) {
+    final String url;
+    if(creationContext.getBackendName() == "cct") {
+      url = FLG_URL;
+    } else {
+      url = CCT_URL;
+    }
+
     return new CctTransportBackend(
-        creationContext.getApplicationContext(),
-        URL,
-        creationContext.getWallClock(),
-        creationContext.getMonotonicClock());
+            creationContext.getApplicationContext(),
+            url,
+            creationContext.getWallClock(),
+            creationContext.getMonotonicClock());
   }
 
   @VisibleForTesting
