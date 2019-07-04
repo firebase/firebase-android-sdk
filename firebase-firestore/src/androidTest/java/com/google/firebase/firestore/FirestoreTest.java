@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provide
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirebaseApp;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -38,6 +40,7 @@ import static org.junit.Assert.fail;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.Query.Direction;
@@ -1023,4 +1026,41 @@ public class FirestoreTest {
     FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
     assertEquals(Code.FAILED_PRECONDITION, firestoreException.getCode());
   }
+
+  @Test
+  public void testRestartFirestoreLeadsToNewInstance() {
+    FirebaseApp app = testFirebaseApp();
+    FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
+    FirebaseFirestore sameInstance = FirebaseFirestore.getInstance(app);
+
+    assertSame(instance, sameInstance);
+    waitFor(instance.document("abc/123").set(Collections.singletonMap("field", 100L)));
+
+    instance.shutdown();
+    FirebaseFirestore newInstance = FirebaseFirestore.getInstance(app);
+
+    // Verify new instance works.
+    DocumentSnapshot doc = waitFor(newInstance.document("abc/123").get());
+    assertEquals(doc.get("field"), 100L);
+    waitFor(newInstance.document("abc/123").delete());
+
+    // Verify it is different instance.
+    assertNotSame(instance, newInstance);
+  }
+
+  /*
+  @Test
+  public void testAppDeleteLeadsToFirestoreShutdown() {
+    FirebaseApp app = testFirebaseApp();
+    FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
+    instance.document("abc/123").set(Collections.singletonMap("Field", 100));
+
+    app.delete();
+
+    try {
+      instance.document("abc/123").get();
+    } catch (Exception e) {
+
+    }
+  }*/
 }

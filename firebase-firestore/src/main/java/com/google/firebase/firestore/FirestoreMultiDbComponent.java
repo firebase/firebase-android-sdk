@@ -45,12 +45,23 @@ class FirestoreMultiDbComponent {
 
   /** Provides instances of Firestore for given database names. */
   @NonNull
-  synchronized FirebaseFirestore get(@NonNull String databaseName) {
-    FirebaseFirestore firestore = instances.get(databaseName);
+  synchronized FirebaseFirestore get(@NonNull String databaseId) {
+    FirebaseFirestore firestore = instances.get(databaseId);
     if (firestore == null) {
-      firestore = FirebaseFirestore.newInstance(context, app, authProvider, databaseName);
-      instances.put(databaseName, firestore);
+      firestore = FirebaseFirestore.newInstance(context, app, authProvider, databaseId);
+      instances.put(databaseId, firestore);
     }
     return firestore;
+  }
+
+  /**
+   * Remove the instance of a given database name from this component, such that if {@link
+   * FirestoreMultiDbComponent#get(String)} is called again with the same name, a new instance of
+   * {@link FirebaseFirestore} is created.
+   *
+   * <p>It is a no-op if there is no instance associated with the given database name.
+   */
+  synchronized void remove(@NonNull String databaseId) {
+    instances.remove(databaseId);
   }
 }

@@ -117,7 +117,13 @@ public class FirebaseFirestore {
     // so there is no need to include it in the persistence key.
     String persistenceKey = app.getName();
 
-    return new FirebaseFirestore(context, databaseId, persistenceKey, provider, queue, app);
+    FirebaseFirestore firestore =
+        new FirebaseFirestore(context, databaseId, persistenceKey, provider, queue, app);
+    app.addLifecycleEventListener(
+        /* onDeleted */ (firebaseAppName, options) -> {
+          firestore.shutdown(/* fromAppDeletion */ true);
+        });
+    return firestore;
   }
 
   @VisibleForTesting
@@ -329,11 +335,20 @@ public class FirebaseFirestore {
     return batch.commit();
   }
 
-  @VisibleForTesting
-  Task<Void> shutdown() {
+  Task<Void> shutdown(boolean fromAppDeletion) {
+    if (!fromAppDeletion && this.getApp() != null) {
+      FirestoreMultiDbComponent component = this.getApp().get(FirestoreMultiDbComponent.class);
+      component.remove(this.databaseId.getDatabaseId());
+    }
     // The client must be initialized to ensure that all subsequent API usage throws an exception.
     this.ensureClientConfigured();
     return client.shutdown();
+  }
+
+  @VisibleForTesting
+  // TODO: Make this public
+  Task<Void> shutdown() {
+    return shutdown(/* fromAppDeletion */ false);
   }
 
   @VisibleForTesting
