@@ -138,7 +138,7 @@ public class GrpcCallProvider {
   /** Shuts down the gRPC channel and the internal worker queue. */
   void shutdown() {
     channelTask.addOnCompleteListener(
-        asyncQueue.getExecutor(),
+        asyncQueue.getExecutorForShutdown(),
         task -> {
           ManagedChannel channel = task.getResult();
           channel.shutdown();

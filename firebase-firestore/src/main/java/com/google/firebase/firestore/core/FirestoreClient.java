@@ -75,7 +75,6 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
-  private volatile boolean clientShutdown = false;
 
   // LRU-related
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
@@ -138,21 +137,21 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   /** Shuts down this client, cancels all writes / listeners, and releases all resources. */
   public Task<Void> shutdown() {
     credentialsProvider.removeChangeListener();
-    return asyncQueue.enqueue(
+    return asyncQueue.enqueueAndInitiateShutdown(
         () -> {
-          if (!this.clientShutdown) {
-            remoteStore.shutdown();
-            persistence.shutdown();
-            if (lruScheduler != null) {
-              lruScheduler.stop();
-            }
-            this.clientShutdown = true;
+          remoteStore.shutdown();
+          persistence.shutdown();
+          if (lruScheduler != null) {
+            lruScheduler.stop();
           }
         });
   }
 
+  /** Has this client been shutdown. */
   public boolean isShutdown() {
-    return this.clientShutdown;
+    // Technically, the asyncQueue is still running, but only accepting tasks related to shutdown
+    // or supposed to be run after shutdown. It is effectively shut down to the eyes of users.
+    return this.asyncQueue.isShuttingDown();
   }
 
   /** Starts listening to a query. */
@@ -272,8 +271,8 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   }
 
   private void verifyNotShutdown() {
-    if (this.clientShutdown) {
-      throw new IllegalArgumentException("The client has already been shutdown");
+    if (this.isShutdown()) {
+      throw new IllegalStateException("The client has already been shutdown");
     }
   }
 

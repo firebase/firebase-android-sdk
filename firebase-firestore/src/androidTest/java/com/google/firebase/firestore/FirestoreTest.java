@@ -1048,19 +1048,24 @@ public class FirestoreTest {
     assertNotSame(instance, newInstance);
   }
 
-  /*
   @Test
   public void testAppDeleteLeadsToFirestoreShutdown() {
     FirebaseApp app = testFirebaseApp();
     FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
-    instance.document("abc/123").set(Collections.singletonMap("Field", 100));
+    waitFor(instance.document("abc/123").set(Collections.singletonMap("Field", 100)));
 
     app.delete();
 
-    try {
-      instance.document("abc/123").get();
-    } catch (Exception e) {
+    assertTrue(instance.getClient().isShutdown());
+  }
 
-    }
-  }*/
+  @Test(expected = IllegalStateException.class)
+  public void testNewOperationThrowsAfterFirestoreShutdown() {
+    FirebaseFirestore instance = testFirestore();
+    waitFor(instance.document("abc/123").set(Collections.singletonMap("Field", 100)));
+
+    instance.shutdown();
+
+    waitForException(instance.document("abc/123").get());
+  }
 }

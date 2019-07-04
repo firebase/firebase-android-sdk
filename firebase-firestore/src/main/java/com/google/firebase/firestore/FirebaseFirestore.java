@@ -411,7 +411,7 @@ public class FirebaseFirestore {
   @PublicApi
   public Task<Void> clearPersistence() {
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-    asyncQueue.enqueueAndForget(
+    asyncQueue.enqueueAndForgetEvenAfterShutdown(
         () -> {
           try {
             if (client != null && !client.isShutdown()) {
