@@ -476,32 +476,33 @@ public class TransactionTest {
   @Test
   public void testReadandUpdateNonExistentDocumentWithExternalWrite() {
     final FirebaseFirestore firestore = testFirestore();
-    DocumentReference doc = firestore.collection("nonexistent").document();
     AtomicInteger counter = new AtomicInteger(0);
 
     // Make a transaction that will fail
     Task<Void> transactionTask =
         firestore.runTransaction(
             transaction -> {
-              counter.incrementAndGet();
-              // Get and update a document that doesn't exist so that the transaction fails
+              int count = counter.incrementAndGet();
+              // Get and update a document that doesn't exist so that the transaction fails.
+              DocumentReference doc = firestore.collection("nonexistent" + count).document();
               transaction.get(doc);
               // Do a write outside of the transaction.
-              doc.set(map("count", Math.random()));
+              doc.set(map("count", count));
               // Now try to update the other doc from within the transaction.
               // This should fail, because the document didn't exist at the
               // start of the transaction.
-              transaction.update(doc, "count", "16");
-              fail("transaction.update should fail");
+              transaction.update(doc, "count", 1234);
               return null;
             });
 
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
+    assertTrue(e instanceof FirebaseFirestoreException);
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
     assertEquals("Can't update a document that doesn't exist.", e.getMessage());
-    // The transaction should not be retried after the initial failure.
-    assertEquals(1, counter.get());
+    // commit() should fail the first time, followed by 5 failures in the subsequent retries.
+    assertEquals(6, counter.get());
   }
 
   @Test
@@ -509,6 +510,7 @@ public class TransactionTest {
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("foo").document();
     waitFor(doc.set(map("foo", "bar")));
+
     Exception e = waitForException(firestore.runTransaction(transaction -> transaction.get(doc)));
     // We currently require every document read to also be written.
     // TODO: Add this check back once we drop that.

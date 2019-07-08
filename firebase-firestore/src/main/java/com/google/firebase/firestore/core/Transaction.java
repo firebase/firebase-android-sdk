@@ -53,6 +53,12 @@ public class Transaction {
   private final ArrayList<Mutation> mutations = new ArrayList<>();
   private boolean committed;
 
+  /**
+   * An error that may have occurred as a consequence of a write. If set, the task will fail instead
+   * of trying to commit.
+   */
+  private FirebaseFirestoreException lastWriteError;
+
   public Transaction(Datastore d) {
     datastore = d;
   }
@@ -134,11 +140,12 @@ public class Transaction {
    * Returns the precondition for a document if the operation is an update, based on the provided
    * UpdateOptions.
    */
-  private Precondition preconditionForUpdate(DocumentKey key) {
+  private Precondition preconditionForUpdate(DocumentKey key) throws FirebaseFirestoreException {
     @Nullable SnapshotVersion version = this.readVersions.get(key);
     if (version != null && version.equals(SnapshotVersion.NONE)) {
       // The document to update doesn't exist, so fail the transaction.
-      throw new IllegalStateException("Can't update a document that doesn't exist.");
+      throw new FirebaseFirestoreException(
+          "Can't update a document that doesn't exist.", Code.INVALID_ARGUMENT);
     } else if (version != null) {
       // Document exists, just base precondition on document update time.
       return Precondition.updateTime(version);
@@ -158,7 +165,11 @@ public class Transaction {
    * called.
    */
   public void update(DocumentKey key, ParsedUpdateData data) {
-    write(data.toMutationList(key, preconditionForUpdate(key)));
+    try {
+      write(data.toMutationList(key, preconditionForUpdate(key)));
+    } catch (FirebaseFirestoreException e) {
+      lastWriteError = e;
+    }
   }
 
   public void delete(DocumentKey key) {
@@ -173,6 +184,10 @@ public class Transaction {
       return Tasks.forException(
           new FirebaseFirestoreException(
               "Transaction has already completed.", Code.INVALID_ARGUMENT));
+    }
+
+    if (lastWriteError != null) {
+      return Tasks.forException(lastWriteError);
     }
 
     HashSet<DocumentKey> unwritten = new HashSet<>(readVersions.keySet());
