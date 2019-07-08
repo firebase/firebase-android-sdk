@@ -140,8 +140,10 @@ class PublishingPlugin implements Plugin<Project> {
             def buildMavenZip = project.task('buildMavenZip', type: Zip) {
                 dependsOn publishProjectsToBuildDir
 
+                archiveFileName = 'm2repository.zip'
+                destinationDirectory = project.buildDir
+
                 from "$project.buildDir/m2repository"
-                archiveName "$project.buildDir/m2repository.zip"
             }
 
             def info = project.task('publishPrintInfo') {

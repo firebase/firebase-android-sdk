@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.ApiUtil.newInstance;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.FieldValue;

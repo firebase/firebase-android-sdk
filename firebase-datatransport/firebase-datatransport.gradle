@@ -19,6 +19,7 @@ plugins {
 firebaseLibrary {
     publishJavadoc = false
     publishSources = true
+    staticAnalysis.disableKotlinInteropLint()
 }
 
 android {

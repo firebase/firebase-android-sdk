@@ -229,15 +229,15 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
-    acknowledgeMutation(0);
-    assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+    acknowledgeMutation(1);
+    assertChanged(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
     if (garbageCollectorIsEager()) {
       // Nothing is pinning this anymore, as it has been acknowledged and there are no targets
       // active.
       assertNotContains("foo/bar");
     } else {
       assertContains(
-          doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
+          doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
     }
   }
 

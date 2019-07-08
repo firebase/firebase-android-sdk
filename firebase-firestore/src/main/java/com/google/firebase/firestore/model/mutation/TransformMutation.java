@@ -25,9 +25,7 @@ import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -103,7 +101,7 @@ public final class TransformMutation extends Mutation {
         serverTransformResults(doc, mutationResult.getTransformResults());
     ObjectValue newData = transformObject(doc.getData(), transformResults);
     return new Document(
-        getKey(), mutationResult.getVersion(), newData, Document.DocumentState.COMMITTED_MUTATIONS);
+        getKey(), mutationResult.getVersion(), Document.DocumentState.COMMITTED_MUTATIONS, newData);
   }
 
   @Nullable
@@ -117,29 +115,34 @@ public final class TransformMutation extends Mutation {
     }
 
     Document doc = requireDocument(maybeDoc);
-    List<FieldValue> transformResults = localTransformResults(localWriteTime, baseDoc);
+    List<FieldValue> transformResults = localTransformResults(localWriteTime, maybeDoc, baseDoc);
     ObjectValue newData = transformObject(doc.getData(), transformResults);
     return new Document(
-        getKey(), doc.getVersion(), newData, Document.DocumentState.LOCAL_MUTATIONS);
+        getKey(), doc.getVersion(), Document.DocumentState.LOCAL_MUTATIONS, newData);
   }
 
+  @Nullable
   @Override
-  public FieldMask getFieldMask() {
-    Set<FieldPath> fieldMask = new HashSet<>();
-    for (FieldTransform transform : fieldTransforms) {
-      fieldMask.add(transform.getFieldPath());
-    }
-    return FieldMask.fromSet(fieldMask);
-  }
+  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
+    ObjectValue baseObject = null;
 
-  @Override
-  public boolean isIdempotent() {
     for (FieldTransform transform : fieldTransforms) {
-      if (!transform.isIdempotent()) {
-        return false;
+      FieldValue existingValue = null;
+      if (maybeDoc instanceof Document) {
+        existingValue = ((Document) maybeDoc).getField(transform.getFieldPath());
+      }
+
+      FieldValue coercedValue = transform.getOperation().computeBaseValue(existingValue);
+      if (coercedValue != null) {
+        if (baseObject == null) {
+          baseObject = ObjectValue.emptyObject().set(transform.getFieldPath(), coercedValue);
+        } else {
+          baseObject = baseObject.set(transform.getFieldPath(), coercedValue);
+        }
       }
     }
-    return true;
+
+    return baseObject;
   }
 
   /**
@@ -193,17 +196,25 @@ public final class TransformMutation extends Mutation {
    *
    * @param localWriteTime The local time of the transform mutation (used to generate
    *     ServerTimestampValues).
+   * @param maybeDoc The current state of the document after applying all previous mutations.
    * @param baseDoc The document prior to applying this mutation batch.
    * @return The transform results list.
    */
   private List<FieldValue> localTransformResults(
-      Timestamp localWriteTime, @Nullable MaybeDocument baseDoc) {
+      Timestamp localWriteTime, @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc) {
     ArrayList<FieldValue> transformResults = new ArrayList<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
 
       FieldValue previousValue = null;
-      if (baseDoc instanceof Document) {
+      if (maybeDoc instanceof Document) {
+        previousValue = ((Document) maybeDoc).getField(fieldTransform.getFieldPath());
+      }
+
+      if (previousValue == null && baseDoc instanceof Document) {
+        // If the current document does not contain a value for the mutated field, use the value
+        // that existed before applying this mutation batch. This solves an edge case where a
+        // PatchMutation clears the values in a nested map before the TransformMutation is applied.
         previousValue = ((Document) baseDoc).getField(fieldTransform.getFieldPath());
       }
 

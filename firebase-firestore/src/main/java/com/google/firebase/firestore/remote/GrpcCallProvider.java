@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.remote;
 
 import android.content.Context;
-import android.os.AsyncTask;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -24,6 +23,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
 import com.google.firestore.v1.FirestoreGrpc;
@@ -69,11 +69,11 @@ public class GrpcCallProvider {
       CallCredentials firestoreHeaders) {
     this.asyncQueue = asyncQueue;
 
-    // We execute network initialization on a separate thred to not block operations that depend on
+    // We execute network initialization on a separate thread to not block operations that depend on
     // the AsyncQueue.
     this.channelTask =
         Tasks.call(
-            AsyncTask.THREAD_POOL_EXECUTOR,
+            Executors.BACKGROUND_EXECUTOR,
             () -> {
               ManagedChannel channel = initChannel(context, databaseInfo);
               FirestoreGrpc.FirestoreStub firestoreStub =
