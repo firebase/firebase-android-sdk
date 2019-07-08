@@ -38,7 +38,7 @@ public class SegmentationServiceClient {
       "projects/%s/installations/%s/customSegmentationData";
   private static final String CLEAR_REQUEST_RESOURCE_NAME_FORMAT =
       "projects/%s/installations/%s/customSegmentationData:clear";
-  private static final String FIREBASE_SEGMENTATION_API_VERSION = "alpha1";
+  private static final String FIREBASE_SEGMENTATION_API_VERSION = "v1alpha";
 
   private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
