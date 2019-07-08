@@ -37,7 +37,6 @@ public class HttpsCallableReference {
     this.name = name;
   }
 
-  @NonNull
   /**
    * Executes this Callable HTTPS trigger asynchronously.
    *
@@ -81,7 +80,6 @@ public class HttpsCallableReference {
     return functionsClient.call(name, data, options);
   }
 
-  @NonNull
   /**
    * Executes this HTTPS endpoint asynchronously without arguments.
    *
@@ -106,7 +104,7 @@ public class HttpsCallableReference {
    * @param timeout The length of the timeout, in the given units.
    * @param units The units for the specified timeout.
    */
-  public void setTimeout(long timeout, @NonNull TimeUnit units) {
+  public void setTimeout(long timeout, TimeUnit units) {
     options.setTimeout(timeout, units);
   }
 
@@ -126,7 +124,7 @@ public class HttpsCallableReference {
    * @param timeout The length of the timeout, in the given units.
    * @param units The units for the specified timeout.
    */
-  public HttpsCallableReference withTimeout(long timeout, @NonNull TimeUnit units) {
+  public HttpsCallableReference withTimeout(long timeout, TimeUnit units) {
     HttpsCallableReference other = new HttpsCallableReference(functionsClient, name);
     other.setTimeout(timeout, units);
     return other;
