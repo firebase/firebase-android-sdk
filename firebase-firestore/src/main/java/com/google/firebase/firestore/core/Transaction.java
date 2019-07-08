@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -91,11 +92,8 @@ public class Transaction {
    * ignoring any local changes.
    */
   public Task<List<MaybeDocument>> lookup(List<DocumentKey> keys) {
-    if (committed) {
-      return Tasks.forException(
-          new FirebaseFirestoreException(
-              "Transaction has already completed.", Code.INVALID_ARGUMENT));
-    }
+    ensureCommitNotCalled();
+
     if (mutations.size() != 0) {
       return Tasks.forException(
           new FirebaseFirestoreException(
@@ -117,9 +115,7 @@ public class Transaction {
   }
 
   private void write(List<Mutation> mutations) {
-    if (committed) {
-      throw new IllegalStateException("Transaction has already completed.");
-    }
+    ensureCommitNotCalled();
     this.mutations.addAll(mutations);
   }
 
@@ -188,11 +184,7 @@ public class Transaction {
   }
 
   public Task<Void> commit() {
-    if (committed) {
-      return Tasks.forException(
-          new FirebaseFirestoreException(
-              "Transaction has already completed.", Code.INVALID_ARGUMENT));
-    }
+    ensureCommitNotCalled();
 
     if (lastWriteError != null) {
       return Tasks.forException(lastWriteError);
@@ -236,6 +228,12 @@ public class Transaction {
             corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS, queue);
     executor.allowCoreThreadTimeOut(true);
     return executor;
+  }
+
+  private void ensureCommitNotCalled() {
+    hardAssert(
+        !committed,
+        "A transaction object cannot be used after its update callback has been invoked.");
   }
 
   public static Executor getDefaultExecutor() {
