@@ -14,6 +14,7 @@
 
 package com.google.firebase.segmentation;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
@@ -25,6 +26,7 @@ import java.util.List;
 public class FirebaseSegmentationRegistrar implements ComponentRegistrar {
 
   @Override
+  @NonNull
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseSegmentation.class)

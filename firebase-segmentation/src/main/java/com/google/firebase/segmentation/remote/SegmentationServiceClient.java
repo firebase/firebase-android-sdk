@@ -14,6 +14,7 @@
 
 package com.google.firebase.segmentation.remote;
 
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -63,12 +64,13 @@ public class SegmentationServiceClient {
     httpRequestExecutor = Executors.newFixedThreadPool(4);
   }
 
+  @NonNull
   public Task<Code> updateCustomInstallationId(
       long projectNumber,
-      String apiKey,
-      String customInstallationId,
-      String firebaseInstanceId,
-      String firebaseInstanceIdToken) {
+      @NonNull String apiKey,
+      @NonNull String customInstallationId,
+      @NonNull String firebaseInstanceId,
+      @NonNull String firebaseInstanceIdToken) {
     String resourceName =
         String.format(UPDATE_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, firebaseInstanceId);
 
@@ -87,11 +89,11 @@ public class SegmentationServiceClient {
         new Request.Builder()
             .url(
                 String.format(
-                    "https://%s/%s/%s",
+                    "https://%s/%s/%s?key=%s",
                     FIREBASE_SEGMENTATION_API_DOMAIN,
                     FIREBASE_SEGMENTATION_API_VERSION,
-                    resourceName))
-            .header("X-Goog-Api-Key", apiKey)
+                    resourceName,
+                    apiKey))
             .header("Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken)
             .header("Content-Type", "application/json")
             .patch(requestBody)
@@ -125,22 +127,18 @@ public class SegmentationServiceClient {
 
   private static JSONObject buildUpdateCustomSegmentationDataRequestBody(
       String resourceName, String customInstallationId) throws JSONException {
-    JSONObject rlt = new JSONObject();
-    rlt.put(
-        "update_mask",
-        "custom_segmentation_data.name,custom_segmentation_data.custom_installation_id");
     JSONObject customSegmentationData = new JSONObject();
     customSegmentationData.put("name", resourceName);
     customSegmentationData.put("custom_installation_id", customInstallationId);
-    rlt.put("custom_segmentation_data", customSegmentationData);
-    return rlt;
+    return customSegmentationData;
   }
 
+  @NonNull
   public Task<Code> clearCustomInstallationId(
       long projectNumber,
-      String apiKey,
-      String firebaseInstanceId,
-      String firebaseInstanceIdToken) {
+      @NonNull String apiKey,
+      @NonNull String firebaseInstanceId,
+      @NonNull String firebaseInstanceIdToken) {
     String resourceName =
         String.format(CLEAR_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, firebaseInstanceId);
 
@@ -157,11 +155,11 @@ public class SegmentationServiceClient {
         new Request.Builder()
             .url(
                 String.format(
-                    "https://%s/%s/%s",
+                    "https://%s/%s/%s?key=%s",
                     FIREBASE_SEGMENTATION_API_DOMAIN,
                     FIREBASE_SEGMENTATION_API_VERSION,
-                    resourceName))
-            .header("X-Goog-Api-Key", apiKey)
+                    resourceName,
+                    apiKey))
             .header("Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken)
             .header("Content-Type", "application/json")
             .post(requestBody)

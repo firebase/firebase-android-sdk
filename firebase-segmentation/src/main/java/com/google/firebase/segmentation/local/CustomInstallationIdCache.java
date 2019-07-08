@@ -16,6 +16,7 @@ package com.google.firebase.segmentation.local;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -53,7 +54,7 @@ public class CustomInstallationIdCache {
   private final SharedPreferences prefs;
   private final String persistenceKey;
 
-  public CustomInstallationIdCache(FirebaseApp firebaseApp) {
+  public CustomInstallationIdCache(@NonNull FirebaseApp firebaseApp) {
     // Different FirebaseApp in the same Android application should have the same application
     // context and same dir path
     prefs =
@@ -77,8 +78,9 @@ public class CustomInstallationIdCache {
     return CustomInstallationIdCacheEntryValue.create(cid, iid, CacheStatus.values()[status]);
   }
 
+  @NonNull
   public synchronized Task<Boolean> insertOrUpdateCacheEntry(
-      CustomInstallationIdCacheEntryValue entryValue) {
+      @NonNull CustomInstallationIdCacheEntryValue entryValue) {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putString(
         getSharedPreferencesKey(CUSTOM_INSTALLATION_ID_KEY), entryValue.getCustomInstallationId());
@@ -87,6 +89,7 @@ public class CustomInstallationIdCache {
     return commitSharedPreferencesEditAsync(editor);
   }
 
+  @NonNull
   public synchronized Task<Boolean> clear() {
     SharedPreferences.Editor editor = prefs.edit();
     editor.remove(getSharedPreferencesKey(CUSTOM_INSTALLATION_ID_KEY));
