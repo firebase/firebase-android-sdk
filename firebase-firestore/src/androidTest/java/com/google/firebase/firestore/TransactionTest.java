@@ -182,6 +182,7 @@ public class TransactionTest {
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
     assertEquals("Can't update a document that doesn't exist.", e.getMessage());
   }
 
@@ -207,6 +208,7 @@ public class TransactionTest {
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
     assertEquals("Can't update a document that doesn't exist.", e.getMessage());
   }
 
