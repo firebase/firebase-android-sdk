@@ -32,6 +32,7 @@ firebaseLibrary {
         device 'model=hero2lte,version=23' // Galaxy S7
         device 'model=htc_m8,version=19' // HTC One (M8)
     }
+    staticAnalysis.disableKotlinInteropLint()
 }
 
 android {

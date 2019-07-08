@@ -21,6 +21,7 @@ firebaseLibrary {
     testLab.enabled = true
     publishJavadoc = true
     publishSources = true
+    staticAnalysis.disableKotlinInteropLint()
 }
 
 android {
@@ -77,6 +78,7 @@ android {
 dependencies {
     implementation project(':firebase-common')
 
+    implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-base:17.0.0'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
     implementation('com.google.firebase:firebase-auth-interop:18.0.0') {

@@ -110,7 +110,7 @@ public abstract class NetworkRequest {
    * @return Url for the target REST call in string form.
    */
   @NonNull
-  public static String getdefaultURL(@NonNull Uri gsUri) {
+  public static String getDefaultURL(@NonNull Uri gsUri) {
     Preconditions.checkNotNull(gsUri);
 
     String pathWithoutBucket = getPathWithoutBucket(gsUri);
@@ -147,7 +147,7 @@ public abstract class NetworkRequest {
    */
   @NonNull
   protected String getURL() {
-    return getdefaultURL(mGsUri);
+    return getDefaultURL(mGsUri);
   }
 
   /**
