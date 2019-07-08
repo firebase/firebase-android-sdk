@@ -1059,13 +1059,25 @@ public class FirestoreTest {
     assertTrue(instance.getClient().isShutdown());
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testNewOperationThrowsAfterFirestoreShutdown() {
     FirebaseFirestore instance = testFirestore();
-    waitFor(instance.document("abc/123").set(Collections.singletonMap("Field", 100)));
+    final DocumentReference reference = instance.document("abc/123");
+    DocumentReference ref = reference;
+    waitFor(reference.set(Collections.singletonMap("Field", 100)));
 
     instance.shutdown();
 
-    waitForException(instance.document("abc/123").get());
+    final String expectedMessage = "The client has already been shutdown";
+    expectError(() -> waitFor(reference.get()), expectedMessage);
+    expectError(() -> waitFor(reference.update("Field", 1)), expectedMessage);
+    expectError(
+        () -> waitFor(reference.set(Collections.singletonMap("Field", 1))), expectedMessage);
+    expectError(
+        () -> waitFor(instance.runBatch((batch) -> batch.update(reference, "Field", 1))),
+        expectedMessage);
+    expectError(
+        () -> waitFor(instance.runTransaction(transaction -> transaction.get(reference))),
+        expectedMessage);
   }
 }

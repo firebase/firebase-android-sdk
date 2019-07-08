@@ -345,8 +345,29 @@ public class FirebaseFirestore {
     return client.shutdown();
   }
 
+  /**
+   * Shuts down this Firestore SDK instance.
+   *
+   * <p>IMPORTANT: If your application is designed to run with Firestore the entire life cycle, it
+   * is not recommended to call `shutdown` explicitly, the shutting down happens naturally when the
+   * application itself is shut down.
+   *
+   * <p>For applications designed to run without Firestore from some point on (typically to save
+   * resources as much as possible), you may call this method.
+   *
+   * <p>Once `shutdown` is called, trying to issue new reads/writes through this instance will
+   * result in {@link IllegalStateException}. Already requested reads/writes might stop resolving.
+   * Be sure to handle this well in your application if proceeding with Firestore shutting down is
+   * desired in your case.
+   *
+   * <p>Note that {@link #clearPersistence()} is an exception, it is designed to run when the
+   * Firestore SDK instance is shutdown.
+   *
+   * <p>To re-start a Firestore SDK instance, simply create a new instance via {@link
+   * #getInstance()} or {@link #getInstance(FirebaseApp)}.
+   */
   @VisibleForTesting
-  // TODO: Make this public
+  // TODO: Make this public and remove @VisibleForTesting
   Task<Void> shutdown() {
     return shutdown(/* fromAppDeletion */ false);
   }
