@@ -54,8 +54,8 @@ public class Transaction {
   private boolean committed;
 
   /**
-   * An error that may have occurred as a consequence of a write. If set, the task will fail instead
-   * of trying to commit.
+   * A deferred usage error that occurred previously in this transaction that will cause the
+   * transaction to fail once it actually commits.
    */
   private FirebaseFirestoreException lastWriteError;
 
@@ -79,7 +79,7 @@ public class Transaction {
       if (!existingVersion.equals(doc.getVersion())) {
         // This transaction will fail no matter what.
         throw new FirebaseFirestoreException(
-            "Document version changed between two reads.", Code.INVALID_ARGUMENT);
+            "Document version changed between two reads.", Code.ABORTED);
       }
     } else {
       readVersions.put(doc.getKey(), docVersion);
@@ -144,6 +144,14 @@ public class Transaction {
     @Nullable SnapshotVersion version = this.readVersions.get(key);
     if (version != null && version.equals(SnapshotVersion.NONE)) {
       // The document to update doesn't exist, so fail the transaction.
+      //
+      // This has to be validated locally because you can't send a precondition that a document
+      // does not exist without changing the semantics of the backend write to be an insert. This is
+      // the reverse of what we want, since we want to assert that the document doesn't exist but
+      // then send the update and have it fail. Since we can't express that to the backend, we have
+      // to validate locally.
+      //
+      // Note: this can change once we can send separate verify writes in the transaction.
       throw new FirebaseFirestoreException(
           "Can't update a document that doesn't exist.", Code.INVALID_ARGUMENT);
     } else if (version != null) {
