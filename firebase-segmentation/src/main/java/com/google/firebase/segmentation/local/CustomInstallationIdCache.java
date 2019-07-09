@@ -18,11 +18,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /**
  * A layer that locally caches a few Firebase Segmentation attributes on top the Segmentation
@@ -50,7 +46,6 @@ public class CustomInstallationIdCache {
   private static final String INSTANCE_ID_KEY = "Iid";
   private static final String CACHE_STATUS_KEY = "Status";
 
-  private final Executor ioExecuter;
   private final SharedPreferences prefs;
   private final String persistenceKey;
 
@@ -62,7 +57,6 @@ public class CustomInstallationIdCache {
             .getApplicationContext()
             .getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE);
     persistenceKey = firebaseApp.getPersistenceKey();
-    ioExecuter = Executors.newFixedThreadPool(2);
   }
 
   @Nullable
@@ -79,32 +73,26 @@ public class CustomInstallationIdCache {
   }
 
   @NonNull
-  public synchronized Task<Boolean> insertOrUpdateCacheEntry(
+  public synchronized boolean insertOrUpdateCacheEntry(
       @NonNull CustomInstallationIdCacheEntryValue entryValue) {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putString(
         getSharedPreferencesKey(CUSTOM_INSTALLATION_ID_KEY), entryValue.getCustomInstallationId());
     editor.putString(getSharedPreferencesKey(INSTANCE_ID_KEY), entryValue.getFirebaseInstanceId());
     editor.putInt(getSharedPreferencesKey(CACHE_STATUS_KEY), entryValue.getCacheStatus().ordinal());
-    return commitSharedPreferencesEditAsync(editor);
+    return editor.commit();
   }
 
   @NonNull
-  public synchronized Task<Boolean> clear() {
+  public synchronized boolean clear() {
     SharedPreferences.Editor editor = prefs.edit();
     editor.remove(getSharedPreferencesKey(CUSTOM_INSTALLATION_ID_KEY));
     editor.remove(getSharedPreferencesKey(INSTANCE_ID_KEY));
     editor.remove(getSharedPreferencesKey(CACHE_STATUS_KEY));
-    return commitSharedPreferencesEditAsync(editor);
+    return editor.commit();
   }
 
   private String getSharedPreferencesKey(String key) {
     return String.format("%s|%s", persistenceKey, key);
-  }
-
-  private Task<Boolean> commitSharedPreferencesEditAsync(SharedPreferences.Editor editor) {
-    TaskCompletionSource<Boolean> result = new TaskCompletionSource<>();
-    ioExecuter.execute(() -> result.setResult(editor.commit()));
-    return result.getTask();
   }
 }

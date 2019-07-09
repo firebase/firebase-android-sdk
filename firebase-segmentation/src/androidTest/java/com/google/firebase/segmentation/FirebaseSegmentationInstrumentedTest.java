@@ -77,16 +77,16 @@ public class FirebaseSegmentationInstrumentedTest {
 
     when(backendClientReturnsOk.updateCustomInstallationId(
             anyLong(), anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(Tasks.forResult(SegmentationServiceClient.Code.OK));
+        .thenReturn(SegmentationServiceClient.Code.OK);
     when(backendClientReturnsOk.clearCustomInstallationId(
             anyLong(), anyString(), anyString(), anyString()))
-        .thenReturn(Tasks.forResult(SegmentationServiceClient.Code.OK));
+        .thenReturn(SegmentationServiceClient.Code.OK);
     when(backendClientReturnsError.updateCustomInstallationId(
             anyLong(), anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(Tasks.forResult(SegmentationServiceClient.Code.SERVER_ERROR));
+        .thenReturn(SegmentationServiceClient.Code.SERVER_ERROR);
     when(backendClientReturnsError.clearCustomInstallationId(
             anyLong(), anyString(), anyString(), anyString()))
-        .thenReturn(Tasks.forResult(SegmentationServiceClient.Code.SERVER_ERROR));
+        .thenReturn(SegmentationServiceClient.Code.SERVER_ERROR);
     when(firebaseInstanceId.getInstanceId())
         .thenReturn(
             Tasks.forResult(
@@ -103,13 +103,13 @@ public class FirebaseSegmentationInstrumentedTest {
                     return "iid_token";
                   }
                 }));
-    when(cacheReturnsError.insertOrUpdateCacheEntry(any())).thenReturn(Tasks.forResult(false));
+    when(cacheReturnsError.insertOrUpdateCacheEntry(any())).thenReturn(false);
     when(cacheReturnsError.readCacheEntryValue()).thenReturn(null);
   }
 
   @After
   public void cleanUp() throws Exception {
-    Tasks.await(actualCache.clear());
+    actualCache.clear();
   }
 
   @Test
@@ -170,12 +170,11 @@ public class FirebaseSegmentationInstrumentedTest {
 
   @Test
   public void testClearCustomInstallationId_CacheOk_BackendOk() throws Exception {
-    Tasks.await(
-        actualCache.insertOrUpdateCacheEntry(
-            CustomInstallationIdCacheEntryValue.create(
-                CUSTOM_INSTALLATION_ID,
-                FIREBASE_INSTANCE_ID,
-                CustomInstallationIdCache.CacheStatus.SYNCED)));
+    actualCache.insertOrUpdateCacheEntry(
+        CustomInstallationIdCacheEntryValue.create(
+            CUSTOM_INSTALLATION_ID,
+            FIREBASE_INSTANCE_ID,
+            CustomInstallationIdCache.CacheStatus.SYNCED));
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
             firebaseApp, firebaseInstanceId, actualCache, backendClientReturnsOk);
@@ -188,12 +187,11 @@ public class FirebaseSegmentationInstrumentedTest {
 
   @Test
   public void testClearCustomInstallationId_CacheOk_BackendError() throws Exception {
-    Tasks.await(
-        actualCache.insertOrUpdateCacheEntry(
-            CustomInstallationIdCacheEntryValue.create(
-                CUSTOM_INSTALLATION_ID,
-                FIREBASE_INSTANCE_ID,
-                CustomInstallationIdCache.CacheStatus.SYNCED)));
+    actualCache.insertOrUpdateCacheEntry(
+        CustomInstallationIdCacheEntryValue.create(
+            CUSTOM_INSTALLATION_ID,
+            FIREBASE_INSTANCE_ID,
+            CustomInstallationIdCache.CacheStatus.SYNCED));
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
             firebaseApp, firebaseInstanceId, actualCache, backendClientReturnsError);

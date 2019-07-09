@@ -30,16 +30,6 @@ android {
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    sourceSets {
-        main {
-            java {
-            }
-        }
-        test {
-            java {
-            }
-        }
-    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -59,8 +49,8 @@ dependencies {
     }
 
     implementation 'androidx.appcompat:appcompat:1.0.2'
-    implementation 'androidx.multidex:multidex:2.0.0'
-    implementation 'com.google.android.gms:play-services-tasks:16.0.1'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
     implementation 'com.squareup.okhttp:okhttp:2.7.5'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"

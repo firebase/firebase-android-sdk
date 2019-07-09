@@ -19,7 +19,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
@@ -28,6 +28,8 @@ import com.google.firebase.segmentation.local.CustomInstallationIdCache;
 import com.google.firebase.segmentation.local.CustomInstallationIdCacheEntryValue;
 import com.google.firebase.segmentation.remote.SegmentationServiceClient;
 import com.google.firebase.segmentation.remote.SegmentationServiceClient.Code;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /** Entry point of Firebase Segmentation SDK. */
 public class FirebaseSegmentation {
@@ -36,12 +38,14 @@ public class FirebaseSegmentation {
   private final FirebaseInstanceId firebaseInstanceId;
   private final CustomInstallationIdCache localCache;
   private final SegmentationServiceClient backendServiceClient;
+  private final Executor executor;
 
   FirebaseSegmentation(FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstanceId = FirebaseInstanceId.getInstance(firebaseApp);
-    localCache = new CustomInstallationIdCache(firebaseApp);
-    backendServiceClient = new SegmentationServiceClient();
+    this.localCache = new CustomInstallationIdCache(firebaseApp);
+    this.backendServiceClient = new SegmentationServiceClient();
+    this.executor = Executors.newFixedThreadPool(4);
   }
 
   @RestrictTo(RestrictTo.Scope.TESTS)
@@ -54,6 +58,7 @@ public class FirebaseSegmentation {
     this.firebaseInstanceId = firebaseInstanceId;
     this.localCache = localCache;
     this.backendServiceClient = backendServiceClient;
+    this.executor = Executors.newFixedThreadPool(4);
   }
 
   /**
@@ -107,73 +112,79 @@ public class FirebaseSegmentation {
    * </pre>
    */
   private Task<Void> updateCustomInstallationId(String customInstallationId) {
-    CustomInstallationIdCacheEntryValue cacheEntryValue = localCache.readCacheEntryValue();
-    if (cacheEntryValue != null
-        && cacheEntryValue.getCustomInstallationId().equals(customInstallationId)
-        && cacheEntryValue.getCacheStatus() == CustomInstallationIdCache.CacheStatus.SYNCED) {
-      // If the given custom installation id matches up the cached
-      // value, there's no need to update.
-      return Tasks.forResult(null);
-    }
+    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
 
-    Task<InstanceIdResult> instanceIdResultTask = firebaseInstanceId.getInstanceId();
-    Task<Boolean> firstUpdateCacheResultTask =
-        instanceIdResultTask.onSuccessTask(
-            instanceIdResult ->
-                localCache.insertOrUpdateCacheEntry(
-                    CustomInstallationIdCacheEntryValue.create(
-                        customInstallationId,
-                        instanceIdResult.getId(),
-                        CustomInstallationIdCache.CacheStatus.PENDING_UPDATE)));
+    executor.execute(
+        () -> {
+          CustomInstallationIdCacheEntryValue cacheEntryValue = localCache.readCacheEntryValue();
+          if (cacheEntryValue != null
+              && cacheEntryValue.getCustomInstallationId().equals(customInstallationId)
+              && cacheEntryValue.getCacheStatus() == CustomInstallationIdCache.CacheStatus.SYNCED) {
+            // If the given custom installation id matches up the cached
+            // value, there's no need to update.
+            taskCompletionSource.setResult(null);
+            return;
+          }
 
-    // Start requesting backend when first cache update is done.
-    Task<Code> backendRequestResultTask =
-        firstUpdateCacheResultTask.onSuccessTask(
-            firstUpdateCacheResult -> {
-              if (firstUpdateCacheResult) {
-                String iid = instanceIdResultTask.getResult().getId();
-                String iidToken = instanceIdResultTask.getResult().getToken();
-                return backendServiceClient.updateCustomInstallationId(
-                    Utils.getProjectNumberFromAppId(firebaseApp.getOptions().getApplicationId()),
-                    firebaseApp.getOptions().getApiKey(),
-                    customInstallationId,
-                    iid,
-                    iidToken);
-              } else {
-                throw new SetCustomInstallationIdException(
-                    "Failed to update client side cache", Status.CLIENT_ERROR);
-              }
-            });
+          InstanceIdResult instanceIdResult = firebaseInstanceId.getInstanceId().getResult();
+          boolean firstUpdateCacheResult =
+              localCache.insertOrUpdateCacheEntry(
+                  CustomInstallationIdCacheEntryValue.create(
+                      customInstallationId,
+                      instanceIdResult.getId(),
+                      CustomInstallationIdCache.CacheStatus.PENDING_UPDATE));
 
-    Task<Boolean> finalUpdateCacheResultTask =
-        backendRequestResultTask.onSuccessTask(
-            backendRequestResult -> {
-              switch (backendRequestResult) {
-                case OK:
-                  return localCache.insertOrUpdateCacheEntry(
+          if (!firstUpdateCacheResult) {
+            taskCompletionSource.setException(
+                new SetCustomInstallationIdException(
+                    "Failed to update client side cache", Status.CLIENT_ERROR));
+            return;
+          }
+
+          // Start requesting backend when first cache updae is done.
+          String iid = instanceIdResult.getId();
+          String iidToken = instanceIdResult.getToken();
+          Code backendRequestResult =
+              backendServiceClient.updateCustomInstallationId(
+                  Utils.getProjectNumberFromAppId(firebaseApp.getOptions().getApplicationId()),
+                  firebaseApp.getOptions().getApiKey(),
+                  customInstallationId,
+                  iid,
+                  iidToken);
+
+          boolean finalUpdateCacheResult;
+          switch (backendRequestResult) {
+            case OK:
+              finalUpdateCacheResult =
+                  localCache.insertOrUpdateCacheEntry(
                       CustomInstallationIdCacheEntryValue.create(
                           customInstallationId,
-                          instanceIdResultTask.getResult().getId(),
+                          instanceIdResult.getId(),
                           CustomInstallationIdCache.CacheStatus.SYNCED));
-                case HTTP_CLIENT_ERROR:
-                  throw new SetCustomInstallationIdException(Status.CLIENT_ERROR);
-                case CONFLICT:
-                  throw new SetCustomInstallationIdException(
-                      Status.DUPLICATED_CUSTOM_INSTALLATION_ID);
-                default:
-                  throw new SetCustomInstallationIdException(Status.BACKEND_ERROR);
-              }
-            });
+              break;
+            case HTTP_CLIENT_ERROR:
+              taskCompletionSource.setException(
+                  new SetCustomInstallationIdException(Status.CLIENT_ERROR));
+              return;
+            case CONFLICT:
+              taskCompletionSource.setException(
+                  new SetCustomInstallationIdException(Status.DUPLICATED_CUSTOM_INSTALLATION_ID));
+              return;
+            default:
+              taskCompletionSource.setException(
+                  new SetCustomInstallationIdException(Status.BACKEND_ERROR));
+              return;
+          }
 
-    return finalUpdateCacheResultTask.onSuccessTask(
-        finalUpdateCacheResult -> {
           if (finalUpdateCacheResult) {
-            return Tasks.forResult(null);
+            taskCompletionSource.setResult(null);
           } else {
-            throw new SetCustomInstallationIdException(
-                "Failed to update client side cache", Status.CLIENT_ERROR);
+            taskCompletionSource.setException(
+                new SetCustomInstallationIdException(
+                    "Failed to update client side cache", Status.CLIENT_ERROR));
           }
         });
+    return taskCompletionSource.getTask();
   }
 
   /**
@@ -194,54 +205,58 @@ public class FirebaseSegmentation {
    * </pre>
    */
   private Task<Void> clearCustomInstallationId() {
-    Task<InstanceIdResult> instanceIdResultTask = firebaseInstanceId.getInstanceId();
-    Task<Boolean> firstUpdateCacheResultTask =
-        instanceIdResultTask.onSuccessTask(
-            instanceIdResult ->
-                localCache.insertOrUpdateCacheEntry(
-                    CustomInstallationIdCacheEntryValue.create(
-                        "",
-                        instanceIdResult.getId(),
-                        CustomInstallationIdCache.CacheStatus.PENDING_CLEAR)));
 
-    Task<Code> backendRequestResultTask =
-        firstUpdateCacheResultTask.onSuccessTask(
-            firstUpdateCacheResult -> {
-              if (firstUpdateCacheResult) {
-                String iid = instanceIdResultTask.getResult().getId();
-                String iidToken = instanceIdResultTask.getResult().getToken();
-                return backendServiceClient.clearCustomInstallationId(
-                    Utils.getProjectNumberFromAppId(firebaseApp.getOptions().getApplicationId()),
-                    firebaseApp.getOptions().getApiKey(),
-                    iid,
-                    iidToken);
-              } else {
-                throw new SetCustomInstallationIdException(
-                    "Failed to update client side cache", Status.CLIENT_ERROR);
-              }
-            });
+    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
 
-    Task<Boolean> finalUpdateCacheResultTask =
-        backendRequestResultTask.onSuccessTask(
-            backendRequestResult -> {
-              switch (backendRequestResult) {
-                case OK:
-                  return localCache.clear();
-                case HTTP_CLIENT_ERROR:
-                  throw new SetCustomInstallationIdException(Status.CLIENT_ERROR);
-                default:
-                  throw new SetCustomInstallationIdException(Status.BACKEND_ERROR);
-              }
-            });
+    executor.execute(
+        () -> {
+          InstanceIdResult instanceIdResult = firebaseInstanceId.getInstanceId().getResult();
+          boolean firstUpdateCacheResult =
+              localCache.insertOrUpdateCacheEntry(
+                  CustomInstallationIdCacheEntryValue.create(
+                      "",
+                      instanceIdResult.getId(),
+                      CustomInstallationIdCache.CacheStatus.PENDING_CLEAR));
 
-    return finalUpdateCacheResultTask.onSuccessTask(
-        finalUpdateCacheResult -> {
+          if (!firstUpdateCacheResult) {
+            taskCompletionSource.setException(
+                new SetCustomInstallationIdException(
+                    "Failed to update client side cache", Status.CLIENT_ERROR));
+            return;
+          }
+
+          String iid = instanceIdResult.getId();
+          String iidToken = instanceIdResult.getToken();
+          Code backendRequestResult =
+              backendServiceClient.clearCustomInstallationId(
+                  Utils.getProjectNumberFromAppId(firebaseApp.getOptions().getApplicationId()),
+                  firebaseApp.getOptions().getApiKey(),
+                  iid,
+                  iidToken);
+
+          boolean finalUpdateCacheResult;
+          switch (backendRequestResult) {
+            case OK:
+              finalUpdateCacheResult = localCache.clear();
+              break;
+            case HTTP_CLIENT_ERROR:
+              taskCompletionSource.setException(
+                  new SetCustomInstallationIdException(Status.CLIENT_ERROR));
+              return;
+            default:
+              taskCompletionSource.setException(
+                  new SetCustomInstallationIdException(Status.BACKEND_ERROR));
+              return;
+          }
+
           if (finalUpdateCacheResult) {
-            return Tasks.forResult(null);
+            taskCompletionSource.setResult(null);
           } else {
-            throw new SetCustomInstallationIdException(
-                "Failed to update client side cache", Status.CLIENT_ERROR);
+            taskCompletionSource.setException(
+                new SetCustomInstallationIdException(
+                    "Failed to update client side cache", Status.CLIENT_ERROR));
           }
         });
+    return taskCompletionSource.getTask();
   }
 }

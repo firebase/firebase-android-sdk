@@ -15,17 +15,12 @@
 package com.google.firebase.segmentation.remote;
 
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.Tasks;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import java.io.IOException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -43,7 +38,6 @@ public class SegmentationServiceClient {
   private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
   private final OkHttpClient httpClient;
-  private final Executor httpRequestExecutor;
 
   public enum Code {
     OK,
@@ -61,11 +55,10 @@ public class SegmentationServiceClient {
 
   public SegmentationServiceClient() {
     httpClient = new OkHttpClient();
-    httpRequestExecutor = Executors.newFixedThreadPool(4);
   }
 
   @NonNull
-  public Task<Code> updateCustomInstallationId(
+  public Code updateCustomInstallationId(
       long projectNumber,
       @NonNull String apiKey,
       @NonNull String customInstallationId,
@@ -82,7 +75,8 @@ public class SegmentationServiceClient {
               buildUpdateCustomSegmentationDataRequestBody(resourceName, customInstallationId)
                   .toString());
     } catch (JSONException e) {
-      return Tasks.forException(e);
+      // This should never happen
+      throw new IllegalStateException(e);
     }
 
     Request request =
@@ -99,30 +93,21 @@ public class SegmentationServiceClient {
             .patch(requestBody)
             .build();
 
-    TaskCompletionSource<Code> taskCompletionSource = new TaskCompletionSource<>();
-    httpRequestExecutor.execute(
-        () -> {
-          try {
-            Response response = httpClient.newCall(request).execute();
-            switch (response.code()) {
-              case 200:
-                taskCompletionSource.setResult(Code.OK);
-                break;
-              case 401:
-                taskCompletionSource.setResult(Code.UNAUTHORIZED);
-                break;
-              case 409:
-                taskCompletionSource.setResult(Code.CONFLICT);
-                break;
-              default:
-                taskCompletionSource.setResult(Code.SERVER_ERROR);
-                break;
-            }
-          } catch (IOException e) {
-            taskCompletionSource.setResult(Code.NETWORK_ERROR);
-          }
-        });
-    return taskCompletionSource.getTask();
+    try {
+      Response response = httpClient.newCall(request).execute();
+      switch (response.code()) {
+        case 200:
+          return Code.OK;
+        case 401:
+          return Code.UNAUTHORIZED;
+        case 409:
+          return Code.CONFLICT;
+        default:
+          return Code.SERVER_ERROR;
+      }
+    } catch (IOException e) {
+      return Code.NETWORK_ERROR;
+    }
   }
 
   private static JSONObject buildUpdateCustomSegmentationDataRequestBody(
@@ -134,7 +119,7 @@ public class SegmentationServiceClient {
   }
 
   @NonNull
-  public Task<Code> clearCustomInstallationId(
+  public Code clearCustomInstallationId(
       long projectNumber,
       @NonNull String apiKey,
       @NonNull String firebaseInstanceId,
@@ -148,7 +133,8 @@ public class SegmentationServiceClient {
           RequestBody.create(
               JSON, buildClearCustomSegmentationDataRequestBody(resourceName).toString());
     } catch (JSONException e) {
-      return Tasks.forException(e);
+      // This should never happen
+      throw new IllegalStateException(e);
     }
 
     Request request =
@@ -165,27 +151,19 @@ public class SegmentationServiceClient {
             .post(requestBody)
             .build();
 
-    TaskCompletionSource<Code> taskCompletionSource = new TaskCompletionSource<>();
-    httpRequestExecutor.execute(
-        () -> {
-          try {
-            Response response = httpClient.newCall(request).execute();
-            switch (response.code()) {
-              case 200:
-                taskCompletionSource.setResult(Code.OK);
-                break;
-              case 401:
-                taskCompletionSource.setResult(Code.UNAUTHORIZED);
-                break;
-              default:
-                taskCompletionSource.setResult(Code.SERVER_ERROR);
-                break;
-            }
-          } catch (IOException e) {
-            taskCompletionSource.setResult(Code.NETWORK_ERROR);
-          }
-        });
-    return taskCompletionSource.getTask();
+    try {
+      Response response = httpClient.newCall(request).execute();
+      switch (response.code()) {
+        case 200:
+          return Code.OK;
+        case 401:
+          return Code.UNAUTHORIZED;
+        default:
+          return Code.SERVER_ERROR;
+      }
+    } catch (IOException e) {
+      return Code.NETWORK_ERROR;
+    }
   }
 
   private static JSONObject buildClearCustomSegmentationDataRequestBody(String resourceName)
