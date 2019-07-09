@@ -12,6 +12,8 @@
 - [feature] Added a `@DocumentId` annotation which can be used on a
   `DocumentReference` or `String` property in a POJO to indicate that the SDK
   should automatically populate it with the document's ID.
+- [changed] Failed transactions now fail with the exception from the last 
+  attempt instead of always failing with an exception with code `ABORTED`.
 
 # 20.1.0
 - [changed] SSL and gRPC initialization now happens on a separate thread, which
