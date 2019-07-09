@@ -55,9 +55,8 @@ public class TransactionTest {
     Exception e = waitForException(firestore.runTransaction(transaction -> transaction.get(doc)));
     // We currently require every document read to also be written.
     // TODO: Fix this check once we drop that requirement.
-    assertEquals("Transaction failed all retries.", e.getMessage());
-    assertEquals(
-        "Every document read in a transaction must also be written.", e.getCause().getMessage());
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
+    assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 
   @Test
@@ -183,9 +182,8 @@ public class TransactionTest {
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
-    // TODO: should this really be raised as a FirebaseFirestoreException?
-    // Note that this test might change if transaction.get throws a FirebaseFirestoreException.
-    assertTrue(e instanceof IllegalStateException);
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
+    assertEquals("Can't update a document that doesn't exist.", e.getMessage());
   }
 
   @Test
@@ -210,9 +208,8 @@ public class TransactionTest {
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
-    // TODO: should this really be raised as a FirebaseFirestoreException?
-    // Note that this test might change if transaction.update throws a FirebaseFirestoreException.
-    assertTrue(e instanceof IllegalStateException);
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
+    assertEquals("Can't update a document that doesn't exist.", e.getMessage());
   }
 
   @Test
@@ -238,9 +235,8 @@ public class TransactionTest {
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
-    assertTrue(e instanceof FirebaseFirestoreException);
-    assertEquals(
-        FirebaseFirestoreException.Code.ABORTED, ((FirebaseFirestoreException) e).getCode());
+    // This is the error surfaced by the backend.
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
   }
 
   @Test
@@ -263,7 +259,6 @@ public class TransactionTest {
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
     assertNotNull(e);
-    assertTrue(e instanceof FirebaseFirestoreException);
     FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
     assertEquals(Code.INVALID_ARGUMENT, firestoreException.getCode());
   }
@@ -437,9 +432,8 @@ public class TransactionTest {
     // assertEquals(1234, snapshot.getDouble("count"));
     // snapshot = waitFor(doc2.get());
     // assertEquals(16, snapshot.getDouble("count"));
-    assertEquals("Transaction failed all retries.", e.getMessage());
-    assertEquals(
-        "Every document read in a transaction must also be written.", e.getCause().getMessage());
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
+    assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 
   @Test
@@ -447,21 +441,23 @@ public class TransactionTest {
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 15.0)));
-    waitForException(
-        firestore.runTransaction(
-            transaction -> {
-              // Get the doc once.
-              DocumentSnapshot snapshot1 = transaction.get(doc);
-              assertEquals(15, snapshot1.getDouble("count").intValue());
-              // Do a write outside of the transaction.
-              waitFor(doc.set(map("count", 1234.0)));
-              // Get the doc again in the transaction with the new version.
-              DocumentSnapshot snapshot2 = transaction.get(doc);
-              // The get itself will fail, because we already read an earlier version of this
-              // document.
-              fail("Should have thrown exception");
-              return null;
-            }));
+    Exception e =
+        waitForException(
+            firestore.runTransaction(
+                transaction -> {
+                  // Get the doc once.
+                  DocumentSnapshot snapshot1 = transaction.get(doc);
+                  assertEquals(15, snapshot1.getDouble("count").intValue());
+                  // Do a write outside of the transaction.
+                  waitFor(doc.set(map("count", 1234.0)));
+                  // Get the doc again in the transaction with the new version.
+                  DocumentSnapshot snapshot2 = transaction.get(doc);
+                  // The get itself will fail, because we already read an earlier version of this
+                  // document.
+                  fail("Should have thrown exception");
+                  return null;
+                }));
+    assertEquals(Code.ABORTED, ((FirebaseFirestoreException) e).getCode());
     DocumentSnapshot snapshot = waitFor(doc.get());
     assertEquals(1234, snapshot.getDouble("count").intValue());
   }
@@ -481,17 +477,44 @@ public class TransactionTest {
   }
 
   @Test
+  public void testReadAndUpdateNonExistentDocumentWithExternalWrite() {
+    FirebaseFirestore firestore = testFirestore();
+
+    // Make a transaction that will fail
+    Task<Void> transactionTask =
+        firestore.runTransaction(
+            transaction -> {
+              // Get and update a document that doesn't exist so that the transaction fails.
+              DocumentReference doc = firestore.collection("nonexistent").document();
+              transaction.get(doc);
+              // Do a write outside of the transaction.
+              doc.set(map("count", 1234));
+              // Now try to update the other doc from within the transaction.
+              // This should fail, because the document didn't exist at the
+              // start of the transaction.
+              transaction.update(doc, "count", 16);
+              return null;
+            });
+
+    waitForException(transactionTask);
+    assertFalse(transactionTask.isSuccessful());
+    Exception e = transactionTask.getException();
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
+    assertEquals("Can't update a document that doesn't exist.", e.getMessage());
+  }
+
+  @Test
   public void testCannotHaveAGetWithoutMutations() {
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("foo").document();
     waitFor(doc.set(map("foo", "bar")));
+
     Exception e = waitForException(firestore.runTransaction(transaction -> transaction.get(doc)));
     // We currently require every document read to also be written.
     // TODO: Add this check back once we drop that.
     // assertEquals("bar", snapshot.getString("foo"));
-    assertEquals("Transaction failed all retries.", e.getMessage());
-    assertEquals(
-        "Every document read in a transaction must also be written.", e.getCause().getMessage());
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
+    assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 
   @Test
