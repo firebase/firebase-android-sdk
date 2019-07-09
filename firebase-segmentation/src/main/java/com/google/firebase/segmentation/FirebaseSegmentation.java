@@ -20,6 +20,7 @@ import androidx.annotation.RestrictTo;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
@@ -126,7 +127,16 @@ public class FirebaseSegmentation {
             return;
           }
 
-          InstanceIdResult instanceIdResult = firebaseInstanceId.getInstanceId().getResult();
+          InstanceIdResult instanceIdResult;
+          try {
+            instanceIdResult = Tasks.await(firebaseInstanceId.getInstanceId());
+          } catch (Exception e) {
+            taskCompletionSource.setException(
+                new SetCustomInstallationIdException(
+                    "Failed to get Firebase instance id", Status.CLIENT_ERROR));
+            return;
+          }
+
           boolean firstUpdateCacheResult =
               localCache.insertOrUpdateCacheEntry(
                   CustomInstallationIdCacheEntryValue.create(
@@ -210,7 +220,16 @@ public class FirebaseSegmentation {
 
     executor.execute(
         () -> {
-          InstanceIdResult instanceIdResult = firebaseInstanceId.getInstanceId().getResult();
+          InstanceIdResult instanceIdResult;
+          try {
+            instanceIdResult = Tasks.await(firebaseInstanceId.getInstanceId());
+          } catch (Exception e) {
+            taskCompletionSource.setException(
+                new SetCustomInstallationIdException(
+                    "Failed to get Firebase instance id", Status.CLIENT_ERROR));
+            return;
+          }
+
           boolean firstUpdateCacheResult =
               localCache.insertOrUpdateCacheEntry(
                   CustomInstallationIdCacheEntryValue.create(
