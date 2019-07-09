@@ -77,7 +77,12 @@ public class GrpcCallProvider {
             () -> {
               ManagedChannel channel = initChannel(context, databaseInfo);
               FirestoreGrpc.FirestoreStub firestoreStub =
-                  FirestoreGrpc.newStub(channel).withCallCredentials(firestoreHeaders);
+                  FirestoreGrpc.newStub(channel)
+                      .withCallCredentials(firestoreHeaders)
+                      // Ensure all callbacks are issued on the worker queue. If this call is
+                      // removed, all calls need to be audited to make sure they are executed on the
+                      // right thread.
+                      .withExecutor(asyncQueue.getExecutor());
               callOptions = firestoreStub.getCallOptions();
               return channel;
             });
@@ -114,10 +119,6 @@ public class GrpcCallProvider {
     // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will
     // usually notify gRPC when a connection dies. But not always. This acts as a failsafe.)
     channelBuilder.keepAliveTime(30, TimeUnit.SECONDS);
-
-    // This ensures all callbacks are issued on the worker queue. If this call is removed,
-    // all calls need to be audited to make sure they are executed on the right thread.
-    channelBuilder.executor(asyncQueue.getExecutor());
 
     // Wrap the ManagedChannelBuilder in an AndroidChannelBuilder. This allows the channel to
     // respond more gracefully to network change events (such as switching from cell to wifi).

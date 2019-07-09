@@ -248,9 +248,7 @@ public class IntegrationTestUtil {
 
     ensureStrictMode();
 
-    AsyncQueue asyncQueue = null;
-
-    asyncQueue = new AsyncQueue();
+    AsyncQueue asyncQueue = new AsyncQueue();
 
     FirebaseFirestore firestore =
         AccessHelper.newFirebaseFirestore(
