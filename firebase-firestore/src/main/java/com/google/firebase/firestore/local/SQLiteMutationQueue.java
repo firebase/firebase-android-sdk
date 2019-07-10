@@ -219,7 +219,7 @@ final class SQLiteMutationQueue implements MutationQueue {
       db.getIndexManager().addToCollectionParentIndex(key.getPath().popLast());
     }
 
-    statsCollector.recordRowsWritten(MutationQueue.TAG, mutations.size());
+    statsCollector.recordRowsWritten(STATS_TAG, mutations.size());
 
     return batch;
   }
@@ -227,7 +227,7 @@ final class SQLiteMutationQueue implements MutationQueue {
   @Nullable
   @Override
   public MutationBatch lookupMutationBatch(int batchId) {
-    statsCollector.recordRowsRead(MutationQueue.TAG, 1);
+    statsCollector.recordRowsRead(STATS_TAG, 1);
 
     return db.query("SELECT SUBSTR(mutations, 1, ?) FROM mutations WHERE uid = ? AND batch_id = ?")
         .binding(BLOB_MAX_INLINE_LENGTH, uid, batchId)
@@ -237,7 +237,7 @@ final class SQLiteMutationQueue implements MutationQueue {
   @Nullable
   @Override
   public MutationBatch getNextMutationBatchAfterBatchId(int batchId) {
-    statsCollector.recordRowsRead(MutationQueue.TAG, 1);
+    statsCollector.recordRowsRead(STATS_TAG, 1);
 
     int nextBatchId = batchId + 1;
 
@@ -252,14 +252,15 @@ final class SQLiteMutationQueue implements MutationQueue {
   @Override
   public List<MutationBatch> getAllMutationBatches() {
     List<MutationBatch> result = new ArrayList<>();
-    db.query(
-            "SELECT batch_id, SUBSTR(mutations, 1, ?) "
-                + "FROM mutations "
-                + "WHERE uid = ? ORDER BY batch_id ASC")
-        .binding(BLOB_MAX_INLINE_LENGTH, uid)
-        .forEach(row -> result.add(decodeInlineMutationBatch(row.getInt(0), row.getBlob(1))));
+    int rowsProcessed =
+        db.query(
+                "SELECT batch_id, SUBSTR(mutations, 1, ?) "
+                    + "FROM mutations "
+                    + "WHERE uid = ? ORDER BY batch_id ASC")
+            .binding(BLOB_MAX_INLINE_LENGTH, uid)
+            .forEach(row -> result.add(decodeInlineMutationBatch(row.getInt(0), row.getBlob(1))));
 
-    statsCollector.recordRowsRead(MutationQueue.TAG, result.size());
+    statsCollector.recordRowsRead(STATS_TAG, rowsProcessed);
 
     return result;
   }
@@ -269,18 +270,19 @@ final class SQLiteMutationQueue implements MutationQueue {
     String path = EncodedPath.encode(documentKey.getPath());
 
     List<MutationBatch> result = new ArrayList<>();
-    db.query(
-            "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) "
-                + "FROM document_mutations dm, mutations m "
-                + "WHERE dm.uid = ? "
-                + "AND dm.path = ? "
-                + "AND dm.uid = m.uid "
-                + "AND dm.batch_id = m.batch_id "
-                + "ORDER BY dm.batch_id")
-        .binding(BLOB_MAX_INLINE_LENGTH, uid, path)
-        .forEach(row -> result.add(decodeInlineMutationBatch(row.getInt(0), row.getBlob(1))));
+    int rowsProcessed =
+        db.query(
+                "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) "
+                    + "FROM document_mutations dm, mutations m "
+                    + "WHERE dm.uid = ? "
+                    + "AND dm.path = ? "
+                    + "AND dm.uid = m.uid "
+                    + "AND dm.batch_id = m.batch_id "
+                    + "ORDER BY dm.batch_id")
+            .binding(BLOB_MAX_INLINE_LENGTH, uid, path)
+            .forEach(row -> result.add(decodeInlineMutationBatch(row.getInt(0), row.getBlob(1))));
 
-    statsCollector.recordRowsRead(MutationQueue.TAG, result.size());
+    statsCollector.recordRowsRead(STATS_TAG, rowsProcessed);
 
     return result;
   }
@@ -307,26 +309,25 @@ final class SQLiteMutationQueue implements MutationQueue {
                 + "AND dm.batch_id = m.batch_id "
                 + "ORDER BY dm.batch_id");
 
-    int rowsRead[] = new int[] {0};
+    int rowsProcessed = 0;
 
     List<MutationBatch> result = new ArrayList<>();
     Set<Integer> uniqueBatchIds = new HashSet<>();
     while (longQuery.hasMoreSubqueries()) {
-      longQuery
-          .performNextSubquery()
-          .forEach(
-              row -> {
-                ++rowsRead[0];
-
-                int batchId = row.getInt(0);
-                if (!uniqueBatchIds.contains(batchId)) {
-                  uniqueBatchIds.add(batchId);
-                  result.add(decodeInlineMutationBatch(batchId, row.getBlob(1)));
-                }
-              });
+      rowsProcessed +=
+          longQuery
+              .performNextSubquery()
+              .forEach(
+                  row -> {
+                    int batchId = row.getInt(0);
+                    if (!uniqueBatchIds.contains(batchId)) {
+                      uniqueBatchIds.add(batchId);
+                      result.add(decodeInlineMutationBatch(batchId, row.getBlob(1)));
+                    }
+                  });
     }
 
-    statsCollector.recordRowsRead(MutationQueue.TAG, rowsRead[0]);
+    statsCollector.recordRowsRead(STATS_TAG, rowsProcessed);
 
     // If more than one query was issued, batches might be in an unsorted order (batches are ordered
     // within one query's results, but not across queries). It's likely to be rare, so don't impose
@@ -366,46 +367,44 @@ final class SQLiteMutationQueue implements MutationQueue {
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
-    int rowsRead[] = new int[] {0};
-
     List<MutationBatch> result = new ArrayList<>();
-    db.query(
-            "SELECT dm.batch_id, dm.path, SUBSTR(m.mutations, 1, ?) "
-                + "FROM document_mutations dm, mutations m "
-                + "WHERE dm.uid = ? "
-                + "AND dm.path >= ? "
-                + "AND dm.path < ? "
-                + "AND dm.uid = m.uid "
-                + "AND dm.batch_id = m.batch_id "
-                + "ORDER BY dm.batch_id")
-        .binding(BLOB_MAX_INLINE_LENGTH, uid, prefixPath, prefixSuccessorPath)
-        .forEach(
-            row -> {
-              ++rowsRead[0];
 
-              // Ensure unique batches only. This works because the batches come out in order so we
-              // only need to ensure that the batchId of this row is different from the preceding
-              // one.
-              int batchId = row.getInt(0);
-              int size = result.size();
-              if (size > 0 && batchId == result.get(size - 1).getBatchId()) {
-                return;
-              }
+    int rowsProcessed =
+        db.query(
+                "SELECT dm.batch_id, dm.path, SUBSTR(m.mutations, 1, ?) "
+                    + "FROM document_mutations dm, mutations m "
+                    + "WHERE dm.uid = ? "
+                    + "AND dm.path >= ? "
+                    + "AND dm.path < ? "
+                    + "AND dm.uid = m.uid "
+                    + "AND dm.batch_id = m.batch_id "
+                    + "ORDER BY dm.batch_id")
+            .binding(BLOB_MAX_INLINE_LENGTH, uid, prefixPath, prefixSuccessorPath)
+            .forEach(
+                row -> {
+                  // Ensure unique batches only. This works because the batches come out in order so
+                  // we only need to ensure that the batchId of this row is different from the
+                  // preceding one.
+                  int batchId = row.getInt(0);
+                  int size = result.size();
+                  if (size > 0 && batchId == result.get(size - 1).getBatchId()) {
+                    return;
+                  }
 
-              // The query is actually returning any path that starts with the query path prefix
-              // which may include documents in subcollections. For example, a query on 'rooms'
-              // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
-              // discarding rows with document keys more than one segment longer than the query
-              // path.
-              ResourcePath path = EncodedPath.decodeResourcePath(row.getString(1));
-              if (path.length() != immediateChildrenPathLength) {
-                return;
-              }
+                  // The query is actually returning any path that starts with the query path prefix
+                  // which may include documents in subcollections. For example, a query on 'rooms'
+                  // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
+                  // discarding rows with document keys more than one segment longer than the query
+                  // path.
+                  ResourcePath path = EncodedPath.decodeResourcePath(row.getString(1));
+                  if (path.length() != immediateChildrenPathLength) {
+                    return;
+                  }
 
-              result.add(decodeInlineMutationBatch(batchId, row.getBlob(2)));
-            });
+                  result.add(decodeInlineMutationBatch(batchId, row.getBlob(2)));
+                });
 
-    statsCollector.recordRowsRead(MutationQueue.TAG, rowsRead[0]);
+    statsCollector.recordRowsRead(STATS_TAG, rowsProcessed);
 
     return result;
   }
@@ -429,7 +428,7 @@ final class SQLiteMutationQueue implements MutationQueue {
       db.getReferenceDelegate().removeMutationReference(key);
     }
 
-    statsCollector.recordRowsDeleted(MutationQueue.TAG, batch.getMutations().size());
+    statsCollector.recordRowsDeleted(STATS_TAG, batch.getMutations().size());
   }
 
   @Override

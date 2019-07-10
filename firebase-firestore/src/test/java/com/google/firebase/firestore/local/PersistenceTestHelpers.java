@@ -30,7 +30,7 @@ public final class PersistenceTestHelpers {
 
   public static SQLitePersistence createSQLitePersistence(String name) {
     return openSQLitePersistence(
-        name, StatsCollector.newNoOpStatsCollector(), LruGarbageCollector.Params.Default());
+        name, StatsCollector.NO_OP_STATS_COLLECTOR, LruGarbageCollector.Params.Default());
   }
   /**
    * Creates and starts a new SQLitePersistence instance for testing.
@@ -41,9 +41,9 @@ public final class PersistenceTestHelpers {
     return createSQLitePersistence(LruGarbageCollector.Params.Default());
   }
 
-  public static SQLitePersistence createSQLitePersistence(StatsCollector statsProvider) {
+  public static SQLitePersistence createSQLitePersistence(StatsCollector statsCollector) {
     return openSQLitePersistence(
-        nextSQLiteDatabaseName(), statsProvider, LruGarbageCollector.Params.Default());
+        nextSQLiteDatabaseName(), statsCollector, LruGarbageCollector.Params.Default());
   }
 
   public static SQLitePersistence createSQLitePersistence(LruGarbageCollector.Params params) {
@@ -51,13 +51,13 @@ public final class PersistenceTestHelpers {
     // cases, but sometimes (particularly the spec tests) we create multiple databases per test
     // case and each should be fresh. A unique name is sufficient to keep these separate.
     return openSQLitePersistence(
-        nextSQLiteDatabaseName(), StatsCollector.newNoOpStatsCollector(), params);
+        nextSQLiteDatabaseName(), StatsCollector.NO_OP_STATS_COLLECTOR, params);
   }
 
   /** Creates and starts a new MemoryPersistence instance for testing. */
   public static MemoryPersistence createEagerGCMemoryPersistence() {
     MemoryPersistence persistence =
-        MemoryPersistence.createEagerGcMemoryPersistence(StatsCollector.newNoOpStatsCollector());
+        MemoryPersistence.createEagerGcMemoryPersistence(StatsCollector.NO_OP_STATS_COLLECTOR);
     persistence.start();
     return persistence;
   }
@@ -78,18 +78,18 @@ public final class PersistenceTestHelpers {
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     MemoryPersistence persistence =
         MemoryPersistence.createLruGcMemoryPersistence(
-            params, StatsCollector.newNoOpStatsCollector(), serializer);
+            params, StatsCollector.NO_OP_STATS_COLLECTOR, serializer);
     persistence.start();
     return persistence;
   }
 
   private static SQLitePersistence openSQLitePersistence(
-      String name, StatsCollector statsProvider, LruGarbageCollector.Params params) {
+      String name, StatsCollector statsCollector, LruGarbageCollector.Params params) {
     DatabaseId databaseId = DatabaseId.forProject("projectId");
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     Context context = ApplicationProvider.getApplicationContext();
     SQLitePersistence persistence =
-        new SQLitePersistence(context, name, databaseId, serializer, statsProvider, params);
+        new SQLitePersistence(context, name, databaseId, serializer, statsCollector, params);
     persistence.start();
     return persistence;
   }

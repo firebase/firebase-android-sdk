@@ -156,7 +156,7 @@ final class MemoryMutationQueue implements MutationQueue {
           .addToCollectionParentIndex(mutation.getKey().getPath().popLast());
     }
 
-    statsCollector.recordRowsWritten(MemoryMutationQueue.TAG, 1);
+    statsCollector.recordRowsWritten(STATS_TAG, 1);
 
     return batch;
   }
@@ -164,7 +164,7 @@ final class MemoryMutationQueue implements MutationQueue {
   @Nullable
   @Override
   public MutationBatch lookupMutationBatch(int batchId) {
-    statsCollector.recordRowsRead(MemoryMutationQueue.TAG, 1);
+    statsCollector.recordRowsRead(STATS_TAG, 1);
 
     int index = indexOfBatchId(batchId);
     if (index < 0 || index >= queue.size()) {
@@ -209,7 +209,7 @@ final class MemoryMutationQueue implements MutationQueue {
       result.add(batch);
     }
 
-    statsCollector.recordRowsRead(MemoryMutationQueue.TAG, result.size());
+    statsCollector.recordRowsRead(STATS_TAG, result.size());
 
     return result;
   }

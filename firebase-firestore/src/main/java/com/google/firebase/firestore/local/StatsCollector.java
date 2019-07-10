@@ -15,36 +15,22 @@
 package com.google.firebase.firestore.local;
 
 /**
- * Collects the operation count from the persistence layer. Implementing classes can expose this
+ * Collects the operation count from the persistence layer. Implementing subclasses can expose this
  * information to measure the efficiency of persistence operations.
  *
- * <p>The only consumer of the operation counts is currently the LocalStoreTestCase (via {@link
+ * <p>The only consumer of operation counts is currently the LocalStoreTestCase (via {@link
  * com.google.firebase.firestore.local.AccumulatingStatsCollector}). If you are not interested in
- * the stats, you can use `newNoOpStatsCollector()` to return an empty stats collector.
+ * the stats, you can use `NO_OP_STATS_COLLECTOR` for the default empty stats collector.
  */
-abstract class StatsCollector {
-  /** A stats collector that discards all operation counts. */
-  static class NoOpStatsCollector extends StatsCollector {
-    @Override
-    void recordRowsRead(String tag, int count) {}
-
-    @Override
-    void recordRowsDeleted(String tag, int count) {}
-
-    @Override
-    void recordRowsWritten(String tag, int count) {}
-  }
-
-  static NoOpStatsCollector newNoOpStatsCollector() {
-    return new NoOpStatsCollector();
-  }
+class StatsCollector {
+  static final StatsCollector NO_OP_STATS_COLLECTOR = new StatsCollector();
 
   /** Records the number of rows read for the given tag. */
-  abstract void recordRowsRead(String tag, int count);
+  void recordRowsRead(String tag, int count) {}
 
   /** Records the number of rows deleted for the given tag. */
-  abstract void recordRowsDeleted(String tag, int count);
+  void recordRowsDeleted(String tag, int count) {}
 
   /** Records the number of rows written for the given tag. */
-  abstract void recordRowsWritten(String tag, int count);
+  void recordRowsWritten(String tag, int count) {}
 }

@@ -41,7 +41,7 @@ public final class MemoryPersistence extends Persistence {
   private boolean started;
 
   public static MemoryPersistence createEagerGcMemoryPersistence() {
-    return createEagerGcMemoryPersistence(StatsCollector.newNoOpStatsCollector());
+    return createEagerGcMemoryPersistence(StatsCollector.NO_OP_STATS_COLLECTOR);
   }
 
   public static MemoryPersistence createEagerGcMemoryPersistence(StatsCollector statsCollector) {

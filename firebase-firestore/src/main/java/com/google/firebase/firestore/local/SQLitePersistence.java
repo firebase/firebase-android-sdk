@@ -79,7 +79,7 @@ public final class SQLitePersistence extends Persistence {
 
   private final OpenHelper opener;
   private final LocalSerializer serializer;
-  private final StatsCollector statsProvider;
+  private final StatsCollector statsCollector;
   private final SQLiteQueryCache queryCache;
   private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
@@ -114,7 +114,7 @@ public final class SQLitePersistence extends Persistence {
         persistenceKey,
         databaseId,
         serializer,
-        StatsCollector.newNoOpStatsCollector(),
+        StatsCollector.NO_OP_STATS_COLLECTOR,
         params);
   }
 
@@ -123,15 +123,15 @@ public final class SQLitePersistence extends Persistence {
       String persistenceKey,
       DatabaseId databaseId,
       LocalSerializer serializer,
-      StatsCollector statsProvider,
+      StatsCollector statsCollector,
       LruGarbageCollector.Params params) {
     String databaseName = databaseName(persistenceKey, databaseId);
     this.opener = new OpenHelper(context, databaseName);
     this.serializer = serializer;
-    this.statsProvider = statsProvider;
+    this.statsCollector = statsCollector;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
     this.indexManager = new SQLiteIndexManager(this);
-    this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer, statsProvider);
+    this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer, statsCollector);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
   }
 
@@ -177,7 +177,7 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   MutationQueue getMutationQueue(User user) {
-    return new SQLiteMutationQueue(this, serializer, statsProvider, user);
+    return new SQLiteMutationQueue(this, serializer, statsCollector, user);
   }
 
   @Override
@@ -465,19 +465,17 @@ public final class SQLitePersistence extends Persistence {
      * Runs the query, calling the consumer once for each row in the results.
      *
      * @param consumer A consumer that will receive the first row.
+     * @return The number of rows processed
      */
-    void forEach(Consumer<Cursor> consumer) {
-      Cursor cursor = null;
-      try {
-        cursor = startQuery();
+    int forEach(Consumer<Cursor> consumer) {
+      int rowsProcessed = 0;
+      try (Cursor cursor = startQuery()) {
         while (cursor.moveToNext()) {
+          ++rowsProcessed;
           consumer.accept(cursor);
         }
-      } finally {
-        if (cursor != null) {
-          cursor.close();
-        }
       }
+      return rowsProcessed;
     }
 
     /**

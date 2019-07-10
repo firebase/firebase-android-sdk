@@ -53,14 +53,14 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public void remove(DocumentKey key) {
-    statsCollector.recordRowsDeleted(RemoteDocumentCache.TAG, 1);
+    statsCollector.recordRowsDeleted(STATS_TAG, 1);
     docs = docs.remove(key);
   }
 
   @Nullable
   @Override
   public MaybeDocument get(DocumentKey key) {
-    statsCollector.recordRowsRead(RemoteDocumentCache.TAG, 1);
+    statsCollector.recordRowsRead(STATS_TAG, 1);
     return docs.get(key);
   }
 
@@ -74,7 +74,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
       result.put(key, get(key));
     }
 
-    statsCollector.recordRowsRead(RemoteDocumentCache.TAG, result.size());
+    statsCollector.recordRowsRead(STATS_TAG, result.size());
     return result;
   }
 
@@ -95,12 +95,13 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
     while (iterator.hasNext()) {
       Map.Entry<DocumentKey, MaybeDocument> entry = iterator.next();
+
+      ++rowsRead;
+
       DocumentKey key = entry.getKey();
       if (!queryPath.isPrefixOf(key.getPath())) {
         break;
       }
-
-      ++rowsRead;
 
       MaybeDocument maybeDoc = entry.getValue();
       if (!(maybeDoc instanceof Document)) {
@@ -113,7 +114,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
       }
     }
 
-    statsCollector.recordRowsRead(RemoteDocumentCache.TAG, rowsRead);
+    statsCollector.recordRowsRead(STATS_TAG, rowsRead);
 
     return result;
   }

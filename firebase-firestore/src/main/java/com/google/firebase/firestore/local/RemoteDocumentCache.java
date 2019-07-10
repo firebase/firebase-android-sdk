@@ -31,7 +31,8 @@ import javax.annotation.Nullable;
  */
 interface RemoteDocumentCache {
   /** The tag used by the StatsCollector. */
-  String TAG = "RemoteDocuments";
+  String STATS_TAG = "remote_documents";
+
   /**
    * Adds or replaces an entry in the cache.
    *

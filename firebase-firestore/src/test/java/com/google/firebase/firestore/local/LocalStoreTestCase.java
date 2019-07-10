@@ -221,7 +221,7 @@ public abstract class LocalStoreTestCase {
    * `resetPersistenceStats()`.
    */
   private void assertMutationsRead(int expected) {
-    assertEquals(expected, statsCollector.getRowsRead(MutationQueue.TAG));
+    assertEquals(expected, statsCollector.getRowsRead(MutationQueue.STATS_TAG));
   }
 
   /**
@@ -229,7 +229,7 @@ public abstract class LocalStoreTestCase {
    * call to `resetPersistenceStats()`.
    */
   private void assertRemoteDocumentsRead(int expected) {
-    assertEquals(expected, statsCollector.getRowsRead(RemoteDocumentCache.TAG));
+    assertEquals(expected, statsCollector.getRowsRead(RemoteDocumentCache.STATS_TAG));
   }
 
   /** Resets the count of rows read by MutationQueue and the RemoteDocumentCache. */
@@ -872,10 +872,6 @@ public abstract class LocalStoreTestCase {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     allocateQuery(query);
     assertTargetId(2);
-
-    localStore.executeQuery(query);
-    assertRemoteDocumentsRead(0);
-    assertMutationsRead(0);
 
     applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map("a", "b")), asList(2), emptyList()));
     applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map("a", "b")), asList(2), emptyList()));

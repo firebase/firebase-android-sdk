@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 /** A queue of mutations to apply to the remote store. */
 interface MutationQueue {
   /** The tag used by the StatsCollector. */
-  String TAG = "Mutations";
+  String STATS_TAG = "mutations";
 
   /**
    * Starts the mutation queue, performing any initial reads that might be required to establish
