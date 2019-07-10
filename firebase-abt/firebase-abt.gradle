@@ -82,10 +82,10 @@ android {
 
 dependencies {
     implementation project(':firebase-common')
-    implementation project(':protolite-well-known-types')
     implementation ('com.google.firebase:firebase-measurement-connector:18.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
+    implementation 'com.google.android.gms:play-services-basement:17.0.0'
     implementation 'com.google.protobuf:protobuf-lite:3.0.1'
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'com.google.truth:truth:0.44'
