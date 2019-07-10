@@ -145,8 +145,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         .binding(prefixPath, prefixSuccessorPath)
         .forEach(
             row -> {
-              ++rowsRead[0];
-
               // TODO: Actually implement a single-collection query
               //
               // The query is actually returning any path that starts with the query path prefix
@@ -158,6 +156,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
               if (path.length() != immediateChildrenPathLength) {
                 return;
               }
+
+              ++rowsRead[0];
 
               byte[] rawDocument = row.getBlob(1);
 
