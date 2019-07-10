@@ -300,7 +300,7 @@ public class TestUploadHelper {
      * indicates end of stream.
      */
     class WonkyStream extends InputStream {
-      private ArrayList<byte[]> streamData = new ArrayList<>();
+      private final ArrayList<byte[]> streamData = new ArrayList<>();
 
       private WonkyStream() {
         streamData.add(new byte[] {0, 1, 2});
@@ -319,17 +319,6 @@ public class TestUploadHelper {
         }
       }
 
-      private void removeData(int removeFirst) {
-        if (streamData.get(0).length == removeFirst) {
-          streamData.remove(0);
-        } else {
-          streamData.set(
-              0,
-              Arrays.copyOfRange(
-                  streamData.get(0), removeFirst, streamData.get(0).length - removeFirst));
-        }
-      }
-
       @Override
       public int read(byte[] b, int off, int len) {
         if (streamData.isEmpty()) {
@@ -339,6 +328,17 @@ public class TestUploadHelper {
           System.arraycopy(streamData.get(0), 0, b, off, length);
           removeData(length);
           return length;
+        }
+      }
+
+      private void removeData(int removeFirst) {
+        if (streamData.get(0).length == removeFirst) {
+          streamData.remove(0);
+        } else {
+          streamData.set(
+              0,
+              Arrays.copyOfRange(
+                  streamData.get(0), removeFirst, streamData.get(0).length - removeFirst));
         }
       }
 
