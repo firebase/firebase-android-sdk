@@ -30,8 +30,8 @@ import java.util.concurrent.Semaphore;
 @SuppressWarnings("unused")
 public class TestDownloadHelper {
   private static final String TAG = "TestDownloadHelper";
-  private static Bitmap mIcon;
-  private static byte[] mBytes;
+  private static Bitmap icon;
+  private static byte[] bytes;
 
   public static class StreamDownloadResponse {
     public StringBuilder mainTask = new StringBuilder();
@@ -59,8 +59,8 @@ public class TestDownloadHelper {
                 response.backgroundTask.append(statusMessage);
 
                 try {
-                  mBytes = IOUtils.toByteArray(stream);
-                  mIcon = BitmapFactory.decodeByteArray(mBytes, 0, mBytes.length);
+                  bytes = IOUtils.toByteArray(stream);
+                  icon = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                 } catch (OutOfMemoryError e) {
                   Log.w(TAG, "Can't persist download due to low memory", e);
                 }
@@ -71,7 +71,7 @@ public class TestDownloadHelper {
 
                 if (state.getTotalByteCount() != -1) {
                   Preconditions.checkState(totalByteCountBeginning == state.getTotalByteCount());
-                  Preconditions.checkState(mBytes.length == state.getTotalByteCount());
+                  Preconditions.checkState(bytes.length == state.getTotalByteCount());
                 }
               } finally {
                 // Closing stream
@@ -106,10 +106,10 @@ public class TestDownloadHelper {
               Log.i(TAG, statusMessage);
               response.mainTask.append(statusMessage);
               if (imageCallback != null) {
-                imageCallback.run(mIcon);
+                imageCallback.run(icon);
               }
               if (byteCallback != null) {
-                byteCallback.run(mBytes);
+                byteCallback.run(bytes);
               }
             })
         .addOnFailureListener(
@@ -219,7 +219,7 @@ public class TestDownloadHelper {
         .addOnFailureListener(
             e -> {
               ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-              String statusMessage = "\nonFailure:\n" + e.toString();
+              String statusMessage = "\nonFailure:\n" + e;
               Log.i(TAG, statusMessage);
               builder.append(statusMessage);
             })
