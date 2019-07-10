@@ -54,7 +54,6 @@ import javax.annotation.Nullable;
  * helper routines that make dealing with SQLite much more pleasant.
  */
 public final class SQLitePersistence extends Persistence {
-
   /**
    * Creates the database name that is used to identify the database to be used with a Firestore
    * instance. Note that this needs to stay stable across releases. The database is uniquely
@@ -80,8 +79,7 @@ public final class SQLitePersistence extends Persistence {
 
   private final OpenHelper opener;
   private final LocalSerializer serializer;
-  private SQLiteDatabase db;
-  private boolean started;
+  private final StatsCollector statsProvider;
   private final SQLiteQueryCache queryCache;
   private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
@@ -102,18 +100,38 @@ public final class SQLitePersistence extends Persistence {
         public void onRollback() {}
       };
 
+  private SQLiteDatabase db;
+  private boolean started;
+
   public SQLitePersistence(
       Context context,
       String persistenceKey,
       DatabaseId databaseId,
       LocalSerializer serializer,
       LruGarbageCollector.Params params) {
+    this(
+        context,
+        persistenceKey,
+        databaseId,
+        serializer,
+        StatsCollector.newNoOpStatsCollector(),
+        params);
+  }
+
+  public SQLitePersistence(
+      Context context,
+      String persistenceKey,
+      DatabaseId databaseId,
+      LocalSerializer serializer,
+      StatsCollector statsProvider,
+      LruGarbageCollector.Params params) {
     String databaseName = databaseName(persistenceKey, databaseId);
     this.opener = new OpenHelper(context, databaseName);
     this.serializer = serializer;
+    this.statsProvider = statsProvider;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
     this.indexManager = new SQLiteIndexManager(this);
-    this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
+    this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer, statsProvider);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
   }
 
@@ -159,7 +177,7 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   MutationQueue getMutationQueue(User user) {
-    return new SQLiteMutationQueue(this, serializer, user);
+    return new SQLiteMutationQueue(this, serializer, statsProvider, user);
   }
 
   @Override

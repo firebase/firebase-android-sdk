@@ -39,16 +39,21 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
+  private final StatsCollector statsProvider;
 
-  SQLiteRemoteDocumentCache(SQLitePersistence persistence, LocalSerializer serializer) {
+  SQLiteRemoteDocumentCache(
+      SQLitePersistence persistence, LocalSerializer serializer, StatsCollector statsProvider) {
     this.db = persistence;
     this.serializer = serializer;
+    this.statsProvider = statsProvider;
   }
 
   @Override
   public void add(MaybeDocument maybeDocument) {
     String path = pathForKey(maybeDocument.getKey());
     MessageLite message = serializer.encodeMaybeDocument(maybeDocument);
+
+    statsProvider.recordRowsWritten(RemoteDocumentCache.TAG, 1);
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents (path, contents) VALUES (?, ?)",
@@ -62,6 +67,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   public void remove(DocumentKey documentKey) {
     String path = pathForKey(documentKey);
 
+    statsProvider.recordRowsDeleted(RemoteDocumentCache.TAG, 1);
+
     db.execute("DELETE FROM remote_documents WHERE path = ?", path);
   }
 
@@ -69,6 +76,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public MaybeDocument get(DocumentKey documentKey) {
     String path = pathForKey(documentKey);
+
+    statsProvider.recordRowsRead(RemoteDocumentCache.TAG, 1);
 
     return db.query("SELECT contents FROM remote_documents WHERE path = ?")
         .binding(path)
@@ -106,6 +115,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
               });
     }
 
+    statsProvider.recordRowsRead(RemoteDocumentCache.TAG, results.size());
+
     return results;
   }
 
@@ -128,10 +139,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         (ImmutableSortedMap<DocumentKey, Document>[])
             new ImmutableSortedMap[] {DocumentCollections.emptyDocumentMap()};
 
+    int[] rowsRead = new int[] {0};
+
     db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
         .binding(prefixPath, prefixSuccessorPath)
         .forEach(
             row -> {
+              ++rowsRead[0];
+
               // TODO: Actually implement a single-collection query
               //
               // The query is actually returning any path that starts with the query path prefix
@@ -167,6 +182,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     } catch (InterruptedException e) {
       fail("Interrupted while deserializing documents", e);
     }
+
+    statsProvider.recordRowsRead(RemoteDocumentCache.TAG, rowsRead[0]);
 
     return matchingDocuments[0];
   }

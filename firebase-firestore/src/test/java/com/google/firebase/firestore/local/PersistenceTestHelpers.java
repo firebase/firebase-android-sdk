@@ -24,25 +24,14 @@ public final class PersistenceTestHelpers {
   /** A counter for generating unique database names. */
   private static int databaseNameCounter = 0;
 
-  public static SQLitePersistence openSQLitePersistence(String name) {
-    return openSQLitePersistence(name, LruGarbageCollector.Params.Default());
-  }
-
-  public static SQLitePersistence openSQLitePersistence(
-      String name, LruGarbageCollector.Params params) {
-    DatabaseId databaseId = DatabaseId.forProject("projectId");
-    LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
-    Context context = ApplicationProvider.getApplicationContext();
-    SQLitePersistence persistence =
-        new SQLitePersistence(context, name, databaseId, serializer, params);
-    persistence.start();
-    return persistence;
-  }
-
   public static String nextSQLiteDatabaseName() {
     return "test-" + databaseNameCounter++;
   }
 
+  public static SQLitePersistence createSQLitePersistence(String name) {
+    return openSQLitePersistence(
+        name, StatsCollector.newNoOpStatsCollector(), LruGarbageCollector.Params.Default());
+  }
   /**
    * Creates and starts a new SQLitePersistence instance for testing.
    *
@@ -52,16 +41,30 @@ public final class PersistenceTestHelpers {
     return createSQLitePersistence(LruGarbageCollector.Params.Default());
   }
 
+  public static SQLitePersistence createSQLitePersistence(StatsCollector statsProvider) {
+    return openSQLitePersistence(
+        nextSQLiteDatabaseName(), statsProvider, LruGarbageCollector.Params.Default());
+  }
+
   public static SQLitePersistence createSQLitePersistence(LruGarbageCollector.Params params) {
     // Robolectric's test runner will clear out the application database directory in between test
     // cases, but sometimes (particularly the spec tests) we create multiple databases per test
     // case and each should be fresh. A unique name is sufficient to keep these separate.
-    return openSQLitePersistence(nextSQLiteDatabaseName(), params);
+    return openSQLitePersistence(
+        nextSQLiteDatabaseName(), StatsCollector.newNoOpStatsCollector(), params);
   }
 
   /** Creates and starts a new MemoryPersistence instance for testing. */
   public static MemoryPersistence createEagerGCMemoryPersistence() {
-    MemoryPersistence persistence = MemoryPersistence.createEagerGcMemoryPersistence();
+    MemoryPersistence persistence =
+        MemoryPersistence.createEagerGcMemoryPersistence(StatsCollector.newNoOpStatsCollector());
+    persistence.start();
+    return persistence;
+  }
+
+  public static MemoryPersistence createEagerGCMemoryPersistence(StatsCollector statsCollector) {
+    MemoryPersistence persistence =
+        MemoryPersistence.createEagerGcMemoryPersistence(statsCollector);
     persistence.start();
     return persistence;
   }
@@ -74,7 +77,19 @@ public final class PersistenceTestHelpers {
     DatabaseId databaseId = DatabaseId.forProject("projectId");
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     MemoryPersistence persistence =
-        MemoryPersistence.createLruGcMemoryPersistence(params, serializer);
+        MemoryPersistence.createLruGcMemoryPersistence(
+            params, StatsCollector.newNoOpStatsCollector(), serializer);
+    persistence.start();
+    return persistence;
+  }
+
+  private static SQLitePersistence openSQLitePersistence(
+      String name, StatsCollector statsProvider, LruGarbageCollector.Params params) {
+    DatabaseId databaseId = DatabaseId.forProject("projectId");
+    LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
+    Context context = ApplicationProvider.getApplicationContext();
+    SQLitePersistence persistence =
+        new SQLitePersistence(context, name, databaseId, serializer, statsProvider, params);
     persistence.start();
     return persistence;
   }
