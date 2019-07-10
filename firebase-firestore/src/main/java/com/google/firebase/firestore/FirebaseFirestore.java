@@ -261,15 +261,15 @@ public class FirebaseFirestore {
    * @param executor The executor to run the transaction callback on.
    * @return The task returned from the updateFunction.
    */
-  private <TResult> Task<TResult> runTransaction(
-      Transaction.Function<TResult> updateFunction, Executor executor) {
+  private <ResultT> Task<ResultT> runTransaction(
+      Transaction.Function<ResultT> updateFunction, Executor executor) {
     ensureClientConfigured();
 
     // We wrap the function they provide in order to
     // 1. Use internal implementation classes for Transaction,
     // 2. Convert exceptions they throw into Tasks, and
     // 3. Run the user callback on the user queue.
-    Function<com.google.firebase.firestore.core.Transaction, Task<TResult>> wrappedUpdateFunction =
+    Function<com.google.firebase.firestore.core.Transaction, Task<ResultT>> wrappedUpdateFunction =
         internalTransaction ->
             Tasks.call(
                 executor,
