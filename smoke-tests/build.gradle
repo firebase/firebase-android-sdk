@@ -24,7 +24,7 @@ buildscript {
 
   dependencies {
     classpath "com.android.tools.build:gradle:3.3.2"
-    classpath "com.google.gms:google-services:4.0.0"
+    classpath "com.google.gms:google-services:4.2.0"
   }
 }
 
@@ -73,6 +73,7 @@ dependencies {
   implementation "com.google.firebase:firebase-common"
   implementation "com.google.truth:truth:0.44"
   implementation "junit:junit:4.12"
+  implementation "com.google.gms:google-services:4.3.0"
 
   // All
   combinedImplementation "com.google.firebase:firebase-auth"
