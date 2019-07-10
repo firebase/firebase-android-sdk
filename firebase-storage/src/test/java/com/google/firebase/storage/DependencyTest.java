@@ -96,7 +96,7 @@ public class DependencyTest {
     }
     String newValue = builder.toString();
     if (!expected.equals(newValue)) {
-      System.err.println("Exepected:\n" + expected + "\nBut got:\n" + newValue);
+      System.err.println("Expected:\n" + expected + "\nBut got:\n" + newValue);
     }
     Assert.assertEquals(expected, newValue);
   }
