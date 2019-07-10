@@ -15,12 +15,10 @@
 package com.google.firebase.segmentation.remote;
 
 import androidx.annotation.NonNull;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URL;
+import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -34,10 +32,6 @@ public class SegmentationServiceClient {
   private static final String CLEAR_REQUEST_RESOURCE_NAME_FORMAT =
       "projects/%s/installations/%s/customSegmentationData:clear";
   private static final String FIREBASE_SEGMENTATION_API_VERSION = "v1alpha";
-
-  private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-
-  private final OkHttpClient httpClient;
 
   public enum Code {
     OK,
@@ -53,10 +47,6 @@ public class SegmentationServiceClient {
     UNAUTHORIZED,
   }
 
-  public SegmentationServiceClient() {
-    httpClient = new OkHttpClient();
-  }
-
   @NonNull
   public Code updateCustomInstallationId(
       long projectNumber,
@@ -66,36 +56,35 @@ public class SegmentationServiceClient {
       @NonNull String firebaseInstanceIdToken) {
     String resourceName =
         String.format(UPDATE_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, firebaseInstanceId);
-
-    RequestBody requestBody;
     try {
-      requestBody =
-          RequestBody.create(
-              JSON,
-              buildUpdateCustomSegmentationDataRequestBody(resourceName, customInstallationId)
-                  .toString());
-    } catch (JSONException e) {
-      // This should never happen
-      throw new IllegalStateException(e);
-    }
+      URL url =
+          new URL(
+              String.format(
+                  "https://%s/%s/%s?key=%s",
+                  FIREBASE_SEGMENTATION_API_DOMAIN,
+                  FIREBASE_SEGMENTATION_API_VERSION,
+                  resourceName,
+                  apiKey));
 
-    Request request =
-        new Request.Builder()
-            .url(
-                String.format(
-                    "https://%s/%s/%s?key=%s",
-                    FIREBASE_SEGMENTATION_API_DOMAIN,
-                    FIREBASE_SEGMENTATION_API_VERSION,
-                    resourceName,
-                    apiKey))
-            .header("Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken)
-            .header("Content-Type", "application/json")
-            .patch(requestBody)
-            .build();
+      HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+      httpsURLConnection.setDoOutput(true);
+      httpsURLConnection.setRequestMethod("PATCH");
+      httpsURLConnection.addRequestProperty(
+          "Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken);
+      httpsURLConnection.addRequestProperty("Content-Type", "application/json");
+      OutputStream os = httpsURLConnection.getOutputStream();
+      try {
+        os.write(
+            buildUpdateCustomSegmentationDataRequestBody(resourceName, customInstallationId)
+                .toString()
+                .getBytes("UTF-8"));
+      } catch (JSONException e) {
+        throw new IllegalStateException(e);
+      }
+      httpsURLConnection.connect();
 
-    try {
-      Response response = httpClient.newCall(request).execute();
-      switch (response.code()) {
+      int httpResponseCode = httpsURLConnection.getResponseCode();
+      switch (httpResponseCode) {
         case 200:
           return Code.OK;
         case 401:
@@ -126,34 +115,33 @@ public class SegmentationServiceClient {
       @NonNull String firebaseInstanceIdToken) {
     String resourceName =
         String.format(CLEAR_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, firebaseInstanceId);
-
-    RequestBody requestBody;
     try {
-      requestBody =
-          RequestBody.create(
-              JSON, buildClearCustomSegmentationDataRequestBody(resourceName).toString());
-    } catch (JSONException e) {
-      // This should never happen
-      throw new IllegalStateException(e);
-    }
+      URL url =
+          new URL(
+              String.format(
+                  "https://%s/%s/%s?key=%s",
+                  FIREBASE_SEGMENTATION_API_DOMAIN,
+                  FIREBASE_SEGMENTATION_API_VERSION,
+                  resourceName,
+                  apiKey));
 
-    Request request =
-        new Request.Builder()
-            .url(
-                String.format(
-                    "https://%s/%s/%s?key=%s",
-                    FIREBASE_SEGMENTATION_API_DOMAIN,
-                    FIREBASE_SEGMENTATION_API_VERSION,
-                    resourceName,
-                    apiKey))
-            .header("Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken)
-            .header("Content-Type", "application/json")
-            .post(requestBody)
-            .build();
+      HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+      httpsURLConnection.setDoOutput(true);
+      httpsURLConnection.setRequestMethod("POST");
+      httpsURLConnection.addRequestProperty(
+          "Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken);
+      httpsURLConnection.addRequestProperty("Content-Type", "application/json");
+      OutputStream os = httpsURLConnection.getOutputStream();
+      try {
+        os.write(
+            buildClearCustomSegmentationDataRequestBody(resourceName).toString().getBytes("UTF-8"));
+      } catch (JSONException e) {
+        throw new IllegalStateException(e);
+      }
+      httpsURLConnection.connect();
 
-    try {
-      Response response = httpClient.newCall(request).execute();
-      switch (response.code()) {
+      int httpResponseCode = httpsURLConnection.getResponseCode();
+      switch (httpResponseCode) {
         case 200:
           return Code.OK;
         case 401:
