@@ -72,7 +72,7 @@ public class MutableData {
    * @return True if data exists at the given path, otherwise false
    */
   @PublicApi
-  public boolean hasChild(String path) {
+  public boolean hasChild(@NonNull String path) {
     return !getNode().getChild(new Path(path)).isEmpty();
   }
 

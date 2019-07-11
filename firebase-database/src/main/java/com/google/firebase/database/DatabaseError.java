@@ -175,8 +175,9 @@ public class DatabaseError {
     return new DatabaseError(code, message, details);
   }
 
+  @NonNull
   @PublicApi
-  public static DatabaseError fromException(Throwable e) {
+  public static DatabaseError fromException(@NonNull Throwable e) {
     StringWriter stringWriter = new StringWriter();
     PrintWriter printWriter = new PrintWriter(stringWriter);
     e.printStackTrace(printWriter);
@@ -229,6 +230,7 @@ public class DatabaseError {
    *
    * @return An exception wrapping this error, with an appropriate message and no stack trace.
    */
+  @NonNull
   @PublicApi
   public DatabaseException toException() {
     return new DatabaseException("Firebase Database error: " + message);
