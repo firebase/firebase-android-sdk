@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase;
-
-import androidx.annotation.NonNull;
-
-/**
- * Exception thrown when a request to a Firebase service has failed due to a network error. Inspect
- * the device's network connectivity state or retry later to resolve.
- */
-public class FirebaseNetworkException extends FirebaseException {
-
-  public FirebaseNetworkException(@NonNull String detailMessage) {
-    super(detailMessage);
-  }
-}
+/** @hide */
+package com.google.firebase.internal;
