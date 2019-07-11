@@ -14,6 +14,8 @@
 
 package com.google.android.datatransport.cct;
 
+import static com.google.android.datatransport.cct.CCTDestination.CCT_DESTINATION_NAME;
+
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.backends.BackendFactory;
@@ -30,17 +32,18 @@ public class CctBackendFactory implements BackendFactory {
   @Override
   public TransportBackend create(CreationContext creationContext) {
     final String url;
-    if(creationContext.getBackendName() == "cct") {
-      url = FLG_URL;
-    } else {
+    // Since legacy flg and clearcut APIs are identical, they share the same backend.
+    if (creationContext.getBackendName() == CCT_DESTINATION_NAME) {
       url = CCT_URL;
+    } else {
+      url = FLG_URL;
     }
 
     return new CctTransportBackend(
-            creationContext.getApplicationContext(),
-            url,
-            creationContext.getWallClock(),
-            creationContext.getMonotonicClock());
+        creationContext.getApplicationContext(),
+        url,
+        creationContext.getWallClock(),
+        creationContext.getMonotonicClock());
   }
 
   @VisibleForTesting

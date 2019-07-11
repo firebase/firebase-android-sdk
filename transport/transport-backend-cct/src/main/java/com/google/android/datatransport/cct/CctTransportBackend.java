@@ -64,6 +64,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
+  static final String API_KEY_HEADER_KEY = "X-Goog-Api-Key";
   private static final String PROTOBUF_CONTENT_TYPE = "application/x-protobuf";
 
   @VisibleForTesting static final String KEY_NETWORK_TYPE = "net-type";
@@ -210,7 +211,7 @@ final class CctTransportBackend implements TransportBackend {
     return batchedRequestBuilder.build();
   }
 
-  private BackendResponse doSend(BatchedLogRequest requestBody) throws IOException {
+  private BackendResponse doSend(BatchedLogRequest requestBody, String apiKey) throws IOException {
     HttpURLConnection connection = (HttpURLConnection) endPoint.openConnection();
     connection.setConnectTimeout(CONNECTION_TIME_OUT);
     connection.setReadTimeout(readTimeout);
@@ -219,6 +220,10 @@ final class CctTransportBackend implements TransportBackend {
     connection.setRequestMethod("POST");
     connection.setRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
     connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, PROTOBUF_CONTENT_TYPE);
+
+    if (apiKey != null) {
+      connection.setRequestProperty(API_KEY_HEADER_KEY, apiKey);
+    }
 
     WritableByteChannel channel = Channels.newChannel(connection.getOutputStream());
     try {
@@ -260,8 +265,25 @@ final class CctTransportBackend implements TransportBackend {
   @Override
   public BackendResponse send(BackendRequest request) {
     BatchedLogRequest requestBody = getRequestBody(request);
+    final String apiKey;
+
+    // CCT backend supports 2 different endpoints
+    // We route to CCT backend if extras are null and to LegacyFlg otherwise.
+    // This (anti-) pattern should not be required for other backends
+    if (request.getExtras() == null) {
+      apiKey = null;
+    } else {
+      LegacyFlgDestination flgDestination =
+          LegacyFlgDestination.builder().fromExtras(request.getExtras()).build();
+      apiKey = flgDestination.getAPIKey();
+    }
+
+    //    if(true){
+    //      throw new RuntimeException(endpoint.toString());
+    //    }
+
     try {
-      return doSend(requestBody);
+      return doSend(requestBody, apiKey);
     } catch (IOException e) {
       LOGGER.log(Level.SEVERE, "Could not make request to the backend", e);
       return BackendResponse.transientError();
