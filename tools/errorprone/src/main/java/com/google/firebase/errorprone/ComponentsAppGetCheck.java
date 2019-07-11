@@ -21,7 +21,6 @@ import static com.google.errorprone.matchers.Matchers.enclosingMethod;
 import static com.google.errorprone.matchers.Matchers.hasAnnotation;
 import static com.google.errorprone.matchers.Matchers.instanceMethod;
 import static com.google.errorprone.matchers.Matchers.isStatic;
-import static com.google.errorprone.matchers.Matchers.isVoidType;
 import static com.google.errorprone.matchers.Matchers.methodHasVisibility;
 import static com.google.errorprone.matchers.Matchers.methodInvocation;
 import static com.google.errorprone.matchers.Matchers.methodIsNamed;
@@ -98,11 +97,8 @@ public class ComponentsAppGetCheck extends BugChecker
    * </pre>
    */
   private static final Matcher<ExpressionTree> WITHIN_SHUTDOWN =
-      enclosingMethod(
-          allOf(
-              methodIsNamed("shutdown")));
-              //methodReturns(isVoidType())));
-
+      enclosingMethod(allOf(methodIsNamed("shutdown")));
+  // methodReturns(isVoidType())));
 
   /**
    * This matches methods of the forms:
