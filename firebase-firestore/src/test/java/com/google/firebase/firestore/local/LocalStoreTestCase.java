@@ -97,19 +97,22 @@ public abstract class LocalStoreTestCase {
   private @Nullable ImmutableSortedMap<DocumentKey, MaybeDocument> lastChanges;
   private int lastTargetId;
 
+  AccumulatingStatsCollector statsCollector;
+
   abstract Persistence getPersistence();
 
   abstract boolean garbageCollectorIsEager();
 
   @Before
   public void setUp() {
-    localStorePersistence = getPersistence();
-    localStore = new LocalStore(localStorePersistence, User.UNAUTHENTICATED);
-    localStore.start();
-
+    statsCollector = new AccumulatingStatsCollector();
     batches = new ArrayList<>();
     lastChanges = null;
     lastTargetId = 0;
+
+    localStorePersistence = getPersistence();
+    localStore = new LocalStore(localStorePersistence, User.UNAUTHENTICATED);
+    localStore.start();
   }
 
   @After
@@ -211,6 +214,27 @@ public abstract class LocalStoreTestCase {
     DocumentKey key = DocumentKey.fromPathString(keyPathString);
     MaybeDocument actual = localStore.readDocument(key);
     assertNull(actual);
+  }
+
+  /**
+   * Asserts the expected numbers of mutation rows read by the MutationQueue since the last call to
+   * `resetPersistenceStats()`.
+   */
+  private void assertMutationsRead(int expected) {
+    assertEquals(expected, statsCollector.getRowsRead(MutationQueue.STATS_TAG));
+  }
+
+  /**
+   * Asserts the expected numbers of document rows read by the RemoteDocumentCache since the last
+   * call to `resetPersistenceStats()`.
+   */
+  private void assertRemoteDocumentsRead(int expected) {
+    assertEquals(expected, statsCollector.getRowsRead(RemoteDocumentCache.STATS_TAG));
+  }
+
+  /** Resets the count of rows read by MutationQueue and the RemoteDocumentCache. */
+  private void resetPersistenceStats() {
+    statsCollector.reset();
   }
 
   @Test
@@ -860,6 +884,23 @@ public abstract class LocalStoreTestCase {
             doc("foo/baz", 10, map("a", "b")),
             doc("foo/bonk", 0, map("a", "b"), Document.DocumentState.LOCAL_MUTATIONS)),
         values(docs));
+  }
+
+  @Test
+  public void testReadsAllDocumentsForCollectionQueries() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+
+    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map()), asList(2), emptyList()));
+    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map()), asList(2), emptyList()));
+    writeMutation(setMutation("foo/bonk", map()));
+
+    resetPersistenceStats();
+
+    localStore.executeQuery(query);
+
+    assertRemoteDocumentsRead(2);
+    assertMutationsRead(1);
   }
 
   @Test

@@ -39,7 +39,7 @@ public final class SQLiteQueryCacheTest extends QueryCacheTestCase {
   public void testMetadataPersistedAcrossRestarts() {
     String name = "test-queryCache-restarts";
 
-    SQLitePersistence db1 = PersistenceTestHelpers.openSQLitePersistence(name);
+    SQLitePersistence db1 = PersistenceTestHelpers.createSQLitePersistence(name);
     QueryCache queryCache1 = db1.getQueryCache();
     assertEquals(0, queryCache1.getHighestListenSequenceNumber());
 
@@ -59,7 +59,7 @@ public final class SQLiteQueryCacheTest extends QueryCacheTestCase {
 
     db1.shutdown();
 
-    SQLitePersistence db2 = PersistenceTestHelpers.openSQLitePersistence(name);
+    SQLitePersistence db2 = PersistenceTestHelpers.createSQLitePersistence(name);
     db2.runTransaction(
         "verify sequence number",
         () -> {
