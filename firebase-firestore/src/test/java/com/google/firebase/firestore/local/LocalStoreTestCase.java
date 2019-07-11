@@ -884,11 +884,6 @@ public abstract class LocalStoreTestCase {
             doc("foo/baz", 10, map("a", "b")),
             doc("foo/bonk", 0, map("a", "b"), Document.DocumentState.LOCAL_MUTATIONS)),
         values(docs));
-
-    // Assert that we read two documents from the remote document cache and one from the mutation
-    // queue.
-    assertRemoteDocumentsRead(2);
-    assertMutationsRead(1);
   }
 
   @Test
