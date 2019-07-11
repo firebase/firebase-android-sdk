@@ -16,7 +16,6 @@ package com.google.firebase.database;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-import com.google.firebase.annotations.PublicApi;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -26,49 +25,48 @@ import java.util.Map;
  * Instances of DatabaseError are passed to callbacks when an operation failed. They contain a
  * description of the specific error that occurred.
  */
-@PublicApi
 public class DatabaseError {
 
   /** <strong>Internal use</strong> */
-  @PublicApi public static final int DATA_STALE = -1;
+  public static final int DATA_STALE = -1;
   /** The server indicated that this operation failed */
-  @PublicApi public static final int OPERATION_FAILED = -2;
+  public static final int OPERATION_FAILED = -2;
   /** This client does not have permission to perform this operation */
-  @PublicApi public static final int PERMISSION_DENIED = -3;
+  public static final int PERMISSION_DENIED = -3;
   /** The operation had to be aborted due to a network disconnect */
-  @PublicApi public static final int DISCONNECTED = -4;
+  public static final int DISCONNECTED = -4;
 
   // Preempted was removed, this is for here for completeness and history
   // public static final int PREEMPTED = -5;
 
   /** The supplied auth token has expired */
-  @PublicApi public static final int EXPIRED_TOKEN = -6;
+  public static final int EXPIRED_TOKEN = -6;
   /**
    * The specified authentication token is invalid. This can occur when the token is malformed,
    * expired, or the secret that was used to generate it has been revoked.
    */
-  @PublicApi public static final int INVALID_TOKEN = -7;
+  public static final int INVALID_TOKEN = -7;
   /** The transaction had too many retries */
-  @PublicApi public static final int MAX_RETRIES = -8;
+  public static final int MAX_RETRIES = -8;
   /** The transaction was overridden by a subsequent set */
-  @PublicApi public static final int OVERRIDDEN_BY_SET = -9;
+  public static final int OVERRIDDEN_BY_SET = -9;
   /** The service is unavailable */
-  @PublicApi public static final int UNAVAILABLE = -10;
+  public static final int UNAVAILABLE = -10;
   /** An exception occurred in user code */
-  @PublicApi public static final int USER_CODE_EXCEPTION = -11;
+  public static final int USER_CODE_EXCEPTION = -11;
 
   // client codes
   /** The operation could not be performed due to a network error. */
-  @PublicApi public static final int NETWORK_ERROR = -24;
+  public static final int NETWORK_ERROR = -24;
 
   /** The write was canceled locally */
-  @PublicApi public static final int WRITE_CANCELED = -25;
+  public static final int WRITE_CANCELED = -25;
 
   /**
    * An unknown error occurred. Please refer to the error message and error details for more
    * information.
    */
-  @PublicApi public static final int UNKNOWN_ERROR = -999;
+  public static final int UNKNOWN_ERROR = -999;
 
   private static final Map<Integer, String> errorReasons = new HashMap<Integer, String>();
 
@@ -176,7 +174,6 @@ public class DatabaseError {
   }
 
   @NonNull
-  @PublicApi
   public static DatabaseError fromException(@NonNull Throwable e) {
     StringWriter stringWriter = new StringWriter();
     PrintWriter printWriter = new PrintWriter(stringWriter);
@@ -200,21 +197,18 @@ public class DatabaseError {
   }
 
   /** @return One of the defined status codes, depending on the error */
-  @PublicApi
   public int getCode() {
     return code;
   }
 
   /** @return A human-readable description of the error */
   @NonNull
-  @PublicApi
   public String getMessage() {
     return message;
   }
 
   /** @return Human-readable details on the error and additional information, e.g. links to docs; */
   @NonNull
-  @PublicApi
   public String getDetails() {
     return details;
   }
@@ -231,7 +225,6 @@ public class DatabaseError {
    * @return An exception wrapping this error, with an appropriate message and no stack trace.
    */
   @NonNull
-  @PublicApi
   public DatabaseException toException() {
     return new DatabaseException("Firebase Database error: " + message);
   }

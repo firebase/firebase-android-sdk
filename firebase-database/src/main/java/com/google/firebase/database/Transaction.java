@@ -17,7 +17,6 @@ package com.google.firebase.database;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.database.snapshot.Node;
 
 /**
@@ -30,7 +29,6 @@ import com.google.firebase.database.snapshot.Node;
  * Result} can be created using either {@link Transaction#success(MutableData)} or {@link
  * com.google.firebase.database.Transaction#abort()}.
  */
-@PublicApi
 public class Transaction {
 
   /**
@@ -45,7 +43,6 @@ public class Transaction {
    * Instances are created using {@link Transaction#success(MutableData)} or {@link
    * com.google.firebase.database.Transaction#abort()}.
    */
-  @PublicApi
   public static class Result {
 
     private boolean success;
@@ -57,7 +54,6 @@ public class Transaction {
     }
 
     /** @return Whether or not this result is a success */
-    @PublicApi
     public boolean isSuccess() {
       return success;
     }
@@ -78,7 +74,6 @@ public class Transaction {
    * An object implementing this interface is used to run a transaction, and will be notified of the
    * results of the transaction.
    */
-  @PublicApi
   public interface Handler {
 
     /**
@@ -99,7 +94,6 @@ public class Transaction {
      * @return Either the new data, or an indication to abort the transaction
      */
     @NonNull
-    @PublicApi
     public Result doTransaction(@NonNull MutableData currentData);
 
     /**
@@ -110,14 +104,12 @@ public class Transaction {
      *     an error occurred
      * @param currentData The current data at the location or null if an error occurred
      */
-    @PublicApi
     public void onComplete(
         @Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot currentData);
   }
 
   /** @return A {@link Result} that aborts the transaction */
   @NonNull
-  @PublicApi
   public static Result abort() {
     return new Result(false, null);
   }
@@ -127,7 +119,6 @@ public class Transaction {
    * @return A {@link Result} indicating the new data to be stored at the location
    */
   @NonNull
-  @PublicApi
   public static Result success(@NonNull MutableData resultData) {
     return new Result(true, resultData.getNode());
   }
