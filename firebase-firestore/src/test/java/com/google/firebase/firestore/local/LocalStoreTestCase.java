@@ -877,8 +877,6 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map("a", "b")), asList(2), emptyList()));
     writeMutation(setMutation("foo/bonk", map("a", "b")));
 
-    resetPersistenceStats();
-
     ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
     assertEquals(
         asList(
@@ -889,6 +887,23 @@ public abstract class LocalStoreTestCase {
 
     // Assert that we read two documents from the remote document cache and one from the mutation
     // queue.
+    assertRemoteDocumentsRead(2);
+    assertMutationsRead(1);
+  }
+
+  @Test
+  public void testReadsAllDocumentsForCollectionQueries() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+
+    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map()), asList(2), emptyList()));
+    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map()), asList(2), emptyList()));
+    writeMutation(setMutation("foo/bonk", map()));
+
+    resetPersistenceStats();
+
+    localStore.executeQuery(query);
+
     assertRemoteDocumentsRead(2);
     assertMutationsRead(1);
   }
