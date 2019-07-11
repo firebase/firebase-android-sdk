@@ -15,12 +15,10 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
 import java.util.Arrays;
 import java.util.List;
 
 /** Sentinel values that can be used when writing document fields with set() or update(). */
-@PublicApi
 public abstract class FieldValue {
 
   FieldValue() {}
@@ -107,7 +105,6 @@ public abstract class FieldValue {
 
   /** Returns a sentinel for use with update() to mark a field for deletion. */
   @NonNull
-  @PublicApi
   public static FieldValue delete() {
     return DELETE_INSTANCE;
   }
@@ -117,7 +114,6 @@ public abstract class FieldValue {
    * the written data.
    */
   @NonNull
-  @PublicApi
   public static FieldValue serverTimestamp() {
     return SERVER_TIMESTAMP_INSTANCE;
   }
@@ -133,7 +129,6 @@ public abstract class FieldValue {
    * @return The FieldValue sentinel for use in a call to set() or update().
    */
   @NonNull
-  @PublicApi
   public static FieldValue arrayUnion(@NonNull Object... elements) {
     return new ArrayUnionFieldValue(Arrays.asList(elements));
   }
@@ -148,7 +143,6 @@ public abstract class FieldValue {
    * @return The FieldValue sentinel for use in a call to set() or update().
    */
   @NonNull
-  @PublicApi
   public static FieldValue arrayRemove(@NonNull Object... elements) {
     return new ArrayRemoveFieldValue(Arrays.asList(elements));
   }
@@ -167,7 +161,6 @@ public abstract class FieldValue {
    * @return The FieldValue sentinel for use in a call to set() or update().
    */
   @NonNull
-  @PublicApi
   public static FieldValue increment(long l) {
     return new NumericIncrementFieldValue(l);
   }
@@ -183,7 +176,6 @@ public abstract class FieldValue {
    * @return The FieldValue sentinel for use in a call to set() or update().
    */
   @NonNull
-  @PublicApi
   public static FieldValue increment(double l) {
     return new NumericIncrementFieldValue(l);
   }

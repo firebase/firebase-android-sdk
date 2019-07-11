@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore;
 
-import com.google.firebase.annotations.PublicApi;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -43,7 +42,6 @@ import java.lang.annotation.Target;
  * WriteBatch#set}), the property annotated by @DocumentId is ignored, which allows writing the POJO
  * back to any document, even if it's not the origin of the POJO.
  */
-@PublicApi
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})
 public @interface DocumentId {}

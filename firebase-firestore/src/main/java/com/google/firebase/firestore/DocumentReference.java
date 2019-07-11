@@ -21,10 +21,10 @@ import static java.util.Collections.singletonList;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
@@ -45,7 +45,6 @@ import com.google.firebase.firestore.util.Util;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
 
 /**
  * A DocumentReference refers to a document location in a Firestore database and can be used to
@@ -57,7 +56,6 @@ import javax.annotation.Nullable;
  * test mocks. Subclassing is not supported in production code and new SDK releases may break code
  * that does so.
  */
-@PublicApi
 public class DocumentReference {
 
   private final DocumentKey key;
@@ -91,13 +89,11 @@ public class DocumentReference {
 
   /** Gets the Firestore instance associated with this document reference. */
   @NonNull
-  @PublicApi
   public FirebaseFirestore getFirestore() {
     return firestore;
   }
 
   @NonNull
-  @PublicApi
   public String getId() {
     return key.getPath().getLastSegment();
   }
@@ -108,7 +104,6 @@ public class DocumentReference {
    * @return The CollectionReference that contains this document.
    */
   @NonNull
-  @PublicApi
   public CollectionReference getParent() {
     return new CollectionReference(key.getPath().popLast(), firestore);
   }
@@ -120,7 +115,6 @@ public class DocumentReference {
    * @return The path of this document.
    */
   @NonNull
-  @PublicApi
   public String getPath() {
     return key.getPath().canonicalString();
   }
@@ -133,7 +127,6 @@ public class DocumentReference {
    * @return The CollectionReference instance.
    */
   @NonNull
-  @PublicApi
   public CollectionReference collection(@NonNull String collectionPath) {
     checkNotNull(collectionPath, "Provided collection path must not be null.");
     return new CollectionReference(
@@ -149,7 +142,6 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> set(@NonNull Object data) {
     return set(data, SetOptions.OVERWRITE);
   }
@@ -165,7 +157,6 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> set(@NonNull Object data, @NonNull SetOptions options) {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
@@ -188,7 +179,6 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> update(@NonNull Map<String, Object> data) {
     ParsedUpdateData parsedData = firestore.getDataConverter().parseUpdateData(data);
     return update(parsedData);
@@ -205,9 +195,8 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> update(
-      @NonNull String field, @Nullable Object value, Object... moreFieldsAndValues) {
+      @NonNull String field, @Nullable Object value, @NonNull Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
             .getDataConverter()
@@ -227,9 +216,10 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> update(
-      @NonNull FieldPath fieldPath, @Nullable Object value, Object... moreFieldsAndValues) {
+      @NonNull FieldPath fieldPath,
+      @Nullable Object value,
+      @NonNull Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
             .getDataConverter()
@@ -252,7 +242,6 @@ public class DocumentReference {
    * @return A Task that will be resolved when the delete completes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> delete() {
     return firestore
         .getClient()
@@ -267,7 +256,6 @@ public class DocumentReference {
    *     DocumentReference.
    */
   @NonNull
-  @PublicApi
   public Task<DocumentSnapshot> get() {
     return get(Source.DEFAULT);
   }
@@ -284,7 +272,6 @@ public class DocumentReference {
    *     DocumentReference.
    */
   @NonNull
-  @PublicApi
   public Task<DocumentSnapshot> get(@NonNull Source source) {
     if (source == Source.CACHE) {
       return firestore
@@ -378,7 +365,6 @@ public class DocumentReference {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull EventListener<DocumentSnapshot> listener) {
     return addSnapshotListener(MetadataChanges.EXCLUDE, listener);
@@ -392,7 +378,6 @@ public class DocumentReference {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Executor executor, @NonNull EventListener<DocumentSnapshot> listener) {
     return addSnapshotListener(executor, MetadataChanges.EXCLUDE, listener);
@@ -409,7 +394,6 @@ public class DocumentReference {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Activity activity, @NonNull EventListener<DocumentSnapshot> listener) {
     return addSnapshotListener(activity, MetadataChanges.EXCLUDE, listener);
@@ -424,7 +408,6 @@ public class DocumentReference {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull MetadataChanges metadataChanges, @NonNull EventListener<DocumentSnapshot> listener) {
     return addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, metadataChanges, listener);
@@ -440,7 +423,6 @@ public class DocumentReference {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Executor executor,
       @NonNull MetadataChanges metadataChanges,
@@ -464,7 +446,6 @@ public class DocumentReference {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Activity activity,
       @NonNull MetadataChanges metadataChanges,

@@ -16,6 +16,7 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -23,7 +24,6 @@ import com.google.firebase.firestore.model.MaybeDocument;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Nullable;
 
 /**
  * A batch of mutations that will be sent as one unit to the backend. Batches can be marked as a

@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -28,7 +27,6 @@ import java.util.regex.Pattern;
  * (referring to a top level field in the document), or a list of field names (referring to a nested
  * field in the document).
  */
-@PublicApi
 public final class FieldPath {
   /** Matches any characters in a field path string that are reserved. */
   private static final Pattern RESERVED = Pattern.compile("[~*/\\[\\]]");
@@ -54,7 +52,7 @@ public final class FieldPath {
    * @param fieldNames A list of field names.
    * @return A {@code FieldPath} that points to a field location in a document.
    */
-  @PublicApi
+  @NonNull
   public static FieldPath of(@NonNull String... fieldNames) {
     checkArgument(fieldNames.length > 0, "Invalid field path. Provided path must not be empty.");
 
@@ -75,7 +73,6 @@ public final class FieldPath {
    * queries to sort or filter by the document ID.
    */
   @NonNull
-  @PublicApi
   public static FieldPath documentId() {
     return DOCUMENT_ID_INSTANCE;
   }

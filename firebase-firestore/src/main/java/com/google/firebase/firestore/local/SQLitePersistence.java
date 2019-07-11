@@ -27,6 +27,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteProgram;
 import android.database.sqlite.SQLiteStatement;
 import android.database.sqlite.SQLiteTransactionListener;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -45,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /**
  * A SQLite-backed instance of Persistence.

@@ -17,8 +17,8 @@ package com.google.firebase.firestore;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -35,7 +35,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * A DocumentSnapshot contains data read from a document in your Firestore database. The data can be
@@ -49,14 +48,12 @@ import javax.annotation.Nullable;
  * test mocks. Subclassing is not supported in production code and new SDK releases may break code
  * that does so.
  */
-@PublicApi
 public class DocumentSnapshot {
 
   /**
    * Controls the return value for server timestamps that have not yet been set to their final
    * value.
    */
-  @PublicApi
   public enum ServerTimestampBehavior {
     /**
      * Return 'null' for {@link com.google.firebase.firestore.FieldValue#serverTimestamp
@@ -126,20 +123,17 @@ public class DocumentSnapshot {
 
   /** @return The id of the document. */
   @NonNull
-  @PublicApi
   public String getId() {
     return key.getPath().getLastSegment();
   }
 
   /** @return The metadata for this document snapshot. */
   @NonNull
-  @PublicApi
   public SnapshotMetadata getMetadata() {
     return metadata;
   }
 
   /** @return true if the document existed in this snapshot. */
-  @PublicApi
   public boolean exists() {
     return doc != null;
   }
@@ -156,7 +150,6 @@ public class DocumentSnapshot {
    * @return The fields of the document as a Map or null if the document doesn't exist.
    */
   @Nullable
-  @PublicApi
   public Map<String, Object> getData() {
     return getData(ServerTimestampBehavior.DEFAULT);
   }
@@ -170,7 +163,6 @@ public class DocumentSnapshot {
    * @return The fields of the document as a Map or null if the document doesn't exist.
    */
   @Nullable
-  @PublicApi
   public Map<String, Object> getData(@NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
@@ -191,7 +183,6 @@ public class DocumentSnapshot {
    *     exist.
    */
   @Nullable
-  @PublicApi
   public <T> T toObject(@NonNull Class<T> valueType) {
     return toObject(valueType, ServerTimestampBehavior.DEFAULT);
   }
@@ -206,7 +197,6 @@ public class DocumentSnapshot {
    *     exist.
    */
   @Nullable
-  @PublicApi
   public <T> T toObject(
       @NonNull Class<T> valueType, @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(valueType, "Provided POJO type must not be null.");
@@ -225,7 +215,6 @@ public class DocumentSnapshot {
    * @param field the path to the field.
    * @return true iff the field exists.
    */
-  @PublicApi
   public boolean contains(@NonNull String field) {
     return contains(FieldPath.fromDotSeparatedPath(field));
   }
@@ -237,7 +226,6 @@ public class DocumentSnapshot {
    * @param fieldPath the path to the field.
    * @return true iff the field exists.
    */
-  @PublicApi
   public boolean contains(@NonNull FieldPath fieldPath) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     return (doc != null) && (doc.getField(fieldPath.getInternalPath()) != null);
@@ -250,7 +238,6 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
-  @PublicApi
   public Object get(@NonNull String field) {
     return get(FieldPath.fromDotSeparatedPath(field), ServerTimestampBehavior.DEFAULT);
   }
@@ -264,7 +251,6 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
-  @PublicApi
   public Object get(
       @NonNull String field, @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     return get(FieldPath.fromDotSeparatedPath(field), serverTimestampBehavior);
@@ -277,7 +263,6 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
-  @PublicApi
   public Object get(@NonNull FieldPath fieldPath) {
     return get(fieldPath, ServerTimestampBehavior.DEFAULT);
   }
@@ -291,7 +276,6 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
-  @PublicApi
   public Object get(
       @NonNull FieldPath fieldPath, @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
@@ -313,7 +297,6 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
-  @PublicApi
   public <T> T get(@NonNull String field, @NonNull Class<T> valueType) {
     return get(FieldPath.fromDotSeparatedPath(field), valueType, ServerTimestampBehavior.DEFAULT);
   }
@@ -329,7 +312,6 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
-  @PublicApi
   public <T> T get(
       @NonNull String field,
       @NonNull Class<T> valueType,
@@ -346,7 +328,6 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
-  @PublicApi
   public <T> T get(@NonNull FieldPath fieldPath, @NonNull Class<T> valueType) {
     return get(fieldPath, valueType, ServerTimestampBehavior.DEFAULT);
   }
@@ -362,7 +343,6 @@ public class DocumentSnapshot {
    * @return The value at the given field or null.
    */
   @Nullable
-  @PublicApi
   public <T> T get(
       @NonNull FieldPath fieldPath,
       @NonNull Class<T> valueType,
@@ -381,7 +361,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public Boolean getBoolean(@NonNull String field) {
     return getTypedValue(field, Boolean.class);
   }
@@ -394,7 +373,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public Double getDouble(@NonNull String field) {
     Number val = getTypedValue(field, Number.class);
     return val != null ? val.doubleValue() : null;
@@ -408,7 +386,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public String getString(@NonNull String field) {
     return getTypedValue(field, String.class);
   }
@@ -421,7 +398,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public Long getLong(@NonNull String field) {
     Number val = getTypedValue(field, Number.class);
     return val != null ? val.longValue() : null;
@@ -435,7 +411,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public Date getDate(@NonNull String field) {
     return getDate(field, ServerTimestampBehavior.DEFAULT);
   }
@@ -453,7 +428,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public Date getDate(
       @NonNull String field, @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(field, "Provided field path must not be null.");
@@ -478,7 +452,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public Timestamp getTimestamp(@NonNull String field) {
     return getTimestamp(field, ServerTimestampBehavior.DEFAULT);
   }
@@ -496,7 +469,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public Timestamp getTimestamp(
       @NonNull String field, @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(field, "Provided field path must not be null.");
@@ -517,7 +489,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public Blob getBlob(@NonNull String field) {
     return getTypedValue(field, Blob.class);
   }
@@ -530,7 +501,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public GeoPoint getGeoPoint(@NonNull String field) {
     return getTypedValue(field, GeoPoint.class);
   }
@@ -543,7 +513,6 @@ public class DocumentSnapshot {
    * @return The value of the field
    */
   @Nullable
-  @PublicApi
   public DocumentReference getDocumentReference(@NonNull String field) {
     return getTypedValue(field, DocumentReference.class);
   }
@@ -554,7 +523,6 @@ public class DocumentSnapshot {
    * @return The reference to the document.
    */
   @NonNull
-  @PublicApi
   public DocumentReference getReference() {
     return new DocumentReference(key, firestore);
   }

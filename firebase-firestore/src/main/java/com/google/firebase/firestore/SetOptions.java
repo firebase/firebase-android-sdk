@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import java.util.HashSet;
 import java.util.List;
@@ -31,7 +30,6 @@ import java.util.Set;
  * calls in {@link DocumentReference}, {@link WriteBatch} and {@link Transaction} can be configured
  * to perform granular merges instead of overwriting the target documents in their entirety.
  */
-@PublicApi
 public final class SetOptions {
 
   static final SetOptions OVERWRITE = new SetOptions(false, null);
@@ -63,7 +61,6 @@ public final class SetOptions {
    * Fields omitted from the set() call will remain untouched.
    */
   @NonNull
-  @PublicApi
   public static SetOptions merge() {
     return MERGE_ALL_FIELDS;
   }
@@ -79,7 +76,6 @@ public final class SetOptions {
    *     within the document.
    */
   @NonNull
-  @PublicApi
   public static SetOptions mergeFields(@NonNull List<String> fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
@@ -101,8 +97,7 @@ public final class SetOptions {
    *     within the document.
    */
   @NonNull
-  @PublicApi
-  public static SetOptions mergeFields(String... fields) {
+  public static SetOptions mergeFields(@NonNull String... fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
     for (String field : fields) {
@@ -122,7 +117,6 @@ public final class SetOptions {
    * @param fields The list of fields to merge.
    */
   @NonNull
-  @PublicApi
   public static SetOptions mergeFieldPaths(@NonNull List<FieldPath> fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 

@@ -17,8 +17,8 @@ package com.google.firebase.firestore.model.value;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.util.Util;
-import javax.annotation.Nullable;
 
 /**
  * A field value represents a data type as stored by Firestore.
