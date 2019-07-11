@@ -147,7 +147,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
         });
   }
 
-  /** Has this client been shutdown. */
+  /** Returns true if this client has been shutdown. */
   public boolean isShutdown() {
     // Technically, the asyncQueue is still running, but only accepting tasks related to shutdown
     // or supposed to be run after shutdown. It is effectively shut down to the eyes of users.

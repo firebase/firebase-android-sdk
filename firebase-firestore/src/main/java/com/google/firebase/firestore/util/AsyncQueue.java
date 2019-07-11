@@ -178,14 +178,14 @@ public class AsyncQueue {
   /**
    * A wrapper around a {@link ScheduledThreadPoolExecutor} class that provides:
    *
-   * <ul>
+   * <ol>
    *   <li>1. Synchronized task scheduling. This is different from function 3, which is about task
    *       execution in a single thread.
    *   <li>2. Ability to do soft-shutdown: only critical tasks related to shutting Firestore SDK
    *       down can be executed once the shutdown process initiated.
    *   <li>3. Single threaded execution service, no concurrent execution among the `Runnable`s
    *       scheduled in this Executor.
-   * </ul>
+   * </ol>
    */
   private class SynchronizedShutdownAwareExecutor implements Executor {
     /**

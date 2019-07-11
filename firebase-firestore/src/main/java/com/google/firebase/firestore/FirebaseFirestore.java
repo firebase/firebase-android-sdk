@@ -120,8 +120,8 @@ public class FirebaseFirestore {
     FirebaseFirestore firestore =
         new FirebaseFirestore(context, databaseId, persistenceKey, provider, queue, app);
     app.addLifecycleEventListener(
-        /* onDeleted */ (firebaseAppName, options) -> {
-          firestore.shutdown(/* fromAppDeletion */ true);
+        (firebaseAppName, options) -> {
+          firestore.shutdown(/* fromAppDeletion= */ true);
         });
     return firestore;
   }
@@ -346,30 +346,29 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Shuts down this Firestore SDK instance.
+   * Shuts down this FirebaseFirestore instance.
    *
-   * <p>IMPORTANT: If your application is designed to run with Firestore the entire life cycle, it
-   * is not recommended to call `shutdown` explicitly, the shutting down happens naturally when the
-   * application itself is shut down.
+   * <p>After shutdown only the {@link #clearPersistence()} method may be used. Any other method
+   * will throw an {@link IllegalStateException}.
    *
-   * <p>For applications designed to run without Firestore from some point on (typically to save
-   * resources as much as possible), you may call this method.
-   *
-   * <p>Once `shutdown` is called, trying to issue new reads/writes through this instance will
-   * result in {@link IllegalStateException}. Already requested reads/writes might stop resolving.
-   * Be sure to handle this well in your application if proceeding with Firestore shutting down is
-   * desired in your case.
-   *
-   * <p>Note that {@link #clearPersistence()} is an exception, it is designed to run when the
-   * Firestore SDK instance is shutdown.
-   *
-   * <p>To re-start a Firestore SDK instance, simply create a new instance via {@link
+   * <p>To restart after shutdown, simply create a new instance of FirebaseFirestore with {@link
    * #getInstance()} or {@link #getInstance(FirebaseApp)}.
+   *
+   * <p>Shutdown does not cancel any pending writes and any tasks that are awaiting a response from
+   * the server will not be resolved. The next time you start this instance, it will resume
+   * attempting to send these writes to the server.
+   *
+   * <p>Note: Under normal circumstances, calling <code>shutdown()</code> is not required. This
+   * method is useful only when you want to force this instance to release all of its resources or
+   * in combination with {@link #clearPersistence} to ensure that all local state is destroyed
+   * between test runs.
+   *
+   * @return A <code>Task</code> that is resolved when the instance has been successfully shut down.
    */
   @VisibleForTesting
-  // TODO: Make this public and remove @VisibleForTesting
+  // TODO(b/135755126): Make this public and remove @VisibleForTesting
   Task<Void> shutdown() {
-    return shutdown(/* fromAppDeletion */ false);
+    return shutdown(/* fromAppDeletion= */ false);
   }
 
   @VisibleForTesting

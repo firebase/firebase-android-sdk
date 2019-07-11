@@ -43,7 +43,7 @@ class FirestoreMultiDbComponent {
     this.authProvider = authProvider;
   }
 
-  /** Provides instances of Firestore for given database names. */
+  /** Provides instances of Firestore for given database IDs. */
   @NonNull
   synchronized FirebaseFirestore get(@NonNull String databaseId) {
     FirebaseFirestore firestore = instances.get(databaseId);
@@ -55,7 +55,7 @@ class FirestoreMultiDbComponent {
   }
 
   /**
-   * Remove the instance of a given database name from this component, such that if {@link
+   * Remove the instance of a given database ID from this component, such that if {@link
    * FirestoreMultiDbComponent#get(String)} is called again with the same name, a new instance of
    * {@link FirebaseFirestore} is created.
    *

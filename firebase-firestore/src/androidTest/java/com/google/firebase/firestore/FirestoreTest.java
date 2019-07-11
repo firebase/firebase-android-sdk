@@ -1062,8 +1062,7 @@ public class FirestoreTest {
   @Test
   public void testNewOperationThrowsAfterFirestoreShutdown() {
     FirebaseFirestore instance = testFirestore();
-    final DocumentReference reference = instance.document("abc/123");
-    DocumentReference ref = reference;
+    DocumentReference reference = instance.document("abc/123");
     waitFor(reference.set(Collections.singletonMap("Field", 100)));
 
     instance.shutdown();
@@ -1079,5 +1078,22 @@ public class FirestoreTest {
     expectError(
         () -> waitFor(instance.runTransaction(transaction -> transaction.get(reference))),
         expectedMessage);
+  }
+
+  @Test
+  public void testShutdownCalledMultipleTimes() {
+    FirebaseFirestore instance = testFirestore();
+    DocumentReference reference = instance.document("abc/123");
+    waitFor(reference.set(Collections.singletonMap("Field", 100)));
+
+    instance.shutdown();
+
+    final String expectedMessage = "The client has already been shutdown";
+    expectError(() -> waitFor(reference.get()), expectedMessage);
+
+    // Calling a second time should go through and change nothing.
+    instance.shutdown();
+
+    expectError(() -> waitFor(reference.get()), expectedMessage);
   }
 }
