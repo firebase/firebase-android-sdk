@@ -53,7 +53,7 @@ public final class FieldPath {
    * @return A {@code FieldPath} that points to a field location in a document.
    */
   @NonNull
-  public static FieldPath of(@NonNull String... fieldNames) {
+  public static FieldPath of(String... fieldNames) {
     checkArgument(fieldNames.length > 0, "Invalid field path. Provided path must not be empty.");
 
     for (int i = 0; i < fieldNames.length; ++i) {

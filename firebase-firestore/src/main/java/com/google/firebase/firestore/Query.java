@@ -613,7 +613,7 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  public Query startAt(@NonNull Object... fieldValues) {
+  public Query startAt(Object... fieldValues) {
     Bound bound = boundFromFields("startAt", fieldValues, /*before=*/ true);
     return new Query(query.startAt(bound), firestore);
   }
@@ -642,7 +642,7 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  public Query startAfter(@NonNull Object... fieldValues) {
+  public Query startAfter(Object... fieldValues) {
     Bound bound = boundFromFields("startAfter", fieldValues, /*before=*/ false);
     return new Query(query.startAt(bound), firestore);
   }
@@ -670,7 +670,7 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  public Query endBefore(@NonNull Object... fieldValues) {
+  public Query endBefore(Object... fieldValues) {
     Bound bound = boundFromFields("endBefore", fieldValues, /*before=*/ true);
     return new Query(query.endAt(bound), firestore);
   }
@@ -697,7 +697,7 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  public Query endAt(@NonNull Object... fieldValues) {
+  public Query endAt(Object... fieldValues) {
     Bound bound = boundFromFields("endAt", fieldValues, /*before=*/ false);
     return new Query(query.endAt(bound), firestore);
   }

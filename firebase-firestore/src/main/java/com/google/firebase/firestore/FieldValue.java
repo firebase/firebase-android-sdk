@@ -129,7 +129,7 @@ public abstract class FieldValue {
    * @return The FieldValue sentinel for use in a call to set() or update().
    */
   @NonNull
-  public static FieldValue arrayUnion(@NonNull Object... elements) {
+  public static FieldValue arrayUnion(Object... elements) {
     return new ArrayUnionFieldValue(Arrays.asList(elements));
   }
 
@@ -143,7 +143,7 @@ public abstract class FieldValue {
    * @return The FieldValue sentinel for use in a call to set() or update().
    */
   @NonNull
-  public static FieldValue arrayRemove(@NonNull Object... elements) {
+  public static FieldValue arrayRemove(Object... elements) {
     return new ArrayRemoveFieldValue(Arrays.asList(elements));
   }
 

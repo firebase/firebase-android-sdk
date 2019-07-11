@@ -124,7 +124,7 @@ public class Transaction {
       @NonNull DocumentReference documentRef,
       @NonNull String field,
       @Nullable Object value,
-      @NonNull Object... moreFieldsAndValues) {
+      Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
             .getDataConverter()
@@ -149,7 +149,7 @@ public class Transaction {
       @NonNull DocumentReference documentRef,
       @NonNull FieldPath fieldPath,
       @Nullable Object value,
-      @NonNull Object... moreFieldsAndValues) {
+      Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
             .getDataConverter()

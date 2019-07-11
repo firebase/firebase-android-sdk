@@ -97,7 +97,7 @@ public final class SetOptions {
    *     within the document.
    */
   @NonNull
-  public static SetOptions mergeFields(@NonNull String... fields) {
+  public static SetOptions mergeFields(String... fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
     for (String field : fields) {

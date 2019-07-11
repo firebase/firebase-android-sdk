@@ -196,7 +196,7 @@ public class DocumentReference {
    */
   @NonNull
   public Task<Void> update(
-      @NonNull String field, @Nullable Object value, @NonNull Object... moreFieldsAndValues) {
+      @NonNull String field, @Nullable Object value, Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
             .getDataConverter()
@@ -219,7 +219,7 @@ public class DocumentReference {
   public Task<Void> update(
       @NonNull FieldPath fieldPath,
       @Nullable Object value,
-      @NonNull Object... moreFieldsAndValues) {
+      Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
             .getDataConverter()
