@@ -164,6 +164,7 @@ public class StorageException extends FirebaseException {
    * Returns the detail message which was provided when this {@code Throwable} was created. Returns
    * {@code null} if no message was provided at creation time.
    */
+  @NonNull
   @Override
   @PublicApi
   public String getMessage() {
@@ -171,6 +172,7 @@ public class StorageException extends FirebaseException {
   }
 
   /** Returns the cause of this {@code Throwable}, or {@code null} if there is no cause. */
+  @Nullable
   @Override
   @PublicApi
   public synchronized Throwable getCause() {

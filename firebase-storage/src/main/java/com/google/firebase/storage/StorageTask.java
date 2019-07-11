@@ -277,6 +277,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    * @throws IllegalStateException if the Task is not yet complete
    * @throws RuntimeExecutionException if the Task failed with an exception
    */
+  @Nullable
   @Override
   @PublicApi
   public ResultT getResult() {
@@ -297,6 +298,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    * @throws X if the Task failed with an exception of type X
    * @throws RuntimeExecutionException if the Task failed with an exception that was not of type X
    */
+  @NonNull
   @Override
   @PublicApi
   public <X extends Throwable> ResultT getResult(@NonNull Class<X> exceptionType) throws X {
@@ -331,6 +333,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    * Returns the current state of the task. This method will return state at any point of the tasks
    * execution and may not be the final result..
    */
+  @NonNull
   @PublicApi
   public ResultT getSnapshot() {
     return snapState();
@@ -476,6 +479,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    *
    * @return this Task
    */
+  @NonNull
   @Override
   @PublicApi
   public StorageTask<ResultT> addOnPausedListener(
@@ -491,6 +495,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    * @param executor the executor to use to call the listener
    * @return this Task
    */
+  @NonNull
   @Override
   @PublicApi
   public StorageTask<ResultT> addOnPausedListener(
@@ -510,6 +515,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    *     removed.
    * @return this Task
    */
+  @NonNull
   @Override
   @PublicApi
   public StorageTask<ResultT> addOnPausedListener(
@@ -521,6 +527,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /** Removes a listener. */
+  @NonNull
   @PublicApi
   public StorageTask<ResultT> removeOnPausedListener(
       @NonNull OnPausedListener<? super ResultT> listener) {
@@ -534,6 +541,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    *
    * @return this Task
    */
+  @NonNull
   @Override
   @PublicApi
   public StorageTask<ResultT> addOnProgressListener(
@@ -549,6 +557,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    * @param executor the executor to use to call the listener
    * @return this Task
    */
+  @NonNull
   @Override
   @PublicApi
   public StorageTask<ResultT> addOnProgressListener(
@@ -566,6 +575,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    *     removed.
    * @return this Task
    */
+  @NonNull
   @Override
   @PublicApi
   public StorageTask<ResultT> addOnProgressListener(
@@ -577,6 +587,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /** Removes a listener. */
+  @NonNull
   @PublicApi
   public StorageTask<ResultT> removeOnProgressListener(
       @NonNull OnProgressListener<? super ResultT> listener) {
@@ -651,6 +662,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /** Removes a listener. */
+  @NonNull
   @PublicApi
   public StorageTask<ResultT> removeOnSuccessListener(
       @NonNull OnSuccessListener<? super ResultT> listener) {
@@ -727,6 +739,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /** Removes a listener. */
+  @NonNull
   @PublicApi
   public StorageTask<ResultT> removeOnFailureListener(@NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
@@ -801,6 +814,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /** Removes a listener. */
+  @NonNull
   @PublicApi
   public StorageTask<ResultT> removeOnCompleteListener(
       @NonNull OnCompleteListener<ResultT> listener) {
@@ -870,6 +884,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /** Removes a listener. */
+  @NonNull
   @PublicApi
   public StorageTask<ResultT> removeOnCanceledListener(@NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
@@ -1171,7 +1186,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
     private final Exception error;
 
     @PublicApi
-    public SnapshotBase(Exception error) {
+    public SnapshotBase(@Nullable Exception error) {
       if (error == null) {
         if (isCanceled()) {
           // give the developer a canceled exception.

@@ -56,6 +56,7 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    *
    * @return this Task
    */
+  @NonNull
   @PublicApi
   public abstract ControllableTask<StateT> addOnPausedListener(
       @NonNull OnPausedListener<? super StateT> listener);
@@ -66,6 +67,7 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    * @param executor the executor to use to call the listener
    * @return this Task
    */
+  @NonNull
   @PublicApi
   public abstract ControllableTask<StateT> addOnPausedListener(
       @NonNull Executor executor, @NonNull OnPausedListener<? super StateT> listener);
@@ -77,6 +79,7 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    *     removed.
    * @return this Task
    */
+  @NonNull
   @PublicApi
   public abstract ControllableTask<StateT> addOnPausedListener(
       @NonNull Activity activity, @NonNull OnPausedListener<? super StateT> listener);

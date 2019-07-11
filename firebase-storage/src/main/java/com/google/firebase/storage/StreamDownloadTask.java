@@ -258,7 +258,8 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
      * @param stream the {@link InputStream} for the downloaded bytes.
      * @throws IOException may be thrown to cancel the operation.
      */
-    void doInBackground(TaskSnapshot state, InputStream stream) throws IOException;
+    void doInBackground(@NonNull TaskSnapshot state, @NonNull InputStream stream)
+        throws IOException;
   }
 
   static class StreamProgressWrapper extends InputStream {
@@ -503,6 +504,7 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
      *     closed either in {@link StreamProcessor#doInBackground(TaskSnapshot, InputStream)} or in
      *     {@link OnSuccessListener}, {@link OnFailureListener}
      */
+    @NonNull
     @PublicApi
     public InputStream getStream() {
       return StreamDownloadTask.this.inputStream;

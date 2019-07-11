@@ -54,6 +54,7 @@ public abstract class CancellableTask<StateT> extends Task<StateT> {
    *
    * @return this Task
    */
+  @NonNull
   @PublicApi
   public abstract CancellableTask<StateT> addOnProgressListener(
       @NonNull OnProgressListener<? super StateT> listener);
@@ -64,6 +65,7 @@ public abstract class CancellableTask<StateT> extends Task<StateT> {
    * @param executor the executor to use to call the listener
    * @return this Task
    */
+  @NonNull
   @PublicApi
   public abstract CancellableTask<StateT> addOnProgressListener(
       @NonNull Executor executor, @NonNull OnProgressListener<? super StateT> listener);
@@ -75,6 +77,7 @@ public abstract class CancellableTask<StateT> extends Task<StateT> {
    *     removed.
    * @return this Task
    */
+  @NonNull
   @PublicApi
   public abstract CancellableTask<StateT> addOnProgressListener(
       @NonNull Activity activity, @NonNull OnProgressListener<? super StateT> listener);

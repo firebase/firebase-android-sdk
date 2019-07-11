@@ -139,6 +139,7 @@ public class StorageMetadata {
   }
 
   /** @return the content type of the {@link StorageReference}. */
+  @Nullable
   @PublicApi
   public String getContentType() {
     return mContentType.getValue();
@@ -150,6 +151,7 @@ public class StorageMetadata {
    * @param key The key for which the metadata should be returned
    * @return the metadata stored in the object the given key.
    */
+  @Nullable
   @PublicApi
   public String getCustomMetadata(@NonNull String key) {
     if (TextUtils.isEmpty(key)) {
@@ -337,7 +339,7 @@ public class StorageMetadata {
      * @param original The source of the metadata to build from.
      */
     @PublicApi
-    public Builder(StorageMetadata original) {
+    public Builder(@NonNull StorageMetadata original) {
       mMetadata = new StorageMetadata(original, false);
     }
 
@@ -400,6 +402,7 @@ public class StorageMetadata {
       }
     }
 
+    @NonNull
     @PublicApi
     public StorageMetadata build() {
       return new StorageMetadata(mMetadata, mFromJSON);
@@ -410,6 +413,7 @@ public class StorageMetadata {
      *
      * @param contentLanguage the new content language.
      */
+    @NonNull
     @PublicApi
     public Builder setContentLanguage(@Nullable String contentLanguage) {
       mMetadata.mContentLanguage = MetadataValue.withUserValue(contentLanguage);
@@ -421,6 +425,7 @@ public class StorageMetadata {
      *
      * @param contentEncoding the new encoding to use.
      */
+    @NonNull
     @PublicApi
     public Builder setContentEncoding(@Nullable String contentEncoding) {
       mMetadata.mContentEncoding = MetadataValue.withUserValue(contentEncoding);
@@ -430,6 +435,7 @@ public class StorageMetadata {
     /**
      * @param contentDisposition changes the content disposition for the {@link StorageReference}
      */
+    @NonNull
     @PublicApi
     public Builder setContentDisposition(@Nullable String contentDisposition) {
       mMetadata.mContentDisposition = MetadataValue.withUserValue(contentDisposition);
@@ -441,6 +447,7 @@ public class StorageMetadata {
      *
      * @param cacheControl the new Cache Control setting.
      */
+    @NonNull
     @PublicApi
     public Builder setCacheControl(@Nullable String cacheControl) {
       mMetadata.mCacheControl = MetadataValue.withUserValue(cacheControl);
@@ -453,8 +460,9 @@ public class StorageMetadata {
      * @param key the key of the new value
      * @param value the value to set.
      */
+    @NonNull
     @PublicApi
-    public Builder setCustomMetadata(String key, String value) {
+    public Builder setCustomMetadata(@NonNull String key, @Nullable String value) {
       if (!mMetadata.mCustomMetadata.isUserProvided()) {
         mMetadata.mCustomMetadata = MetadataValue.withUserValue(new HashMap<>());
       }
@@ -467,6 +475,7 @@ public class StorageMetadata {
      *
      * @param contentType the new Content Type.
      */
+    @NonNull
     @PublicApi
     public Builder setContentType(@Nullable String contentType) {
       mMetadata.mContentType = MetadataValue.withUserValue(contentType);

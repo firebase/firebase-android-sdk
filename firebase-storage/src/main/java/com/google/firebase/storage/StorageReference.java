@@ -720,7 +720,7 @@ public class StorageReference implements Comparable<StorageReference> {
   }
 
   @Override
-  public int compareTo(StorageReference other) {
+  public int compareTo(@NonNull StorageReference other) {
     // mStorageUri contains a reference to the GCS bucket as well as the fully qualified path
     // of this reference.
     return mStorageUri.compareTo(other.mStorageUri);
