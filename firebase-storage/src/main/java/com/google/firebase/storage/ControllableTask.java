@@ -16,7 +16,6 @@ package com.google.firebase.storage;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
 import java.util.concurrent.Executor;
 
 /**
@@ -26,7 +25,6 @@ import java.util.concurrent.Executor;
  * @param <StateT> the type of state this operation returns in events.
  */
 @SuppressWarnings("unused")
-@PublicApi
 public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
 
   /**
@@ -35,7 +33,6 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    * @return true if this task was successfully paused or is in the process of being paused. Returns
    *     false if the task is already completed or in a state that cannot be paused.
    */
-  @PublicApi
   public abstract boolean pause();
 
   /**
@@ -44,11 +41,9 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    * @return true if the task is successfully resumed or is in the process of being resumed. Returns
    *     false if the task is already completed or in a state that cannot be resumed.
    */
-  @PublicApi
   public abstract boolean resume();
 
   /** @return true if the task has been paused. */
-  @PublicApi
   public abstract boolean isPaused();
 
   /**
@@ -57,7 +52,6 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    * @return this Task
    */
   @NonNull
-  @PublicApi
   public abstract ControllableTask<StateT> addOnPausedListener(
       @NonNull OnPausedListener<? super StateT> listener);
 
@@ -68,7 +62,6 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    * @return this Task
    */
   @NonNull
-  @PublicApi
   public abstract ControllableTask<StateT> addOnPausedListener(
       @NonNull Executor executor, @NonNull OnPausedListener<? super StateT> listener);
 
@@ -80,7 +73,6 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    * @return this Task
    */
   @NonNull
-  @PublicApi
   public abstract ControllableTask<StateT> addOnPausedListener(
       @NonNull Activity activity, @NonNull OnPausedListener<? super StateT> listener);
 }

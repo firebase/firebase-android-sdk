@@ -32,7 +32,6 @@ import com.google.android.gms.tasks.RuntimeExecutionException;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.annotations.PublicApi;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,7 +39,6 @@ import java.util.concurrent.Executor;
 
 /** A controllable Task that has a synchronized state machine. */
 @SuppressWarnings({"unused", "TypeParameterUnusedInFormals"})
-@PublicApi
 public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
     extends ControllableTask<ResultT> {
   private static final String TAG = "StorageTask";
@@ -203,7 +201,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    *     unrecoverable error or has entered another state that precludes resume.
    */
   @Override
-  @PublicApi
   public boolean resume() {
     if (tryChangeState(INTERNAL_STATE_QUEUED, true)) {
       resetState();
@@ -220,7 +217,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    *     immediately paused if it was executing another action and can still fail or complete.
    */
   @Override
-  @PublicApi
   public boolean pause() {
     return tryChangeState(new int[] {INTERNAL_STATE_PAUSED, INTERNAL_STATE_PAUSING}, true);
   }
@@ -231,42 +227,36 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    * @return {@code true} if this task is successfully being canceled.
    */
   @Override
-  @PublicApi
   public boolean cancel() {
     return tryChangeState(new int[] {INTERNAL_STATE_CANCELED, INTERNAL_STATE_CANCELING}, true);
   }
 
   /** Returns {@code true} if the Task is complete; {@code false} otherwise. */
   @Override
-  @PublicApi
   public boolean isComplete() {
     return (getInternalState() & STATES_COMPLETE) != 0;
   }
 
   /** Returns {@code true} if the Task has completed successfully; {@code false} otherwise. */
   @Override
-  @PublicApi
   public boolean isSuccessful() {
     return (getInternalState() & STATES_SUCCESS) != 0;
   }
 
   /** Returns {@code true} if the task has been canceled. */
   @Override
-  @PublicApi
   public boolean isCanceled() {
     return getInternalState() == INTERNAL_STATE_CANCELED;
   }
 
   /** Returns {@code true} if the task is currently running. */
   @Override
-  @PublicApi
   public boolean isInProgress() {
     return (getInternalState() & STATES_INPROGRESS) != 0;
   }
 
   /** Returns {@code true} if the task has been paused. */
   @Override
-  @PublicApi
   public boolean isPaused() {
     return (getInternalState() & STATES_PAUSED) != 0;
   }
@@ -279,7 +269,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Nullable
   @Override
-  @PublicApi
   public ResultT getResult() {
     if (getFinalResult() == null) {
       throw new IllegalStateException();
@@ -300,7 +289,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public <X extends Throwable> ResultT getResult(@NonNull Class<X> exceptionType) throws X {
     if (getFinalResult() == null) {
       throw new IllegalStateException();
@@ -321,7 +309,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Nullable
   @Override
-  @PublicApi
   public Exception getException() {
     if (getFinalResult() == null) {
       return null;
@@ -334,7 +321,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    * execution and may not be the final result..
    */
   @NonNull
-  @PublicApi
   public ResultT getSnapshot() {
     return snapState();
   }
@@ -441,22 +427,17 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   // These callbacks get executed in a synchronized block
-  @PublicApi
+
   protected void onQueued() {}
 
-  @PublicApi
   protected void onProgress() {}
 
-  @PublicApi
   protected void onPaused() {}
 
-  @PublicApi
   protected void onFailure() {}
 
-  @PublicApi
   protected void onSuccess() {}
 
-  @PublicApi
   protected void onCanceled() {}
 
   private ResultT getFinalResult() {
@@ -481,7 +462,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public StorageTask<ResultT> addOnPausedListener(
       @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -497,7 +477,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public StorageTask<ResultT> addOnPausedListener(
       @NonNull Executor executor, @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -517,7 +496,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public StorageTask<ResultT> addOnPausedListener(
       @NonNull Activity activity, @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -528,7 +506,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> removeOnPausedListener(
       @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -543,7 +520,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public StorageTask<ResultT> addOnProgressListener(
       @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -559,7 +535,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public StorageTask<ResultT> addOnProgressListener(
       @NonNull Executor executor, @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -577,7 +552,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public StorageTask<ResultT> addOnProgressListener(
       @NonNull Activity activity, @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -588,7 +562,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> removeOnProgressListener(
       @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -606,7 +579,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> addOnSuccessListener(
       @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -628,7 +600,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> addOnSuccessListener(
       @NonNull Executor executor, @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(executor);
@@ -652,7 +623,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> addOnSuccessListener(
       @NonNull Activity activity, @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(activity);
@@ -663,7 +633,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> removeOnSuccessListener(
       @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -684,7 +653,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> addOnFailureListener(@NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
     failureManager.addListener(null, null, listener);
@@ -704,7 +672,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> addOnFailureListener(
       @NonNull Executor executor, @NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
@@ -728,7 +695,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> addOnFailureListener(
       @NonNull Activity activity, @NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
@@ -740,7 +706,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> removeOnFailureListener(@NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
     failureManager.removeListener(listener);
@@ -760,7 +725,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> addOnCompleteListener(@NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
     completeListener.addListener(null, null, listener);
@@ -780,7 +744,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> addOnCompleteListener(
       @NonNull Executor executor, @NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -803,7 +766,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> addOnCompleteListener(
       @NonNull Activity activity, @NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -815,7 +777,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> removeOnCompleteListener(
       @NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -834,7 +795,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public StorageTask<ResultT> addOnCanceledListener(@NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
     cancelManager.addListener(null, null, listener);
@@ -852,7 +812,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public StorageTask<ResultT> addOnCanceledListener(
       @NonNull Executor executor, @NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
@@ -874,7 +833,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public StorageTask<ResultT> addOnCanceledListener(
       @NonNull Activity activity, @NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
@@ -885,7 +843,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
-  @PublicApi
   public StorageTask<ResultT> removeOnCanceledListener(@NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
     cancelManager.removeListener(listener);
@@ -902,7 +859,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public <ContinuationResultT> Task<ContinuationResultT> continueWith(
       @NonNull Continuation<ResultT, ContinuationResultT> continuation) {
     return continueWithImpl(null, continuation);
@@ -917,7 +873,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public <ContinuationResultT> Task<ContinuationResultT> continueWith(
       @NonNull final Executor executor,
       @NonNull final Continuation<ResultT, ContinuationResultT> continuation) {
@@ -965,7 +920,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public <ContinuationResultT> Task<ContinuationResultT> continueWithTask(
       @NonNull Continuation<ResultT, Task<ContinuationResultT>> continuation) {
     return continueWithTaskImpl(null, continuation);
@@ -980,7 +934,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public <ContinuationResultT> Task<ContinuationResultT> continueWithTask(
       @NonNull final Executor executor,
       @NonNull final Continuation<ResultT, Task<ContinuationResultT>> continuation) {
@@ -1001,7 +954,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public <ContinuationResultT> Task<ContinuationResultT> onSuccessTask(
       @NonNull SuccessContinuation<ResultT, ContinuationResultT> continuation) {
     return successTaskImpl(null, continuation);
@@ -1020,7 +972,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
-  @PublicApi
   public <ContinuationResultT> Task<ContinuationResultT> onSuccessTask(
       @NonNull Executor executor,
       @NonNull SuccessContinuation<ResultT, ContinuationResultT> continuation) {
@@ -1181,11 +1132,9 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /** Base class for state. */
-  @PublicApi
   public class SnapshotBase implements StorageTask.ProvideError {
     private final Exception error;
 
-    @PublicApi
     public SnapshotBase(@Nullable Exception error) {
       if (error == null) {
         if (isCanceled()) {
@@ -1204,14 +1153,12 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
     /** Returns the {@link StorageTask} for this state. */
     @NonNull
-    @PublicApi
     public StorageTask<ResultT> getTask() {
       return StorageTask.this;
     }
 
     /** Returns the target of the upload. */
     @NonNull
-    @PublicApi
     public StorageReference getStorage() {
       return getTask().getStorage();
     }
@@ -1219,7 +1166,6 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
     /** Returns the last error encountered. */
     @Override
     @Nullable
-    @PublicApi
     public Exception getError() {
       return error;
     }

@@ -28,7 +28,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.Slashes;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -46,7 +45,6 @@ import java.util.concurrent.Executor;
  * href="https://cloud.google.com/storage/">Google Cloud Storage</a>)
  */
 @SuppressWarnings("unused")
-@PublicApi
 public class StorageReference implements Comparable<StorageReference> {
   private static final String TAG = "StorageReference";
 
@@ -82,7 +80,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return the child {@link StorageReference}.
    */
   @NonNull
-  @PublicApi
   public StorageReference child(@NonNull String pathString) {
     Preconditions.checkArgument(
         !TextUtils.isEmpty(pathString), "childName cannot be null or empty");
@@ -116,7 +113,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return the parent {@link StorageReference}.
    */
   @Nullable
-  @PublicApi
   public StorageReference getParent() {
     String path = mStorageUri.getPath();
     if (TextUtils.isEmpty(path) || path.equals("/")) {
@@ -139,7 +135,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return the root {@link StorageReference}.
    */
   @NonNull
-  @PublicApi
   public StorageReference getRoot() {
     Uri child = mStorageUri.buildUpon().path("").build();
     return new StorageReference(child, mFirebaseStorage);
@@ -151,7 +146,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return the name.
    */
   @NonNull
-  @PublicApi
   public String getName() {
     String path = mStorageUri.getPath();
     assert path != null;
@@ -168,7 +162,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return the path.
    */
   @NonNull
-  @PublicApi
   public String getPath() {
     String path = mStorageUri.getPath();
     assert path != null;
@@ -181,7 +174,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return the bucket.
    */
   @NonNull
-  @PublicApi
   public String getBucket() {
     return mStorageUri.getAuthority();
   }
@@ -192,7 +184,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return The {@link FirebaseStorage} service.
    */
   @NonNull
-  @PublicApi
   public FirebaseStorage getStorage() {
     return mFirebaseStorage;
   }
@@ -216,7 +207,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putBytes(@NonNull byte[] bytes) {
     Preconditions.checkArgument(bytes != null, "bytes cannot be null");
 
@@ -237,7 +227,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putBytes(@NonNull byte[] bytes, @NonNull StorageMetadata metadata) {
     Preconditions.checkArgument(bytes != null, "bytes cannot be null");
     Preconditions.checkArgument(metadata != null, "metadata cannot be null");
@@ -256,7 +245,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putFile(@NonNull Uri uri) {
     Preconditions.checkArgument(uri != null, "uri cannot be null");
 
@@ -276,7 +264,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putFile(@NonNull Uri uri, @NonNull StorageMetadata metadata) {
     Preconditions.checkArgument(uri != null, "uri cannot be null");
     Preconditions.checkArgument(metadata != null, "metadata cannot be null");
@@ -299,7 +286,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putFile(
       @NonNull Uri uri, @Nullable StorageMetadata metadata, @Nullable Uri existingUploadUri) {
     Preconditions.checkArgument(uri != null, "uri cannot be null");
@@ -319,7 +305,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putStream(@NonNull InputStream stream) {
     Preconditions.checkArgument(stream != null, "stream cannot be null");
 
@@ -339,7 +324,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putStream(@NonNull InputStream stream, @NonNull StorageMetadata metadata) {
     Preconditions.checkArgument(stream != null, "stream cannot be null");
     Preconditions.checkArgument(metadata != null, "metadata cannot be null");
@@ -355,14 +339,12 @@ public class StorageReference implements Comparable<StorageReference> {
 
   /** @return the set of active upload tasks currently in progress or recently completed. */
   @NonNull
-  @PublicApi
   public List<UploadTask> getActiveUploadTasks() {
     return StorageTaskManager.getInstance().getUploadTasksUnder(this);
   }
 
   /** @return the set of active download tasks currently in progress or recently completed. */
   @NonNull
-  @PublicApi
   public List<FileDownloadTask> getActiveDownloadTasks() {
     return StorageTaskManager.getInstance().getDownloadTasksUnder(this);
   }
@@ -377,7 +359,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("deprecation")
   @NonNull
-  @PublicApi
   public Task<StorageMetadata> getMetadata() {
     TaskCompletionSource<StorageMetadata> pendingResult = new TaskCompletionSource<>();
     StorageTaskScheduler.getInstance().scheduleCommand(new GetMetadataTask(this, pendingResult));
@@ -394,7 +375,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("deprecation,unused")
   @NonNull
-  @PublicApi
   public Task<Uri> getDownloadUrl() {
     TaskCompletionSource<Uri> pendingResult = new TaskCompletionSource<>();
     StorageTaskScheduler.getInstance().scheduleCommand(new GetDownloadUrlTask(this, pendingResult));
@@ -410,7 +390,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("deprecation")
   @NonNull
-  @PublicApi
   public Task<StorageMetadata> updateMetadata(@NonNull StorageMetadata metadata) {
     Preconditions.checkNotNull(metadata);
 
@@ -436,7 +415,6 @@ public class StorageReference implements Comparable<StorageReference> {
    */
   @SuppressWarnings("deprecation")
   @NonNull
-  @PublicApi
   public Task<byte[]> getBytes(final long maxDownloadSizeBytes) {
     final TaskCompletionSource<byte[]> pendingResult = new TaskCompletionSource<>();
 
@@ -444,7 +422,6 @@ public class StorageReference implements Comparable<StorageReference> {
     task.setStreamProcessor(
             new StreamDownloadTask.StreamProcessor() {
               @Override
-              @PublicApi
               public void doInBackground(StreamDownloadTask.TaskSnapshot state, InputStream stream)
                   throws IOException {
                 try {
@@ -472,7 +449,6 @@ public class StorageReference implements Comparable<StorageReference> {
         .addOnSuccessListener(
             new OnSuccessListener<StreamDownloadTask.TaskSnapshot>() {
               @Override
-              @PublicApi
               public void onSuccess(StreamDownloadTask.TaskSnapshot state) {
                 if (!pendingResult.getTask().isComplete()) {
                   // something went wrong and we didn't set results, but we think it worked.
@@ -485,7 +461,6 @@ public class StorageReference implements Comparable<StorageReference> {
         .addOnFailureListener(
             new OnFailureListener() {
               @Override
-              @PublicApi
               public void onFailure(@NonNull Exception e) {
                 StorageException se = StorageException.fromExceptionAndHttpCode(e, 0);
                 assert se != null;
@@ -506,7 +481,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return A {@link FileDownloadTask} that can be used to monitor or manage the download.
    */
   @NonNull
-  @PublicApi
   public FileDownloadTask getFile(@NonNull Uri destinationUri) {
     FileDownloadTask task = new FileDownloadTask(this, destinationUri);
     task.queue();
@@ -521,7 +495,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return A {@link FileDownloadTask} that can be used to monitor or manage the download.
    */
   @NonNull
-  @PublicApi
   public FileDownloadTask getFile(@NonNull File destinationFile) {
     return getFile(Uri.fromFile(destinationFile));
   }
@@ -535,7 +508,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return A {@link FileDownloadTask} that can be used to monitor or manage the download.
    */
   @NonNull
-  @PublicApi
   public StreamDownloadTask getStream() {
     StreamDownloadTask task = new StreamDownloadTask(this);
     task.queue();
@@ -552,7 +524,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return A {@link FileDownloadTask} that can be used to monitor or manage the download.
    */
   @NonNull
-  @PublicApi
   public StreamDownloadTask getStream(@NonNull StreamDownloadTask.StreamProcessor processor) {
     StreamDownloadTask task = new StreamDownloadTask(this);
     task.setStreamProcessor(processor);
@@ -569,7 +540,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return A {@link Task} that indicates whether the operation succeeded or failed.
    */
   @NonNull
-  @PublicApi
   public Task<Void> delete() {
     TaskCompletionSource<Void> pendingResult = new TaskCompletionSource<>();
     StorageTaskScheduler.getInstance().scheduleCommand(new DeleteStorageTask(this, pendingResult));
@@ -595,7 +565,6 @@ public class StorageReference implements Comparable<StorageReference> {
    *     StorageReference.
    */
   @NonNull
-  @PublicApi
   public Task<ListResult> list(int maxResults) {
     Preconditions.checkArgument(maxResults > 0, "maxResults must be greater than zero");
     Preconditions.checkArgument(maxResults <= 1000, "maxResults must be at most 1000");
@@ -621,7 +590,6 @@ public class StorageReference implements Comparable<StorageReference> {
    *     StorageReference.
    */
   @NonNull
-  @PublicApi
   public Task<ListResult> list(int maxResults, @NonNull String pageToken) {
     Preconditions.checkArgument(maxResults > 0, "maxResults must be greater than zero");
     Preconditions.checkArgument(maxResults <= 1000, "maxResults must be at most 1000");
@@ -645,7 +613,6 @@ public class StorageReference implements Comparable<StorageReference> {
    * @return A {@link Task} that returns all items and prefixes under the current StorageReference.
    */
   @NonNull
-  @PublicApi
   public Task<ListResult> listAll() {
     TaskCompletionSource<ListResult> pendingResult = new TaskCompletionSource<>();
 

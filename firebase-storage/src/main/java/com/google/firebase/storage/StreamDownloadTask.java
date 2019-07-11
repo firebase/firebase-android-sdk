@@ -22,7 +22,6 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
 import com.google.firebase.storage.network.GetNetworkRequest;
 import com.google.firebase.storage.network.NetworkRequest;
@@ -34,7 +33,6 @@ import java.util.concurrent.Callable;
 
 /** A task that downloads bytes of a GCS blob. */
 @SuppressWarnings("unused")
-@PublicApi
 public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnapshot> {
   static final long PREFERRED_CHUNK_SIZE = 256 * 1024;
   private static final String TAG = "StreamDownloadTask";
@@ -247,7 +245,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
   }
 
   /** A callback that is used to handle the stream download */
-  @PublicApi
   public interface StreamProcessor {
     /**
      * doInBackground gets called on a background thread and should process the input stream to load
@@ -339,7 +336,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     @Override
-    @PublicApi
     public int read() throws IOException {
       while (ensureStream()) {
         try {
@@ -357,7 +353,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     @Override
-    @PublicApi
     public int available() throws IOException {
       while (ensureStream()) {
         try {
@@ -371,7 +366,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     @Override
-    @PublicApi
     public void close() throws IOException {
       if (mWrappedStream != null) {
         mWrappedStream.close();
@@ -386,17 +380,14 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     @Override
-    @PublicApi
     public void mark(int readlimit) {}
 
     @Override
-    @PublicApi
     public boolean markSupported() {
       return false;
     }
 
     @Override
-    @PublicApi
     public int read(@NonNull byte[] buffer, int byteOffset, int byteCount) throws IOException {
       int bytesRead = 0;
       while (ensureStream()) {
@@ -435,7 +426,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     @Override
-    @PublicApi
     public long skip(long byteCount) throws IOException {
       long bytesSkipped = 0;
 
@@ -473,7 +463,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
   }
 
   /** Encapsulates state about the running {@link StreamDownloadTask} */
-  @PublicApi
   public class TaskSnapshot extends StorageTask<StreamDownloadTask.TaskSnapshot>.SnapshotBase {
     private final long mBytesDownloaded;
 
@@ -488,13 +477,11 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     /** @return the total bytes downloaded so far. */
-    @PublicApi
     public long getBytesTransferred() {
       return mBytesDownloaded;
     }
 
     /** @return the total bytes of the download. */
-    @PublicApi
     public long getTotalByteCount() {
       return StreamDownloadTask.this.getTotalBytes();
     }
@@ -505,7 +492,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
      *     {@link OnSuccessListener}, {@link OnFailureListener}
      */
     @NonNull
-    @PublicApi
     public InputStream getStream() {
       return StreamDownloadTask.this.inputStream;
     }
