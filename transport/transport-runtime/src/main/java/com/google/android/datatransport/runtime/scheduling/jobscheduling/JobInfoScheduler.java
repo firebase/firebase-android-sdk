@@ -14,6 +14,8 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
+import static android.util.Base64.*;
+
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
@@ -36,6 +38,7 @@ public class JobInfoScheduler implements WorkScheduler {
   static final String ATTEMPT_NUMBER = "attemptNumber";
   static final String BACKEND_NAME = "backendName";
   static final String EVENT_PRIORITY = "priority";
+  static final String EXTRAS = "extras";
 
   private final Context context;
 
@@ -97,6 +100,9 @@ public class JobInfoScheduler implements WorkScheduler {
     bundle.putInt(ATTEMPT_NUMBER, attemptNumber);
     bundle.putString(BACKEND_NAME, transportContext.getBackendName());
     bundle.putInt(EVENT_PRIORITY, transportContext.getPriority().ordinal());
+    if (transportContext.getExtras() != null) {
+      bundle.putString(EXTRAS, encodeToString(transportContext.getExtras(), DEFAULT));
+    }
     builder.setExtras(bundle);
 
     jobScheduler.schedule(builder.build());

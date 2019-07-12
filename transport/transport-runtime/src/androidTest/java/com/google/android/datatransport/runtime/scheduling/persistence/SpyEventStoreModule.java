@@ -14,11 +14,6 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_CONTEXTS_SQL_V1;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENTS_SQL_V1;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENT_BACKEND_INDEX_V1;
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.CREATE_EVENT_METADATA_SQL_V1;
 import static org.mockito.Mockito.spy;
 
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
@@ -45,32 +40,8 @@ public abstract class SpyEventStoreModule {
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
 
   @Provides
-  @Named("CREATE_EVENTS_SQL")
-  static String createEventsSql() {
-    return CREATE_EVENTS_SQL_V1;
-  }
-
-  @Provides
-  @Named("CREATE_EVENT_METADATA_SQL")
-  static String createEventMetadataSql() {
-    return CREATE_EVENT_METADATA_SQL_V1;
-  }
-
-  @Provides
-  @Named("CREATE_CONTEXTS_SQL")
-  static String createContextsSql() {
-    return CREATE_CONTEXTS_SQL_V1;
-  }
-
-  @Provides
-  @Named("CREATE_EVENT_BACKEND_INDEX")
-  static String getCreateEventBackendIndex() {
-    return CREATE_EVENT_BACKEND_INDEX_V1;
-  }
-
-  @Provides
-  @Named("CREATE_CONTEXT_BACKEND_PRIORITY_INDEX")
-  static String createEventBackendPriorityIndex() {
-    return CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1;
+  @Named("SCHEMA_VERSION")
+  static int schemaVersion() {
+    return SchemaManager.SCHEMA_VERSION;
   }
 }

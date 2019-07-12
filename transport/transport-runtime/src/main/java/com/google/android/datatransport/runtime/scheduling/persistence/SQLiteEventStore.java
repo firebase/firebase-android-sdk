@@ -19,6 +19,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabaseLockedException;
 import android.os.SystemClock;
+import android.util.Base64;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
@@ -30,6 +31,7 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -78,7 +80,6 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   @Override
   @Nullable
   public PersistedEvent persist(TransportContext transportContext, EventInternal event) {
-
     long newRowId =
         inTransaction(
             db -> {
@@ -127,20 +128,33 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     record.put("backend_name", transportContext.getBackendName());
     record.put("priority", transportContext.getPriority().ordinal());
     record.put("next_request_ms", 0);
+    if (transportContext.getExtras() != null) {
+      record.put("extras", Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
+    }
+
     return db.insert("transport_contexts", null, record);
   }
 
   @Nullable
   private Long getTransportContextId(SQLiteDatabase db, TransportContext transportContext) {
+    final StringBuilder selection = new StringBuilder("backend_name = ? and priority = ?");
+    ArrayList<String> selectionArgs =
+        new ArrayList<>(
+            Arrays.asList(
+                transportContext.getBackendName(),
+                String.valueOf(transportContext.getPriority().ordinal())));
+
+    if (transportContext.getExtras() != null) {
+      selection.append(" and extras = ?");
+      selectionArgs.add(Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
+    }
+
     return tryWithCursor(
         db.query(
             "transport_contexts",
             new String[] {"_id"},
-            "backend_name = ? and priority = ?",
-            new String[] {
-              transportContext.getBackendName(),
-              String.valueOf(transportContext.getPriority().ordinal())
-            },
+            selection.toString(),
+            selectionArgs.toArray(new String[0]),
             null,
             null,
             null),
