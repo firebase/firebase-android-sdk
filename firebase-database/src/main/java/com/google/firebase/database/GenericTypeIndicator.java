@@ -14,8 +14,6 @@
 
 package com.google.firebase.database;
 
-import com.google.firebase.annotations.PublicApi;
-
 /**
  * Due to the way that Java implements generics (type-erasure), it is necessary to use a slightly
  * more complicated method to properly resolve types for generic collections at runtime. To solve
@@ -57,7 +55,6 @@ import com.google.firebase.annotations.PublicApi;
  *
  * @param <T> The type of generic collection that this instance servers as an indicator for
  */
-@PublicApi
 public abstract class GenericTypeIndicator<T> {
   // TODO: This is a legacy class that inherited from TypeIndicator from Jackson to be
   // able to resolve generic types. We need a new solution going forward.
