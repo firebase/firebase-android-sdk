@@ -94,43 +94,38 @@ class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
 
         private fun doVisit(node: UDeclaration) {
             for (annotation in node.annotations) {
-                if (isNullabilityAnnotation(annotation)) {
-                    ensureAndroidNullability(context, annotation)
-                }
+                ensureAndroidNullability(context, annotation)
             }
         }
 
         private fun ensureAndroidNullability(context: JavaContext, annotation: UAnnotation) {
-            annotation.qualifiedName?.let { name ->
-                if (name in ANDROIDX_ANNOTATIONS) {
-                    return
-                }
+            val name = annotation.qualifiedName ?: return
 
-                val simpleName = name.split('.').last()
-                val replacement = if (simpleName in NOT_NULL_ANNOTATIONS) "NonNull" else "Nullable"
-                val replacementAnnotation = "@androidx.annotation.$replacement"
+            val simpleName = name.split('.').last()
 
-                val fix = LintFix.create()
-                        .replace()
-                        .name("Replace with $replacementAnnotation")
-                        .range(context.getLocation(annotation))
-                        .all()
-                        .shortenNames()
-                        .reformat(true)
-                        .with(replacementAnnotation)
-                        .build()
-
-                context.report(NON_ANDROIDX_NULLABILITY, context.getLocation(annotation),
-                        "Use androidx nullability annotations.", fix)
+            if (!isNullabilityAnnotation(simpleName) || name in ANDROIDX_ANNOTATIONS) {
+                return
             }
+
+            val replacement = if (simpleName in NOT_NULL_ANNOTATIONS) "NonNull" else "Nullable"
+            val replacementAnnotation = "@androidx.annotation.$replacement"
+
+            val fix = LintFix.create()
+                    .replace()
+                    .name("Replace with $replacementAnnotation")
+                    .range(context.getLocation(annotation))
+                    .all()
+                    .shortenNames()
+                    .reformat(true)
+                    .with(replacementAnnotation)
+                    .build()
+
+            context.report(NON_ANDROIDX_NULLABILITY, context.getLocation(annotation),
+                    "Use androidx nullability annotations.", fix)
         }
 
-        private fun isNullabilityAnnotation(annotation: UAnnotation): Boolean {
-            annotation.qualifiedName?.let { name ->
-                val simpleName = name.split('.').last()
-                return (simpleName in NULLABLE_ANNOTATIONS || simpleName in NOT_NULL_ANNOTATIONS)
-            }
-            return false
-        }
+        private fun isNullabilityAnnotation(name: String): Boolean =
+                name in NULLABLE_ANNOTATIONS || name in NOT_NULL_ANNOTATIONS
+
     }
 }

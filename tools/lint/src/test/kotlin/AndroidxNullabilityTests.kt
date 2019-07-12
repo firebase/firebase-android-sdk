@@ -37,7 +37,7 @@ private fun androidxAnnotation(name: String): String {
     return annotationSource("androidx.annotation", name)
 }
 
-private val NULLABLE_CLASS = """
+private val JAVAX_NULLABLE_CLASS = """
     import javax.annotation.Nullable;
     @Nullable
     class Foo {}
@@ -49,7 +49,7 @@ private val ANDROIDX_NULLABLE_CLASS = """
     class Foo {}
 """.trimIndent()
 
-private val NULLABLE_METHOD = """
+private val JAVAX_NULLABLE_METHOD = """
     import javax.annotation.Nullable;
 
     class Foo {
@@ -65,7 +65,7 @@ private val ANDROIDX_NULLABLE_METHOD = """
     }
 """.trimIndent()
 
-private val NON_NULL_METHOD_PARAMETER = """
+private val JAVAX_NON_NULL_METHOD_PARAMETER = """
     import javax.annotation.Nonnull;
 
     class Foo {
@@ -88,7 +88,7 @@ class AndroidxNullabilityTests : LintDetectorTest() {
             mutableListOf(NonAndroidxNullabilityDetector.NON_ANDROIDX_NULLABILITY)
 
     fun testJavaxAnnotatedNullableClass() {
-        lint().files(java(NULLABLE_CLASS), java(javaxAnnotation("Nullable")))
+        lint().files(java(JAVAX_NULLABLE_CLASS), java(javaxAnnotation("Nullable")))
                 .run()
                 .checkContains(EXPECTED_ERROR)
     }
@@ -102,7 +102,7 @@ class AndroidxNullabilityTests : LintDetectorTest() {
 
     fun testJavaxAnnotatedNullableMethod() {
         lint().files(
-                java(NULLABLE_METHOD), java(javaxAnnotation("Nullable")))
+                java(JAVAX_NULLABLE_METHOD), java(javaxAnnotation("Nullable")))
                 .run()
                 .checkContains(EXPECTED_ERROR)
     }
@@ -116,7 +116,7 @@ class AndroidxNullabilityTests : LintDetectorTest() {
 
     fun testJavaxAnnotatedNonNullMethodParameter() {
         lint().files(
-                java(NON_NULL_METHOD_PARAMETER), java(javaxAnnotation("Nonnull")))
+                java(JAVAX_NON_NULL_METHOD_PARAMETER), java(javaxAnnotation("Nonnull")))
                 .run()
                 .checkContains(EXPECTED_ERROR)
     }
