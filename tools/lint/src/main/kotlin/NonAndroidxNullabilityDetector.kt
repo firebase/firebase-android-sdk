@@ -24,6 +24,7 @@ import com.android.tools.lint.detector.api.LintFix
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.android.tools.lint.detector.api.isKotlin
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UDeclaration
@@ -50,6 +51,7 @@ class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
                 category = Category.COMPLIANCE,
                 priority = 1,
                 severity = Severity.ERROR,
+                enabledByDefault = false,
                 implementation = IMPLEMENTATION
         )
     }
@@ -59,6 +61,12 @@ class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
     }
 
     override fun createUastHandler(context: JavaContext): UElementHandler? {
+        // using deprecated psi field here instead of sourcePsi because the IDE
+        // still uses older version of UAST
+        if (isKotlin(context.uastFile?.sourcePsi)) {
+            // These checks apply only to Java code
+            return null
+        }
         return Visitor(context)
     }
 
