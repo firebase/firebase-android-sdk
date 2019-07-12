@@ -17,24 +17,28 @@ package com.google.android.datatransport.cct;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.Destination;
-import com.google.auto.value.AutoValue;
 import java.io.UnsupportedEncodingException;
 
-@AutoValue
-abstract class LegacyFlgDestination implements Destination {
+public class LegacyFlgDestination implements Destination {
   static final String DESTINATION_NAME = "lflg";
-  static final String DEFAULT_API_KEY =
+  private static final String DEFAULT_API_KEY =
       CctBackendFactory.mergeStrings("AzSCki82AwsLzKd5O8zo", "IayckHiZRO1EFl1aGoK");
 
-  @NonNull
-  public abstract String getAPIKey();
+  public static final LegacyFlgDestination DEFAULT_INSTANCE =
+      new LegacyFlgDestination(DEFAULT_API_KEY);
 
-  /** Returns a new builder for {@link LegacyFlgDestination}. */
-  public static Builder builder() {
-    return new AutoValue_LegacyFlgDestination.Builder().setAPIKey(DEFAULT_API_KEY);
+  private final String apiKey;
+
+  private LegacyFlgDestination(String apiKey) {
+    this.apiKey = apiKey;
   }
 
-  @Nullable
+  @NonNull
+  String getAPIKey() {
+    return apiKey;
+  }
+
+  @NonNull
   @Override
   public String getName() {
     return DESTINATION_NAME;
@@ -43,7 +47,7 @@ abstract class LegacyFlgDestination implements Destination {
   @Nullable
   @Override
   public byte[] getExtras() {
-    return encodeString(getAPIKey());
+    return encodeString(apiKey);
   }
 
   @Nullable
@@ -57,33 +61,12 @@ abstract class LegacyFlgDestination implements Destination {
   }
 
   @Nullable
-  private static String decodeByteArray(@NonNull byte[] a) {
+  static String decodeExtras(@NonNull byte[] a) {
     try {
       return new String(a, "UTF-8");
     } catch (UnsupportedEncodingException e) {
       e.printStackTrace();
     }
     return null;
-  }
-
-  @AutoValue.Builder
-  public abstract static class Builder {
-    public abstract Builder setAPIKey(@NonNull String apiKey);
-
-    public Builder withDefaultAPIKey() {
-      return setAPIKey(DEFAULT_API_KEY);
-    }
-
-    public abstract LegacyFlgDestination build();
-
-    Builder fromExtras(@NonNull byte[] extras) {
-      String apiKey = decodeByteArray(extras);
-
-      if (apiKey != null) {
-        return setAPIKey(apiKey);
-      }
-
-      return null;
-    }
   }
 }

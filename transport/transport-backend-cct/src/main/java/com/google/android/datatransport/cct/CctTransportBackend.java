@@ -265,18 +265,11 @@ final class CctTransportBackend implements TransportBackend {
   @Override
   public BackendResponse send(BackendRequest request) {
     BatchedLogRequest requestBody = getRequestBody(request);
-    final String apiKey;
-
     // CCT backend supports 2 different endpoints
     // We route to CCT backend if extras are null and to LegacyFlg otherwise.
     // This (anti-) pattern should not be required for other backends
-    if (request.getExtras() == null) {
-      apiKey = null;
-    } else {
-      LegacyFlgDestination flgDestination =
-          LegacyFlgDestination.builder().fromExtras(request.getExtras()).build();
-      apiKey = flgDestination.getAPIKey();
-    }
+    final String apiKey =
+        request.getExtras() == null ? null : LegacyFlgDestination.decodeExtras(request.getExtras());
 
     try {
       return doSend(requestBody, apiKey);

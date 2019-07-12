@@ -14,27 +14,17 @@
 
 package com.google.android.datatransport.cct;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.Destination;
 
 public class CCTDestination implements Destination {
   static final String DESTINATION_NAME = "cct";
-  private static volatile CCTDestination instance;
+  private static volatile CCTDestination INSTANCE = new CCTDestination();
 
   private CCTDestination() {}
 
-  public static CCTDestination getInstance() {
-    if (instance == null) {
-      synchronized (CCTDestination.class) {
-        if (instance == null) {
-          instance = new CCTDestination();
-        }
-      }
-    }
-    return instance;
-  }
-
-  @Nullable
+  @NonNull
   @Override
   public String getName() {
     return DESTINATION_NAME;
