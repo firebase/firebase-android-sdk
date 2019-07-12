@@ -92,7 +92,8 @@ final class SchemaManager extends SQLiteOpenHelper {
         db.execSQL("DROP INDEX contexts_backend_priority");
       };
 
-  static final List<Migration> INCREMENTAL_MIGRATIONS = Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2);
+  private static final List<Migration> INCREMENTAL_MIGRATIONS =
+      Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2);
 
   @Inject
   SchemaManager(Context context, @Named("SCHEMA_VERSION") int schemaVersion) {
@@ -148,7 +149,7 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private void upgrade(SQLiteDatabase db, int fromVersion, int toVersion) {
     if (toVersion > INCREMENTAL_MIGRATIONS.size()) {
-      throw new RuntimeException(
+      throw new IllegalArgumentException(
           "Migration from "
               + fromVersion
               + " to "

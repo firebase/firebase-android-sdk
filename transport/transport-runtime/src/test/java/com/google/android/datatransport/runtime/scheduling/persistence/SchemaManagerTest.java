@@ -24,6 +24,7 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import java.util.Map;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -131,13 +132,17 @@ public class SchemaManagerTest {
     assertThat(store.loadBatch(CONTEXT1)).doesNotContain(event1);
   }
 
-  @Test(expected = RuntimeException.class)
+  @Test
   public void upgrade_toANonExistentVersion_fails() {
     int oldVersion = 1;
     int nonExistentVersion = 1000;
     SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
 
-    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, nonExistentVersion);
+    Assert.assertThrows(
+        RuntimeException.class,
+        () ->
+            schemaManager.onUpgrade(
+                schemaManager.getWritableDatabase(), oldVersion, nonExistentVersion));
   }
 
   private PersistedEvent simulatedPersistOnV1Database(
