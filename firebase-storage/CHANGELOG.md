@@ -5,6 +5,9 @@
 - [changed] Added validation to `StorageReference.getDownloadUrl()` and
   `StorageReference.getMetadata()` to return an error if the reference is the
   root of the bucket.
+- [changed] Added missing nullability annotations for better Kotlin interop.
+- [internal] Removed ``@PublicApi` annotations as they are no longer enforced
+  and have no semantic meaning.
 
 # 17.0.0
 - [internal] Updated the SDK initialization process and removed usages of
