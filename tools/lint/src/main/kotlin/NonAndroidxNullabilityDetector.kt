@@ -35,6 +35,12 @@ import org.jetbrains.uast.UMethod
 private val NULLABLE_ANNOTATIONS = listOf("Nullable", "CheckForNull")
 private val NOT_NULL_ANNOTATIONS = listOf("NonNull", "NotNull", "Nonnull")
 
+private val ANDROIDX_ANNOTATIONS = listOf(
+        "androidx.annotation.Nullable",
+        "androidx.annotation.NonNull",
+        "android.support.annotation.Nullable",
+        "android.support.annotation.NonNull")
+
 class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
     companion object Issues {
         private val IMPLEMENTATION = Implementation(
@@ -96,13 +102,12 @@ class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
 
         private fun ensureAndroidNullability(context: JavaContext, annotation: UAnnotation) {
             annotation.qualifiedName?.let { name ->
-                val path = name.split('.')
-                val packageName = path.subList(0, path.size - 1).joinToString(".")
-                if (packageName in listOf("androidx.annotation", "android.support.annotation")) {
+                if (name in ANDROIDX_ANNOTATIONS) {
                     return
                 }
 
-                val replacement = if (path.last() in NOT_NULL_ANNOTATIONS) "NonNull" else "Nullable"
+                val simpleName = name.split('.').last()
+                val replacement = if (simpleName in NOT_NULL_ANNOTATIONS) "NonNull" else "Nullable"
                 val replacementAnnotation = "@androidx.annotation.$replacement"
 
                 val fix = LintFix.create()
