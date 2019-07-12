@@ -267,7 +267,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    * @throws IllegalStateException if the Task is not yet complete
    * @throws RuntimeExecutionException if the Task failed with an exception
    */
-  @Nullable
+  @NonNull
   @Override
   public ResultT getResult() {
     if (getFinalResult() == null) {
