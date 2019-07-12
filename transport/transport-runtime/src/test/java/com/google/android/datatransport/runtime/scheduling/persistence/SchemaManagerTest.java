@@ -139,7 +139,7 @@ public class SchemaManagerTest {
     SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
 
     Assert.assertThrows(
-        RuntimeException.class,
+        IllegalArgumentException.class,
         () ->
             schemaManager.onUpgrade(
                 schemaManager.getWritableDatabase(), oldVersion, nonExistentVersion));
