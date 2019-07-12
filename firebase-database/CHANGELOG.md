@@ -1,4 +1,8 @@
-# Unreleased
+# 18.0.1
+- [changed] The SDK now reports the correct version number (via
+  `FirebaseDatabase.getSdkVersion()`).
+
+# 17.0.0
 - [changed] Added `@RestrictTo` annotations to discourage the use of APIs that
   are not public. This affects internal APIs that were previously obfuscated
   and are not mentioned in our documentation.

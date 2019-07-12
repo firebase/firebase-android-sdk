@@ -36,7 +36,7 @@ import com.google.firebase.database.core.utilities.Validation;
  */
 public class FirebaseDatabase {
 
-  private static final String SDK_VERSION = "3.0.0";
+  private static final String SDK_VERSION = BuildConfig.VERSION_NAME;
 
   private final FirebaseApp app;
   private final RepoInfo repoInfo;
