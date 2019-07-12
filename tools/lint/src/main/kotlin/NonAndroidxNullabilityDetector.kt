@@ -126,6 +126,5 @@ class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
 
         private fun isNullabilityAnnotation(name: String): Boolean =
                 name in NULLABLE_ANNOTATIONS || name in NOT_NULL_ANNOTATIONS
-
     }
 }
