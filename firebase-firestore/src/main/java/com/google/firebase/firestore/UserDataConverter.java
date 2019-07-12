@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue.ArrayRemoveFieldValue;
@@ -57,7 +58,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.annotation.Nullable;
 
 /**
  * Helper for parsing raw user input (provided via the API) into internal model classes.

@@ -17,13 +17,12 @@ package com.google.firebase.firestore;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
-import javax.annotation.Nullable;
 
 /**
  * A CollectionReference can be used for adding documents, getting document references, and querying
@@ -33,7 +32,6 @@ import javax.annotation.Nullable;
  * test mocks. Subclassing is not supported in production code and new SDK releases may break code
  * that does so.
  */
-@PublicApi
 public class CollectionReference extends Query {
 
   CollectionReference(ResourcePath path, FirebaseFirestore firestore) {
@@ -50,7 +48,6 @@ public class CollectionReference extends Query {
 
   /** @return The ID of the collection. */
   @NonNull
-  @PublicApi
   public String getId() {
     return query.getPath().getLastSegment();
   }
@@ -63,7 +60,6 @@ public class CollectionReference extends Query {
    *     collection.
    */
   @Nullable
-  @PublicApi
   public DocumentReference getParent() {
     ResourcePath parentPath = query.getPath().popLast();
     if (parentPath.isEmpty()) {
@@ -80,7 +76,6 @@ public class CollectionReference extends Query {
    * @return The path of this collection.
    */
   @NonNull
-  @PublicApi
   public String getPath() {
     return query.getPath().canonicalString();
   }
@@ -92,7 +87,6 @@ public class CollectionReference extends Query {
    * @return A DocumentReference pointing to a new document with an auto-generated ID.
    */
   @NonNull
-  @PublicApi
   public DocumentReference document() {
     return document(Util.autoId());
   }
@@ -105,7 +99,6 @@ public class CollectionReference extends Query {
    * @return The DocumentReference instance.
    */
   @NonNull
-  @PublicApi
   public DocumentReference document(@NonNull String documentPath) {
     checkNotNull(documentPath, "Provided document path must not be null.");
     return DocumentReference.forPath(
@@ -121,7 +114,6 @@ public class CollectionReference extends Query {
    * @return A Task that will be resolved with the DocumentReference of the newly created document.
    */
   @NonNull
-  @PublicApi
   public Task<DocumentReference> add(@NonNull Object data) {
     checkNotNull(data, "Provided data must not be null.");
     final DocumentReference ref = document();

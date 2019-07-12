@@ -14,11 +14,9 @@
 
 package com.google.firebase.firestore;
 
-import com.google.firebase.annotations.PublicApi;
-import javax.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /** An interface for event listeners. */
-@PublicApi
 public interface EventListener<T> {
 
   /**
@@ -28,6 +26,5 @@ public interface EventListener<T> {
    * @param value The value of the event. null if there was an error.
    * @param error The error if there was error. null otherwise.
    */
-  @PublicApi
   void onEvent(@Nullable T value, @Nullable FirebaseFirestoreException error);
 }

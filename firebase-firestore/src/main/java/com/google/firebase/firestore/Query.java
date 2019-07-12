@@ -20,10 +20,10 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
@@ -50,7 +50,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
 
 /**
  * A Query which you can read or listen to. You can also construct refined Query objects by adding
@@ -60,14 +59,12 @@ import javax.annotation.Nullable;
  * test mocks. Subclassing is not supported in production code and new SDK releases may break code
  * that does so.
  */
-@PublicApi
 public class Query {
   final com.google.firebase.firestore.core.Query query;
 
   final FirebaseFirestore firestore;
 
   /** An enum for the direction of a sort. */
-  @PublicApi
   public enum Direction {
     ASCENDING,
     DESCENDING
@@ -80,7 +77,6 @@ public class Query {
 
   /** Gets the Firestore instance associated with this query. */
   @NonNull
-  @PublicApi
   public FirebaseFirestore getFirestore() {
     return firestore;
   }
@@ -94,7 +90,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereEqualTo(@NonNull String field, @Nullable Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.EQUAL, value);
   }
@@ -108,7 +103,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
     return whereHelper(fieldPath, Operator.EQUAL, value);
   }
@@ -122,7 +116,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereLessThan(@NonNull String field, @NonNull Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.LESS_THAN, value);
   }
@@ -136,7 +129,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereLessThan(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.LESS_THAN, value);
   }
@@ -150,7 +142,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereLessThanOrEqualTo(@NonNull String field, @NonNull Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.LESS_THAN_OR_EQUAL, value);
   }
@@ -164,7 +155,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereLessThanOrEqualTo(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.LESS_THAN_OR_EQUAL, value);
   }
@@ -178,7 +168,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereGreaterThan(@NonNull String field, @NonNull Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.GREATER_THAN, value);
   }
@@ -192,7 +181,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereGreaterThan(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.GREATER_THAN, value);
   }
@@ -206,7 +194,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereGreaterThanOrEqualTo(@NonNull String field, @NonNull Object value) {
     return whereHelper(
         FieldPath.fromDotSeparatedPath(field), Operator.GREATER_THAN_OR_EQUAL, value);
@@ -221,7 +208,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereGreaterThanOrEqualTo(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.GREATER_THAN_OR_EQUAL, value);
   }
@@ -239,7 +225,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereArrayContains(@NonNull String field, @NonNull Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS, value);
   }
@@ -257,7 +242,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query whereArrayContains(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.ARRAY_CONTAINS, value);
   }
@@ -526,7 +510,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query orderBy(@NonNull String field) {
     return orderBy(FieldPath.fromDotSeparatedPath(field), Direction.ASCENDING);
   }
@@ -538,7 +521,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query orderBy(@NonNull FieldPath fieldPath) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     return orderBy(fieldPath.getInternalPath(), Direction.ASCENDING);
@@ -553,7 +535,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query orderBy(@NonNull String field, @NonNull Direction direction) {
     return orderBy(FieldPath.fromDotSeparatedPath(field), direction);
   }
@@ -567,7 +548,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query orderBy(@NonNull FieldPath fieldPath, @NonNull Direction direction) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     return orderBy(fieldPath.getInternalPath(), direction);
@@ -603,7 +583,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query limit(long limit) {
     if (limit <= 0) {
       throw new IllegalArgumentException(
@@ -621,7 +600,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query startAt(@NonNull DocumentSnapshot snapshot) {
     Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /*before=*/ true);
     return new Query(query.startAt(bound), firestore);
@@ -635,7 +613,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query startAt(Object... fieldValues) {
     Bound bound = boundFromFields("startAt", fieldValues, /*before=*/ true);
     return new Query(query.startAt(bound), firestore);
@@ -650,7 +627,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query startAfter(@NonNull DocumentSnapshot snapshot) {
     Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /*before=*/ false);
     return new Query(query.startAt(bound), firestore);
@@ -666,7 +642,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query startAfter(Object... fieldValues) {
     Bound bound = boundFromFields("startAfter", fieldValues, /*before=*/ false);
     return new Query(query.startAt(bound), firestore);
@@ -681,7 +656,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query endBefore(@NonNull DocumentSnapshot snapshot) {
     Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /*before=*/ true);
     return new Query(query.endAt(bound), firestore);
@@ -696,7 +670,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query endBefore(Object... fieldValues) {
     Bound bound = boundFromFields("endBefore", fieldValues, /*before=*/ true);
     return new Query(query.endAt(bound), firestore);
@@ -711,7 +684,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query endAt(@NonNull DocumentSnapshot snapshot) {
     Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /*before=*/ false);
     return new Query(query.endAt(bound), firestore);
@@ -725,7 +697,6 @@ public class Query {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query endAt(Object... fieldValues) {
     Bound bound = boundFromFields("endAt", fieldValues, /*before=*/ false);
     return new Query(query.endAt(bound), firestore);
@@ -845,7 +816,6 @@ public class Query {
    * @return A Task that will be resolved with the results of the Query.
    */
   @NonNull
-  @PublicApi
   public Task<QuerySnapshot> get() {
     return get(Source.DEFAULT);
   }
@@ -861,8 +831,7 @@ public class Query {
    * @return A Task that will be resolved with the results of the Query.
    */
   @NonNull
-  @PublicApi
-  public Task<QuerySnapshot> get(Source source) {
+  public Task<QuerySnapshot> get(@NonNull Source source) {
     if (source == Source.CACHE) {
       return firestore
           .getClient()
@@ -936,7 +905,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(@NonNull EventListener<QuerySnapshot> listener) {
     return addSnapshotListener(MetadataChanges.EXCLUDE, listener);
   }
@@ -949,7 +917,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Executor executor, @NonNull EventListener<QuerySnapshot> listener) {
     return addSnapshotListener(executor, MetadataChanges.EXCLUDE, listener);
@@ -965,7 +932,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Activity activity, @NonNull EventListener<QuerySnapshot> listener) {
     return addSnapshotListener(activity, MetadataChanges.EXCLUDE, listener);
@@ -980,7 +946,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull MetadataChanges metadataChanges, @NonNull EventListener<QuerySnapshot> listener) {
     return addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, metadataChanges, listener);
@@ -996,7 +961,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Executor executor,
       @NonNull MetadataChanges metadataChanges,
@@ -1019,7 +983,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Activity activity,
       @NonNull MetadataChanges metadataChanges,

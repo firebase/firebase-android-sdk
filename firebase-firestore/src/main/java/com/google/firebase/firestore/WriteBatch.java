@@ -20,7 +20,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
@@ -44,7 +43,6 @@ import java.util.Map;
  * test mocks. Subclassing is not supported in production code and new SDK releases may break code
  * that does so.
  */
-@PublicApi
 public class WriteBatch {
   private final FirebaseFirestore firestore;
   private final ArrayList<Mutation> mutations = new ArrayList<>();
@@ -64,7 +62,6 @@ public class WriteBatch {
    * @return This WriteBatch instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch set(@NonNull DocumentReference documentRef, @NonNull Object data) {
     return set(documentRef, data, SetOptions.OVERWRITE);
   }
@@ -81,7 +78,6 @@ public class WriteBatch {
    * @return This WriteBatch instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch set(
       @NonNull DocumentReference documentRef, @NonNull Object data, @NonNull SetOptions options) {
     firestore.validateReference(documentRef);
@@ -106,7 +102,6 @@ public class WriteBatch {
    * @return This WriteBatch instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch update(
       @NonNull DocumentReference documentRef, @NonNull Map<String, Object> data) {
     ParsedUpdateData parsedData = firestore.getDataConverter().parseUpdateData(data);
@@ -125,7 +120,6 @@ public class WriteBatch {
    * @return This WriteBatch instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch update(
       @NonNull DocumentReference documentRef,
       @NonNull String field,
@@ -151,7 +145,6 @@ public class WriteBatch {
    * @return This WriteBatch instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch update(
       @NonNull DocumentReference documentRef,
       @NonNull FieldPath fieldPath,
@@ -181,7 +174,6 @@ public class WriteBatch {
    * @return This WriteBatch instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch delete(@NonNull DocumentReference documentRef) {
     firestore.validateReference(documentRef);
     verifyNotCommitted();
@@ -195,7 +187,6 @@ public class WriteBatch {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> commit() {
     verifyNotCommitted();
     committed = true;
@@ -218,9 +209,8 @@ public class WriteBatch {
    *
    * @see FirebaseFirestore#runBatch(WriteBatch.Function)
    */
-  @PublicApi
   public interface Function {
-    @PublicApi
+
     void apply(@NonNull WriteBatch batch);
   }
 }

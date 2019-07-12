@@ -17,12 +17,11 @@ package com.google.firebase.firestore;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.Assert;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * A QueryDocumentSnapshot contains data read from a document in your Firestore database as part of
@@ -37,7 +36,6 @@ import javax.annotation.Nullable;
  * test mocks. Subclassing is not supported in production code and new SDK releases may break code
  * that does so.
  */
-@PublicApi
 public class QueryDocumentSnapshot extends DocumentSnapshot {
 
   private QueryDocumentSnapshot(
@@ -62,7 +60,6 @@ public class QueryDocumentSnapshot extends DocumentSnapshot {
    */
   @NonNull
   @Override
-  @PublicApi
   public Map<String, Object> getData() {
     Map<String, Object> result = super.getData();
     Assert.hardAssert(result != null, "Data in a QueryDocumentSnapshot should be non-null");
@@ -79,7 +76,6 @@ public class QueryDocumentSnapshot extends DocumentSnapshot {
    */
   @NonNull
   @Override
-  @PublicApi
   public Map<String, Object> getData(@NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
@@ -96,7 +92,6 @@ public class QueryDocumentSnapshot extends DocumentSnapshot {
    */
   @NonNull
   @Override
-  @PublicApi
   public <T> T toObject(@NonNull Class<T> valueType) {
     T result = super.toObject(valueType);
     Assert.hardAssert(result != null, "Object in a QueryDocumentSnapshot should be non-null");
@@ -113,7 +108,6 @@ public class QueryDocumentSnapshot extends DocumentSnapshot {
    */
   @NonNull
   @Override
-  @PublicApi
   public <T> T toObject(
       @NonNull Class<T> valueType, @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(

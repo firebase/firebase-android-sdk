@@ -16,6 +16,7 @@ package com.google.firebase.firestore.core;
 
 import static java.util.Collections.unmodifiableList;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.mutation.FieldMask;
@@ -33,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
 
 public class UserData {
   private UserData() {} // Do not instantiate

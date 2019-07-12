@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore;
 
-import com.google.firebase.annotations.PublicApi;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -25,7 +24,6 @@ import java.lang.annotation.Target;
  * being written contains null for a @ServerTimestamp-annotated field, it will be replaced with a
  * server-generated timestamp.
  */
-@PublicApi
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface ServerTimestamp {}

@@ -16,11 +16,9 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.util.Util;
 
 /** Immutable class representing a GeoPoint in Firestore */
-@PublicApi
 public class GeoPoint implements Comparable<GeoPoint> {
   private final double latitude;
   private final double longitude;
@@ -31,7 +29,6 @@ public class GeoPoint implements Comparable<GeoPoint> {
    * @param latitude The latitude of this GeoPoint in the range [-90, 90].
    * @param longitude The longitude of this GeoPoint in the range [-180, 180].
    */
-  @PublicApi
   public GeoPoint(double latitude, double longitude) {
     if (Double.isNaN(latitude) || latitude < -90 || latitude > 90) {
       throw new IllegalArgumentException("Latitude must be in the range of [-90, 90]");
@@ -44,19 +41,16 @@ public class GeoPoint implements Comparable<GeoPoint> {
   }
 
   /** @return The latitude value of this GeoPoint. */
-  @PublicApi
   public double getLatitude() {
     return latitude;
   }
 
   /** @return The longitude value of this GeoPoint. */
-  @PublicApi
   public double getLongitude() {
     return longitude;
   }
 
   @Override
-  @PublicApi
   public int compareTo(@NonNull GeoPoint other) {
     int comparison = Util.compareDoubles(latitude, other.latitude);
     if (comparison == 0) {
