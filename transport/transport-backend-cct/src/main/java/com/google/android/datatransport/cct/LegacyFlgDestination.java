@@ -14,8 +14,6 @@
 
 package com.google.android.datatransport.cct;
 
-import static com.google.android.datatransport.cct.CctBackendFactory.mergeStrings;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.Destination;
@@ -25,7 +23,8 @@ import java.io.UnsupportedEncodingException;
 @AutoValue
 abstract class LegacyFlgDestination implements Destination {
   static final String DESTINATION_NAME = "lflg";
-  static final String DEFAULT_API_KEY = mergeStrings("AzSCki82AwsLzKd5O8z", "IayckHiZRO1EFl1aGoKo");
+  static final String DEFAULT_API_KEY =
+      CctBackendFactory.mergeStrings("AzSCki82AwsLzKd5O8zo", "IayckHiZRO1EFl1aGoK");
 
   @NonNull
   public abstract String getAPIKey();

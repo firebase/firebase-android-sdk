@@ -15,6 +15,7 @@
 package com.google.android.datatransport.cct;
 
 import static com.google.android.datatransport.cct.CctBackendFactory.CCT_URL;
+import static com.google.android.datatransport.cct.CctBackendFactory.LFLG_URL;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
@@ -91,6 +92,6 @@ public class CctBackendFactoryTest {
             LegacyFlgDestination.DESTINATION_NAME);
 
     CctTransportBackend backend = (CctTransportBackend) cctBackendFactory.create(creationContext);
-    assertThat(backend.endPoint).isEqualTo(new URL(CCT_URL));
+    assertThat(backend.endPoint).isEqualTo(new URL(LFLG_URL));
   }
 }

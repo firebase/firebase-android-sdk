@@ -15,7 +15,6 @@
 package com.google.android.datatransport.cct;
 
 import androidx.annotation.Keep;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.backends.BackendFactory;
 import com.google.android.datatransport.runtime.backends.CreationContext;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
@@ -45,7 +44,6 @@ public class CctBackendFactory implements BackendFactory {
         creationContext.getMonotonicClock());
   }
 
-  @VisibleForTesting
   static String mergeStrings(String part1, String part2) {
     int sizeDiff = part1.length() - part2.length();
     if (sizeDiff < 0 || sizeDiff > 1) {
