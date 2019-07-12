@@ -14,17 +14,19 @@
 
 package com.google.firebase.remoteconfig;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseException;
 
 /** Base class for {@link FirebaseRemoteConfig} exceptions. */
 public class FirebaseRemoteConfigException extends FirebaseException {
   /** Creates a Firebase Remote Config exception with the given message. */
-  public FirebaseRemoteConfigException(String detailMessage) {
+  public FirebaseRemoteConfigException(@NonNull String detailMessage) {
     super(detailMessage);
   }
 
   /** Creates a Firebase Remote Config exception with the given message and cause. */
-  public FirebaseRemoteConfigException(String detailMessage, Throwable cause) {
+  public FirebaseRemoteConfigException(@NonNull String detailMessage, @Nullable Throwable cause) {
     super(detailMessage, cause);
   }
 }
