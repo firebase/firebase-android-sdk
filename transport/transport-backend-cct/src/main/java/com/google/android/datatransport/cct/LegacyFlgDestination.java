@@ -14,6 +14,8 @@
 
 package com.google.android.datatransport.cct;
 
+import static com.google.android.datatransport.cct.CctBackendFactory.mergeStrings;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.Destination;
@@ -22,20 +24,21 @@ import java.io.UnsupportedEncodingException;
 
 @AutoValue
 abstract class LegacyFlgDestination implements Destination {
-  private static final String LEGACY_FLG_DESTINATION_NAME = "lflg";
+  static final String DESTINATION_NAME = "lflg";
+  static final String DEFAULT_API_KEY = mergeStrings("AzSCki82AwsLzKd5O8z", "IayckHiZRO1EFl1aGoKo");
 
   @NonNull
   public abstract String getAPIKey();
 
   /** Returns a new builder for {@link LegacyFlgDestination}. */
   public static Builder builder() {
-    return new AutoValue_LegacyFlgDestination.Builder();
+    return new AutoValue_LegacyFlgDestination.Builder().setAPIKey(DEFAULT_API_KEY);
   }
 
   @Nullable
   @Override
   public String getName() {
-    return LEGACY_FLG_DESTINATION_NAME;
+    return DESTINATION_NAME;
   }
 
   @Nullable
@@ -55,7 +58,7 @@ abstract class LegacyFlgDestination implements Destination {
   }
 
   @Nullable
-  static String decodeByteArray(@NonNull byte[] a) {
+  private static String decodeByteArray(@NonNull byte[] a) {
     try {
       return new String(a, "UTF-8");
     } catch (UnsupportedEncodingException e) {
@@ -67,6 +70,10 @@ abstract class LegacyFlgDestination implements Destination {
   @AutoValue.Builder
   public abstract static class Builder {
     public abstract Builder setAPIKey(@NonNull String apiKey);
+
+    public Builder withDefaultAPIKey() {
+      return setAPIKey(DEFAULT_API_KEY);
+    }
 
     public abstract LegacyFlgDestination build();
 

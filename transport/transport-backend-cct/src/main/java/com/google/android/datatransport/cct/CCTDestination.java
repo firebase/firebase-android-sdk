@@ -18,7 +18,7 @@ import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.Destination;
 
 public class CCTDestination implements Destination {
-  static final String CCT_DESTINATION_NAME = "cct";
+  static final String DESTINATION_NAME = "cct";
   private static volatile CCTDestination instance;
 
   private CCTDestination() {}
@@ -37,7 +37,7 @@ public class CCTDestination implements Destination {
   @Nullable
   @Override
   public String getName() {
-    return CCT_DESTINATION_NAME;
+    return DESTINATION_NAME;
   }
 
   @Nullable

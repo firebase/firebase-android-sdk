@@ -23,6 +23,10 @@ public interface Destination {
   /**
    * Any extras that must be passed to the backend while uploading. Uploads to the backend are
    * grouped by (backend_name, priority, extras)
+   *
+   * <p>Note that backends that change the implementations of this method must prepare to
+   * deserialize older implementations as well. For events that have already been written to disk,
+   * extras may be at older versions.
    */
   @Nullable
   byte[] getExtras();

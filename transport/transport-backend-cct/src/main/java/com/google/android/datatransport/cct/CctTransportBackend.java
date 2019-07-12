@@ -81,7 +81,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String KEY_TIMEZONE_OFFSET = "tz-offset";
 
   private final ConnectivityManager connectivityManager;
-  private final URL endPoint;
+  final URL endPoint;
   private final Clock uptimeClock;
   private final Clock wallTimeClock;
   private final int readTimeout;
@@ -277,10 +277,6 @@ final class CctTransportBackend implements TransportBackend {
           LegacyFlgDestination.builder().fromExtras(request.getExtras()).build();
       apiKey = flgDestination.getAPIKey();
     }
-
-    //    if(true){
-    //      throw new RuntimeException(endpoint.toString());
-    //    }
 
     try {
       return doSend(requestBody, apiKey);
