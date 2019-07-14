@@ -207,7 +207,14 @@ public final class LocalSerializerTest {
     ByteString resumeToken = TestUtil.resumeToken(1039);
 
     QueryData queryData =
-        new QueryData(query, targetId, sequenceNumber, QueryPurpose.LISTEN, version, resumeToken);
+        new QueryData(
+            query,
+            targetId,
+            sequenceNumber,
+            /* sycned= */ true,
+            QueryPurpose.LISTEN,
+            version,
+            resumeToken);
 
     // Let the RPC serializer test various permutations of query serialization.
     com.google.firestore.v1.Target.QueryTarget queryTarget =
@@ -223,6 +230,7 @@ public final class LocalSerializerTest {
                 com.google.firestore.v1.Target.QueryTarget.newBuilder()
                     .setParent(queryTarget.getParent())
                     .setStructuredQuery(queryTarget.getStructuredQuery()))
+            .setSynced(true)
             .build();
 
     assertEquals(expected, serializer.encodeQueryData(queryData));

@@ -359,7 +359,11 @@ public final class LocalStore {
             if (!resumeToken.isEmpty()) {
               QueryData oldQueryData = queryData;
               queryData =
-                  queryData.copy(remoteEvent.getSnapshotVersion(), resumeToken, sequenceNumber);
+                  queryData.copy(
+                      remoteEvent.getSnapshotVersion(),
+                      resumeToken,
+                      sequenceNumber,
+                      oldQueryData.isSynced());
               targetIds.put(boxedTargetId, queryData);
 
               if (shouldPersistQueryData(oldQueryData, queryData, change)) {
@@ -469,12 +473,26 @@ public final class LocalStore {
         "notifyLocalViewChanges",
         () -> {
           for (LocalViewChanges viewChange : viewChanges) {
-            localViewReferences.addReferences(viewChange.getAdded(), viewChange.getTargetId());
+            int targetId = viewChange.getTargetId();
+
+            // Update the local view references for LRU garbage collection
+            localViewReferences.addReferences(viewChange.getAdded(), targetId);
             ImmutableSortedSet<DocumentKey> removed = viewChange.getRemoved();
             for (DocumentKey key : removed) {
               persistence.getReferenceDelegate().removeReference(key);
             }
-            localViewReferences.removeReferences(removed, viewChange.getTargetId());
+            localViewReferences.removeReferences(removed, targetId);
+
+            // Mark whether the local query view is in sync with the backend.
+            QueryData queryData = targetIds.get(targetId);
+            hardAssert(queryData != null, "Can't mark inactive target synchronized: %s", targetId);
+            QueryData updatedQueryData =
+                queryData.copy(
+                    queryData.getSnapshotVersion(),
+                    queryData.getResumeToken(),
+                    queryData.getSequenceNumber(),
+                    viewChange.isSynced());
+            targetIds.put(targetId, updatedQueryData);
           }
         });
   }
@@ -548,10 +566,18 @@ public final class LocalStore {
 
           int targetId = queryData.getTargetId();
           QueryData cachedQueryData = targetIds.get(targetId);
+
+          boolean needsUpdate = false;
           if (cachedQueryData.getSnapshotVersion().compareTo(queryData.getSnapshotVersion()) > 0) {
             // If we've been avoiding persisting the resumeToken (see shouldPersistQueryData for
             // conditions and rationale) we need to persist the token now because there will no
             // longer be an in-memory version to fall back on.
+            needsUpdate = true;
+          } else if (cachedQueryData.isSynced() != queryData.isSynced()) {
+            needsUpdate = true;
+          }
+
+          if (needsUpdate) {
             queryData = cachedQueryData;
             queryCache.updateQueryData(queryData);
           }
@@ -568,6 +594,22 @@ public final class LocalStore {
           persistence.getReferenceDelegate().removeTarget(queryData);
           targetIds.remove(queryData.getTargetId());
         });
+  }
+
+  /**
+   * Mark the query as not-consistent with the backend, indicating that we have to re-run the query
+   * against the full set of local documents.
+   */
+  public void markNeedsRefill(int targetId) {
+    QueryData queryData = targetIds.get(targetId);
+    hardAssert(queryData != null, "Can't mark inactive target: %s", targetId);
+    QueryData updatedQueryData =
+        queryData.copy(
+            queryData.getSnapshotVersion(),
+            queryData.getResumeToken(),
+            queryData.getSequenceNumber(),
+            /* synced= */ false);
+    targetIds.put(targetId, updatedQueryData);
   }
 
   /** Runs the given query against all the documents in the local store and returns the results. */

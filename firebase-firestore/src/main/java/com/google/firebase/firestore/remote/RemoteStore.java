@@ -506,7 +506,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
           this.listenTargets.put(
               targetId,
               queryData.copy(
-                  snapshotVersion, targetChange.getResumeToken(), queryData.getSequenceNumber()));
+                  snapshotVersion,
+                  targetChange.getResumeToken(),
+                  queryData.getSequenceNumber(),
+                  queryData.isSynced()));
         }
       }
     }
@@ -521,7 +524,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         this.listenTargets.put(
             targetId,
             queryData.copy(
-                queryData.getSnapshotVersion(), ByteString.EMPTY, queryData.getSequenceNumber()));
+                queryData.getSnapshotVersion(),
+                ByteString.EMPTY,
+                queryData.getSequenceNumber(),
+                queryData.isSynced()));
 
         // Cause a hard reset by unwatching and rewatching immediately, but deliberately don't send
         // a resume token so that we get a full update.

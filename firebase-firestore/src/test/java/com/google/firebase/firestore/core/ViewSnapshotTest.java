@@ -47,6 +47,7 @@ public class ViewSnapshotTest {
     ImmutableSortedSet<DocumentKey> mutatedKeys = keySet(key("c/foo"));
     boolean fromCache = true;
     boolean hasPendingWrites = true;
+    boolean synced = true;
     boolean syncStateChanges = true;
     boolean excludesMetadataChanges = true;
 
@@ -58,6 +59,7 @@ public class ViewSnapshotTest {
             changes,
             fromCache,
             mutatedKeys,
+            synced,
             syncStateChanges,
             excludesMetadataChanges);
 
@@ -67,6 +69,7 @@ public class ViewSnapshotTest {
     assertEquals(changes, snapshot.getChanges());
     assertEquals(fromCache, snapshot.isFromCache());
     assertEquals(mutatedKeys, snapshot.getMutatedKeys());
+    assertEquals(synced, snapshot.isSynced());
     assertEquals(hasPendingWrites, snapshot.hasPendingWrites());
     assertEquals(syncStateChanges, snapshot.didSyncStateChange());
     assertEquals(excludesMetadataChanges, snapshot.excludesMetadataChanges());

@@ -78,6 +78,11 @@ message Target {
     // A target specified by a set of document names.
     google.firestore.v1.Target.DocumentsTarget documents = 6;
   }
+
+  // Whether the locally cached query data and the query's document are in sync
+  // with the backend. A query is synced if we have received CURRENT, there are
+  // no Limbo documents and the query does not need to be refilled from cache.
+  bool synced = 7;
 }
 
 // Global state tracked across all Targets, tracked separately to avoid the

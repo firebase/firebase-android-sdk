@@ -37,6 +37,7 @@ public class ViewSnapshot {
   private final List<DocumentViewChange> changes;
   private final boolean isFromCache;
   private final ImmutableSortedSet<DocumentKey> mutatedKeys;
+  private final boolean synced;
   private final boolean didSyncStateChange;
   private boolean excludesMetadataChanges;
 
@@ -47,6 +48,7 @@ public class ViewSnapshot {
       List<DocumentViewChange> changes,
       boolean isFromCache,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
+      boolean synced,
       boolean didSyncStateChange,
       boolean excludesMetadataChanges) {
     this.query = query;
@@ -55,6 +57,7 @@ public class ViewSnapshot {
     this.changes = changes;
     this.isFromCache = isFromCache;
     this.mutatedKeys = mutatedKeys;
+    this.synced = synced;
     this.didSyncStateChange = didSyncStateChange;
     this.excludesMetadataChanges = excludesMetadataChanges;
   }
@@ -65,6 +68,7 @@ public class ViewSnapshot {
       DocumentSet documents,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
       boolean fromCache,
+      boolean synced,
       boolean excludesMetadataChanges) {
     List<DocumentViewChange> viewChanges = new ArrayList<>();
     for (Document doc : documents) {
@@ -77,12 +81,21 @@ public class ViewSnapshot {
         viewChanges,
         fromCache,
         mutatedKeys,
+        synced,
         /* didSyncStateChange= */ true,
         excludesMetadataChanges);
   }
 
   public Query getQuery() {
     return query;
+  }
+
+  /**
+   * Returns whether the view was synced with the backend at the time the snapshot was raised. A
+   * synced view is marked CURRENT and contains no Limbo documents.
+   */
+  public boolean isSynced() {
+    return synced;
   }
 
   public DocumentSet getDocuments() {
@@ -131,6 +144,9 @@ public class ViewSnapshot {
     if (isFromCache != that.isFromCache) {
       return false;
     }
+    if (synced != that.synced) {
+      return false;
+    }
     if (didSyncStateChange != that.didSyncStateChange) {
       return false;
     }
@@ -160,6 +176,7 @@ public class ViewSnapshot {
     result = 31 * result + changes.hashCode();
     result = 31 * result + mutatedKeys.hashCode();
     result = 31 * result + (isFromCache ? 1 : 0);
+    result = 31 * result + (synced ? 1 : 0);
     result = 31 * result + (didSyncStateChange ? 1 : 0);
     result = 31 * result + (excludesMetadataChanges ? 1 : 0);
     return result;
@@ -179,6 +196,8 @@ public class ViewSnapshot {
         + isFromCache
         + ", mutatedKeys="
         + mutatedKeys.size()
+        + ", synced="
+        + synced
         + ", didSyncStateChange="
         + didSyncStateChange
         + ", excludesMetadataChanges="
