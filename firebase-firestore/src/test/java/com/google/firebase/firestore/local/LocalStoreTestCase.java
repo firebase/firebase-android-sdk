@@ -284,7 +284,7 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    notifyLocalViewChanges(viewChanges(2, asList("foo/bar"), emptyList()));
+    notifyLocalViewChanges(viewChanges(2, /* synced= */ false, asList("foo/bar"), emptyList()));
 
     assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
@@ -804,14 +804,16 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 1, map("foo", "bar")));
     assertContains(doc("foo/baz", 0, map("foo", "baz"), Document.DocumentState.LOCAL_MUTATIONS));
 
-    notifyLocalViewChanges(viewChanges(2, asList("foo/bar", "foo/baz"), emptyList()));
+    notifyLocalViewChanges(
+        viewChanges(2, /* synced= */ false, asList("foo/bar", "foo/baz"), emptyList()));
     applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 1, map("foo", "bar")), none, two));
     applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 2, map("foo", "baz")), two, none));
     acknowledgeMutation(2);
     assertContains(doc("foo/bar", 1, map("foo", "bar")));
     assertContains(doc("foo/baz", 2, map("foo", "baz")));
 
-    notifyLocalViewChanges(viewChanges(2, emptyList(), asList("foo/bar", "foo/baz")));
+    notifyLocalViewChanges(
+        viewChanges(2, /* synced= */ true, emptyList(), asList("foo/bar", "foo/baz")));
     releaseQuery(query);
 
     assertNotContains("foo/bar");
