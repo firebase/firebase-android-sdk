@@ -34,6 +34,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
 import io.grpc.android.AndroidChannelBuilder;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /** Manages the gRPC channel and encapsulates all SSL and gRPC initialization. */
@@ -137,48 +138,53 @@ public class GrpcCallProvider {
 
   /** Shuts down the gRPC channel and the internal worker queue. */
   void shutdown() {
-    channelTask.addOnCompleteListener(
-        asyncQueue.getExecutorForShutdown(),
-        task -> {
-          ManagedChannel channel = task.getResult();
-          channel.shutdown();
-          try {
-            // TODO(rsgowman): Investigate occasional hangs in channel.shutdown().
-            //
-            // While running the integration tests, channel.shutdown() will occasionally timeout.
-            // (Typically on ~4-5 different tests, differing from one run to the next.) We should
-            // figure this out. But in the meantime, just use an exceptionally short timeout here
-            // and skip straight to shutdownNow() which works every time. (We don't support shutting
-            // down Firestore, so this should only be triggered from the test suite.)
-            if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
-              Logger.debug(
-                  FirestoreChannel.class.getSimpleName(),
-                  "Unable to gracefully shutdown the gRPC ManagedChannel. Will attempt an immediate shutdown.");
-              channel.shutdownNow();
+    ManagedChannel channel = null;
+    try {
+      channel = Tasks.await(channelTask);
+    } catch (ExecutionException | InterruptedException e) {
+      Logger.warn(
+          FirestoreChannel.class.getSimpleName(),
+          "Channel is not initialized, shutdown will just do nothing.");
+      return;
+    }
 
-              // gRPC docs claim "Although forceful, the shutdown process is still not
-              // instantaneous; isTerminated() will likely return false immediately after this
-              // method returns." Therefore, we still need to awaitTermination() again.
-              if (!channel.awaitTermination(60, TimeUnit.SECONDS)) {
-                // Something bad has happened. We could assert, but this is just resource cleanup
-                // for a resource that is likely only released at the end of the execution. So
-                // instead, we'll just log the error.
-                Logger.warn(
-                    FirestoreChannel.class.getSimpleName(),
-                    "Unable to forcefully shutdown the gRPC ManagedChannel.");
-              }
-            }
-          } catch (InterruptedException e) {
-            // (Re-)Cancel if current thread also interrupted
-            channel.shutdownNow();
+    channel.shutdown();
+    try {
+      // TODO(rsgowman): Investigate occasional hangs in channel.shutdown().
+      //
+      // While running the integration tests, channel.shutdown() will occasionally timeout.
+      // (Typically on ~4-5 different tests, differing from one run to the next.) We should
+      // figure this out. But in the meantime, just use an exceptionally short timeout here
+      // and skip straight to shutdownNow() which works every time. (We don't support shutting
+      // down Firestore, so this should only be triggered from the test suite.)
+      if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
+        Logger.debug(
+            FirestoreChannel.class.getSimpleName(),
+            "Unable to gracefully shutdown the gRPC ManagedChannel. Will attempt an immediate shutdown.");
+        channel.shutdownNow();
 
-            // Similar to above, something bad happened, but it's not worth asserting. Just log it.
-            Logger.warn(
-                FirestoreChannel.class.getSimpleName(),
-                "Interrupted while shutting down the gRPC Managed Channel");
-            // Preserve interrupt status
-            Thread.currentThread().interrupt();
-          }
-        });
+        // gRPC docs claim "Although forceful, the shutdown process is still not
+        // instantaneous; isTerminated() will likely return false immediately after this
+        // method returns." Therefore, we still need to awaitTermination() again.
+        if (!channel.awaitTermination(60, TimeUnit.SECONDS)) {
+          // Something bad has happened. We could assert, but this is just resource cleanup
+          // for a resource that is likely only released at the end of the execution. So
+          // instead, we'll just log the error.
+          Logger.warn(
+              FirestoreChannel.class.getSimpleName(),
+              "Unable to forcefully shutdown the gRPC ManagedChannel.");
+        }
+      }
+    } catch (InterruptedException e) {
+      // (Re-)Cancel if current thread also interrupted
+      channel.shutdownNow();
+
+      // Similar to above, something bad happened, but it's not worth asserting. Just log it.
+      Logger.warn(
+          FirestoreChannel.class.getSimpleName(),
+          "Interrupted while shutting down the gRPC Managed Channel");
+      // Preserve interrupt status
+      Thread.currentThread().interrupt();
+    }
   }
 }

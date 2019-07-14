@@ -126,7 +126,7 @@ public class AsyncQueueTest {
 
   @Test
   public void tasksAreScheduledWithRespectToShutdown() {
-    expectedSteps = Arrays.asList(1, 2, 4, 6);
+    expectedSteps = Arrays.asList(1, 2, 4);
     queue.enqueueAndForget(runnableForStep(1));
 
     // From this point on, `normal` tasks are not scheduled. Only those who explicitly request to
@@ -137,6 +137,5 @@ public class AsyncQueueTest {
     queue.enqueueAndForgetEvenAfterShutdown(runnableForStep(4));
 
     queue.getExecutor().execute(runnableForStep(5));
-    queue.getExecutorForShutdown().execute(runnableForStep(6));
   }
 }

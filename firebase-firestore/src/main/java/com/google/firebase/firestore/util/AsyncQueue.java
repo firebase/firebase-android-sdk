@@ -285,14 +285,67 @@ public class AsyncQueue {
       }
     }
 
+    /** Execute the command, regardless if shutdown has been initiated. */
+    public void executeEvenAfterShutdown(Runnable command) {
+      try {
+        internalExecutor.execute(command);
+      } catch (RejectedExecutionException e) {
+        // The only way we can get here is if the AsyncQueue has panicked and we're now racing with
+        // the post to the main looper that will crash the app.
+        Logger.warn(AsyncQueue.class.getSimpleName(), "Refused to enqueue task after panic");
+      }
+    }
+
+    /**
+     * Run a given `Callable` on this executor, and report the result of the `Callable` in a {@link
+     * Task}. The `Callable` will not be run if the executor started shutting down already.
+     *
+     * @return A {@link Task} resolves when the requested `Callable` completes, or reports error
+     *     when the `Callable` runs into exceptions.
+     */
+    private <T> Task<T> executeAndReportResult(Callable<T> task) {
+      final TaskCompletionSource<T> completionSource = new TaskCompletionSource<>();
+      try {
+        this.execute(
+            () -> {
+              try {
+                completionSource.setResult(task.call());
+              } catch (Exception e) {
+                completionSource.setException(e);
+                throw new RuntimeException(e);
+              }
+            });
+      } catch (RejectedExecutionException e) {
+        // The only way we can get here is if the AsyncQueue has panicked and we're now racing with
+        // the post to the main looper that will crash the app.
+        Logger.warn(AsyncQueue.class.getSimpleName(), "Refused to enqueue task after panic");
+      }
+      return completionSource.getTask();
+    }
+
     /**
      * Initiate the shutdown process. Once called, the only possible way to run `Runnable`s are by
      * holding the `internalExecutor` reference.
      */
-    private synchronized void initiateShutdown() {
-      if (!isShuttingDown) {
-        isShuttingDown = true;
+    private synchronized Task<Void> executeAndInitiateShutdown(Runnable task) {
+      if (isShuttingDown()) {
+        TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+        source.setResult(null);
+        return source.getTask();
       }
+
+      // Not shutting down yet, execute and return a Task.
+      Task<Void> t =
+          executeAndReportResult(
+              () -> {
+                task.run();
+                return null;
+              });
+
+      // Mark the initiation of shut down.
+      isShuttingDown = true;
+
+      return t;
     }
 
     /**
@@ -334,14 +387,6 @@ public class AsyncQueue {
     return executor;
   }
 
-  /**
-   * For tasks that need to run after shutdown has been initiated. The tasks should themselves be
-   * shutdown related.
-   */
-  public Executor getExecutorForShutdown() {
-    return executor.internalExecutor;
-  }
-
   /** Verifies that the current thread is the managed AsyncQueue thread. */
   public void verifyIsCurrentThread() {
     Thread current = Thread.currentThread();
@@ -362,27 +407,7 @@ public class AsyncQueue {
    */
   @CheckReturnValue
   public <T> Task<T> enqueue(Callable<T> task) {
-    return enqueueImpl(task, executor);
-  }
-
-  private <T> Task<T> enqueueImpl(Callable<T> task, Executor executor) {
-    final TaskCompletionSource<T> completionSource = new TaskCompletionSource<>();
-    try {
-      executor.execute(
-          () -> {
-            try {
-              completionSource.setResult(task.call());
-            } catch (Exception e) {
-              completionSource.setException(e);
-              throw new RuntimeException(e);
-            }
-          });
-    } catch (RejectedExecutionException e) {
-      // The only way we can get here is if the AsyncQueue has panicked and we're now racing with
-      // the post to the main looper that will crash the app.
-      Logger.warn(AsyncQueue.class.getSimpleName(), "Refused to enqueue task after panic");
-    }
-    return completionSource.getTask();
+    return executor.executeAndReportResult(task);
   }
 
   /**
@@ -402,26 +427,11 @@ public class AsyncQueue {
 
   /**
    * Queue a Runnable and immediately mark the initiation of shutdown process. Tasks queued after
-   * this method is called are not run unless they explicitly request via {@link
-   * AsyncQueue#enqueueAndForgetEvenAfterShutdown(Runnable)} or {@link
-   * AsyncQueue#getExecutorForShutdown()}.
+   * this method is called are not run unless they explicitly are requested via {@link
+   * AsyncQueue#enqueueAndForgetEvenAfterShutdown(Runnable)}.
    */
   public Task<Void> enqueueAndInitiateShutdown(Runnable task) {
-    synchronized (executor) {
-      if (executor.isShuttingDown()) {
-        TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-        source.setResult(null);
-        return source.getTask();
-      }
-      Task<Void> t =
-          enqueue(
-              () -> {
-                task.run();
-                return null;
-              });
-      executor.initiateShutdown();
-      return t;
-    }
+    return executor.executeAndInitiateShutdown(task);
   }
 
   /**
@@ -429,12 +439,7 @@ public class AsyncQueue {
    * if shutdown has been initiated.
    */
   public void enqueueAndForgetEvenAfterShutdown(Runnable task) {
-    enqueueImpl(
-        () -> {
-          task.run();
-          return null;
-        },
-        executor.internalExecutor);
+    executor.executeEvenAfterShutdown(task);
   }
 
   /** Has the shutdown process been initiated. */
