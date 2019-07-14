@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.model;
 
 import com.google.firebase.Timestamp;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A version of a document in Firestore. This corresponds to the version timestamp, such as
@@ -34,6 +35,12 @@ public final class SnapshotVersion implements Comparable<SnapshotVersion> {
 
   public Timestamp getTimestamp() {
     return timestamp;
+  }
+
+  /** Returns the microseconds since EPOCH that this snapshot version represents. * */
+  public long toMicroseconds() {
+    return TimeUnit.MICROSECONDS.convert(timestamp.getSeconds(), TimeUnit.SECONDS)
+        + TimeUnit.MICROSECONDS.convert(timestamp.getNanoseconds(), TimeUnit.NANOSECONDS);
   }
 
   @Override

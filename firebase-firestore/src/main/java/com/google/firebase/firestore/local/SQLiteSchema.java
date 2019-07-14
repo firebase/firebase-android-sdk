@@ -46,7 +46,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 8;
+  static final int VERSION = 9;
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
@@ -125,6 +125,10 @@ class SQLiteSchema {
 
     if (fromVersion < 8 && toVersion >= 8) {
       createV8CollectionParentsIndex();
+    }
+
+    if (fromVersion < 9 && toVersion >= 9) {
+      addUpdateTime();
     }
 
     /*
@@ -348,6 +352,12 @@ class SQLiteSchema {
   private void addSequenceNumber() {
     if (!tableContainsColumn("target_documents", "sequence_number")) {
       db.execSQL("ALTER TABLE target_documents ADD COLUMN sequence_number INTEGER");
+    }
+  }
+
+  private void addUpdateTime() {
+    if (!tableContainsColumn("remote_documents", "snapshot_version_micros")) {
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN snapshot_version_micros INTEGER");
     }
   }
 

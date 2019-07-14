@@ -24,6 +24,7 @@ import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Executors;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -51,13 +52,16 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public void add(MaybeDocument maybeDocument) {
     String path = pathForKey(maybeDocument.getKey());
+    SnapshotVersion snapshotVersion = maybeDocument.getVersion();
     MessageLite message = serializer.encodeMaybeDocument(maybeDocument);
 
     statsCollector.recordRowsWritten(STATS_TAG, 1);
 
     db.execute(
-        "INSERT OR REPLACE INTO remote_documents (path, contents) VALUES (?, ?)",
+        "INSERT OR REPLACE INTO remote_documents (path, snapshot_version_micros, contents) "
+            + "VALUES (?, ?, ?)",
         path,
+        snapshotVersion.toMicroseconds(),
         message.toByteArray());
 
     db.getIndexManager().addToCollectionParentIndex(maybeDocument.getKey().getPath().popLast());
