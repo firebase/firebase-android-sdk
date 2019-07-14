@@ -213,7 +213,7 @@ public class IndexedQueryEngineTest {
     Query query = query("coll").filter(filter("a", "==", "a"));
 
     ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(query);
+        queryEngine.getDocumentsMatchingQuery(query, /* queryData= */ null);
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).contains(MATCHING_DOC.getKey());
@@ -228,7 +228,7 @@ public class IndexedQueryEngineTest {
     Query query = query("coll").filter(filter("a", "==", "a"));
 
     ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(query);
+        queryEngine.getDocumentsMatchingQuery(query, /* queryData= */ null);
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).contains(MATCHING_DOC.getKey());
@@ -243,7 +243,7 @@ public class IndexedQueryEngineTest {
     Query query = query("coll").filter(filter("a", "==", "a"));
 
     ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(query);
+        queryEngine.getDocumentsMatchingQuery(query, /* queryData= */ null);
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).doesNotContain(MATCHING_DOC.getKey());
@@ -261,7 +261,7 @@ public class IndexedQueryEngineTest {
     Query query = query("coll").filter(filter("a.a", "==", "a"));
 
     ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(query);
+        queryEngine.getDocumentsMatchingQuery(query, /* queryData= */ null);
 
     assertThat(results).doesNotContain(ignoredDoc.getKey());
     assertThat(results).contains(matchingDoc.getKey());
@@ -275,7 +275,7 @@ public class IndexedQueryEngineTest {
     Query query = query("coll").orderBy(TestUtil.orderBy("a"));
 
     ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(query);
+        queryEngine.getDocumentsMatchingQuery(query, /* queryData= */ null);
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).contains(MATCHING_DOC.getKey());

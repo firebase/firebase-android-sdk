@@ -19,12 +19,14 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
+import javax.annotation.Nullable;
 
 /** Represents a query engine capable of performing queries over the local document cache. */
 interface QueryEngine {
 
   /** Returns all local documents matching the specified query. */
-  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(Query query);
+  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+      Query query, @Nullable QueryData queryData);
 
   /**
    * Notifies the query engine of a document change in case it would like to update indexes and the

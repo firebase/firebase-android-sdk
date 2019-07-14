@@ -19,6 +19,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -73,7 +74,10 @@ interface RemoteDocumentCache {
    * <p>Cached NoDocument entries have no bearing on query results.
    *
    * @param query The query to match documents against.
+   * @param sinceUpdateTime If not set to SnapshotVersion.MIN, return only documents that have been
+   *     modified since this snapshot version (exclusive).
    * @return The set of matching documents.
    */
-  ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(Query query);
+  ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+      Query query, SnapshotVersion sinceUpdateTime);
 }

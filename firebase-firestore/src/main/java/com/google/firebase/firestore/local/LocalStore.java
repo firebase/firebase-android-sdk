@@ -614,7 +614,12 @@ public final class LocalStore {
 
   /** Runs the given query against all the documents in the local store and returns the results. */
   public ImmutableSortedMap<DocumentKey, Document> executeQuery(Query query) {
-    return queryEngine.getDocumentsMatchingQuery(query);
+    QueryData cachedQueryData = queryCache.getQueryData(query);
+    QueryData updatedQueryData =
+        cachedQueryData != null ? targetIds.get(cachedQueryData.getTargetId()) : null;
+
+    return queryEngine.getDocumentsMatchingQuery(
+        query, updatedQueryData != null ? updatedQueryData : cachedQueryData);
   }
 
   /**

@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.values;
+import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -32,6 +33,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -175,13 +177,31 @@ abstract class RemoteDocumentCacheTestCase {
 
     Query query = Query.atPath(path("b"));
     ImmutableSortedMap<DocumentKey, Document> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query);
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, SnapshotVersion.NONE);
     List<Document> expected = asList(doc("b/1", 42, docData), doc("b/2", 42, docData));
     assertEquals(expected, values(results));
   }
 
+  @Test
+  public void testDocumentsMatchingQuerySinceUpdateTIme() {
+    Map<String, Object> docData = map("data", 2);
+    addTestDocumentAtPath("b/old", /* version= */ 41);
+    addTestDocumentAtPath("b/current", /* version= */ 42);
+    addTestDocumentAtPath("b/new", /* version= */ 43);
+
+    Query query = Query.atPath(path("b"));
+    ImmutableSortedMap<DocumentKey, Document> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, version(42));
+    List<Document> expected = asList(doc("b/new", 43, docData));
+    assertEquals(expected, values(results));
+  }
+
   private Document addTestDocumentAtPath(String path) {
-    Document doc = doc(path, 42, map("data", 2));
+    return addTestDocumentAtPath(path, /* version= */ 42);
+  }
+
+  private Document addTestDocumentAtPath(String path, int version) {
+    Document doc = doc(path, version, map("data", 2));
     add(doc);
     return doc;
   }

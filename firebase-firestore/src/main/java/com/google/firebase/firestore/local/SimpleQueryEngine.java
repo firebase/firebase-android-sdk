@@ -19,6 +19,8 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
+import javax.annotation.Nullable;
 
 /**
  * A naive implementation of QueryEngine that just loads all the documents in the queried collection
@@ -33,10 +35,11 @@ public class SimpleQueryEngine implements QueryEngine {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(Query query) {
+  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+      Query query, @Nullable QueryData queryData) {
     // TODO: Once LocalDocumentsView provides a getCollectionDocuments() method, we
     // should call that here and then filter the results.
-    return localDocumentsView.getDocumentsMatchingQuery(query);
+    return localDocumentsView.getDocumentsMatchingQuery(query, SnapshotVersion.NONE);
   }
 
   @Override
