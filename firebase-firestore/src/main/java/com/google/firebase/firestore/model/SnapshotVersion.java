@@ -37,7 +37,7 @@ public final class SnapshotVersion implements Comparable<SnapshotVersion> {
     return timestamp;
   }
 
-  /** Returns the microseconds since EPOCH that this snapshot version represents. * */
+  /** Returns the microseconds since EPOCH that this snapshot version represents. */
   public long toMicroseconds() {
     return TimeUnit.MICROSECONDS.convert(timestamp.getSeconds(), TimeUnit.SECONDS)
         + TimeUnit.MICROSECONDS.convert(timestamp.getNanoseconds(), TimeUnit.NANOSECONDS);
