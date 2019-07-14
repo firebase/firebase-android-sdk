@@ -65,6 +65,7 @@ import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
+import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
 import com.google.protobuf.ByteString;
@@ -374,6 +375,24 @@ public class TestUtil {
     return activeLimboQueries(docKey, asList(targets));
   }
 
+  public static RemoteEvent noChangeEvent(int targetId, int version) {
+    return noChangeEvent(targetId, version, resumeToken(version));
+  }
+
+  public static RemoteEvent noChangeEvent(int targetId, int version, ByteString resumeToken) {
+    QueryData queryData = TestUtil.queryData(targetId, QueryPurpose.LISTEN, "foo/bar");
+    TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
+    testTargetMetadataProvider.setSyncedKeys(queryData, DocumentKey.emptyKeySet());
+
+    WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
+
+    WatchChange.WatchTargetChange watchChange =
+        new WatchChange.WatchTargetChange(
+            WatchChange.WatchTargetChangeType.NoChange, asList(targetId), resumeToken);
+    aggregator.handleTargetChange(watchChange);
+    return aggregator.createRemoteEvent(version(version));
+  }
+
   public static RemoteEvent addedRemoteEvent(
       MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     DocumentChange change =
@@ -524,6 +543,36 @@ public class TestUtil {
 
   public static ByteString streamToken(String contents) {
     return ByteString.copyFrom(contents, Charsets.UTF_8);
+  }
+
+  /**
+   * An implementation of TargetMetadataProvider that provides controlled access to the
+   * `TargetMetadataProvider` callbacks. Any target accessed via these callbacks must be registered
+   * beforehand via `setSyncedKeys()`.
+   */
+  public static class TestTargetMetadataProvider
+      implements WatchChangeAggregator.TargetMetadataProvider {
+    final Map<Integer, ImmutableSortedSet<DocumentKey>> syncedKeys = new HashMap<>();
+    final Map<Integer, QueryData> queryData = new HashMap<>();
+
+    @Override
+    public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+      return syncedKeys.get(targetId) != null
+          ? syncedKeys.get(targetId)
+          : DocumentKey.emptyKeySet();
+    }
+
+    @androidx.annotation.Nullable
+    @Override
+    public QueryData getQueryDataForTarget(int targetId) {
+      return queryData.get(targetId);
+    }
+
+    /** Sets or replaces the local state for the provided query data. */
+    public void setSyncedKeys(QueryData queryData, ImmutableSortedSet<DocumentKey> keys) {
+      this.queryData.put(queryData.getTargetId(), queryData);
+      this.syncedKeys.put(queryData.getTargetId(), keys);
+    }
   }
 
   private static Map<String, Object> fromJsonString(String json) {
