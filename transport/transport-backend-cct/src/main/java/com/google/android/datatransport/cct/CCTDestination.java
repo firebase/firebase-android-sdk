@@ -20,7 +20,7 @@ import com.google.android.datatransport.runtime.Destination;
 
 public final class CCTDestination implements Destination {
   static final String DESTINATION_NAME = "cct";
-  private static final CCTDestination INSTANCE = new CCTDestination();
+  public static final CCTDestination INSTANCE = new CCTDestination();
 
   private CCTDestination() {}
 
