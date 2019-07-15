@@ -14,6 +14,9 @@
 
 package com.google.firebase.remoteconfig;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 /**
  * Exception thrown when the {@link FirebaseRemoteConfig#fetch()} operation cannot be completed
  * successfully.
@@ -24,12 +27,13 @@ package com.google.firebase.remoteconfig;
 @Deprecated
 public class FirebaseRemoteConfigFetchException extends FirebaseRemoteConfigException {
   /** Creates a Firebase Remote Config fetch exception with the given message. */
-  public FirebaseRemoteConfigFetchException(String detailMessage) {
+  public FirebaseRemoteConfigFetchException(@NonNull String detailMessage) {
     super(detailMessage);
   }
 
   /** Creates a Firebase Remote Config fetch exception with the given message and cause. */
-  public FirebaseRemoteConfigFetchException(String detailMessage, Throwable cause) {
+  public FirebaseRemoteConfigFetchException(
+      @NonNull String detailMessage, @Nullable Throwable cause) {
     super(detailMessage, cause);
   }
 }
