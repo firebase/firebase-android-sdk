@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime;
+package com.google.android.datatransport.cct;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.android.datatransport.runtime.Destination;
 
-public interface Destination {
-  /** Name that can be used to discover the backend */
+public final class CCTDestination implements Destination {
+  static final String DESTINATION_NAME = "cct";
+  public static final CCTDestination INSTANCE = new CCTDestination();
+
+  private CCTDestination() {}
+
   @NonNull
-  String getName();
+  @Override
+  public String getName() {
+    return DESTINATION_NAME;
+  }
 
-  /**
-   * Any extras that must be passed to the backend while uploading. Uploads to the backend are
-   * grouped by (backend_name, priority, extras)
-   *
-   * <p>Note that backends that change the implementations of this method must prepare to
-   * deserialize older implementations as well. For events that have already been written to disk,
-   * extras may be at older versions.
-   */
   @Nullable
-  byte[] getExtras();
+  @Override
+  public byte[] getExtras() {
+    return null;
+  }
 }
