@@ -184,12 +184,7 @@ final class LocalDocumentsView {
         remoteDocumentCache.getAllDocumentsMatchingQuery(query);
 
     List<MutationBatch> matchingBatches = mutationQueue.getAllMutationBatchesAffectingQuery(query);
-    // It is possible that a PatchMutation can make a document match a query, even if
-    // the version in the RemoteDocumentCache is not a match yet (waiting for server
-    // to ack). To handle this, we find all document keys affected by the PatchMutations
-    // that are not in `result` yet, and back fill them via `remoteDocumentCache.getEntries`,
-    // otherwise those `PatchMutations` will be ignored because no base document can be found,
-    // and lead to missing result for the query.
+
     results = addMissingBaseDocuments(matchingBatches, results);
 
     for (MutationBatch batch : matchingBatches) {
@@ -221,6 +216,13 @@ final class LocalDocumentsView {
     return results;
   }
 
+  /**
+   * It is possible that a PatchMutation can make a document match a query, even if the version in
+   * the RemoteDocumentCache is not a match yet (waiting for server to ack). To handle this, we find
+   * all document keys affected by the PatchMutations that are not in `result` yet, and back fill
+   * them via `remoteDocumentCache.getAll`, otherwise those `PatchMutations` will be ignored because
+   * no base document can be found, and lead to missing result for the query.
+   */
   private ImmutableSortedMap<DocumentKey, Document> addMissingBaseDocuments(
       List<MutationBatch> matchingBatches, ImmutableSortedMap<DocumentKey, Document> existingDocs) {
     HashSet<DocumentKey> missedDocKeys = new HashSet<>();
