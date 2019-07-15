@@ -17,7 +17,6 @@ package com.google.android.datatransport.cct;
 import static com.google.android.datatransport.cct.CctBackendFactory.CCT_URL;
 import static com.google.android.datatransport.cct.CctBackendFactory.LFLG_URL;
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 
 import com.google.android.datatransport.runtime.backends.CreationContext;
 import com.google.android.datatransport.runtime.time.TestClock;
@@ -34,28 +33,6 @@ public class CctBackendFactoryTest {
   private static final long INITIAL_UPTIME = 10L;
   private TestClock wallClock = new TestClock(INITIAL_WALL_TIME);
   private TestClock uptimeClock = new TestClock(INITIAL_UPTIME);
-
-  @Test
-  public void mergeStrings_whenPartsAreUnequalLength() {
-    String part1 = "hts/eapecm";
-    String part2 = "tp:/xml.o";
-    assertThat(CctBackendFactory.mergeStrings(part1, part2)).isEqualTo("https://example.com");
-  }
-
-  @Test
-  public void mergeStrings_whenPartsAreEqualLength() {
-    String part1 = "hts/eape.o";
-    String part2 = "tp:/xmlscm";
-    assertThat(CctBackendFactory.mergeStrings(part1, part2)).isEqualTo("https://examples.com");
-  }
-
-  @Test
-  public void mergeStrings_whenPart2IsLongerThanPart1() {
-    String part1 = "135";
-    String part2 = "2467";
-    assertThrows(
-        IllegalArgumentException.class, () -> CctBackendFactory.mergeStrings(part1, part2));
-  }
 
   @Test
   public void create_returnCCTBackend_WhenBackendNameIsCCT() throws MalformedURLException {

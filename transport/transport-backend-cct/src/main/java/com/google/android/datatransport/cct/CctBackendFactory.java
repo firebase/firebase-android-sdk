@@ -22,10 +22,11 @@ import com.google.android.datatransport.runtime.backends.TransportBackend;
 @Keep
 public class CctBackendFactory implements BackendFactory {
   static final String CCT_URL =
-      mergeStrings("hts/frbslgiggolai.o/0clgbth", "tp:/ieaeogn.ogepscmvc/o/ac");
+      StringMerger.mergeStrings("hts/frbslgiggolai.o/0clgbth", "tp:/ieaeogn.ogepscmvc/o/ac");
 
   static final String LFLG_URL =
-      mergeStrings("hts/frbslgigp.ogepscmv/ieo/eaylg", "tp:/ieaeogn-agolai.o/1frlglgc/o");
+      StringMerger.mergeStrings(
+          "hts/frbslgigp.ogepscmv/ieo/eaylg", "tp:/ieaeogn-agolai.o/1frlglgc/o");
 
   @Override
   public TransportBackend create(CreationContext creationContext) {
@@ -42,23 +43,5 @@ public class CctBackendFactory implements BackendFactory {
         url,
         creationContext.getWallClock(),
         creationContext.getMonotonicClock());
-  }
-
-  static String mergeStrings(String part1, String part2) {
-    int sizeDiff = part1.length() - part2.length();
-    if (sizeDiff < 0 || sizeDiff > 1) {
-      throw new IllegalArgumentException("Invalid input received");
-    }
-
-    StringBuilder url = new StringBuilder(part1.length() + part2.length());
-
-    for (int i = 0; i < part1.length(); i++) {
-      url.append(part1.charAt(i));
-      if (part2.length() > i) {
-        url.append(part2.charAt(i));
-      }
-    }
-
-    return url.toString();
   }
 }

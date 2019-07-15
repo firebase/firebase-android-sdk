@@ -14,25 +14,22 @@
 
 package com.google.android.datatransport.cct;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.datatransport.runtime.Destination;
+public final class StringMerger {
+  static String mergeStrings(String part1, String part2) {
+    int sizeDiff = part1.length() - part2.length();
+    if (sizeDiff < 0 || sizeDiff > 1) {
+      throw new IllegalArgumentException("Invalid input received");
+    }
 
-public final class CCTDestination implements Destination {
-  static final String DESTINATION_NAME = "cct";
-  private static final CCTDestination INSTANCE = new CCTDestination();
+    StringBuilder url = new StringBuilder(part1.length() + part2.length());
 
-  private CCTDestination() {}
+    for (int i = 0; i < part1.length(); i++) {
+      url.append(part1.charAt(i));
+      if (part2.length() > i) {
+        url.append(part2.charAt(i));
+      }
+    }
 
-  @NonNull
-  @Override
-  public String getName() {
-    return DESTINATION_NAME;
-  }
-
-  @Nullable
-  @Override
-  public byte[] getExtras() {
-    return null;
+    return url.toString();
   }
 }
