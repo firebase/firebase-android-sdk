@@ -64,8 +64,8 @@ public class Transaction {
   /**
    * Set of documents that have been written in the transaction.
    *
-   * When there's more than one write to the same key in a transaction, any
-   * writes after the first are handled differently.
+   * <p>When there's more than one write to the same key in a transaction, any writes after the
+   * first are handled differently.
    */
   private Set<DocumentKey> writtenDocs = new HashSet<>();
 
@@ -187,7 +187,7 @@ public class Transaction {
       if (!existingVersion.equals(doc.getVersion())) {
         // This transaction will fail no matter what.
         throw new FirebaseFirestoreException(
-                "Document version changed between two reads.", Code.ABORTED);
+            "Document version changed between two reads.", Code.ABORTED);
       }
     } else {
       readVersions.put(doc.getKey(), docVersion);
@@ -220,14 +220,16 @@ public class Transaction {
         // The document to update doesn't exist, so fail the transaction.
         //
         // This has to be validated locally because you can't send a precondition that a document
-        // does not exist without changing the semantics of the backend write to be an insert. This is
+        // does not exist without changing the semantics of the backend write to be an insert. This
+        // is
         // the reverse of what we want, since we want to assert that the document doesn't exist but
-        // then send the update and have it fail. Since we can't express that to the backend, we have
+        // then send the update and have it fail. Since we can't express that to the backend, we
+        // have
         // to validate locally.
         //
         // Note: this can change once we can send separate verify writes in the transaction.
         throw new FirebaseFirestoreException(
-                "Can't update a document that doesn't exist.", Code.INVALID_ARGUMENT);
+            "Can't update a document that doesn't exist.", Code.INVALID_ARGUMENT);
       }
       // Document exists, base precondition on document update time.
       return Precondition.updateTime(version);
