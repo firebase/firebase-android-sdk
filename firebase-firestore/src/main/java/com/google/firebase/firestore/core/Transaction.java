@@ -61,6 +61,14 @@ public class Transaction {
    */
   private FirebaseFirestoreException lastWriteError;
 
+  /**
+   * Set of documents that have been written in the transaction.
+   *
+   * When there's more than one write to the same key in a transaction, any
+   * writes after the first are handled differently.
+   */
+  private Set<DocumentKey> writtenDocs = new HashSet<>();
+
   public Transaction(Datastore d) {
     datastore = d;
   }
@@ -95,6 +103,7 @@ public class Transaction {
   /** Stores a set mutation for the given key and value, to be committed when commit() is called. */
   public void set(DocumentKey key, ParsedSetData data) {
     write(data.toMutationList(key, precondition(key)));
+    writtenDocs.add(key);
   }
 
   /**
@@ -107,13 +116,12 @@ public class Transaction {
     } catch (FirebaseFirestoreException e) {
       lastWriteError = e;
     }
+    this.writtenDocs.add(key);
   }
 
   public void delete(DocumentKey key) {
     write(Collections.singletonList(new DeleteMutation(key, precondition(key))));
-    // Since the delete will be applied before all following writes, we need to ensure that the
-    // precondition for the next write will be exists: false.
-    readVersions.put(key, SnapshotVersion.NONE);
+    writtenDocs.add(key);
   }
 
   public Task<Void> commit() {
@@ -192,7 +200,7 @@ public class Transaction {
    */
   private Precondition precondition(DocumentKey key) {
     @Nullable SnapshotVersion version = readVersions.get(key);
-    if (version != null) {
+    if (!writtenDocs.contains(key) && version != null) {
       return Precondition.updateTime(version);
     } else {
       return Precondition.NONE;
@@ -205,20 +213,23 @@ public class Transaction {
    */
   private Precondition preconditionForUpdate(DocumentKey key) throws FirebaseFirestoreException {
     @Nullable SnapshotVersion version = this.readVersions.get(key);
-    if (version != null && version.equals(SnapshotVersion.NONE)) {
-      // The document to update doesn't exist, so fail the transaction.
-      //
-      // This has to be validated locally because you can't send a precondition that a document
-      // does not exist without changing the semantics of the backend write to be an insert. This is
-      // the reverse of what we want, since we want to assert that the document doesn't exist but
-      // then send the update and have it fail. Since we can't express that to the backend, we have
-      // to validate locally.
-      //
-      // Note: this can change once we can send separate verify writes in the transaction.
-      throw new FirebaseFirestoreException(
-              "Can't update a document that doesn't exist.", Code.INVALID_ARGUMENT);
-    } else if (version != null) {
-      // Document exists, just base precondition on document update time.
+    // The first time a document is written, we want to take into account the read time and
+    // existence.
+    if (!writtenDocs.contains(key) && version != null) {
+      if (version != null && version.equals(SnapshotVersion.NONE)) {
+        // The document to update doesn't exist, so fail the transaction.
+        //
+        // This has to be validated locally because you can't send a precondition that a document
+        // does not exist without changing the semantics of the backend write to be an insert. This is
+        // the reverse of what we want, since we want to assert that the document doesn't exist but
+        // then send the update and have it fail. Since we can't express that to the backend, we have
+        // to validate locally.
+        //
+        // Note: this can change once we can send separate verify writes in the transaction.
+        throw new FirebaseFirestoreException(
+                "Can't update a document that doesn't exist.", Code.INVALID_ARGUMENT);
+      }
+      // Document exists, base precondition on document update time.
       return Precondition.updateTime(version);
     } else {
       // Document was not read, so we just use the preconditions for a blind write.
