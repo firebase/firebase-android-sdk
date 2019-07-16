@@ -27,6 +27,8 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.PLATFORM_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.SDK_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.TIME_ZONE;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ACTIVE_ROLLOUTS;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENABLED_FEATURE_KEYS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENTRIES;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
@@ -369,10 +371,30 @@ public class ConfigFetchHttpClient {
       try {
         experimentDescriptions = fetchResponse.getJSONArray(EXPERIMENT_DESCRIPTIONS);
       } catch (JSONException e) {
-        // Do nothing if entries do not exist.
+        // Do nothing if no ABT Experiments exist.
       }
       if (experimentDescriptions != null) {
         containerBuilder.withAbtExperiments(experimentDescriptions);
+      }
+
+      JSONArray activeRollouts = null;
+      try {
+        activeRollouts = fetchResponse.getJSONArray(ACTIVE_ROLLOUTS);
+      } catch (JSONException e) {
+        // Do nothing if Rollouts do not exist.
+      }
+      if (activeRollouts != null) {
+        containerBuilder.withActiveRollouts(activeRollouts);
+      }
+
+      JSONArray enabledFeatureKeys = null;
+      try {
+        enabledFeatureKeys = fetchResponse.getJSONArray(ENABLED_FEATURE_KEYS);
+      } catch (JSONException e) {
+        // Do nothing if no Features are enabled.
+      }
+      if (enabledFeatureKeys != null) {
+        containerBuilder.withEnabledFeatureKeys(enabledFeatureKeys);
       }
 
       return containerBuilder.build();

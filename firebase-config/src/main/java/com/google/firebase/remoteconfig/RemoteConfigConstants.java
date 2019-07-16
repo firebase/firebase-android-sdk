@@ -81,8 +81,10 @@ public class RemoteConfigConstants {
   @StringDef({ENTRIES, EXPERIMENT_DESCRIPTIONS, STATE})
   @Retention(RetentionPolicy.SOURCE)
   public @interface ResponseFieldKey {
+    String ACTIVE_ROLLOUTS = "activeRollouts";
     String ENTRIES = "entries";
     String EXPERIMENT_DESCRIPTIONS = "experimentDescriptions";
+    String ENABLED_FEATURE_KEYS = "enabledFeatureKeys";
     String STATE = "state";
   }
 

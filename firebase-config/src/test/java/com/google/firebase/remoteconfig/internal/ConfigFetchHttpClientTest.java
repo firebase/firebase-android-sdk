@@ -29,6 +29,8 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.PLATFORM_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.SDK_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.TIME_ZONE;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ACTIVE_ROLLOUTS;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENABLED_FEATURE_KEYS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENTRIES;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
@@ -114,7 +116,16 @@ public class ConfigFetchHttpClientTest {
                             .put("trigger_event", "event_trigger_1")
                             .put("experiment_start_time", "2017-10-30T21:46:40Z")
                             .put("trigger_timeout", "15552000s")
-                            .put("time_to_live", "7776000s")));
+                            .put("time_to_live", "7776000s")))
+            .put(
+                ACTIVE_ROLLOUTS,
+                new JSONArray()
+                    .put(
+                        new JSONObject()
+                            .put("rollout", "Rollout1")
+                            .put("featureKey", "feature_key_1")
+                            .put("featureEnabled", "true")))
+            .put(ENABLED_FEATURE_KEYS, new JSONArray().put("feature_key_1").put("feature_key_2"));
     noChangeResponseBody = new JSONObject().put(STATE, "NO_CHANGE");
 
     fakeHttpURLConnection =
@@ -144,6 +155,10 @@ public class ConfigFetchHttpClientTest {
         .isEqualTo(hasChangeResponseBody.getJSONObject(ENTRIES).toString());
     assertThat(response.getFetchedConfigs().getAbtExperiments().toString())
         .isEqualTo(hasChangeResponseBody.getJSONArray(EXPERIMENT_DESCRIPTIONS).toString());
+    assertThat(response.getFetchedConfigs().getActiveRollouts().toString())
+        .isEqualTo(hasChangeResponseBody.getJSONArray(ACTIVE_ROLLOUTS).toString());
+    assertThat(response.getFetchedConfigs().getEnabledFeatureKeys().toString())
+        .isEqualTo(hasChangeResponseBody.getJSONArray(ENABLED_FEATURE_KEYS).toString());
     assertThat(response.getFetchedConfigs().getFetchTime())
         .isEqualTo(new Date(mockClock.currentTimeMillis()));
   }
