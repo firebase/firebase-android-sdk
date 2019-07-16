@@ -217,26 +217,27 @@ final class LocalDocumentsView {
   }
 
   /**
-   * It is possible that a PatchMutation can make a document match a query, even if the version in
-   * the RemoteDocumentCache is not a match yet (waiting for server to ack). To handle this, we find
-   * all document keys affected by the PatchMutations that are not in `result` yet, and back fill
-   * them via `remoteDocumentCache.getAll`, otherwise those `PatchMutations` will be ignored because
-   * no base document can be found, and lead to missing result for the query.
+   * It is possible that a {@code PatchMutation} can make a document match a query, even if the
+   * version in the {@code RemoteDocumentCache} is not a match yet (waiting for server to ack). To
+   * handle this, we find all document keys affected by the {@code PatchMutation}s that are not in
+   * {@code existingDocs} yet, and back fill them via {@code remoteDocumentCache.getAll}, otherwise
+   * those {@code PatchMutation}s will be ignored because no base document can be found, and lead to
+   * missing results for the query.
    */
   private ImmutableSortedMap<DocumentKey, Document> addMissingBaseDocuments(
       List<MutationBatch> matchingBatches, ImmutableSortedMap<DocumentKey, Document> existingDocs) {
-    HashSet<DocumentKey> missedDocKeys = new HashSet<>();
+    HashSet<DocumentKey> missingDocKeys = new HashSet<>();
     for (MutationBatch batch : matchingBatches) {
       for (Mutation mutation : batch.getMutations()) {
         if (mutation instanceof PatchMutation && !existingDocs.containsKey(mutation.getKey())) {
-          missedDocKeys.add(mutation.getKey());
+          missingDocKeys.add(mutation.getKey());
         }
       }
     }
 
     ImmutableSortedMap<DocumentKey, Document> mergedDocs = existingDocs;
-    Map<DocumentKey, MaybeDocument> missedDoc = remoteDocumentCache.getAll(missedDocKeys);
-    for (Map.Entry<DocumentKey, MaybeDocument> entry : missedDoc.entrySet()) {
+    Map<DocumentKey, MaybeDocument> missingDoc = remoteDocumentCache.getAll(missingDocKeys);
+    for (Map.Entry<DocumentKey, MaybeDocument> entry : missingDoc.entrySet()) {
       if (entry.getValue() != null && (entry.getValue() instanceof Document)) {
         mergedDocs = mergedDocs.insert(entry.getKey(), (Document) entry.getValue());
       }
