@@ -1,8 +1,8 @@
 # Unreleased
-- [fixed] Fixed an issue where query results were temporarily missing documents
-  that previously had not matched but had been updated to now match the query.
 
 # 20.2.0
+- [fixed] Fixed an issue where query results were temporarily missing documents
+  that previously had not matched but had been updated to now match the query.
 - [feature] Added a `@DocumentId` annotation which can be used on a
   `DocumentReference` or `String` property in a POJO to indicate that the SDK
   should automatically populate it with the document's ID.
