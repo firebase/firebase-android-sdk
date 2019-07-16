@@ -1,4 +1,6 @@
 # Unreleased
+- [fixed] Fixed an issue where query results were temporarily missing documents
+  that previously had not matched but had been updated to now match the query.
 
 # 20.2.0
 - [feature] Added a `@DocumentId` annotation which can be used on a
