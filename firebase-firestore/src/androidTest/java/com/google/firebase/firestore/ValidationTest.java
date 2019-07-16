@@ -400,10 +400,10 @@ public class ValidationTest {
     CollectionReference collection = testCollection();
     expectError(
         () -> collection.whereGreaterThan("a", null),
-        "Invalid Query. You can only perform equality comparisons on null (via whereEqualTo()).");
+        "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
     expectError(
         () -> collection.whereArrayContains("a", null),
-        "Invalid Query. You can only perform equality comparisons on null (via whereEqualTo()).");
+        "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
     expectError(
         () -> collection.whereArrayContainsAny("a", null),
         "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
@@ -413,10 +413,10 @@ public class ValidationTest {
 
     expectError(
         () -> collection.whereGreaterThan("a", Double.NaN),
-        "Invalid Query. You can only perform equality comparisons on NaN (via whereEqualTo()).");
+        "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
     expectError(
         () -> collection.whereArrayContains("a", Double.NaN),
-        "Invalid Query. You can only perform equality comparisons on NaN (via whereEqualTo()).");
+        "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
   }
 
   @Test
