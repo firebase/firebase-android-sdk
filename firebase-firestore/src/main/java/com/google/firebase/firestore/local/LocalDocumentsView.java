@@ -236,8 +236,8 @@ final class LocalDocumentsView {
     }
 
     ImmutableSortedMap<DocumentKey, Document> mergedDocs = existingDocs;
-    Map<DocumentKey, MaybeDocument> missingDoc = remoteDocumentCache.getAll(missingDocKeys);
-    for (Map.Entry<DocumentKey, MaybeDocument> entry : missingDoc.entrySet()) {
+    Map<DocumentKey, MaybeDocument> missingDocs = remoteDocumentCache.getAll(missingDocKeys);
+    for (Map.Entry<DocumentKey, MaybeDocument> entry : missingDocs.entrySet()) {
       if (entry.getValue() != null && (entry.getValue() instanceof Document)) {
         mergedDocs = mergedDocs.insert(entry.getKey(), (Document) entry.getValue());
       }
