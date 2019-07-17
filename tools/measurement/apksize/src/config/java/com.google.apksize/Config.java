@@ -26,10 +26,11 @@ public class Config implements SampleCode {
   @Override
   public void runSample(Context context) {
     FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance();
-    FirebaseRemoteConfigSettings settings = new FirebaseRemoteConfigSettings.Builder()
-                                            .setDeveloperModeEnabled(BuildConfig.DEBUG)
-                                            .setMinimumFetchIntervalInSeconds(3600)
-                                            .build();
+    FirebaseRemoteConfigSettings settings =
+        new FirebaseRemoteConfigSettings.Builder()
+            .setDeveloperModeEnabled(BuildConfig.DEBUG)
+            .setMinimumFetchIntervalInSeconds(3600)
+            .build();
     remoteConfig.setConfigSettings(settings);
     remoteConfig.setDefaults(R.xml.remote_config_defaults);
 
