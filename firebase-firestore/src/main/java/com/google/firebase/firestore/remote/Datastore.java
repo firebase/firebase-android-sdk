@@ -222,6 +222,45 @@ public class Datastore {
   }
 
   /**
+   * Determines whether the given error code that represents a permanent error when received in
+   * response to a non-write operation.
+   *
+   * @see #isPermanentWriteError for classifying write errors.
+   */
+  public static boolean isPermanentError(FirebaseFirestoreException.Code code) {
+    // See go/firestore-client-errors
+    switch (code) {
+      case OK:
+        throw new IllegalArgumentException("Treated status OK as error");
+      case CANCELLED:
+      case UNKNOWN:
+      case DEADLINE_EXCEEDED:
+      case RESOURCE_EXHAUSTED:
+      case INTERNAL:
+      case UNAVAILABLE:
+      case UNAUTHENTICATED:
+        // Unauthenticated means something went wrong with our token and we need
+        // to retry with new credentials which will happen automatically.
+        return false;
+      case INVALID_ARGUMENT:
+      case NOT_FOUND:
+      case ALREADY_EXISTS:
+      case PERMISSION_DENIED:
+      case FAILED_PRECONDITION:
+      case ABORTED:
+        // Aborted might be retried in some scenarios, but that is dependant on
+        // the context and should handled individually by the calling code.
+        // See https://cloud.google.com/apis/design/errors.
+      case OUT_OF_RANGE:
+      case UNIMPLEMENTED:
+      case DATA_LOSS:
+        return true;
+      default:
+        throw new IllegalArgumentException("Unknown gRPC status code: " + code);
+    }
+  }
+
+  /**
    * Determine whether the given status maps to the error that GRPC-Java throws when an Android
    * device is missing required SSL Ciphers.
    *

@@ -31,6 +31,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,6 +42,160 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class TransactionTest {
+  interface TransactionStage {
+    void runStage(Transaction transaction, DocumentReference docRef)
+        throws FirebaseFirestoreException;
+  }
+
+  private static TransactionStage delete1 = Transaction::delete;
+
+  private static TransactionStage update1 =
+      (Transaction transaction, DocumentReference docRef) ->
+          transaction.update(docRef, map("foo", "bar1"));
+
+  private static TransactionStage update2 =
+      (Transaction transaction, DocumentReference docRef) ->
+          transaction.update(docRef, map("foo", "bar2"));
+
+  private static TransactionStage set1 =
+      (Transaction transaction, DocumentReference docRef) ->
+          transaction.set(docRef, map("foo", "bar1"));
+
+  private static TransactionStage set2 =
+      (Transaction transaction, DocumentReference docRef) ->
+          transaction.set(docRef, map("foo", "bar2"));
+
+  private static TransactionStage get = Transaction::get;
+
+  /**
+   * Used for testing that all possible combinations of executing transactions result in the desired
+   * document value or error.
+   *
+   * <p>`run()`, `withExistingDoc()`, and `withNonexistentDoc()` don't actually do anything except
+   * assign variables into the TransactionTester.
+   *
+   * <p>`expectDoc()`, `expectNoDoc()`, and `expectError()` will trigger the transaction to run and
+   * assert that the end result matches the input.
+   */
+  private static class TransactionTester {
+    private FirebaseFirestore db;
+    private DocumentReference docRef;
+    private boolean fromExistingDoc = false;
+    private List<TransactionStage> stages = new ArrayList<>();
+
+    TransactionTester(FirebaseFirestore inputDb) {
+      db = inputDb;
+    }
+
+    public TransactionTester withExistingDoc() {
+      fromExistingDoc = true;
+      return this;
+    }
+
+    public TransactionTester withNonexistentDoc() {
+      fromExistingDoc = false;
+      return this;
+    }
+
+    public TransactionTester run(TransactionStage... inputStages) {
+      stages = Arrays.asList(inputStages);
+      return this;
+    }
+
+    public void expectDoc(Object expected) {
+      try {
+        prepareDoc();
+        waitFor(runTransaction());
+        DocumentSnapshot snapshot = waitFor(docRef.get());
+        assertTrue(snapshot.exists());
+        assertEquals(expected, snapshot.getData());
+      } catch (Exception e) {
+        fail(
+            "Expected the sequence ("
+                + listStages(stages)
+                + ") to succeed, but got "
+                + e.toString());
+      }
+      cleanupTester();
+    }
+
+    private void expectNoDoc() {
+      try {
+        prepareDoc();
+        waitFor(runTransaction());
+        DocumentSnapshot snapshot = waitFor(docRef.get());
+        assertFalse(snapshot.exists());
+      } catch (Exception e) {
+        fail(
+            "Expected the sequence ("
+                + listStages(stages)
+                + ") to succeed, but got "
+                + e.toString());
+      }
+      cleanupTester();
+    }
+
+    private void expectError(Code expected) {
+      prepareDoc();
+      Task<Void> transactionTask = runTransaction();
+      try {
+        waitForException(transactionTask);
+      } catch (Exception e) {
+        throw new AssertionError(
+            "Expected the sequence ("
+                + listStages(stages)
+                + ") to fail with the error "
+                + expected.toString());
+      }
+      assertFalse(transactionTask.isSuccessful());
+      Exception e = transactionTask.getException();
+      assertEquals(expected, ((FirebaseFirestoreException) e).getCode());
+      cleanupTester();
+    }
+
+    private void prepareDoc() {
+      docRef = db.collection("tester-docref").document();
+      if (fromExistingDoc) {
+        docRef.set(map("foo", "bar0"));
+        DocumentSnapshot docSnap = waitFor(docRef.get());
+        assertTrue(docSnap.exists());
+      }
+    }
+
+    private Task<Void> runTransaction() {
+      return db.runTransaction(
+          transaction -> {
+            for (TransactionStage stage : stages) {
+              stage.runStage(transaction, docRef);
+            }
+            return null;
+          });
+    }
+
+    private void cleanupTester() {
+      stages = new ArrayList<>();
+      // Set the docRef to something else to lose the original reference.
+      docRef = db.collection("reset").document();
+    }
+
+    private static String listStages(List<TransactionStage> stages) {
+      List<String> seqList = new ArrayList<>();
+      for (TransactionStage stage : stages) {
+        if (stage == delete1) {
+          seqList.add("delete");
+        } else if (stage == update1 || stage == update2) {
+          seqList.add("update");
+        } else if (stage == set1 || stage == set2) {
+          seqList.add("set");
+        } else if (stage == get) {
+          seqList.add("get");
+        } else {
+          throw new IllegalArgumentException("Stage not recognized");
+        }
+      }
+      return seqList.toString();
+    }
+  }
 
   @After
   public void tearDown() {
@@ -60,50 +216,75 @@ public class TransactionTest {
   }
 
   @Test
-  public void testDeleteDocument() {
+  public void testRunsTransactionsAfterGettingExistingDoc() {
     FirebaseFirestore firestore = testFirestore();
-    DocumentReference doc = firestore.collection("towns").document();
-    waitFor(doc.set(map("foo", "bar")));
-    DocumentSnapshot snapshot = waitFor(doc.get());
-    assertEquals("bar", snapshot.getString("foo"));
-    waitFor(
-        firestore.runTransaction(
-            transaction -> {
-              transaction.delete(doc);
-              return null;
-            }));
-    snapshot = waitFor(doc.get());
-    assertFalse(snapshot.exists());
+    TransactionTester tt = new TransactionTester(firestore);
+
+    tt.withExistingDoc().run(get, delete1, delete1).expectNoDoc();
+    tt.withExistingDoc().run(get, delete1, update2).expectError(Code.INVALID_ARGUMENT);
+    tt.withExistingDoc().run(get, delete1, set2).expectDoc(map("foo", "bar2"));
+
+    tt.withExistingDoc().run(get, update1, delete1).expectNoDoc();
+    tt.withExistingDoc().run(get, update1, update2).expectDoc(map("foo", "bar2"));
+    tt.withExistingDoc().run(get, update1, set2).expectDoc(map("foo", "bar2"));
+
+    tt.withExistingDoc().run(get, set1, delete1).expectNoDoc();
+    tt.withExistingDoc().run(get, set1, update2).expectDoc(map("foo", "bar2"));
+    tt.withExistingDoc().run(get, set1, set2).expectDoc(map("foo", "bar2"));
   }
 
   @Test
-  public void testGetNonexistentDocumentThenCreate() {
+  public void testRunsTransactionsAfterGettingNonexistentDoc() {
     FirebaseFirestore firestore = testFirestore();
-    DocumentReference docRef = firestore.collection("towns").document();
-    waitFor(
-        firestore.runTransaction(
-            transaction -> {
-              DocumentSnapshot docSnap = transaction.get(docRef);
-              assertFalse(docSnap.exists());
-              transaction.set(docRef, map("foo", "bar"));
-              return null;
-            }));
-    DocumentSnapshot snapshot = waitFor(docRef.get());
-    assertEquals("bar", snapshot.getString("foo"));
+    TransactionTester tt = new TransactionTester(firestore);
+
+    tt.withNonexistentDoc().run(get, delete1, delete1).expectNoDoc();
+    tt.withNonexistentDoc().run(get, delete1, update2).expectError(Code.INVALID_ARGUMENT);
+    tt.withNonexistentDoc().run(get, delete1, set2).expectDoc(map("foo", "bar2"));
+
+    tt.withNonexistentDoc().run(get, update1, delete1).expectError(Code.INVALID_ARGUMENT);
+    tt.withNonexistentDoc().run(get, update1, update2).expectError(Code.INVALID_ARGUMENT);
+    tt.withNonexistentDoc().run(get, update1, set2).expectError(Code.INVALID_ARGUMENT);
+
+    tt.withNonexistentDoc().run(get, set1, delete1).expectNoDoc();
+    tt.withNonexistentDoc().run(get, set1, update2).expectDoc(map("foo", "bar2"));
+    tt.withNonexistentDoc().run(get, set1, set2).expectDoc(map("foo", "bar2"));
   }
 
   @Test
-  public void testWriteDocumentTwice() {
+  public void testRunsTransactionsOnExistingDoc() {
     FirebaseFirestore firestore = testFirestore();
-    DocumentReference doc = firestore.collection("towns").document();
-    waitFor(
-        firestore.runTransaction(
-            transaction -> {
-              transaction.set(doc, map("a", "b")).set(doc, map("c", "d"));
-              return null;
-            }));
-    DocumentSnapshot snapshot = waitFor(doc.get());
-    assertEquals(map("c", "d"), snapshot.getData());
+    TransactionTester tt = new TransactionTester(firestore);
+
+    tt.withExistingDoc().run(delete1, delete1).expectNoDoc();
+    tt.withExistingDoc().run(delete1, update2).expectError(Code.INVALID_ARGUMENT);
+    tt.withExistingDoc().run(delete1, set2).expectDoc(map("foo", "bar2"));
+
+    tt.withExistingDoc().run(update1, delete1).expectNoDoc();
+    tt.withExistingDoc().run(update1, update2).expectDoc(map("foo", "bar2"));
+    tt.withExistingDoc().run(update1, set2).expectDoc(map("foo", "bar2"));
+
+    tt.withExistingDoc().run(set1, delete1).expectNoDoc();
+    tt.withExistingDoc().run(set1, update2).expectDoc(map("foo", "bar2"));
+    tt.withExistingDoc().run(set1, set2).expectDoc(map("foo", "bar2"));
+  }
+
+  @Test
+  public void testRunsTransactionsOnNonexistentDoc() {
+    FirebaseFirestore firestore = testFirestore();
+    TransactionTester tt = new TransactionTester(firestore);
+
+    tt.withNonexistentDoc().run(delete1, delete1).expectNoDoc();
+    tt.withNonexistentDoc().run(delete1, update2).expectError(Code.INVALID_ARGUMENT);
+    tt.withNonexistentDoc().run(delete1, set2).expectDoc(map("foo", "bar2"));
+
+    tt.withNonexistentDoc().run(update1, delete1).expectError(Code.NOT_FOUND);
+    tt.withNonexistentDoc().run(update1, update2).expectError(Code.NOT_FOUND);
+    tt.withNonexistentDoc().run(update1, set2).expectError(Code.NOT_FOUND);
+
+    tt.withNonexistentDoc().run(set1, delete1).expectNoDoc();
+    tt.withNonexistentDoc().run(set1, update2).expectDoc(map("foo", "bar2"));
+    tt.withNonexistentDoc().run(set1, set2).expectDoc(map("foo", "bar2"));
   }
 
   @Test
@@ -164,82 +345,6 @@ public class TransactionTest {
   }
 
   @Test
-  public void testTransactionRejectsUpdatesForNonexistentDocuments() {
-    final FirebaseFirestore firestore = testFirestore();
-
-    // Make a transaction that will fail
-    Task<Void> transactionTask =
-        firestore.runTransaction(
-            transaction -> {
-              // Get and update a document that doesn't exist so that the transaction fails
-              DocumentSnapshot doc =
-                  transaction.get(firestore.collection("nonexistent").document());
-              transaction.update(doc.getReference(), "foo", "bar");
-              return null;
-            });
-
-    // Let all of the transactions fetch the old value and stop once.
-    waitForException(transactionTask);
-    assertFalse(transactionTask.isSuccessful());
-    Exception e = transactionTask.getException();
-    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
-    assertEquals("Can't update a document that doesn't exist.", e.getMessage());
-  }
-
-  @Test
-  public void testCantDeleteDocumentThenPatch() {
-    final FirebaseFirestore firestore = testFirestore();
-    final DocumentReference docRef = firestore.collection("docs").document();
-    waitFor(docRef.set(map("foo", "bar")));
-
-    // Make a transaction that will fail
-    Task<Void> transactionTask =
-        firestore.runTransaction(
-            transaction -> {
-              DocumentSnapshot doc = transaction.get(docRef);
-              assertTrue(doc.exists());
-              transaction.delete(docRef);
-              // Since we deleted the doc, the update will fail
-              transaction.update(docRef, "foo", "bar");
-              return null;
-            });
-
-    // Let all of the transactions fetch the old value and stop once.
-    waitForException(transactionTask);
-    assertFalse(transactionTask.isSuccessful());
-    Exception e = transactionTask.getException();
-    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
-    assertEquals("Can't update a document that doesn't exist.", e.getMessage());
-  }
-
-  @Test
-  public void testCantDeleteDocumentThenSet() {
-    final FirebaseFirestore firestore = testFirestore();
-    final DocumentReference docRef = firestore.collection("docs").document();
-    waitFor(docRef.set(map("foo", "bar")));
-
-    // Make a transaction that will fail
-    Task<Void> transactionTask =
-        firestore.runTransaction(
-            transaction -> {
-              DocumentSnapshot doc = transaction.get(docRef);
-              assertTrue(doc.exists());
-              transaction.delete(docRef);
-              // TODO: In theory this should work, but it's complex to make it work, so
-              // instead we just let the transaction fail and verify it's unsupported for now
-              transaction.set(docRef, map("foo", "new-bar"));
-              return null;
-            });
-
-    // Let all of the transactions fetch the old value and stop once.
-    waitForException(transactionTask);
-    assertFalse(transactionTask.isSuccessful());
-    Exception e = transactionTask.getException();
-    // This is the error surfaced by the backend.
-    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
-  }
-
-  @Test
   public void testTransactionRaisesErrorsForInvalidUpdates() {
     final FirebaseFirestore firestore = testFirestore();
 
@@ -270,7 +375,6 @@ public class TransactionTest {
     ArrayList<Task<Void>> readTasks = new ArrayList<>();
     // A barrier to make sure every transaction reaches the same spot.
     TaskCompletionSource<Void> barrier = new TaskCompletionSource<>();
-    AtomicInteger started = new AtomicInteger(0);
 
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("counters").document();
@@ -285,7 +389,6 @@ public class TransactionTest {
               transaction -> {
                 DocumentSnapshot snapshot = transaction.get(doc);
                 assertNotNull(snapshot);
-                started.incrementAndGet();
                 resolveRead.trySetResult(null);
                 waitFor(barrier.getTask());
                 transaction.update(doc, map("count", snapshot.getDouble("count") + 1.0));
@@ -295,7 +398,6 @@ public class TransactionTest {
 
     // Let all of the transactions fetch the old value and stop once.
     waitFor(Tasks.whenAll(readTasks));
-    assertEquals(3, started.intValue());
     // Let all of the transactions continue and wait for them to finish.
     barrier.setResult(null);
     waitFor(Tasks.whenAll(transactionTasks));
@@ -441,10 +543,12 @@ public class TransactionTest {
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 15.0)));
+    AtomicInteger count = new AtomicInteger(0);
     Exception e =
         waitForException(
             firestore.runTransaction(
                 transaction -> {
+                  count.incrementAndGet();
                   // Get the doc once.
                   DocumentSnapshot snapshot1 = transaction.get(doc);
                   assertEquals(15, snapshot1.getDouble("count").intValue());
@@ -457,6 +561,7 @@ public class TransactionTest {
                   fail("Should have thrown exception");
                   return null;
                 }));
+    assertEquals(1, count.get());
     assertEquals(Code.ABORTED, ((FirebaseFirestoreException) e).getCode());
     DocumentSnapshot snapshot = waitFor(doc.get());
     assertEquals(1234, snapshot.getDouble("count").intValue());
@@ -515,6 +620,28 @@ public class TransactionTest {
     // assertEquals("bar", snapshot.getString("foo"));
     assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
     assertEquals("Every document read in a transaction must also be written.", e.getMessage());
+  }
+
+  @Test
+  public void testDoesNotRetryOnPermanentError() {
+    final FirebaseFirestore firestore = testFirestore();
+    AtomicInteger count = new AtomicInteger(0);
+    // Make a transaction that should fail with a permanent error
+    Task<Void> transactionTask =
+        firestore.runTransaction(
+            transaction -> {
+              count.incrementAndGet();
+              // Get and update a document that doesn't exist so that the transaction fails
+              DocumentSnapshot doc =
+                  transaction.get(firestore.collection("nonexistent").document());
+              transaction.update(doc.getReference(), "foo", "bar");
+              return null;
+            });
+
+    // Let all of the transactions fetch the old value and stop once.
+    waitForException(transactionTask);
+    assertEquals(1, count.get());
+    assertFalse(transactionTask.isSuccessful());
   }
 
   @Test

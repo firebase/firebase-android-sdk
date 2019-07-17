@@ -6,3 +6,5 @@ functions-aggressive:2
 storage-aggressive:3
 functions-release:6
 storage-release:7
+config-aggressive:9
+config-release:10
