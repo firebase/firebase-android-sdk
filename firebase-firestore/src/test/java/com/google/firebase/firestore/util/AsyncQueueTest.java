@@ -137,5 +137,6 @@ public class AsyncQueueTest {
     queue.enqueueAndForgetEvenAfterShutdown(runnableForStep(4));
 
     queue.getExecutor().execute(runnableForStep(5));
+    waitForExpectedSteps();
   }
 }

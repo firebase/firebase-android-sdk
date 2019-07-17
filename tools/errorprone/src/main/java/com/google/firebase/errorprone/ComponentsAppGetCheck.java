@@ -98,7 +98,6 @@ public class ComponentsAppGetCheck extends BugChecker
    */
   private static final Matcher<ExpressionTree> WITHIN_SHUTDOWN =
       enclosingMethod(allOf(methodIsNamed("shutdown")));
-  // methodReturns(isVoidType())));
 
   /**
    * This matches methods of the forms:

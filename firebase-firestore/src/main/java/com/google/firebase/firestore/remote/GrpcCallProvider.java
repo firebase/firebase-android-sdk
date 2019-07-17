@@ -138,13 +138,23 @@ public class GrpcCallProvider {
 
   /** Shuts down the gRPC channel and the internal worker queue. */
   void shutdown() {
+    // Handling shutdown synchronously to avoid re-enqueuing on the AsyncQueue after shutdown has
+    // started.
     ManagedChannel channel = null;
     try {
       channel = Tasks.await(channelTask);
-    } catch (ExecutionException | InterruptedException e) {
+    } catch (ExecutionException e) {
       Logger.warn(
           FirestoreChannel.class.getSimpleName(),
-          "Channel is not initialized, shutdown will just do nothing.");
+          "Channel is not initialized, shutdown will just do nothing. Channel initializing run into exception: %s",
+          e);
+      return;
+    } catch (InterruptedException e) {
+      Logger.warn(
+          FirestoreChannel.class.getSimpleName(),
+          "Interrupted while retrieving the gRPC Managed Channel");
+      // Preserve interrupt status
+      Thread.currentThread().interrupt();
       return;
     }
 

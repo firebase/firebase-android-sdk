@@ -119,10 +119,6 @@ public class FirebaseFirestore {
 
     FirebaseFirestore firestore =
         new FirebaseFirestore(context, databaseId, persistenceKey, provider, queue, app);
-    app.addLifecycleEventListener(
-        (firebaseAppName, options) -> {
-          firestore.shutdown(/* fromAppDeletion= */ true);
-        });
     return firestore;
   }
 
@@ -335,11 +331,7 @@ public class FirebaseFirestore {
     return batch.commit();
   }
 
-  Task<Void> shutdown(boolean fromAppDeletion) {
-    if (!fromAppDeletion && this.getApp() != null) {
-      FirestoreMultiDbComponent component = this.getApp().get(FirestoreMultiDbComponent.class);
-      component.remove(this.databaseId.getDatabaseId());
-    }
+  Task<Void> shutdownInternal() {
     // The client must be initialized to ensure that all subsequent API usage throws an exception.
     this.ensureClientConfigured();
     return client.shutdown();
@@ -368,7 +360,13 @@ public class FirebaseFirestore {
   @VisibleForTesting
   // TODO(b/135755126): Make this public and remove @VisibleForTesting
   Task<Void> shutdown() {
-    return shutdown(/* fromAppDeletion= */ false);
+    // TODO(wuandy): This is required because test code setup Firestore without an App. We should
+    //               eliminate that.
+    if (this.getApp() != null) {
+      FirestoreMultiDbComponent component = this.getApp().get(FirestoreMultiDbComponent.class);
+      component.remove(this.databaseId.getDatabaseId());
+    }
+    return shutdownInternal();
   }
 
   @VisibleForTesting

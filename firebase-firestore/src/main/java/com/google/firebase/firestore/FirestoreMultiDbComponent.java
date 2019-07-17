@@ -18,12 +18,14 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseAppLifecycleListener;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import java.util.HashMap;
 import java.util.Map;
 
 /** Multi-resource container for Firestore. */
-class FirestoreMultiDbComponent {
+class FirestoreMultiDbComponent implements FirebaseAppLifecycleListener {
   /**
    * A static map from instance key to FirebaseFirestore instances. Instance keys are database
    * names.
@@ -41,6 +43,7 @@ class FirestoreMultiDbComponent {
     this.context = context;
     this.app = app;
     this.authProvider = authProvider;
+    this.app.addLifecycleEventListener(this);
   }
 
   /** Provides instances of Firestore for given database IDs. */
@@ -63,5 +66,14 @@ class FirestoreMultiDbComponent {
    */
   synchronized void remove(@NonNull String databaseId) {
     instances.remove(databaseId);
+  }
+
+  @Override
+  public void onDeleted(String firebaseAppName, FirebaseOptions options) {
+    // Shuts down all database instances and remove them from registry map when App is deleted.
+    for (Map.Entry<String, FirebaseFirestore> entry : instances.entrySet()) {
+      entry.getValue().shutdownInternal();
+      instances.remove(entry.getKey());
+    }
   }
 }
