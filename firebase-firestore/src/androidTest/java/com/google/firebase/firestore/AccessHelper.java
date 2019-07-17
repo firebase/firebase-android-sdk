@@ -32,7 +32,7 @@ public final class AccessHelper {
       CredentialsProvider credentialsProvider,
       AsyncQueue asyncQueue,
       FirebaseApp firebaseApp,
-      FirestoreMultiDbComponent.DeregisterCommand deregisterCommand) {
+      FirebaseFirestore.InstanceRegistry instanceRegistry) {
     return new FirebaseFirestore(
         context,
         databaseId,
@@ -40,7 +40,7 @@ public final class AccessHelper {
         credentialsProvider,
         asyncQueue,
         firebaseApp,
-        deregisterCommand);
+        instanceRegistry);
   }
 
   /** Makes the shutdown method accessible. */

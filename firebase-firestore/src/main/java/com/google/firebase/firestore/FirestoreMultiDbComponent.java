@@ -25,11 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** Multi-resource container for Firestore. */
-class FirestoreMultiDbComponent implements FirebaseAppLifecycleListener {
-
-  public interface DeregisterCommand {
-    void execute();
-  }
+class FirestoreMultiDbComponent
+    implements FirebaseAppLifecycleListener, FirebaseFirestore.InstanceRegistry {
 
   /**
    * A static map from instance key to FirebaseFirestore instances. Instance keys are database
@@ -56,9 +53,7 @@ class FirestoreMultiDbComponent implements FirebaseAppLifecycleListener {
   synchronized FirebaseFirestore get(@NonNull String databaseId) {
     FirebaseFirestore firestore = instances.get(databaseId);
     if (firestore == null) {
-      firestore =
-          FirebaseFirestore.newInstance(
-              context, app, authProvider, databaseId, () -> this.remove(databaseId));
+      firestore = FirebaseFirestore.newInstance(context, app, authProvider, databaseId, this);
       instances.put(databaseId, firestore);
     }
     return firestore;
@@ -71,7 +66,8 @@ class FirestoreMultiDbComponent implements FirebaseAppLifecycleListener {
    *
    * <p>It is a no-op if there is no instance associated with the given database name.
    */
-  synchronized void remove(@NonNull String databaseId) {
+  @Override
+  public synchronized void remove(@NonNull String databaseId) {
     instances.remove(databaseId);
   }
 

@@ -51,6 +51,12 @@ import java.util.concurrent.Executor;
 @PublicApi
 public class FirebaseFirestore {
 
+  /** Provides a registry management interface for {@code FirebaseFirestore} instances. */
+  public interface InstanceRegistry {
+    /** Removes the Firestore instance with given name from registry. */
+    void remove(@NonNull String databaseId);
+  }
+
   private static final String TAG = "FirebaseFirestore";
   private final Context context;
   // This is also used as private lock object for this instance. There is nothing inherent about
@@ -63,7 +69,7 @@ public class FirebaseFirestore {
   private final UserDataConverter dataConverter;
   // When user requests to shutdown, use this to notify `FirestoreMultiDbComponent` to deregister
   // this instance.
-  private final FirestoreMultiDbComponent.DeregisterCommand onDeregister;
+  private final InstanceRegistry instanceRegistry;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
 
@@ -98,7 +104,7 @@ public class FirebaseFirestore {
       @NonNull FirebaseApp app,
       @Nullable InternalAuthProvider authProvider,
       @NonNull String database,
-      @NonNull FirestoreMultiDbComponent.DeregisterCommand onDeregister) {
+      @NonNull InstanceRegistry instanceRegistry) {
     String projectId = app.getOptions().getProjectId();
     if (projectId == null) {
       throw new IllegalArgumentException("FirebaseOptions.getProjectId() cannot be null");
@@ -123,7 +129,7 @@ public class FirebaseFirestore {
 
     FirebaseFirestore firestore =
         new FirebaseFirestore(
-            context, databaseId, persistenceKey, provider, queue, app, onDeregister);
+            context, databaseId, persistenceKey, provider, queue, app, instanceRegistry);
     return firestore;
   }
 
@@ -135,7 +141,7 @@ public class FirebaseFirestore {
       CredentialsProvider credentialsProvider,
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
-      FirestoreMultiDbComponent.DeregisterCommand onDeregister) {
+      InstanceRegistry instanceRegistry) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.dataConverter = new UserDataConverter(databaseId);
@@ -144,7 +150,7 @@ public class FirebaseFirestore {
     this.asyncQueue = checkNotNull(asyncQueue);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
-    this.onDeregister = onDeregister;
+    this.instanceRegistry = instanceRegistry;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
   }
@@ -367,7 +373,7 @@ public class FirebaseFirestore {
   @VisibleForTesting
   // TODO(b/135755126): Make this public and remove @VisibleForTesting
   Task<Void> shutdown() {
-    onDeregister.execute();
+    instanceRegistry.remove(this.getDatabaseId().getDatabaseId());
     return shutdownInternal();
   }
 

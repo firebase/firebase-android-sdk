@@ -265,7 +265,7 @@ public class IntegrationTestUtil {
             new EmptyCredentialsProvider(),
             asyncQueue,
             /*firebaseApp=*/ null,
-            /*deregisterCommand=*/ () -> {});
+            /*instanceRegistry=*/ (dbId) -> {});
     waitFor(AccessHelper.clearPersistence(firestore));
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);
