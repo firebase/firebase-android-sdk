@@ -221,11 +221,9 @@ public class Transaction {
         //
         // This has to be validated locally because you can't send a precondition that a document
         // does not exist without changing the semantics of the backend write to be an insert. This
-        // is
-        // the reverse of what we want, since we want to assert that the document doesn't exist but
-        // then send the update and have it fail. Since we can't express that to the backend, we
-        // have
-        // to validate locally.
+        // is the reverse of what we want, since we want to assert that the document doesn't exist
+        // but then send the update and have it fail. Since we can't express that to the backend, we
+        // have to validate locally.
         //
         // Note: this can change once we can send separate verify writes in the transaction.
         throw new FirebaseFirestoreException(
