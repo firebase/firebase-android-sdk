@@ -25,6 +25,7 @@ apply from: "src/database/database.gradle"
 apply from: "src/storage/storage.gradle"
 apply from: "src/firestore/firestore.gradle"
 apply from: "src/functions/functions.gradle"
+apply from: "src/config/config.gradle"
 
 /**
  * This task builds all supported variants (only aggressive as of writing) and writes the
