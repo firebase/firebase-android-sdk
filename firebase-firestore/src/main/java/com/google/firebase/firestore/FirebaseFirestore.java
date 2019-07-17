@@ -61,6 +61,9 @@ public class FirebaseFirestore {
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataConverter dataConverter;
+  // When user requests to shutdown, use this to notify `FirestoreMultiDbComponent` to deregister
+  // this instance.
+  private final FirestoreMultiDbComponent.DeregisterCommand onDeregister;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
 
@@ -94,7 +97,8 @@ public class FirebaseFirestore {
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @Nullable InternalAuthProvider authProvider,
-      @NonNull String database) {
+      @NonNull String database,
+      @NonNull FirestoreMultiDbComponent.DeregisterCommand onDeregister) {
     String projectId = app.getOptions().getProjectId();
     if (projectId == null) {
       throw new IllegalArgumentException("FirebaseOptions.getProjectId() cannot be null");
@@ -118,7 +122,8 @@ public class FirebaseFirestore {
     String persistenceKey = app.getName();
 
     FirebaseFirestore firestore =
-        new FirebaseFirestore(context, databaseId, persistenceKey, provider, queue, app);
+        new FirebaseFirestore(
+            context, databaseId, persistenceKey, provider, queue, app, onDeregister);
     return firestore;
   }
 
@@ -129,7 +134,8 @@ public class FirebaseFirestore {
       String persistenceKey,
       CredentialsProvider credentialsProvider,
       AsyncQueue asyncQueue,
-      @Nullable FirebaseApp firebaseApp) {
+      @Nullable FirebaseApp firebaseApp,
+      FirestoreMultiDbComponent.DeregisterCommand onDeregister) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.dataConverter = new UserDataConverter(databaseId);
@@ -138,6 +144,7 @@ public class FirebaseFirestore {
     this.asyncQueue = checkNotNull(asyncQueue);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
+    this.onDeregister = onDeregister;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
   }
@@ -360,12 +367,7 @@ public class FirebaseFirestore {
   @VisibleForTesting
   // TODO(b/135755126): Make this public and remove @VisibleForTesting
   Task<Void> shutdown() {
-    // TODO(wuandy): This is required because test code setup Firestore without an App. We should
-    //               eliminate that.
-    if (this.getApp() != null) {
-      FirestoreMultiDbComponent component = this.getApp().get(FirestoreMultiDbComponent.class);
-      component.remove(this.databaseId.getDatabaseId());
-    }
+    onDeregister.execute();
     return shutdownInternal();
   }
 

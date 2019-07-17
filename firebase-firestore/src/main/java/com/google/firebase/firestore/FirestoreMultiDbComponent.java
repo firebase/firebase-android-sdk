@@ -26,6 +26,11 @@ import java.util.Map;
 
 /** Multi-resource container for Firestore. */
 class FirestoreMultiDbComponent implements FirebaseAppLifecycleListener {
+
+  public interface DeregisterCommand {
+    void execute();
+  }
+
   /**
    * A static map from instance key to FirebaseFirestore instances. Instance keys are database
    * names.
@@ -51,7 +56,9 @@ class FirestoreMultiDbComponent implements FirebaseAppLifecycleListener {
   synchronized FirebaseFirestore get(@NonNull String databaseId) {
     FirebaseFirestore firestore = instances.get(databaseId);
     if (firestore == null) {
-      firestore = FirebaseFirestore.newInstance(context, app, authProvider, databaseId);
+      firestore =
+          FirebaseFirestore.newInstance(
+              context, app, authProvider, databaseId, () -> this.remove(databaseId));
       instances.put(databaseId, firestore);
     }
     return firestore;

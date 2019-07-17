@@ -92,18 +92,6 @@ public class ComponentsAppGetCheck extends BugChecker
    *
    * <pre>{@code
    * class Foo {
-   *     void shutdown();
-   * }
-   * </pre>
-   */
-  private static final Matcher<ExpressionTree> WITHIN_SHUTDOWN =
-      enclosingMethod(allOf(methodIsNamed("shutdown")));
-
-  /**
-   * This matches methods of the forms:
-   *
-   * <pre>{@code
-   * class Foo {
    *     private static Foo getInstanceImpl(/* any number of parameters * /);
    * }
    *
@@ -126,7 +114,7 @@ public class ComponentsAppGetCheck extends BugChecker
       enclosingClass(hasAnnotation("org.junit.runner.RunWith"));
 
   private static final Matcher<ExpressionTree> ALLOWED_USAGES =
-      anyOf(WITHIN_GET_INSTANCE, WITHIN_GET_INSTANCE_IMPL, WITHIN_SHUTDOWN, WITHIN_JUNIT_TEST);
+      anyOf(WITHIN_GET_INSTANCE, WITHIN_GET_INSTANCE_IMPL, WITHIN_JUNIT_TEST);
 
   @Override
   public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
