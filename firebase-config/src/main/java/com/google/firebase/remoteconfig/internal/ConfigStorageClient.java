@@ -80,7 +80,7 @@ public class ConfigStorageClient {
     try {
       outputStream.write(container.toString().getBytes(JSON_STRING_ENCODING));
     } finally {
-       if(outputStream != null) outputStream.close();
+       outputStream.close();
     }
     return null;
   }
@@ -105,7 +105,7 @@ public class ConfigStorageClient {
       // File might not have been written to yet, so this not an irrecoverable error.
       return null;
     } finally {
-       if(fileInputStream != null ) fileInputStream.close();
+       fileInputStream.close();
     }
   }
 
