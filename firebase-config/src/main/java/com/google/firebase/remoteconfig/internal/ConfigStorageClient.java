@@ -110,7 +110,7 @@ public class ConfigStorageClient {
       // File might not have been written to yet, so this not an irrecoverable error.
       return null;
     } finally {
-      if(fileInputStream != null) fileInputStream.close();
+      fileInputStream.close();
     }
   }
 
