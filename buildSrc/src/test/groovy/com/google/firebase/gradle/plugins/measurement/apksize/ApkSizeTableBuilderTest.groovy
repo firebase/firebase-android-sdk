@@ -25,8 +25,8 @@ import org.junit.runners.JUnit4
 public class ApkSizeTableBuilderTest {
 
   private static final String HEADER =
-      "|------------------        APK Sizes        ------------------|\n" +
-      "|--    project    --|--  build type   --|--  size in bytes  --|\n"
+      "|-------------------        APK Sizes        -------------------|\n" +
+      "|---    project    ---|--  build type   --|--  size in bytes  --|\n"
 
   @Test(expected = IllegalStateException.class)
   public void toTableString_throwsWhenZeroAdded() {

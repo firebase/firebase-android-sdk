@@ -16,7 +16,6 @@ package com.google.apksize;
 
 import android.content.Context;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
-import com.google.firebase.inappmessaging.model.InAppMessage;
 
 public class InAppMessagingDisplay implements SampleCode {
 
