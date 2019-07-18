@@ -277,10 +277,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
                         }
                         Exception e = commitTask.getException();
                         if (retries > 0 && isRetryableError(e)) {
-                          System.out.println("BCHEN retrying @" + retries);
                           return transaction(asyncQueue, updateFunction, retries - 1);
                         }
-                        System.out.println("BCHEN !!!!!failing @" + retries);
                         return Tasks.forException(e);
                       });
             });

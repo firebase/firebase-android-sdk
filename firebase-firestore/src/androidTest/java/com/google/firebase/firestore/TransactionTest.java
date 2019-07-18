@@ -375,6 +375,7 @@ public class TransactionTest {
     ArrayList<Task<Void>> readTasks = new ArrayList<>();
     // A barrier to make sure every transaction reaches the same spot.
     TaskCompletionSource<Void> barrier = new TaskCompletionSource<>();
+    AtomicInteger counter = new AtomicInteger(0);
 
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("counters").document();
@@ -387,6 +388,7 @@ public class TransactionTest {
       transactionTasks.add(
           firestore.runTransaction(
               transaction -> {
+                counter.incrementAndGet();
                 DocumentSnapshot snapshot = transaction.get(doc);
                 assertNotNull(snapshot);
                 resolveRead.trySetResult(null);
@@ -398,9 +400,13 @@ public class TransactionTest {
 
     // Let all of the transactions fetch the old value and stop once.
     waitFor(Tasks.whenAll(readTasks));
-    // Let all of the transactions continue and wait for them to finish.
+    // There should be 3 initial transaction runs.
+    assertEquals(3, counter.get());
+    // There should be a total of 3 retries: once for the 2nd update, and twice for the 3rd update.
     barrier.setResult(null);
     waitFor(Tasks.whenAll(transactionTasks));
+    // The 1st write transaction should succeed. The 2nd should retry once, and the 3rd
+    assertEquals(6, counter.get());
     // Now all transaction should be completed, so check the result.
     DocumentSnapshot snapshot = waitFor(doc.get());
     assertEquals(8, snapshot.getDouble("count").intValue());
@@ -543,12 +549,10 @@ public class TransactionTest {
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 15.0)));
-    AtomicInteger count = new AtomicInteger(0);
     Exception e =
         waitForException(
             firestore.runTransaction(
                 transaction -> {
-                  count.incrementAndGet();
                   // Get the doc once.
                   DocumentSnapshot snapshot1 = transaction.get(doc);
                   assertEquals(15, snapshot1.getDouble("count").intValue());
@@ -561,7 +565,6 @@ public class TransactionTest {
                   fail("Should have thrown exception");
                   return null;
                 }));
-    assertEquals(1, count.get());
     assertEquals(Code.ABORTED, ((FirebaseFirestoreException) e).getCode());
     DocumentSnapshot snapshot = waitFor(doc.get());
     assertEquals(1234, snapshot.getDouble("count").intValue());
