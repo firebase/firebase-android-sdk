@@ -16,8 +16,8 @@ package com.google.firebase.segmentation.remote;
 
 import androidx.annotation.NonNull;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URL;
+import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -32,6 +32,11 @@ public class SegmentationServiceClient {
   private static final String CLEAR_REQUEST_RESOURCE_NAME_FORMAT =
       "projects/%s/installations/%s/customSegmentationData:clear";
   private static final String FIREBASE_SEGMENTATION_API_VERSION = "v1alpha";
+
+  private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
+  private static final String JSON_CONTENT_TYPE = "application/json";
+  private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
+  private static final String GZIP_CONTENT_ENCODING = "gzip";
 
   public enum Code {
     OK,
@@ -71,18 +76,21 @@ public class SegmentationServiceClient {
       httpsURLConnection.setRequestMethod("PATCH");
       httpsURLConnection.addRequestProperty(
           "Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken);
-      httpsURLConnection.addRequestProperty("Content-Type", "application/json");
-      OutputStream os = httpsURLConnection.getOutputStream();
+      httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+      httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+      GZIPOutputStream gzipOutputStream =
+          new GZIPOutputStream(httpsURLConnection.getOutputStream());
       try {
-        os.write(
+        gzipOutputStream.write(
             buildUpdateCustomSegmentationDataRequestBody(resourceName, customInstallationId)
                 .toString()
                 .getBytes("UTF-8"));
       } catch (JSONException e) {
         throw new IllegalStateException(e);
+      } finally {
+        gzipOutputStream.close();
       }
       httpsURLConnection.connect();
-
       int httpResponseCode = httpsURLConnection.getResponseCode();
       switch (httpResponseCode) {
         case 200:
@@ -130,13 +138,17 @@ public class SegmentationServiceClient {
       httpsURLConnection.setRequestMethod("POST");
       httpsURLConnection.addRequestProperty(
           "Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken);
-      httpsURLConnection.addRequestProperty("Content-Type", "application/json");
-      OutputStream os = httpsURLConnection.getOutputStream();
+      httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+      httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+      GZIPOutputStream gzipOutputStream =
+          new GZIPOutputStream(httpsURLConnection.getOutputStream());
       try {
-        os.write(
+        gzipOutputStream.write(
             buildClearCustomSegmentationDataRequestBody(resourceName).toString().getBytes("UTF-8"));
       } catch (JSONException e) {
         throw new IllegalStateException(e);
+      } finally {
+        gzipOutputStream.close();
       }
       httpsURLConnection.connect();
 
