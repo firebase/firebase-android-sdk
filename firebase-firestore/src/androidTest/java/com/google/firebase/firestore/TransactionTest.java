@@ -549,15 +549,17 @@ public class TransactionTest {
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 15.0)));
+    AtomicInteger counter = new AtomicInteger(0);
     Exception e =
         waitForException(
             firestore.runTransaction(
                 transaction -> {
+                  counter.incrementAndGet();
                   // Get the doc once.
                   DocumentSnapshot snapshot1 = transaction.get(doc);
-                  assertEquals(15, snapshot1.getDouble("count").intValue());
-                  // Do a write outside of the transaction.
-                  waitFor(doc.set(map("count", 1234.0)));
+                  // Do a write outside of the transaction. Because the transaction will retry, set
+                  // the document to a different value each time.
+                  waitFor(doc.set(map("count", 1234.0 + counter.get())));
                   // Get the doc again in the transaction with the new version.
                   DocumentSnapshot snapshot2 = transaction.get(doc);
                   // The get itself will fail, because we already read an earlier version of this
@@ -566,8 +568,6 @@ public class TransactionTest {
                   return null;
                 }));
     assertEquals(Code.ABORTED, ((FirebaseFirestoreException) e).getCode());
-    DocumentSnapshot snapshot = waitFor(doc.get());
-    assertEquals(1234, snapshot.getDouble("count").intValue());
   }
 
   @Test

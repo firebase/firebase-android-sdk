@@ -265,6 +265,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
             asyncQueue.getExecutor(),
             userTask -> {
               if (!userTask.isSuccessful()) {
+                if (retries > 0 && isRetryableError(userTask.getException())) {
+                  return transaction(asyncQueue, updateFunction, retries - 1);
+                }
                 return userTask;
               }
               return transaction
