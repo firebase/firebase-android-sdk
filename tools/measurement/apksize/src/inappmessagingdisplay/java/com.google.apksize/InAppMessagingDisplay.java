@@ -17,6 +17,7 @@ package com.google.apksize;
 import android.content.Context;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener;
 import com.google.firebase.inappmessaging.model.Action;
+import com.google.firebase.inappmessaging.model.CampaignMetadata;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 
 public class InAppMessagingDisplay implements SampleCode {
