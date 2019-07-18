@@ -18,7 +18,6 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,16 +26,13 @@ import java.util.Map;
  * `TargetMetadataProvider` callbacks. Any target accessed via these callbacks must be registered
  * beforehand via `setSyncedKeys()`.
  */
-public class TestTargetMetadataProvider
-    implements WatchChangeAggregator.TargetMetadataProvider {
+public class TestTargetMetadataProvider implements WatchChangeAggregator.TargetMetadataProvider {
   final Map<Integer, ImmutableSortedSet<DocumentKey>> syncedKeys = new HashMap<>();
   final Map<Integer, QueryData> queryData = new HashMap<>();
 
   @Override
   public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
-    return syncedKeys.get(targetId) != null
-        ? syncedKeys.get(targetId)
-        : DocumentKey.emptyKeySet();
+    return syncedKeys.get(targetId) != null ? syncedKeys.get(targetId) : DocumentKey.emptyKeySet();
   }
 
   @androidx.annotation.Nullable
