@@ -80,7 +80,7 @@ public class ConfigStorageClient {
     try {
       outputStream.write(container.toString().getBytes(JSON_STRING_ENCODING));
     } finally {
-       outputStream.close();
+      outputStream.close();
     }
     return null;
   }
