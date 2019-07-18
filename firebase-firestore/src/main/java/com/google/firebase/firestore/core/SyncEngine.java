@@ -598,8 +598,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
   private boolean isRetryableError(Exception e) {
     if (e instanceof FirebaseFirestoreException) {
-      // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION, which
-      // should be retried.
+      // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION and
+      // non-matching document versions with ABORTED. These errors should be retried.
       List<FirebaseFirestoreException.Code> retryableExceptions =
           Arrays.asList(
               FirebaseFirestoreException.Code.ABORTED,

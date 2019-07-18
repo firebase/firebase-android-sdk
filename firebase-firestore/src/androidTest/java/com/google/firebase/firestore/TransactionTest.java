@@ -402,10 +402,9 @@ public class TransactionTest {
     waitFor(Tasks.whenAll(readTasks));
     // There should be 3 initial transaction runs.
     assertEquals(3, counter.get());
-    // There should be a total of 3 retries: once for the 2nd update, and twice for the 3rd update.
     barrier.setResult(null);
     waitFor(Tasks.whenAll(transactionTasks));
-    // The 1st write transaction should succeed. The 2nd should retry once, and the 3rd
+    // There should be a total of 3 retries: once for the 2nd update, and twice for the 3rd update.
     assertEquals(6, counter.get());
     // Now all transaction should be completed, so check the result.
     DocumentSnapshot snapshot = waitFor(doc.get());
