@@ -381,7 +381,7 @@ public class ConfigFetchHttpClient {
       try {
         activeRollouts = fetchResponse.getJSONArray(ACTIVE_ROLLOUTS);
       } catch (JSONException e) {
-        // Do nothing if Rollouts do not exist.
+        // Do nothing if no Rollouts exist.
       }
       if (activeRollouts != null) {
         containerBuilder.withActiveRollouts(activeRollouts);

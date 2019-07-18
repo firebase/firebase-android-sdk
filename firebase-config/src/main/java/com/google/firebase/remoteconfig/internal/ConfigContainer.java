@@ -15,6 +15,7 @@
 package com.google.firebase.remoteconfig.internal;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -119,10 +120,16 @@ public class ConfigContainer {
     return abtExperiments;
   }
 
+  /**
+   * Returns all rollouts that target this device.
+   */
   public JSONArray getActiveRollouts() {
     return activeRollouts;
   }
 
+  /**
+   * Returns the keys of all enabled features on this device.
+   */
   public JSONArray getEnabledFeatureKeys() {
     return enabledFeatureKeys;
   }
@@ -154,24 +161,19 @@ public class ConfigContainer {
   public static class Builder {
     private JSONObject builderConfigsJson;
     private Date builderFetchTime;
-    private JSONArray builderAbtExperiments;
-    private JSONArray builderActiveRollouts;
-    private JSONArray builderEnabledFeatureKeys;
+    private Map<String, JSONArray> jsonArrayBuilders = new HashMap<>();
 
     private Builder() {
       builderConfigsJson = new JSONObject();
       builderFetchTime = DEFAULTS_FETCH_TIME;
-      builderAbtExperiments = new JSONArray();
-      builderActiveRollouts = new JSONArray();
-      builderEnabledFeatureKeys = new JSONArray();
     }
 
     public Builder(ConfigContainer otherContainer) {
       this.builderConfigsJson = otherContainer.getConfigs();
       this.builderFetchTime = otherContainer.getFetchTime();
-      this.builderAbtExperiments = otherContainer.getAbtExperiments();
-      this.builderActiveRollouts = otherContainer.getActiveRollouts();
-      this.builderEnabledFeatureKeys = otherContainer.getEnabledFeatureKeys();
+      jsonArrayBuilders.put(ABT_EXPERIMENTS_KEY, otherContainer.getAbtExperiments());
+      jsonArrayBuilders.put(ACTIVE_ROLLOUTS_KEY, otherContainer.getActiveRollouts());
+      jsonArrayBuilders.put(ENABLED_FEATURE_KEYS_KEY, otherContainer.getEnabledFeatureKeys());
     }
 
     public Builder replaceConfigsWith(Map<String, String> configsMap) {
@@ -197,32 +199,20 @@ public class ConfigContainer {
     }
 
     public Builder withAbtExperiments(JSONArray abtExperiments) {
-      try {
-        this.builderAbtExperiments = new JSONArray(abtExperiments.toString());
-      } catch (JSONException e) {
-        // We serialize and deserialize the JSONArray to guarantee that it cannot be mutated after
-        // being set in the builder.
-        // A JSONException should never occur because the JSON that is being deserialized is
-        // guaranteed to be valid.
-      }
-      return this;
+      return with(ABT_EXPERIMENTS_KEY, abtExperiments);
     }
 
     public Builder withActiveRollouts(JSONArray activeRollouts) {
-      try {
-        this.builderActiveRollouts = new JSONArray(activeRollouts.toString());
-      } catch (JSONException e) {
-        // We serialize and deserialize the JSONArray to guarantee that it cannot be mutated after
-        // being set in the builder.
-        // A JSONException should never occur because the JSON that is being deserialized is
-        // guaranteed to be valid.
-      }
-      return this;
+      return with(ACTIVE_ROLLOUTS_KEY, activeRollouts);
     }
 
     public Builder withEnabledFeatureKeys(JSONArray enabledFeatureKeys) {
+      return with(ENABLED_FEATURE_KEYS_KEY, enabledFeatureKeys);
+    }
+
+    private Builder with(String key, JSONArray jsonArray) {
       try {
-        this.builderEnabledFeatureKeys = new JSONArray(enabledFeatureKeys.toString());
+        jsonArrayBuilders.put(key, new JSONArray(jsonArray.toString()));
       } catch (JSONException e) {
         // We serialize and deserialize the JSONArray to guarantee that it cannot be mutated after
         // being set in the builder.
@@ -237,9 +227,9 @@ public class ConfigContainer {
       return new ConfigContainer(
           builderConfigsJson,
           builderFetchTime,
-          builderAbtExperiments,
-          builderActiveRollouts,
-          builderEnabledFeatureKeys);
+          jsonArrayBuilders.getOrDefault(ABT_EXPERIMENTS_KEY, new JSONArray()),
+          jsonArrayBuilders.getOrDefault(ACTIVE_ROLLOUTS_KEY, new JSONArray()),
+          jsonArrayBuilders.getOrDefault(ENABLED_FEATURE_KEYS_KEY, new JSONArray()));
     }
   }
 
