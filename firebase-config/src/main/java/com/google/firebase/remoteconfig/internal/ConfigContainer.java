@@ -120,16 +120,12 @@ public class ConfigContainer {
     return abtExperiments;
   }
 
-  /**
-   * Returns all rollouts that target this device.
-   */
+  /** Returns all rollouts that target this device. */
   public JSONArray getActiveRollouts() {
     return activeRollouts;
   }
 
-  /**
-   * Returns the keys of all enabled features on this device.
-   */
+  /** Returns the keys of all enabled features on this device. */
   public JSONArray getEnabledFeatureKeys() {
     return enabledFeatureKeys;
   }
@@ -161,6 +157,10 @@ public class ConfigContainer {
   public static class Builder {
     private JSONObject builderConfigsJson;
     private Date builderFetchTime;
+    /**
+     * A collection of {@link JSONArray} objects that will be used to set {@link JSONArray}
+     * parameters of a {@link ConfigContainer}.
+     */
     private Map<String, JSONArray> jsonArrayBuilders = new HashMap<>();
 
     private Builder() {
@@ -210,6 +210,7 @@ public class ConfigContainer {
       return with(ENABLED_FEATURE_KEYS_KEY, enabledFeatureKeys);
     }
 
+    /** Adds a {@param key}, {@link JSONArray} pair to {@link Builder#jsonArrayBuilders}. */
     private Builder with(String key, JSONArray jsonArray) {
       try {
         jsonArrayBuilders.put(key, new JSONArray(jsonArray.toString()));
