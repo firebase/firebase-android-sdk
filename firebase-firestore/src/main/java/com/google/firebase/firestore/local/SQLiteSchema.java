@@ -356,8 +356,12 @@ class SQLiteSchema {
   }
 
   private void addUpdateTime() {
-    if (!tableContainsColumn("remote_documents", "snapshot_version_micros")) {
-      db.execSQL("ALTER TABLE remote_documents ADD COLUMN snapshot_version_micros INTEGER");
+    if (!tableContainsColumn("remote_documents", "snapshot_version_seconds")) {
+      hardAssert(
+          !tableContainsColumn("remote_documents", "snapshot_version_nanos"),
+          "Table contained snapshot_version_seconds, but is missing snapshot_version_nanos");
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN snapshot_version_seconds INTEGER");
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN snapshot_version_nanos INTEGER");
     }
   }
 
