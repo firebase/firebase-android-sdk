@@ -93,13 +93,10 @@ public class ConfigStorageClient {
    */
   @Nullable
   public synchronized ConfigContainer read() throws IOException {
+
+    FileInputStream fileInputStream = null;
     try {
-      context.openFileInput(fileName);
-    } catch (FileNotFoundException e) {
-      return null;
-    }
-    FileInputStream fileInputStream = context.openFileInput(fileName);
-    try {
+      fileInputStream = context.openFileInput(fileName);
       byte[] bytes = new byte[fileInputStream.available()];
       fileInputStream.read(bytes, 0, bytes.length);
       String containerJsonString = new String(bytes, JSON_STRING_ENCODING);
@@ -110,7 +107,7 @@ public class ConfigStorageClient {
       // File might not have been written to yet, so this not an irrecoverable error.
       return null;
     } finally {
-      fileInputStream.close();
+      if (fileInputStream != null) fileInputStream.close();
     }
   }
 
