@@ -15,24 +15,13 @@
 package com.google.apksize;
 
 import android.content.Context;
-import com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener;
-import com.google.firebase.inappmessaging.model.Action;
-import com.google.firebase.inappmessaging.model.CampaignMetadata;
+import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 
 public class InAppMessagingDisplay implements SampleCode {
 
-  public class MyClickListener implements FirebaseInAppMessagingClickListener {
-    @Override
-    public void messageClicked(InAppMessage inAppMessage, Action action) {
-      String url = action.getActionUrl();
-      CampaignMetadata metadata = inAppMessage.getCampaignMetadata();
-    }
-  }
-
   @Override
   public void runSample(Context context) {
-    MyClickListener listener = new MyClickListener();
-    FirebaseInAppMessaging.getInstance().addClickListener(listener);
+    FirebaseInAppMessaging.getInstance();
   }
 }
