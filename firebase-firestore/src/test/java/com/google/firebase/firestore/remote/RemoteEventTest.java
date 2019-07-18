@@ -39,7 +39,7 @@ import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
-import com.google.firebase.firestore.testutil.TestUtil.TestTargetMetadataProvider;
+import com.google.firebase.firestore.testutil.TestTargetMetadataProvider;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
