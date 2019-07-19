@@ -49,6 +49,10 @@ android {
     }
   }
 
+  if (project.hasProperty("testBuildType")) {
+    testBuildType project.getProperty("testBuildType")
+  }
+
   flavorDimensions "systemUnderTest"
 
   // TODO(allisonbm92): Switch to the default flavor.
