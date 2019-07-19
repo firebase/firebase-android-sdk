@@ -15,7 +15,6 @@
 package com.google.firebase.inappmessaging.display.internal.bindingwrappers;
 
 import android.graphics.Color;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,35 +29,36 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.inappmessaging.display.R;
 import com.google.firebase.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
-import com.google.firebase.inappmessaging.display.internal.layout.FiamRelativeLayout;
+import com.google.firebase.inappmessaging.display.internal.layout.BaseModalLayout;
+import com.google.firebase.inappmessaging.display.internal.layout.FiamCardView;
 import com.google.firebase.inappmessaging.model.Action;
+import com.google.firebase.inappmessaging.model.CardMessage;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.MessageType;
-import com.google.firebase.inappmessaging.model.ModalMessage;
 import java.util.Map;
 import javax.inject.Inject;
 
 /** @hide */
 @InAppMessageScope
-public class ModalBindingWrapper extends BindingWrapper {
+public class CardBindingWrapper extends BindingWrapper {
 
-  private FiamRelativeLayout modalRoot;
-  private ViewGroup modalContentRoot;
-
+  private FiamCardView cardRoot;
+  private BaseModalLayout cardContentRoot;
   private ScrollView bodyScroll;
-  private Button button;
-  private View collapseImage;
+  private Button primaryButton;
+  private Button secondaryButton;
   private ImageView imageView;
   private TextView messageBody;
   private TextView messageTitle;
-  private ModalMessage modalMessage;
+  private CardMessage cardMessage;
+  private View.OnClickListener dismissListener;
 
   private ViewTreeObserver.OnGlobalLayoutListener layoutListener =
       new ScrollViewAdjustableListener();
 
   @Inject
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-  public ModalBindingWrapper(
+  public CardBindingWrapper(
       InAppMessageLayoutConfig config, LayoutInflater inflater, InAppMessage message) {
     super(config, inflater, message);
   }
@@ -69,24 +69,24 @@ public class ModalBindingWrapper extends BindingWrapper {
       Map<Action, View.OnClickListener> actionListeners,
       View.OnClickListener dismissOnClickListener) {
 
-    View root = inflater.inflate(R.layout.modal, null);
+    View root = inflater.inflate(R.layout.card, null);
     bodyScroll = root.findViewById(R.id.body_scroll);
-    button = root.findViewById(R.id.button);
-    collapseImage = root.findViewById(R.id.collapse_button);
+    primaryButton = root.findViewById(R.id.primary_button);
+    secondaryButton = root.findViewById(R.id.secondary_button);
     imageView = root.findViewById(R.id.image_view);
     messageBody = root.findViewById(R.id.message_body);
     messageTitle = root.findViewById(R.id.message_title);
-    modalRoot = root.findViewById(R.id.modal_root);
+    cardRoot = root.findViewById(R.id.card_root);
+    cardContentRoot = root.findViewById(R.id.card_content_root);
 
-    modalContentRoot = root.findViewById(R.id.modal_content_root);
-
-    if (message.getMessageType().equals(MessageType.MODAL)) {
-      modalMessage = (ModalMessage) message;
-      setMessage(modalMessage);
-      setButton(actionListeners);
+    if (message.getMessageType().equals(MessageType.CARD)) {
+      cardMessage = (CardMessage) message;
+      setMessage(cardMessage);
+      setImage(cardMessage);
+      setButtons(actionListeners);
       setLayoutConfig(config);
       setDismissListener(dismissOnClickListener);
-      setViewBgColorFromHex(modalContentRoot, modalMessage.getBackgroundHexColor());
+      setViewBgColorFromHex(cardContentRoot, cardMessage.getBackgroundHexColor());
     }
     return layoutListener;
   }
@@ -95,18 +95,6 @@ public class ModalBindingWrapper extends BindingWrapper {
   @Override
   public ImageView getImageView() {
     return imageView;
-  }
-
-  @NonNull
-  @Override
-  public ViewGroup getRootView() {
-    return modalRoot;
-  }
-
-  @NonNull
-  @Override
-  public View getDialogView() {
-    return modalContentRoot;
   }
 
   @NonNull
@@ -121,63 +109,83 @@ public class ModalBindingWrapper extends BindingWrapper {
 
   @NonNull
   @Override
+  public ViewGroup getRootView() {
+    return cardRoot;
+  }
+
+  @NonNull
+  @Override
+  public View getDialogView() {
+    return cardContentRoot;
+  }
+
+  @NonNull
+  @Override
   public InAppMessageLayoutConfig getConfig() {
     return config;
   }
 
   @NonNull
-  public Button getActionButton() {
-    return button;
+  @Override
+  public View.OnClickListener getDismissListener() {
+    return dismissListener;
   }
 
   @NonNull
-  public View getCollapseButton() {
-    return collapseImage;
+  public Button getPrimaryButton() {
+    return primaryButton;
   }
 
-  private void setMessage(ModalMessage message) {
-    if (message.getImageData() == null || TextUtils.isEmpty(message.getImageData().getImageUrl())) {
-      imageView.setVisibility(View.GONE);
-    } else {
-      imageView.setVisibility(View.VISIBLE);
-    }
+  @NonNull
+  public Button getSecondaryButton() {
+    return secondaryButton;
+  }
 
-    if (message.getTitle() != null) {
-      if (!TextUtils.isEmpty(message.getTitle().getText())) {
-        messageTitle.setVisibility(View.VISIBLE);
-        messageTitle.setText(message.getTitle().getText());
-      } else {
-        messageTitle.setVisibility(View.GONE);
-      }
+  private void setMessage(CardMessage message) {
+    // We can assume we have a title because the CardMessage model enforces it.
+    messageTitle.setText(message.getTitle().getText());
+    messageTitle.setTextColor(Color.parseColor(message.getTitle().getHexColor()));
 
-      if (!TextUtils.isEmpty(message.getTitle().getHexColor())) {
-        messageTitle.setTextColor(Color.parseColor(message.getTitle().getHexColor()));
-      }
-    }
-
-    // eventually we should no longer need to check for the text of the body
-    if (message.getBody() != null && !TextUtils.isEmpty(message.getBody().getText())) {
+    // Right now we need to check for null, eventually we will make an API change to have hasBody()
+    // Additionally right now we have to check for getText. this will be fixed soon.
+    if (message.getBody() != null && message.getBody().getText() != null) {
       bodyScroll.setVisibility(View.VISIBLE);
       messageBody.setVisibility(View.VISIBLE);
-      messageBody.setTextColor(Color.parseColor(message.getBody().getHexColor()));
       messageBody.setText(message.getBody().getText());
+      messageBody.setTextColor(Color.parseColor(message.getBody().getHexColor()));
     } else {
       bodyScroll.setVisibility(View.GONE);
       messageBody.setVisibility(View.GONE);
     }
   }
 
-  private void setButton(Map<Action, View.OnClickListener> actionListeners) {
-    Action modalAction = modalMessage.getAction();
-    // Right now we have to check for text not being empty but this should be fixed in the future
-    if (modalAction != null
-        && modalAction.getButton() != null
-        && !TextUtils.isEmpty(modalAction.getButton().getText().getText())) {
-      setupViewButtonFromModel(button, modalAction.getButton());
-      setButtonActionListener(button, actionListeners.get(modalMessage.getAction()));
-      button.setVisibility(View.VISIBLE);
+  private void setButtons(Map<Action, View.OnClickListener> actionListeners) {
+    Action primaryAction = cardMessage.getPrimaryAction();
+    Action secondaryAction = cardMessage.getSecondaryAction();
+
+    // Primary button will always exist.
+    setupViewButtonFromModel(primaryButton, primaryAction.getButton());
+    // The main display code will override the action listener with a dismiss listener in the case
+    // of a missing action url.
+    setButtonActionListener(primaryButton, actionListeners.get(primaryAction));
+    primaryButton.setVisibility(View.VISIBLE);
+
+    // Secondary button is optional, eventually this null check will be at the model level.
+    if (secondaryAction != null && secondaryAction.getButton() != null) {
+      setupViewButtonFromModel(secondaryButton, secondaryAction.getButton());
+      setButtonActionListener(secondaryButton, actionListeners.get(secondaryAction));
+      secondaryButton.setVisibility(View.VISIBLE);
     } else {
-      button.setVisibility(View.GONE);
+      secondaryButton.setVisibility(View.GONE);
+    }
+  }
+
+  private void setImage(CardMessage message) {
+    // Right now we need to check for null, eventually we will make an API change hasImageData()
+    if (message.getPortraitImageData() != null || message.getLandscapeImageData() != null) {
+      imageView.setVisibility(View.VISIBLE);
+    } else {
+      imageView.setVisibility(View.GONE);
     }
   }
 
@@ -187,8 +195,8 @@ public class ModalBindingWrapper extends BindingWrapper {
   }
 
   private void setDismissListener(View.OnClickListener dismissListener) {
-    collapseImage.setOnClickListener(dismissListener);
-    modalRoot.setDismissListener(dismissListener);
+    this.dismissListener = dismissListener;
+    cardRoot.setDismissListener(dismissListener);
   }
 
   @VisibleForTesting

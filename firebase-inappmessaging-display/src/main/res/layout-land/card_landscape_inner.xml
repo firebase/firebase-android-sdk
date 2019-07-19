@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.firebase.inappmessaging.display.internal.layout.CardLayoutLandscape xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:fiam="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_content_root"
+    style="@style/FiamUI.Card"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center"
+    android:theme="@style/FiamUI"
+    fiam:maxHeightPct="@dimen/dialogHeightPct"
+    fiam:maxWidthPct="@dimen/dialogWidthPct">
+
+    <ImageView
+        android:id="@+id/image_view"
+        style="@style/FiamUI.Card.ImageView"
+        tools:src="@drawable/placeholder_850_850" />
+
+    <TextView
+        android:id="@+id/message_title"
+        style="@style/FiamUI.Text.Title"
+        android:paddingLeft="@dimen/paddingSmall"
+        android:paddingTop="@dimen/paddingSmall"
+        android:paddingRight="@dimen/paddingSmall"
+        tools:text="Your wishlist items are on sale!!" />
+
+
+    <ScrollView
+        android:id="@+id/body_scroll"
+        style="@style/FiamUI.Card.Scroll">
+
+        <TextView
+            android:id="@+id/message_body"
+            style="@style/FiamUI.ModalBody"
+            tools:text="@string/placeholder_very_short" />
+
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/action_bar"
+        style="@style/FiamUI.Card.ActionBar">
+
+        <Button
+            android:id="@+id/secondary_button"
+            style="@style/FiamUI.Card.ActionBar.Button"
+            tools:text="Secondary"
+            tools:textColor="#000000" />
+
+        <Button
+            android:id="@+id/primary_button"
+            style="@style/FiamUI.Card.ActionBar.Button"
+            tools:text="Primary"
+            tools:textColor="#000000" />
+    </LinearLayout>
+</com.google.firebase.inappmessaging.display.internal.layout.CardLayoutLandscape>
