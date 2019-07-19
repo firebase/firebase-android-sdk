@@ -404,9 +404,8 @@ public class TransactionTest {
     assertEquals(3, counter.get());
     barrier.setResult(null);
     waitFor(Tasks.whenAll(transactionTasks));
-    // There should be a total of 3 retries: once for the 2nd update, and twice for the 3rd update,
-    // but this is not guaranteed and should be revisited if this test becomes flaky.
-    assertEquals(6, counter.get());
+    // There should be a maximum of 3 retries: once for the 2nd update, and twice for the 3rd update
+    assertTrue(counter.get() <= 6);
     // Now all transaction should be completed, so check the result.
     DocumentSnapshot snapshot = waitFor(doc.get());
     assertEquals(8, snapshot.getDouble("count").intValue());
