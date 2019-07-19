@@ -18,6 +18,7 @@ plugins {
 
 firebaseLibrary {
     testLab.enabled = true
+    staticAnalysis.disableKotlinInteropLint()
 }
 
 android {
@@ -66,7 +67,9 @@ android {
 
 dependencies {
     implementation project(':firebase-common')
-    implementation project(':firebase-inappmessaging')
+    implementation ("com.google.firebase:firebase-inappmessaging:18.0.2") {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
 
     implementation ('com.google.firebase:firebase-iid:19.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
