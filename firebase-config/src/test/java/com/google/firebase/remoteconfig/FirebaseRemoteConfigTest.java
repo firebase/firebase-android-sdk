@@ -1031,6 +1031,54 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void isFeatureEnabled_featureEnabled_returnsTrue() throws Exception {
+    loadFetchHandlerWithResponse();
+    ConfigContainer containerWithEnabledFeatureKey =
+        ConfigContainer.newBuilder()
+            .withFetchTime(new Date(1000L))
+            .withEnabledFeatureKeys(generateEnabledFeatureKeys())
+            .build();
+
+    loadCacheWithConfig(mockFetchedCache, containerWithEnabledFeatureKey);
+    cachePutReturnsConfig(mockActivatedCache, containerWithEnabledFeatureKey);
+
+    Task<Boolean> task = frc.fetchAndActivate();
+
+    assertThat(frc.isFeatureEnabled("feature_key_1")).isTrue();
+  }
+
+  @Test
+  public void isFeatureEnabled_featureNotEnabled_returnsFalse() throws Exception {
+    loadFetchHandlerWithResponse();
+    ConfigContainer containerWithNoEnabledFeatureKeys =
+        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
+
+    loadCacheWithConfig(mockFetchedCache, containerWithNoEnabledFeatureKeys);
+    cachePutReturnsConfig(mockActivatedCache, containerWithNoEnabledFeatureKeys);
+
+    Task<Boolean> task = frc.fetchAndActivate();
+
+    assertThat(frc.isFeatureEnabled("non_existent_feature_key")).isFalse();
+  }
+
+  @Test
+  public void getEnabledFeatureKeys_returnsEnabledFeatureKeys() throws Exception {
+    loadFetchHandlerWithResponse();
+    ConfigContainer containerWithEnabledFeatureKey =
+        ConfigContainer.newBuilder()
+            .withFetchTime(new Date(1000L))
+            .withEnabledFeatureKeys(generateEnabledFeatureKeys())
+            .build();
+
+    loadCacheWithConfig(mockFetchedCache, containerWithEnabledFeatureKey);
+    cachePutReturnsConfig(mockActivatedCache, containerWithEnabledFeatureKey);
+
+    Task<Boolean> task = frc.fetchAndActivate();
+
+    assertThat(frc.getEnabledFeatureKeys()).containsExactly("feature_key_1", "feature_key_2");
+  }
+
+  @Test
   public void getInfo_returnsInfo() {
     when(metadataClient.getInfo()).thenReturn(mockFrcInfo);
 
@@ -1184,6 +1232,14 @@ public final class FirebaseRemoteConfigTest {
       experiments.put(createAbtExperiment("exp" + experimentNum));
     }
     return experiments;
+  }
+
+  private static JSONArray generateEnabledFeatureKeys() throws JSONException {
+    JSONArray featureKeys = new JSONArray();
+    for (int featureNum = 1; featureNum <= 2; featureNum++) {
+      featureKeys.put("feature_key_" + featureNum);
+    }
+    return featureKeys;
   }
 
   private static FirebaseApp initializeFirebaseApp(Context context) {

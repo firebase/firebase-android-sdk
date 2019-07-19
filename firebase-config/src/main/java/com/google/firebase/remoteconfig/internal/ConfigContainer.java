@@ -228,9 +228,13 @@ public class ConfigContainer {
       return new ConfigContainer(
           builderConfigsJson,
           builderFetchTime,
-          jsonArrayBuilders.getOrDefault(ABT_EXPERIMENTS_KEY, new JSONArray()),
-          jsonArrayBuilders.getOrDefault(ACTIVE_ROLLOUTS_KEY, new JSONArray()),
-          jsonArrayBuilders.getOrDefault(ENABLED_FEATURE_KEYS_KEY, new JSONArray()));
+          getOrDefaultToEmptyJSONArray(ABT_EXPERIMENTS_KEY),
+          getOrDefaultToEmptyJSONArray(ACTIVE_ROLLOUTS_KEY),
+          getOrDefaultToEmptyJSONArray(ENABLED_FEATURE_KEYS_KEY));
+    }
+
+    private JSONArray getOrDefaultToEmptyJSONArray(String key) {
+      return jsonArrayBuilders.containsKey(key) ? jsonArrayBuilders.get(key) : new JSONArray();
     }
   }
 

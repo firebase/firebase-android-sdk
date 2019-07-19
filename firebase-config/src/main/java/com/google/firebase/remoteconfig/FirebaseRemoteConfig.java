@@ -35,6 +35,7 @@ import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -143,6 +144,9 @@ public class FirebaseRemoteConfig {
   private final ConfigCacheClient activatedConfigsCache;
   private final ConfigCacheClient defaultConfigsCache;
   private final ConfigFetchHandler fetchHandler;
+  /** {@link Set} of keys of enabled Firebase Remote Config features on this device. */
+  @Nullable private Set<String> enabledFeatureKeys;
+
   private final ConfigGetParameterHandler getHandler;
   private final ConfigMetadataClient frcMetadata;
 
@@ -236,6 +240,8 @@ public class FirebaseRemoteConfig {
             newlyActivatedContainer -> {
               fetchedConfigsCache.clear();
               updateAbtWithActivatedExperiments(newlyActivatedContainer.getAbtExperiments());
+              // TODO(clp): Log rollout events to analytics
+              setEnabledFeatureKeys(newlyActivatedContainer.getEnabledFeatureKeys());
             });
     return true;
   }
@@ -474,6 +480,38 @@ public class FirebaseRemoteConfig {
   }
 
   /**
+   * Returns {@code true} if a Firebase Remote Config feature with the given key is enabled on the
+   * device, and {@code false} otherwise.
+   *
+   * <p>The first call to this method may also initialize {@link this#enabledFeatureKeys} if it was
+   * previously {@code null}.
+   *
+   * @param key A Firebase Remote Config feature key.
+   */
+  public boolean isFeatureEnabled(String key) {
+    if (enabledFeatureKeys == null) {
+      @Nullable ConfigContainer activatedContainer = activatedConfigsCache.getBlocking();
+      setEnabledFeatureKeys(activatedContainer.getEnabledFeatureKeys());
+    }
+    return enabledFeatureKeys.contains(key);
+  }
+
+  /**
+   * Returns a {@link Set} that contains the keys of all enabled Firebase Remote Config features on
+   * the device.
+   *
+   * <p>The first call to this method may also initialize {@link this#enabledFeatureKeys} if it was
+   * previously {@code null}.
+   */
+  public Set<String> getEnabledFeatureKeys() {
+    if (enabledFeatureKeys == null) {
+      @Nullable ConfigContainer activatedContainer = activatedConfigsCache.getBlocking();
+      setEnabledFeatureKeys(activatedContainer.getEnabledFeatureKeys());
+    }
+    return enabledFeatureKeys;
+  }
+
+  /**
    * Returns the state of this {@link FirebaseRemoteConfig} instance as a {@link
    * FirebaseRemoteConfigInfo}.
    */
@@ -632,6 +670,8 @@ public class FirebaseRemoteConfig {
       // values from the put task must be non-null.
       if (putTask.getResult() != null) {
         updateAbtWithActivatedExperiments(putTask.getResult().getAbtExperiments());
+        // TODO(clp): Log rollout events to analytics
+        setEnabledFeatureKeys(putTask.getResult().getEnabledFeatureKeys());
       } else {
         // Should never happen.
         Log.e(TAG, "Activated configs written to disk are null.");
@@ -731,6 +771,22 @@ public class FirebaseRemoteConfig {
       experimentInfoMaps.add(experimentInfo);
     }
     return experimentInfoMaps;
+  }
+
+  /**
+   * @param enabledFeatureKeysJson A {@link JSONArray} of {@link String}s, where each String is the
+   *     unique key of an enabled Firebase Remote Config Feature.
+   */
+  private void setEnabledFeatureKeys(JSONArray enabledFeatureKeysJson) {
+    enabledFeatureKeys = new HashSet<String>();
+    for (int index = 0; index < enabledFeatureKeysJson.length(); index++) {
+      try {
+        enabledFeatureKeys.add(enabledFeatureKeysJson.getString(index));
+      } catch (JSONException e) {
+        // Do nothing, as per the precondition of the method, all elements of enabledFeatureKeysJson
+        // should be strings.
+      }
+    }
   }
 
   /** Returns true if the fetched configs are fresher than the activated configs. */
