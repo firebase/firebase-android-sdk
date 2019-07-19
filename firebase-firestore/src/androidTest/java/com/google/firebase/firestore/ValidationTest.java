@@ -241,21 +241,26 @@ public class ValidationTest {
   public void writesMustNotContainReservedFieldNames() {
     expectWriteError(
         map("__baz__", 1),
-        "Invalid data. Document fields cannot begin and end with __ (found in field __baz__)");
+        "Invalid data. Document fields cannot begin or end with \"__\" (found in field __baz__)");
     expectWriteError(
         map("foo", map("__baz__", 1)),
-        "Invalid data. Document fields cannot begin and end with __ (found in field foo.__baz__)");
+        "Invalid data. Document fields cannot begin or end with \"__\" (found in field foo.__baz__)");
     expectWriteError(
         map("__baz__", map("foo", 1)),
-        "Invalid data. Document fields cannot begin and end with __ (found in field __baz__)");
+        "Invalid data. Document fields cannot begin or end with \"__\" (found in field __baz__)");
 
     expectUpdateError(
         map("__baz__", 1),
-        "Invalid data. Document fields cannot begin and end with __ (found in field __baz__)");
+        "Invalid data. Document fields cannot begin or end with \"__\" (found in field __baz__)");
     expectUpdateError(
         map("baz.__foo__", 1),
-        "Invalid data. Document fields cannot begin and end with "
-            + "__ (found in field baz.__foo__)");
+        "Invalid data. Document fields cannot begin or end with \"__\" (found in field baz.__foo__)");
+  }
+
+  @Test
+  public void writesMustNotContainEmptyFieldNames() {
+    expectSetError(
+        map("", "foo"), "Invalid data. Document fields must not be empty (found in field ``)");
   }
 
   @Test
@@ -298,8 +303,7 @@ public class ValidationTest {
                       expectError(
                           () -> {
                             // Because .get() throws a checked exception for missing docs, we have
-                            // to
-                            // try/catch it.
+                            // to try/catch it.
                             try {
                               transaction.get(badRef);
                             } catch (FirebaseFirestoreException e) {
