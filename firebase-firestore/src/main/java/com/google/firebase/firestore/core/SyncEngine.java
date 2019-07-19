@@ -48,7 +48,6 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -265,7 +264,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
             asyncQueue.getExecutor(),
             userTask -> {
               if (!userTask.isSuccessful()) {
-                if (retries > 0 && isRetryableError(userTask.getException())) {
+                if (retries > 0 && isRetryableTransactionError(userTask.getException())) {
                   return transaction(asyncQueue, updateFunction, retries - 1);
                 }
                 return userTask;
@@ -279,7 +278,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
                           return Tasks.forResult(userTask.getResult());
                         }
                         Exception e = commitTask.getException();
-                        if (retries > 0 && isRetryableError(e)) {
+                        if (retries > 0 && isRetryableTransactionError(e)) {
                           return transaction(asyncQueue, updateFunction, retries - 1);
                         }
                         return Tasks.forException(e);
@@ -596,16 +595,13 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     return false;
   }
 
-  private boolean isRetryableError(Exception e) {
+  private boolean isRetryableTransactionError(Exception e) {
     if (e instanceof FirebaseFirestoreException) {
       // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION and
       // non-matching document versions with ABORTED. These errors should be retried.
-      List<FirebaseFirestoreException.Code> retryableExceptions =
-          Arrays.asList(
-              FirebaseFirestoreException.Code.ABORTED,
-              FirebaseFirestoreException.Code.FAILED_PRECONDITION);
-
-      return retryableExceptions.contains(((FirebaseFirestoreException) e).getCode())
+      FirebaseFirestoreException.Code code = ((FirebaseFirestoreException) e).getCode();
+      return code == FirebaseFirestoreException.Code.ABORTED
+          || code == FirebaseFirestoreException.Code.FAILED_PRECONDITION
           || !Datastore.isPermanentError(((FirebaseFirestoreException) e).getCode());
     }
     return false;

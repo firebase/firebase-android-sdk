@@ -404,7 +404,8 @@ public class TransactionTest {
     assertEquals(3, counter.get());
     barrier.setResult(null);
     waitFor(Tasks.whenAll(transactionTasks));
-    // There should be a total of 3 retries: once for the 2nd update, and twice for the 3rd update.
+    // There should be a total of 3 retries: once for the 2nd update, and twice for the 3rd update,
+    // but this is not guaranteed and should be revisited if this test becomes flaky.
     assertEquals(6, counter.get());
     // Now all transaction should be completed, so check the result.
     DocumentSnapshot snapshot = waitFor(doc.get());
@@ -641,9 +642,9 @@ public class TransactionTest {
             });
 
     // Let all of the transactions fetch the old value and stop once.
-    waitForException(transactionTask);
+    Exception e = waitForException(transactionTask);
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
     assertEquals(1, count.get());
-    assertFalse(transactionTask.isSuccessful());
   }
 
   @Test
