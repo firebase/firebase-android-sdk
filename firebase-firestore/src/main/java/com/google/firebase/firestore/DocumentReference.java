@@ -48,14 +48,14 @@ import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
 
 /**
- * A DocumentReference refers to a document location in a Firestore database and can be used to
- * write, read, or listen to the location. There may or may not exist a document at the referenced
- * location. A DocumentReference can also be used to create a CollectionReference to a
+ * A DocumentReference refers to a document location in a Cloud Firestore database and can be used
+ * to write, read, or listen to the location. There may or may not exist a document at the
+ * referenced location. A DocumentReference can also be used to create a CollectionReference to a
  * subcollection.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
 @PublicApi
 public class DocumentReference {
@@ -89,7 +89,7 @@ public class DocumentReference {
     return key;
   }
 
-  /** Gets the Firestore instance associated with this document reference. */
+  /** Gets the Cloud Firestore instance associated with this document reference. */
   @NonNull
   @PublicApi
   public FirebaseFirestore getFirestore() {

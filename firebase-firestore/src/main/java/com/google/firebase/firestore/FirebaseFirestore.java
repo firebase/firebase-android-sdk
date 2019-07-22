@@ -42,18 +42,18 @@ import com.google.firebase.firestore.util.Logger.Level;
 import java.util.concurrent.Executor;
 
 /**
- * Represents a Firestore Database and is the entry point for all Firestore operations
+ * Represents a Cloud Firestore database and is the entry point for all Cloud Firestore operations.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
 @PublicApi
 public class FirebaseFirestore {
 
   /** Provides a registry management interface for {@code FirebaseFirestore} instances. */
   public interface InstanceRegistry {
-    /** Removes the Firestore instance with given name from registry. */
+    /** Removes the Cloud Firestore instance with given name from registry. */
     void remove(@NonNull String databaseId);
   }
 
@@ -406,7 +406,7 @@ public class FirebaseFirestore {
     return client.disableNetwork();
   }
 
-  /** Globally enables / disables Firestore logging for the SDK. */
+  /** Globally enables / disables Cloud Firestore logging for the SDK. */
   @PublicApi
   public static void setLoggingEnabled(boolean loggingEnabled) {
     if (loggingEnabled) {
@@ -471,7 +471,7 @@ public class FirebaseFirestore {
     checkNotNull(docRef, "Provided DocumentReference must not be null.");
     if (docRef.getFirestore() != this) {
       throw new IllegalArgumentException(
-          "Provided document reference is from a different Firestore instance.");
+          "Provided document reference is from a different Cloud Firestore instance.");
     }
   }
 }

@@ -23,7 +23,7 @@ import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
 
-/** Immutable class representing an array of bytes in Firestore. */
+/** Immutable class representing an array of bytes in Cloud Firestore. */
 @PublicApi
 public class Blob implements Comparable<Blob> {
   private final ByteString bytes;

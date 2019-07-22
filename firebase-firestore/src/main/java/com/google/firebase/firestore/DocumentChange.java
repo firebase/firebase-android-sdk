@@ -31,9 +31,9 @@ import javax.annotation.Nullable;
  * A DocumentChange represents a change to the documents matching a query. It contains the document
  * affected and a the type of change that occurred (added, modified, or removed).
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
 @PublicApi
 public class DocumentChange {

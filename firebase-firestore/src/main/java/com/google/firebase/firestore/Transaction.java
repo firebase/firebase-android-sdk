@@ -38,9 +38,9 @@ import java.util.concurrent.ExecutionException;
  * A Transaction is passed to a Function to provide the methods to read and write data within the
  * transaction context.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  *
  * @see FirebaseFirestore#runTransaction(Function)
  */

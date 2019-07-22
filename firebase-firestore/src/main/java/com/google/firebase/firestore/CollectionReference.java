@@ -29,9 +29,9 @@ import javax.annotation.Nullable;
  * A CollectionReference can be used for adding documents, getting document references, and querying
  * for documents (using the methods inherited from Query).
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
 @PublicApi
 public class CollectionReference extends Query {

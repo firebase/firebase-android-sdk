@@ -20,9 +20,9 @@ import javax.annotation.Nullable;
 /**
  * Metadata about a snapshot, describing the state of the snapshot.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
 @PublicApi
 public class SnapshotMetadata {

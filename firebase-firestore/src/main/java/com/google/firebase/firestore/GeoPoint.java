@@ -19,7 +19,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.util.Util;
 
-/** Immutable class representing a GeoPoint in Firestore */
+/** Immutable class representing a GeoPoint in Cloud Firestore */
 @PublicApi
 public class GeoPoint implements Comparable<GeoPoint> {
   private final double latitude;

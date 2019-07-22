@@ -38,16 +38,16 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
- * A DocumentSnapshot contains data read from a document in your Firestore database. The data can be
- * extracted with the getData() or get() methods.
+ * A DocumentSnapshot contains data read from a document in your Cloud Firestore database. The data
+ * can be extracted with the getData() or get() methods.
  *
  * <p>If the DocumentSnapshot points to a non-existing document, getData() and its corresponding
  * methods will return null. You can always explicitly check for a document's existence by calling
  * exists().
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
 @PublicApi
 public class DocumentSnapshot {

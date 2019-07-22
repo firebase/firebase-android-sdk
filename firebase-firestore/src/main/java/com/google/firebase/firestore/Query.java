@@ -56,9 +56,9 @@ import javax.annotation.Nullable;
  * A Query which you can read or listen to. You can also construct refined Query objects by adding
  * filters and ordering.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
 @PublicApi
 public class Query {
@@ -78,7 +78,7 @@ public class Query {
     this.firestore = checkNotNull(firestore);
   }
 
-  /** Gets the Firestore instance associated with this query. */
+  /** Gets the Cloud Firestore instance associated with this query. */
   @NonNull
   @PublicApi
   public FirebaseFirestore getFirestore() {

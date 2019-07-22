@@ -63,9 +63,9 @@ public class Datastore {
    * part of their app's dependencies.
    */
   static final String SSL_DEPENDENCY_ERROR_MESSAGE =
-      "The Firestore SDK failed to establish a secure connection. This is likely a problem with "
-          + "your app, rather than with Firestore itself. See https://bit.ly/2XFpdma for "
-          + "instructions on how to enable TLS on Android 4.x devices.";
+      "The Cloud Firestore SDK failed to establish a secure connection. This is likely a problem "
+          + "with your app, rather than with Cloud Firestore itself. See https://bit.ly/2XFpdma "
+          + "for instructions on how to enable TLS on Android 4.x devices.";
 
   /** Set of lowercase, white-listed headers for logging purposes. */
   static final Set<String> WHITE_LISTED_HEADERS =

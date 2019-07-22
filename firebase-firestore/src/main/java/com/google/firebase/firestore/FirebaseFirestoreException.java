@@ -22,12 +22,12 @@ import com.google.firebase.FirebaseException;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.util.Assert;
 
-/** A class of exceptions thrown by Firestore */
+/** A class of exceptions thrown by Cloud Firestore. */
 @PublicApi
 public class FirebaseFirestoreException extends FirebaseException {
   /**
-   * The set of Firestore status codes. The codes are the same at the ones exposed by gRPC here:
-   * https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
+   * The set of Cloud Firestore status codes. The codes are the same at the ones exposed by gRPC
+   * here: https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
    */
   @PublicApi
   public enum Code {
@@ -165,7 +165,7 @@ public class FirebaseFirestoreException extends FirebaseException {
   }
 
   /**
-   * Gets the error code for the Firestore operation that failed.
+   * Gets the error code for the Cloud Firestore operation that failed.
    *
    * @return the code for the FirebaseFirestoreException
    */
