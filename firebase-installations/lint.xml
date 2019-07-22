@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!--gRPC's DNS name resolver checks for javax.naming at runtime to determine if it can be used, but fails gracefullt without it. This lint error is safe to ignore.-->
+    <!--See : https://github.com/grpc/grpc-java/blob/b0f423295b4674cb5247a6143fd211b050ef0065/core/src/main/java/io/grpc/internal/JndiResourceResolverFactory.java#L73-->
+    <issue id="InvalidPackage">
+        <ignore path="*/io.grpc/grpc-core/*"/>
+    </issue>
+
+    <!-- Disable the given check in this project -->
+    <issue id="GradleCompatible" severity="ignore" />
+</lint>
