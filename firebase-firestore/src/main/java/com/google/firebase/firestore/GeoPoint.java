@@ -19,17 +19,17 @@ import androidx.annotation.Nullable;
 import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.util.Util;
 
-/** Immutable class representing a GeoPoint in Cloud Firestore */
+/** Immutable class representing a {@code GeoPoint} in Cloud Firestore */
 @PublicApi
 public class GeoPoint implements Comparable<GeoPoint> {
   private final double latitude;
   private final double longitude;
 
   /**
-   * Construct a new GeoPoint using the provided latitude and longitude values.
+   * Construct a new {@code GeoPoint} using the provided latitude and longitude values.
    *
-   * @param latitude The latitude of this GeoPoint in the range [-90, 90].
-   * @param longitude The longitude of this GeoPoint in the range [-180, 180].
+   * @param latitude The latitude of this {@code GeoPoint} in the range [-90, 90].
+   * @param longitude The longitude of this {@code GeoPoint} in the range [-180, 180].
    */
   @PublicApi
   public GeoPoint(double latitude, double longitude) {
@@ -43,13 +43,13 @@ public class GeoPoint implements Comparable<GeoPoint> {
     this.longitude = longitude;
   }
 
-  /** @return The latitude value of this GeoPoint. */
+  /** @return The latitude value of this {@code GeoPoint}. */
   @PublicApi
   public double getLatitude() {
     return latitude;
   }
 
-  /** @return The longitude value of this GeoPoint. */
+  /** @return The longitude value of this {@code GeoPoint}. */
   @PublicApi
   public double getLongitude() {
     return longitude;

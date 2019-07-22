@@ -72,8 +72,8 @@ public final class SetOptions {
    * Changes the behavior of set() calls to only replace the fields under fieldPaths. Any field that
    * is not specified in fieldPaths is ignored and remains untouched.
    *
-   * <p>It is an error to pass a SetOptions object to a set() call that is missing a value for any
-   * of the fields specified here.
+   * <p>It is an error to pass a {@code SetOptions} object to a set() call that is missing a value
+   * for any of the fields specified here.
    *
    * @param fields The list of fields to merge. Fields can contain dots to reference nested fields
    *     within the document.
@@ -94,8 +94,8 @@ public final class SetOptions {
    * Changes the behavior of set() calls to only replace the fields under fieldPaths. Any field that
    * is not specified in fieldPaths is ignored and remains untouched.
    *
-   * <p>It is an error to pass a SetOptions object to a set() call that is missing a value for any
-   * of the fields specified here.
+   * <p>It is an error to pass a {@code SetOptions} object to a set() call that is missing a value
+   * for any of the fields specified here.
    *
    * @param fields The list of fields to merge. Fields can contain dots to reference nested fields
    *     within the document.
@@ -116,8 +116,8 @@ public final class SetOptions {
    * Changes the behavior of set() calls to only replace the fields under fieldPaths. Any field that
    * is not specified in fieldPaths is ignored and remains untouched.
    *
-   * <p>It is an error to pass a SetOptions object to a set() call that is missing a value for any
-   * of the fields specified here in its to data argument.
+   * <p>It is an error to pass a {@code SetOptions} object to a set() call that is missing a value
+   * for any of the fields specified here in its to data argument.
    *
    * @param fields The list of fields to merge.
    */

@@ -22,8 +22,8 @@ import javax.annotation.Nullable;
 public interface EventListener<T> {
 
   /**
-   * onEvent will be called with the new value or the error if an error occurred. It's guaranteed
-   * that exactly one of value or error will be non-null.
+   * {@code onEvent} will be called with the new value or the error if an error occurred. It's
+   * guaranteed that exactly one of value or error will be non-null.
    *
    * @param value The value of the event. null if there was an error.
    * @param error The error if there was error. null otherwise.

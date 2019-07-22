@@ -155,7 +155,7 @@ public class FirebaseFirestore {
     settings = new FirebaseFirestoreSettings.Builder().build();
   }
 
-  /** Returns the settings used by this FirebaseFirestore object. */
+  /** Returns the settings used by this {@code FirebaseFirestore} object. */
   @NonNull
   @PublicApi
   public FirebaseFirestoreSettings getFirestoreSettings() {
@@ -163,8 +163,8 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Sets any custom settings used to configure this FirebaseFirestore object. This method can only
-   * be called before calling any other methods on this object.
+   * Sets any custom settings used to configure this {@code FirebaseFirestore} object. This method
+   * can only be called before calling any other methods on this object.
    */
   @PublicApi
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
@@ -200,9 +200,7 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Returns the FirebaseApp instance to which this FirebaseFirestore belongs.
-   *
-   * @return The FirebaseApp instance to which this FirebaseFirestore belongs.
+   * Returns the FirebaseApp instance to which this {@code FirebaseFirestore} belongs.
    */
   @NonNull
   @PublicApi
@@ -211,11 +209,11 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Gets a CollectionReference instance that refers to the collection at the specified path within
-   * the database.
+   * Gets a {@link CollectionReference} instance that refers to the collection at the specified path
+   * within the database.
    *
    * @param collectionPath A slash-separated path to a collection.
-   * @return The CollectionReference instance.
+   * @return The {@link CollectionReference} instance.
    */
   @NonNull
   @PublicApi
@@ -351,13 +349,13 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Shuts down this FirebaseFirestore instance.
+   * Shuts down this {@code FirebaseFirestore} instance.
    *
    * <p>After shutdown only the {@link #clearPersistence()} method may be used. Any other method
    * will throw an {@link IllegalStateException}.
    *
-   * <p>To restart after shutdown, simply create a new instance of FirebaseFirestore with {@link
-   * #getInstance()} or {@link #getInstance(FirebaseApp)}.
+   * <p>To restart after shutdown, simply create a new instance of {@code FirebaseFirestore} with
+   * {@link #getInstance()} or {@link #getInstance(FirebaseApp)}.
    *
    * <p>Shutdown does not cancel any pending writes and any tasks that are awaiting a response from
    * the server will not be resolved. The next time you start this instance, it will resume
@@ -419,11 +417,11 @@ public class FirebaseFirestore {
   /**
    * Clears the persistent storage, including pending writes and cached documents.
    *
-   * <p>Must be called while the FirebaseFirestore instance is not started (after the app is
+   * <p>Must be called while the {@code FirebaseFirestore} instance is not started (after the app is
    * shutdown or when the app is first initialized). On startup, this method must be called before
-   * other methods (other than <code>setFirestoreSettings()</code>). If the FirebaseFirestore
-   * instance is still running, the <code>Task</code> will fail with an error code of <code>
-   * FAILED_PRECONDITION</code>.
+   * other methods (other than <code>setFirestoreSettings()</code>). If the {@code
+   * FirebaseFirestore} instance is still running, the <code>Task</code> will fail with an error
+   * code of <code> FAILED_PRECONDITION</code>.
    *
    * <p>Note: <code>clearPersistence()</code> is primarily intended to help write reliable tests
    * that use Cloud Firestore. It uses an efficient mechanism for dropping existing data but does
@@ -466,7 +464,10 @@ public class FirebaseFirestore {
     return dataConverter;
   }
 
-  /** Helper to validate a DocumentReference. Used by WriteBatch and Transaction. */
+  /**
+   * Helper to validate a {@link DocumentReference}. Used by {@link WriteBatch} and {@link
+   * Transaction}.
+   */
   void validateReference(DocumentReference docRef) {
     checkNotNull(docRef, "Provided DocumentReference must not be null.");
     if (docRef.getFirestore() != this) {

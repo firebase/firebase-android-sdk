@@ -26,12 +26,12 @@ public abstract class FieldValue {
   FieldValue() {}
 
   /**
-   * Returns the method name (e.g. "FieldValue.delete") that was used to create this FieldValue
-   * instance, for use in error messages, etc.
+   * Returns the method name (e.g. "FieldValue.delete") that was used to create this {@code
+   * FieldValue} instance, for use in error messages, etc.
    */
   abstract String getMethodName();
 
-  /* FieldValue class for field deletes. */
+  /* {@code FieldValue} class for field deletes. */
   static class DeleteFieldValue extends FieldValue {
     @Override
     String getMethodName() {
@@ -39,7 +39,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* FieldValue class for server timestamps. */
+  /* {@code FieldValue} class for server timestamps. */
   static class ServerTimestampFieldValue extends FieldValue {
     @Override
     String getMethodName() {
@@ -47,7 +47,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* FieldValue class for arrayUnion() transforms. */
+  /* {@code FieldValue} class for arrayUnion() transforms. */
   static class ArrayUnionFieldValue extends FieldValue {
     private final List<Object> elements;
 
@@ -65,7 +65,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* FieldValue class for arrayRemove() transforms. */
+  /* {@code FieldValue} class for arrayRemove() transforms. */
   static class ArrayRemoveFieldValue extends FieldValue {
     private final List<Object> elements;
 
@@ -83,7 +83,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* FieldValue class for increment() transforms. */
+  /* {@code FieldValue} class for increment() transforms. */
   static class NumericIncrementFieldValue extends FieldValue {
     private final Number operand;
 
@@ -130,7 +130,7 @@ public abstract class FieldValue {
    * specified elements.
    *
    * @param elements The elements to union into the array.
-   * @return The FieldValue sentinel for use in a call to set() or update().
+   * @return The {@code FieldValue} sentinel for use in a call to set() or update().
    */
   @NonNull
   @PublicApi
@@ -145,7 +145,7 @@ public abstract class FieldValue {
    * already an array it will be overwritten with an empty array.
    *
    * @param elements The elements to remove from the array.
-   * @return The FieldValue sentinel for use in a call to set() or update().
+   * @return The {@code FieldValue} sentinel for use in a call to set() or update().
    */
   @NonNull
   @PublicApi
@@ -164,7 +164,7 @@ public abstract class FieldValue {
    * <p>If the current field is not an integer or double, or if the field does not yet exist, the
    * transformation will set the field to the given value.
    *
-   * @return The FieldValue sentinel for use in a call to set() or update().
+   * @return The {@code FieldValue} sentinel for use in a call to set() or update().
    */
   @NonNull
   @PublicApi
@@ -180,7 +180,7 @@ public abstract class FieldValue {
    * interpreted as doubles and all arithmetic will follow IEEE 754 semantics. Otherwise, the
    * transformation will set the field to the given value.
    *
-   * @return The FieldValue sentinel for use in a call to set() or update().
+   * @return The {@code FieldValue} sentinel for use in a call to set() or update().
    */
   @NonNull
   @PublicApi

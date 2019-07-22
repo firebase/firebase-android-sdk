@@ -33,10 +33,11 @@ public class Blob implements Comparable<Blob> {
   }
 
   /**
-   * Creates a new Blob instance from the provided bytes. Will make a copy of the bytes passed in.
+   * Creates a new {@code Blob} instance from the provided bytes. Will make a copy of the bytes
+   * passed in.
    *
-   * @param bytes The bytes to use for this Blob instance.
-   * @return The new Blob instance
+   * @param bytes The bytes to use for this {@code Blob} instance.
+   * @return The new {@code Blob} instance
    */
   @NonNull
   @PublicApi

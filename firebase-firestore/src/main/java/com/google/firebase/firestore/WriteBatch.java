@@ -55,13 +55,13 @@ public class WriteBatch {
   }
 
   /**
-   * Overwrites the document referred to by the provided DocumentReference. If the document does not
-   * yet exist, it will be created. If a document already exists, it will be overwritten.
+   * Overwrites the document referred to by the provided {@link DocumentReference}. If the document
+   * does not yet exist, it will be created. If a document already exists, it will be overwritten.
    *
-   * @param documentRef The DocumentReference to overwrite.
+   * @param documentRef The {@link DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -70,15 +70,15 @@ public class WriteBatch {
   }
 
   /**
-   * Writes to the document referred to by the provided DocumentReference. If the document does not
-   * yet exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged
-   * into an existing document.
+   * Writes to the document referred to by the provided {@link DocumentReference}. If the document
+   * does not yet exist, it will be created. If you pass {@link SetOptions}, the provided data can
+   * be merged into an existing document.
    *
-   * @param documentRef The DocumentReference to overwrite.
+   * @param documentRef The {@link DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
    * @param options An object to configure the set behavior.
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -97,13 +97,13 @@ public class WriteBatch {
   }
 
   /**
-   * Updates fields in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates fields in the document referred to by the provided {@link DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@link DocumentReference} to update.
    * @param data A map of field / value pairs to update. Fields can contain dots to reference nested
    *     fields within the document.
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -114,15 +114,15 @@ public class WriteBatch {
   }
 
   /**
-   * Updates field in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates field in the document referred to by the provided {@link DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@link DocumentReference} to update.
    * @param field The first field to update. Fields can contain dots to reference a nested field
    *     within the document.
    * @param value The first value
    * @param moreFieldsAndValues Additional field/value pairs.
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -141,14 +141,14 @@ public class WriteBatch {
   }
 
   /**
-   * Updates fields in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates fields in the document referred to by the provided {@link DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@link DocumentReference} to update.
    * @param fieldPath The first field to update.
    * @param value The first value
    * @param moreFieldsAndValues Additional field/value pairs.
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -175,10 +175,10 @@ public class WriteBatch {
   }
 
   /**
-   * Deletes the document referred to by the provided DocumentReference.
+   * Deletes the document referred to by the provided {@link DocumentReference}.
    *
-   * @param documentRef The DocumentReference to delete.
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @param documentRef The {@link DocumentReference} to delete.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi

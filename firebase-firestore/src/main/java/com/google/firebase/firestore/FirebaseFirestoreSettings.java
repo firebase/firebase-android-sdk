@@ -21,7 +21,7 @@ import androidx.annotation.Nullable;
 import com.google.common.base.MoreObjects;
 import com.google.firebase.annotations.PublicApi;
 
-/** Settings used to configure a FirebaseFirestore instance. */
+/** Settings used to configure a {@link FirebaseFirestore} instance. */
 @PublicApi
 public final class FirebaseFirestoreSettings {
   /**
@@ -44,7 +44,7 @@ public final class FirebaseFirestoreSettings {
     private boolean timestampsInSnapshotsEnabled;
     private long cacheSizeBytes;
 
-    /** Constructs a new FirebaseFirestoreSettings Builder object. */
+    /** Constructs a new {@code FirebaseFirestoreSettings} Builder object. */
     @PublicApi
     public Builder() {
       host = DEFAULT_HOST;
@@ -55,8 +55,8 @@ public final class FirebaseFirestoreSettings {
     }
 
     /**
-     * Constructs a new FirebaseFirestoreSettings Builder based on an existing
-     * FirebaseFirestoreSettings object.
+     * Constructs a new {@code FirebaseFirestoreSettings} Builder based on an existing {@code
+     * FirebaseFirestoreSettings} object.
      */
     @PublicApi
     public Builder(@NonNull FirebaseFirestoreSettings settings) {
@@ -172,7 +172,7 @@ public final class FirebaseFirestoreSettings {
   private final boolean timestampsInSnapshotsEnabled;
   private final long cacheSizeBytes;
 
-  /** Constructs a FirebaseFirestoreSettings object based on the values in the Builder. */
+  /** Constructs a {@code FirebaseFirestoreSettings} object based on the values in the Builder. */
   private FirebaseFirestoreSettings(Builder builder) {
     host = builder.host;
     sslEnabled = builder.sslEnabled;

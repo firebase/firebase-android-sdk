@@ -35,8 +35,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
- * A Transaction is passed to a Function to provide the methods to read and write data within the
- * transaction context.
+ * A {@code Transaction} is passed to a Function to provide the methods to read and write data
+ * within the transaction context.
  *
  * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
@@ -56,13 +56,13 @@ public class Transaction {
   }
 
   /**
-   * Overwrites the document referred to by the provided DocumentReference. If the document does not
-   * yet exist, it will be created. If a document already exists, it will be overwritten.
+   * Overwrites the document referred to by the provided {@link DocumentReference}. If the document
+   * does not yet exist, it will be created. If a document already exists, it will be overwritten.
    *
-   * @param documentRef The DocumentReference to overwrite.
+   * @param documentRef The {@link DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
-   * @return This Transaction instance. Used for chaining method calls.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -75,11 +75,11 @@ public class Transaction {
    * yet exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged
    * into an existing document.
    *
-   * @param documentRef The DocumentReference to overwrite.
+   * @param documentRef The {@link DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
    * @param options An object to configure the set behavior.
-   * @return This Transaction instance. Used for chaining method calls.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -97,13 +97,13 @@ public class Transaction {
   }
 
   /**
-   * Updates fields in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates fields in the document referred to by the provided {@link DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@link DocumentReference} to update.
    * @param data A map of field / value pairs to update. Fields can contain dots to reference nested
    *     fields within the document.
-   * @return This Transaction instance. Used for chaining method calls.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -114,15 +114,15 @@ public class Transaction {
   }
 
   /**
-   * Updates fields in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates fields in the document referred to by the provided {@link DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@link DocumentReference} to update.
    * @param field The first field to update. Fields can contain dots to reference a nested field
    *     within the document.
    * @param value The first value
    * @param moreFieldsAndValues Additional field/value pairs.
-   * @return This Transaction instance. Used for chaining method calls.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -141,14 +141,14 @@ public class Transaction {
   }
 
   /**
-   * Updates fields in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates fields in the document referred to by the provided {@link DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@link DocumentReference} to update.
    * @param fieldPath The first field to update.
    * @param value The first value
    * @param moreFieldsAndValues Additional field/value pairs.
-   * @return This Transaction instance. Used for chaining method calls.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -174,10 +174,10 @@ public class Transaction {
   }
 
   /**
-   * Deletes the document referred to by the provided DocumentReference.
+   * Deletes the document referred to by the provided {@link DocumentReference}.
    *
-   * @param documentRef The DocumentReference to delete.
-   * @return This Transaction instance. Used for chaining method calls.
+   * @param documentRef The {@link DocumentReference} to delete.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   @PublicApi
@@ -188,11 +188,11 @@ public class Transaction {
   }
 
   /**
-   * Reads the document referenced by the provided DocumentReference
+   * Reads the document referenced by the provided {@link DocumentReference}
    *
-   * @param documentRef The DocumentReference to read.
+   * @param documentRef The {@link DocumentReference} to read.
    * @return A Task that will be resolved with the contents of the Document at this
-   *     DocumentReference.
+   *     {@link DocumentReference}.
    */
   private Task<DocumentSnapshot> getAsync(DocumentReference documentRef) {
     return transaction
@@ -223,10 +223,10 @@ public class Transaction {
   }
 
   /**
-   * Reads the document referenced by this DocumentReference
+   * Reads the document referenced by this {@link DocumentReference}
    *
-   * @param documentRef The DocumentReference to read.
-   * @return The contents of the Document at this DocumentReference.
+   * @param documentRef The {@link DocumentReference} to read.
+   * @return The contents of the Document at this {@link DocumentReference}.
    */
   @NonNull
   @PublicApi
