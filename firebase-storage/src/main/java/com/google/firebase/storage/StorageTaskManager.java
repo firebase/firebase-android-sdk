@@ -46,7 +46,7 @@ import java.util.Map;
       String parentPath = parent.toString();
       for (Map.Entry<String, WeakReference<StorageTask<?>>> entry : inProgressTasks.entrySet()) {
         if (entry.getKey().startsWith(parentPath)) {
-          StorageTask task = entry.getValue().get();
+          StorageTask<?> task = entry.getValue().get();
           if (task instanceof UploadTask) {
             inProgressList.add((UploadTask) task);
           }

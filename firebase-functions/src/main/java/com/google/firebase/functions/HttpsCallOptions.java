@@ -50,6 +50,10 @@ class HttpsCallOptions {
 
   /** Creates a new OkHttpClient with these options applied to it. */
   OkHttpClient apply(OkHttpClient client) {
-    return client.newBuilder().callTimeout(timeout, timeoutUnits).build();
+    return client
+        .newBuilder()
+        .callTimeout(timeout, timeoutUnits)
+        .readTimeout(timeout, timeoutUnits)
+        .build();
   }
 }

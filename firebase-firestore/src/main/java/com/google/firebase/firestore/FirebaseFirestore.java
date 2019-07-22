@@ -51,6 +51,12 @@ import java.util.concurrent.Executor;
 @PublicApi
 public class FirebaseFirestore {
 
+  /** Provides a registry management interface for {@code FirebaseFirestore} instances. */
+  public interface InstanceRegistry {
+    /** Removes the Firestore instance with given name from registry. */
+    void remove(@NonNull String databaseId);
+  }
+
   private static final String TAG = "FirebaseFirestore";
   private final Context context;
   // This is also used as private lock object for this instance. There is nothing inherent about
@@ -61,6 +67,9 @@ public class FirebaseFirestore {
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataConverter dataConverter;
+  // When user requests to shutdown, use this to notify `FirestoreMultiDbComponent` to deregister
+  // this instance.
+  private final InstanceRegistry instanceRegistry;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
 
@@ -94,7 +103,8 @@ public class FirebaseFirestore {
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @Nullable InternalAuthProvider authProvider,
-      @NonNull String database) {
+      @NonNull String database,
+      @NonNull InstanceRegistry instanceRegistry) {
     String projectId = app.getOptions().getProjectId();
     if (projectId == null) {
       throw new IllegalArgumentException("FirebaseOptions.getProjectId() cannot be null");
@@ -117,7 +127,10 @@ public class FirebaseFirestore {
     // so there is no need to include it in the persistence key.
     String persistenceKey = app.getName();
 
-    return new FirebaseFirestore(context, databaseId, persistenceKey, provider, queue, app);
+    FirebaseFirestore firestore =
+        new FirebaseFirestore(
+            context, databaseId, persistenceKey, provider, queue, app, instanceRegistry);
+    return firestore;
   }
 
   @VisibleForTesting
@@ -127,7 +140,8 @@ public class FirebaseFirestore {
       String persistenceKey,
       CredentialsProvider credentialsProvider,
       AsyncQueue asyncQueue,
-      @Nullable FirebaseApp firebaseApp) {
+      @Nullable FirebaseApp firebaseApp,
+      InstanceRegistry instanceRegistry) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.dataConverter = new UserDataConverter(databaseId);
@@ -136,6 +150,7 @@ public class FirebaseFirestore {
     this.asyncQueue = checkNotNull(asyncQueue);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
+    this.instanceRegistry = instanceRegistry;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
   }
@@ -261,15 +276,15 @@ public class FirebaseFirestore {
    * @param executor The executor to run the transaction callback on.
    * @return The task returned from the updateFunction.
    */
-  private <TResult> Task<TResult> runTransaction(
-      Transaction.Function<TResult> updateFunction, Executor executor) {
+  private <ResultT> Task<ResultT> runTransaction(
+      Transaction.Function<ResultT> updateFunction, Executor executor) {
     ensureClientConfigured();
 
     // We wrap the function they provide in order to
     // 1. Use internal implementation classes for Transaction,
     // 2. Convert exceptions they throw into Tasks, and
     // 3. Run the user callback on the user queue.
-    Function<com.google.firebase.firestore.core.Transaction, Task<TResult>> wrappedUpdateFunction =
+    Function<com.google.firebase.firestore.core.Transaction, Task<ResultT>> wrappedUpdateFunction =
         internalTransaction ->
             Tasks.call(
                 executor,
@@ -329,11 +344,37 @@ public class FirebaseFirestore {
     return batch.commit();
   }
 
-  @VisibleForTesting
-  Task<Void> shutdown() {
+  Task<Void> shutdownInternal() {
     // The client must be initialized to ensure that all subsequent API usage throws an exception.
     this.ensureClientConfigured();
     return client.shutdown();
+  }
+
+  /**
+   * Shuts down this FirebaseFirestore instance.
+   *
+   * <p>After shutdown only the {@link #clearPersistence()} method may be used. Any other method
+   * will throw an {@link IllegalStateException}.
+   *
+   * <p>To restart after shutdown, simply create a new instance of FirebaseFirestore with {@link
+   * #getInstance()} or {@link #getInstance(FirebaseApp)}.
+   *
+   * <p>Shutdown does not cancel any pending writes and any tasks that are awaiting a response from
+   * the server will not be resolved. The next time you start this instance, it will resume
+   * attempting to send these writes to the server.
+   *
+   * <p>Note: Under normal circumstances, calling <code>shutdown()</code> is not required. This
+   * method is useful only when you want to force this instance to release all of its resources or
+   * in combination with {@link #clearPersistence} to ensure that all local state is destroyed
+   * between test runs.
+   *
+   * @return A <code>Task</code> that is resolved when the instance has been successfully shut down.
+   */
+  @VisibleForTesting
+  // TODO(b/135755126): Make this public and remove @VisibleForTesting
+  Task<Void> shutdown() {
+    instanceRegistry.remove(this.getDatabaseId().getDatabaseId());
+    return shutdownInternal();
   }
 
   @VisibleForTesting
@@ -396,7 +437,7 @@ public class FirebaseFirestore {
   @PublicApi
   public Task<Void> clearPersistence() {
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-    asyncQueue.enqueueAndForget(
+    asyncQueue.enqueueAndForgetEvenAfterShutdown(
         () -> {
           try {
             if (client != null && !client.isShutdown()) {

@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.noChangeEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.resumeToken;
@@ -46,7 +47,6 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.TestUtil.TestTargetMetadataProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -61,13 +61,9 @@ import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.remote.RemoteEvent;
-import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
-import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
-import com.google.firebase.firestore.remote.WatchChangeAggregator;
 import com.google.firebase.firestore.remote.WatchStream;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.testutil.TestUtil;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -97,19 +93,22 @@ public abstract class LocalStoreTestCase {
   private @Nullable ImmutableSortedMap<DocumentKey, MaybeDocument> lastChanges;
   private int lastTargetId;
 
+  AccumulatingStatsCollector statsCollector;
+
   abstract Persistence getPersistence();
 
   abstract boolean garbageCollectorIsEager();
 
   @Before
   public void setUp() {
-    localStorePersistence = getPersistence();
-    localStore = new LocalStore(localStorePersistence, User.UNAUTHENTICATED);
-    localStore.start();
-
+    statsCollector = new AccumulatingStatsCollector();
     batches = new ArrayList<>();
     lastChanges = null;
     lastTargetId = 0;
+
+    localStorePersistence = getPersistence();
+    localStore = new LocalStore(localStorePersistence, User.UNAUTHENTICATED);
+    localStore.start();
   }
 
   @After
@@ -211,6 +210,27 @@ public abstract class LocalStoreTestCase {
     DocumentKey key = DocumentKey.fromPathString(keyPathString);
     MaybeDocument actual = localStore.readDocument(key);
     assertNull(actual);
+  }
+
+  /**
+   * Asserts the expected numbers of mutation rows read by the MutationQueue since the last call to
+   * `resetPersistenceStats()`.
+   */
+  private void assertMutationsRead(int expected) {
+    assertEquals(expected, statsCollector.getRowsRead(MutationQueue.STATS_TAG));
+  }
+
+  /**
+   * Asserts the expected numbers of document rows read by the RemoteDocumentCache since the last
+   * call to `resetPersistenceStats()`.
+   */
+  private void assertRemoteDocumentsRead(int expected) {
+    assertEquals(expected, statsCollector.getRowsRead(RemoteDocumentCache.STATS_TAG));
+  }
+
+  /** Resets the count of rows read by MutationQueue and the RemoteDocumentCache. */
+  private void resetPersistenceStats() {
+    statsCollector.reset();
   }
 
   @Test
@@ -863,6 +883,23 @@ public abstract class LocalStoreTestCase {
   }
 
   @Test
+  public void testReadsAllDocumentsForCollectionQueries() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+
+    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map()), asList(2), emptyList()));
+    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map()), asList(2), emptyList()));
+    writeMutation(setMutation("foo/bonk", map()));
+
+    resetPersistenceStats();
+
+    localStore.executeQuery(query);
+
+    assertRemoteDocumentsRead(2);
+    assertMutationsRead(1);
+  }
+
+  @Test
   public void testPersistsResumeTokens() {
     // This test only works in the absence of the EagerGarbageCollector.
     if (garbageCollectorIsEager()) {
@@ -871,26 +908,15 @@ public abstract class LocalStoreTestCase {
 
     Query query = query("foo/bar");
     int targetId = allocateQuery(query);
-    ByteString resumeToken = resumeToken(1000);
 
-    QueryData queryData = TestUtil.queryData(targetId, QueryPurpose.LISTEN, "foo/bar");
-    TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
-    testTargetMetadataProvider.setSyncedKeys(queryData, DocumentKey.emptyKeySet());
-
-    WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
-
-    WatchTargetChange watchChange =
-        new WatchTargetChange(WatchTargetChangeType.Current, asList(targetId), resumeToken);
-    aggregator.handleTargetChange(watchChange);
-    RemoteEvent remoteEvent = aggregator.createRemoteEvent(version(1000));
-    applyRemoteEvent(remoteEvent);
+    applyRemoteEvent(noChangeEvent(targetId, 1000));
 
     // Stop listening so that the query should become inactive (but persistent)
     localStore.releaseQuery(query);
 
     // Should come back with the same resume token
     QueryData queryData2 = localStore.allocateQuery(query);
-    assertEquals(resumeToken, queryData2.getResumeToken());
+    assertEquals(resumeToken(1000), queryData2.getResumeToken());
   }
 
   @Test
@@ -902,35 +928,18 @@ public abstract class LocalStoreTestCase {
 
     Query query = query("foo/bar");
     int targetId = allocateQuery(query);
-    ByteString resumeToken = resumeToken(1000);
 
-    QueryData queryData = TestUtil.queryData(targetId, QueryPurpose.LISTEN, "foo/bar");
-    TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
-    testTargetMetadataProvider.setSyncedKeys(queryData, DocumentKey.emptyKeySet());
-
-    WatchChangeAggregator aggregator1 = new WatchChangeAggregator(testTargetMetadataProvider);
-
-    WatchTargetChange watchChange1 =
-        new WatchTargetChange(WatchTargetChangeType.Current, asList(targetId), resumeToken);
-    aggregator1.handleTargetChange(watchChange1);
-    RemoteEvent remoteEvent1 = aggregator1.createRemoteEvent(version(1000));
-    applyRemoteEvent(remoteEvent1);
+    applyRemoteEvent(noChangeEvent(targetId, 1000));
 
     // New message with empty resume token should not replace the old resume token
-    WatchChangeAggregator aggregator2 = new WatchChangeAggregator(testTargetMetadataProvider);
-    WatchTargetChange watchChange2 =
-        new WatchTargetChange(
-            WatchTargetChangeType.Current, asList(targetId), WatchStream.EMPTY_RESUME_TOKEN);
-    aggregator2.handleTargetChange(watchChange2);
-    RemoteEvent remoteEvent2 = aggregator2.createRemoteEvent(version(2000));
-    applyRemoteEvent(remoteEvent2);
+    applyRemoteEvent(TestUtil.noChangeEvent(targetId, 2000, WatchStream.EMPTY_RESUME_TOKEN));
 
     // Stop listening so that the query should become inactive (but persistent)
     localStore.releaseQuery(query);
 
     // Should come back with the same resume token
     QueryData queryData2 = localStore.allocateQuery(query);
-    assertEquals(resumeToken, queryData2.getResumeToken());
+    assertEquals(resumeToken(1000), queryData2.getResumeToken());
   }
 
   @Test

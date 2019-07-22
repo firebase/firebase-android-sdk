@@ -24,8 +24,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LocalViewChanges;
@@ -276,12 +274,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
                         }
                         // TODO: Only retry on real transaction failures.
                         if (retries == 0) {
-                          Exception e =
-                              new FirebaseFirestoreException(
-                                  "Transaction failed all retries.",
-                                  Code.ABORTED,
-                                  commitTask.getException());
-                          return Tasks.forException(e);
+                          return Tasks.forException(commitTask.getException());
                         }
                         return transaction(asyncQueue, updateFunction, retries - 1);
                       });

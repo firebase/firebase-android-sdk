@@ -325,9 +325,7 @@ public class ServerTimestampTest {
     Exception e = waitForException(completion);
     assertNotNull(e);
     assertTrue(e instanceof FirebaseFirestoreException);
-    // TODO: This should be a NOT_FOUND, but right now we retry transactions on any
-    // error and so this turns into ABORTED instead.
-    assertEquals(Code.ABORTED, ((FirebaseFirestoreException) e).getCode());
+    assertEquals(Code.NOT_FOUND, ((FirebaseFirestoreException) e).getCode());
   }
 
   @Test

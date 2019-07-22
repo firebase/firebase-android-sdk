@@ -16,7 +16,7 @@ package com.google.firebase.storage.internal;
 
 /** Helper for mocking sleep for exponential backoff. */
 public class MockSleeperHelper implements Sleeper {
-  private MockClockHelper clock;
+  private final MockClockHelper clock;
 
   public MockSleeperHelper(MockClockHelper clock) {
     this.clock = clock;

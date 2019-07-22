@@ -36,9 +36,11 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   private ImmutableSortedMap<DocumentKey, MaybeDocument> docs;
 
   private final MemoryPersistence persistence;
+  private StatsCollector statsCollector;
 
-  MemoryRemoteDocumentCache(MemoryPersistence persistence) {
+  MemoryRemoteDocumentCache(MemoryPersistence persistence, StatsCollector statsCollector) {
     docs = emptyMaybeDocumentMap();
+    this.statsCollector = statsCollector;
     this.persistence = persistence;
   }
 
@@ -51,12 +53,14 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public void remove(DocumentKey key) {
+    statsCollector.recordRowsDeleted(STATS_TAG, 1);
     docs = docs.remove(key);
   }
 
   @Nullable
   @Override
   public MaybeDocument get(DocumentKey key) {
+    statsCollector.recordRowsRead(STATS_TAG, 1);
     return docs.get(key);
   }
 
@@ -70,6 +74,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
       result.put(key, get(key));
     }
 
+    statsCollector.recordRowsRead(STATS_TAG, result.size());
     return result;
   }
 
@@ -85,8 +90,14 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     ResourcePath queryPath = query.getPath();
     DocumentKey prefix = DocumentKey.fromPath(queryPath.append(""));
     Iterator<Map.Entry<DocumentKey, MaybeDocument>> iterator = docs.iteratorFrom(prefix);
+
+    int rowsRead = 0;
+
     while (iterator.hasNext()) {
       Map.Entry<DocumentKey, MaybeDocument> entry = iterator.next();
+
+      ++rowsRead;
+
       DocumentKey key = entry.getKey();
       if (!queryPath.isPrefixOf(key.getPath())) {
         break;
@@ -102,6 +113,8 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         result = result.insert(doc.getKey(), doc);
       }
     }
+
+    statsCollector.recordRowsRead(STATS_TAG, rowsRead);
 
     return result;
   }
