@@ -304,13 +304,11 @@ public class UserData {
     private static final String RESERVED = "__";
 
     private void validatePathSegment(String segment) {
-      if (!isWrite()) return;
-
-      if (segment.isEmpty()) {
+      if (!isWrite() && segment.isEmpty()) {
         throw this.createError("Document fields must not be empty");
       }
 
-      if (segment.startsWith(RESERVED) || segment.endsWith(RESERVED)) {
+      if (segment.startsWith(RESERVED) && segment.endsWith(RESERVED)) {
         throw this.createError("Document fields cannot begin or end with \"__\"");
       }
     }
