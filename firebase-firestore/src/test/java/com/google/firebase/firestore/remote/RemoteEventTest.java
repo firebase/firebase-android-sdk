@@ -32,7 +32,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.TestUtil.TestTargetMetadataProvider;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -40,6 +39,7 @@ import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
+import com.google.firebase.firestore.testutil.TestTargetMetadataProvider;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
