@@ -21,10 +21,12 @@ android {
     flavorDimensions "apkSize"
 }
 
+apply from: "src/config/config.gradle"
 apply from: "src/database/database.gradle"
-apply from: "src/storage/storage.gradle"
 apply from: "src/firestore/firestore.gradle"
 apply from: "src/functions/functions.gradle"
+apply from: "src/inappmessagingdisplay/inappmessaging-display.gradle"
+apply from: "src/storage/storage.gradle"
 
 /**
  * This task builds all supported variants (only aggressive as of writing) and writes the

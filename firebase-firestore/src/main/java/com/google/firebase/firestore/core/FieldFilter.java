@@ -82,15 +82,13 @@ public class FieldFilter extends Filter {
     } else if (value.equals(NullValue.nullValue())) {
       if (operator != Filter.Operator.EQUAL) {
         throw new IllegalArgumentException(
-            "Invalid Query. You can only perform equality comparisons on null (via "
-                + "whereEqualTo()).");
+            "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
       }
       return new FieldFilter(path, operator, value);
     } else if (value.equals(DoubleValue.NaN)) {
       if (operator != Filter.Operator.EQUAL) {
         throw new IllegalArgumentException(
-            "Invalid Query. You can only perform equality comparisons on NaN (via "
-                + "whereEqualTo()).");
+            "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
       }
       return new FieldFilter(path, operator, value);
     } else if (operator == Operator.ARRAY_CONTAINS) {

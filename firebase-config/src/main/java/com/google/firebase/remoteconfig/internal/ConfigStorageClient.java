@@ -76,8 +76,11 @@ public class ConfigStorageClient {
    */
   public synchronized Void write(ConfigContainer container) throws IOException {
     // TODO(issues/262): Consider using the AtomicFile class instead.
-    try (FileOutputStream outputStream = context.openFileOutput(fileName, Context.MODE_PRIVATE)) {
+    FileOutputStream outputStream = context.openFileOutput(fileName, Context.MODE_PRIVATE);
+    try {
       outputStream.write(container.toString().getBytes(JSON_STRING_ENCODING));
+    } finally {
+      outputStream.close();
     }
     return null;
   }
@@ -90,7 +93,10 @@ public class ConfigStorageClient {
    */
   @Nullable
   public synchronized ConfigContainer read() throws IOException {
-    try (FileInputStream fileInputStream = context.openFileInput(fileName)) {
+
+    FileInputStream fileInputStream = null;
+    try {
+      fileInputStream = context.openFileInput(fileName);
       byte[] bytes = new byte[fileInputStream.available()];
       fileInputStream.read(bytes, 0, bytes.length);
       String containerJsonString = new String(bytes, JSON_STRING_ENCODING);
@@ -100,6 +106,8 @@ public class ConfigStorageClient {
     } catch (JSONException | FileNotFoundException e) {
       // File might not have been written to yet, so this not an irrecoverable error.
       return null;
+    } finally {
+      if (fileInputStream != null) fileInputStream.close();
     }
   }
 
