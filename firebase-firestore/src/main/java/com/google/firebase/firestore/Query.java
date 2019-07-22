@@ -114,8 +114,8 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new {@code Query} with the additional filter that documents must contain the
-   * specified field and the value should be less than the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be less than the specified value.
    *
    * @param field The name of the field to compare
    * @param value The value for comparison
@@ -267,8 +267,8 @@ public class Query {
    * the specified field, the value must be an array, and that the array must contain at least one
    * value from the provided array.
    *
-   * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot
-   * be combined with {@code whereArrayContains()} or {@code whereIn()}.
+   * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
+   * combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param field The name of the field containing an array to search.
    * @param value The array that contains the values to match.
@@ -285,8 +285,8 @@ public class Query {
    * the specified field, the value must be an array, and that the array must contain at least one
    * value from the provided array.
    *
-   * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot
-   * be combined with {@code whereArrayContains()} or {@code whereIn()}.
+   * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
+   * combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param fieldPath The path of the field containing an array to search.
    * @param value The array that contains the values to match.
@@ -302,8 +302,8 @@ public class Query {
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value must equal one of the values from the provided array.
    *
-   * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined
-   * with {@code whereArrayContainsAny()}.
+   * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
+   * {@code whereArrayContainsAny()}.
    *
    * @param field The name of the field to search.
    * @param value The array that contains the values to match.
@@ -319,8 +319,8 @@ public class Query {
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value must equal one of the values from the provided array.
    *
-   * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined
-   * with {@code whereArrayContainsAny()}.
+   * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
+   * {@code whereArrayContainsAny()}.
    *
    * @param fieldPath The path of the field to search.
    * @param value The array that contains the values to match.
@@ -545,8 +545,8 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new {@code Query} that's additionally sorted by the specified field, optionally
-   * in descending order instead of ascending.
+   * Creates and returns a new {@code Query} that's additionally sorted by the specified field,
+   * optionally in descending order instead of ascending.
    *
    * @param field The field to sort by.
    * @param direction The direction to sort.
@@ -559,8 +559,8 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new {@code Query} that's additionally sorted by the specified field, optionally
-   * in descending order instead of ascending.
+   * Creates and returns a new {@code Query} that's additionally sorted by the specified field,
+   * optionally in descending order instead of ascending.
    *
    * @param fieldPath The field to sort by.
    * @param direction The direction to sort.

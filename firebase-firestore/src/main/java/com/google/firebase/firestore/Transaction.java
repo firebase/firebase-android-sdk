@@ -191,8 +191,8 @@ public class Transaction {
    * Reads the document referenced by the provided {@link DocumentReference}
    *
    * @param documentRef The {@link DocumentReference} to read.
-   * @return A Task that will be resolved with the contents of the Document at this
-   *     {@link DocumentReference}.
+   * @return A Task that will be resolved with the contents of the Document at this {@link
+   *     DocumentReference}.
    */
   private Task<DocumentSnapshot> getAsync(DocumentReference documentRef) {
     return transaction

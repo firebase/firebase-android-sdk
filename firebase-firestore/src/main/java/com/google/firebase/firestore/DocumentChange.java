@@ -98,11 +98,11 @@ public class DocumentChange {
 
   /**
    * Returns the newly added or modified document if this {@code DocumentChange} is for an updated
-   * document.  Returns the deleted document if this document change represents a removal.
+   * document. Returns the deleted document if this document change represents a removal.
    *
-   * @return A snapshot of the new data (for {@link DocumentChange.Type#ADDED} or
-   *     {@link DocumentChange.Type#MODIFIED}) or the removed data (for
-   *     {@link DocumentChange.Type.REMOVED}).
+   * @return A snapshot of the new data (for {@link DocumentChange.Type#ADDED} or {@link
+   *     DocumentChange.Type#MODIFIED}) or the removed data (for {@link
+   *     DocumentChange.Type.REMOVED}).
    */
   @NonNull
   @PublicApi
@@ -111,8 +111,8 @@ public class DocumentChange {
   }
 
   /**
-   * The index of the changed document in the result set immediately prior to this
-   * {@code DocumentChange} (i.e. supposing that all prior {@code DocumentChange} objects have been
+   * The index of the changed document in the result set immediately prior to this {@code
+   * DocumentChange} (i.e. supposing that all prior {@code DocumentChange} objects have been
    * applied). Returns -1 for 'added' events.
    */
   @PublicApi

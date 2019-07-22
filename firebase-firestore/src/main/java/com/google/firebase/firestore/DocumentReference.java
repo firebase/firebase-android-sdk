@@ -263,8 +263,8 @@ public class DocumentReference {
   /**
    * Reads the document referenced by this {@code DocumentReference}.
    *
-   * @return A Task that will be resolved with the contents of the Document at this
-   *     {@code DocumentReference}.
+   * @return A Task that will be resolved with the contents of the Document at this {@code
+   *     DocumentReference}.
    */
   @NonNull
   @PublicApi
@@ -280,8 +280,8 @@ public class DocumentReference {
    * cannot be reached. This behavior can be altered via the {@link Source} parameter.
    *
    * @param source A value to configure the get behavior.
-   * @return A Task that will be resolved with the contents of the Document at this
-   *     {@code DocumentReference}.
+   * @return A Task that will be resolved with the contents of the Document at this {@code
+   *     DocumentReference}.
    */
   @NonNull
   @PublicApi

@@ -21,8 +21,8 @@ import com.google.firebase.annotations.PublicApi;
 public interface ListenerRegistration {
 
   /**
-   * Removes the listener being tracked by this {@code ListenerRegistration}. After the initial call,
-   * subsequent calls have no effect.
+   * Removes the listener being tracked by this {@code ListenerRegistration}. After the initial
+   * call, subsequent calls have no effect.
    */
   @PublicApi
   void remove();
