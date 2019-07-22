@@ -27,13 +27,13 @@ import java.util.List;
 @Keep
 public class FirebaseInstallationsRegistrar implements ComponentRegistrar {
 
-    @Override
-    public List<Component<?>> getComponents() {
-        return Arrays.asList(
-                Component.builder(FirebaseInstallationsApi.class)
-                        .add(Dependency.required(FirebaseApp.class))
-                        .factory(c -> new FirebaseInstallations(c.get(FirebaseApp.class)))
-                        .build(),
-                LibraryVersionComponent.create("fire-installations", BuildConfig.VERSION_NAME));
-    }
+  @Override
+  public List<Component<?>> getComponents() {
+    return Arrays.asList(
+        Component.builder(FirebaseInstallationsApi.class)
+            .add(Dependency.required(FirebaseApp.class))
+            .factory(c -> new FirebaseInstallations(c.get(FirebaseApp.class)))
+            .build(),
+        LibraryVersionComponent.create("fire-installations", BuildConfig.VERSION_NAME));
+  }
 }

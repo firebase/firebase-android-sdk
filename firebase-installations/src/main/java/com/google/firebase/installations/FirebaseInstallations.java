@@ -35,76 +35,76 @@ import okhttp3.OkHttpClient;
  */
 public class FirebaseInstallations implements FirebaseInstallationsApi {
 
-    private final OkHttpClient httpClient;
+  private final OkHttpClient httpClient;
 
-    private final FirebaseApp firebaseApp;
+  private final FirebaseApp firebaseApp;
 
-    /** package private constructor. */
-    FirebaseInstallations(FirebaseApp firebaseApp) {
-        this.firebaseApp = firebaseApp;
-        httpClient = new OkHttpClient();
-    }
+  /** package private constructor. */
+  FirebaseInstallations(FirebaseApp firebaseApp) {
+    this.firebaseApp = firebaseApp;
+    httpClient = new OkHttpClient();
+  }
 
-    /**
-     * Returns the {@link FirebaseInstallationsApi} initialized with the default {@link FirebaseApp}.
-     *
-     * @return a {@link FirebaseInstallationsApi} instance
-     */
-    @NonNull
-    public static FirebaseInstallations getInstance() {
-        FirebaseApp defaultFirebaseApp = FirebaseApp.getInstance();
-        return getInstance(defaultFirebaseApp);
-    }
+  /**
+   * Returns the {@link FirebaseInstallationsApi} initialized with the default {@link FirebaseApp}.
+   *
+   * @return a {@link FirebaseInstallationsApi} instance
+   */
+  @NonNull
+  public static FirebaseInstallations getInstance() {
+    FirebaseApp defaultFirebaseApp = FirebaseApp.getInstance();
+    return getInstance(defaultFirebaseApp);
+  }
 
-    /**
-     * Returns the {@link FirebaseInstallations} initialized with a custom {@link FirebaseApp}.
-     *
-     * @param app a custom {@link FirebaseApp}
-     * @return a {@link FirebaseInstallations} instance
-     */
-    @NonNull
-    public static FirebaseInstallations getInstance(@NonNull FirebaseApp app) {
-        Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
-        return (FirebaseInstallations) app.get(FirebaseInstallationsApi.class);
-    }
+  /**
+   * Returns the {@link FirebaseInstallations} initialized with a custom {@link FirebaseApp}.
+   *
+   * @param app a custom {@link FirebaseApp}
+   * @return a {@link FirebaseInstallations} instance
+   */
+  @NonNull
+  public static FirebaseInstallations getInstance(@NonNull FirebaseApp app) {
+    Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
+    return (FirebaseInstallations) app.get(FirebaseInstallationsApi.class);
+  }
 
-    /**
-     * Returns a globally unique identifier of this Firebase app installation. This is a url-safe
-     * base64 string of a 128-bit integer.
-     */
-    @NonNull
-    @Override
-    public Task<String> getId() {
-        return Tasks.forResult("fid-is-better-than-iid");
-    }
+  /**
+   * Returns a globally unique identifier of this Firebase app installation. This is a url-safe
+   * base64 string of a 128-bit integer.
+   */
+  @NonNull
+  @Override
+  public Task<String> getId() {
+    return Tasks.forResult("fid-is-better-than-iid");
+  }
 
-    /** Returns a auth token(public key) of this Firebase app installation. */
-    @NonNull
-    @Override
-    public Task<String> getAuthToken() {
-        return Tasks.forResult("dummy_auth_token");
-    }
+  /** Returns a auth token(public key) of this Firebase app installation. */
+  @NonNull
+  @Override
+  public Task<String> getAuthToken() {
+    return Tasks.forResult("dummy_auth_token");
+  }
 
-    /**
-     * Call to delete this Firebase app installation from Firebase backend. This call would possibly
-     * lead Firebase Notification, Firebase RemoteConfig, Firebase Predictions or Firebase In-App
-     * Messaging not function properly.
-     */
-    @NonNull
-    @Override
-    public Task<Void> delete() {
-        return Tasks.forResult(null);
-    }
+  /**
+   * Call to delete this Firebase app installation from Firebase backend. This call would possibly
+   * lead Firebase Notification, Firebase RemoteConfig, Firebase Predictions or Firebase In-App
+   * Messaging not function properly.
+   */
+  @NonNull
+  @Override
+  public Task<Void> delete() {
+    return Tasks.forResult(null);
+  }
 
-    /** Returns the application id of the {@link FirebaseApp} of this {@link FirebaseInstallations} */
-    @VisibleForTesting
-    String getApplicationId() {
-        return firebaseApp.getOptions().getApplicationId();
-    }
+  /** Returns the application id of the {@link FirebaseApp} of this {@link FirebaseInstallations} */
+  @VisibleForTesting
+  String getApplicationId() {
+    return firebaseApp.getOptions().getApplicationId();
+  }
 
-    /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseInstallations} */
-    @VisibleForTesting
-    String getName() {
-        return firebaseApp.getName();
-    }
+  /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseInstallations} */
+  @VisibleForTesting
+  String getName() {
+    return firebaseApp.getName();
+  }
 }

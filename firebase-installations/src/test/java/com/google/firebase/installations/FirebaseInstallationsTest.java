@@ -15,6 +15,4 @@
 package com.google.firebase.installations;
 
 /** Tests for {@link FirebaseInstallations}. */
-public class FirebaseInstallationsTest {
-
-}
+public class FirebaseInstallationsTest {}
