@@ -193,7 +193,7 @@ public class Datastore {
   }
 
   /**
-   * Determines whether the given error code that represents a permanent error when received in
+   * Determines whether the given error code represents a permanent error when received in
    * response to a non-write operation.
    *
    * @see #isPermanentWriteError for classifying write errors.
