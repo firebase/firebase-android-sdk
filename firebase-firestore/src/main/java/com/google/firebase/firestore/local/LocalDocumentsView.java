@@ -28,6 +28,8 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.firebase.firestore.model.mutation.PatchMutation;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -182,6 +184,9 @@ final class LocalDocumentsView {
         remoteDocumentCache.getAllDocumentsMatchingQuery(query);
 
     List<MutationBatch> matchingBatches = mutationQueue.getAllMutationBatchesAffectingQuery(query);
+
+    results = addMissingBaseDocuments(matchingBatches, results);
+
     for (MutationBatch batch : matchingBatches) {
       for (Mutation mutation : batch.getMutations()) {
         // Only process documents belonging to the collection.
@@ -209,5 +214,35 @@ final class LocalDocumentsView {
     }
 
     return results;
+  }
+
+  /**
+   * It is possible that a {@code PatchMutation} can make a document match a query, even if the
+   * version in the {@code RemoteDocumentCache} is not a match yet (waiting for server to ack). To
+   * handle this, we find all document keys affected by the {@code PatchMutation}s that are not in
+   * {@code existingDocs} yet, and back fill them via {@code remoteDocumentCache.getAll}, otherwise
+   * those {@code PatchMutation}s will be ignored because no base document can be found, and lead to
+   * missing results for the query.
+   */
+  private ImmutableSortedMap<DocumentKey, Document> addMissingBaseDocuments(
+      List<MutationBatch> matchingBatches, ImmutableSortedMap<DocumentKey, Document> existingDocs) {
+    HashSet<DocumentKey> missingDocKeys = new HashSet<>();
+    for (MutationBatch batch : matchingBatches) {
+      for (Mutation mutation : batch.getMutations()) {
+        if (mutation instanceof PatchMutation && !existingDocs.containsKey(mutation.getKey())) {
+          missingDocKeys.add(mutation.getKey());
+        }
+      }
+    }
+
+    ImmutableSortedMap<DocumentKey, Document> mergedDocs = existingDocs;
+    Map<DocumentKey, MaybeDocument> missingDocs = remoteDocumentCache.getAll(missingDocKeys);
+    for (Map.Entry<DocumentKey, MaybeDocument> entry : missingDocs.entrySet()) {
+      if (entry.getValue() != null && (entry.getValue() instanceof Document)) {
+        mergedDocs = mergedDocs.insert(entry.getKey(), (Document) entry.getValue());
+      }
+    }
+
+    return mergedDocs;
   }
 }
