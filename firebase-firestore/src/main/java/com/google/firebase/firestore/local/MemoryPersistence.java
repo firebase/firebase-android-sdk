@@ -35,30 +35,38 @@ public final class MemoryPersistence extends Persistence {
   private final MemoryIndexManager indexManager;
   private final MemoryQueryCache queryCache;
   private final MemoryRemoteDocumentCache remoteDocumentCache;
+  private final StatsCollector statsCollector;
   private ReferenceDelegate referenceDelegate;
 
   private boolean started;
 
   public static MemoryPersistence createEagerGcMemoryPersistence() {
-    MemoryPersistence persistence = new MemoryPersistence();
+    return createEagerGcMemoryPersistence(StatsCollector.NO_OP_STATS_COLLECTOR);
+  }
+
+  public static MemoryPersistence createEagerGcMemoryPersistence(StatsCollector statsCollector) {
+    MemoryPersistence persistence = new MemoryPersistence(statsCollector);
     persistence.setReferenceDelegate(new MemoryEagerReferenceDelegate(persistence));
     return persistence;
   }
 
   public static MemoryPersistence createLruGcMemoryPersistence(
-      LruGarbageCollector.Params params, LocalSerializer serializer) {
-    MemoryPersistence persistence = new MemoryPersistence();
+      LruGarbageCollector.Params params,
+      StatsCollector statsCollector,
+      LocalSerializer serializer) {
+    MemoryPersistence persistence = new MemoryPersistence(statsCollector);
     persistence.setReferenceDelegate(
         new MemoryLruReferenceDelegate(persistence, params, serializer));
     return persistence;
   }
 
   /** Use static helpers to instantiate */
-  private MemoryPersistence() {
+  private MemoryPersistence(StatsCollector statsCollector) {
+    this.statsCollector = statsCollector;
     mutationQueues = new HashMap<>();
     indexManager = new MemoryIndexManager();
     queryCache = new MemoryQueryCache(this);
-    remoteDocumentCache = new MemoryRemoteDocumentCache(this);
+    remoteDocumentCache = new MemoryRemoteDocumentCache(this, statsCollector);
   }
 
   @Override
@@ -93,7 +101,7 @@ public final class MemoryPersistence extends Persistence {
   MutationQueue getMutationQueue(User user) {
     MemoryMutationQueue queue = mutationQueues.get(user);
     if (queue == null) {
-      queue = new MemoryMutationQueue(this);
+      queue = new MemoryMutationQueue(this, statsCollector);
       mutationQueues.put(user, queue);
     }
     return queue;

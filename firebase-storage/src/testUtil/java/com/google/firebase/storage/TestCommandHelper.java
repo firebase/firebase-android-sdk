@@ -48,7 +48,7 @@ public class TestCommandHelper {
         executor,
         task -> {
           builder.append("Received Download Url.\n");
-          builder.append("getDownloadUrl:").append(task.getResult().toString());
+          builder.append("getDownloadUrl:").append(task.getResult());
           builder.append("\nonComplete:Success=\n").append(task.isSuccessful());
           result.setResult(builder);
         });
@@ -180,7 +180,7 @@ public class TestCommandHelper {
     builder.append("getMD5Hash:").append(metadata.getMd5Hash()).append("\n");
     builder.append("getGeneration:").append(metadata.getGeneration()).append("\n");
     builder.append("getMetadataGeneration:").append(metadata.getMetadataGeneration()).append("\n");
-    builder.append("getSizeBytes:").append(Long.toString(metadata.getSizeBytes())).append("\n");
+    builder.append("getSizeBytes:").append(metadata.getSizeBytes()).append("\n");
     builder.append("getReference:").append(metadata.getReference().getName()).append("\n");
     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
     sdf.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));

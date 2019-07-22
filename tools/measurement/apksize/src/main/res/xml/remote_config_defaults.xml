@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<defaultsMap>
+    <entry>
+        <key>message</key>
+        <value>My custom message</value>
+    </entry>
+    <entry>
+        <key>flag</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>number</key>
+        <value>3.14159</value>
+    </entry>
+</defaultsMap>

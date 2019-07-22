@@ -1,4 +1,16 @@
 # Unreleased
+- [changed] Transactions are now more flexible. Some sequences of operations
+  that were previously incorrectly disallowed are now allowed. For example,
+  after reading a document that doesn't exist, you can now set it multiple
+  times successfully in a transaction.
+- [fixed] Fixed an issue where query results were temporarily missing documents
+  that previously had not matched but had been updated to now match the
+  query (#155).
+
+# 20.2.0
+- [feature] Added a `@DocumentId` annotation which can be used on a
+  `DocumentReference` or `String` property in a POJO to indicate that the SDK
+  should automatically populate it with the document's ID.
 - [fixed] Fixed an internal assertion that was triggered when an update
   with a `FieldValue.serverTimestamp()` and an update with a
   `FieldValue.increment()` were pending for the same document (#491).
@@ -7,11 +19,11 @@
   small subset of the documents in a collection.
 - [changed] Instead of failing silently, Firestore now crashes the client app
   if it fails to load SSL Ciphers. To avoid these crashes, you must bundle 
-  Conscrypt to support non-GMSCore devices on Android KitKat or JellyBean (see
+  Conscrypt to support non-GMSCore devices on Android API level 19 (KitKat) or
+  earlier (for more information, refer to
   https://github.com/grpc/grpc-java/blob/master/SECURITY.md#tls-on-android).
-- [feature] Added a `@DocumentId` annotation which can be used on a
-  `DocumentReference` or `String` property in a POJO to indicate that the SDK
-  should automatically populate it with the document's ID.
+- [changed] Failed transactions now fail with the exception from the last 
+  attempt instead of always failing with an exception with code `ABORTED`.
 
 # 20.1.0
 - [changed] SSL and gRPC initialization now happens on a separate thread, which

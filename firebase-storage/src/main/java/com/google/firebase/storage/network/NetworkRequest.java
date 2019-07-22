@@ -137,6 +137,16 @@ public abstract class NetworkRequest {
     return path;
   }
 
+  /**
+   * Returns the path of the object but excludes the bucket name
+   *
+   * @return the path in string form.
+   */
+  @Nullable
+  public String getPathWithoutBucket() {
+    return getPathWithoutBucket(mGsUri);
+  }
+
   @NonNull
   protected abstract String getAction();
 
@@ -148,16 +158,6 @@ public abstract class NetworkRequest {
   @NonNull
   protected String getURL() {
     return getDefaultURL(mGsUri);
-  }
-
-  /**
-   * Returns the path of the object but excludes the bucket name
-   *
-   * @return the path in string form.
-   */
-  @Nullable
-  public String getPathWithoutBucket() {
-    return getPathWithoutBucket(mGsUri);
   }
 
   /**
@@ -418,22 +418,6 @@ public abstract class NetworkRequest {
     }
   }
 
-  private void processResponseStream() throws IOException {
-    if (isResultSuccess()) {
-      parseSuccessulResponse(resultInputStream);
-    } else {
-      parseErrorResponse(resultInputStream);
-    }
-  }
-
-  protected void parseSuccessulResponse(@Nullable InputStream resultStream) throws IOException {
-    parseResponse(resultStream);
-  }
-
-  protected void parseErrorResponse(@Nullable InputStream resultStream) throws IOException {
-    parseResponse(resultStream);
-  }
-
   @SuppressWarnings("TryFinallyCanBeTryWithResources")
   private void parseResponse(@Nullable InputStream resultStream) throws IOException {
     StringBuilder sb = new StringBuilder();
@@ -453,6 +437,22 @@ public abstract class NetworkRequest {
     if (!isResultSuccess()) {
       mException = new IOException(rawStringResponse);
     }
+  }
+
+  private void processResponseStream() throws IOException {
+    if (isResultSuccess()) {
+      parseSuccessulResponse(resultInputStream);
+    } else {
+      parseErrorResponse(resultInputStream);
+    }
+  }
+
+  protected void parseSuccessulResponse(@Nullable InputStream resultStream) throws IOException {
+    parseResponse(resultStream);
+  }
+
+  protected void parseErrorResponse(@Nullable InputStream resultStream) throws IOException {
+    parseResponse(resultStream);
   }
 
   @Nullable

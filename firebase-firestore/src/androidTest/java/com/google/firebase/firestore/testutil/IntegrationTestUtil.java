@@ -25,6 +25,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.AccessHelper;
 import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.CollectionReference;
@@ -145,6 +146,10 @@ public class IntegrationTestUtil {
     return settings.build();
   }
 
+  public static FirebaseApp testFirebaseApp() {
+    return FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext());
+  }
+
   /** Initializes a new Firestore instance that uses the default project. */
   public static FirebaseFirestore testFirestore() {
     return testFirestore(newTestSettings());
@@ -248,9 +253,7 @@ public class IntegrationTestUtil {
 
     ensureStrictMode();
 
-    AsyncQueue asyncQueue = null;
-
-    asyncQueue = new AsyncQueue();
+    AsyncQueue asyncQueue = new AsyncQueue();
 
     FirebaseFirestore firestore =
         AccessHelper.newFirebaseFirestore(
@@ -259,7 +262,8 @@ public class IntegrationTestUtil {
             persistenceKey,
             new EmptyCredentialsProvider(),
             asyncQueue,
-            /*firebaseApp=*/ null);
+            /*firebaseApp=*/ null,
+            /*instanceRegistry=*/ (dbId) -> {});
     waitFor(AccessHelper.clearPersistence(firestore));
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);
