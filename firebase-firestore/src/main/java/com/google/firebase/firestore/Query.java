@@ -231,8 +231,8 @@ public class Query {
    * specified field, the value must be an array, and that the array must contain the provided
    * value.
    *
-   * <p>A Query can have only one whereArrayContains() filter and it cannot be combined with
-   * whereArrayContainsAny().
+   * <p>A {@code Query} can have only one {@code whereArrayContains()} filter and it cannot be
+   * combined with {@code whereArrayContainsAny()}.
    *
    * @param field The name of the field containing an array to search.
    * @param value The value that must be contained in the array
@@ -249,8 +249,8 @@ public class Query {
    * specified field, the value must be an array, and that the array must contain the provided
    * value.
    *
-   * <p>A Query can have only one whereArrayContains() filter and it cannot be combined with
-   * whereArrayContainsAny().
+   * <p>A {@code Query} can have only one {@code whereArrayContains()} filter and it cannot be
+   * combined with {@code whereArrayContainsAny()}.
    *
    * @param fieldPath The path of the field containing an array to search.
    * @param value The value that must be contained in the array
@@ -267,8 +267,8 @@ public class Query {
    * specified field, the value must be an array, and that the array must contain at least one value
    * from the provided array.
    *
-   * <p>A Query can have only one whereArrayContainsAny() filter and it cannot be combined with
-   * whereArrayContains() or whereIn().
+   * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot
+   * be combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param field The name of the field containing an array to search.
    * @param value The array that contains the values to match.
@@ -285,8 +285,8 @@ public class Query {
    * specified field, the value must be an array, and that the array must contain at least one value
    * from the provided array.
    *
-   * <p>A Query can have only one whereArrayContainsAny() filter and it cannot be combined with
-   * whereArrayContains() or whereIn().
+   * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot
+   * be combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param fieldPath The path of the field containing an array to search.
    * @param value The array that contains the values to match.
@@ -302,8 +302,8 @@ public class Query {
    * Creates and returns a new Query with the additional filter that documents must contain the
    * specified field and the value must equal one of the values from the provided array.
    *
-   * <p>A Query can have only one whereIn() filter, and it cannot be combined with
-   * whereArrayContainsAny().
+   * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined
+   * with {@code whereArrayContainsAny()}.
    *
    * @param field The name of the field to search.
    * @param value The array that contains the values to match.
@@ -319,8 +319,8 @@ public class Query {
    * Creates and returns a new Query with the additional filter that documents must contain the
    * specified field and the value must equal one of the values from the provided array.
    *
-   * <p>A Query can have only one whereIn() filter, and it cannot be combined with
-   * whereArrayContainsAny().
+   * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined
+   * with {@code whereArrayContainsAny()}.
    *
    * @param fieldPath The path of the field to search.
    * @param value The array that contains the values to match.
