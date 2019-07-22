@@ -267,8 +267,9 @@ public class FirebaseFirestore {
    * be retried. If it fails to commit after 5 attempts, the transaction will fail.
    *
    * <p>The maximum number of writes allowed in a single transaction is 500, but note that each
-   * usage of FieldValue.serverTimestamp(), FieldValue.arrayUnion(), FieldValue.arrayRemove(), or
-   * FieldValue.increment() inside a transaction counts as an additional write.
+   * usage of {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion()}, {@link
+   * FieldValue#arrayRemove()}, or {@link FieldValue#increment()} inside a transaction counts as an
+   * additional write.
    *
    * @param updateFunction The function to execute within the transaction context.
    * @param executor The executor to run the transaction callback on.
@@ -314,8 +315,9 @@ public class FirebaseFirestore {
    * Creates a write batch, used for performing multiple writes as a single atomic operation.
    *
    * <p>The maximum number of writes allowed in a single batch is 500, but note that each usage of
-   * FieldValue.serverTimestamp(), FieldValue.arrayUnion(), FieldValue.arrayRemove(), or
-   * FieldValue.increment() inside a transaction counts as an additional write.
+   * {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion()}, {@link
+   * FieldValue#arrayRemove()}, or {@link FieldValue#increment()} inside a transaction counts as an
+   * additional write.
    *
    * @return The created WriteBatch object.
    */
@@ -361,7 +363,7 @@ public class FirebaseFirestore {
    * the server will not be resolved. The next time you start this instance, it will resume
    * attempting to send these writes to the server.
    *
-   * <p>Note: Under normal circumstances, calling <code>shutdown()</code> is not required. This
+   * <p>Note: Under normal circumstances, calling {@code shutdown()} is not required. This
    * method is useful only when you want to force this instance to release all of its resources or
    * in combination with {@link #clearPersistence} to ensure that all local state is destroyed
    * between test runs.
@@ -381,7 +383,7 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Re-enables network usage for this instance after a prior call to disableNetwork().
+   * Re-enables network usage for this instance after a prior call to {@link #disableNetwork()}.
    *
    * @return A Task that will be completed once networking is enabled.
    */
@@ -393,8 +395,8 @@ public class FirebaseFirestore {
 
   /**
    * Disables network access for this instance. While the network is disabled, any snapshot
-   * listeners or get() calls will return results from cache, and any write operations will be
-   * queued until network usage is re-enabled via a call to enableNetwork().
+   * listeners or {@code get()} calls will return results from cache, and any write operations will
+   * be queued until network usage is re-enabled via a call to {@link #enableNetwork()}.
    *
    * @return A Task that will be completed once networking is disabled.
    */
@@ -419,15 +421,15 @@ public class FirebaseFirestore {
    *
    * <p>Must be called while the {@code FirebaseFirestore} instance is not started (after the app is
    * shutdown or when the app is first initialized). On startup, this method must be called before
-   * other methods (other than <code>setFirestoreSettings()</code>). If the {@code
+   * other methods (other than {@link #setFirestoreSettings()}). If the {@code
    * FirebaseFirestore} instance is still running, the <code>Task</code> will fail with an error
    * code of <code> FAILED_PRECONDITION</code>.
    *
-   * <p>Note: <code>clearPersistence()</code> is primarily intended to help write reliable tests
-   * that use Cloud Firestore. It uses an efficient mechanism for dropping existing data but does
-   * not attempt to securely overwrite or otherwise make cached data unrecoverable. For applications
-   * that are sensitive to the disclosure of cached data in between user sessions, we strongly
-   * recommend not enabling persistence at all.
+   * <p>Note: {@code clearPersistence()} is primarily intended to help write reliable tests that use
+   * Cloud Firestore. It uses an efficient mechanism for dropping existing data but does not attempt
+   * to securely overwrite or otherwise make cached data unrecoverable. For applications that are
+   * sensitive to the disclosure of cached data in between user sessions, we strongly recommend not
+   * enabling persistence at all.
    *
    * @return A <code>Task</code> that is resolved when the persistent storage is cleared. Otherwise,
    *     the <code>Task</code> is rejected with an error.

@@ -19,7 +19,10 @@ import com.google.firebase.annotations.PublicApi;
 import java.util.Arrays;
 import java.util.List;
 
-/** Sentinel values that can be used when writing document fields with set() or update(). */
+/**
+ * Sentinel values that can be used when writing document fields with {@code set()} or {@code
+ * update()}.
+ */
 @PublicApi
 public abstract class FieldValue {
 
@@ -47,7 +50,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* {@code FieldValue} class for arrayUnion() transforms. */
+  /* {@code FieldValue} class for {@link #arrayUnion()} transforms. */
   static class ArrayUnionFieldValue extends FieldValue {
     private final List<Object> elements;
 
@@ -65,7 +68,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* {@code FieldValue} class for arrayRemove() transforms. */
+  /* {@code FieldValue} class for {@link #arrayRemove()} transforms. */
   static class ArrayRemoveFieldValue extends FieldValue {
     private final List<Object> elements;
 
@@ -83,7 +86,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* {@code FieldValue} class for increment() transforms. */
+  /* {@code FieldValue} class for {@link #increment()} transforms. */
   static class NumericIncrementFieldValue extends FieldValue {
     private final Number operand;
 
@@ -105,7 +108,7 @@ public abstract class FieldValue {
   private static final ServerTimestampFieldValue SERVER_TIMESTAMP_INSTANCE =
       new ServerTimestampFieldValue();
 
-  /** Returns a sentinel for use with update() to mark a field for deletion. */
+  /** Returns a sentinel for use with {@code update()} to mark a field for deletion. */
   @NonNull
   @PublicApi
   public static FieldValue delete() {
@@ -113,8 +116,8 @@ public abstract class FieldValue {
   }
 
   /**
-   * Returns a sentinel for use with set() or update() to include a server-generated timestamp in
-   * the written data.
+   * Returns a sentinel for use with {@code set()} or {@code update()} to include a server-generated
+   * timestamp in the written data.
    */
   @NonNull
   @PublicApi
@@ -123,14 +126,14 @@ public abstract class FieldValue {
   }
 
   /**
-   * Returns a special value that can be used with set() or update() that tells the server to union
-   * the given elements with any array value that already exists on the server. Each specified
-   * element that doesn't already exist in the array will be added to the end. If the field being
-   * modified is not already an array it will be overwritten with an array containing exactly the
-   * specified elements.
+   * Returns a special value that can be used with {@code set()} or {@code update()} that tells the
+   * server to union the given elements with any array value that already exists on the server. Each
+   * specified element that doesn't already exist in the array will be added to the end. If the
+   * field being modified is not already an array it will be overwritten with an array containing
+   * exactly the specified elements.
    *
    * @param elements The elements to union into the array.
-   * @return The {@code FieldValue} sentinel for use in a call to set() or update().
+   * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
    */
   @NonNull
   @PublicApi
@@ -139,13 +142,13 @@ public abstract class FieldValue {
   }
 
   /**
-   * Returns a special value that can be used with set() or update() that tells the server to remove
-   * the given elements from any array value that already exists on the server. All instances of
-   * each element specified will be removed from the array. If the field being modified is not
-   * already an array it will be overwritten with an empty array.
+   * Returns a special value that can be used with {@code set()} or {@code update()} that tells the
+   * server to remove the given elements from any array value that already exists on the server. All
+   * instances of each element specified will be removed from the array. If the field being modified
+   * is not already an array it will be overwritten with an empty array.
    *
    * @param elements The elements to remove from the array.
-   * @return The {@code FieldValue} sentinel for use in a call to set() or update().
+   * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
    */
   @NonNull
   @PublicApi
@@ -154,8 +157,8 @@ public abstract class FieldValue {
   }
 
   /**
-   * Returns a special value that can be used with set() or update() that tells the server to
-   * increment the field's current value by the given value.
+   * Returns a special value that can be used with {@code set()} or {@code update()} that tells the
+   * server to increment the field's current value by the given value.
    *
    * <p>If the current field value is an integer, possible integer overflows are resolved to
    * Long.MAX_VALUE or Long.MIN_VALUE. If the current field value is a double, both values will be
@@ -164,7 +167,7 @@ public abstract class FieldValue {
    * <p>If the current field is not an integer or double, or if the field does not yet exist, the
    * transformation will set the field to the given value.
    *
-   * @return The {@code FieldValue} sentinel for use in a call to set() or update().
+   * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
    */
   @NonNull
   @PublicApi
@@ -173,14 +176,14 @@ public abstract class FieldValue {
   }
 
   /**
-   * Returns a special value that can be used with set() or update() that tells the server to
-   * increment the field's current value by the given value.
+   * Returns a special value that can be used with {@code set()} or {@code update()} that tells the
+   * server to increment the field's current value by the given value.
    *
    * <p>If the current value is an integer or a double, both the current and the given value will be
    * interpreted as doubles and all arithmetic will follow IEEE 754 semantics. Otherwise, the
    * transformation will set the field to the given value.
    *
-   * @return The {@code FieldValue} sentinel for use in a call to set() or update().
+   * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
    */
   @NonNull
   @PublicApi

@@ -27,11 +27,11 @@ import javax.annotation.Nullable;
 /**
  * A {@code QueryDocumentSnapshot} contains data read from a document in your Cloud Firestore
  * database as part of a query. The document is guaranteed to exist and its data can be extracted
- * using the getData() or get() methods.
+ * using the {@link #getData()} or {@link #get()} methods.
  *
  * <p>{@code QueryDocumentSnapshot} offers the same API surface as {@link DocumentSnapshot}. Since
- * query results contain only existing documents, the exists() method will always return true and
- * getData() will never be null.
+ * query results contain only existing documents, the {@link #exists()} method will always return
+ * true and {@link #getData()} will never be null.
  *
  * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break

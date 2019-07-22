@@ -35,10 +35,11 @@ public class SnapshotMetadata {
   }
 
   /**
-   * @return true if the snapshot contains the result of local writes (e.g. set() or update() calls)
-   *     that have not yet been committed to the backend. If your listener has opted into metadata
-   *     updates (via `MetadataChanges.INCLUDE`) you will receive another snapshot with
-   *     `hasPendingWrites()` equal to false once the writes have been committed to the backend.
+   * @return true if the snapshot contains the result of local writes (e.g. {@code set()} or {@code
+   *     update()} calls) that have not yet been committed to the backend. If your listener has
+   *     opted into metadata updates (via {@link MetadataChanges#INCLUDE}) you will receive another
+   *     snapshot with {@code hasPendingWrites()} equal to false once the writes have been committed
+   *     to the backend.
    */
   @PublicApi
   public boolean hasPendingWrites() {
@@ -47,9 +48,9 @@ public class SnapshotMetadata {
 
   /**
    * @return true if the snapshot was created from cached data rather than guaranteed up-to-date
-   *     server data. If your listener has opted into metadata updates (via
-   *     `MetadataChanges.INCLUDE`) you will receive another snapshot with `isFomCache()` equal to
-   *     false once the client has received up-to-date data from the backend.
+   *     server data. If your listener has opted into metadata updates (via {@link
+   *     MetadataChanges#INCLUDE}) you will receive another snapshot with {@code isFromCache()}
+   *     equal to false once the client has received up-to-date data from the backend.
    */
   @PublicApi
   public boolean isFromCache() {

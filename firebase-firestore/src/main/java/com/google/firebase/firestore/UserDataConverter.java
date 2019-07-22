@@ -74,7 +74,7 @@ public final class UserDataConverter {
   }
 
   /**
-   * Parse document data from a non-merge set() call.
+   * Parse document data from a non-merge {@code set()} call.
    *
    * @param input A map or POJO object representing document data.
    */
@@ -85,7 +85,7 @@ public final class UserDataConverter {
   }
 
   /**
-   * Parse document data from a set() call with SetOptions.merge() set.
+   * Parse document data from a {@code set()} call with {@link SetOptions#merge()} set.
    *
    * @param input A map or POJO object representing document data.
    * @param fieldMask A {@link FieldMask} object representing the fields to be merged.
@@ -111,7 +111,7 @@ public final class UserDataConverter {
     }
   }
 
-  /** Parse update data from an update() call. */
+  /** Parse update data from an {@code update()} call. */
   public ParsedUpdateData parseUpdateData(Map<String, Object> data) {
     checkNotNull(data, "Provided update data must not be null.");
 
