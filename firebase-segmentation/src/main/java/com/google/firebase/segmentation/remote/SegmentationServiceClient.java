@@ -90,7 +90,7 @@ public class SegmentationServiceClient {
       } finally {
         gzipOutputStream.close();
       }
-      httpsURLConnection.connect();
+
       int httpResponseCode = httpsURLConnection.getResponseCode();
       switch (httpResponseCode) {
         case 200:
@@ -150,7 +150,6 @@ public class SegmentationServiceClient {
       } finally {
         gzipOutputStream.close();
       }
-      httpsURLConnection.connect();
 
       int httpResponseCode = httpsURLConnection.getResponseCode();
       switch (httpResponseCode) {
