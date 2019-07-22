@@ -59,7 +59,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents "
-            + "(path, snapshot_version_seconds, snapshot_version_nanos, contents) "
+            + "(path, update_time_seconds, update_time_nanos, contents) "
             + "VALUES (?, ?, ?, ?)",
         path,
         timestamp.getSeconds(),
