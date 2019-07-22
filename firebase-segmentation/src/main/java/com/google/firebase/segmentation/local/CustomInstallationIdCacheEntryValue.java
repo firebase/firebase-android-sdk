@@ -14,6 +14,7 @@
 
 package com.google.firebase.segmentation.local;
 
+import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.segmentation.local.CustomInstallationIdCache.CacheStatus;
 
@@ -23,14 +24,20 @@ import com.google.firebase.segmentation.local.CustomInstallationIdCache.CacheSta
  */
 @AutoValue
 public abstract class CustomInstallationIdCacheEntryValue {
+  @NonNull
   public abstract String getCustomInstallationId();
 
+  @NonNull
   public abstract String getFirebaseInstanceId();
 
+  @NonNull
   public abstract CacheStatus getCacheStatus();
 
+  @NonNull
   public static CustomInstallationIdCacheEntryValue create(
-      String customInstallationId, String firebaseInstanceId, CacheStatus cacheStatus) {
+      @NonNull String customInstallationId,
+      @NonNull String firebaseInstanceId,
+      @NonNull CacheStatus cacheStatus) {
     return new AutoValue_CustomInstallationIdCacheEntryValue(
         customInstallationId, firebaseInstanceId, cacheStatus);
   }

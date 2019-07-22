@@ -20,7 +20,6 @@ import static org.junit.Assert.assertTrue;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import org.junit.After;
@@ -55,8 +54,8 @@ public class CustomInstallationIdCacheTest {
 
   @After
   public void cleanUp() throws Exception {
-    Tasks.await(cache0.clear());
-    Tasks.await(cache1.clear());
+    cache0.clear();
+    cache1.clear();
   }
 
   @Test
@@ -68,12 +67,9 @@ public class CustomInstallationIdCacheTest {
   @Test
   public void testUpdateAndReadCacheEntry() throws Exception {
     assertTrue(
-        Tasks.await(
-            cache0.insertOrUpdateCacheEntry(
-                CustomInstallationIdCacheEntryValue.create(
-                    "123456",
-                    "cAAAAAAAAAA",
-                    CustomInstallationIdCache.CacheStatus.PENDING_UPDATE))));
+        cache0.insertOrUpdateCacheEntry(
+            CustomInstallationIdCacheEntryValue.create(
+                "123456", "cAAAAAAAAAA", CustomInstallationIdCache.CacheStatus.PENDING_UPDATE)));
     CustomInstallationIdCacheEntryValue entryValue = cache0.readCacheEntryValue();
     assertThat(entryValue.getCustomInstallationId()).isEqualTo("123456");
     assertThat(entryValue.getFirebaseInstanceId()).isEqualTo("cAAAAAAAAAA");
@@ -82,10 +78,9 @@ public class CustomInstallationIdCacheTest {
     assertNull(cache1.readCacheEntryValue());
 
     assertTrue(
-        Tasks.await(
-            cache0.insertOrUpdateCacheEntry(
-                CustomInstallationIdCacheEntryValue.create(
-                    "123456", "cAAAAAAAAAA", CustomInstallationIdCache.CacheStatus.SYNCED))));
+        cache0.insertOrUpdateCacheEntry(
+            CustomInstallationIdCacheEntryValue.create(
+                "123456", "cAAAAAAAAAA", CustomInstallationIdCache.CacheStatus.SYNCED)));
     entryValue = cache0.readCacheEntryValue();
     assertThat(entryValue.getCustomInstallationId()).isEqualTo("123456");
     assertThat(entryValue.getFirebaseInstanceId()).isEqualTo("cAAAAAAAAAA");

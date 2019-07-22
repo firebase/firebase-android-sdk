@@ -14,43 +14,159 @@
 
 package com.google.firebase.segmentation.remote;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.squareup.okhttp.OkHttpClient;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import androidx.annotation.NonNull;
+import java.io.IOException;
+import java.net.URL;
+import java.util.zip.GZIPOutputStream;
+import javax.net.ssl.HttpsURLConnection;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /** Http client that sends request to Firebase Segmentation backend API. To be implemented */
 public class SegmentationServiceClient {
 
-  private final OkHttpClient httpClient;
-  private final Executor httpRequestExecutor;
+  private static final String FIREBASE_SEGMENTATION_API_DOMAIN =
+      "firebasesegmentation.googleapis.com";
+  private static final String UPDATE_REQUEST_RESOURCE_NAME_FORMAT =
+      "projects/%s/installations/%s/customSegmentationData";
+  private static final String CLEAR_REQUEST_RESOURCE_NAME_FORMAT =
+      "projects/%s/installations/%s/customSegmentationData:clear";
+  private static final String FIREBASE_SEGMENTATION_API_VERSION = "v1alpha";
+
+  private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
+  private static final String JSON_CONTENT_TYPE = "application/json";
+  private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
+  private static final String GZIP_CONTENT_ENCODING = "gzip";
 
   public enum Code {
     OK,
 
-    SERVER_INTERNAL_ERROR,
+    HTTP_CLIENT_ERROR,
 
-    ALREADY_EXISTS,
+    CONFLICT,
 
-    PERMISSION_DENIED
+    NETWORK_ERROR,
+
+    SERVER_ERROR,
+
+    UNAUTHORIZED,
   }
 
-  public SegmentationServiceClient() {
-    httpClient = new OkHttpClient();
-    httpRequestExecutor = Executors.newFixedThreadPool(4);
-  }
-
-  public Task<Code> updateCustomInstallationId(
+  @NonNull
+  public Code updateCustomInstallationId(
       long projectNumber,
-      String customInstallationId,
-      String firebaseInstanceId,
-      String firebaseInstanceIdToken) {
-    return Tasks.forResult(Code.OK);
+      @NonNull String apiKey,
+      @NonNull String customInstallationId,
+      @NonNull String firebaseInstanceId,
+      @NonNull String firebaseInstanceIdToken) {
+    String resourceName =
+        String.format(UPDATE_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, firebaseInstanceId);
+    try {
+      URL url =
+          new URL(
+              String.format(
+                  "https://%s/%s/%s?key=%s",
+                  FIREBASE_SEGMENTATION_API_DOMAIN,
+                  FIREBASE_SEGMENTATION_API_VERSION,
+                  resourceName,
+                  apiKey));
+
+      HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+      httpsURLConnection.setDoOutput(true);
+      httpsURLConnection.setRequestMethod("PATCH");
+      httpsURLConnection.addRequestProperty(
+          "Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken);
+      httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+      httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+      GZIPOutputStream gzipOutputStream =
+          new GZIPOutputStream(httpsURLConnection.getOutputStream());
+      try {
+        gzipOutputStream.write(
+            buildUpdateCustomSegmentationDataRequestBody(resourceName, customInstallationId)
+                .toString()
+                .getBytes("UTF-8"));
+      } catch (JSONException e) {
+        throw new IllegalStateException(e);
+      } finally {
+        gzipOutputStream.close();
+      }
+
+      int httpResponseCode = httpsURLConnection.getResponseCode();
+      switch (httpResponseCode) {
+        case 200:
+          return Code.OK;
+        case 401:
+          return Code.UNAUTHORIZED;
+        case 409:
+          return Code.CONFLICT;
+        default:
+          return Code.SERVER_ERROR;
+      }
+    } catch (IOException e) {
+      return Code.NETWORK_ERROR;
+    }
   }
 
-  public Task<Code> clearCustomInstallationId(
-      long projectNumber, String firebaseInstanceId, String firebaseInstanceIdToken) {
-    return Tasks.forResult(Code.OK);
+  private static JSONObject buildUpdateCustomSegmentationDataRequestBody(
+      String resourceName, String customInstallationId) throws JSONException {
+    JSONObject customSegmentationData = new JSONObject();
+    customSegmentationData.put("name", resourceName);
+    customSegmentationData.put("custom_installation_id", customInstallationId);
+    return customSegmentationData;
+  }
+
+  @NonNull
+  public Code clearCustomInstallationId(
+      long projectNumber,
+      @NonNull String apiKey,
+      @NonNull String firebaseInstanceId,
+      @NonNull String firebaseInstanceIdToken) {
+    String resourceName =
+        String.format(CLEAR_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, firebaseInstanceId);
+    try {
+      URL url =
+          new URL(
+              String.format(
+                  "https://%s/%s/%s?key=%s",
+                  FIREBASE_SEGMENTATION_API_DOMAIN,
+                  FIREBASE_SEGMENTATION_API_VERSION,
+                  resourceName,
+                  apiKey));
+
+      HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+      httpsURLConnection.setDoOutput(true);
+      httpsURLConnection.setRequestMethod("POST");
+      httpsURLConnection.addRequestProperty(
+          "Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken);
+      httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+      httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+      GZIPOutputStream gzipOutputStream =
+          new GZIPOutputStream(httpsURLConnection.getOutputStream());
+      try {
+        gzipOutputStream.write(
+            buildClearCustomSegmentationDataRequestBody(resourceName).toString().getBytes("UTF-8"));
+      } catch (JSONException e) {
+        throw new IllegalStateException(e);
+      } finally {
+        gzipOutputStream.close();
+      }
+
+      int httpResponseCode = httpsURLConnection.getResponseCode();
+      switch (httpResponseCode) {
+        case 200:
+          return Code.OK;
+        case 401:
+          return Code.UNAUTHORIZED;
+        default:
+          return Code.SERVER_ERROR;
+      }
+    } catch (IOException e) {
+      return Code.NETWORK_ERROR;
+    }
+  }
+
+  private static JSONObject buildClearCustomSegmentationDataRequestBody(String resourceName)
+      throws JSONException {
+    return new JSONObject().put("name", resourceName);
   }
 }
