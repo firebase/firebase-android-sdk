@@ -29,7 +29,7 @@ public abstract class FieldValue {
   FieldValue() {}
 
   /**
-   * Returns the method name (e.g. "FieldValue.delete") that was used to create this {@code
+   * Returns the method name (for example, "FieldValue.delete") that was used to create this {@code
    * FieldValue} instance, for use in error messages, etc.
    */
   abstract String getMethodName();

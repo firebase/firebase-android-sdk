@@ -112,7 +112,7 @@ public class DocumentChange {
 
   /**
    * The index of the changed document in the result set immediately prior to this {@code
-   * DocumentChange} (i.e. supposing that all prior {@code DocumentChange} objects have been
+   * DocumentChange} (assuming that all prior {@code DocumentChange} objects have been
    * applied). Returns -1 for 'added' events.
    */
   @PublicApi
@@ -122,7 +122,7 @@ public class DocumentChange {
 
   /**
    * The index of the changed document in the result set immediately after this {@code
-   * DocumentChange} (i.e. supposing that all prior {@code DocumentChange} objects and the current
+   * DocumentChange} (assuming that all prior {@code DocumentChange} objects and the current
    * {@code DocumentChange} object have been applied). Returns -1 for 'removed' events.
    */
   @PublicApi

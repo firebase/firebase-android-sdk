@@ -149,8 +149,8 @@ public final class SQLitePersistence extends Persistence {
               + " app. Keep in mind that multi-process Android apps execute the code in your"
               + " Application class in all processes, so you may need to avoid initializing"
               + " Cloud Firestore in your Application class. If you are intentionally using Cloud"
-              + " Firestore from multiple processes, you can only enable offline persistence (i.e. "
-              + " call setPersistenceEnabled(true)) in one of them.",
+              + " Firestore from multiple processes, you can only enable offline persistence (that"
+              + " is, call setPersistenceEnabled(true)) in one of them.",
           e);
     }
     queryCache.start();

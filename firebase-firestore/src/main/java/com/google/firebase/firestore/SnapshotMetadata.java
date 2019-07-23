@@ -35,7 +35,7 @@ public class SnapshotMetadata {
   }
 
   /**
-   * @return true if the snapshot contains the result of local writes (e.g. {@code set()} or {@code
+   * @return true if the snapshot contains the result of local writes (for example, {@code set()} or {@code
    *     update()} calls) that have not yet been committed to the backend. If your listener has
    *     opted into metadata updates (via {@link MetadataChanges#INCLUDE}) you will receive another
    *     snapshot with {@code hasPendingWrites()} equal to false once the writes have been committed
