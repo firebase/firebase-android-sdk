@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LocalViewChanges;
@@ -38,6 +39,7 @@ import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
+import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.TargetChange;
@@ -262,6 +264,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
             asyncQueue.getExecutor(),
             userTask -> {
               if (!userTask.isSuccessful()) {
+                if (retries > 0 && isRetryableTransactionError(userTask.getException())) {
+                  return transaction(asyncQueue, updateFunction, retries - 1);
+                }
                 return userTask;
               }
               return transaction
@@ -272,11 +277,11 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
                         if (commitTask.isSuccessful()) {
                           return Tasks.forResult(userTask.getResult());
                         }
-                        // TODO: Only retry on real transaction failures.
-                        if (retries == 0) {
-                          return Tasks.forException(commitTask.getException());
+                        Exception e = commitTask.getException();
+                        if (retries > 0 && isRetryableTransactionError(e)) {
+                          return transaction(asyncQueue, updateFunction, retries - 1);
                         }
-                        return transaction(asyncQueue, updateFunction, retries - 1);
+                        return Tasks.forException(e);
                       });
             });
   }
@@ -587,6 +592,18 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       return true;
     }
 
+    return false;
+  }
+
+  private boolean isRetryableTransactionError(Exception e) {
+    if (e instanceof FirebaseFirestoreException) {
+      // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION and
+      // non-matching document versions with ABORTED. These errors should be retried.
+      FirebaseFirestoreException.Code code = ((FirebaseFirestoreException) e).getCode();
+      return code == FirebaseFirestoreException.Code.ABORTED
+          || code == FirebaseFirestoreException.Code.FAILED_PRECONDITION
+          || !Datastore.isPermanentError(((FirebaseFirestoreException) e).getCode());
+    }
     return false;
   }
 }
