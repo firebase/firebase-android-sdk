@@ -20,7 +20,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
-import okhttp3.OkHttpClient;
 
 /**
  * Entry point for Firebase Installations.
@@ -35,14 +34,11 @@ import okhttp3.OkHttpClient;
  */
 public class FirebaseInstallations implements FirebaseInstallationsApi {
 
-  private final OkHttpClient httpClient;
-
   private final FirebaseApp firebaseApp;
 
   /** package private constructor. */
   FirebaseInstallations(FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
-    httpClient = new OkHttpClient();
   }
 
   /**
@@ -81,8 +77,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   /** Returns a auth token(public key) of this Firebase app installation. */
   @NonNull
   @Override
-  public Task<String> getAuthToken() {
-    return Tasks.forResult("dummy_auth_token");
+  public Task<InstallationTokenResult> getAuthToken(boolean forceRefresh) {
+    return Tasks.forResult(new InstallationTokenResult("dummy_auth_token", 1000l));
   }
 
   /**
