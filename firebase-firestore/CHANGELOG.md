@@ -1,4 +1,11 @@
 # Unreleased
+- [changed] Transactions are now more flexible. Some sequences of operations
+  that were previously incorrectly disallowed are now allowed. For example,
+  after reading a document that doesn't exist, you can now set it multiple
+  times successfully in a transaction.
+- [fixed] Fixed an issue where query results were temporarily missing documents
+  that previously had not matched but had been updated to now match the
+  query (#155).
 
 # 20.2.0
 - [feature] Added a `@DocumentId` annotation which can be used on a

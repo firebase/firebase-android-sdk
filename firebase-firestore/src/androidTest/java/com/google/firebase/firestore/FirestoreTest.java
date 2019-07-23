@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provide
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirebaseApp;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -38,6 +40,7 @@ import static org.junit.Assert.fail;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.Query.Direction;
@@ -1022,5 +1025,75 @@ public class FirestoreTest {
     Exception e = transactionTask.getException();
     FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
     assertEquals(Code.FAILED_PRECONDITION, firestoreException.getCode());
+  }
+
+  @Test
+  public void testRestartFirestoreLeadsToNewInstance() {
+    FirebaseApp app = testFirebaseApp();
+    FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
+    FirebaseFirestore sameInstance = FirebaseFirestore.getInstance(app);
+
+    assertSame(instance, sameInstance);
+    waitFor(instance.document("abc/123").set(Collections.singletonMap("field", 100L)));
+
+    instance.shutdown();
+    FirebaseFirestore newInstance = FirebaseFirestore.getInstance(app);
+
+    // Verify new instance works.
+    DocumentSnapshot doc = waitFor(newInstance.document("abc/123").get());
+    assertEquals(doc.get("field"), 100L);
+    waitFor(newInstance.document("abc/123").delete());
+
+    // Verify it is different instance.
+    assertNotSame(instance, newInstance);
+  }
+
+  @Test
+  public void testAppDeleteLeadsToFirestoreShutdown() {
+    FirebaseApp app = testFirebaseApp();
+    FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
+    waitFor(instance.document("abc/123").set(Collections.singletonMap("Field", 100)));
+
+    app.delete();
+
+    assertTrue(instance.getClient().isShutdown());
+  }
+
+  @Test
+  public void testNewOperationThrowsAfterFirestoreShutdown() {
+    FirebaseFirestore instance = testFirestore();
+    DocumentReference reference = instance.document("abc/123");
+    waitFor(reference.set(Collections.singletonMap("Field", 100)));
+
+    instance.shutdown();
+
+    final String expectedMessage = "The client has already been shutdown";
+    expectError(() -> waitFor(reference.get()), expectedMessage);
+    expectError(() -> waitFor(reference.update("Field", 1)), expectedMessage);
+    expectError(
+        () -> waitFor(reference.set(Collections.singletonMap("Field", 1))), expectedMessage);
+    expectError(
+        () -> waitFor(instance.runBatch((batch) -> batch.update(reference, "Field", 1))),
+        expectedMessage);
+    expectError(
+        () -> waitFor(instance.runTransaction(transaction -> transaction.get(reference))),
+        expectedMessage);
+  }
+
+  @Test
+  public void testShutdownCalledMultipleTimes() {
+    FirebaseFirestore instance = testFirestore();
+    DocumentReference reference = instance.document("abc/123");
+    waitFor(reference.set(Collections.singletonMap("Field", 100)));
+
+    instance.shutdown();
+
+    final String expectedMessage = "The client has already been shutdown";
+    expectError(() -> waitFor(reference.get()), expectedMessage);
+
+    // Calling a second time should go through and change nothing.
+    instance.shutdown();
+
+    expectError(() -> waitFor(reference.get()), expectedMessage);
   }
 }

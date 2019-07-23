@@ -545,36 +545,6 @@ public class TestUtil {
     return ByteString.copyFrom(contents, Charsets.UTF_8);
   }
 
-  /**
-   * An implementation of TargetMetadataProvider that provides controlled access to the
-   * `TargetMetadataProvider` callbacks. Any target accessed via these callbacks must be registered
-   * beforehand via `setSyncedKeys()`.
-   */
-  public static class TestTargetMetadataProvider
-      implements WatchChangeAggregator.TargetMetadataProvider {
-    final Map<Integer, ImmutableSortedSet<DocumentKey>> syncedKeys = new HashMap<>();
-    final Map<Integer, QueryData> queryData = new HashMap<>();
-
-    @Override
-    public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
-      return syncedKeys.get(targetId) != null
-          ? syncedKeys.get(targetId)
-          : DocumentKey.emptyKeySet();
-    }
-
-    @androidx.annotation.Nullable
-    @Override
-    public QueryData getQueryDataForTarget(int targetId) {
-      return queryData.get(targetId);
-    }
-
-    /** Sets or replaces the local state for the provided query data. */
-    public void setSyncedKeys(QueryData queryData, ImmutableSortedSet<DocumentKey> keys) {
-      this.queryData.put(queryData.getTargetId(), queryData);
-      this.syncedKeys.put(queryData.getTargetId(), keys);
-    }
-  }
-
   private static Map<String, Object> fromJsonString(String json) {
     try {
       ObjectMapper mapper = new ObjectMapper();
