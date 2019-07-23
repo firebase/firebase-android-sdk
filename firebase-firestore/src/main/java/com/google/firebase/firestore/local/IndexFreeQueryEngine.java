@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -25,17 +27,25 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 public class IndexFreeQueryEngine implements QueryEngine {
-  private final LocalDocumentsView localDocumentsView;
-  private final QueryCache queryCache;
+  private LocalDocumentsView localDocumentsView;
+  private QueryCache queryCache;
 
-  public IndexFreeQueryEngine(LocalDocumentsView localDocumentsView, QueryCache queryCache) {
-    this.localDocumentsView = localDocumentsView;
+  @Override
+  public void setQueryCache(QueryCache queryCache) {
     this.queryCache = queryCache;
+  }
+
+  @Override
+  public void setLocalDocumentsView(LocalDocumentsView localDocuments) {
+    this.localDocumentsView = localDocuments;
   }
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, @Nullable QueryData queryData) {
+    hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
+    hardAssert(queryCache != null, "setQueryCache() not called");
+
     if (isSynced(queryData) && !matchesAllDocuments(query)) {
       // Retrieve all results for documents that were updated since the last remote snapshot.
       ImmutableSortedMap<DocumentKey, Document> docs =

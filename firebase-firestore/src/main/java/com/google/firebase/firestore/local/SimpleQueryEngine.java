@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -28,15 +30,25 @@ import javax.annotation.Nullable;
  */
 public class SimpleQueryEngine implements QueryEngine {
 
-  private final LocalDocumentsView localDocumentsView;
+  private LocalDocumentsView localDocumentsView;
 
-  public SimpleQueryEngine(LocalDocumentsView localDocumentsView) {
-    this.localDocumentsView = localDocumentsView;
+  public SimpleQueryEngine() {}
+
+  @Override
+  public void setQueryCache(QueryCache queryCache) {
+    // Unused.
+  }
+
+  @Override
+  public void setLocalDocumentsView(LocalDocumentsView localDocuments) {
+    this.localDocumentsView = localDocuments;
   }
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, @Nullable QueryData queryData) {
+    hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
+
     // TODO: Once LocalDocumentsView provides a getCollectionDocuments() method, we
     // should call that here and then filter the results.
     return localDocumentsView.getDocumentsMatchingQuery(query, SnapshotVersion.NONE);

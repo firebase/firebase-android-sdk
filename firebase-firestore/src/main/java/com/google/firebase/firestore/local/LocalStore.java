@@ -124,7 +124,7 @@ public final class LocalStore {
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
 
-  public LocalStore(Persistence persistence, User initialUser) {
+  public LocalStore(Persistence persistence, QueryEngine queryEngine, User initialUser) {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
@@ -134,8 +134,10 @@ public final class LocalStore {
     remoteDocuments = persistence.getRemoteDocumentCache();
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-    // TODO: Use IndexedQueryEngine as appropriate.
-    queryEngine = new SimpleQueryEngine(localDocuments);
+
+    this.queryEngine = queryEngine;
+    queryEngine.setQueryCache(queryCache);
+    queryEngine.setLocalDocumentsView(localDocuments);
 
     localViewReferences = new ReferenceSet();
     persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
@@ -169,8 +171,7 @@ public final class LocalStore {
     // Recreate our LocalDocumentsView using the new MutationQueue.
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-    // TODO: Use IndexedQueryEngine as appropriate.
-    queryEngine = new SimpleQueryEngine(localDocuments);
+    queryEngine.setLocalDocumentsView(localDocuments);
 
     // Union the old/new changed keys.
     ImmutableSortedSet<DocumentKey> changedKeys = DocumentKey.emptyKeySet();

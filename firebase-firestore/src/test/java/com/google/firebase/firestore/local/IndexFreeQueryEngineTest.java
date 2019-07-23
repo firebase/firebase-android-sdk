@@ -79,7 +79,9 @@ public class IndexFreeQueryEngineTest {
     documentsInQueryByKey.clear();
     documentsUpdatedSinceQueryByKey.clear();
 
-    queryEngine = new IndexFreeQueryEngine(localDocumentsView, queryCache);
+    queryEngine = new IndexFreeQueryEngine();
+    queryEngine.setLocalDocumentsView(localDocumentsView);
+    queryEngine.setQueryCache(queryCache);
 
     doAnswer(
             getMatchingKeysForTargetIdInvocation -> {

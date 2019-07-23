@@ -24,6 +24,7 @@ import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
+import com.google.firebase.firestore.local.SimpleQueryEngine;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
@@ -72,9 +73,10 @@ public class RemoteStoreTest {
         };
 
     FakeConnectivityMonitor connectivityMonitor = new FakeConnectivityMonitor();
+    SimpleQueryEngine queryEngine = new SimpleQueryEngine();
     Persistence persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     persistence.start();
-    LocalStore localStore = new LocalStore(persistence, User.UNAUTHENTICATED);
+    LocalStore localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
     RemoteStore remoteStore =
         new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
 

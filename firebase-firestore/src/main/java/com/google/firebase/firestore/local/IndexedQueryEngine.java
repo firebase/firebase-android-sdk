@@ -88,18 +88,28 @@ public class IndexedQueryEngine implements QueryEngine {
   private static final List<Class> lowCardinalityTypes =
       Arrays.asList(BooleanValue.class, ArrayValue.class, ObjectValue.class);
 
-  private final LocalDocumentsView localDocuments;
   private final SQLiteCollectionIndex collectionIndex;
+  private LocalDocumentsView localDocuments;
 
-  public IndexedQueryEngine(
-      LocalDocumentsView localDocuments, SQLiteCollectionIndex collectionIndex) {
-    this.localDocuments = localDocuments;
+  public IndexedQueryEngine(SQLiteCollectionIndex collectionIndex) {
     this.collectionIndex = collectionIndex;
+  }
+
+  @Override
+  public void setQueryCache(QueryCache queryCache) {
+    // Unused.
+  }
+
+  @Override
+  public void setLocalDocumentsView(LocalDocumentsView localDocuments) {
+    this.localDocuments = localDocuments;
   }
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, @Nullable QueryData queryData) {
+    hardAssert(localDocuments != null, "setLocalDocumentsView() not called");
+
     return query.isDocumentQuery()
         ? localDocuments.getDocumentsMatchingQuery(query, SnapshotVersion.NONE)
         : performCollectionQuery(query);

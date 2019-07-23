@@ -37,7 +37,9 @@ import com.google.firebase.firestore.local.LruDelegate;
 import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
+import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.SQLitePersistence;
+import com.google.firebase.firestore.local.SimpleQueryEngine;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -251,7 +253,9 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     }
 
     persistence.start();
-    localStore = new LocalStore(persistence, user);
+    // TODO: Use IndexFreeQueryEngine/IndexedQueryEngine as appropriate.
+    QueryEngine queryEngine = new SimpleQueryEngine();
+    localStore = new LocalStore(persistence, queryEngine, user);
     if (gc != null) {
       lruScheduler = gc.newScheduler(asyncQueue, localStore);
       lruScheduler.start();

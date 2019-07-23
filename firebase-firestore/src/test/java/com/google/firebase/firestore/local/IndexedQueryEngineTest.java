@@ -69,7 +69,8 @@ public class IndexedQueryEngineTest {
     remoteDocuments = persistence.getRemoteDocumentCache();
     LocalDocumentsView localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-    queryEngine = new IndexedQueryEngine(localDocuments, index);
+    queryEngine = new IndexedQueryEngine(index);
+    queryEngine.setLocalDocumentsView(localDocuments);
   }
 
   private void addDocument(Document newDoc) {
