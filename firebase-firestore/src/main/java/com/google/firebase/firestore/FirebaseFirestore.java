@@ -366,7 +366,7 @@ public class FirebaseFirestore {
    * combination with {@link #clearPersistence} to ensure that all local state is destroyed between
    * test runs.
    *
-   * @return A <code>Task</code> that is resolved when the instance has been successfully shut down.
+   * @return A {@code Task} that is resolved when the instance has been successfully shut down.
    */
   @VisibleForTesting
   // TODO(b/135755126): Make this public and remove @VisibleForTesting
@@ -420,8 +420,8 @@ public class FirebaseFirestore {
    * <p>Must be called while the {@code FirebaseFirestore} instance is not started (after the app is
    * shutdown or when the app is first initialized). On startup, this method must be called before
    * other methods (other than {@link #setFirestoreSettings()}). If the {@code FirebaseFirestore}
-   * instance is still running, the <code>Task</code> will fail with an error code of <code>
-   *  FAILED_PRECONDITION</code>.
+   * instance is still running, the {@code Task} will fail with an error code of {@code
+   * FAILED_PRECONDITION}.
    *
    * <p>Note: {@code clearPersistence()} is primarily intended to help write reliable tests that use
    * Cloud Firestore. It uses an efficient mechanism for dropping existing data but does not attempt
@@ -429,8 +429,8 @@ public class FirebaseFirestore {
    * sensitive to the disclosure of cached data in between user sessions, we strongly recommend not
    * enabling persistence at all.
    *
-   * @return A <code>Task</code> that is resolved when the persistent storage is cleared. Otherwise,
-   *     the <code>Task</code> is rejected with an error.
+   * @return A {@code Task} that is resolved when the persistent storage is cleared. Otherwise, the
+   *     {@code Task} is rejected with an error.
    */
   @PublicApi
   public Task<Void> clearPersistence() {

@@ -350,8 +350,7 @@ public final class SQLitePersistence extends Persistence {
   }
 
   /**
-   * Execute the given non-query SQL statement. Equivalent to <code>execute(prepare(sql), args)
-   * </code>.
+   * Execute the given non-query SQL statement. Equivalent to {@code execute(prepare(sql), args)}.
    */
   void execute(String sql, Object... args) {
     // Note that unlike db.query and friends, execSQL already takes Object[] bindArgs so there's no
