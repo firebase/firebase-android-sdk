@@ -301,15 +301,17 @@ public class UserData {
       }
     }
 
-    private static final String RESERVED = "__";
+    private static final String RESERVED_FIELD_DESIGNATOR = "__";
 
     private void validatePathSegment(String segment) {
       if (segment.isEmpty()) {
         throw this.createError("Document fields must not be empty");
       }
 
-      if (isWrite() && segment.startsWith(RESERVED) && segment.endsWith(RESERVED)) {
-        throw this.createError("Document fields cannot begin or end with \"__\"");
+      if (isWrite()
+          && segment.startsWith(RESERVED_FIELD_DESIGNATOR)
+          && segment.endsWith(RESERVED_FIELD_DESIGNATOR)) {
+        throw this.createError("Document fields cannot begin and end with \"__\"");
       }
     }
   }

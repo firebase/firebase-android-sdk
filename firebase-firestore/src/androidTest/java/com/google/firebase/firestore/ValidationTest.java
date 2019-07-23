@@ -245,20 +245,20 @@ public class ValidationTest {
 
     expectWriteError(
         map("__baz__", 1),
-        "Invalid data. Document fields cannot begin or end with \"__\" (found in field __baz__)");
+        "Invalid data. Document fields cannot begin and end with \"__\" (found in field __baz__)");
     expectWriteError(
         map("foo", map("__baz__", 1)),
-        "Invalid data. Document fields cannot begin or end with \"__\" (found in field foo.__baz__)");
+        "Invalid data. Document fields cannot begin and end with \"__\" (found in field foo.__baz__)");
     expectWriteError(
         map("__baz__", map("foo", 1)),
-        "Invalid data. Document fields cannot begin or end with \"__\" (found in field __baz__)");
+        "Invalid data. Document fields cannot begin and end with \"__\" (found in field __baz__)");
 
     expectUpdateError(
         map("__baz__", 1),
-        "Invalid data. Document fields cannot begin or end with \"__\" (found in field __baz__)");
+        "Invalid data. Document fields cannot begin and end with \"__\" (found in field __baz__)");
     expectUpdateError(
         map("baz.__foo__", 1),
-        "Invalid data. Document fields cannot begin or end with \"__\" (found in field baz.__foo__)");
+        "Invalid data. Document fields cannot begin and end with \"__\" (found in field baz.__foo__)");
   }
 
   @Test
@@ -782,8 +782,7 @@ public class ValidationTest {
    * Performs a write using each set and/or update API and makes sure it fails with the expected
    * reason.
    */
-  private static void expectWriteSuccess(
-      Object data, boolean includeSets, boolean includeUpdates) {
+  private static void expectWriteSuccess(Object data, boolean includeSets, boolean includeUpdates) {
     DocumentReference ref = testDocument();
 
     if (includeSets) {
