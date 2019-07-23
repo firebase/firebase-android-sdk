@@ -25,6 +25,7 @@ import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Executors;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -142,6 +143,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
+    Timestamp updateTime = sinceUpdateTime.getTimestamp();
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
 
@@ -152,8 +154,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     int rowsProcessed =
         db.query(
                 "SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ? "
-                    + "AND (snapshot_version_micros > ? OR snapshot_version_micros IS NULL)")
-            .binding(prefixPath, prefixSuccessorPath, sinceUpdateTime.toMicroseconds())
+                    + "AND (update_time_seconds IS NULL OR update_time_seconds > ? "
+                    + "OR (update_time_seconds = ? AND update_time_nanos > ?))")
+            .binding(
+                prefixPath,
+                prefixSuccessorPath,
+                updateTime.getSeconds(),
+                updateTime.getSeconds(),
+                updateTime.getNanoseconds())
             .forEach(
                 row -> {
                   // TODO: Actually implement a single-collection query
