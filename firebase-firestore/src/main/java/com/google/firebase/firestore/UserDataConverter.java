@@ -241,8 +241,8 @@ public final class UserDataConverter {
    * @param input Data to be parsed.
    * @param context A context object representing the current path being parsed, the source of the
    *     data being parsed, etc.
-   * @return The parsed value, or {@code null} if the value was a FieldValue sentinel that should not be
-   *     included in the resulting parsed data.
+   * @return The parsed value, or {@code null} if the value was a FieldValue sentinel that should
+   *     not be included in the resulting parsed data.
    */
   @Nullable
   private FieldValue parseData(Object input, ParseContext context) {
@@ -380,8 +380,8 @@ public final class UserDataConverter {
   /**
    * Helper to parse a scalar value (i.e. not a Map or List)
    *
-   * @return The parsed value, or {@code null} if the value was a FieldValue sentinel that should not be
-   *     included in the resulting parsed data.
+   * @return The parsed value, or {@code null} if the value was a FieldValue sentinel that should
+   *     not be included in the resulting parsed data.
    */
   @Nullable
   private FieldValue parseScalarValue(Object input, ParseContext context) {

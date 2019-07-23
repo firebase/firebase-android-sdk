@@ -22,8 +22,8 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation used to mark a timestamp field to be populated with a server timestamp. If a POJO
- * being written contains {@code null} for a @ServerTimestamp-annotated field, it will be replaced with a
- * server-generated timestamp.
+ * being written contains {@code null} for a @ServerTimestamp-annotated field, it will be replaced
+ * with a server-generated timestamp.
  */
 @PublicApi
 @Retention(RetentionPolicy.RUNTIME)

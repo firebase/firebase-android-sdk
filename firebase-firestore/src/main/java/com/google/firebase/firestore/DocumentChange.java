@@ -112,8 +112,8 @@ public class DocumentChange {
 
   /**
    * The index of the changed document in the result set immediately prior to this {@code
-   * DocumentChange} (assuming that all prior {@code DocumentChange} objects have been
-   * applied). Returns -1 for 'added' events.
+   * DocumentChange} (assuming that all prior {@code DocumentChange} objects have been applied).
+   * Returns -1 for 'added' events.
    */
   @PublicApi
   public int getOldIndex() {
@@ -122,8 +122,8 @@ public class DocumentChange {
 
   /**
    * The index of the changed document in the result set immediately after this {@code
-   * DocumentChange} (assuming that all prior {@code DocumentChange} objects and the current
-   * {@code DocumentChange} object have been applied). Returns -1 for 'removed' events.
+   * DocumentChange} (assuming that all prior {@code DocumentChange} objects and the current {@code
+   * DocumentChange} object have been applied). Returns -1 for 'removed' events.
    */
   @PublicApi
   public int getNewIndex() {

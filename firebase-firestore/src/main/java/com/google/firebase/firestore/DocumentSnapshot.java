@@ -150,8 +150,8 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the fields of the document as a Map or {@code null} if the document doesn't exist. Field values
-   * will be converted to their native Java representation.
+   * Returns the fields of the document as a Map or {@code null} if the document doesn't exist.
+   * Field values will be converted to their native Java representation.
    *
    * @return The fields of the document as a Map or {@code null} if the document doesn't exist.
    */
@@ -162,8 +162,8 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the fields of the document as a Map or {@code null} if the document doesn't exist. Field values
-   * will be converted to their native Java representation.
+   * Returns the fields of the document as a Map or {@code null} if the document doesn't exist.
+   * Field values will be converted to their native Java representation.
    *
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
@@ -184,11 +184,12 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the contents of the document converted to a POJO or {@code null} if the document doesn't exist.
+   * Returns the contents of the document converted to a POJO or {@code null} if the document
+   * doesn't exist.
    *
    * @param valueType The Java class to create
-   * @return The contents of the document in an object of type T or {@code null} if the document doesn't
-   *     exist.
+   * @return The contents of the document in an object of type T or {@code null} if the document
+   *     doesn't exist.
    */
   @Nullable
   @PublicApi
@@ -197,13 +198,14 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the contents of the document converted to a POJO or {@code null} if the document doesn't exist.
+   * Returns the contents of the document converted to a POJO or {@code null} if the document
+   * doesn't exist.
    *
    * @param valueType The Java class to create
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
-   * @return The contents of the document in an object of type T or {@code null} if the document doesn't
-   *     exist.
+   * @return The contents of the document in an object of type T or {@code null} if the document
+   *     doesn't exist.
    */
   @Nullable
   @PublicApi
@@ -305,8 +307,8 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document doesn't
-   * exist.
+   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document
+   * doesn't exist.
    *
    * @param field The path to the field
    * @param valueType The Java class to convert the field value to.
@@ -319,8 +321,8 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document doesn't
-   * exist.
+   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document
+   * doesn't exist.
    *
    * @param field The path to the field
    * @param valueType The Java class to convert the field value to.
@@ -338,8 +340,8 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document doesn't
-   * exist.
+   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document
+   * doesn't exist.
    *
    * @param fieldPath The path to the field
    * @param valueType The Java class to convert the field value to.
@@ -352,8 +354,8 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document doesn't
-   * exist.
+   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document
+   * doesn't exist.
    *
    * @param fieldPath The path to the field
    * @param valueType The Java class to convert the field value to.
