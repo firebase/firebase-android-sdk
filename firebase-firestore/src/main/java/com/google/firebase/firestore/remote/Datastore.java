@@ -189,8 +189,18 @@ public class Datastore {
    * @see #isPermanentWriteError for classifying write errors.
    */
   public static boolean isPermanentError(Status status) {
+    return isPermanentError(FirebaseFirestoreException.Code.fromValue(status.getCode().value()));
+  }
+
+  /**
+   * Determines whether the given error code represents a permanent error when received in response
+   * to a non-write operation.
+   *
+   * @see #isPermanentWriteError for classifying write errors.
+   */
+  public static boolean isPermanentError(FirebaseFirestoreException.Code code) {
     // See go/firestore-client-errors
-    switch (status.getCode()) {
+    switch (code) {
       case OK:
         throw new IllegalArgumentException("Treated status OK as error");
       case CANCELLED:
@@ -217,7 +227,7 @@ public class Datastore {
       case DATA_LOSS:
         return true;
       default:
-        throw new IllegalArgumentException("Unknown gRPC status code: " + status.getCode());
+        throw new IllegalArgumentException("Unknown gRPC status code: " + code);
     }
   }
 
