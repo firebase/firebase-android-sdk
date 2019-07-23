@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -52,16 +53,18 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public void add(MaybeDocument maybeDocument) {
     String path = pathForKey(maybeDocument.getKey());
-    SnapshotVersion snapshotVersion = maybeDocument.getVersion();
+    Timestamp timestamp = maybeDocument.getVersion().getTimestamp();
     MessageLite message = serializer.encodeMaybeDocument(maybeDocument);
 
     statsCollector.recordRowsWritten(STATS_TAG, 1);
 
     db.execute(
-        "INSERT OR REPLACE INTO remote_documents (path, snapshot_version_micros, contents) "
-            + "VALUES (?, ?, ?)",
+        "INSERT OR REPLACE INTO remote_documents "
+            + "(path, update_time_seconds, update_time_nanos, contents) "
+            + "VALUES (?, ?, ?, ?)",
         path,
-        snapshotVersion.toMicroseconds(),
+        timestamp.getSeconds(),
+        timestamp.getNanoseconds(),
         message.toByteArray());
 
     db.getIndexManager().addToCollectionParentIndex(maybeDocument.getKey().getPath().popLast());
@@ -140,6 +143,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
+    Timestamp updateTime = sinceUpdateTime.getTimestamp();
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
 
@@ -150,8 +154,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     int rowsProcessed =
         db.query(
                 "SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ? "
-                    + "AND (snapshot_version_micros > ? OR snapshot_version_micros IS NULL)")
-            .binding(prefixPath, prefixSuccessorPath, sinceUpdateTime.toMicroseconds())
+                    + "AND (update_time_seconds IS NULL OR update_time_seconds > ? "
+                    + "OR (update_time_seconds = ? AND update_time_nanos > ?))")
+            .binding(
+                prefixPath,
+                prefixSuccessorPath,
+                updateTime.getSeconds(),
+                updateTime.getSeconds(),
+                updateTime.getNanoseconds())
             .forEach(
                 row -> {
                   // TODO: Actually implement a single-collection query
