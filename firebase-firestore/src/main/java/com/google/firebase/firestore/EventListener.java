@@ -23,10 +23,10 @@ public interface EventListener<T> {
 
   /**
    * {@code onEvent} will be called with the new value or the error if an error occurred. It's
-   * guaranteed that exactly one of value or error will be non-null.
+   * guaranteed that exactly one of value or error will be non-{@code null}.
    *
-   * @param value The value of the event. null if there was an error.
-   * @param error The error if there was error. null otherwise.
+   * @param value The value of the event. {@code null} if there was an error.
+   * @param error The error if there was error. {@code null} otherwise.
    */
   @PublicApi
   void onEvent(@Nullable T value, @Nullable FirebaseFirestoreException error);

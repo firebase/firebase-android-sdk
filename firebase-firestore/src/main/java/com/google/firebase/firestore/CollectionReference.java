@@ -57,9 +57,9 @@ public class CollectionReference extends Query {
 
   /**
    * Gets a {@code DocumentReference} to the document that contains this collection. Only
-   * subcollections are contained in a document. For root collections, returns null.
+   * subcollections are contained in a document. For root collections, returns {@code null}.
    *
-   * @return The {@code DocumentReference} that contains this collection or null if this is a root
+   * @return The {@code DocumentReference} that contains this collection or {@code null} if this is a root
    *     collection.
    */
   @Nullable

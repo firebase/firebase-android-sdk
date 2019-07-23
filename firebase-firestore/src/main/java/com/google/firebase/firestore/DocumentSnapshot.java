@@ -42,7 +42,7 @@ import javax.annotation.Nullable;
  * The data can be extracted with the {@link #getData()} or {@link #get()} methods.
  *
  * <p>If the {@code DocumentSnapshot} points to a non-existing document, {@link #getData()} and its
- * corresponding methods will return null. You can always explicitly check for a document's
+ * corresponding methods will return {@code null}. You can always explicitly check for a document's
  * existence by calling {@link #exists()}.
  *
  * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
@@ -59,7 +59,7 @@ public class DocumentSnapshot {
   @PublicApi
   public enum ServerTimestampBehavior {
     /**
-     * Return 'null' for {@link com.google.firebase.firestore.FieldValue#serverTimestamp
+     * Return {@code null} for {@link com.google.firebase.firestore.FieldValue#serverTimestamp
      * ServerTimestamps} that have not yet been set to their final value.
      */
     NONE,
@@ -97,7 +97,7 @@ public class DocumentSnapshot {
 
   private final DocumentKey key;
 
-  /** Is null if the document doesn't exist */
+  /** Is {@code null} if the document doesn't exist */
   private final @Nullable Document doc;
 
   private final SnapshotMetadata metadata;
@@ -150,10 +150,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the fields of the document as a Map or null if the document doesn't exist. Field values
+   * Returns the fields of the document as a Map or {@code null} if the document doesn't exist. Field values
    * will be converted to their native Java representation.
    *
-   * @return The fields of the document as a Map or null if the document doesn't exist.
+   * @return The fields of the document as a Map or {@code null} if the document doesn't exist.
    */
   @Nullable
   @PublicApi
@@ -162,12 +162,12 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the fields of the document as a Map or null if the document doesn't exist. Field values
+   * Returns the fields of the document as a Map or {@code null} if the document doesn't exist. Field values
    * will be converted to their native Java representation.
    *
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
-   * @return The fields of the document as a Map or null if the document doesn't exist.
+   * @return The fields of the document as a Map or {@code null} if the document doesn't exist.
    */
   @Nullable
   @PublicApi
@@ -184,10 +184,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the contents of the document converted to a POJO or null if the document doesn't exist.
+   * Returns the contents of the document converted to a POJO or {@code null} if the document doesn't exist.
    *
    * @param valueType The Java class to create
-   * @return The contents of the document in an object of type T or null if the document doesn't
+   * @return The contents of the document in an object of type T or {@code null} if the document doesn't
    *     exist.
    */
   @Nullable
@@ -197,12 +197,12 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the contents of the document converted to a POJO or null if the document doesn't exist.
+   * Returns the contents of the document converted to a POJO or {@code null} if the document doesn't exist.
    *
    * @param valueType The Java class to create
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
-   * @return The contents of the document in an object of type T or null if the document doesn't
+   * @return The contents of the document in an object of type T or {@code null} if the document doesn't
    *     exist.
    */
   @Nullable
@@ -244,10 +244,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field or null if the field doesn't exist.
+   * Returns the value at the field or {@code null} if the field doesn't exist.
    *
    * @param field The path to the field
-   * @return The value at the given field or null.
+   * @return The value at the given field or {@code null}.
    */
   @Nullable
   @PublicApi
@@ -256,12 +256,12 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field or null if the field doesn't exist.
+   * Returns the value at the field or {@code null} if the field doesn't exist.
    *
    * @param field The path to the field
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
-   * @return The value at the given field or null.
+   * @return The value at the given field or {@code null}.
    */
   @Nullable
   @PublicApi
@@ -271,10 +271,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field or null if the field or document doesn't exist.
+   * Returns the value at the field or {@code null} if the field or document doesn't exist.
    *
    * @param fieldPath The path to the field
-   * @return The value at the given field or null.
+   * @return The value at the given field or {@code null}.
    */
   @Nullable
   @PublicApi
@@ -283,12 +283,12 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field or null if the field or document doesn't exist.
+   * Returns the value at the field or {@code null} if the field or document doesn't exist.
    *
    * @param fieldPath The path to the field
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
-   * @return The value at the given field or null.
+   * @return The value at the given field or {@code null}.
    */
   @Nullable
   @PublicApi
@@ -305,12 +305,12 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document doesn't
    * exist.
    *
    * @param field The path to the field
    * @param valueType The Java class to convert the field value to.
-   * @return The value at the given field or null.
+   * @return The value at the given field or {@code null}.
    */
   @Nullable
   @PublicApi
@@ -319,14 +319,14 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document doesn't
    * exist.
    *
    * @param field The path to the field
    * @param valueType The Java class to convert the field value to.
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
-   * @return The value at the given field or null.
+   * @return The value at the given field or {@code null}.
    */
   @Nullable
   @PublicApi
@@ -338,12 +338,12 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document doesn't
    * exist.
    *
    * @param fieldPath The path to the field
    * @param valueType The Java class to convert the field value to.
-   * @return The value at the given field or null.
+   * @return The value at the given field or {@code null}.
    */
   @Nullable
   @PublicApi
@@ -352,14 +352,14 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value at the field, converted to a POJO, or null if the field or document doesn't
+   * Returns the value at the field, converted to a POJO, or {@code null} if the field or document doesn't
    * exist.
    *
    * @param fieldPath The path to the field
    * @param valueType The Java class to convert the field value to.
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
-   * @return The value at the given field or null.
+   * @return The value at the given field or {@code null}.
    */
   @Nullable
   @PublicApi

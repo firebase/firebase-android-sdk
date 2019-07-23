@@ -1036,7 +1036,7 @@ public class Query {
   /**
    * Internal helper method to create add a snapshot listener.
    *
-   * <p>Will be Activity scoped if the activity parameter is non-null.
+   * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
    *
    * @param executor The executor to use to call the listener.
    * @param options The options to use for this listen.

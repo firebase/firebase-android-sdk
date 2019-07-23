@@ -31,7 +31,7 @@ import javax.annotation.Nullable;
  *
  * <p>{@code QueryDocumentSnapshot} offers the same API surface as {@link DocumentSnapshot}. Since
  * query results contain only existing documents, the {@link #exists()} method will always return
- * true and {@link #getData()} will never be null.
+ * true and {@link #getData()} will never be {@code null}.
  *
  * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
@@ -75,7 +75,7 @@ public class QueryDocumentSnapshot extends DocumentSnapshot {
    *
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
-   * @return The fields of the document as a Map or null if the document doesn't exist.
+   * @return The fields of the document as a Map or {@code null} if the document doesn't exist.
    */
   @NonNull
   @Override
