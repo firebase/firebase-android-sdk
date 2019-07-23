@@ -15,29 +15,24 @@
 package com.google.firebase.installations;
 
 import androidx.annotation.NonNull;
+import com.google.auto.value.AutoValue;
 
-/** A set of values describing a FIS Auth Token Result. */
-public class InstallationTokenResult {
+/** This class represents a set of values describing a FIS Auth Token Result. */
+@AutoValue
+public abstract class InstallationTokenResult {
 
   /** A new FIS Auth-Token, created for this firebase installation. */
-  private final String authToken;
+  @NonNull
+  public abstract String getAuthToken();
   /**
    * The amount of time, in milliseconds, before the auth-token expires for this firebase
    * installation.
    */
-  private final long tokenExpirationTimestampMillis;
-
-  public InstallationTokenResult(@NonNull String authToken, long tokenExpirationTimestampMillis) {
-    this.authToken = authToken;
-    this.tokenExpirationTimestampMillis = tokenExpirationTimestampMillis;
-  }
+  public abstract long getTokenExpirationTimestampMillis();
 
   @NonNull
-  public String getAuthToken() {
-    return authToken;
-  }
-
-  public long getTokenExpirationTimestampMillis() {
-    return tokenExpirationTimestampMillis;
+  public static InstallationTokenResult create(
+      @NonNull String authToken, long tokenExpirationTimestampMillis) {
+    return new AutoValue_InstallationTokenResult(authToken, tokenExpirationTimestampMillis);
   }
 }

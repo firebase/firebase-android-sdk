@@ -78,7 +78,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<InstallationTokenResult> getAuthToken(boolean forceRefresh) {
-    return Tasks.forResult(new InstallationTokenResult("dummy_auth_token", 1000l));
+    return Tasks.forResult(InstallationTokenResult.create("dummy_auth_token", 1000l));
   }
 
   /**
