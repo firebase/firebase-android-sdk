@@ -130,7 +130,7 @@ public class DocumentChange {
     return newIndex;
   }
 
-  /** Creates the list of {@code DocumentChange}s from a {@link ViewSnapshot}. */
+  /** Creates the list of {@code DocumentChange}s from a {@code ViewSnapshot}. */
   static List<DocumentChange> changesFromSnapshot(
       FirebaseFirestore firestore, MetadataChanges metadataChanges, ViewSnapshot snapshot) {
     List<DocumentChange> documentChanges = new ArrayList<>();

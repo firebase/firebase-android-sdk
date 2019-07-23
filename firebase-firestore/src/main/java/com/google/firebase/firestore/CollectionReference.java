@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 
 /**
  * A {@code CollectionReference} can be used for adding documents, getting document references, and
- * querying for documents (using the methods inherited from {@link Query}).
+ * querying for documents (using the methods inherited from {@code Query}).
  *
  * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
@@ -56,10 +56,10 @@ public class CollectionReference extends Query {
   }
 
   /**
-   * Gets a {@link DocumentReference} to the document that contains this collection. Only
+   * Gets a {@code DocumentReference} to the document that contains this collection. Only
    * subcollections are contained in a document. For root collections, returns null.
    *
-   * @return The {@link DocumentReference} that contains this collection or null if this is a root
+   * @return The {@code DocumentReference} that contains this collection or null if this is a root
    *     collection.
    */
   @Nullable
@@ -86,10 +86,10 @@ public class CollectionReference extends Query {
   }
 
   /**
-   * Returns a {@link DocumentReference} pointing to a new document with an auto-generated ID within
+   * Returns a {@code DocumentReference} pointing to a new document with an auto-generated ID within
    * this collection.
    *
-   * @return A {@link DocumentReference} pointing to a new document with an auto-generated ID.
+   * @return A {@code DocumentReference} pointing to a new document with an auto-generated ID.
    */
   @NonNull
   @PublicApi
@@ -98,11 +98,11 @@ public class CollectionReference extends Query {
   }
 
   /**
-   * Gets a {@link DocumentReference} instance that refers to the document at the specified path
+   * Gets a {@code DocumentReference} instance that refers to the document at the specified path
    * within this collection.
    *
    * @param documentPath A slash-separated relative path to a document.
-   * @return The {@link DocumentReference} instance.
+   * @return The {@code DocumentReference} instance.
    */
   @NonNull
   @PublicApi
@@ -118,7 +118,7 @@ public class CollectionReference extends Query {
    *
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
-   * @return A Task that will be resolved with the {@link DocumentReference} of the newly created
+   * @return A Task that will be resolved with the {@code DocumentReference} of the newly created
    *     document.
    */
   @NonNull

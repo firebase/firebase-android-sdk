@@ -468,7 +468,7 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a {@link com.google.firebase.Timestamp}.
+   * Returns the value of the field as a {@code com.google.firebase.Timestamp}.
    *
    * <p>This method ignores the global setting {@link
    * FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled}.
@@ -484,7 +484,7 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a {@link com.google.firebase.Timestamp}.
+   * Returns the value of the field as a {@code com.google.firebase.Timestamp}.
    *
    * <p>This method ignores the global setting {@link
    * FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled}.

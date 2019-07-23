@@ -55,10 +55,10 @@ public class WriteBatch {
   }
 
   /**
-   * Overwrites the document referred to by the provided {@link DocumentReference}. If the document
+   * Overwrites the document referred to by the provided {@code DocumentReference}. If the document
    * does not yet exist, it will be created. If a document already exists, it will be overwritten.
    *
-   * @param documentRef The {@link DocumentReference} to overwrite.
+   * @param documentRef The {@code DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
    * @return This {@code WriteBatch} instance. Used for chaining method calls.
@@ -70,11 +70,11 @@ public class WriteBatch {
   }
 
   /**
-   * Writes to the document referred to by the provided {@link DocumentReference}. If the document
-   * does not yet exist, it will be created. If you pass {@link SetOptions}, the provided data can
+   * Writes to the document referred to by the provided {@code DocumentReference}. If the document
+   * does not yet exist, it will be created. If you pass {@code SetOptions}, the provided data can
    * be merged into an existing document.
    *
-   * @param documentRef The {@link DocumentReference} to overwrite.
+   * @param documentRef The {@code DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
    * @param options An object to configure the set behavior.
@@ -97,10 +97,10 @@ public class WriteBatch {
   }
 
   /**
-   * Updates fields in the document referred to by the provided {@link DocumentReference}. If no
+   * Updates fields in the document referred to by the provided {@code DocumentReference}. If no
    * document exists yet, the update will fail.
    *
-   * @param documentRef The {@link DocumentReference} to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param data A map of field / value pairs to update. Fields can contain dots to reference nested
    *     fields within the document.
    * @return This {@code WriteBatch} instance. Used for chaining method calls.
@@ -114,10 +114,10 @@ public class WriteBatch {
   }
 
   /**
-   * Updates field in the document referred to by the provided {@link DocumentReference}. If no
+   * Updates field in the document referred to by the provided {@code DocumentReference}. If no
    * document exists yet, the update will fail.
    *
-   * @param documentRef The {@link DocumentReference} to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param field The first field to update. Fields can contain dots to reference a nested field
    *     within the document.
    * @param value The first value
@@ -141,10 +141,10 @@ public class WriteBatch {
   }
 
   /**
-   * Updates fields in the document referred to by the provided {@link DocumentReference}. If no
+   * Updates fields in the document referred to by the provided {@code DocumentReference}. If no
    * document exists yet, the update will fail.
    *
-   * @param documentRef The {@link DocumentReference} to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param fieldPath The first field to update.
    * @param value The first value
    * @param moreFieldsAndValues Additional field/value pairs.
@@ -175,9 +175,9 @@ public class WriteBatch {
   }
 
   /**
-   * Deletes the document referred to by the provided {@link DocumentReference}.
+   * Deletes the document referred to by the provided {@code DocumentReference}.
    *
-   * @param documentRef The {@link DocumentReference} to delete.
+   * @param documentRef The {@code DocumentReference} to delete.
    * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
@@ -214,7 +214,7 @@ public class WriteBatch {
   }
 
   /**
-   * An interface for providing code to be executed within a {@link WriteBatch} context.
+   * An interface for providing code to be executed within a {@code WriteBatch} context.
    *
    * @see FirebaseFirestore#runBatch(WriteBatch.Function)
    */

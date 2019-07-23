@@ -207,11 +207,11 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Gets a {@link CollectionReference} instance that refers to the collection at the specified path
+   * Gets a {@code CollectionReference} instance that refers to the collection at the specified path
    * within the database.
    *
    * @param collectionPath A slash-separated path to a collection.
-   * @return The {@link CollectionReference} instance.
+   * @return The {@code CollectionReference} instance.
    */
   @NonNull
   @PublicApi
@@ -237,8 +237,8 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Creates and returns a new @link{Query} that includes all documents in the database that are
-   * contained in a collection or subcollection with the given @code{collectionId}.
+   * Creates and returns a new {@code Query} that includes all documents in the database that are
+   * contained in a collection or subcollection with the given {@code collectionId}.
    *
    * @param collectionId Identifies the collections to query over. Every collection or subcollection
    *     with this ID as the last segment of its path will be included. Cannot contain a slash.
@@ -465,7 +465,7 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Helper to validate a {@link DocumentReference}. Used by {@link WriteBatch} and {@link
+   * Helper to validate a {@code DocumentReference}. Used by {@link WriteBatch} and {@link
    * Transaction}.
    */
   void validateReference(DocumentReference docRef) {

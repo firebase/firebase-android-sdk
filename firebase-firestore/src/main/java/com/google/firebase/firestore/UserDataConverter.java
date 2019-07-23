@@ -88,7 +88,7 @@ public final class UserDataConverter {
    * Parse document data from a {@code set()} call with {@link SetOptions#merge()} set.
    *
    * @param input A map or POJO object representing document data.
-   * @param fieldMask A {@link FieldMask} object representing the fields to be merged.
+   * @param fieldMask A {@code FieldMask} object representing the fields to be merged.
    */
   public ParsedSetData parseMergeData(Object input, @Nullable FieldMask fieldMask) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.MergeSet);

@@ -56,10 +56,10 @@ public class Transaction {
   }
 
   /**
-   * Overwrites the document referred to by the provided {@link DocumentReference}. If the document
+   * Overwrites the document referred to by the provided {@code DocumentReference}. If the document
    * does not yet exist, it will be created. If a document already exists, it will be overwritten.
    *
-   * @param documentRef The {@link DocumentReference} to overwrite.
+   * @param documentRef The {@code DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
    * @return This {@code Transaction} instance. Used for chaining method calls.
@@ -72,10 +72,10 @@ public class Transaction {
 
   /**
    * Writes to the document referred to by the provided DocumentReference. If the document does not
-   * yet exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged
+   * yet exist, it will be created. If you pass {@code SetOptions}, the provided data can be merged
    * into an existing document.
    *
-   * @param documentRef The {@link DocumentReference} to overwrite.
+   * @param documentRef The {@code DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
    * @param options An object to configure the set behavior.
@@ -97,10 +97,10 @@ public class Transaction {
   }
 
   /**
-   * Updates fields in the document referred to by the provided {@link DocumentReference}. If no
+   * Updates fields in the document referred to by the provided {@code DocumentReference}. If no
    * document exists yet, the update will fail.
    *
-   * @param documentRef The {@link DocumentReference} to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param data A map of field / value pairs to update. Fields can contain dots to reference nested
    *     fields within the document.
    * @return This {@code Transaction} instance. Used for chaining method calls.
@@ -114,10 +114,10 @@ public class Transaction {
   }
 
   /**
-   * Updates fields in the document referred to by the provided {@link DocumentReference}. If no
+   * Updates fields in the document referred to by the provided {@code DocumentReference}. If no
    * document exists yet, the update will fail.
    *
-   * @param documentRef The {@link DocumentReference} to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param field The first field to update. Fields can contain dots to reference a nested field
    *     within the document.
    * @param value The first value
@@ -141,10 +141,10 @@ public class Transaction {
   }
 
   /**
-   * Updates fields in the document referred to by the provided {@link DocumentReference}. If no
+   * Updates fields in the document referred to by the provided {@code DocumentReference}. If no
    * document exists yet, the update will fail.
    *
-   * @param documentRef The {@link DocumentReference} to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param fieldPath The first field to update.
    * @param value The first value
    * @param moreFieldsAndValues Additional field/value pairs.
@@ -174,9 +174,9 @@ public class Transaction {
   }
 
   /**
-   * Deletes the document referred to by the provided {@link DocumentReference}.
+   * Deletes the document referred to by the provided {@code DocumentReference}.
    *
-   * @param documentRef The {@link DocumentReference} to delete.
+   * @param documentRef The {@code DocumentReference} to delete.
    * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
@@ -188,10 +188,10 @@ public class Transaction {
   }
 
   /**
-   * Reads the document referenced by the provided {@link DocumentReference}
+   * Reads the document referenced by the provided {@code DocumentReference}
    *
-   * @param documentRef The {@link DocumentReference} to read.
-   * @return A Task that will be resolved with the contents of the Document at this {@link
+   * @param documentRef The {@code DocumentReference} to read.
+   * @return A Task that will be resolved with the contents of the Document at this {@code
    *     DocumentReference}.
    */
   private Task<DocumentSnapshot> getAsync(DocumentReference documentRef) {
@@ -223,10 +223,10 @@ public class Transaction {
   }
 
   /**
-   * Reads the document referenced by this {@link DocumentReference}
+   * Reads the document referenced by this {@code DocumentReference}
    *
-   * @param documentRef The {@link DocumentReference} to read.
-   * @return The contents of the Document at this {@link DocumentReference}.
+   * @param documentRef The {@code DocumentReference} to read.
+   * @return The contents of the Document at this {@code DocumentReference}.
    */
   @NonNull
   @PublicApi

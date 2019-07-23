@@ -35,7 +35,7 @@ public final class FirebaseFirestoreSettings {
   private static final String DEFAULT_HOST = "firestore.googleapis.com";
   private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = true;
 
-  /** A Builder for creating {@link FirebaseFirestoreSettings}. */
+  /** A Builder for creating {@code FirebaseFirestoreSettings}. */
   @PublicApi
   public static final class Builder {
     private String host;

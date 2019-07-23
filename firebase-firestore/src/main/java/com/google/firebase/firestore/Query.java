@@ -842,7 +842,7 @@ public class Query {
   }
 
   /**
-   * Executes the query and returns the results as a {@link QuerySnapshot}.
+   * Executes the query and returns the results as a {@code QuerySnapshot}.
    *
    * @return A Task that will be resolved with the results of the {@code Query}.
    */
@@ -853,11 +853,11 @@ public class Query {
   }
 
   /**
-   * Executes the query and returns the results as a {@link QuerySnapshot}.
+   * Executes the query and returns the results as a {@code QuerySnapshot}.
    *
    * <p>By default, {@code get()} attempts to provide up-to-date data when possible by waiting for
    * data from the server, but it may return cached data or fail if you are offline and the server
-   * cannot be reached. This behavior can be altered via the {@link Source} parameter.
+   * cannot be reached. This behavior can be altered via the {@code Source} parameter.
    *
    * @param source A value to configure the get behavior.
    * @return A Task that will be resolved with the results of the {@code Query}.

@@ -103,9 +103,9 @@ public class DocumentReference {
   }
 
   /**
-   * Gets a {@link CollectionReference} to the collection that contains this document.
+   * Gets a {@code CollectionReference} to the collection that contains this document.
    *
-   * @return The {@link CollectionReference} that contains this document.
+   * @return The {@code CollectionReference} that contains this document.
    */
   @NonNull
   @PublicApi
@@ -126,11 +126,11 @@ public class DocumentReference {
   }
 
   /**
-   * Gets a {@link CollectionReference} instance that refers to the subcollection at the specified
+   * Gets a {@code CollectionReference} instance that refers to the subcollection at the specified
    * path relative to this document.
    *
    * @param collectionPath A slash-separated relative path to a subcollection.
-   * @return The {@link CollectionReference} instance.
+   * @return The {@code CollectionReference} instance.
    */
   @NonNull
   @PublicApi
@@ -156,7 +156,7 @@ public class DocumentReference {
 
   /**
    * Writes to the document referred to by this {@code DocumentReference}. If the document does not
-   * yet exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged
+   * yet exist, it will be created. If you pass {@code SetOptions}, the provided data can be merged
    * into an existing document.
    *
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
@@ -277,7 +277,7 @@ public class DocumentReference {
    *
    * <p>By default, {@code get()} attempts to provide up-to-date data when possible by waiting for
    * data from the server, but it may return cached data or fail if you are offline and the server
-   * cannot be reached. This behavior can be altered via the {@link Source} parameter.
+   * cannot be reached. This behavior can be altered via the {@code Source} parameter.
    *
    * @param source A value to configure the get behavior.
    * @return A Task that will be resolved with the contents of the Document at this {@code
