@@ -144,13 +144,13 @@ public final class SQLitePersistence extends Persistence {
     } catch (SQLiteDatabaseLockedException e) {
       // TODO: Use a better exception type
       throw new RuntimeException(
-          "Failed to gain exclusive lock to the Firestore client's offline persistence. This"
-              + " generally means you are using Firestore from multiple processes in your app."
-              + " Keep in mind that multi-process Android apps execute the code in your"
+          "Failed to gain exclusive lock to the Cloud Firestore client's offline persistence. This"
+              + " generally means you are using Cloud Firestore from multiple processes in your"
+              + " app. Keep in mind that multi-process Android apps execute the code in your"
               + " Application class in all processes, so you may need to avoid initializing"
-              + " Firestore in your Application class. If you are intentionally using Firestore"
-              + " from multiple processes, you can only enable offline persistence (i.e. call"
-              + " setPersistenceEnabled(true)) in one of them.",
+              + " Cloud Firestore in your Application class. If you are intentionally using Cloud"
+              + " Firestore from multiple processes, you can only enable offline persistence (that"
+              + " is, call setPersistenceEnabled(true)) in one of them.",
           e);
     }
     queryCache.start();
@@ -350,8 +350,7 @@ public final class SQLitePersistence extends Persistence {
   }
 
   /**
-   * Execute the given non-query SQL statement. Equivalent to <code>execute(prepare(sql), args)
-   * </code>.
+   * Execute the given non-query SQL statement. Equivalent to {@code execute(prepare(sql), args)}.
    */
   void execute(String sql, Object... args) {
     // Note that unlike db.query and friends, execSQL already takes Object[] bindArgs so there's no

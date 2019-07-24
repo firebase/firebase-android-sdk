@@ -277,7 +277,7 @@ public class ValidationTest {
   @Test
   public void batchWritesRequireCorrectDocumentReferences() {
     DocumentReference badRef = testAlternateFirestore().document("foo/bar");
-    String reason = "Provided document reference is from a different Firestore instance.";
+    String reason = "Provided document reference is from a different Cloud Firestore instance.";
     Map<String, Object> data = map("foo", 1);
     WriteBatch batch = testFirestore().batch();
     expectError(() -> batch.set(badRef, data), reason);
@@ -288,7 +288,7 @@ public class ValidationTest {
   @Test
   public void transactionsRequireCorrectDocumentReferences() {
     DocumentReference badRef = testAlternateFirestore().document("foo/bar");
-    String reason = "Provided document reference is from a different Firestore instance.";
+    String reason = "Provided document reference is from a different Cloud Firestore instance.";
     Map<String, Object> data = map("foo", 1);
     waitFor(
         testFirestore()

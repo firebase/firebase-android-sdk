@@ -74,7 +74,7 @@ public final class UserDataConverter {
   }
 
   /**
-   * Parse document data from a non-merge set() call.
+   * Parse document data from a non-merge {@code set()} call.
    *
    * @param input A map or POJO object representing document data.
    */
@@ -85,10 +85,10 @@ public final class UserDataConverter {
   }
 
   /**
-   * Parse document data from a set() call with SetOptions.merge() set.
+   * Parse document data from a {@code set()} call with {@link SetOptions#merge()} set.
    *
    * @param input A map or POJO object representing document data.
-   * @param fieldMask A {@link FieldMask} object representing the fields to be merged.
+   * @param fieldMask A {@code FieldMask} object representing the fields to be merged.
    */
   public ParsedSetData parseMergeData(Object input, @Nullable FieldMask fieldMask) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.MergeSet);
@@ -111,7 +111,7 @@ public final class UserDataConverter {
     }
   }
 
-  /** Parse update data from an update() call. */
+  /** Parse update data from an {@code update()} call. */
   public ParsedUpdateData parseUpdateData(Map<String, Object> data) {
     checkNotNull(data, "Provided update data must not be null.");
 
@@ -241,8 +241,8 @@ public final class UserDataConverter {
    * @param input Data to be parsed.
    * @param context A context object representing the current path being parsed, the source of the
    *     data being parsed, etc.
-   * @return The parsed value, or null if the value was a FieldValue sentinel that should not be
-   *     included in the resulting parsed data.
+   * @return The parsed value, or {@code null} if the value was a FieldValue sentinel that should
+   *     not be included in the resulting parsed data.
    */
   @Nullable
   private FieldValue parseData(Object input, ParseContext context) {
@@ -380,8 +380,8 @@ public final class UserDataConverter {
   /**
    * Helper to parse a scalar value (i.e. not a Map or List)
    *
-   * @return The parsed value, or null if the value was a FieldValue sentinel that should not be
-   *     included in the resulting parsed data.
+   * @return The parsed value, or {@code null} if the value was a FieldValue sentinel that should
+   *     not be included in the resulting parsed data.
    */
   @Nullable
   private FieldValue parseScalarValue(Object input, ParseContext context) {
