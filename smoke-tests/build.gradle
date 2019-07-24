@@ -76,6 +76,7 @@ dependencies {
   implementation "junit:junit:4.12"
 
   // All
+  combinedImplementation "com.google.firebase:firebase-analytics"
   combinedImplementation "com.google.firebase:firebase-auth"
   combinedImplementation "com.google.firebase:firebase-database"
   combinedImplementation "com.google.firebase:firebase-firestore"
