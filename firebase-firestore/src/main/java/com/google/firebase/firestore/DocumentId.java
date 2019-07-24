@@ -32,16 +32,16 @@ import java.lang.annotation.Target;
  *   <li>This annotation is applied to a property that is not writable (for example, a Java Bean
  *       getter without a backing field).
  *   <li>This annotation is applied to a property with a name that conflicts with a read document
- *       field. For example, if a POJO has a field `firstName` annotated by @DocumentId, and there
- *       is a property from the document named `firstName` as well, an exception is thrown when you
- *       try to read the document into the POJO via {@link DocumentSnapshot#toObject} or {@link
- *       DocumentReference#get}.
+ *       field. For example, if a POJO has a field `firstName` annotated by {@code @DocumentId}, and
+ *       there is a property from the document named `firstName` as well, an exception is thrown
+ *       when you try to read the document into the POJO via {@link DocumentSnapshot#toObject} or
+ *       {@link DocumentReference#get}.
  *   <li>
  * </ul>
  *
  * <p>When using a POJO to write to a document (via {@link DocumentReference#set} or @{@link
- * WriteBatch#set}), the property annotated by @DocumentId is ignored, which allows writing the POJO
- * back to any document, even if it's not the origin of the POJO.
+ * WriteBatch#set}), the property annotated by {@code @DocumentId} is ignored, which allows writing
+ * the POJO back to any document, even if it's not the origin of the POJO.
  */
 @PublicApi
 @Retention(RetentionPolicy.RUNTIME)

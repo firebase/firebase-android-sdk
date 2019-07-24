@@ -24,7 +24,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Multi-resource container for Firestore. */
+/** Multi-resource container for Cloud Firestore. */
 class FirestoreMultiDbComponent
     implements FirebaseAppLifecycleListener, FirebaseFirestore.InstanceRegistry {
 
@@ -48,7 +48,7 @@ class FirestoreMultiDbComponent
     this.app.addLifecycleEventListener(this);
   }
 
-  /** Provides instances of Firestore for given database IDs. */
+  /** Provides instances of Cloud Firestore for given database IDs. */
   @NonNull
   synchronized FirebaseFirestore get(@NonNull String databaseId) {
     FirebaseFirestore firestore = instances.get(databaseId);
