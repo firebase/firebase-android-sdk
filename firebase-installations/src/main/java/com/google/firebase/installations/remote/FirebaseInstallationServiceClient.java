@@ -14,14 +14,9 @@
 
 package com.google.firebase.installations.remote;
 
-import android.util.JsonReader;
 import androidx.annotation.NonNull;
-import com.google.firebase.FirebaseException;
-import com.google.firebase.installations.InstallationTokenResult;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
@@ -46,6 +41,10 @@ public class FirebaseInstallationServiceClient {
   public enum Code {
     OK,
 
+    HTTP_CLIENT_ERROR,
+
+    CONFLICT,
+
     NETWORK_ERROR,
 
     SERVER_ERROR,
@@ -54,12 +53,11 @@ public class FirebaseInstallationServiceClient {
   }
 
   @NonNull
-  public InstallationResponse createFirebaseInstallation(
+  public Code createFirebaseInstallation(
       long projectNumber,
       @NonNull String apiKey,
       @NonNull String firebaseInstallationId,
-      @NonNull String appId)
-      throws FirebaseException {
+      @NonNull String appId) {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectNumber);
     try {
       URL url =
@@ -92,14 +90,16 @@ public class FirebaseInstallationServiceClient {
       int httpResponseCode = httpsURLConnection.getResponseCode();
       switch (httpResponseCode) {
         case 200:
-          return readCreateResponse(httpsURLConnection);
+          return Code.OK;
         case 401:
-          throw new FirebaseException("The request did not have the required credentials.");
+          return Code.UNAUTHORIZED;
+        case 409:
+          return Code.CONFLICT;
         default:
-          throw new FirebaseException("There was an internal server error.");
+          return Code.SERVER_ERROR;
       }
     } catch (IOException e) {
-      throw new FirebaseException("The server returned an unexpected error.: " + e.getMessage());
+      return Code.NETWORK_ERROR;
     }
   }
 
@@ -151,9 +151,11 @@ public class FirebaseInstallationServiceClient {
   }
 
   @NonNull
-  public InstallationTokenResult generateAuthToken(
-      long projectNumber, @NonNull String apiKey, @NonNull String fid, @NonNull String refreshToken)
-      throws FirebaseException {
+  public Code generateAuthToken(
+      long projectNumber,
+      @NonNull String apiKey,
+      @NonNull String fid,
+      @NonNull String refreshToken) {
     String resourceName =
         String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, fid);
     try {
@@ -176,72 +178,14 @@ public class FirebaseInstallationServiceClient {
       int httpResponseCode = httpsURLConnection.getResponseCode();
       switch (httpResponseCode) {
         case 200:
-          return readGenerateAuthTokenResponse(httpsURLConnection);
+          return Code.OK;
         case 401:
-          throw new FirebaseException("The request did not have the required credentials.");
+          return Code.UNAUTHORIZED;
         default:
-          throw new FirebaseException("There was an internal server error.");
+          return Code.SERVER_ERROR;
       }
     } catch (IOException e) {
-      throw new FirebaseException("The server returned an unexpected error.: " + e.getMessage());
+      return Code.NETWORK_ERROR;
     }
-  }
-
-  // Read the response from the createFirebaseInstallation API.
-  private InstallationResponse readCreateResponse(HttpsURLConnection conn) throws IOException {
-    JsonReader reader =
-        new JsonReader(new InputStreamReader(conn.getInputStream(), Charset.defaultCharset()));
-    InstallationTokenResult.Builder installationTokenResult = InstallationTokenResult.builder();
-    InstallationResponse.Builder builder = InstallationResponse.builder();
-    reader.beginObject();
-    while (reader.hasNext()) {
-      String name = reader.nextName();
-      if (name.equals("name")) {
-        builder.setName(reader.nextString());
-      } else if (name.equals("refreshToken")) {
-        builder.setRefreshToken(reader.nextString());
-      } else if (name.equals("authToken")) {
-        reader.beginObject();
-        while (reader.hasNext()) {
-          String key = reader.nextName();
-          if (key.equals("token")) {
-            installationTokenResult.setAuthToken(reader.nextString());
-          } else if (key.equals("expiresIn")) {
-            installationTokenResult.setTokenExpirationTimestampMillis(reader.nextLong());
-          } else {
-            reader.skipValue();
-          }
-        }
-        builder.setAuthToken(installationTokenResult.build());
-        reader.endObject();
-      } else {
-        reader.skipValue();
-      }
-    }
-    reader.endObject();
-
-    return builder.build();
-  }
-
-  // Read the response from the generateAuthToken FirebaseInstallation API.
-  private InstallationTokenResult readGenerateAuthTokenResponse(HttpsURLConnection conn)
-      throws IOException {
-    JsonReader reader =
-        new JsonReader(new InputStreamReader(conn.getInputStream(), Charset.defaultCharset()));
-    InstallationTokenResult.Builder builder = InstallationTokenResult.builder();
-    reader.beginObject();
-    while (reader.hasNext()) {
-      String name = reader.nextName();
-      if (name.equals("token")) {
-        builder.setAuthToken(reader.nextString());
-      } else if (name.equals("expiresIn")) {
-        builder.setTokenExpirationTimestampMillis(reader.nextLong());
-      } else {
-        reader.skipValue();
-      }
-    }
-    reader.endObject();
-
-    return builder.build();
   }
 }
