@@ -27,12 +27,12 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 /**
- * A QuerySnapshot contains the results of a query. It can contain zero or more DocumentSnapshot
- * objects.
+ * A {@code QuerySnapshot} contains the results of a query. It can contain zero or more {@link
+ * DocumentSnapshot} objects.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
 @PublicApi
 public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
@@ -132,7 +132,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   }
 
   /**
-   * Returns the documents in this QuerySnapshot as a List in order of the query.
+   * Returns the documents in this {@code QuerySnapshot} as a List in order of the query.
    *
    * @return The list of documents.
    */
@@ -146,13 +146,13 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
     return res;
   }
 
-  /** Returns true if there are no documents in the QuerySnapshot. */
+  /** Returns true if there are no documents in the {@code QuerySnapshot}. */
   @PublicApi
   public boolean isEmpty() {
     return snapshot.getDocuments().isEmpty();
   }
 
-  /** Returns the number of documents in the QuerySnapshot. */
+  /** Returns the number of documents in the {@code QuerySnapshot}. */
   @PublicApi
   public int size() {
     return snapshot.getDocuments().size();
@@ -166,8 +166,8 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   }
 
   /**
-   * Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as
-   * a list.
+   * Returns the contents of the documents in the {@code QuerySnapshot}, converted to the provided
+   * class, as a list.
    *
    * @param clazz The POJO type used to convert the documents in the list.
    */
@@ -178,8 +178,8 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   }
 
   /**
-   * Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as
-   * a list.
+   * Returns the contents of the documents in the {@code QuerySnapshot}, converted to the provided
+   * class, as a list.
    *
    * @param clazz The POJO type used to convert the documents in the list.
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet

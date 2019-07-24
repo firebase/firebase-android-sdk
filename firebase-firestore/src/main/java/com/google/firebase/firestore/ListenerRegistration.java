@@ -16,13 +16,13 @@ package com.google.firebase.firestore;
 
 import com.google.firebase.annotations.PublicApi;
 
-/** Represents a listener that can be removed by calling remove(). */
+/** Represents a listener that can be removed by calling {@link #remove()}. */
 @PublicApi
 public interface ListenerRegistration {
 
   /**
-   * Removes the listener being tracked by this ListenerRegistration. After the initial call,
-   * subsequent calls have no effect.
+   * Removes the listener being tracked by this {@code ListenerRegistration}. After the initial
+   * call, subsequent calls have no effect.
    */
   @PublicApi
   void remove();
