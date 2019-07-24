@@ -12,42 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.installations;
+package com.google.firebase.installations.remote;
 
 import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
+import com.google.firebase.installations.InstallationTokenResult;
 
-/** This class represents a set of values describing a FIS Auth Token Result. */
 @AutoValue
-public abstract class InstallationTokenResult {
+public abstract class InstallationResponse {
 
-  /** A new FIS Auth-Token, created for this firebase installation. */
   @NonNull
-  public abstract String getAuthToken();
-  /**
-   * The amount of time, in milliseconds, before the auth-token expires for this firebase
-   * installation.
-   */
-  public abstract long getTokenExpirationTimestampMillis();
+  public abstract String getName();
+
+  @NonNull
+  public abstract String getRefreshToken();
+
+  @NonNull
+  public abstract InstallationTokenResult getAuthToken();
 
   @NonNull
   public abstract Builder toBuilder();
 
   /** Returns a default Builder object to create an InstallationResponse object */
   @NonNull
-  public static InstallationTokenResult.Builder builder() {
-    return new AutoValue_InstallationTokenResult.Builder();
+  public static InstallationResponse.Builder builder() {
+    return new AutoValue_InstallationResponse.Builder();
   }
 
   @AutoValue.Builder
   public abstract static class Builder {
     @NonNull
-    public abstract Builder setAuthToken(@NonNull String value);
+    public abstract Builder setName(@NonNull String value);
 
     @NonNull
-    public abstract Builder setTokenExpirationTimestampMillis(long value);
+    public abstract Builder setRefreshToken(@NonNull String value);
 
     @NonNull
-    public abstract InstallationTokenResult build();
+    public abstract Builder setAuthToken(@NonNull InstallationTokenResult value);
+
+    @NonNull
+    public abstract InstallationResponse build();
   }
 }
