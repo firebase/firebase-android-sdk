@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 public class UserData {
@@ -192,8 +191,6 @@ public class UserData {
    */
   public static class ParseContext {
 
-    private final Pattern reservedFieldRegex = Pattern.compile("^__.*__$");
-
     private final ParseAccumulator accumulator;
 
     /** The current path being parsed. */
@@ -235,6 +232,7 @@ public class UserData {
       return accumulator.dataSource;
     }
 
+    @Nullable
     public FieldPath getPath() {
       return path;
     }
@@ -303,9 +301,17 @@ public class UserData {
       }
     }
 
+    private static final String RESERVED_FIELD_DESIGNATOR = "__";
+
     private void validatePathSegment(String segment) {
-      if (isWrite() && reservedFieldRegex.matcher(segment).find()) {
-        throw this.createError("Document fields cannot begin and end with __");
+      if (segment.isEmpty()) {
+        throw this.createError("Document fields must not be empty");
+      }
+
+      if (isWrite()
+          && segment.startsWith(RESERVED_FIELD_DESIGNATOR)
+          && segment.endsWith(RESERVED_FIELD_DESIGNATOR)) {
+        throw this.createError("Document fields cannot begin and end with \"__\"");
       }
     }
   }
