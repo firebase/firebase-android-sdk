@@ -156,7 +156,7 @@ public class TransactionTest {
     private void prepareDoc() {
       docRef = db.collection("tester-docref").document();
       if (fromExistingDoc) {
-        docRef.set(map("foo", "bar0"));
+        waitFor(docRef.set(map("foo", "bar0")));
         DocumentSnapshot docSnap = waitFor(docRef.get());
         assertTrue(docSnap.exists());
       }
