@@ -27,12 +27,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A DocumentChange represents a change to the documents matching a query. It contains the document
- * affected and a the type of change that occurred (added, modified, or removed).
+ * A {@code DocumentChange} represents a change to the documents matching a query. It contains the
+ * document affected and a the type of change that occurred (added, modified, or removed).
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
 public class DocumentChange {
   /** An enumeration of snapshot diff types. */
@@ -93,11 +93,12 @@ public class DocumentChange {
   }
 
   /**
-   * Returns the newly added or modified document if this DocumentChange is for an updated document.
-   * Returns the deleted document if this document change represents a removal.
+   * Returns the newly added or modified document if this {@code DocumentChange} is for an updated
+   * document. Returns the deleted document if this document change represents a removal.
    *
-   * @return A snapshot of the new data (for Type.ADDED or Type.MODIFIED) or the removed data (for
-   *     Type.REMOVED).
+   * @return A snapshot of the new data (for {@link DocumentChange.Type#ADDED} or {@link
+   *     DocumentChange.Type#MODIFIED}) or the removed data (for {@link
+   *     DocumentChange.Type.REMOVED}).
    */
   @NonNull
   public QueryDocumentSnapshot getDocument() {
@@ -105,24 +106,24 @@ public class DocumentChange {
   }
 
   /**
-   * The index of the changed document in the result set immediately prior to this DocumentChange
-   * (i.e. supposing that all prior DocumentChange objects have been applied). Returns -1 for
-   * 'added' events.
+   * The index of the changed document in the result set immediately prior to this {@code
+   * DocumentChange} (assuming that all prior {@code DocumentChange} objects have been applied).
+   * Returns -1 for 'added' events.
    */
   public int getOldIndex() {
     return oldIndex;
   }
 
   /**
-   * The index of the changed document in the result set immediately after this DocumentChange (i.e.
-   * supposing that all prior DocumentChange objects and the current DocumentChange object have been
-   * applied). Returns -1 for 'removed' events.
+   * The index of the changed document in the result set immediately after this {@code
+   * DocumentChange} (assuming that all prior {@code DocumentChange} objects and the current {@code
+   * DocumentChange} object have been applied). Returns -1 for 'removed' events.
    */
   public int getNewIndex() {
     return newIndex;
   }
 
-  /** Creates the list of DocumentChanges from a ViewSnapshot. */
+  /** Creates the list of document changes from a {@code ViewSnapshot}. */
   static List<DocumentChange> changesFromSnapshot(
       FirebaseFirestore firestore, MetadataChanges metadataChanges, ViewSnapshot snapshot) {
     List<DocumentChange> documentChanges = new ArrayList<>();

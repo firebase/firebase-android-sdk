@@ -46,8 +46,8 @@ public final class FieldPath {
   }
 
   /**
-   * Creates a FieldPath from the provided field names. If more than one field name is provided, the
-   * path will point to a nested field in a document.
+   * Creates a {@code FieldPath} from the provided field names. If more than one field name is
+   * provided, the path will point to a nested field in a document.
    *
    * @param fieldNames A list of field names.
    * @return A {@code FieldPath} that points to a field location in a document.
@@ -69,8 +69,8 @@ public final class FieldPath {
       new FieldPath(com.google.firebase.firestore.model.FieldPath.KEY_PATH);
 
   /**
-   * Returns A special sentinel FieldPath to refer to the ID of a document. It can be used in
-   * queries to sort or filter by the document ID.
+   * Returns A special sentinel {@code FieldPath} to refer to the ID of a document. It can be used
+   * in queries to sort or filter by the document ID.
    */
   @NonNull
   public static FieldPath documentId() {

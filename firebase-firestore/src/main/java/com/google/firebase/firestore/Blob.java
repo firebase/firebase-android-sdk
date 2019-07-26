@@ -22,7 +22,7 @@ import androidx.annotation.RestrictTo;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
 
-/** Immutable class representing an array of bytes in Firestore. */
+/** Immutable class representing an array of bytes in Cloud Firestore. */
 public class Blob implements Comparable<Blob> {
   private final ByteString bytes;
 
@@ -31,10 +31,11 @@ public class Blob implements Comparable<Blob> {
   }
 
   /**
-   * Creates a new Blob instance from the provided bytes. Will make a copy of the bytes passed in.
+   * Creates a new {@code Blob} instance from the provided bytes. Will make a copy of the bytes
+   * passed in.
    *
-   * @param bytes The bytes to use for this Blob instance.
-   * @return The new Blob instance
+   * @param bytes The bytes to use for this {@code Blob} instance.
+   * @return The new {@code Blob} instance
    */
   @NonNull
   public static Blob fromBytes(@NonNull byte[] bytes) {

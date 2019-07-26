@@ -15,7 +15,7 @@
 package com.google.firebase.firestore;
 
 /**
- * Indicates whether metadata-only changes (i.e. only {@code DocumentSnapshot.getMetadata()} or
+ * Indicates whether metadata-only changes (that is, only {@code DocumentSnapshot.getMetadata()} or
  * {@code Query.getMetadata()} changed) should trigger snapshot events.
  */
 public enum MetadataChanges {

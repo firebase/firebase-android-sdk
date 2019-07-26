@@ -47,14 +47,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 /**
- * A DocumentReference refers to a document location in a Firestore database and can be used to
- * write, read, or listen to the location. There may or may not exist a document at the referenced
- * location. A DocumentReference can also be used to create a CollectionReference to a
- * subcollection.
+ * A {@code DocumentReference} refers to a document location in a Cloud Firestore database and can
+ * be used to write, read, or listen to the location. There may or may not exist a document at the
+ * referenced location. A {@code DocumentReference} can also be used to create a {@link
+ * CollectionReference} to a subcollection.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
 public class DocumentReference {
 
@@ -87,7 +87,7 @@ public class DocumentReference {
     return key;
   }
 
-  /** Gets the Firestore instance associated with this document reference. */
+  /** Gets the Cloud Firestore instance associated with this document reference. */
   @NonNull
   public FirebaseFirestore getFirestore() {
     return firestore;
@@ -99,9 +99,9 @@ public class DocumentReference {
   }
 
   /**
-   * Gets a CollectionReference to the collection that contains this document.
+   * Gets a {@code CollectionReference} to the collection that contains this document.
    *
-   * @return The CollectionReference that contains this document.
+   * @return The {@code CollectionReference} that contains this document.
    */
   @NonNull
   public CollectionReference getParent() {
@@ -120,11 +120,11 @@ public class DocumentReference {
   }
 
   /**
-   * Gets a CollectionReference instance that refers to the subcollection at the specified path
-   * relative to this document.
+   * Gets a {@code CollectionReference} instance that refers to the subcollection at the specified
+   * path relative to this document.
    *
    * @param collectionPath A slash-separated relative path to a subcollection.
-   * @return The CollectionReference instance.
+   * @return The {@code CollectionReference} instance.
    */
   @NonNull
   public CollectionReference collection(@NonNull String collectionPath) {
@@ -134,8 +134,8 @@ public class DocumentReference {
   }
 
   /**
-   * Overwrites the document referred to by this DocumentReference. If the document does not yet
-   * exist, it will be created. If a document already exists, it will be overwritten.
+   * Overwrites the document referred to by this {@code DocumentReference}. If the document does not
+   * yet exist, it will be created. If a document already exists, it will be overwritten.
    *
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
@@ -147,9 +147,9 @@ public class DocumentReference {
   }
 
   /**
-   * Writes to the document referred to by this DocumentReference. If the document does not yet
-   * exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged into
-   * an existing document.
+   * Writes to the document referred to by this {@code DocumentReference}. If the document does not
+   * yet exist, it will be created. If you pass {@code SetOptions}, the provided data can be merged
+   * into an existing document.
    *
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
@@ -171,8 +171,8 @@ public class DocumentReference {
   }
 
   /**
-   * Updates fields in the document referred to by this DocumentReference. If no document exists
-   * yet, the update will fail.
+   * Updates fields in the document referred to by this {@code DocumentReference}. If no document
+   * exists yet, the update will fail.
    *
    * @param data A map of field / value pairs to update. Fields can contain dots to reference nested
    *     fields within the document.
@@ -185,8 +185,8 @@ public class DocumentReference {
   }
 
   /**
-   * Updates fields in the document referred to by this DocumentReference. If no document exists
-   * yet, the update will fail.
+   * Updates fields in the document referred to by this {@code DocumentReference}. If no document
+   * exists yet, the update will fail.
    *
    * @param field The first field to update. Fields can contain dots to reference a nested field
    *     within the document.
@@ -207,8 +207,8 @@ public class DocumentReference {
   }
 
   /**
-   * Updates fields in the document referred to by this DocumentReference. If no document exists
-   * yet, the update will fail.
+   * Updates fields in the document referred to by this {@code DocumentReference}. If no document
+   * exists yet, the update will fail.
    *
    * @param fieldPath The first field to update.
    * @param value The first value
@@ -235,7 +235,7 @@ public class DocumentReference {
   }
 
   /**
-   * Deletes the document referred to by this DocumentReference.
+   * Deletes the document referred to by this {@code DocumentReference}.
    *
    * @return A Task that will be resolved when the delete completes.
    */
@@ -248,10 +248,10 @@ public class DocumentReference {
   }
 
   /**
-   * Reads the document referenced by this DocumentReference.
+   * Reads the document referenced by this {@code DocumentReference}.
    *
-   * @return A Task that will be resolved with the contents of the Document at this
-   *     DocumentReference.
+   * @return A Task that will be resolved with the contents of the Document at this {@code
+   *     DocumentReference}.
    */
   @NonNull
   public Task<DocumentSnapshot> get() {
@@ -259,15 +259,15 @@ public class DocumentReference {
   }
 
   /**
-   * Reads the document referenced by this DocumentReference.
+   * Reads the document referenced by this {@code DocumentReference}.
    *
    * <p>By default, {@code get()} attempts to provide up-to-date data when possible by waiting for
    * data from the server, but it may return cached data or fail if you are offline and the server
-   * cannot be reached. This behavior can be altered via the {@link Source} parameter.
+   * cannot be reached. This behavior can be altered via the {@code Source} parameter.
    *
    * @param source A value to configure the get behavior.
-   * @return A Task that will be resolved with the contents of the Document at this
-   *     DocumentReference.
+   * @return A Task that will be resolved with the contents of the Document at this {@code
+   *     DocumentReference}.
    */
   @NonNull
   public Task<DocumentSnapshot> get(@NonNull Source source) {
@@ -357,7 +357,7 @@ public class DocumentReference {
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference.
+   * Starts listening to the document referenced by this {@code DocumentReference}.
    *
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
@@ -369,7 +369,7 @@ public class DocumentReference {
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference.
+   * Starts listening to the document referenced by this {@code DocumentReference}.
    *
    * @param executor The executor to use to call the listener.
    * @param listener The event listener that will be called with the snapshots.
@@ -382,8 +382,8 @@ public class DocumentReference {
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference using an Activity-scoped
-   * listener.
+   * Starts listening to the document referenced by this {@code DocumentReference} using an
+   * Activity-scoped listener.
    *
    * <p>The listener will be automatically removed during {@link Activity#onStop}.
    *
@@ -398,7 +398,8 @@ public class DocumentReference {
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference with the given options.
+   * Starts listening to the document referenced by this {@code DocumentReference} with the given
+   * options.
    *
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
    *     DocumentSnapshot.getMetadata()} changed) should trigger snapshot events.
@@ -412,7 +413,8 @@ public class DocumentReference {
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference with the given options.
+   * Starts listening to the document referenced by this {@code DocumentReference} with the given
+   * options.
    *
    * @param executor The executor to use to call the listener.
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
@@ -432,8 +434,8 @@ public class DocumentReference {
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference with the given options
-   * using an Activity-scoped listener.
+   * Starts listening to the document referenced by this {@code DocumentReference} with the given
+   * options using an Activity-scoped listener.
    *
    * <p>The listener will be automatically removed during {@link Activity#onStop}.
    *
@@ -458,7 +460,7 @@ public class DocumentReference {
   /**
    * Internal helper method to create add a snapshot listener.
    *
-   * <p>Will be Activity scoped if the activity parameter is non-null.
+   * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
    *
    * @param userExecutor The executor to use to call the listener.
    * @param options The options to use for this listen.

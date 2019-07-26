@@ -549,11 +549,11 @@ public class StorageReference implements Comparable<StorageReference> {
   // region List
 
   /**
-   * List up to `maxResults` items (files) and prefixes (folders) under this StorageReference.
+   * List up to {@code maxResults} items (files) and prefixes (folders) under this StorageReference.
    *
-   * <p>"/" is treated as a path delimiter. Firebase Storage does not support unsupported object
-   * paths that end with "/" or contain two consecutive "/"s. All invalid objects in GCS will be
-   * filtered.
+   * <p>"/" is treated as a path delimiter. Cloud Storage for Firebase does not support object paths
+   * that end with "/" or contain two consecutive "/"s. All invalid objects in Google Cloud Storage
+   * will be filtered.
    *
    * <p>{@code list()} is only available for projects using <a
    * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
@@ -575,9 +575,9 @@ public class StorageReference implements Comparable<StorageReference> {
    * Resumes a previous call to {@link #list(int)}, starting after a pagination token. Returns the
    * next set of items (files) and prefixes (folders) under this StorageReference.
    *
-   * <p>"/" is treated as a path delimiter. Firebase Storage does not support unsupported object
-   * paths that end with "/" or contain two consecutive "/"s. All invalid objects in GCS will be
-   * filtered.
+   * <p>"/" is treated as a path delimiter. Cloud Storage for Firebase does not support object paths
+   * that end with "/" or contain two consecutive "/"s. All invalid objects in Google Cloud Storage
+   * will be filtered.
    *
    * <p>{@code list()} is only available for projects using <a
    * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
@@ -601,9 +601,9 @@ public class StorageReference implements Comparable<StorageReference> {
   /**
    * List all items (files) and prefixes (folders) under this StorageReference.
    *
-   * <p>This is a helper method for calling list() repeatedly until there are no more results.
-   * Consistency of the result is not guaranteed if objects are inserted or removed while this
-   * operation is executing.
+   * <p>This is a helper method for calling {@code list()} repeatedly until there are no more
+   * results. Consistency of the result is not guaranteed if objects are inserted or removed while
+   * this operation is executing.
    *
    * <p>{@code listAll()} is only available for projects using <a
    * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase

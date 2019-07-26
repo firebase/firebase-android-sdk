@@ -89,10 +89,10 @@ public final class ListResult {
   }
 
   /**
-   * Returns a token that can be used to resume a previous {@code list()} operation. `null`
+   * Returns a token that can be used to resume a previous {@code list()} operation. ${@code null}
    * indicates that there are no more results.
    *
-   * @return A page token if more results are avaible.
+   * @return A page token if more results are available.
    */
   @Nullable
   public String getPageToken() {

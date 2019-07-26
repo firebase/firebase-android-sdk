@@ -34,12 +34,12 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
- * A Transaction is passed to a Function to provide the methods to read and write data within the
- * transaction context.
+ * A {@code Transaction} is passed to a Function to provide the methods to read and write data
+ * within the transaction context.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  *
  * @see FirebaseFirestore#runTransaction(Function)
  */
@@ -54,13 +54,13 @@ public class Transaction {
   }
 
   /**
-   * Overwrites the document referred to by the provided DocumentReference. If the document does not
-   * yet exist, it will be created. If a document already exists, it will be overwritten.
+   * Overwrites the document referred to by the provided {@code DocumentReference}. If the document
+   * does not yet exist, it will be created. If a document already exists, it will be overwritten.
    *
-   * @param documentRef The DocumentReference to overwrite.
+   * @param documentRef The {@code DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
-   * @return This Transaction instance. Used for chaining method calls.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   public Transaction set(@NonNull DocumentReference documentRef, @NonNull Object data) {
@@ -69,14 +69,14 @@ public class Transaction {
 
   /**
    * Writes to the document referred to by the provided DocumentReference. If the document does not
-   * yet exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged
+   * yet exist, it will be created. If you pass {@code SetOptions}, the provided data can be merged
    * into an existing document.
    *
-   * @param documentRef The DocumentReference to overwrite.
+   * @param documentRef The {@code DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
    * @param options An object to configure the set behavior.
-   * @return This Transaction instance. Used for chaining method calls.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   public Transaction set(
@@ -93,13 +93,13 @@ public class Transaction {
   }
 
   /**
-   * Updates fields in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates fields in the document referred to by the provided {@code DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param data A map of field / value pairs to update. Fields can contain dots to reference nested
    *     fields within the document.
-   * @return This Transaction instance. Used for chaining method calls.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   public Transaction update(
@@ -109,15 +109,15 @@ public class Transaction {
   }
 
   /**
-   * Updates fields in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates fields in the document referred to by the provided {@code DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param field The first field to update. Fields can contain dots to reference a nested field
    *     within the document.
    * @param value The first value
    * @param moreFieldsAndValues Additional field/value pairs.
-   * @return This Transaction instance. Used for chaining method calls.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   public Transaction update(
@@ -135,14 +135,14 @@ public class Transaction {
   }
 
   /**
-   * Updates fields in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates fields in the document referred to by the provided {@code DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param fieldPath The first field to update.
    * @param value The first value
    * @param moreFieldsAndValues Additional field/value pairs.
-   * @return This Transaction instance. Used for chaining method calls.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   public Transaction update(
@@ -167,10 +167,10 @@ public class Transaction {
   }
 
   /**
-   * Deletes the document referred to by the provided DocumentReference.
+   * Deletes the document referred to by the provided {@code DocumentReference}.
    *
-   * @param documentRef The DocumentReference to delete.
-   * @return This Transaction instance. Used for chaining method calls.
+   * @param documentRef The {@code DocumentReference} to delete.
+   * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
   public Transaction delete(@NonNull DocumentReference documentRef) {
@@ -180,11 +180,11 @@ public class Transaction {
   }
 
   /**
-   * Reads the document referenced by the provided DocumentReference
+   * Reads the document referenced by the provided {@code DocumentReference}
    *
-   * @param documentRef The DocumentReference to read.
-   * @return A Task that will be resolved with the contents of the Document at this
-   *     DocumentReference.
+   * @param documentRef The {@code DocumentReference} to read.
+   * @return A Task that will be resolved with the contents of the Document at this {@code
+   *     DocumentReference}.
    */
   private Task<DocumentSnapshot> getAsync(DocumentReference documentRef) {
     return transaction
@@ -215,10 +215,10 @@ public class Transaction {
   }
 
   /**
-   * Reads the document referenced by this DocumentReference
+   * Reads the document referenced by this {@code DocumentReference}
    *
-   * @param documentRef The DocumentReference to read.
-   * @return The contents of the Document at this DocumentReference.
+   * @param documentRef The {@code DocumentReference} to read.
+   * @return The contents of the Document at this {@code DocumentReference}.
    */
   @NonNull
   public DocumentSnapshot get(@NonNull DocumentReference documentRef)
