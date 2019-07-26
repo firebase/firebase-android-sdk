@@ -60,7 +60,7 @@ public class RemoteConfigComponent {
   /** Name of the file where defaults configs are stored. */
   public static final String DEFAULTS_FILE_NAME = "defaults";
   /** Timeout for the call to the Firebase Remote Config servers in second. */
-  public static final long NETWORK_CONNECTION_TIMEOUT_IN_SECONDS = 5;
+  public static final long NETWORK_CONNECTION_TIMEOUT_IN_SECONDS = 30;
 
   private static final String FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX = "frc";
   private static final String PREFERENCES_FILE_NAME = "settings";
