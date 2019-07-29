@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static java.util.Collections.emptyList;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -32,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import javax.annotation.Nullable;
 
 final class MemoryMutationQueue implements MutationQueue {
 

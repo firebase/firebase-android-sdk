@@ -17,15 +17,14 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentSet;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /**
  * A {@code DocumentChange} represents a change to the documents matching a query. It contains the
@@ -35,10 +34,8 @@ import javax.annotation.Nullable;
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
  * code that does so.
  */
-@PublicApi
 public class DocumentChange {
   /** An enumeration of snapshot diff types. */
-  @PublicApi
   public enum Type {
     /** Indicates a new document was added to the set of documents matching the query. */
     ADDED,
@@ -91,7 +88,6 @@ public class DocumentChange {
   }
 
   @NonNull
-  @PublicApi
   public Type getType() {
     return type;
   }
@@ -105,7 +101,6 @@ public class DocumentChange {
    *     DocumentChange.Type.REMOVED}).
    */
   @NonNull
-  @PublicApi
   public QueryDocumentSnapshot getDocument() {
     return document;
   }
@@ -115,7 +110,6 @@ public class DocumentChange {
    * DocumentChange} (assuming that all prior {@code DocumentChange} objects have been applied).
    * Returns -1 for 'added' events.
    */
-  @PublicApi
   public int getOldIndex() {
     return oldIndex;
   }
@@ -125,7 +119,6 @@ public class DocumentChange {
    * DocumentChange} (assuming that all prior {@code DocumentChange} objects and the current {@code
    * DocumentChange} object have been applied). Returns -1 for 'removed' events.
    */
-  @PublicApi
   public int getNewIndex() {
     return newIndex;
   }

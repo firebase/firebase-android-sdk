@@ -14,10 +14,10 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import javax.annotation.Nullable;
 
 /** Transforms a value into a server-generated timestamp. */
 public class ServerTimestampOperation implements TransformOperation {
