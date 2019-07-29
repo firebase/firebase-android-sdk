@@ -1,0 +1,81 @@
+// Signature format: 2.0
+package com.google.firebase {
+
+  public class FirebaseApp {
+    method public boolean equals(Object);
+    method @NonNull public Context getApplicationContext();
+    method public static List<FirebaseApp> getApps(Context);
+    method @NonNull public static com.google.firebase.FirebaseApp getInstance();
+    method @NonNull public static com.google.firebase.FirebaseApp getInstance(@NonNull String);
+    method @NonNull public String getName();
+    method @NonNull public com.google.firebase.FirebaseOptions getOptions();
+    method public int hashCode();
+    method @Nullable public static com.google.firebase.FirebaseApp initializeApp(@NonNull Context);
+    method @NonNull public static com.google.firebase.FirebaseApp initializeApp(@NonNull Context, @NonNull com.google.firebase.FirebaseOptions);
+    method @NonNull public static com.google.firebase.FirebaseApp initializeApp(@NonNull Context, @NonNull com.google.firebase.FirebaseOptions, @NonNull String);
+    method public void setAutomaticResourceManagementEnabled(boolean);
+    method public String toString();
+    field public static final String DEFAULT_APP_NAME;
+  }
+
+  public class FirebaseNetworkException {
+    ctor public FirebaseNetworkException(@NonNull String);
+  }
+
+  public final class FirebaseOptions {
+    method public boolean equals(Object);
+    method public static com.google.firebase.FirebaseOptions fromResource(Context);
+    method public String getApiKey();
+    method public String getApplicationId();
+    method public String getDatabaseUrl();
+    method public String getGcmSenderId();
+    method public String getProjectId();
+    method public String getStorageBucket();
+    method public int hashCode();
+    method public String toString();
+  }
+
+  public static final class FirebaseOptions.Builder {
+    ctor public FirebaseOptions.Builder();
+    ctor public FirebaseOptions.Builder(com.google.firebase.FirebaseOptions);
+    method public com.google.firebase.FirebaseOptions build();
+    method public com.google.firebase.FirebaseOptions.Builder setApiKey(@NonNull String);
+    method public com.google.firebase.FirebaseOptions.Builder setApplicationId(@NonNull String);
+    method public com.google.firebase.FirebaseOptions.Builder setDatabaseUrl(@Nullable String);
+    method public com.google.firebase.FirebaseOptions.Builder setGcmSenderId(@Nullable String);
+    method public com.google.firebase.FirebaseOptions.Builder setProjectId(@Nullable String);
+    method public com.google.firebase.FirebaseOptions.Builder setStorageBucket(@Nullable String);
+  }
+
+  public class FirebaseTooManyRequestsException {
+    ctor public FirebaseTooManyRequestsException(String);
+  }
+
+}
+
+package com.google.firebase.internal {
+
+  public class DataCollectionConfigStorage {
+    ctor public DataCollectionConfigStorage(Context, String, com.google.firebase.events.Publisher);
+    method public boolean isEnabled();
+    method public void setEnabled(boolean);
+    field public static final String DATA_COLLECTION_DEFAULT_ENABLED;
+  }
+
+}
+
+package com.google.firebase.provider {
+
+  public class FirebaseInitProvider {
+    ctor public FirebaseInitProvider();
+    method public void attachInfo(Context, ProviderInfo);
+    method public int delete(Uri, String, String[]);
+    method @Nullable public String getType(Uri);
+    method @Nullable public Uri insert(Uri, ContentValues);
+    method public boolean onCreate();
+    method @Nullable public Cursor query(Uri, String[], String, String[], String);
+    method public int update(Uri, ContentValues, String, String[]);
+  }
+
+}
+

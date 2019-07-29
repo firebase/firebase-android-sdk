@@ -18,11 +18,16 @@ import com.android.build.gradle.LibraryExtension;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
+import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTask;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
+
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.Set;
 
 public class FirebaseLibraryPlugin implements Plugin<Project> {
@@ -63,6 +68,21 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                   task.setEnabled(false);
                 }
               });
+    }
+    if(System.getenv().containsKey("METALAVA_BINARY_PATH")) {
+      String metalavaBinaryPath = System.getenv().get("METALAVA_BINARY_PATH");
+      String sourcePath = project.getProjectDir() + "/src/main/java";
+      project.getTasks().create("apiInformation", ApiInformationTask.class, task -> {
+        task.setProperty("apiTxt", project.getProjectDir() + "/api.txt");
+        task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
+        task.setProperty("sourcePath", sourcePath);
+      });
+
+      project.getTasks().create("generateApiTxtFile", GenerateApiTask.class, task -> {
+        task.setProperty("apiTxt", project.getProjectDir() + "/api.txt");
+        task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
+        task.setProperty("sourcePath", sourcePath);
+      });
     }
 
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab));
