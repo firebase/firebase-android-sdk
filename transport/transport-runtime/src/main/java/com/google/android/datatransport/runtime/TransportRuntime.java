@@ -36,7 +36,7 @@ import javax.inject.Singleton;
 @Singleton
 public class TransportRuntime implements TransportInternal {
 
-  private static volatile TransportRuntimeComponent INSTANCE = null;
+  private static volatile TransportRuntimeComponent instance = null;
 
   private final Clock eventClock;
   private final Clock uptimeClock;
@@ -61,12 +61,14 @@ public class TransportRuntime implements TransportInternal {
    * <p>This method must be called before {@link #getInstance()}.
    */
   public static void initialize(Context applicationContext) {
-    if (INSTANCE == null) {
+    if (instance == null) {
       synchronized (TransportRuntime.class) {
-        INSTANCE =
-            DaggerTransportRuntimeComponent.builder()
-                .setApplicationContext(applicationContext)
-                .build();
+        if (instance == null) {
+          instance =
+              DaggerTransportRuntimeComponent.builder()
+                  .setApplicationContext(applicationContext)
+                  .build();
+        }
       }
     }
     // send warning
@@ -78,7 +80,7 @@ public class TransportRuntime implements TransportInternal {
    * @throws IllegalStateException if {@link #initialize(Context)} is not called before this method.
    */
   public static TransportRuntime getInstance() {
-    TransportRuntimeComponent localRef = INSTANCE;
+    TransportRuntimeComponent localRef = instance;
     if (localRef == null) {
       throw new IllegalStateException("Not initialized!");
     }
@@ -91,14 +93,14 @@ public class TransportRuntime implements TransportInternal {
       throws Throwable {
     TransportRuntimeComponent original;
     synchronized (TransportRuntime.class) {
-      original = INSTANCE;
-      INSTANCE = component;
+      original = instance;
+      instance = component;
     }
     try {
       callable.call();
     } finally {
       synchronized (TransportRuntime.class) {
-        INSTANCE = original;
+        instance = original;
       }
     }
   }

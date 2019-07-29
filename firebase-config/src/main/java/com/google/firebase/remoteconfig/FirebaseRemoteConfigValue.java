@@ -14,6 +14,8 @@
 
 package com.google.firebase.remoteconfig;
 
+import androidx.annotation.NonNull;
+
 /** Wrapper for a Remote Config parameter value, with methods to get it as different types. */
 public interface FirebaseRemoteConfigValue {
   /**
@@ -22,33 +24,37 @@ public interface FirebaseRemoteConfigValue {
    * @return <code>long</code> representation of this parameter value.
    * @throws IllegalArgumentException If the value cannot be converted to a <code>long</code>.
    */
-  public long asLong() throws IllegalArgumentException;
+  long asLong() throws IllegalArgumentException;
   /**
    * Gets the value as a <code>double</code>.
    *
    * @return <code>double</code> representation of this parameter value.
    * @throws IllegalArgumentException If the value cannot be converted to a <code>double</code>.
    */
-  public double asDouble() throws IllegalArgumentException;
+  double asDouble() throws IllegalArgumentException;
+
   /**
    * Gets the value as a <code>String</code>.
    *
    * @return <code>String</code> representation of this parameter value.
    */
-  public String asString();
+  @NonNull
+  String asString();
+
   /**
    * Gets the value as a <code>byte[]</code>.
    *
    * @return <code>byte[]</code> representation of this parameter value.
    */
-  public byte[] asByteArray();
+  @NonNull
+  byte[] asByteArray();
   /**
    * Gets the value as a <code>boolean</code>.
    *
    * @return <code>boolean</code> representation of this parameter value.
    * @throws IllegalArgumentException If the value cannot be converted to a <code>boolean</code>.
    */
-  public boolean asBoolean() throws IllegalArgumentException;
+  boolean asBoolean() throws IllegalArgumentException;
 
   /**
    * Indicates at which source this value came from.
@@ -58,5 +64,5 @@ public interface FirebaseRemoteConfigValue {
    *     default, or {@link FirebaseRemoteConfig#VALUE_SOURCE_STATIC} if no value was found and a
    *     static default value was returned instead.
    */
-  public int getSource();
+  int getSource();
 }

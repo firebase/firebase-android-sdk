@@ -21,7 +21,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.Document;
@@ -44,7 +43,6 @@ import java.util.concurrent.ExecutionException;
  *
  * @see FirebaseFirestore#runTransaction(Function)
  */
-@PublicApi
 public class Transaction {
   private final com.google.firebase.firestore.core.Transaction transaction;
   private final FirebaseFirestore firestore;
@@ -65,7 +63,6 @@ public class Transaction {
    * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public Transaction set(@NonNull DocumentReference documentRef, @NonNull Object data) {
     return set(documentRef, data, SetOptions.OVERWRITE);
   }
@@ -82,7 +79,6 @@ public class Transaction {
    * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public Transaction set(
       @NonNull DocumentReference documentRef, @NonNull Object data, @NonNull SetOptions options) {
     firestore.validateReference(documentRef);
@@ -106,7 +102,6 @@ public class Transaction {
    * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public Transaction update(
       @NonNull DocumentReference documentRef, @NonNull Map<String, Object> data) {
     ParsedUpdateData parsedData = firestore.getDataConverter().parseUpdateData(data);
@@ -125,7 +120,6 @@ public class Transaction {
    * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public Transaction update(
       @NonNull DocumentReference documentRef,
       @NonNull String field,
@@ -151,7 +145,6 @@ public class Transaction {
    * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public Transaction update(
       @NonNull DocumentReference documentRef,
       @NonNull FieldPath fieldPath,
@@ -180,7 +173,6 @@ public class Transaction {
    * @return This {@code Transaction} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public Transaction delete(@NonNull DocumentReference documentRef) {
     firestore.validateReference(documentRef);
     transaction.delete(documentRef.getKey());
@@ -229,7 +221,6 @@ public class Transaction {
    * @return The contents of the Document at this {@code DocumentReference}.
    */
   @NonNull
-  @PublicApi
   public DocumentSnapshot get(@NonNull DocumentReference documentRef)
       throws FirebaseFirestoreException {
     firestore.validateReference(documentRef);
@@ -250,10 +241,8 @@ public class Transaction {
    *
    * @see FirebaseFirestore#runTransaction(Function)
    */
-  @PublicApi
   public interface Function<TResult> {
     @Nullable
-    @PublicApi
     TResult apply(@NonNull Transaction transaction) throws FirebaseFirestoreException;
   }
 }

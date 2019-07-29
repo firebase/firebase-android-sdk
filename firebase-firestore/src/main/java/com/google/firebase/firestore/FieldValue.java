@@ -15,7 +15,6 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,7 +22,6 @@ import java.util.List;
  * Sentinel values that can be used when writing document fields with {@code set()} or {@code
  * update()}.
  */
-@PublicApi
 public abstract class FieldValue {
 
   FieldValue() {}
@@ -110,7 +108,6 @@ public abstract class FieldValue {
 
   /** Returns a sentinel for use with {@code update()} to mark a field for deletion. */
   @NonNull
-  @PublicApi
   public static FieldValue delete() {
     return DELETE_INSTANCE;
   }
@@ -120,7 +117,6 @@ public abstract class FieldValue {
    * timestamp in the written data.
    */
   @NonNull
-  @PublicApi
   public static FieldValue serverTimestamp() {
     return SERVER_TIMESTAMP_INSTANCE;
   }
@@ -136,8 +132,7 @@ public abstract class FieldValue {
    * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
    */
   @NonNull
-  @PublicApi
-  public static FieldValue arrayUnion(@NonNull Object... elements) {
+  public static FieldValue arrayUnion(Object... elements) {
     return new ArrayUnionFieldValue(Arrays.asList(elements));
   }
 
@@ -151,8 +146,7 @@ public abstract class FieldValue {
    * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
    */
   @NonNull
-  @PublicApi
-  public static FieldValue arrayRemove(@NonNull Object... elements) {
+  public static FieldValue arrayRemove(Object... elements) {
     return new ArrayRemoveFieldValue(Arrays.asList(elements));
   }
 
@@ -170,7 +164,6 @@ public abstract class FieldValue {
    * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
    */
   @NonNull
-  @PublicApi
   public static FieldValue increment(long l) {
     return new NumericIncrementFieldValue(l);
   }
@@ -186,7 +179,6 @@ public abstract class FieldValue {
    * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
    */
   @NonNull
-  @PublicApi
   public static FieldValue increment(double l) {
     return new NumericIncrementFieldValue(l);
   }

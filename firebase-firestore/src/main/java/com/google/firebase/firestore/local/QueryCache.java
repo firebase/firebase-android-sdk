@@ -14,12 +14,12 @@
 
 package com.google.firebase.firestore.local;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
-import javax.annotation.Nullable;
 
 /**
  * Represents cached queries received from the remote backend. This contains both a mapping between
