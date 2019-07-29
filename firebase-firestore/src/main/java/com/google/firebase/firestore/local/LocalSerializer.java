@@ -205,7 +205,7 @@ public final class LocalSerializer {
     result
         .setTargetId(queryData.getTargetId())
         .setLastListenSequenceNumber(queryData.getSequenceNumber())
-        .setSynced(queryData.isSynced())
+        .setConsistent(queryData.isConsistentWithLocalViews())
         .setSnapshotVersion(rpcSerializer.encodeVersion(queryData.getSnapshotVersion()))
         .setResumeToken(queryData.getResumeToken());
 
@@ -224,7 +224,7 @@ public final class LocalSerializer {
     SnapshotVersion version = rpcSerializer.decodeVersion(target.getSnapshotVersion());
     ByteString resumeToken = target.getResumeToken();
     long sequenceNumber = target.getLastListenSequenceNumber();
-    boolean synced = target.getSynced();
+    boolean consistent = target.getConsistent();
 
     Query query;
     switch (target.getTargetTypeCase()) {
@@ -241,6 +241,6 @@ public final class LocalSerializer {
     }
 
     return new QueryData(
-        query, targetId, sequenceNumber, synced, QueryPurpose.LISTEN, version, resumeToken);
+        query, targetId, sequenceNumber, consistent, QueryPurpose.LISTEN, version, resumeToken);
   }
 }

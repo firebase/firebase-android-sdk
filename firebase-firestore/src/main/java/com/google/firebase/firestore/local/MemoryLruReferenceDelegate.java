@@ -140,7 +140,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
             queryData.getSnapshotVersion(),
             queryData.getResumeToken(),
             getCurrentSequenceNumber(),
-            queryData.isSynced());
+            queryData.isConsistentWithLocalViews());
     persistence.getQueryCache().updateQueryData(updated);
   }
 

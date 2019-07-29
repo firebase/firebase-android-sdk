@@ -125,7 +125,7 @@ public class QuerySnapshotTest {
             documentChanges,
             /*isFromCache=*/ false,
             /*mutatedKeys=*/ keySet(),
-            /*synced=*/ true,
+            /*consistentWithBackend=*/ true,
             /*didSyncStateChange=*/ true,
             /* excludesMetadataChanges= */ false);
 

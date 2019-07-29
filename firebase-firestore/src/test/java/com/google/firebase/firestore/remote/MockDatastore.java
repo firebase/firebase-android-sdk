@@ -94,7 +94,7 @@ public class MockDatastore extends Datastore {
               SnapshotVersion.NONE,
               queryData.getResumeToken(),
               queryData.getSequenceNumber(),
-              queryData.isSynced());
+              queryData.isConsistentWithLocalViews());
       watchStreamRequestCount += 1;
       this.activeTargets.put(queryData.getTargetId(), sentQueryData);
     }

@@ -509,7 +509,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                   snapshotVersion,
                   targetChange.getResumeToken(),
                   queryData.getSequenceNumber(),
-                  queryData.isSynced()));
+                  queryData.isConsistentWithLocalViews()));
         }
       }
     }
@@ -527,7 +527,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 queryData.getSnapshotVersion(),
                 ByteString.EMPTY,
                 queryData.getSequenceNumber(),
-                queryData.isSynced()));
+                queryData.isConsistentWithLocalViews()));
 
         // Cause a hard reset by unwatching and rewatching immediately, but deliberately don't send
         // a resume token so that we get a full update.

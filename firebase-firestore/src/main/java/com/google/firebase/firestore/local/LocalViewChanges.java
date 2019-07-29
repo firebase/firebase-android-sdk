@@ -49,22 +49,23 @@ public final class LocalViewChanges {
       }
     }
 
-    return new LocalViewChanges(targetId, snapshot.isSynced(), addedKeys, removedKeys);
+    return new LocalViewChanges(
+        targetId, snapshot.isConsistentWithBackend(), addedKeys, removedKeys);
   }
 
   private final int targetId;
-  private final boolean synced;
+  private final boolean consistentWithBackend;
 
   private final ImmutableSortedSet<DocumentKey> added;
   private final ImmutableSortedSet<DocumentKey> removed;
 
   public LocalViewChanges(
       int targetId,
-      boolean synced,
+      boolean consistentWithBackend,
       ImmutableSortedSet<DocumentKey> added,
       ImmutableSortedSet<DocumentKey> removed) {
     this.targetId = targetId;
-    this.synced = synced;
+    this.consistentWithBackend = consistentWithBackend;
     this.added = added;
     this.removed = removed;
   }
@@ -74,8 +75,8 @@ public final class LocalViewChanges {
   }
 
   /** Returns whether the local query view is in sync with the backend. * */
-  public boolean isSynced() {
-    return synced;
+  public boolean isConsistentWithBackend() {
+    return consistentWithBackend;
   }
 
   public ImmutableSortedSet<DocumentKey> getAdded() {

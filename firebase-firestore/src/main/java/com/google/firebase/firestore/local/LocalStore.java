@@ -358,12 +358,15 @@ public final class LocalStore {
             ByteString resumeToken = change.getResumeToken();
             if (!resumeToken.isEmpty()) {
               QueryData oldQueryData = queryData;
+              // A query whose document target mapping changed can only be marked consistent once
+              // we re-compute the associated view.
+              boolean consistentWithLocalViews = false;
               queryData =
                   queryData.copy(
                       remoteEvent.getSnapshotVersion(),
                       resumeToken,
                       sequenceNumber,
-                      oldQueryData.isSynced());
+                      consistentWithLocalViews);
               targetIds.put(boxedTargetId, queryData);
 
               if (shouldPersistQueryData(oldQueryData, queryData, change)) {
@@ -491,7 +494,7 @@ public final class LocalStore {
                     queryData.getSnapshotVersion(),
                     queryData.getResumeToken(),
                     queryData.getSequenceNumber(),
-                    viewChange.isSynced());
+                    viewChange.isConsistentWithBackend());
             targetIds.put(targetId, updatedQueryData);
           }
         });
@@ -573,7 +576,8 @@ public final class LocalStore {
             // conditions and rationale) we need to persist the token now because there will no
             // longer be an in-memory version to fall back on.
             needsUpdate = true;
-          } else if (cachedQueryData.isSynced() != queryData.isSynced()) {
+          } else if (cachedQueryData.isConsistentWithLocalViews()
+              != queryData.isConsistentWithLocalViews()) {
             needsUpdate = true;
           }
 
@@ -608,7 +612,7 @@ public final class LocalStore {
             queryData.getSnapshotVersion(),
             queryData.getResumeToken(),
             queryData.getSequenceNumber(),
-            /* synced= */ false);
+            /* consistentWithLocalViews= */ false);
     targetIds.put(targetId, updatedQueryData);
   }
 

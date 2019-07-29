@@ -302,6 +302,33 @@ public class ViewTest {
   }
 
   @Test
+  public void testViewsWithLimboDocumentsAreNotConsistent() {
+    Query query = messageQuery();
+    View view = new View(query, DocumentKey.emptyKeySet());
+    Document doc1 = doc("rooms/eros/messages/0", 0, map());
+    Document doc2 = doc("rooms/eros/messages/1", 0, map());
+
+    // Doc1 is contained in the local view, but the backend has not yet told us about it.
+    ViewChange change = applyChanges(view, doc1);
+    assertTrue(change.getSnapshot().isConsistentWithBackend());
+
+    // Add doc2 to generate a snapshot. Doc1 is still missing.
+    View.DocumentChanges viewDocChanges = view.computeDocChanges(docUpdates(doc2));
+    change =
+        view.applyChanges(
+            viewDocChanges, targetChange(ByteString.EMPTY, true, asList(doc2), null, null));
+    // View is not consistent since doc1 is missing from the result set
+    assertFalse(change.getSnapshot().isConsistentWithBackend());
+
+    // Add doc1 to the backend's result set.
+    change =
+        view.applyChanges(
+            viewDocChanges, targetChange(ByteString.EMPTY, true, asList(doc1), null, null));
+    // View is consistent
+    assertTrue(change.getSnapshot().isConsistentWithBackend());
+  }
+
+  @Test
   public void testResumingQueryCreatesNoLimbos() {
     Query query = messageQuery();
     Document doc1 = doc("rooms/eros/messages/0", 0, map());

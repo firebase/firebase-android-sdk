@@ -327,7 +327,7 @@ public abstract class QueryCacheTestCase {
         query,
         targetId,
         sequenceNumber,
-        /* synced= */ false,
+        /* consistentWithBackend= */ false,
         QueryPurpose.LISTEN,
         version(version),
         resumeToken(version));

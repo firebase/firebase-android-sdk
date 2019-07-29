@@ -211,7 +211,7 @@ public final class LocalSerializerTest {
             query,
             targetId,
             sequenceNumber,
-            /* sycned= */ true,
+            /* consistentWithLocalViews= */ true,
             QueryPurpose.LISTEN,
             version,
             resumeToken);
@@ -230,7 +230,7 @@ public final class LocalSerializerTest {
                 com.google.firestore.v1.Target.QueryTarget.newBuilder()
                     .setParent(queryTarget.getParent())
                     .setStructuredQuery(queryTarget.getStructuredQuery()))
-            .setSynced(true)
+            .setConsistent(true)
             .build();
 
     assertEquals(expected, serializer.encodeQueryData(queryData));
