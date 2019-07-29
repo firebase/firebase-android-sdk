@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.auth;
 
-import javax.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /**
  * Simple wrapper around a nullable UID. Mostly exists to make code more readable and for use as a

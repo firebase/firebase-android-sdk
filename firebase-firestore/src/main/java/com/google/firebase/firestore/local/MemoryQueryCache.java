@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import android.util.SparseArray;
+import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -23,7 +24,6 @@ import com.google.firebase.firestore.util.Consumer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * An implementation of the QueryCache protocol that merely keeps queries in memory, suitable for

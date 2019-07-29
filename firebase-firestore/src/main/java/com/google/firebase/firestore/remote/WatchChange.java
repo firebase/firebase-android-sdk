@@ -16,12 +16,12 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /**
  * A Watch Change is the internal representation of the watcher API protocol buffers. This is an

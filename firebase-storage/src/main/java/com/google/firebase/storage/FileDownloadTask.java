@@ -19,7 +19,6 @@ import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.api.Status;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
 import com.google.firebase.storage.network.GetNetworkRequest;
 import com.google.firebase.storage.network.NetworkRequest;
@@ -31,7 +30,6 @@ import java.io.OutputStream;
 
 /** A task that downloads bytes of a GCS blob to a specified File. */
 @SuppressWarnings("unused")
-@PublicApi
 public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot> {
   static final int PREFERRED_CHUNK_SIZE = 256 * 1024; // 256KB
   private static final String TAG = "FileDownloadTask";
@@ -262,7 +260,6 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
   }
 
   @Override
-  @PublicApi
   protected void onCanceled() {
     mSender.cancel();
     mException = StorageException.fromErrorStatus(Status.RESULT_CANCELED);
@@ -274,7 +271,6 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
 
   /** Encapsulates state about the running {@link FileDownloadTask} */
   @SuppressWarnings("unused")
-  @PublicApi
   public class TaskSnapshot extends StorageTask<FileDownloadTask.TaskSnapshot>.SnapshotBase {
     private final long mBytesDownloaded;
 
@@ -284,13 +280,11 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
     }
 
     /** @return the total bytes downloaded so far. */
-    @PublicApi
     public long getBytesTransferred() {
       return mBytesDownloaded;
     }
 
     /** @return the total bytes to upload.. */
-    @PublicApi
     public long getTotalByteCount() {
       return FileDownloadTask.this.getTotalBytes();
     }
