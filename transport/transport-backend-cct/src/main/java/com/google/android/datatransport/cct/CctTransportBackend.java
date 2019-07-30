@@ -19,6 +19,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.proto.AndroidClientInfo;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
 import com.google.android.datatransport.cct.proto.ClientInfo;
@@ -217,6 +218,8 @@ final class CctTransportBackend implements TransportBackend {
     connection.setDoOutput(true);
     connection.setInstanceFollowRedirects(false);
     connection.setRequestMethod("POST");
+    connection.setRequestProperty(
+        "User-Agent", String.format("datatransport/%s android/", BuildConfig.VERSION_NAME));
     connection.setRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
     connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, PROTOBUF_CONTENT_TYPE);
 

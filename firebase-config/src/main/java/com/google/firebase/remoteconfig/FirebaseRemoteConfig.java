@@ -72,12 +72,14 @@ public class FirebaseRemoteConfig {
    * @return A singleton instance of {@link FirebaseRemoteConfig} for the default {@link
    *     FirebaseApp}.
    */
+  @NonNull
   public static FirebaseRemoteConfig getInstance() {
     return getInstance(FirebaseApp.getInstance());
   }
 
   /** Returns an instance of Firebase Remote Config for the given {@link FirebaseApp}. */
-  public static FirebaseRemoteConfig getInstance(FirebaseApp app) {
+  @NonNull
+  public static FirebaseRemoteConfig getInstance(@NonNull FirebaseApp app) {
     return app.get(RemoteConfigComponent.class).getDefault();
   }
 
@@ -178,6 +180,7 @@ public class FirebaseRemoteConfig {
    * Returns a {@link Task} representing the initialization status of this Firebase Remote Config
    * instance.
    */
+  @NonNull
   public Task<FirebaseRemoteConfigInfo> ensureInitialized() {
     Task<ConfigContainer> activatedConfigsTask = activatedConfigsCache.get();
     Task<ConfigContainer> defaultsConfigsTask = defaultConfigsCache.get();
@@ -202,6 +205,7 @@ public class FirebaseRemoteConfig {
    *     configs; if no configs were fetched from the backend and the local fetched configs have
    *     already been activated, returns a {@link Task} with a {@code false} result.
    */
+  @NonNull
   public Task<Boolean> fetchAndActivate() {
     return fetch().onSuccessTask(executor, (unusedVoid) -> activate());
   }
@@ -248,6 +252,7 @@ public class FirebaseRemoteConfig {
    *     configs; if the fetched configs were already activated by a previous call, returns a {@link
    *     Task} with a {@code false} result.
    */
+  @NonNull
   public Task<Boolean> activate() {
     Task<ConfigContainer> fetchedConfigsTask = fetchedConfigsCache.get();
     Task<ConfigContainer> activatedConfigsTask = activatedConfigsCache.get();
@@ -293,6 +298,7 @@ public class FirebaseRemoteConfig {
    *
    * @return {@link Task} representing the {@code fetch} call.
    */
+  @NonNull
   public Task<Void> fetch() {
     Task<FetchResponse> fetchTask = fetchHandler.fetch();
 
@@ -317,6 +323,7 @@ public class FirebaseRemoteConfig {
    *     this many seconds ago, configs are served from the backend instead of local storage.
    * @return {@link Task} representing the {@code fetch} call.
    */
+  @NonNull
   public Task<Void> fetch(long minimumFetchIntervalInSeconds) {
     Task<FetchResponse> fetchTask = fetchHandler.fetch(minimumFetchIntervalInSeconds);
 
@@ -339,7 +346,8 @@ public class FirebaseRemoteConfig {
    * @return {@link String} representing the value of the Firebase Remote Config parameter with the
    *     given key.
    */
-  public String getString(String key) {
+  @NonNull
+  public String getString(@NonNull String key) {
     return getHandler.getString(key);
   }
 
@@ -364,7 +372,7 @@ public class FirebaseRemoteConfig {
    * @return {@code boolean} representing the value of the Firebase Remote Config parameter with the
    *     given key.
    */
-  public boolean getBoolean(String key) {
+  public boolean getBoolean(@NonNull String key) {
     return getHandler.getBoolean(key);
   }
 
@@ -383,8 +391,9 @@ public class FirebaseRemoteConfig {
    * @return {@code byte[]} representing the value of the Firebase Remote Config parameter with the
    *     given key.
    */
+  @NonNull
   @Deprecated
-  public byte[] getByteArray(String key) {
+  public byte[] getByteArray(@NonNull String key) {
     return getHandler.getByteArray(key);
   }
 
@@ -405,7 +414,7 @@ public class FirebaseRemoteConfig {
    * @return {@code double} representing the value of the Firebase Remote Config parameter with the
    *     given key.
    */
-  public double getDouble(String key) {
+  public double getDouble(@NonNull String key) {
     return getHandler.getDouble(key);
   }
 
@@ -426,7 +435,7 @@ public class FirebaseRemoteConfig {
    * @return {@code long} representing the value of the Firebase Remote Config parameter with the
    *     given key.
    */
-  public long getLong(String key) {
+  public long getLong(@NonNull String key) {
     return getHandler.getLong(key);
   }
 
@@ -445,7 +454,8 @@ public class FirebaseRemoteConfig {
    * @return {@link FirebaseRemoteConfigValue} representing the value of the Firebase Remote Config
    *     parameter with the given key.
    */
-  public FirebaseRemoteConfigValue getValue(String key) {
+  @NonNull
+  public FirebaseRemoteConfigValue getValue(@NonNull String key) {
     return getHandler.getValue(key);
   }
 
@@ -455,7 +465,8 @@ public class FirebaseRemoteConfig {
    * @param prefix The key prefix to look for. If the prefix is empty, all keys are returned.
    * @return {@link Set} of Remote Config parameter keys that start with the specified prefix.
    */
-  public Set<String> getKeysByPrefix(String prefix) {
+  @NonNull
+  public Set<String> getKeysByPrefix(@NonNull String prefix) {
     return getHandler.getKeysByPrefix(prefix);
   }
 
@@ -469,6 +480,7 @@ public class FirebaseRemoteConfig {
    *   <li>The default value, if the key was set with {@link #setDefaultsAsync}.
    * </ol>
    */
+  @NonNull
   public Map<String, FirebaseRemoteConfigValue> getAll() {
     return getHandler.getAll();
   }
@@ -477,6 +489,7 @@ public class FirebaseRemoteConfig {
    * Returns the state of this {@link FirebaseRemoteConfig} instance as a {@link
    * FirebaseRemoteConfigInfo}.
    */
+  @NonNull
   public FirebaseRemoteConfigInfo getInfo() {
     return frcMetadata.getInfo();
   }
@@ -488,7 +501,7 @@ public class FirebaseRemoteConfig {
    * @deprecated Use {@link #setConfigSettingsAsync(FirebaseRemoteConfigSettings)} instead.
    */
   @Deprecated
-  public void setConfigSettings(FirebaseRemoteConfigSettings settings) {
+  public void setConfigSettings(@NonNull FirebaseRemoteConfigSettings settings) {
     frcMetadata.setConfigSettingsWithoutWaitingOnDiskWrite(settings);
   }
 
@@ -497,7 +510,8 @@ public class FirebaseRemoteConfig {
    *
    * @param settings The new settings to be applied.
    */
-  public Task<Void> setConfigSettingsAsync(FirebaseRemoteConfigSettings settings) {
+  @NonNull
+  public Task<Void> setConfigSettingsAsync(@NonNull FirebaseRemoteConfigSettings settings) {
     return Tasks.call(
         executor,
         () -> {
@@ -526,7 +540,7 @@ public class FirebaseRemoteConfig {
    * @deprecated Use {@link #setDefaultsAsync} instead.
    */
   @Deprecated
-  public void setDefaults(Map<String, Object> defaults) {
+  public void setDefaults(@NonNull Map<String, Object> defaults) {
     // Fetch values from the server are in the Map<String, String> format, so match that here.
     Map<String, String> defaultsStringMap = new HashMap<>();
     for (Map.Entry<String, Object> defaultsEntry : defaults.entrySet()) {
@@ -552,7 +566,8 @@ public class FirebaseRemoteConfig {
    * @param defaults {@link Map} of key value pairs representing Firebase Remote Config parameter
    *     keys and values.
    */
-  public Task<Void> setDefaultsAsync(Map<String, Object> defaults) {
+  @NonNull
+  public Task<Void> setDefaultsAsync(@NonNull Map<String, Object> defaults) {
     // Fetch values from the server are in the Map<String, String> format, so match that here.
     Map<String, String> defaultsStringMap = new HashMap<>();
     for (Map.Entry<String, Object> defaultsEntry : defaults.entrySet()) {
@@ -579,6 +594,7 @@ public class FirebaseRemoteConfig {
    * @param resourceId Id for the XML resource, which should be in your application's {@code
    *     res/xml} folder.
    */
+  @NonNull
   public Task<Void> setDefaultsAsync(@XmlRes int resourceId) {
     Map<String, String> xmlDefaults = DefaultsXmlParser.getDefaultsFromXml(context, resourceId);
     return setDefaultsWithStringsMapAsync(xmlDefaults);
@@ -590,6 +606,7 @@ public class FirebaseRemoteConfig {
    *
    * @return {@link Task} representing the {@code clear} call.
    */
+  @NonNull
   public Task<Void> reset() {
     // Use a Task to avoid throwing potential file I/O errors to the caller and because
     // frcMetadata's clear call is blocking.

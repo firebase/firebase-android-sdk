@@ -14,14 +14,12 @@
 
 package com.google.firebase.firestore;
 
-import com.google.firebase.annotations.PublicApi;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Marks a field as excluded from the Database. */
-@PublicApi
+/** Marks a field as excluded from the database instance. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Exclude {}

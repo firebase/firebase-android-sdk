@@ -156,7 +156,7 @@ public class TransactionTest {
     private void prepareDoc() {
       docRef = db.collection("tester-docref").document();
       if (fromExistingDoc) {
-        docRef.set(map("foo", "bar0"));
+        waitFor(docRef.set(map("foo", "bar0")));
         DocumentSnapshot docSnap = waitFor(docRef.get());
         assertTrue(docSnap.exists());
       }
@@ -375,7 +375,7 @@ public class TransactionTest {
     ArrayList<Task<Void>> readTasks = new ArrayList<>();
     // A barrier to make sure every transaction reaches the same spot.
     TaskCompletionSource<Void> barrier = new TaskCompletionSource<>();
-    AtomicInteger started = new AtomicInteger(0);
+    AtomicInteger counter = new AtomicInteger(0);
 
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("counters").document();
@@ -388,9 +388,9 @@ public class TransactionTest {
       transactionTasks.add(
           firestore.runTransaction(
               transaction -> {
+                counter.incrementAndGet();
                 DocumentSnapshot snapshot = transaction.get(doc);
                 assertNotNull(snapshot);
-                started.incrementAndGet();
                 resolveRead.trySetResult(null);
                 waitFor(barrier.getTask());
                 transaction.update(doc, map("count", snapshot.getDouble("count") + 1.0));
@@ -400,10 +400,12 @@ public class TransactionTest {
 
     // Let all of the transactions fetch the old value and stop once.
     waitFor(Tasks.whenAll(readTasks));
-    assertEquals(3, started.intValue());
-    // Let all of the transactions continue and wait for them to finish.
+    // There should be 3 initial transaction runs.
+    assertEquals(3, counter.get());
     barrier.setResult(null);
     waitFor(Tasks.whenAll(transactionTasks));
+    // There should be a maximum of 3 retries: once for the 2nd update, and twice for the 3rd update
+    assertTrue(counter.get() <= 6);
     // Now all transaction should be completed, so check the result.
     DocumentSnapshot snapshot = waitFor(doc.get());
     assertEquals(8, snapshot.getDouble("count").intValue());
@@ -546,15 +548,17 @@ public class TransactionTest {
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 15.0)));
+    AtomicInteger counter = new AtomicInteger(0);
     Exception e =
         waitForException(
             firestore.runTransaction(
                 transaction -> {
+                  counter.incrementAndGet();
                   // Get the doc once.
                   DocumentSnapshot snapshot1 = transaction.get(doc);
-                  assertEquals(15, snapshot1.getDouble("count").intValue());
-                  // Do a write outside of the transaction.
-                  waitFor(doc.set(map("count", 1234.0)));
+                  // Do a write outside of the transaction. Because the transaction will retry, set
+                  // the document to a different value each time.
+                  waitFor(doc.set(map("count", 1234.0 + counter.get())));
                   // Get the doc again in the transaction with the new version.
                   DocumentSnapshot snapshot2 = transaction.get(doc);
                   // The get itself will fail, because we already read an earlier version of this
@@ -563,8 +567,6 @@ public class TransactionTest {
                   return null;
                 }));
     assertEquals(Code.ABORTED, ((FirebaseFirestoreException) e).getCode());
-    DocumentSnapshot snapshot = waitFor(doc.get());
-    assertEquals(1234, snapshot.getDouble("count").intValue());
   }
 
   @Test
@@ -620,6 +622,28 @@ public class TransactionTest {
     // assertEquals("bar", snapshot.getString("foo"));
     assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
     assertEquals("Every document read in a transaction must also be written.", e.getMessage());
+  }
+
+  @Test
+  public void testDoesNotRetryOnPermanentError() {
+    final FirebaseFirestore firestore = testFirestore();
+    AtomicInteger count = new AtomicInteger(0);
+    // Make a transaction that should fail with a permanent error
+    Task<Void> transactionTask =
+        firestore.runTransaction(
+            transaction -> {
+              count.incrementAndGet();
+              // Get and update a document that doesn't exist so that the transaction fails
+              DocumentSnapshot doc =
+                  transaction.get(firestore.collection("nonexistent").document());
+              transaction.update(doc.getReference(), "foo", "bar");
+              return null;
+            });
+
+    // Let all of the transactions fetch the old value and stop once.
+    Exception e = waitForException(transactionTask);
+    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
+    assertEquals(1, count.get());
   }
 
   @Test

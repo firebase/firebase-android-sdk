@@ -63,9 +63,9 @@ public class Datastore {
    * part of their app's dependencies.
    */
   static final String SSL_DEPENDENCY_ERROR_MESSAGE =
-      "The Firestore SDK failed to establish a secure connection. This is likely a problem with "
-          + "your app, rather than with Firestore itself. See https://bit.ly/2XFpdma for "
-          + "instructions on how to enable TLS on Android 4.x devices.";
+      "The Cloud Firestore client failed to establish a secure connection. This is likely a "
+          + "problem with your app, rather than with Cloud Firestore itself. See "
+          + "https://bit.ly/2XFpdma for instructions on how to enable TLS on Android 4.x devices.";
 
   /** Set of lowercase, white-listed headers for logging purposes. */
   static final Set<String> WHITE_LISTED_HEADERS =
@@ -189,8 +189,18 @@ public class Datastore {
    * @see #isPermanentWriteError for classifying write errors.
    */
   public static boolean isPermanentError(Status status) {
+    return isPermanentError(FirebaseFirestoreException.Code.fromValue(status.getCode().value()));
+  }
+
+  /**
+   * Determines whether the given error code represents a permanent error when received in response
+   * to a non-write operation.
+   *
+   * @see #isPermanentWriteError for classifying write errors.
+   */
+  public static boolean isPermanentError(FirebaseFirestoreException.Code code) {
     // See go/firestore-client-errors
-    switch (status.getCode()) {
+    switch (code) {
       case OK:
         throw new IllegalArgumentException("Treated status OK as error");
       case CANCELLED:
@@ -217,7 +227,7 @@ public class Datastore {
       case DATA_LOSS:
         return true;
       default:
-        throw new IllegalArgumentException("Unknown gRPC status code: " + status.getCode());
+        throw new IllegalArgumentException("Unknown gRPC status code: " + code);
     }
   }
 
