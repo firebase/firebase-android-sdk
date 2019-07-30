@@ -511,7 +511,7 @@ public class AsyncQueue {
             throw error;
           } else {
             throw new RuntimeException(
-                "Internal error in Firestore (" + BuildConfig.VERSION_NAME + ").", t);
+                "Internal error in Cloud Firestore (" + BuildConfig.VERSION_NAME + ").", t);
           }
         });
   }

@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -28,7 +27,6 @@ import java.util.regex.Pattern;
  * (referring to a top level field in the document), or a list of field names (referring to a nested
  * field in the document).
  */
-@PublicApi
 public final class FieldPath {
   /** Matches any characters in a field path string that are reserved. */
   private static final Pattern RESERVED = Pattern.compile("[~*/\\[\\]]");
@@ -48,14 +46,14 @@ public final class FieldPath {
   }
 
   /**
-   * Creates a FieldPath from the provided field names. If more than one field name is provided, the
-   * path will point to a nested field in a document.
+   * Creates a {@code FieldPath} from the provided field names. If more than one field name is
+   * provided, the path will point to a nested field in a document.
    *
    * @param fieldNames A list of field names.
    * @return A {@code FieldPath} that points to a field location in a document.
    */
-  @PublicApi
-  public static FieldPath of(@NonNull String... fieldNames) {
+  @NonNull
+  public static FieldPath of(String... fieldNames) {
     checkArgument(fieldNames.length > 0, "Invalid field path. Provided path must not be empty.");
 
     for (int i = 0; i < fieldNames.length; ++i) {
@@ -71,11 +69,10 @@ public final class FieldPath {
       new FieldPath(com.google.firebase.firestore.model.FieldPath.KEY_PATH);
 
   /**
-   * Returns A special sentinel FieldPath to refer to the ID of a document. It can be used in
-   * queries to sort or filter by the document ID.
+   * Returns A special sentinel {@code FieldPath} to refer to the ID of a document. It can be used
+   * in queries to sort or filter by the document ID.
    */
   @NonNull
-  @PublicApi
   public static FieldPath documentId() {
     return DOCUMENT_ID_INSTANCE;
   }
