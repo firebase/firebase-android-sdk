@@ -41,15 +41,15 @@ public class SegmentationServiceClient {
   public enum Code {
     OK,
 
-    HTTP_CLIENT_ERROR,
-
     CONFLICT,
+
+    UNAUTHORIZED,
 
     NETWORK_ERROR,
 
-    SERVER_ERROR,
+    HTTP_CLIENT_ERROR,
 
-    UNAUTHORIZED,
+    SERVER_ERROR,
   }
 
   @NonNull
@@ -100,6 +100,9 @@ public class SegmentationServiceClient {
         case 409:
           return Code.CONFLICT;
         default:
+          if (httpResponseCode / 100 == 4) {
+            return Code.HTTP_CLIENT_ERROR;
+          }
           return Code.SERVER_ERROR;
       }
     } catch (IOException e) {
@@ -158,6 +161,9 @@ public class SegmentationServiceClient {
         case 401:
           return Code.UNAUTHORIZED;
         default:
+          if (httpResponseCode / 100 == 4) {
+            return Code.HTTP_CLIENT_ERROR;
+          }
           return Code.SERVER_ERROR;
       }
     } catch (IOException e) {

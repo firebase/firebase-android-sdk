@@ -127,7 +127,8 @@ public class FirebaseSegmentationInstrumentedTest {
   }
 
   @Test
-  public void testUpdateCustomInstallationId_CacheOk_BackendError() throws InterruptedException {
+  public void testUpdateCustomInstallationId_CacheOk_BackendError_Retryable()
+      throws InterruptedException {
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
             firebaseApp, firebaseInstanceId, actualCache, backendClientReturnsError);
@@ -148,6 +149,31 @@ public class FirebaseSegmentationInstrumentedTest {
     assertThat(entryValue.getFirebaseInstanceId()).isEqualTo(FIREBASE_INSTANCE_ID);
     assertThat(entryValue.getCacheStatus())
         .isEqualTo(CustomInstallationIdCache.CacheStatus.PENDING_UPDATE);
+  }
+
+  @Test
+  public void testUpdateCustomInstallationId_CacheOk_BackendError_NotRetryable()
+      throws InterruptedException {
+    when(backendClientReturnsError.updateCustomInstallationId(
+            anyLong(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(SegmentationServiceClient.Code.CONFLICT);
+    FirebaseSegmentation firebaseSegmentation =
+        new FirebaseSegmentation(
+            firebaseApp, firebaseInstanceId, actualCache, backendClientReturnsError);
+
+    // Expect exception
+    try {
+      Tasks.await(firebaseSegmentation.setCustomInstallationId(CUSTOM_INSTALLATION_ID));
+      fail();
+    } catch (ExecutionException expected) {
+      Throwable cause = expected.getCause();
+      assertThat(cause).isInstanceOf(SetCustomInstallationIdException.class);
+      assertThat(((SetCustomInstallationIdException) cause).getStatus())
+          .isEqualTo(SetCustomInstallationIdException.Status.DUPLICATED_CUSTOM_INSTALLATION_ID);
+    }
+
+    CustomInstallationIdCacheEntryValue entryValue = actualCache.readCacheEntryValue();
+    assertThat(entryValue).isNull();
   }
 
   @Test

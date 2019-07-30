@@ -45,13 +45,13 @@ public class SetCustomInstallationIdException extends FirebaseException {
     this.status = status;
   }
 
-  SetCustomInstallationIdException(@NonNull String message, @NonNull Status status) {
+  SetCustomInstallationIdException(@NonNull Status status, @NonNull String message) {
     super(message);
     this.status = status;
   }
 
   SetCustomInstallationIdException(
-      @NonNull String message, @NonNull Status status, Throwable cause) {
+      @NonNull Status status, @NonNull String message, Throwable cause) {
     super(message, cause);
     this.status = status;
   }
