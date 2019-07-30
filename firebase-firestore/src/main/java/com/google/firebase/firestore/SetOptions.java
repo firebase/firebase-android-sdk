@@ -67,8 +67,8 @@ public final class SetOptions {
   }
 
   /**
-   * Changes the behavior of {@code set()} calls to only replace the fields under fieldPaths. Any
-   * field that is not specified in fieldPaths is ignored and remains untouched.
+   * Changes the behavior of {@code set()} calls to only replace the given fields. Any field that is
+   * not specified in {@code fields} is ignored and remains untouched.
    *
    * <p>It is an error to pass a {@code SetOptions} object to a {@code set()} call that is missing a
    * value for any of the fields specified here.
@@ -88,8 +88,8 @@ public final class SetOptions {
   }
 
   /**
-   * Changes the behavior of {@code set()} calls to only replace the fields under fieldPaths. Any
-   * field that is not specified in fieldPaths is ignored and remains untouched.
+   * Changes the behavior of {@code set()} calls to only replace the given fields. Any field that is
+   * not specified in {@code fields} is ignored and remains untouched.
    *
    * <p>It is an error to pass a {@code SetOptions} object to a {@code set()} call that is missing a
    * value for any of the fields specified here.
@@ -109,8 +109,8 @@ public final class SetOptions {
   }
 
   /**
-   * Changes the behavior of {@code set()} calls to only replace the fields under fieldPaths. Any
-   * field that is not specified in fieldPaths is ignored and remains untouched.
+   * Changes the behavior of {@code set()} calls to only replace the given fields. Any field that is
+   * not specified in {@code fields} is ignored and remains untouched.
    *
    * <p>It is an error to pass a {@code SetOptions} object to a {@code set()} call that is missing a
    * value for any of the fields specified here in its to data argument.
