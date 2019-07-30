@@ -16,7 +16,6 @@ package com.google.firebase.installations.remote;
 
 import android.util.JsonReader;
 import androidx.annotation.NonNull;
-import com.google.firebase.FirebaseException;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -39,19 +38,15 @@ public class FirebaseInstallationServiceClient {
   private static final String FIREBASE_INSTALLATION_AUTH_VERSION = "FIS_V2";
 
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
+  private static final String ACCEPT_HEADER_KEY = "Accept";
   private static final String JSON_CONTENT_TYPE = "application/json";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
 
-  public enum Code {
-    OK,
-
-    NETWORK_ERROR,
-
-    SERVER_ERROR,
-
-    UNAUTHORIZED,
-  }
+  private static final String UNAUTHORIZED_ERROR_MESSAGE =
+      "The request did not have the required credentials.";
+  private static final String INTERNAL_SERVER_ERROR_MESSAGE = "There was an internal server error.";
+  private static final String NETWORK_ERROR_MESSAGE = "The server returned an unexpected error:";
 
   @NonNull
   public InstallationResponse createFirebaseInstallation(
@@ -59,7 +54,7 @@ public class FirebaseInstallationServiceClient {
       @NonNull String apiKey,
       @NonNull String firebaseInstallationId,
       @NonNull String appId)
-      throws FirebaseException {
+      throws FirebaseInstallationServiceException {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectNumber);
     try {
       URL url =
@@ -75,6 +70,7 @@ public class FirebaseInstallationServiceClient {
       httpsURLConnection.setDoOutput(true);
       httpsURLConnection.setRequestMethod("POST");
       httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+      httpsURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
       httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
       GZIPOutputStream gzipOutputStream =
           new GZIPOutputStream(httpsURLConnection.getOutputStream());
@@ -94,12 +90,17 @@ public class FirebaseInstallationServiceClient {
         case 200:
           return readCreateResponse(httpsURLConnection);
         case 401:
-          throw new FirebaseException("The request did not have the required credentials.");
+          throw new FirebaseInstallationServiceException(
+              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Code.UNAUTHORIZED);
         default:
-          throw new FirebaseException("There was an internal server error.");
+          throw new FirebaseInstallationServiceException(
+              INTERNAL_SERVER_ERROR_MESSAGE,
+              FirebaseInstallationServiceException.Code.SERVER_ERROR);
       }
     } catch (IOException e) {
-      throw new FirebaseException("The server returned an unexpected error.: " + e.getMessage());
+      throw new FirebaseInstallationServiceException(
+          NETWORK_ERROR_MESSAGE + e.getMessage(),
+          FirebaseInstallationServiceException.Code.NETWORK_ERROR);
     }
   }
 
@@ -113,11 +114,9 @@ public class FirebaseInstallationServiceClient {
   }
 
   @NonNull
-  public Code deleteFirebaseInstallation(
-      long projectNumber,
-      @NonNull String apiKey,
-      @NonNull String fid,
-      @NonNull String refreshToken) {
+  public void deleteFirebaseInstallation(
+      long projectNumber, @NonNull String apiKey, @NonNull String fid, @NonNull String refreshToken)
+      throws FirebaseInstallationServiceException {
     String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, fid);
     try {
       URL url =
@@ -139,21 +138,26 @@ public class FirebaseInstallationServiceClient {
       int httpResponseCode = httpsURLConnection.getResponseCode();
       switch (httpResponseCode) {
         case 200:
-          return Code.OK;
+          return;
         case 401:
-          return Code.UNAUTHORIZED;
+          throw new FirebaseInstallationServiceException(
+              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Code.UNAUTHORIZED);
         default:
-          return Code.SERVER_ERROR;
+          throw new FirebaseInstallationServiceException(
+              INTERNAL_SERVER_ERROR_MESSAGE,
+              FirebaseInstallationServiceException.Code.SERVER_ERROR);
       }
     } catch (IOException e) {
-      return Code.NETWORK_ERROR;
+      throw new FirebaseInstallationServiceException(
+          NETWORK_ERROR_MESSAGE + e.getMessage(),
+          FirebaseInstallationServiceException.Code.NETWORK_ERROR);
     }
   }
 
   @NonNull
   public InstallationTokenResult generateAuthToken(
       long projectNumber, @NonNull String apiKey, @NonNull String fid, @NonNull String refreshToken)
-      throws FirebaseException {
+      throws FirebaseInstallationServiceException {
     String resourceName =
         String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, fid);
     try {
@@ -171,6 +175,7 @@ public class FirebaseInstallationServiceClient {
       httpsURLConnection.setRequestMethod("POST");
       httpsURLConnection.addRequestProperty("Authorization", "FIS_V2 " + refreshToken);
       httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+      httpsURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
       httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
 
       int httpResponseCode = httpsURLConnection.getResponseCode();
@@ -178,12 +183,17 @@ public class FirebaseInstallationServiceClient {
         case 200:
           return readGenerateAuthTokenResponse(httpsURLConnection);
         case 401:
-          throw new FirebaseException("The request did not have the required credentials.");
+          throw new FirebaseInstallationServiceException(
+              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Code.UNAUTHORIZED);
         default:
-          throw new FirebaseException("There was an internal server error.");
+          throw new FirebaseInstallationServiceException(
+              INTERNAL_SERVER_ERROR_MESSAGE,
+              FirebaseInstallationServiceException.Code.SERVER_ERROR);
       }
     } catch (IOException e) {
-      throw new FirebaseException("The server returned an unexpected error.: " + e.getMessage());
+      throw new FirebaseInstallationServiceException(
+          NETWORK_ERROR_MESSAGE + e.getMessage(),
+          FirebaseInstallationServiceException.Code.NETWORK_ERROR);
     }
   }
   // Read the response from the createFirebaseInstallation API.

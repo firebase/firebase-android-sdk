@@ -28,6 +28,7 @@ public abstract class InstallationTokenResult {
    * The amount of time, in milliseconds, before the auth-token expires for this firebase
    * installation.
    */
+  @NonNull
   public abstract long getTokenExpirationTimestampMillis();
 
   @NonNull
@@ -45,7 +46,7 @@ public abstract class InstallationTokenResult {
     public abstract Builder setAuthToken(@NonNull String value);
 
     @NonNull
-    public abstract Builder setTokenExpirationTimestampMillis(long value);
+    public abstract Builder setTokenExpirationTimestampMillis(@NonNull long value);
 
     @NonNull
     public abstract InstallationTokenResult build();
