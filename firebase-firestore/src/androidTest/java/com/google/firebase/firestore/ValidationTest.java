@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
@@ -239,23 +240,31 @@ public class ValidationTest {
 
   @Test
   public void writesMustNotContainReservedFieldNames() {
+    expectWriteSuccess(map("__bar", 1));
+    expectWriteSuccess(map("bar__", 1));
+
     expectWriteError(
         map("__baz__", 1),
-        "Invalid data. Document fields cannot begin and end with __ (found in field __baz__)");
+        "Invalid data. Document fields cannot begin and end with \"__\" (found in field __baz__)");
     expectWriteError(
         map("foo", map("__baz__", 1)),
-        "Invalid data. Document fields cannot begin and end with __ (found in field foo.__baz__)");
+        "Invalid data. Document fields cannot begin and end with \"__\" (found in field foo.__baz__)");
     expectWriteError(
         map("__baz__", map("foo", 1)),
-        "Invalid data. Document fields cannot begin and end with __ (found in field __baz__)");
+        "Invalid data. Document fields cannot begin and end with \"__\" (found in field __baz__)");
 
     expectUpdateError(
         map("__baz__", 1),
-        "Invalid data. Document fields cannot begin and end with __ (found in field __baz__)");
+        "Invalid data. Document fields cannot begin and end with \"__\" (found in field __baz__)");
     expectUpdateError(
         map("baz.__foo__", 1),
-        "Invalid data. Document fields cannot begin and end with "
-            + "__ (found in field baz.__foo__)");
+        "Invalid data. Document fields cannot begin and end with \"__\" (found in field baz.__foo__)");
+  }
+
+  @Test
+  public void writesMustNotContainEmptyFieldNames() {
+    expectSetError(
+        map("", "foo"), "Invalid data. Document fields must not be empty (found in field ``)");
   }
 
   @Test
@@ -277,7 +286,7 @@ public class ValidationTest {
   @Test
   public void batchWritesRequireCorrectDocumentReferences() {
     DocumentReference badRef = testAlternateFirestore().document("foo/bar");
-    String reason = "Provided document reference is from a different Firestore instance.";
+    String reason = "Provided document reference is from a different Cloud Firestore instance.";
     Map<String, Object> data = map("foo", 1);
     WriteBatch batch = testFirestore().batch();
     expectError(() -> batch.set(badRef, data), reason);
@@ -288,7 +297,7 @@ public class ValidationTest {
   @Test
   public void transactionsRequireCorrectDocumentReferences() {
     DocumentReference badRef = testAlternateFirestore().document("foo/bar");
-    String reason = "Provided document reference is from a different Firestore instance.";
+    String reason = "Provided document reference is from a different Cloud Firestore instance.";
     Map<String, Object> data = map("foo", 1);
     waitFor(
         testFirestore()
@@ -298,8 +307,7 @@ public class ValidationTest {
                       expectError(
                           () -> {
                             // Because .get() throws a checked exception for missing docs, we have
-                            // to
-                            // try/catch it.
+                            // to try/catch it.
                             try {
                               transaction.get(badRef);
                             } catch (FirebaseFirestoreException e) {
@@ -754,6 +762,71 @@ public class ValidationTest {
   }
 
   // Helpers
+
+  /** Performs a write using each write API and makes sure it succeeds. */
+  private static void expectWriteSuccess(Object data) {
+    expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ true);
+  }
+
+  /** Performs a write using each update API and makes sure it succeeds. */
+  private static void expectUpdateSuccess(Map<String, Object> data) {
+    expectWriteSuccess(data, /*includeSets=*/ false, /*includeUpdates=*/ true);
+  }
+
+  /** Performs a write using each set API and makes sure it succeeds. */
+  private static void expectSetSuccess(Object data) {
+    expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ false);
+  }
+
+  /**
+   * Performs a write using each set and/or update API and makes sure it fails with the expected
+   * reason.
+   */
+  private static void expectWriteSuccess(Object data, boolean includeSets, boolean includeUpdates) {
+    DocumentReference ref = testDocument();
+
+    if (includeSets) {
+      assertDoesNotThrow(() -> ref.set(data));
+      assertDoesNotThrow(() -> ref.getFirestore().batch().set(ref, data));
+    }
+
+    if (includeUpdates) {
+      assertTrue("update() only support Maps.", data instanceof Map);
+      assertDoesNotThrow(
+          () -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> updateMap = (Map<String, Object>) data;
+            ref.update(updateMap);
+          });
+      assertDoesNotThrow(
+          () -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> updateMap = (Map<String, Object>) data;
+            ref.getFirestore().batch().update(ref, updateMap);
+          });
+    }
+
+    waitFor(
+        ref.getFirestore()
+            .runTransaction(
+                (Function<Void>)
+                    transaction -> {
+                      if (includeSets) {
+                        assertDoesNotThrow(() -> transaction.set(ref, data));
+                      }
+                      if (includeUpdates) {
+                        assertTrue("update() only support Maps.", data instanceof Map);
+                        assertDoesNotThrow(
+                            () -> {
+                              @SuppressWarnings("unchecked")
+                              Map<String, Object> updateMap = (Map<String, Object>) data;
+                              transaction.update(ref, updateMap);
+                            });
+                      }
+
+                      return null;
+                    }));
+  }
 
   /** Performs a write using each write API and makes sure it fails with the expected reason. */
   private static void expectWriteError(Object data, String reason) {

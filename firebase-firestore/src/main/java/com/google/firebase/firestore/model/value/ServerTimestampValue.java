@@ -14,9 +14,9 @@
 
 package com.google.firebase.firestore.model.value;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
-import javax.annotation.Nullable;
 
 /**
  * Represents a locally-applied Server Timestamp.
