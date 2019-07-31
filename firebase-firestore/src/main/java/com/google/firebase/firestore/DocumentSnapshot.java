@@ -38,7 +38,7 @@ import java.util.Map;
 
 /**
  * A {@code DocumentSnapshot} contains data read from a document in your Cloud Firestore database.
- * The data can be extracted with the {@link #getData()} or {@link #get()} methods.
+ * The data can be extracted with the {@link #getData()} or {@link #get(String)} methods.
  *
  * <p>If the {@code DocumentSnapshot} points to a non-existing document, {@link #getData()} and its
  * corresponding methods will return {@code null}. You can always explicitly check for a document's
