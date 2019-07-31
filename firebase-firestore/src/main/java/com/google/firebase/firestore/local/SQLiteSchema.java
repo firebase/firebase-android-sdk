@@ -45,16 +45,8 @@ class SQLiteSchema {
   /**
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
-   *
-   * <p>TODO(index-free): The migration to schema version 9 doesn't backfill `update_time` as this
-   * requires rewriting the RemoteDocumentCache. For index-free queries to efficiently handle
-   * existing documents, we still need to populate update_time for all existing entries, drop the
-   * RemoteDocumentCache or ask users to invoke `clearPersistence()` manually. If we decide to
-   * backfill or drop the contents of the RemoteDocumentCache, we need to perform an additional
-   * schema migration.
    */
-  static final int VERSION = 9;
-
+  static final int VERSION = 8;
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
@@ -133,10 +125,6 @@ class SQLiteSchema {
 
     if (fromVersion < 8 && toVersion >= 8) {
       createV8CollectionParentsIndex();
-    }
-
-    if (fromVersion < 9 && toVersion >= 9) {
-      addUpdateTime();
     }
 
     /*
@@ -360,16 +348,6 @@ class SQLiteSchema {
   private void addSequenceNumber() {
     if (!tableContainsColumn("target_documents", "sequence_number")) {
       db.execSQL("ALTER TABLE target_documents ADD COLUMN sequence_number INTEGER");
-    }
-  }
-
-  private void addUpdateTime() {
-    if (!tableContainsColumn("remote_documents", "update_time_seconds")) {
-      hardAssert(
-          !tableContainsColumn("remote_documents", "update_time_nanos"),
-          "Table contained update_time_seconds, but is missing update_time_nanos");
-      db.execSQL("ALTER TABLE remote_documents ADD COLUMN update_time_seconds INTEGER");
-      db.execSQL("ALTER TABLE remote_documents ADD COLUMN update_time_nanos INTEGER");
     }
   }
 
