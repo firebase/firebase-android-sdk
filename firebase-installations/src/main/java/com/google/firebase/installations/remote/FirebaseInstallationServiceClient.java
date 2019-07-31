@@ -16,6 +16,7 @@ package com.google.firebase.installations.remote;
 
 import android.util.JsonReader;
 import androidx.annotation.NonNull;
+import com.google.firebase.installations.FirebaseInstallationException;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -50,12 +51,12 @@ public class FirebaseInstallationServiceClient {
 
   @NonNull
   public InstallationResponse createFirebaseInstallation(
-      long projectNumber,
+      @NonNull String projectID,
       @NonNull String apiKey,
       @NonNull String firebaseInstallationId,
       @NonNull String appId)
-      throws FirebaseInstallationServiceException {
-    String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectNumber);
+      throws FirebaseInstallationException {
+    String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
     try {
       URL url =
           new URL(
@@ -90,17 +91,15 @@ public class FirebaseInstallationServiceClient {
         case 200:
           return readCreateResponse(httpsURLConnection);
         case 401:
-          throw new FirebaseInstallationServiceException(
-              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Code.UNAUTHORIZED);
+          throw new FirebaseInstallationException(
+              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationException.Code.UNAUTHORIZED);
         default:
-          throw new FirebaseInstallationServiceException(
-              INTERNAL_SERVER_ERROR_MESSAGE,
-              FirebaseInstallationServiceException.Code.SERVER_ERROR);
+          throw new FirebaseInstallationException(
+              INTERNAL_SERVER_ERROR_MESSAGE, FirebaseInstallationException.Code.SERVER_ERROR);
       }
     } catch (IOException e) {
-      throw new FirebaseInstallationServiceException(
-          NETWORK_ERROR_MESSAGE + e.getMessage(),
-          FirebaseInstallationServiceException.Code.NETWORK_ERROR);
+      throw new FirebaseInstallationException(
+          NETWORK_ERROR_MESSAGE + e.getMessage(), FirebaseInstallationException.Code.NETWORK_ERROR);
     }
   }
 
@@ -115,9 +114,12 @@ public class FirebaseInstallationServiceClient {
 
   @NonNull
   public void deleteFirebaseInstallation(
-      long projectNumber, @NonNull String apiKey, @NonNull String fid, @NonNull String refreshToken)
-      throws FirebaseInstallationServiceException {
-    String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, fid);
+      @NonNull String projectID,
+      @NonNull String apiKey,
+      @NonNull String fid,
+      @NonNull String refreshToken)
+      throws FirebaseInstallationException {
+    String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
     try {
       URL url =
           new URL(
@@ -140,26 +142,27 @@ public class FirebaseInstallationServiceClient {
         case 200:
           return;
         case 401:
-          throw new FirebaseInstallationServiceException(
-              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Code.UNAUTHORIZED);
+          throw new FirebaseInstallationException(
+              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationException.Code.UNAUTHORIZED);
         default:
-          throw new FirebaseInstallationServiceException(
-              INTERNAL_SERVER_ERROR_MESSAGE,
-              FirebaseInstallationServiceException.Code.SERVER_ERROR);
+          throw new FirebaseInstallationException(
+              INTERNAL_SERVER_ERROR_MESSAGE, FirebaseInstallationException.Code.SERVER_ERROR);
       }
     } catch (IOException e) {
-      throw new FirebaseInstallationServiceException(
-          NETWORK_ERROR_MESSAGE + e.getMessage(),
-          FirebaseInstallationServiceException.Code.NETWORK_ERROR);
+      throw new FirebaseInstallationException(
+          NETWORK_ERROR_MESSAGE + e.getMessage(), FirebaseInstallationException.Code.NETWORK_ERROR);
     }
   }
 
   @NonNull
   public InstallationTokenResult generateAuthToken(
-      long projectNumber, @NonNull String apiKey, @NonNull String fid, @NonNull String refreshToken)
-      throws FirebaseInstallationServiceException {
+      @NonNull String projectID,
+      @NonNull String apiKey,
+      @NonNull String fid,
+      @NonNull String refreshToken)
+      throws FirebaseInstallationException {
     String resourceName =
-        String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, fid);
+        String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
     try {
       URL url =
           new URL(
@@ -183,17 +186,15 @@ public class FirebaseInstallationServiceClient {
         case 200:
           return readGenerateAuthTokenResponse(httpsURLConnection);
         case 401:
-          throw new FirebaseInstallationServiceException(
-              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Code.UNAUTHORIZED);
+          throw new FirebaseInstallationException(
+              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationException.Code.UNAUTHORIZED);
         default:
-          throw new FirebaseInstallationServiceException(
-              INTERNAL_SERVER_ERROR_MESSAGE,
-              FirebaseInstallationServiceException.Code.SERVER_ERROR);
+          throw new FirebaseInstallationException(
+              INTERNAL_SERVER_ERROR_MESSAGE, FirebaseInstallationException.Code.SERVER_ERROR);
       }
     } catch (IOException e) {
-      throw new FirebaseInstallationServiceException(
-          NETWORK_ERROR_MESSAGE + e.getMessage(),
-          FirebaseInstallationServiceException.Code.NETWORK_ERROR);
+      throw new FirebaseInstallationException(
+          NETWORK_ERROR_MESSAGE + e.getMessage(), FirebaseInstallationException.Code.NETWORK_ERROR);
     }
   }
   // Read the response from the createFirebaseInstallation API.

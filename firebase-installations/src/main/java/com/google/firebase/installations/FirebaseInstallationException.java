@@ -12,35 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.installations.remote;
+package com.google.firebase.installations;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseException;
 
-/** The class for all Exceptions thrown by {@link FirebaseInstallationServiceClient}. */
-public class FirebaseInstallationServiceException extends FirebaseException {
+/** The class for all Exceptions thrown by {@link FirebaseInstallations}. */
+public class FirebaseInstallationException extends FirebaseException {
 
   public enum Code {
     SERVER_ERROR,
 
     NETWORK_ERROR,
 
-    UNAUTHORIZED
+    UNAUTHORIZED,
+
+    CLIENT_ERROR
   }
 
   @NonNull private final Code code;
 
-  FirebaseInstallationServiceException(@NonNull Code code) {
+  public FirebaseInstallationException(@NonNull Code code) {
     this.code = code;
   }
 
-  FirebaseInstallationServiceException(@NonNull String message, @NonNull Code code) {
+  public FirebaseInstallationException(@NonNull String message, @NonNull Code code) {
     super(message);
     this.code = code;
   }
 
-  FirebaseInstallationServiceException(
-      @NonNull String message, @NonNull Code code, Throwable cause) {
+  public FirebaseInstallationException(
+      @NonNull String message, @NonNull Code code, @NonNull Throwable cause) {
     super(message, cause);
     this.code = code;
   }
@@ -48,7 +50,7 @@ public class FirebaseInstallationServiceException extends FirebaseException {
   /**
    * Gets the status code for the operation that failed.
    *
-   * @return the code for the FirebaseInstallationServiceException
+   * @return the code for the FirebaseInstallationsException
    */
   @NonNull
   public Code getCode() {

@@ -11,4 +11,6 @@
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
     </application>
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 </manifest>
