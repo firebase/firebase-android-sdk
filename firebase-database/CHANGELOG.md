@@ -1,3 +1,11 @@
+# 19.1.0
+- [feature] The SDK adds support for the Firebase Database Emulator. To connect
+  to the emulator, specify "http://<emulatorHost>/?ns=<projectId>" as your
+  Database URL (via `FirebaseDatabase.getInstance(String)`).
+  Note that if you are running the Database Emulator on "localhost" and
+  connecting from an app that is running inside an Android Emulator, the
+  emulator host will be "10.0.2.2" followed by its port.
+
 # 18.0.1
 - [changed] The SDK now reports the correct version number (via
   `FirebaseDatabase.getSdkVersion()`).
