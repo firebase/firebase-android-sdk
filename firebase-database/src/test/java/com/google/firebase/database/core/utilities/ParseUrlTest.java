@@ -59,8 +59,8 @@ public class ParseUrlTest {
   @Test
   public void testUrlParsingSpecialCharacters() throws DatabaseException {
     ParsedUrl parsed =
-        Utilities.parseUrl("http://gsoltis.firebaseio.com/a%b&c@d/space: /non-ascii:ø");
-    assertEquals("/a%b&c@d/space: /non-ascii:ø", parsed.path.toString());
+        Utilities.parseUrl("http://gsoltis.firebaseio.com/a%b&c@d/+space: /non-ascii:ø");
+    assertEquals("/a%b&c@d/ space: /non-ascii:ø", parsed.path.toString());
   }
 
   @Test

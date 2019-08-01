@@ -24,6 +24,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoInfo;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -62,8 +63,7 @@ public class Utilities {
       repoInfo.internalHost = repoInfo.host;
 
       String originalPathString = extractPathString(url);
-      // Instead of '+', the RTDB SDK uses spaces
-      originalPathString = originalPathString.replace("+", " ");
+      originalPathString = tryUrlDecode(originalPathString, /*fallback=*/ originalPathString);
       Validation.validateRootPathString(originalPathString);
 
       ParsedUrl parsedUrl = new ParsedUrl();
@@ -72,7 +72,16 @@ public class Utilities {
 
       return parsedUrl;
     } catch (Exception e) {
-      throw new DatabaseException("Invalid Firebase Database url specified", e);
+      throw new DatabaseException("Invalid Firebase Database url specified: " + url, e);
+    }
+  }
+
+  private static String tryUrlDecode(String url, String fallback) {
+    try {
+      return URLDecoder.decode(url, "UTF-8");
+    } catch (IllegalArgumentException | UnsupportedEncodingException e) {
+      // Manually replace "+" with space even if the decoding failed.
+      return fallback.replace("+", " ");
     }
   }
 

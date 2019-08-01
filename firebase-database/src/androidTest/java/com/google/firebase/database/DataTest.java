@@ -1081,13 +1081,18 @@ public class DataTest {
         new DatabaseReference(
             IntegrationTestValues.getNamespace() + "/a%b&c@d/space: /non-ascii:ø", ctx);
     String result = ref.toString();
-    String expected =
+    String encoded =
         IntegrationTestValues.getNamespace() + "/a%25b%26c%40d/space%3A%20/non-ascii%3A%C3%B8";
-    assertEquals(expected, result);
+    assertEquals(encoded, result);
 
     String child = "" + new Random().nextInt(100000000);
     new WriteFuture(ref.child(child), "testdata").timedGet();
+
     DataSnapshot snap = IntegrationTestHelpers.getSnap(ref.child(child));
+    assertEquals("testdata", snap.getValue());
+
+    DatabaseReference refWithEncoding = new DatabaseReference(encoded, ctx);
+    snap = IntegrationTestHelpers.getSnap(refWithEncoding.child(child));
     assertEquals("testdata", snap.getValue());
   }
 
