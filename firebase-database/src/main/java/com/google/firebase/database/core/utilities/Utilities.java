@@ -86,15 +86,14 @@ public class Utilities {
       throw new DatabaseException("Firebase Database URL is missing URL scheme");
     }
 
-    int pathOffset = originalUrl.substring(schemeOffset + 2).indexOf("/");
+    String urlWithoutScheme = originalUrl.substring(schemeOffset + 2);
+    int pathOffset = urlWithoutScheme.indexOf("/");
     if (pathOffset != -1) {
-      pathOffset += schemeOffset + 2;
-
-      int queryOffset = originalUrl.indexOf("?");
+      int queryOffset = urlWithoutScheme.indexOf("?");
       if (queryOffset != -1) {
-        return originalUrl.substring(pathOffset, queryOffset);
+        return urlWithoutScheme.substring(pathOffset + 1, queryOffset);
       } else {
-        return originalUrl.substring(pathOffset);
+        return urlWithoutScheme.substring(pathOffset + 1);
       }
     } else {
       return "";

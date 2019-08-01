@@ -64,6 +64,13 @@ public class ParseUrlTest {
   }
 
   @Test
+  public void testUrlParsingIgnoresTrailingSlash() throws DatabaseException {
+    ParsedUrl parsed1 = Utilities.parseUrl("http://gsoltis.firebaseio.com/");
+    ParsedUrl parsed2 = Utilities.parseUrl("http://gsoltis.firebaseio.com");
+    assertEquals(parsed1, parsed2);
+  }
+
+  @Test
   public void testUrlParsingWithNamespace() throws DatabaseException {
     ParsedUrl parsed = Utilities.parseUrl("http://gsoltis.firebaseio.com/foo/bar?ns=mrschmidt");
     assertEquals(parsed.path.toString(), "/foo/bar");
