@@ -157,6 +157,7 @@ public class RemoteConfigComponent {
         firebaseApp,
         namespace,
         firebaseAbt,
+        analyticsConnector,
         executorService,
         fetchedCacheClient,
         activatedCacheClient,
@@ -171,6 +172,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       String namespace,
       FirebaseABTesting firebaseAbt,
+      AnalyticsConnector analyticsConnector,
       Executor executor,
       ConfigCacheClient fetchedClient,
       ConfigCacheClient activatedClient,
@@ -184,6 +186,7 @@ public class RemoteConfigComponent {
               context,
               firebaseApp,
               isAbtSupported(firebaseApp, namespace) ? firebaseAbt : null,
+              isFeatureRolloutsSupported(firebaseApp, namespace) ? analyticsConnector : null,
               executor,
               fetchedClient,
               activatedClient,
@@ -277,6 +280,22 @@ public class RemoteConfigComponent {
    *     the 3P namespace.
    */
   private static boolean isAbtSupported(FirebaseApp firebaseApp, String namespace) {
+    return namespace.equals(DEFAULT_NAMESPACE) && isPrimaryApp(firebaseApp);
+  }
+
+  /**
+   * Checks if Rollouts can be used in the given {@code firebaseApp} and {@code namespace}.
+   *
+   * <p>Firebase Feature Rollouts uses Analytics, so, since Analytics does not work outside the
+   * primary {@link FirebaseApp}, Feature Rollouts should not be used outside the primary App.
+   *
+   * <p>The Feature Rollouts product is only available to 3P developers and does not work for other
+   * Firebase SDKs, so Feature Rollouts should not be used outside the 3P namespace.
+   *
+   * @return True if {@code firebaseApp} is the main {@link FirebaseApp} and {@code namespace} is
+   *     the 3P namespace.
+   */
+  private static boolean isFeatureRolloutsSupported(FirebaseApp firebaseApp, String namespace) {
     return namespace.equals(DEFAULT_NAMESPACE) && isPrimaryApp(firebaseApp);
   }
 

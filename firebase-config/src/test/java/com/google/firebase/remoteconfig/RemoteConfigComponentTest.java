@@ -203,6 +203,7 @@ public class RemoteConfigComponentTest {
         mockFirebaseApp,
         namespace,
         mockFirebaseAbt,
+        mockAnalyticsConnector,
         directExecutor,
         mockFetchedCache,
         mockActivatedCache,

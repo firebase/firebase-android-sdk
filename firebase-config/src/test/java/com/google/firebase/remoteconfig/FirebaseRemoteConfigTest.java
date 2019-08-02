@@ -22,10 +22,16 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALU
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_DOUBLE;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_LONG;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING;
+import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.FRC_ANALYTICS_ORIGIN_NAME;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.toExperimentInfoMaps;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ActiveRolloutsFieldKey.FEATURE_ENABLED;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ActiveRolloutsFieldKey.FEATURE_KEY;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ActiveRolloutsFieldKey.ROLLOUT;
 import static com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler.FRC_BYTE_ARRAY_ENCODING;
+import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -33,6 +39,9 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Base64;
 import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -45,6 +54,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -52,6 +62,8 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchRespons
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -60,11 +72,13 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -113,6 +127,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private FirebaseRemoteConfigInfo mockFrcInfo;
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
+  @Mock private AnalyticsConnector mockAnalyticsConnector;
 
   private FirebaseRemoteConfig frc;
   private FirebaseRemoteConfig fireperfFrc;
@@ -144,6 +159,7 @@ public final class FirebaseRemoteConfigTest {
             context,
             firebaseApp,
             mockFirebaseAbt,
+            mockAnalyticsConnector,
             directExecutor,
             mockFetchedCache,
             mockActivatedCache,
@@ -160,6 +176,7 @@ public final class FirebaseRemoteConfigTest {
                 firebaseApp,
                 FIREPERF_NAMESPACE,
                 /*firebaseAbt=*/ null,
+                /*analyticsConnector=*/ null,
                 directExecutor,
                 mockFireperfFetchedCache,
                 mockFireperfActivatedCache,
@@ -183,6 +200,8 @@ public final class FirebaseRemoteConfigTest {
 
     firstFetchedContainerResponse =
         FetchResponse.forBackendUpdatesFetched(firstFetchedContainer, ETAG);
+
+    Mockito.doNothing().when(mockAnalyticsConnector).logEvent(any(), any(), any());
   }
 
   @Test
@@ -429,6 +448,77 @@ public final class FirebaseRemoteConfigTest {
     assertWithMessage("2p fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
 
     verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
+  }
+
+  @Test
+  public void fetchAndActivate_hasNoFeatureRollouts_sendsEmptyParamListToGa() throws Exception {
+    loadFetchHandlerWithResponse();
+    ConfigContainer containerWithNoFeatureRollouts =
+        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
+
+    loadCacheWithConfig(mockFetchedCache, containerWithNoFeatureRollouts);
+    cachePutReturnsConfig(mockActivatedCache, containerWithNoFeatureRollouts);
+
+    Task<Boolean> task = frc.fetchAndActivate();
+
+    assertWithMessage("fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
+
+    verify(mockAnalyticsConnector)
+        .logEvent(eq("_ssr"), eq(FRC_ANALYTICS_ORIGIN_NAME), refEq(createFfrBundleForGa()));
+  }
+
+  @Test
+  public void fetchAndActivate_hasFeatureRollouts_sendsRolloutsThatEnableFeaturesToGa()
+      throws Exception {
+    loadFetchHandlerWithResponse();
+    ConfigContainer containerWithFeatureRollouts =
+        ConfigContainer.newBuilder(firstFetchedContainer)
+            .withActiveRollouts(generateRollouts())
+            .build();
+
+    loadCacheWithConfig(mockFetchedCache, containerWithFeatureRollouts);
+    cachePutReturnsConfig(mockActivatedCache, containerWithFeatureRollouts);
+
+    Task<Boolean> task = frc.fetchAndActivate();
+
+    assertWithMessage("fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
+
+    verify(mockAnalyticsConnector)
+        .logEvent(eq("_ssr"), eq(FRC_ANALYTICS_ORIGIN_NAME), refEq(createFfrBundleForGa(/* rolloutIds= */ "1")));
+  }
+
+  @Test
+  public void fetchAndActivate2p_hasNoFeatureRollouts_doesNotCallGa() throws Exception {
+    load2pFetchHandlerWithResponse();
+    ConfigContainer containerWithNoFeatureRollouts =
+        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
+
+    loadCacheWithConfig(mockFireperfFetchedCache, containerWithNoFeatureRollouts);
+    cachePutReturnsConfig(mockFireperfActivatedCache, containerWithNoFeatureRollouts);
+
+    Task<Boolean> task = fireperfFrc.fetchAndActivate();
+
+    assertWithMessage("2p fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
+
+    verify(mockAnalyticsConnector, never()).logEvent(any(), any(), any());
+  }
+
+  @Test
+  public void fetchAndActivate2p_hasFeatureRollouts_doesNotCallGa() throws Exception {
+    load2pFetchHandlerWithResponse();
+    ConfigContainer containerWithFeatureRollouts =
+        ConfigContainer.newBuilder(firstFetchedContainer)
+            .withActiveRollouts(generateRollouts())
+            .build();
+
+    loadCacheWithConfig(mockFireperfFetchedCache, containerWithFeatureRollouts);
+    cachePutReturnsConfig(mockFireperfActivatedCache, containerWithFeatureRollouts);
+
+    Task<Boolean> task = fireperfFrc.fetchAndActivate();
+
+    assertWithMessage("2p fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
+
+    verify(mockAnalyticsConnector, never()).logEvent(any(), any(), any());
   }
 
   @SuppressWarnings("deprecation")
@@ -1234,7 +1324,34 @@ public final class FirebaseRemoteConfigTest {
     return experiments;
   }
 
-  private static JSONArray generateEnabledFeatureKeys() throws JSONException {
+  private static JSONArray generateRollouts() throws JSONException {
+    JSONArray rollouts = new JSONArray();
+
+    JSONObject rolloutThatEnablesFeature = new JSONObject();
+    rolloutThatEnablesFeature.put(ROLLOUT, 1);
+    rolloutThatEnablesFeature.put(FEATURE_KEY, "feature_key_1");
+    rolloutThatEnablesFeature.put(FEATURE_ENABLED, true);
+
+    JSONObject rolloutThatDoesNotEnableFeature = new JSONObject();
+    rolloutThatDoesNotEnableFeature.put(ROLLOUT, 1);
+    rolloutThatDoesNotEnableFeature.put(FEATURE_KEY, "feature_key_-1");
+    rolloutThatDoesNotEnableFeature.put(FEATURE_ENABLED, false);
+
+    return rollouts.put(rolloutThatEnablesFeature).put(rolloutThatDoesNotEnableFeature);
+  }
+
+  private static Bundle createFfrBundleForGa(String... rolloutIds) {
+    List<String> base64RolloutIds = new ArrayList<>();
+    for (String rolloutId : rolloutIds) {
+      base64RolloutIds.add(
+          Base64.encodeToString(rolloutId.getBytes(StandardCharsets.UTF_8), Base64.DEFAULT));
+    }
+    Bundle paramBundle = new Bundle();
+    paramBundle.putString("_ffr", TextUtils.join(",", base64RolloutIds));
+    return paramBundle;
+  }
+
+  private static JSONArray generateEnabledFeatureKeys() {
     JSONArray featureKeys = new JSONArray();
     for (int featureNum = 1; featureNum <= 2; featureNum++) {
       featureKeys.put("feature_key_" + featureNum);
