@@ -20,6 +20,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
 
 /**
@@ -40,8 +41,9 @@ interface RemoteDocumentCache {
    * for the key, it will be replaced.
    *
    * @param maybeDocument A Document or NoDocument to put in the cache.
+   * @param readTime The time at which the document was read or committed.
    */
-  void add(MaybeDocument maybeDocument);
+  void add(MaybeDocument maybeDocument, SnapshotVersion readTime);
 
   /** Removes the cached entry for the given key (no-op if no entry exists). */
   void remove(DocumentKey documentKey);
