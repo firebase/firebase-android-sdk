@@ -493,7 +493,6 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
         // The query has a limit and some docs were removed/updated, so we need to re-run the query
         // against the local store to make sure we didn't lose any good docs that had been past the
         // limit.
-        localStore.markNeedsRefill(queryView.getTargetId());
         ImmutableSortedMap<DocumentKey, Document> docs =
             localStore.executeQuery(queryView.getQuery());
         viewDocChanges = view.computeDocChanges(docs, viewDocChanges);

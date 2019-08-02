@@ -49,23 +49,22 @@ public final class LocalViewChanges {
       }
     }
 
-    return new LocalViewChanges(
-        targetId, snapshot.isConsistentWithBackend(), addedKeys, removedKeys);
+    return new LocalViewChanges(targetId, snapshot.hasLimboDocuments(), addedKeys, removedKeys);
   }
 
   private final int targetId;
-  private final boolean consistentWithBackend;
+  private final boolean hasUnresolvedLimboDocuments;
 
   private final ImmutableSortedSet<DocumentKey> added;
   private final ImmutableSortedSet<DocumentKey> removed;
 
   public LocalViewChanges(
       int targetId,
-      boolean consistentWithBackend,
+      boolean hasUnresolvedLimboDocuments,
       ImmutableSortedSet<DocumentKey> added,
       ImmutableSortedSet<DocumentKey> removed) {
     this.targetId = targetId;
-    this.consistentWithBackend = consistentWithBackend;
+    this.hasUnresolvedLimboDocuments = hasUnresolvedLimboDocuments;
     this.added = added;
     this.removed = removed;
   }
@@ -74,9 +73,12 @@ public final class LocalViewChanges {
     return targetId;
   }
 
-  /** Returns whether the local query view is in sync with the backend. * */
-  public boolean isConsistentWithBackend() {
-    return consistentWithBackend;
+  /**
+   * Returns whether there were any unresolved limbo documents in the corresponding view when this
+   * change was computed.
+   */
+  public boolean hasUnresolvedLimboDocuments() {
+    return hasUnresolvedLimboDocuments;
   }
 
   public ImmutableSortedSet<DocumentKey> getAdded() {

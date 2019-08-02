@@ -474,8 +474,8 @@ public final class RemoteSerializerTest {
                 q,
                 1,
                 2,
-                /* consistentWithLocalViews= */ true,
                 QueryPurpose.LISTEN,
+                SnapshotVersion.NONE,
                 SnapshotVersion.NONE,
                 WatchStream.EMPTY_RESUME_TOKEN));
 
@@ -887,8 +887,8 @@ public final class RemoteSerializerTest {
                 q,
                 1,
                 2,
-                /* consistentWithLocalViews= */ false,
                 QueryPurpose.LISTEN,
+                SnapshotVersion.NONE,
                 SnapshotVersion.NONE,
                 TestUtil.resumeToken(1000)));
 
@@ -921,8 +921,8 @@ public final class RemoteSerializerTest {
         query,
         1,
         2,
-        /* consistentWithLocalViews= */ false,
         QueryPurpose.LISTEN,
+        SnapshotVersion.NONE,
         SnapshotVersion.NONE,
         WatchStream.EMPTY_RESUME_TOKEN);
   }
