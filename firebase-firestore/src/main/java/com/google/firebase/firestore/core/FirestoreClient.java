@@ -195,7 +195,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     this.verifyNotShutdown();
     return asyncQueue.enqueue(
         () -> {
-          ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
+          ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query, /* requiresFullScan= */ false );
 
           View view =
               new View(

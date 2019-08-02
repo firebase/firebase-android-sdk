@@ -186,7 +186,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   private ViewSnapshot initializeViewAndComputeSnapshot(QueryData queryData) {
     Query query = queryData.getQuery();
 
-    ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
+    ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query, /* requiresFullScan= */ false);
     ImmutableSortedSet<DocumentKey> remoteKeys =
         localStore.getRemoteDocumentKeys(queryData.getTargetId());
 
@@ -494,7 +494,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
         // against the local store to make sure we didn't lose any good docs that had been past the
         // limit.
         ImmutableSortedMap<DocumentKey, Document> docs =
-            localStore.executeQuery(queryView.getQuery());
+            localStore.executeQuery(queryView.getQuery(), /* requiresFullScan= */ true);
         viewDocChanges = view.computeDocChanges(docs, viewDocChanges);
       }
       TargetChange targetChange =

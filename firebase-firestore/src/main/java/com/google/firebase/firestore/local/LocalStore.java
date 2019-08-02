@@ -603,14 +603,24 @@ public final class LocalStore {
         });
   }
 
-  /** Runs the given query against all the documents in the local store and returns the results. */
-  public ImmutableSortedMap<DocumentKey, Document> executeQuery(Query query) {
-    QueryData cachedQueryData = queryCache.getQueryData(query);
-    QueryData updatedQueryData =
-        cachedQueryData != null ? targetIds.get(cachedQueryData.getTargetId()) : null;
+  /**
+   * Runs the given query against all the documents in the local store and returns the results.
+   *
+   * @param requiresFullScan Perform a full scan against all documents in the collection (useful if
+   *                         a the local query result and the backend result are not in sync, e.g. due to limbo documents).
+   */
+  public ImmutableSortedMap<DocumentKey, Document> executeQuery(Query query, boolean requiresFullScan) {
+    if (requiresFullScan) {
+        // By not providing the query data, we omit optimizations based on previous results.
+        return queryEngine.getDocumentsMatchingQuery(query, null);
+    } else {
+        QueryData cachedQueryData = queryCache.getQueryData(query);
+        QueryData updatedQueryData =
+                cachedQueryData != null ? targetIds.get(cachedQueryData.getTargetId()) : null;
 
-    return queryEngine.getDocumentsMatchingQuery(
-        query, updatedQueryData != null ? updatedQueryData : cachedQueryData);
+        return queryEngine.getDocumentsMatchingQuery(
+                query, updatedQueryData != null ? updatedQueryData : cachedQueryData);
+    }
   }
 
   /**
