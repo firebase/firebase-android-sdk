@@ -509,10 +509,7 @@ public class TestUtil {
   }
 
   public static LocalViewChanges viewChanges(
-      int targetId,
-      boolean consistentWithBackend,
-      List<String> addedKeys,
-      List<String> removedKeys) {
+      int targetId, boolean hasLimboDocuments, List<String> addedKeys, List<String> removedKeys) {
     ImmutableSortedSet<DocumentKey> added = DocumentKey.emptyKeySet();
     for (String keyPath : addedKeys) {
       added = added.insert(key(keyPath));
@@ -521,7 +518,7 @@ public class TestUtil {
     for (String keyPath : removedKeys) {
       removed = removed.insert(key(keyPath));
     }
-    return new LocalViewChanges(targetId, consistentWithBackend, added, removed);
+    return new LocalViewChanges(targetId, hasLimboDocuments, added, removed);
   }
 
   /** Creates a resume token to match the given snapshot version. */

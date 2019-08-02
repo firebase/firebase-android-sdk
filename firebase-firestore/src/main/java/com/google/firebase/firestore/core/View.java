@@ -296,8 +296,8 @@ public class View {
         });
     applyTargetChange(targetChange);
     List<LimboDocumentChange> limboDocumentChanges = updateLimboDocuments();
-    boolean consistentWithBackend = limboDocuments.size() == 0;
-    boolean synced = consistentWithBackend && current;
+    boolean hasLimboDocuments = !(limboDocuments.size() == 0);
+    boolean synced = !hasLimboDocuments && current;
     SyncState newSyncState = synced ? SyncState.SYNCED : SyncState.LOCAL;
     boolean syncStatedChanged = newSyncState != syncState;
     syncState = newSyncState;
@@ -312,7 +312,7 @@ public class View {
               viewChanges,
               fromCache,
               docChanges.mutatedKeys,
-              consistentWithBackend,
+              hasLimboDocuments,
               syncStatedChanged,
               /* excludesMetadataChanges= */ false);
     }

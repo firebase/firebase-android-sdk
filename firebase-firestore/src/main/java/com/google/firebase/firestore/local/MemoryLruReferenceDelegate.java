@@ -137,10 +137,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   public void removeTarget(QueryData queryData) {
     QueryData updated =
         queryData.copy(
-            queryData.getSnapshotVersion(),
-            queryData.getResumeToken(),
-            getCurrentSequenceNumber(),
-            queryData.isConsistentWithLocalViews());
+            queryData.getSnapshotVersion(), queryData.getResumeToken(), getCurrentSequenceNumber());
     persistence.getQueryCache().updateQueryData(updated);
   }
 

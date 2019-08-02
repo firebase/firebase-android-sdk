@@ -79,11 +79,9 @@ message Target {
     google.firestore.v1.Target.DocumentsTarget documents = 6;
   }
 
-  // Whether the set of locally cached query results is consistent with the
-  // backend's results. A query state is consistent if the corresponding views
-  // contain no Limbo documents and the query does not need to be refilled from
-  // cache.
-  bool consistent = 7;
+  // Denotes the maximum snapshot version at which the associated querye view
+  // contained no limbo documents.
+  google.protobuf.Timestamp last_limbo_free_snapshot_version = 7;
 }
 
 // Global state tracked across all Targets, tracked separately to avoid the

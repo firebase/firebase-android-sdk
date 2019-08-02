@@ -37,7 +37,7 @@ public class ViewSnapshot {
   private final List<DocumentViewChange> changes;
   private final boolean isFromCache;
   private final ImmutableSortedSet<DocumentKey> mutatedKeys;
-  private final boolean consistentWithBackend;
+  private final boolean hasLimboDocuments;
   private final boolean didSyncStateChange;
   private boolean excludesMetadataChanges;
 
@@ -48,7 +48,7 @@ public class ViewSnapshot {
       List<DocumentViewChange> changes,
       boolean isFromCache,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
-      boolean consistentWithBackend,
+      boolean hasLimboDocuments,
       boolean didSyncStateChange,
       boolean excludesMetadataChanges) {
     this.query = query;
@@ -57,7 +57,7 @@ public class ViewSnapshot {
     this.changes = changes;
     this.isFromCache = isFromCache;
     this.mutatedKeys = mutatedKeys;
-    this.consistentWithBackend = consistentWithBackend;
+    this.hasLimboDocuments = hasLimboDocuments;
     this.didSyncStateChange = didSyncStateChange;
     this.excludesMetadataChanges = excludesMetadataChanges;
   }
@@ -68,7 +68,7 @@ public class ViewSnapshot {
       DocumentSet documents,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
       boolean fromCache,
-      boolean consistentWithBackend,
+      boolean hasLimboDocuments,
       boolean excludesMetadataChanges) {
     List<DocumentViewChange> viewChanges = new ArrayList<>();
     for (Document doc : documents) {
@@ -81,7 +81,7 @@ public class ViewSnapshot {
         viewChanges,
         fromCache,
         mutatedKeys,
-        consistentWithBackend,
+        hasLimboDocuments,
         /* didSyncStateChange= */ true,
         excludesMetadataChanges);
   }
@@ -90,12 +90,8 @@ public class ViewSnapshot {
     return query;
   }
 
-  /**
-   * Returns whether the documents in the view matched the backend's result set at the time the
-   * snapshot was raised. A synced view contains no Limbo documents.
-   */
-  public boolean isConsistentWithBackend() {
-    return consistentWithBackend;
+  public boolean hasLimboDocuments() {
+    return hasLimboDocuments;
   }
 
   public DocumentSet getDocuments() {
@@ -144,7 +140,7 @@ public class ViewSnapshot {
     if (isFromCache != that.isFromCache) {
       return false;
     }
-    if (consistentWithBackend != that.consistentWithBackend) {
+    if (hasLimboDocuments != that.hasLimboDocuments) {
       return false;
     }
     if (didSyncStateChange != that.didSyncStateChange) {
@@ -176,7 +172,7 @@ public class ViewSnapshot {
     result = 31 * result + changes.hashCode();
     result = 31 * result + mutatedKeys.hashCode();
     result = 31 * result + (isFromCache ? 1 : 0);
-    result = 31 * result + (consistentWithBackend ? 1 : 0);
+    result = 31 * result + (hasLimboDocuments ? 1 : 0);
     result = 31 * result + (didSyncStateChange ? 1 : 0);
     result = 31 * result + (excludesMetadataChanges ? 1 : 0);
     return result;
@@ -196,8 +192,8 @@ public class ViewSnapshot {
         + isFromCache
         + ", mutatedKeys="
         + mutatedKeys.size()
-        + ", consistentWithBackend="
-        + consistentWithBackend
+        + ", hasLimboDocuments="
+        + hasLimboDocuments
         + ", didSyncStateChange="
         + didSyncStateChange
         + ", excludesMetadataChanges="

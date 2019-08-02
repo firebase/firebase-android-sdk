@@ -117,7 +117,7 @@ public class TestUtil {
             documentChanges,
             isFromCache,
             mutatedKeys,
-            /* consistentWithBackend= */ true,
+            /* hasLimboDocuments= */ true,
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ false);
     return new QuerySnapshot(query(path), viewSnapshot, FIRESTORE);

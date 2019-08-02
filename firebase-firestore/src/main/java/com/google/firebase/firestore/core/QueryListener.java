@@ -80,7 +80,7 @@ public class QueryListener {
               documentChanges,
               newSnapshot.isFromCache(),
               newSnapshot.getMutatedKeys(),
-              newSnapshot.isConsistentWithBackend(),
+              newSnapshot.hasLimboDocuments(),
               newSnapshot.didSyncStateChange(),
               /* excludesMetadataChanges= */ true);
     }
@@ -159,7 +159,7 @@ public class QueryListener {
             snapshot.getDocuments(),
             snapshot.getMutatedKeys(),
             snapshot.isFromCache(),
-            snapshot.isConsistentWithBackend(),
+            snapshot.hasLimboDocuments(),
             snapshot.excludesMetadataChanges());
     raisedInitialEvent = true;
     listener.onEvent(snapshot, null);
