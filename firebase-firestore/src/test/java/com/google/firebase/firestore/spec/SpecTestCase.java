@@ -45,6 +45,7 @@ import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.SyncEngine;
+import com.google.firebase.firestore.local.IndexFreeQueryEngine;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryData;
@@ -264,7 +265,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
    */
   private void initClient() {
     localPersistence = getPersistence(garbageCollectionEnabled);
-    QueryEngine queryEngine = new SimpleQueryEngine();
+    QueryEngine queryEngine = new IndexFreeQueryEngine();
     LocalStore localStore = new LocalStore(localPersistence, queryEngine, currentUser);
 
     queue = new AsyncQueue();
