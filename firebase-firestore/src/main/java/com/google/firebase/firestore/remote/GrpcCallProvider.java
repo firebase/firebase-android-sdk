@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.remote;
 
 import android.content.Context;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.security.ProviderInstaller;
@@ -25,7 +24,6 @@ import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
-import com.google.firebase.firestore.util.Supplier;
 import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.CallCredentials;
 import io.grpc.CallOptions;
@@ -43,25 +41,10 @@ public class GrpcCallProvider {
 
   private static final String LOG_TAG = "GrpcCallProvider";
 
-  private static Supplier<ManagedChannelBuilder<?>> overrideChannelBuilderSupplier;
-
   private final Task<ManagedChannel> channelTask;
   private final AsyncQueue asyncQueue;
 
   private CallOptions callOptions;
-
-  /**
-   * Helper function to globally override the channel that RPCs use. Useful for testing when you
-   * want to bypass SSL certificate checking.
-   *
-   * @param channelBuilderSupplier The supplier for a channel builder that is used to create gRPC
-   *     channels.
-   */
-  @VisibleForTesting
-  public static void overrideChannelBuilder(
-      Supplier<ManagedChannelBuilder<?>> channelBuilderSupplier) {
-    overrideChannelBuilderSupplier = channelBuilderSupplier;
-  }
 
   GrpcCallProvider(
       AsyncQueue asyncQueue,
@@ -105,16 +88,12 @@ public class GrpcCallProvider {
       Logger.warn(LOG_TAG, "Failed to update ssl context: %s", e);
     }
 
-    ManagedChannelBuilder<?> channelBuilder;
-    if (overrideChannelBuilderSupplier != null) {
-      channelBuilder = overrideChannelBuilderSupplier.get();
-    } else {
-      channelBuilder = ManagedChannelBuilder.forTarget(databaseInfo.getHost());
-      if (!databaseInfo.isSslEnabled()) {
-        // Note that the boolean flag does *NOT* switch the wire format from Protobuf to Plaintext.
-        // It merely turns off SSL encryption.
-        channelBuilder.usePlaintext();
-      }
+    ManagedChannelBuilder<?> channelBuilder =
+        ManagedChannelBuilder.forTarget(databaseInfo.getHost());
+    if (!databaseInfo.isSslEnabled()) {
+      // Note that the boolean flag does *NOT* switch the wire format from Protobuf to Plaintext.
+      // It merely turns off SSL encryption.
+      channelBuilder.usePlaintext();
     }
 
     // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will
