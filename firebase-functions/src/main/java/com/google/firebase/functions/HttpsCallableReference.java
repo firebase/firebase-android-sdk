@@ -76,6 +76,7 @@ public class HttpsCallableReference {
    * @see java.io.IOException
    * @see FirebaseFunctionsException
    */
+  @NonNull
   public Task<HttpsCallableResult> call(@Nullable Object data) {
     return functionsClient.call(name, data, options);
   }
@@ -94,6 +95,7 @@ public class HttpsCallableReference {
    *
    * @return A Task that will be completed when the HTTPS request has completed.
    */
+  @NonNull
   public Task<HttpsCallableResult> call() {
     return functionsClient.call(name, null, options);
   }
@@ -104,11 +106,10 @@ public class HttpsCallableReference {
    * @param timeout The length of the timeout, in the given units.
    * @param units The units for the specified timeout.
    */
-  public void setTimeout(long timeout, TimeUnit units) {
+  public void setTimeout(long timeout, @NonNull TimeUnit units) {
     options.setTimeout(timeout, units);
   }
 
-  @NonNull
   /**
    * Returns the timeout for calls from this instance of Functions.
    *
@@ -124,7 +125,8 @@ public class HttpsCallableReference {
    * @param timeout The length of the timeout, in the given units.
    * @param units The units for the specified timeout.
    */
-  public HttpsCallableReference withTimeout(long timeout, TimeUnit units) {
+  @NonNull
+  public HttpsCallableReference withTimeout(long timeout, @NonNull TimeUnit units) {
     HttpsCallableReference other = new HttpsCallableReference(functionsClient, name);
     other.setTimeout(timeout, units);
     return other;

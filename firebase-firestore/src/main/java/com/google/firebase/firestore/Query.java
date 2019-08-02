@@ -20,10 +20,10 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
@@ -50,24 +50,21 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
 
 /**
- * A Query which you can read or listen to. You can also construct refined Query objects by adding
- * filters and ordering.
+ * A {@code Query} which you can read or listen to. You can also construct refined {@code Query}
+ * objects by adding filters and ordering.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
-@PublicApi
 public class Query {
   final com.google.firebase.firestore.core.Query query;
 
   final FirebaseFirestore firestore;
 
   /** An enum for the direction of a sort. */
-  @PublicApi
   public enum Direction {
     ASCENDING,
     DESCENDING
@@ -78,201 +75,188 @@ public class Query {
     this.firestore = checkNotNull(firestore);
   }
 
-  /** Gets the Firestore instance associated with this query. */
+  /** Gets the Cloud Firestore instance associated with this query. */
   @NonNull
-  @PublicApi
   public FirebaseFirestore getFirestore() {
     return firestore;
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should be equal to the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be equal to the specified value.
    *
    * @param field The name of the field to compare
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereEqualTo(@NonNull String field, @Nullable Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.EQUAL, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should be equal to the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be equal to the specified value.
    *
    * @param fieldPath The path of the field to compare
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
     return whereHelper(fieldPath, Operator.EQUAL, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should be less than the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be less than the specified value.
    *
    * @param field The name of the field to compare
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereLessThan(@NonNull String field, @NonNull Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.LESS_THAN, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should be less than the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be less than the specified value.
    *
    * @param fieldPath The path of the field to compare
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereLessThan(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.LESS_THAN, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should be less than or equal to the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be less than or equal to the specified value.
    *
    * @param field The name of the field to compare
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereLessThanOrEqualTo(@NonNull String field, @NonNull Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.LESS_THAN_OR_EQUAL, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should be less than or equal to the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be less than or equal to the specified value.
    *
    * @param fieldPath The path of the field to compare
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereLessThanOrEqualTo(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.LESS_THAN_OR_EQUAL, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should be greater than the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be greater than the specified value.
    *
    * @param field The name of the field to compare
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereGreaterThan(@NonNull String field, @NonNull Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.GREATER_THAN, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should be greater than the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be greater than the specified value.
    *
    * @param fieldPath The path of the field to compare
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereGreaterThan(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.GREATER_THAN, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should be greater than or equal to the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be greater than or equal to the specified value.
    *
    * @param field The name of the field to compare
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereGreaterThanOrEqualTo(@NonNull String field, @NonNull Object value) {
     return whereHelper(
         FieldPath.fromDotSeparatedPath(field), Operator.GREATER_THAN_OR_EQUAL, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should be greater than or equal to the specified value.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should be greater than or equal to the specified value.
    *
    * @param fieldPath The path of the field to compare
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereGreaterThanOrEqualTo(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.GREATER_THAN_OR_EQUAL, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field, the value must be an array, and that the array must contain the provided
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field, the value must be an array, and that the array must contain the provided
    * value.
    *
-   * <p>A Query can have only one whereArrayContains() filter and it cannot be combined with
-   * whereArrayContainsAny().
+   * <p>A {@code Query} can have only one {@code whereArrayContains()} filter and it cannot be
+   * combined with {@code whereArrayContainsAny()}.
    *
    * @param field The name of the field containing an array to search.
    * @param value The value that must be contained in the array
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereArrayContains(@NonNull String field, @NonNull Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field, the value must be an array, and that the array must contain the provided
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field, the value must be an array, and that the array must contain the provided
    * value.
    *
-   * <p>A Query can have only one whereArrayContains() filter and it cannot be combined with
-   * whereArrayContainsAny().
+   * <p>A {@code Query} can have only one {@code whereArrayContains()} filter and it cannot be
+   * combined with {@code whereArrayContainsAny()}.
    *
    * @param fieldPath The path of the field containing an array to search.
    * @param value The value that must be contained in the array
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query whereArrayContains(@NonNull FieldPath fieldPath, @NonNull Object value) {
     return whereHelper(fieldPath, Operator.ARRAY_CONTAINS, value);
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field, the value must be an array, and that the array must contain at least one value
-   * from the provided array.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field, the value must be an array, and that the array must contain at least one
+   * value from the provided array.
    *
-   * <p>A Query can have only one whereArrayContainsAny() filter and it cannot be combined with
-   * whereArrayContains() or whereIn().
+   * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
+   * combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param field The name of the field containing an array to search.
    * @param value The array that contains the values to match.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
@@ -281,16 +265,16 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field, the value must be an array, and that the array must contain at least one value
-   * from the provided array.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field, the value must be an array, and that the array must contain at least one
+   * value from the provided array.
    *
-   * <p>A Query can have only one whereArrayContainsAny() filter and it cannot be combined with
-   * whereArrayContains() or whereIn().
+   * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
+   * combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param fieldPath The path of the field containing an array to search.
    * @param value The array that contains the values to match.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
@@ -299,15 +283,15 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value must equal one of the values from the provided array.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value must equal one of the values from the provided array.
    *
-   * <p>A Query can have only one whereIn() filter, and it cannot be combined with
-   * whereArrayContainsAny().
+   * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
+   * {@code whereArrayContainsAny()}.
    *
    * @param field The name of the field to search.
    * @param value The array that contains the values to match.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
@@ -316,15 +300,15 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value must equal one of the values from the provided array.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value must equal one of the values from the provided array.
    *
-   * <p>A Query can have only one whereIn() filter, and it cannot be combined with
-   * whereArrayContainsAny().
+   * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
+   * {@code whereArrayContainsAny()}.
    *
    * @param fieldPath The path of the field to search.
    * @param value The array that contains the values to match.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
@@ -333,13 +317,13 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new Query with the additional filter that documents must contain the
-   * specified field and the value should satisfy the relation constraint provided.
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value should satisfy the relation constraint provided.
    *
    * @param fieldPath The field to compare
    * @param op The operator
    * @param value The value for comparison
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   private Query whereHelper(@NonNull FieldPath fieldPath, Operator op, Object value) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
@@ -520,54 +504,50 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new Query that's additionally sorted by the specified field.
+   * Creates and returns a new {@code Query} that's additionally sorted by the specified field.
    *
    * @param field The field to sort by.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query orderBy(@NonNull String field) {
     return orderBy(FieldPath.fromDotSeparatedPath(field), Direction.ASCENDING);
   }
 
   /**
-   * Creates and returns a new Query that's additionally sorted by the specified field.
+   * Creates and returns a new {@code Query} that's additionally sorted by the specified field.
    *
    * @param fieldPath The field to sort by.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query orderBy(@NonNull FieldPath fieldPath) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     return orderBy(fieldPath.getInternalPath(), Direction.ASCENDING);
   }
 
   /**
-   * Creates and returns a new Query that's additionally sorted by the specified field, optionally
-   * in descending order instead of ascending.
+   * Creates and returns a new {@code Query} that's additionally sorted by the specified field,
+   * optionally in descending order instead of ascending.
    *
    * @param field The field to sort by.
    * @param direction The direction to sort.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query orderBy(@NonNull String field, @NonNull Direction direction) {
     return orderBy(FieldPath.fromDotSeparatedPath(field), direction);
   }
 
   /**
-   * Creates and returns a new Query that's additionally sorted by the specified field, optionally
-   * in descending order instead of ascending.
+   * Creates and returns a new {@code Query} that's additionally sorted by the specified field,
+   * optionally in descending order instead of ascending.
    *
    * @param fieldPath The field to sort by.
    * @param direction The direction to sort.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query orderBy(@NonNull FieldPath fieldPath, @NonNull Direction direction) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     return orderBy(fieldPath.getInternalPath(), direction);
@@ -596,14 +576,13 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new Query that's additionally limited to only return up to the specified
-   * number of documents.
+   * Creates and returns a new {@code Query} that's additionally limited to only return up to the
+   * specified number of documents.
    *
    * @param limit The maximum number of items to return.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query limit(long limit) {
     if (limit <= 0) {
       throw new IllegalArgumentException(
@@ -613,119 +592,113 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new Query that starts at the provided document (inclusive). The starting
-   * position is relative to the order of the query. The document must contain all of the fields
-   * provided in the orderBy of this query.
+   * Creates and returns a new {@code Query} that starts at the provided document (inclusive). The
+   * starting position is relative to the order of the query. The document must contain all of the
+   * fields provided in the orderBy of this query.
    *
    * @param snapshot The snapshot of the document to start at.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query startAt(@NonNull DocumentSnapshot snapshot) {
     Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /*before=*/ true);
     return new Query(query.startAt(bound), firestore);
   }
 
   /**
-   * Creates and returns a new Query that starts at the provided fields relative to the order of the
-   * query. The order of the field values must match the order of the order by clauses of the query.
+   * Creates and returns a new {@code Query} that starts at the provided fields relative to the
+   * order of the query. The order of the field values must match the order of the order by clauses
+   * of the query.
    *
    * @param fieldValues The field values to start this query at, in order of the query's order by.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query startAt(Object... fieldValues) {
     Bound bound = boundFromFields("startAt", fieldValues, /*before=*/ true);
     return new Query(query.startAt(bound), firestore);
   }
 
   /**
-   * Creates and returns a new Query that starts after the provided document (exclusive). The
-   * starting position is relative to the order of the query. The document must contain all of the
-   * fields provided in the orderBy of this query.
+   * Creates and returns a new {@code Query} that starts after the provided document (exclusive).
+   * The starting position is relative to the order of the query. The document must contain all of
+   * the fields provided in the orderBy of this query.
    *
    * @param snapshot The snapshot of the document to start after.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query startAfter(@NonNull DocumentSnapshot snapshot) {
     Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /*before=*/ false);
     return new Query(query.startAt(bound), firestore);
   }
 
   /**
-   * Creates and returns a new Query that starts after the provided fields relative to the order of
-   * the query. The order of the field values must match the order of the order by clauses of the
-   * query.
+   * Creates and returns a new {@code Query} that starts after the provided fields relative to the
+   * order of the query. The order of the field values must match the order of the order by clauses
+   * of the query.
    *
    * @param fieldValues The field values to start this query after, in order of the query's order
    *     by.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query startAfter(Object... fieldValues) {
     Bound bound = boundFromFields("startAfter", fieldValues, /*before=*/ false);
     return new Query(query.startAt(bound), firestore);
   }
 
   /**
-   * Creates and returns a new Query that ends before the provided document (exclusive). The end
-   * position is relative to the order of the query. The document must contain all of the fields
+   * Creates and returns a new {@code Query} that ends before the provided document (exclusive). The
+   * end position is relative to the order of the query. The document must contain all of the fields
    * provided in the orderBy of this query.
    *
    * @param snapshot The snapshot of the document to end before.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query endBefore(@NonNull DocumentSnapshot snapshot) {
     Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /*before=*/ true);
     return new Query(query.endAt(bound), firestore);
   }
 
   /**
-   * Creates and returns a new Query that ends before the provided fields relative to the order of
-   * the query. The order of the field values must match the order of the order by clauses of the
-   * query.
+   * Creates and returns a new {@code Query} that ends before the provided fields relative to the
+   * order of the query. The order of the field values must match the order of the order by clauses
+   * of the query.
    *
    * @param fieldValues The field values to end this query before, in order of the query's order by.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query endBefore(Object... fieldValues) {
     Bound bound = boundFromFields("endBefore", fieldValues, /*before=*/ true);
     return new Query(query.endAt(bound), firestore);
   }
 
   /**
-   * Creates and returns a new Query that ends at the provided document (inclusive). The end
+   * Creates and returns a new {@code Query} that ends at the provided document (inclusive). The end
    * position is relative to the order of the query. The document must contain all of the fields
    * provided in the orderBy of this query.
    *
    * @param snapshot The snapshot of the document to end at.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query endAt(@NonNull DocumentSnapshot snapshot) {
     Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /*before=*/ false);
     return new Query(query.endAt(bound), firestore);
   }
 
   /**
-   * Creates and returns a new Query that ends at the provided fields relative to the order of the
-   * query. The order of the field values must match the order of the order by clauses of the query.
+   * Creates and returns a new {@code Query} that ends at the provided fields relative to the order
+   * of the query. The order of the field values must match the order of the order by clauses of the
+   * query.
    *
    * @param fieldValues The field values to end this query at, in order of the query's order by.
-   * @return The created Query.
+   * @return The created {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Query endAt(Object... fieldValues) {
     Bound bound = boundFromFields("endAt", fieldValues, /*before=*/ false);
     return new Query(query.endAt(bound), firestore);
@@ -840,29 +813,27 @@ public class Query {
   }
 
   /**
-   * Executes the query and returns the results as a QuerySnapshot.
+   * Executes the query and returns the results as a {@code QuerySnapshot}.
    *
-   * @return A Task that will be resolved with the results of the Query.
+   * @return A Task that will be resolved with the results of the {@code Query}.
    */
   @NonNull
-  @PublicApi
   public Task<QuerySnapshot> get() {
     return get(Source.DEFAULT);
   }
 
   /**
-   * Executes the query and returns the results as a QuerySnapshot.
+   * Executes the query and returns the results as a {@code QuerySnapshot}.
    *
-   * <p>By default, get() attempts to provide up-to-date data when possible by waiting for data from
-   * the server, but it may return cached data or fail if you are offline and the server cannot be
-   * reached. This behavior can be altered via the {@link Source} parameter.
+   * <p>By default, {@code get()} attempts to provide up-to-date data when possible by waiting for
+   * data from the server, but it may return cached data or fail if you are offline and the server
+   * cannot be reached. This behavior can be altered via the {@code Source} parameter.
    *
    * @param source A value to configure the get behavior.
-   * @return A Task that will be resolved with the results of the Query.
+   * @return A Task that will be resolved with the results of the {@code Query}.
    */
   @NonNull
-  @PublicApi
-  public Task<QuerySnapshot> get(Source source) {
+  public Task<QuerySnapshot> get(@NonNull Source source) {
     if (source == Source.CACHE) {
       return firestore
           .getClient()
@@ -936,7 +907,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(@NonNull EventListener<QuerySnapshot> listener) {
     return addSnapshotListener(MetadataChanges.EXCLUDE, listener);
   }
@@ -949,7 +919,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Executor executor, @NonNull EventListener<QuerySnapshot> listener) {
     return addSnapshotListener(executor, MetadataChanges.EXCLUDE, listener);
@@ -965,7 +934,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Activity activity, @NonNull EventListener<QuerySnapshot> listener) {
     return addSnapshotListener(activity, MetadataChanges.EXCLUDE, listener);
@@ -980,7 +948,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull MetadataChanges metadataChanges, @NonNull EventListener<QuerySnapshot> listener) {
     return addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, metadataChanges, listener);
@@ -996,7 +963,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Executor executor,
       @NonNull MetadataChanges metadataChanges,
@@ -1019,7 +985,6 @@ public class Query {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Activity activity,
       @NonNull MetadataChanges metadataChanges,
@@ -1034,7 +999,7 @@ public class Query {
   /**
    * Internal helper method to create add a snapshot listener.
    *
-   * <p>Will be Activity scoped if the activity parameter is non-null.
+   * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
    *
    * @param executor The executor to use to call the listener.
    * @param options The options to use for this listen.

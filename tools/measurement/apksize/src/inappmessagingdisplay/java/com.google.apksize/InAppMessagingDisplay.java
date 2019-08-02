@@ -14,25 +14,55 @@
 
 package com.google.apksize;
 
+import android.app.Activity;
 import android.content.Context;
-import com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener;
-import com.google.firebase.inappmessaging.model.Action;
-import com.google.firebase.inappmessaging.model.CampaignMetadata;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
+import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 
 public class InAppMessagingDisplay implements SampleCode {
+  private static final String SAMPLE_TEXT = "My sample text";
+  private static final String ACTION_URL = "https://www.example.com";
+  private static final String CAMPAIGN_ID = "my_campaign";
+  private static final String TITLE = "Title";
 
-  public class MyClickListener implements FirebaseInAppMessagingClickListener {
+  public static class DisplayCallback implements FirebaseInAppMessagingDisplayCallbacks {
     @Override
-    public void messageClicked(InAppMessage inAppMessage, Action action) {
-      String url = action.getActionUrl();
-      CampaignMetadata metadata = inAppMessage.getCampaignMetadata();
+    public Task<Void> impressionDetected() {
+      return new TaskCompletionSource<Void>().getTask();
+    }
+
+    @Override
+    public Task<Void> messageDismissed(InAppMessagingDismissType dismissType) {
+      return new TaskCompletionSource<Void>().getTask();
+    }
+
+    @Override
+    public Task<Void> messageClicked() {
+      return new TaskCompletionSource<Void>().getTask();
+    }
+
+    @Override
+    public Task<Void> displayErrorEncountered(InAppMessagingErrorReason InAppMessagingErrorReason) {
+      return new TaskCompletionSource<Void>().getTask();
     }
   }
 
   @Override
   public void runSample(Context context) {
-    MyClickListener listener = new MyClickListener();
-    FirebaseInAppMessaging.getInstance().addClickListener(listener);
+    InAppMessage message =
+        InAppMessage.builder()
+            .setBody(InAppMessage.Text.builder().setText(SAMPLE_TEXT).build())
+            .setAction(InAppMessage.Action.builder().setActionUrl(ACTION_URL).build())
+            .setCampaignId(CAMPAIGN_ID)
+            .setTitle(InAppMessage.Text.builder().setText(TITLE).build())
+            .build();
+
+    // NOTE: Context is *not guaranteed* to be an Activity. This is **fine** in this case because we
+    // only want to compile the APK to measure it size, and it will not be run.
+    FirebaseInAppMessagingDisplay.getInstance()
+        .testMessage((Activity) context, message, new DisplayCallback());
   }
 }

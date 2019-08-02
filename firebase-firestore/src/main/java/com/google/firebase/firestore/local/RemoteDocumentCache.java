@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -21,7 +22,6 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * Represents cached documents received from the remote backend.

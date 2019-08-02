@@ -14,6 +14,8 @@
 
 package com.google.firebase.functions;
 
+import androidx.annotation.Nullable;
+
 /** The result of calling a HttpsCallableReference function. */
 public class HttpsCallableResult {
   // The actual result data, as generic types decoded from JSON.
@@ -30,6 +32,7 @@ public class HttpsCallableResult {
    * array, this object would be a List<Object>. If your trigger returned a JavaScript object with
    * keys and values, this object would be a Map<String, Object>.
    */
+  @Nullable
   public Object getData() {
     return data;
   }

@@ -25,7 +25,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.internal.AdaptiveStreamBuffer;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
@@ -48,7 +47,6 @@ import org.json.JSONException;
  * allows pause and resume to control the upload operation.
  */
 @SuppressWarnings("unused")
-@PublicApi
 public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   @VisibleForTesting static final int PREFERRED_CHUNK_SIZE = 256 * 1024; // 256 KB
   private static final int MAXIMUM_CHUNK_SIZE = 32 * 1024 * 1024; // 32 MB
@@ -526,7 +524,6 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   }
 
   /** Encapsulates state about the running {@link UploadTask} */
-  @PublicApi
   public class TaskSnapshot extends StorageTask<UploadTask.TaskSnapshot>.SnapshotBase {
     private final long mBytesUploaded;
     private final Uri mUploadUri;
@@ -546,13 +543,11 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     }
 
     /** @return the total bytes uploaded so far. */
-    @PublicApi
     public long getBytesTransferred() {
       return mBytesUploaded;
     }
 
     /** @return The number of bytes to upload. Will return -1 if uploading from a stream. */
-    @PublicApi
     public long getTotalByteCount() {
       return UploadTask.this.getTotalByteCount();
     }
@@ -563,7 +558,6 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
      *     StorageMetadata, Uri)}
      */
     @Nullable
-    @PublicApi
     public Uri getUploadSessionUri() {
       return mUploadUri;
     }
@@ -573,7 +567,6 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
      *     Metadata which will include the upload URL.
      */
     @Nullable
-    @PublicApi
     public StorageMetadata getMetadata() {
       return mMetadata;
     }

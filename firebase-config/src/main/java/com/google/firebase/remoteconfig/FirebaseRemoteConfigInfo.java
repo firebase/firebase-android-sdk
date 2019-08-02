@@ -14,6 +14,8 @@
 
 package com.google.firebase.remoteconfig;
 
+import androidx.annotation.NonNull;
+
 /** Wraps the current state of the FirebaseRemoteConfig singleton object. */
 public interface FirebaseRemoteConfigInfo {
   /**
@@ -23,7 +25,7 @@ public interface FirebaseRemoteConfigInfo {
    * @return -1 if no fetch attempt has been made yet. Otherwise, returns the timestamp of the last
    *     successful fetch operation.
    */
-  public long getFetchTimeMillis();
+  long getFetchTimeMillis();
 
   /**
    * Gets the status of the most recent fetch attempt.
@@ -33,12 +35,13 @@ public interface FirebaseRemoteConfigInfo {
    *     FirebaseRemoteConfig#LAST_FETCH_STATUS_THROTTLED}, or {@link
    *     FirebaseRemoteConfig#LAST_FETCH_STATUS_NO_FETCH_YET}.
    */
-  public int getLastFetchStatus();
+  int getLastFetchStatus();
 
   /**
    * Gets the current settings of the FirebaseRemoteConfig singleton object.
    *
    * @return A {@link FirebaseRemoteConfigSettings} object indicating the current settings.
    */
-  public FirebaseRemoteConfigSettings getConfigSettings();
+  @NonNull
+  FirebaseRemoteConfigSettings getConfigSettings();
 }

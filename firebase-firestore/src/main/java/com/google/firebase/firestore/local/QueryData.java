@@ -26,9 +26,9 @@ public final class QueryData {
   private final Query query;
   private final int targetId;
   private final long sequenceNumber;
-  private final boolean synced;
   private final QueryPurpose purpose;
   private final SnapshotVersion snapshotVersion;
+  private final SnapshotVersion lastLimboFreeSnapshotVersion;
   private final ByteString resumeToken;
 
   /**
@@ -38,26 +38,26 @@ public final class QueryData {
    * @param targetId The target to which the query corresponds, assigned by the LocalStore for user
    *     queries or the SyncEngine for limbo queries.
    * @param sequenceNumber The sequence number, denoting the last time this query was used.
-   * @param synced Whether the query's local state is in sync with the backend.
    * @param purpose The purpose of the query.
    * @param snapshotVersion The latest snapshot version seen for this target.
+   * @param lastLimboFreeSnapshotVersion The maximum snapshot version at which the associated query
+   *     view contained no limbo documents.
    * @param resumeToken An opaque, server-assigned token that allows watching a query to be resumed
    *     after disconnecting without retransmitting all the data that matches the query. The resume
    *     token essentially identifies a point in time from which the server should resume sending
-   *     results.
    */
   public QueryData(
       Query query,
       int targetId,
       long sequenceNumber,
-      boolean synced,
       QueryPurpose purpose,
       SnapshotVersion snapshotVersion,
+      SnapshotVersion lastLimboFreeSnapshotVersion,
       ByteString resumeToken) {
     this.query = checkNotNull(query);
     this.targetId = targetId;
     this.sequenceNumber = sequenceNumber;
-    this.synced = synced;
+    this.lastLimboFreeSnapshotVersion = lastLimboFreeSnapshotVersion;
     this.purpose = purpose;
     this.snapshotVersion = checkNotNull(snapshotVersion);
     this.resumeToken = checkNotNull(resumeToken);
@@ -69,8 +69,8 @@ public final class QueryData {
         query,
         targetId,
         sequenceNumber,
-        /* synced= */ false,
         purpose,
+        SnapshotVersion.NONE,
         SnapshotVersion.NONE,
         WatchStream.EMPTY_RESUME_TOKEN);
   }
@@ -99,9 +99,11 @@ public final class QueryData {
     return resumeToken;
   }
 
-  /** Whether the query's local state is in sync with the backend. */
-  public boolean isSynced() {
-    return synced;
+  /**
+   * Returns the last snapshot version for which the associated view contained no limbo documents.
+   */
+  public SnapshotVersion getLastLimboFreeSnapshotVersion() {
+    return lastLimboFreeSnapshotVersion;
   }
 
   @Override
@@ -117,9 +119,9 @@ public final class QueryData {
     return query.equals(queryData.query)
         && targetId == queryData.targetId
         && sequenceNumber == queryData.sequenceNumber
-        && synced == queryData.synced
         && purpose.equals(queryData.purpose)
         && snapshotVersion.equals(queryData.snapshotVersion)
+        && lastLimboFreeSnapshotVersion.equals(queryData.lastLimboFreeSnapshotVersion)
         && resumeToken.equals(queryData.resumeToken);
   }
 
@@ -128,9 +130,9 @@ public final class QueryData {
     int result = query.hashCode();
     result = 31 * result + targetId;
     result = 31 * result + (int) sequenceNumber;
-    result = 31 * result + (synced ? 1 : 0);
     result = 31 * result + purpose.hashCode();
     result = 31 * result + snapshotVersion.hashCode();
+    result = 31 * result + lastLimboFreeSnapshotVersion.hashCode();
     result = 31 * result + resumeToken.hashCode();
     return result;
   }
@@ -144,27 +146,27 @@ public final class QueryData {
         + targetId
         + ", sequenceNumber="
         + sequenceNumber
-        + ", isSynced="
-        + synced
         + ", purpose="
         + purpose
         + ", snapshotVersion="
         + snapshotVersion
+        + ", lastLimboFreeSnapshotVersion="
+        + lastLimboFreeSnapshotVersion
         + ", resumeToken="
         + resumeToken
         + '}';
   }
 
-  /**
-   * Creates a new query data instance with an updated snapshot version, sequence number, sync
-   * status and resume token.
-   */
+  /** Creates a new query data instance with an updated snapshot version and resume token. */
   public QueryData copy(
-      SnapshotVersion snapshotVersion,
-      ByteString resumeToken,
-      long sequenceNumber,
-      boolean synced) {
+      SnapshotVersion snapshotVersion, ByteString resumeToken, long sequenceNumber) {
     return new QueryData(
-        query, targetId, sequenceNumber, synced, purpose, snapshotVersion, resumeToken);
+        query,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
   }
 }

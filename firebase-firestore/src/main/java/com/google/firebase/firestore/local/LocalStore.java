@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static java.util.Arrays.asList;
 
 import android.util.SparseArray;
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
@@ -46,7 +47,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 
 /**
  * Local storage in the Firestore client. Coordinates persistence components like the mutation queue
@@ -359,11 +359,7 @@ public final class LocalStore {
             if (!resumeToken.isEmpty()) {
               QueryData oldQueryData = queryData;
               queryData =
-                  queryData.copy(
-                      remoteEvent.getSnapshotVersion(),
-                      resumeToken,
-                      sequenceNumber,
-                      oldQueryData.isSynced());
+                  queryData.copy(remoteEvent.getSnapshotVersion(), resumeToken, sequenceNumber);
               targetIds.put(boxedTargetId, queryData);
 
               if (shouldPersistQueryData(oldQueryData, queryData, change)) {
@@ -475,7 +471,6 @@ public final class LocalStore {
           for (LocalViewChanges viewChange : viewChanges) {
             int targetId = viewChange.getTargetId();
 
-            // Update the local view references for LRU garbage collection
             localViewReferences.addReferences(viewChange.getAdded(), targetId);
             ImmutableSortedSet<DocumentKey> removed = viewChange.getRemoved();
             for (DocumentKey key : removed) {
@@ -483,16 +478,26 @@ public final class LocalStore {
             }
             localViewReferences.removeReferences(removed, targetId);
 
-            // Mark whether the local query view is in sync with the backend.
-            QueryData queryData = targetIds.get(targetId);
-            hardAssert(queryData != null, "Can't mark inactive target synchronized: %s", targetId);
-            QueryData updatedQueryData =
-                queryData.copy(
-                    queryData.getSnapshotVersion(),
-                    queryData.getResumeToken(),
-                    queryData.getSequenceNumber(),
-                    viewChange.isSynced());
-            targetIds.put(targetId, updatedQueryData);
+            if (!viewChange.hasUnresolvedLimboDocuments()) {
+              QueryData queryData = targetIds.get(targetId);
+              hardAssert(
+                  queryData != null,
+                  "Can't set limbo-free snapshot version for unknown target: %s",
+                  targetId);
+
+              // Advance the last limbo free snapshot version
+              SnapshotVersion lastLimboFreeSnapshotVersion = queryData.getSnapshotVersion();
+              QueryData updatedQueryData =
+                  new QueryData(
+                      queryData.getQuery(),
+                      queryData.getTargetId(),
+                      queryData.getSequenceNumber(),
+                      queryData.getPurpose(),
+                      queryData.getSnapshotVersion(),
+                      lastLimboFreeSnapshotVersion,
+                      queryData.getResumeToken());
+              targetIds.put(targetId, updatedQueryData);
+            }
           }
         });
   }
@@ -573,7 +578,9 @@ public final class LocalStore {
             // conditions and rationale) we need to persist the token now because there will no
             // longer be an in-memory version to fall back on.
             needsUpdate = true;
-          } else if (cachedQueryData.isSynced() != queryData.isSynced()) {
+          } else if (!cachedQueryData
+              .getLastLimboFreeSnapshotVersion()
+              .equals(queryData.getLastLimboFreeSnapshotVersion())) {
             needsUpdate = true;
           }
 
@@ -594,22 +601,6 @@ public final class LocalStore {
           persistence.getReferenceDelegate().removeTarget(queryData);
           targetIds.remove(queryData.getTargetId());
         });
-  }
-
-  /**
-   * Mark the query as not-consistent with the backend, indicating that we have to re-run the query
-   * against the full set of local documents.
-   */
-  public void markNeedsRefill(int targetId) {
-    QueryData queryData = targetIds.get(targetId);
-    hardAssert(queryData != null, "Can't mark inactive target: %s", targetId);
-    QueryData updatedQueryData =
-        queryData.copy(
-            queryData.getSnapshotVersion(),
-            queryData.getResumeToken(),
-            queryData.getSequenceNumber(),
-            /* synced= */ false);
-    targetIds.put(targetId, updatedQueryData);
   }
 
   /** Runs the given query against all the documents in the local store and returns the results. */

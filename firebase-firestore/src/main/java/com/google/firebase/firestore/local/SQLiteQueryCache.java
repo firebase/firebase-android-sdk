@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.database.sqlite.SQLiteStatement;
 import android.util.SparseArray;
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -27,7 +28,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.protobuf.InvalidProtocolBufferException;
-import javax.annotation.Nullable;
 
 /** Cached Queries backed by SQLite. */
 final class SQLiteQueryCache implements QueryCache {
