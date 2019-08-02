@@ -46,10 +46,12 @@ public class IndexFreeQueryEngine implements QueryEngine {
     hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
     hardAssert(queryCache != null, "setQueryCache() not called");
 
-    if (isSynced(queryData) && !matchesAllDocuments(query)) {
-      // Retrieve all results for documents that were updated since the last remote snapshot.
+    if (hasLimboFreeSnapshot(queryData) && !matchesAllDocuments(query)) {
+      // Retrieve all results for documents that were updated since the last limbo-document free
+      // remote snapshot.
       ImmutableSortedMap<DocumentKey, Document> docs =
-          localDocumentsView.getDocumentsMatchingQuery(query, queryData.getSnapshotVersion());
+          localDocumentsView.getDocumentsMatchingQuery(
+              query, queryData.getLastLimboFreeSnapshotVersion());
 
       // Merge with the documents that matched the query per the last remote snapshot.
       ImmutableSortedSet<DocumentKey> remoteKeys =
@@ -70,13 +72,14 @@ public class IndexFreeQueryEngine implements QueryEngine {
     }
   }
 
+  private boolean hasLimboFreeSnapshot(@Nullable QueryData queryData) {
+    return queryData != null
+        && !queryData.getLastLimboFreeSnapshotVersion().equals(SnapshotVersion.NONE);
+  }
+
   @Override
   public void handleDocumentChange(MaybeDocument oldDocument, MaybeDocument newDocument) {
     // No indexes to update.
-  }
-
-  private boolean isSynced(@Nullable QueryData queryData) {
-    return queryData != null && queryData.isSynced();
   }
 
   private static boolean matchesAllDocuments(Query query) {

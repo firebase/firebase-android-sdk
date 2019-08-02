@@ -213,6 +213,12 @@ public class IndexFreeQueryEngineTest {
 
   private QueryData queryData(Query query, boolean synced) {
     return new QueryData(
-        query, TEST_TARGET_ID, 1, synced, QueryPurpose.LISTEN, version(10), ByteString.EMPTY);
+        query,
+        TEST_TARGET_ID,
+        1,
+        QueryPurpose.LISTEN,
+        version(10),
+        synced ? version(10) : SnapshotVersion.NONE,
+        ByteString.EMPTY);
   }
 }

@@ -74,7 +74,8 @@ public class IndexedQueryEngineTest {
   }
 
   private void addDocument(Document newDoc) {
-    remoteDocuments.add(newDoc);
+    // Use document version as read time as the IndexedQueryEngine does not rely on read time.
+    remoteDocuments.add(newDoc, newDoc.getVersion());
     queryEngine.handleDocumentChange(
         deletedDoc(newDoc.getKey().toString(), ORIGINAL_VERSION), newDoc);
   }
@@ -86,7 +87,7 @@ public class IndexedQueryEngineTest {
   }
 
   private void updateDocument(Document oldDoc, Document newDoc) {
-    remoteDocuments.add(newDoc);
+    remoteDocuments.add(newDoc, newDoc.getVersion());
     queryEngine.handleDocumentChange(oldDoc, newDoc);
   }
 

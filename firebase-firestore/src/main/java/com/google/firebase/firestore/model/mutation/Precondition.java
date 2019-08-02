@@ -17,10 +17,10 @@ package com.google.firebase.firestore.model.mutation;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import javax.annotation.Nullable;
 
 /**
  * Encodes a precondition for a mutation. This follows the model that the backend accepts with the

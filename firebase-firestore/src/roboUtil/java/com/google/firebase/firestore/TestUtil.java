@@ -129,7 +129,7 @@ public class TestUtil {
             documentChanges,
             isFromCache,
             mutatedKeys,
-            /* synced= */ true,
+            /* hasLimboDocuments= */ true,
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ false);
     return new QuerySnapshot(query(path), viewSnapshot, FIRESTORE);

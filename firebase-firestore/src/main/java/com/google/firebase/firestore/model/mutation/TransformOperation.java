@@ -14,9 +14,9 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.value.FieldValue;
-import javax.annotation.Nullable;
 
 /** A transform within a TransformMutation. */
 public interface TransformOperation {

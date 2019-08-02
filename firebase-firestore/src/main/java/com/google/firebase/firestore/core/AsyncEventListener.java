@@ -14,10 +14,10 @@
 
 package com.google.firebase.firestore.core;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
 
 /**
  * A wrapper event listener that uses an Executor to dispatch events. Exposes a mute() call to

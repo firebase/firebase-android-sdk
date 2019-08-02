@@ -136,7 +136,7 @@ abstract class RemoteDocumentCacheTestCase {
   public void testSetAndReadDeletedDocument() {
     String path = "a/b";
     NoDocument deletedDoc = deletedDoc(path, 42);
-    add(deletedDoc);
+    add(deletedDoc, version(42));
     assertEquals(deletedDoc, get(path));
   }
 
@@ -146,7 +146,7 @@ abstract class RemoteDocumentCacheTestCase {
     Document written = addTestDocumentAtPath(path);
 
     Document newDoc = doc(path, 57, map("data", 5));
-    add(newDoc);
+    add(newDoc, version(57));
 
     assertNotEquals(written, newDoc);
     assertEquals(newDoc, get(path));
@@ -202,12 +202,12 @@ abstract class RemoteDocumentCacheTestCase {
 
   private Document addTestDocumentAtPath(String path, int version) {
     Document doc = doc(path, version, map("data", 2));
-    add(doc);
+    add(doc, version(version));
     return doc;
   }
 
-  private void add(MaybeDocument doc) {
-    persistence.runTransaction("add entry", () -> remoteDocumentCache.add(doc));
+  private void add(MaybeDocument doc, SnapshotVersion readTime) {
+    persistence.runTransaction("add entry", () -> remoteDocumentCache.add(doc, readTime));
   }
 
   @Nullable
