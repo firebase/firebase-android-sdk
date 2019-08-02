@@ -390,7 +390,7 @@ public final class LocalStore {
                 || doc.getVersion().equals(SnapshotVersion.NONE)
                 || (authoritativeUpdates.contains(doc.getKey()) && !existingDoc.hasPendingWrites())
                 || doc.getVersion().compareTo(existingDoc.getVersion()) >= 0) {
-              remoteDocuments.add(doc);
+              remoteDocuments.add(doc, remoteEvent.getSnapshotVersion());
               changedDocs.put(key, doc);
             } else {
               Logger.debug(
@@ -649,7 +649,7 @@ public final class LocalStore {
               batch,
               remoteDoc);
         } else {
-          remoteDocuments.add(doc);
+          remoteDocuments.add(doc, batchResult.getCommitVersion());
         }
       }
     }

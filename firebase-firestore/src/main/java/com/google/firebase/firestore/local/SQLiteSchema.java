@@ -136,7 +136,7 @@ class SQLiteSchema {
     }
 
     if (fromVersion < 9 && toVersion >= 9) {
-      addUpdateTime();
+      addReadTime();
     }
 
     /*
@@ -363,13 +363,13 @@ class SQLiteSchema {
     }
   }
 
-  private void addUpdateTime() {
-    if (!tableContainsColumn("remote_documents", "update_time_seconds")) {
+  private void addReadTime() {
+    if (!tableContainsColumn("remote_documents", "read_time_seconds")) {
       hardAssert(
-          !tableContainsColumn("remote_documents", "update_time_nanos"),
-          "Table contained update_time_seconds, but is missing update_time_nanos");
-      db.execSQL("ALTER TABLE remote_documents ADD COLUMN update_time_seconds INTEGER");
-      db.execSQL("ALTER TABLE remote_documents ADD COLUMN update_time_nanos INTEGER");
+          !tableContainsColumn("remote_documents", "read_time_nanos"),
+          "Table contained read_time_nanos, but is missing read_time_seconds");
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN read_time_seconds INTEGER");
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN read_time_nanos INTEGER");
     }
   }
 

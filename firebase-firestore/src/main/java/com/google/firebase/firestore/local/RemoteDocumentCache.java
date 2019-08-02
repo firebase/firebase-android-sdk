@@ -41,8 +41,9 @@ interface RemoteDocumentCache {
    * for the key, it will be replaced.
    *
    * @param maybeDocument A Document or NoDocument to put in the cache.
+   * @param readTime The time at which the document was read or committed.
    */
-  void add(MaybeDocument maybeDocument);
+  void add(MaybeDocument maybeDocument, SnapshotVersion readTime);
 
   /** Removes the cached entry for the given key (no-op if no entry exists). */
   void remove(DocumentKey documentKey);

@@ -51,16 +51,16 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public void add(MaybeDocument maybeDocument) {
+  public void add(MaybeDocument maybeDocument, SnapshotVersion readTime) {
     String path = pathForKey(maybeDocument.getKey());
-    Timestamp timestamp = maybeDocument.getVersion().getTimestamp();
+    Timestamp timestamp = readTime.getTimestamp();
     MessageLite message = serializer.encodeMaybeDocument(maybeDocument);
 
     statsCollector.recordRowsWritten(STATS_TAG, 1);
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents "
-            + "(path, update_time_seconds, update_time_nanos, contents) "
+            + "(path, read_time_seconds, read_time_nanos, contents) "
             + "VALUES (?, ?, ?, ?)",
         path,
         timestamp.getSeconds(),
@@ -154,8 +154,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     int rowsProcessed =
         db.query(
                 "SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ? "
-                    + "AND (update_time_seconds IS NULL OR update_time_seconds > ? "
-                    + "OR (update_time_seconds = ? AND update_time_nanos > ?))")
+                    + "AND (read_time_seconds IS NULL OR read_time_seconds > ? "
+                    + "OR (read_time_seconds = ? AND read_time_nanos > ?))")
             .binding(
                 prefixPath,
                 prefixSuccessorPath,
