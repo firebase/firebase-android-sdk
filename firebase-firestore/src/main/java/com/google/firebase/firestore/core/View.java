@@ -17,6 +17,7 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.compareIntegers;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
@@ -30,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * View is responsible for computing the final merged truth of what docs are in a query. It gets
@@ -296,7 +296,8 @@ public class View {
         });
     applyTargetChange(targetChange);
     List<LimboDocumentChange> limboDocumentChanges = updateLimboDocuments();
-    boolean synced = limboDocuments.size() == 0 && current;
+    boolean hasLimboDocuments = !(limboDocuments.size() == 0);
+    boolean synced = !hasLimboDocuments && current;
     SyncState newSyncState = synced ? SyncState.SYNCED : SyncState.LOCAL;
     boolean syncStatedChanged = newSyncState != syncState;
     syncState = newSyncState;
@@ -311,7 +312,7 @@ public class View {
               viewChanges,
               fromCache,
               docChanges.mutatedKeys,
-              synced,
+              hasLimboDocuments,
               syncStatedChanged,
               /* excludesMetadataChanges= */ false);
     }

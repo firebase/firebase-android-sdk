@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.model.value;
 
-import javax.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /** A wrapper for null values in Firestore. */
 public class NullValue extends FieldValue {

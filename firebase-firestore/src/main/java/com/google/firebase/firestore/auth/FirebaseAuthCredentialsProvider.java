@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.auth;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.GetTokenResult;
@@ -23,7 +24,6 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.util.Listener;
-import javax.annotation.Nullable;
 
 /**
  * FirebaseAuthCredentialsProvider uses Firebase Auth via {@link FirebaseApp} to get an auth token.

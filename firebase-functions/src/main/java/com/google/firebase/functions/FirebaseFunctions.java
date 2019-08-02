@@ -128,7 +128,8 @@ public class FirebaseFunctions {
    * @param app The app for the Firebase project.
    * @param region The region for the HTTPS trigger, such as "us-central1".
    */
-  public static FirebaseFunctions getInstance(FirebaseApp app, String region) {
+  @NonNull
+  public static FirebaseFunctions getInstance(@NonNull FirebaseApp app, @NonNull String region) {
     Preconditions.checkNotNull(app, "You must call FirebaseApp.initializeApp first.");
     Preconditions.checkNotNull(region);
 
@@ -143,7 +144,8 @@ public class FirebaseFunctions {
    *
    * @param app The app for the Firebase project.
    */
-  public static FirebaseFunctions getInstance(FirebaseApp app) {
+  @NonNull
+  public static FirebaseFunctions getInstance(@NonNull FirebaseApp app) {
     return getInstance(app, "us-central1");
   }
 
@@ -152,17 +154,20 @@ public class FirebaseFunctions {
    *
    * @param region The region for the HTTPS trigger, such as "us-central1".
    */
-  public static FirebaseFunctions getInstance(String region) {
+  @NonNull
+  public static FirebaseFunctions getInstance(@NonNull String region) {
     return getInstance(FirebaseApp.getInstance(), region);
   }
 
   /** Creates a Cloud Functions client with the default app. */
+  @NonNull
   public static FirebaseFunctions getInstance() {
     return getInstance(FirebaseApp.getInstance(), "us-central1");
   }
 
   /** Returns a reference to the Callable HTTPS trigger with the given name. */
-  public HttpsCallableReference getHttpsCallable(String name) {
+  @NonNull
+  public HttpsCallableReference getHttpsCallable(@NonNull String name) {
     return new HttpsCallableReference(this, name);
   }
 

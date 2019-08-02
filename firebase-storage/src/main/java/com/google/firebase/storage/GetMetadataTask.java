@@ -18,7 +18,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
 import com.google.firebase.storage.network.GetMetadataNetworkRequest;
 import com.google.firebase.storage.network.NetworkRequest;
@@ -55,7 +54,6 @@ class GetMetadataTask implements Runnable {
   }
 
   @Override
-  @PublicApi
   public void run() {
     final NetworkRequest request =
         new GetMetadataNetworkRequest(mStorageRef.getStorageUri(), mStorageRef.getApp());

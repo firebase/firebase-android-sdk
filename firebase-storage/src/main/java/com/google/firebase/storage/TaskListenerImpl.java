@@ -19,7 +19,6 @@ import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.ActivityLifecycleListener;
 import com.google.firebase.storage.internal.SmartHandler;
 import java.util.HashMap;
@@ -29,7 +28,7 @@ import java.util.concurrent.Executor;
 
 /** Helper class to manage listener subscriptions on executor/activity. */
 /*package*/
-@PublicApi
+
 class TaskListenerImpl<ListenerTypeT, ResultT extends StorageTask.ProvideError> {
   private final Queue<ListenerTypeT> listenerQueue = new ConcurrentLinkedQueue<>();
   private final HashMap<ListenerTypeT, SmartHandler> handlerMap = new HashMap<>();
@@ -37,7 +36,6 @@ class TaskListenerImpl<ListenerTypeT, ResultT extends StorageTask.ProvideError> 
   private int targetStates;
   private OnRaise<ListenerTypeT, ResultT> onRaise;
 
-  @PublicApi
   public TaskListenerImpl(
       @NonNull StorageTask<ResultT> task,
       int targetInternalStates,
@@ -52,7 +50,6 @@ class TaskListenerImpl<ListenerTypeT, ResultT extends StorageTask.ProvideError> 
     return Math.max(listenerQueue.size(), handlerMap.size());
   }
 
-  @PublicApi
   public void addListener(
       @Nullable Activity activity,
       @Nullable Executor executor,
@@ -83,7 +80,6 @@ class TaskListenerImpl<ListenerTypeT, ResultT extends StorageTask.ProvideError> 
     }
   }
 
-  @PublicApi
   public void onInternalStateChanged() {
     if ((task.getInternalState() & targetStates) != 0) {
       final ResultT snappedState = task.snapState();
@@ -98,7 +94,6 @@ class TaskListenerImpl<ListenerTypeT, ResultT extends StorageTask.ProvideError> 
   }
 
   /** Removes a listener. */
-  @PublicApi
   public void removeListener(@NonNull ListenerTypeT listener) {
     Preconditions.checkNotNull(listener);
 

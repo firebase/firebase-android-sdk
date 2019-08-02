@@ -31,6 +31,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.ProtoMatchers.PredicateMatcher;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
 import com.google.android.datatransport.cct.proto.LogEvent;
@@ -126,6 +127,9 @@ public class CctTransportBackendTest {
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
+            .withHeader(
+                "User-Agent",
+                equalTo(String.format("datatransport/%s android/", BuildConfig.VERSION_NAME)))
             .withHeader("Content-Type", equalTo("application/x-protobuf"))
             .andMatching(batchRequestMatcher.test(batch -> batch.getLogRequestCount() == 1))
             .andMatching(

@@ -19,24 +19,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.common.base.MoreObjects;
-import com.google.firebase.annotations.PublicApi;
 
-/** Settings used to configure a FirebaseFirestore instance. */
-@PublicApi
+/** Settings used to configure a {@link FirebaseFirestore} instance. */
 public final class FirebaseFirestoreSettings {
   /**
    * Constant to use with {@link FirebaseFirestoreSettings.Builder#setCacheSizeBytes(long)} to
    * disable garbage collection.
    */
-  @PublicApi public static final long CACHE_SIZE_UNLIMITED = -1;
+  public static final long CACHE_SIZE_UNLIMITED = -1;
 
   private static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1 MB
   private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
   private static final String DEFAULT_HOST = "firestore.googleapis.com";
   private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = true;
 
-  /** A Builder for creating {@link FirebaseFirestoreSettings}. */
-  @PublicApi
+  /** A Builder for creating {@code FirebaseFirestoreSettings}. */
   public static final class Builder {
     private String host;
     private boolean sslEnabled;
@@ -44,8 +41,7 @@ public final class FirebaseFirestoreSettings {
     private boolean timestampsInSnapshotsEnabled;
     private long cacheSizeBytes;
 
-    /** Constructs a new FirebaseFirestoreSettings Builder object. */
-    @PublicApi
+    /** Constructs a new {@code FirebaseFirestoreSettings} Builder object. */
     public Builder() {
       host = DEFAULT_HOST;
       sslEnabled = true;
@@ -55,10 +51,9 @@ public final class FirebaseFirestoreSettings {
     }
 
     /**
-     * Constructs a new FirebaseFirestoreSettings Builder based on an existing
-     * FirebaseFirestoreSettings object.
+     * Constructs a new {@code FirebaseFirestoreSettings} Builder based on an existing {@code
+     * FirebaseFirestoreSettings} object.
      */
-    @PublicApi
     public Builder(@NonNull FirebaseFirestoreSettings settings) {
       checkNotNull(settings, "Provided settings must not be null.");
       host = settings.host;
@@ -68,13 +63,12 @@ public final class FirebaseFirestoreSettings {
     }
 
     /**
-     * Sets the host of the Firestore backend.
+     * Sets the host of the Cloud Firestore backend.
      *
      * @param host The host string
      * @return A settings object with the host set.
      */
     @NonNull
-    @PublicApi
     public Builder setHost(@NonNull String host) {
       this.host = checkNotNull(host, "Provided host must not be null.");
       return this;
@@ -86,7 +80,6 @@ public final class FirebaseFirestoreSettings {
      * @return A settings object that uses SSL as specified by the <tt>value</tt>.
      */
     @NonNull
-    @PublicApi
     public Builder setSslEnabled(boolean value) {
       this.sslEnabled = value;
       return this;
@@ -99,7 +92,6 @@ public final class FirebaseFirestoreSettings {
      *     <tt>value</tt>.
      */
     @NonNull
-    @PublicApi
     public Builder setPersistenceEnabled(boolean value) {
       this.persistenceEnabled = value;
       return this;
@@ -110,12 +102,12 @@ public final class FirebaseFirestoreSettings {
      * fields in {@link DocumentSnapshot DocumentSnapshots}. This is now enabled by default and
      * should not be disabled.
      *
-     * <p>Previously, Firestore returned timestamp fields as {@link java.util.Date} but {@link
+     * <p>Previously, Cloud Firestore returned timestamp fields as {@link java.util.Date} but {@link
      * java.util.Date} only supports millisecond precision, which leads to truncation and causes
      * unexpected behavior when using a timestamp from a snapshot as a part of a subsequent query.
      *
-     * <p>So now Firestore returns {@link com.google.firebase.Timestamp Timestamp} values instead of
-     * {@link java.util.Date}, avoiding this kind of problem.
+     * <p>So now Cloud Firestore returns {@link com.google.firebase.Timestamp Timestamp} values
+     * instead of {@link java.util.Date}, avoiding this kind of problem.
      *
      * <p>To opt into the old behavior of returning {@link java.util.Date Dates}, you can
      * temporarily set {@link FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled} to false.
@@ -127,7 +119,6 @@ public final class FirebaseFirestoreSettings {
      */
     @NonNull
     @Deprecated
-    @PublicApi
     public Builder setTimestampsInSnapshotsEnabled(boolean value) {
       this.timestampsInSnapshotsEnabled = value;
       return this;
@@ -135,9 +126,9 @@ public final class FirebaseFirestoreSettings {
 
     /**
      * Sets an approximate cache size threshold for the on-disk data. If the cache grows beyond this
-     * size, Firestore will start removing data that hasn't been recently used. The size is not a
-     * guarantee that the cache will stay below that size, only that if the cache exceeds the given
-     * size, cleanup will be attempted.
+     * size, Cloud Firestore will start removing data that hasn't been recently used. The size is
+     * not a guarantee that the cache will stay below that size, only that if the cache exceeds the
+     * given size, cleanup will be attempted.
      *
      * <p>By default, collection is enabled with a cache size of 100 MB. The minimum value is 1 MB.
      *
@@ -145,7 +136,6 @@ public final class FirebaseFirestoreSettings {
      *     {@code value}.
      */
     @NonNull
-    @PublicApi
     public Builder setCacheSizeBytes(long value) {
       if (value != CACHE_SIZE_UNLIMITED && value < MINIMUM_CACHE_BYTES) {
         throw new IllegalArgumentException(
@@ -156,7 +146,6 @@ public final class FirebaseFirestoreSettings {
     }
 
     @NonNull
-    @PublicApi
     public FirebaseFirestoreSettings build() {
       if (!this.sslEnabled && this.host.equals(DEFAULT_HOST)) {
         throw new IllegalStateException(
@@ -172,7 +161,7 @@ public final class FirebaseFirestoreSettings {
   private final boolean timestampsInSnapshotsEnabled;
   private final long cacheSizeBytes;
 
-  /** Constructs a FirebaseFirestoreSettings object based on the values in the Builder. */
+  /** Constructs a {@code FirebaseFirestoreSettings} object based on the values in the Builder. */
   private FirebaseFirestoreSettings(Builder builder) {
     host = builder.host;
     sslEnabled = builder.sslEnabled;
@@ -219,21 +208,18 @@ public final class FirebaseFirestoreSettings {
         .toString();
   }
 
-  /** Returns the host of the Firestore backend. */
+  /** Returns the host of the Cloud Firestore backend. */
   @NonNull
-  @PublicApi
   public String getHost() {
     return host;
   }
 
   /** Returns whether or not to use SSL for communication. */
-  @PublicApi
   public boolean isSslEnabled() {
     return sslEnabled;
   }
 
   /** Returns whether or not to use local persistent storage. */
-  @PublicApi
   public boolean isPersistenceEnabled() {
     return persistenceEnabled;
   }
@@ -242,7 +228,6 @@ public final class FirebaseFirestoreSettings {
    * Returns whether or not {@link DocumentSnapshot DocumentSnapshots} return timestamp fields as
    * {@link com.google.firebase.Timestamp Timestamps}.
    */
-  @PublicApi
   public boolean areTimestampsInSnapshotsEnabled() {
     return timestampsInSnapshotsEnabled;
   }
@@ -251,7 +236,6 @@ public final class FirebaseFirestoreSettings {
    * Returns the threshold for the cache size above which the SDK will attempt to collect the least
    * recently used documents.
    */
-  @PublicApi
   public long getCacheSizeBytes() {
     return cacheSizeBytes;
   }

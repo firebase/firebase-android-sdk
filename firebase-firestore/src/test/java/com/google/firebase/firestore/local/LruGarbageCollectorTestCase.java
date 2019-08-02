@@ -108,9 +108,9 @@ public abstract class LruGarbageCollectorTestCase {
   private void updateTargetInTransaction(QueryData queryData) {
     SnapshotVersion version = version(2);
     ByteString resumeToken = resumeToken(2);
-    long sequenceNumber = persistence.getReferenceDelegate().getCurrentSequenceNumber();
-    boolean synced = false;
-    QueryData updated = queryData.copy(version, resumeToken, sequenceNumber, synced);
+    QueryData updated =
+        queryData.copy(
+            version, resumeToken, persistence.getReferenceDelegate().getCurrentSequenceNumber());
     queryCache.updateQueryData(updated);
   }
 
@@ -139,7 +139,7 @@ public abstract class LruGarbageCollectorTestCase {
 
   private Document cacheADocumentInTransaction() {
     Document doc = nextTestDocument();
-    documentCache.add(doc);
+    documentCache.add(doc, doc.getVersion());
     return doc;
   }
 
@@ -554,7 +554,7 @@ public abstract class LruGarbageCollectorTestCase {
           SnapshotVersion newVersion = version(3);
           Document doc =
               new Document(middleDocToUpdate, newVersion, Document.DocumentState.SYNCED, testValue);
-          documentCache.add(doc);
+          documentCache.add(doc, newVersion);
           updateTargetInTransaction(middleTarget);
         });
 

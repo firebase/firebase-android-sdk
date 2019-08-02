@@ -14,14 +14,10 @@
 
 package com.google.firebase.database;
 
-import com.google.firebase.annotations.PublicApi;
-
 /** This interface is used to setup logging for Firebase Database. */
-@PublicApi
 public interface Logger {
 
   /** The log levels used by the Firebase Database library */
-  @PublicApi
   enum Level {
     DEBUG,
     INFO,

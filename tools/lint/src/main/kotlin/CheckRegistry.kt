@@ -25,7 +25,8 @@ class CheckRegistry : IssueRegistry() {
                 KotlinInteropDetector.KOTLIN_PROPERTY,
                 KotlinInteropDetector.LAMBDA_LAST,
                 KotlinInteropDetector.NO_HARD_KOTLIN_KEYWORDS,
-                KotlinInteropDetector.PLATFORM_NULLNESS
+                KotlinInteropDetector.PLATFORM_NULLNESS,
+                NonAndroidxNullabilityDetector.NON_ANDROIDX_NULLABILITY
         )
 
     override val api: Int

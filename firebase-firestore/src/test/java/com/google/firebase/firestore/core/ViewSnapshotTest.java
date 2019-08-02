@@ -45,9 +45,9 @@ public class ViewSnapshotTest {
     List<DocumentViewChange> changes =
         Arrays.asList(DocumentViewChange.create(Type.ADDED, doc("c/foo", 1, map())));
     ImmutableSortedSet<DocumentKey> mutatedKeys = keySet(key("c/foo"));
+    boolean hasLimboDocuments = true;
     boolean fromCache = true;
     boolean hasPendingWrites = true;
-    boolean synced = true;
     boolean syncStateChanges = true;
     boolean excludesMetadataChanges = true;
 
@@ -59,7 +59,7 @@ public class ViewSnapshotTest {
             changes,
             fromCache,
             mutatedKeys,
-            synced,
+            hasLimboDocuments,
             syncStateChanges,
             excludesMetadataChanges);
 
@@ -69,7 +69,7 @@ public class ViewSnapshotTest {
     assertEquals(changes, snapshot.getChanges());
     assertEquals(fromCache, snapshot.isFromCache());
     assertEquals(mutatedKeys, snapshot.getMutatedKeys());
-    assertEquals(synced, snapshot.isSynced());
+    assertEquals(hasLimboDocuments, snapshot.hasLimboDocuments());
     assertEquals(hasPendingWrites, snapshot.hasPendingWrites());
     assertEquals(syncStateChanges, snapshot.didSyncStateChange());
     assertEquals(excludesMetadataChanges, snapshot.excludesMetadataChanges());
