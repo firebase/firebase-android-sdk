@@ -240,12 +240,15 @@ public class FirebaseRemoteConfig {
   @WorkerThread
   public boolean activateFetched() {
     @Nullable ConfigContainer fetchedContainer = fetchedConfigsCache.getBlocking();
+    @Nullable ConfigContainer activatedContainer = activatedConfigsCache.getBlocking();
     if (fetchedContainer == null) {
+      if (activatedContainer != null) {
+        updateGaWithEnabledRollouts(activatedContainer.getActiveRollouts());
+      }
       return false;
     }
 
     // If the activated configs exist, verify that the fetched configs are fresher.
-    @Nullable ConfigContainer activatedContainer = activatedConfigsCache.getBlocking();
     if (!isFetchedFresh(fetchedContainer, activatedContainer)) {
       updateGaWithEnabledRollouts(activatedContainer.getActiveRollouts());
       return false;
@@ -284,6 +287,8 @@ public class FirebaseRemoteConfig {
             executor,
             (unusedListOfCompletedTasks) -> {
               if (!fetchedConfigsTask.isSuccessful() || fetchedConfigsTask.getResult() == null) {
+                @Nullable ConfigContainer activatedContainer = activatedConfigsTask.getResult();
+                updateGaWithEnabledRollouts(activatedContainer.getActiveRollouts());
                 return Tasks.forResult(false);
               }
               ConfigContainer fetchedContainer = fetchedConfigsTask.getResult();

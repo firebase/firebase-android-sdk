@@ -721,6 +721,21 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void activate_getFetchedFailedWithNonNullActivatedConfigs_logsActiveRolloutsToGa() {
+    loadCacheWithIoException(mockFetchedCache);
+    loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
+
+    Task<Boolean> activateTask = frc.activate();
+
+    assertWithMessage("activate() succeeded with no fetched values!")
+        .that(activateTask.getResult())
+        .isFalse();
+
+    verify(mockAnalyticsConnector)
+        .logEvent(eq("_ssr"), eq(FRC_ANALYTICS_ORIGIN_NAME), refEq(createFfrBundleForGa()));
+  }
+
+  @Test
   public void activate_noFetchedConfigs_returnsFalse() {
     loadCacheWithConfig(mockFetchedCache, null);
     loadCacheWithConfig(mockActivatedCache, null);
@@ -736,6 +751,21 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void activate_noFetchedConfigsWithNonNullActivatedConfigs_logsActiveRolloutsToGa() {
+    loadCacheWithConfig(mockFetchedCache, null);
+    loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
+
+    Task<Boolean> activateTask = frc.activate();
+
+    assertWithMessage("activate() succeeded with no fetched values!")
+        .that(activateTask.getResult())
+        .isFalse();
+
+    verify(mockAnalyticsConnector)
+        .logEvent(eq("_ssr"), eq(FRC_ANALYTICS_ORIGIN_NAME), refEq(createFfrBundleForGa()));
+  }
+
+  @Test
   public void activate_staleFetchedConfigs_returnsFalse() {
     loadCacheWithConfig(mockFetchedCache, firstFetchedContainer);
     loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
@@ -748,6 +778,21 @@ public final class FirebaseRemoteConfigTest {
 
     verify(mockActivatedCache, never()).put(any());
     verify(mockFetchedCache, never()).clear();
+  }
+
+  @Test
+  public void activate_staleFetchedConfigs_logsActiveRolloutsToGa() {
+    loadCacheWithConfig(mockFetchedCache, firstFetchedContainer);
+    loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
+
+    Task<Boolean> activateTask = frc.activate();
+
+    assertWithMessage("activate() succeeded with stale values!")
+        .that(activateTask.getResult())
+        .isFalse();
+
+    verify(mockAnalyticsConnector)
+        .logEvent(eq("_ssr"), eq(FRC_ANALYTICS_ORIGIN_NAME), refEq(createFfrBundleForGa()));
   }
 
   @Test
