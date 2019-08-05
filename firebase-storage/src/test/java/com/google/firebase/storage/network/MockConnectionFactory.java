@@ -44,13 +44,13 @@ import org.mockito.exceptions.base.MockitoAssertionError;
 
 public class MockConnectionFactory implements HttpURLConnectionFactory {
   private final boolean binaryBody;
-  HttpURLConnection oldMock;
-  List<String> verifications = new ArrayList<>();
-  int count = 0;
-  private BufferedReader br;
+  private HttpURLConnection oldMock;
+  private List<String> verifications = new ArrayList<>();
+  private final BufferedReader br;
+  private final Semaphore pauseSemaphore = new Semaphore(0);
+  private int lineCount = 0;
   private int pauseRecord = Integer.MAX_VALUE;
-  private int currentRecord = 0;
-  private Semaphore pauseSemaphore = new Semaphore(0);
+  private int currentRecord = 0;;
 
   public MockConnectionFactory(String testName, boolean binaryBody) {
     this.binaryBody = binaryBody;
@@ -91,7 +91,7 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
     String line;
     try {
       while ((line = br.readLine()) != null) {
-        count++;
+        lineCount++;
 
         if ("<new>".equalsIgnoreCase(line)) {
           break;
@@ -156,7 +156,7 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
         }
       }
     } catch (ComparisonFailure | IllegalArgumentException e) {
-      System.out.println("**** Error at line:" + count);
+      System.out.println("**** Error at line:" + lineCount);
       throw e;
     }
     currentRecord++;
@@ -179,7 +179,7 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
   }
 
   public synchronized void verifyOldMock() {
-    if (oldMock == null || verifications.size() == 0) {
+    if (oldMock == null || verifications.isEmpty()) {
       return;
     }
     List<String> requestPropertyKeys = new ArrayList<>();
@@ -233,7 +233,7 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
             valueCapture.getAllValues().get(keyIndex));
       }
     } catch (MockitoAssertionError | ComparisonFailure e) {
-      System.out.println("**********Error in network Line: " + count);
+      System.out.println("**********Error in network Line: " + lineCount);
       throw e;
     }
 

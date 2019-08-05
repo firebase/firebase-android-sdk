@@ -517,7 +517,7 @@ class KotlinInteropDetector : Detector(), SourceCodeScanner {
             }
 
             // Known nullability: don't complain
-            if (isEqualsParameter(node) || isToStringMethod(node)) {
+            if (isEqualsParameter(node) || isToStringMethod(node) || isVarargParameter(node)) {
                 return
             }
 
@@ -606,6 +606,10 @@ class KotlinInteropDetector : Detector(), SourceCodeScanner {
             }
 
             return false
+        }
+
+        private fun isVarargParameter(node: UDeclaration): Boolean {
+            return node is UParameter && node.isVarArgs
         }
 
         private fun isToStringMethod(node: UDeclaration): Boolean {

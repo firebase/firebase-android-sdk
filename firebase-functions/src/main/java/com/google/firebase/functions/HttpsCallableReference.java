@@ -37,7 +37,6 @@ public class HttpsCallableReference {
     this.name = name;
   }
 
-  @NonNull
   /**
    * Executes this Callable HTTPS trigger asynchronously.
    *
@@ -77,11 +76,11 @@ public class HttpsCallableReference {
    * @see java.io.IOException
    * @see FirebaseFunctionsException
    */
+  @NonNull
   public Task<HttpsCallableResult> call(@Nullable Object data) {
     return functionsClient.call(name, data, options);
   }
 
-  @NonNull
   /**
    * Executes this HTTPS endpoint asynchronously without arguments.
    *
@@ -96,6 +95,7 @@ public class HttpsCallableReference {
    *
    * @return A Task that will be completed when the HTTPS request has completed.
    */
+  @NonNull
   public Task<HttpsCallableResult> call() {
     return functionsClient.call(name, null, options);
   }
@@ -110,7 +110,6 @@ public class HttpsCallableReference {
     options.setTimeout(timeout, units);
   }
 
-  @NonNull
   /**
    * Returns the timeout for calls from this instance of Functions.
    *
@@ -126,6 +125,7 @@ public class HttpsCallableReference {
    * @param timeout The length of the timeout, in the given units.
    * @param units The units for the specified timeout.
    */
+  @NonNull
   public HttpsCallableReference withTimeout(long timeout, @NonNull TimeUnit units) {
     HttpsCallableReference other = new HttpsCallableReference(functionsClient, name);
     other.setTimeout(timeout, units);

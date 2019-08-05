@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.auth;
 
-import javax.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /**
  * The current User and the authentication token provided by the underlying authentication

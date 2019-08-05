@@ -14,13 +14,13 @@
 
 package com.google.firebase.firestore.local;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * Represents cached documents received from the remote backend.
@@ -30,6 +30,9 @@ import javax.annotation.Nullable;
  * instances (indicating that the document is known to not exist).
  */
 interface RemoteDocumentCache {
+  /** The tag used by the StatsCollector. */
+  String STATS_TAG = "remote_documents";
+
   /**
    * Adds or replaces an entry in the cache.
    *

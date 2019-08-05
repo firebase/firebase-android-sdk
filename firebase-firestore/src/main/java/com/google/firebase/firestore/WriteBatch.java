@@ -20,7 +20,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
@@ -40,11 +39,10 @@ import java.util.Map;
  * <p>Unlike transactions, write batches are persisted offline and therefore are preferable when you
  * don't need to condition your writes on read data.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
-@PublicApi
 public class WriteBatch {
   private final FirebaseFirestore firestore;
   private final ArrayList<Mutation> mutations = new ArrayList<>();
@@ -55,33 +53,31 @@ public class WriteBatch {
   }
 
   /**
-   * Overwrites the document referred to by the provided DocumentReference. If the document does not
-   * yet exist, it will be created. If a document already exists, it will be overwritten.
+   * Overwrites the document referred to by the provided {@code DocumentReference}. If the document
+   * does not yet exist, it will be created. If a document already exists, it will be overwritten.
    *
-   * @param documentRef The DocumentReference to overwrite.
+   * @param documentRef The {@code DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch set(@NonNull DocumentReference documentRef, @NonNull Object data) {
     return set(documentRef, data, SetOptions.OVERWRITE);
   }
 
   /**
-   * Writes to the document referred to by the provided DocumentReference. If the document does not
-   * yet exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged
-   * into an existing document.
+   * Writes to the document referred to by the provided {@code DocumentReference}. If the document
+   * does not yet exist, it will be created. If you pass {@code SetOptions}, the provided data can
+   * be merged into an existing document.
    *
-   * @param documentRef The DocumentReference to overwrite.
+   * @param documentRef The {@code DocumentReference} to overwrite.
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
    * @param options An object to configure the set behavior.
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch set(
       @NonNull DocumentReference documentRef, @NonNull Object data, @NonNull SetOptions options) {
     firestore.validateReference(documentRef);
@@ -97,16 +93,15 @@ public class WriteBatch {
   }
 
   /**
-   * Updates fields in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates fields in the document referred to by the provided {@code DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param data A map of field / value pairs to update. Fields can contain dots to reference nested
    *     fields within the document.
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch update(
       @NonNull DocumentReference documentRef, @NonNull Map<String, Object> data) {
     ParsedUpdateData parsedData = firestore.getDataConverter().parseUpdateData(data);
@@ -114,18 +109,17 @@ public class WriteBatch {
   }
 
   /**
-   * Updates field in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates field in the document referred to by the provided {@code DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param field The first field to update. Fields can contain dots to reference a nested field
    *     within the document.
    * @param value The first value
    * @param moreFieldsAndValues Additional field/value pairs.
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch update(
       @NonNull DocumentReference documentRef,
       @NonNull String field,
@@ -141,17 +135,16 @@ public class WriteBatch {
   }
 
   /**
-   * Updates fields in the document referred to by the provided DocumentReference. If no document
-   * exists yet, the update will fail.
+   * Updates fields in the document referred to by the provided {@code DocumentReference}. If no
+   * document exists yet, the update will fail.
    *
-   * @param documentRef The DocumentReference to update.
+   * @param documentRef The {@code DocumentReference} to update.
    * @param fieldPath The first field to update.
    * @param value The first value
    * @param moreFieldsAndValues Additional field/value pairs.
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch update(
       @NonNull DocumentReference documentRef,
       @NonNull FieldPath fieldPath,
@@ -175,13 +168,12 @@ public class WriteBatch {
   }
 
   /**
-   * Deletes the document referred to by the provided DocumentReference.
+   * Deletes the document referred to by the provided {@code DocumentReference}.
    *
-   * @param documentRef The DocumentReference to delete.
-   * @return This WriteBatch instance. Used for chaining method calls.
+   * @param documentRef The {@code DocumentReference} to delete.
+   * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
   @NonNull
-  @PublicApi
   public WriteBatch delete(@NonNull DocumentReference documentRef) {
     firestore.validateReference(documentRef);
     verifyNotCommitted();
@@ -195,7 +187,6 @@ public class WriteBatch {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> commit() {
     verifyNotCommitted();
     committed = true;
@@ -214,13 +205,12 @@ public class WriteBatch {
   }
 
   /**
-   * An interface for providing code to be executed within a {@link WriteBatch} context.
+   * An interface for providing code to be executed within a {@code WriteBatch} context.
    *
    * @see FirebaseFirestore#runBatch(WriteBatch.Function)
    */
-  @PublicApi
   public interface Function {
-    @PublicApi
+
     void apply(@NonNull WriteBatch batch);
   }
 }

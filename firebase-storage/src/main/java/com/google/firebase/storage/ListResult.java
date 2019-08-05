@@ -16,7 +16,6 @@ package com.google.firebase.storage;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.annotations.PublicApi;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
@@ -24,7 +23,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /** Contains the prefixes and items returned by a {@link StorageReference#list} call. */
-@PublicApi
 public final class ListResult {
   private static final String ITEMS_KEY = "items";
   private static final String NAME_KEY = "name";
@@ -76,7 +74,6 @@ public final class ListResult {
    * @return A list of prefixes (folders).
    */
   @NonNull
-  @PublicApi
   public List<StorageReference> getPrefixes() {
     return prefixes;
   }
@@ -87,19 +84,17 @@ public final class ListResult {
    * @return A list of items (files).
    */
   @NonNull
-  @PublicApi
   public List<StorageReference> getItems() {
     return items;
   }
 
   /**
-   * Returns a token that can be used to resume a previous {@code list()} operation. `null`
+   * Returns a token that can be used to resume a previous {@code list()} operation. ${@code null}
    * indicates that there are no more results.
    *
-   * @return A page token if more results are avaible.
+   * @return A page token if more results are available.
    */
   @Nullable
-  @PublicApi
   public String getPageToken() {
     return pageToken;
   }

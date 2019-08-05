@@ -27,6 +27,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteProgram;
 import android.database.sqlite.SQLiteStatement;
 import android.database.sqlite.SQLiteTransactionListener;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -45,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /**
  * A SQLite-backed instance of Persistence.
@@ -54,7 +54,6 @@ import javax.annotation.Nullable;
  * helper routines that make dealing with SQLite much more pleasant.
  */
 public final class SQLitePersistence extends Persistence {
-
   /**
    * Creates the database name that is used to identify the database to be used with a Firestore
    * instance. Note that this needs to stay stable across releases. The database is uniquely
@@ -80,8 +79,7 @@ public final class SQLitePersistence extends Persistence {
 
   private final OpenHelper opener;
   private final LocalSerializer serializer;
-  private SQLiteDatabase db;
-  private boolean started;
+  private final StatsCollector statsCollector;
   private final SQLiteQueryCache queryCache;
   private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
@@ -102,18 +100,38 @@ public final class SQLitePersistence extends Persistence {
         public void onRollback() {}
       };
 
+  private SQLiteDatabase db;
+  private boolean started;
+
   public SQLitePersistence(
       Context context,
       String persistenceKey,
       DatabaseId databaseId,
       LocalSerializer serializer,
       LruGarbageCollector.Params params) {
+    this(
+        context,
+        persistenceKey,
+        databaseId,
+        serializer,
+        StatsCollector.NO_OP_STATS_COLLECTOR,
+        params);
+  }
+
+  public SQLitePersistence(
+      Context context,
+      String persistenceKey,
+      DatabaseId databaseId,
+      LocalSerializer serializer,
+      StatsCollector statsCollector,
+      LruGarbageCollector.Params params) {
     String databaseName = databaseName(persistenceKey, databaseId);
     this.opener = new OpenHelper(context, databaseName);
     this.serializer = serializer;
+    this.statsCollector = statsCollector;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
     this.indexManager = new SQLiteIndexManager(this);
-    this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
+    this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer, statsCollector);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
   }
 
@@ -126,13 +144,13 @@ public final class SQLitePersistence extends Persistence {
     } catch (SQLiteDatabaseLockedException e) {
       // TODO: Use a better exception type
       throw new RuntimeException(
-          "Failed to gain exclusive lock to the Firestore client's offline persistence. This"
-              + " generally means you are using Firestore from multiple processes in your app."
-              + " Keep in mind that multi-process Android apps execute the code in your"
+          "Failed to gain exclusive lock to the Cloud Firestore client's offline persistence. This"
+              + " generally means you are using Cloud Firestore from multiple processes in your"
+              + " app. Keep in mind that multi-process Android apps execute the code in your"
               + " Application class in all processes, so you may need to avoid initializing"
-              + " Firestore in your Application class. If you are intentionally using Firestore"
-              + " from multiple processes, you can only enable offline persistence (i.e. call"
-              + " setPersistenceEnabled(true)) in one of them.",
+              + " Cloud Firestore in your Application class. If you are intentionally using Cloud"
+              + " Firestore from multiple processes, you can only enable offline persistence (that"
+              + " is, call setPersistenceEnabled(true)) in one of them.",
           e);
     }
     queryCache.start();
@@ -159,7 +177,7 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   MutationQueue getMutationQueue(User user) {
-    return new SQLiteMutationQueue(this, serializer, user);
+    return new SQLiteMutationQueue(this, serializer, statsCollector, user);
   }
 
   @Override
@@ -332,8 +350,7 @@ public final class SQLitePersistence extends Persistence {
   }
 
   /**
-   * Execute the given non-query SQL statement. Equivalent to <code>execute(prepare(sql), args)
-   * </code>.
+   * Execute the given non-query SQL statement. Equivalent to {@code execute(prepare(sql), args)}.
    */
   void execute(String sql, Object... args) {
     // Note that unlike db.query and friends, execSQL already takes Object[] bindArgs so there's no
@@ -447,19 +464,17 @@ public final class SQLitePersistence extends Persistence {
      * Runs the query, calling the consumer once for each row in the results.
      *
      * @param consumer A consumer that will receive the first row.
+     * @return The number of rows processed
      */
-    void forEach(Consumer<Cursor> consumer) {
-      Cursor cursor = null;
-      try {
-        cursor = startQuery();
+    int forEach(Consumer<Cursor> consumer) {
+      int rowsProcessed = 0;
+      try (Cursor cursor = startQuery()) {
         while (cursor.moveToNext()) {
+          ++rowsProcessed;
           consumer.accept(cursor);
         }
-      } finally {
-        if (cursor != null) {
-          cursor.close();
-        }
       }
+      return rowsProcessed;
     }
 
     /**

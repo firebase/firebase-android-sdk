@@ -1,11 +1,18 @@
-# Unreleased
+# 18.0.1
+- [changed] The SDK now reports the correct version number (via
+  `FirebaseDatabase.getSdkVersion()`).
+
+# 17.0.0
 - [changed] Added `@RestrictTo` annotations to discourage the use of APIs that
   are not public. This affects internal APIs that were previously obfuscated
   and are not mentioned in our documentation.
 - [changed] Improved error messages for certain Number types that are not
   supported by our serialization layer (#272).
 - [internal] Updated the SDK initialization process and removed usages of
-  deprecated method
+  deprecated method.
+- [changed] Added missing nullability annotations for better Kotlin interop.
+- [internal] Removed ``@PublicApi` annotations as they are no longer enforced
+  and have no semantic meaning.
 
 # 16.0.6  
 - [fixed] Fixed an issue that could cause a NullPointerException during the

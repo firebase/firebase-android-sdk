@@ -23,8 +23,8 @@ buildscript {
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:3.3.2"
-    classpath "com.google.gms:google-services:4.0.0"
+    classpath "com.android.tools.build:gradle:3.4.2"
+    classpath "com.google.gms:google-services:4.3.0"
   }
 }
 
@@ -49,6 +49,10 @@ android {
     }
   }
 
+  if (project.hasProperty("testBuildType")) {
+    testBuildType project.getProperty("testBuildType")
+  }
+
   flavorDimensions "systemUnderTest"
 
   // TODO(allisonbm92): Switch to the default flavor.
@@ -59,9 +63,6 @@ android {
     }
   }
 
-  // TODO(allisonbm92): Enable the Inapp Messaging test after the next release. The current release
-  // is incompatible with the head state of AB Testing (required by Remote Config).
-  sourceSets.combined.java.filter.exclude "**/inappmessaging/**"
 }
 
 apply from: "configure.gradle"
@@ -75,11 +76,12 @@ dependencies {
   implementation "junit:junit:4.12"
 
   // All
+  combinedImplementation "com.google.firebase:firebase-analytics"
   combinedImplementation "com.google.firebase:firebase-auth"
   combinedImplementation "com.google.firebase:firebase-database"
   combinedImplementation "com.google.firebase:firebase-firestore"
   combinedImplementation "com.google.firebase:firebase-functions"
-//  combinedImplementation "com.google.firebase:firebase-inappmessaging"
+  combinedImplementation "com.google.firebase:firebase-inappmessaging"
   combinedImplementation "com.google.firebase:firebase-config"
   combinedImplementation "com.google.firebase:firebase-storage"
 

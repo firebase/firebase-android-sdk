@@ -20,7 +20,6 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
@@ -35,10 +34,9 @@ import com.google.firebase.database.core.utilities.Validation;
  * FirebaseDatabase#getInstance()}. To access a location in the database and read or write data, use
  * {@link FirebaseDatabase#getReference()}.
  */
-@PublicApi
 public class FirebaseDatabase {
 
-  private static final String SDK_VERSION = "3.0.0";
+  private static final String SDK_VERSION = BuildConfig.VERSION_NAME;
 
   private final FirebaseApp app;
   private final RepoInfo repoInfo;
@@ -51,7 +49,6 @@ public class FirebaseDatabase {
    * @return A FirebaseDatabase instance.
    */
   @NonNull
-  @PublicApi
   public static FirebaseDatabase getInstance() {
     FirebaseApp instance = FirebaseApp.getInstance();
     if (instance == null) {
@@ -67,7 +64,6 @@ public class FirebaseDatabase {
    * @return A FirebaseDatabase instance.
    */
   @NonNull
-  @PublicApi
   public static FirebaseDatabase getInstance(@NonNull String url) {
     FirebaseApp instance = FirebaseApp.getInstance();
     if (instance == null) {
@@ -83,7 +79,6 @@ public class FirebaseDatabase {
    * @return A FirebaseDatabase instance.
    */
   @NonNull
-  @PublicApi
   public static FirebaseDatabase getInstance(@NonNull FirebaseApp app) {
     return getInstance(app, app.getOptions().getDatabaseUrl());
   }
@@ -96,7 +91,6 @@ public class FirebaseDatabase {
    * @return A FirebaseDatabase instance.
    */
   @NonNull
-  @PublicApi
   public static synchronized FirebaseDatabase getInstance(
       @NonNull FirebaseApp app, @NonNull String url) {
     if (TextUtils.isEmpty(url)) {
@@ -141,7 +135,6 @@ public class FirebaseDatabase {
    * @return The FirebaseApp instance to which this FirebaseDatabase belongs.
    */
   @NonNull
-  @PublicApi
   public FirebaseApp getApp() {
     return this.app;
   }
@@ -152,7 +145,6 @@ public class FirebaseDatabase {
    * @return A DatabaseReference pointing to the root node.
    */
   @NonNull
-  @PublicApi
   public DatabaseReference getReference() {
     ensureRepo();
     return new DatabaseReference(this.repo, Path.getEmptyPath());
@@ -165,7 +157,6 @@ public class FirebaseDatabase {
    * @return A DatabaseReference pointing to the specified path.
    */
   @NonNull
-  @PublicApi
   public DatabaseReference getReference(@NonNull String path) {
     ensureRepo();
 
@@ -189,7 +180,6 @@ public class FirebaseDatabase {
    * @return A DatabaseReference for the provided URL.
    */
   @NonNull
-  @PublicApi
   public DatabaseReference getReferenceFromUrl(@NonNull String url) {
     ensureRepo();
 
@@ -221,7 +211,6 @@ public class FirebaseDatabase {
    * writes. The writes will be rolled back locally, perhaps triggering events for affected event
    * listeners, and the client will not (re-)send them to the Firebase backend.
    */
-  @PublicApi
   public void purgeOutstandingWrites() {
     ensureRepo();
     this.repo.scheduleNow(
@@ -237,7 +226,6 @@ public class FirebaseDatabase {
    * Resumes our connection to the Firebase Database backend after a previous {@link #goOffline()}
    * call.
    */
-  @PublicApi
   public void goOnline() {
     ensureRepo();
     RepoManager.resume(this.repo);
@@ -246,7 +234,6 @@ public class FirebaseDatabase {
   /**
    * Shuts down our connection to the Firebase Database backend until {@link #goOnline()} is called.
    */
-  @PublicApi
   public void goOffline() {
     ensureRepo();
     RepoManager.interrupt(this.repo);
@@ -260,7 +247,6 @@ public class FirebaseDatabase {
    *
    * @param logLevel The desired minimum log level
    */
-  @PublicApi
   public synchronized void setLogLevel(@NonNull Logger.Level logLevel) {
     assertUnfrozen("setLogLevel");
     this.config.setLogLevel(logLevel);
@@ -279,7 +265,6 @@ public class FirebaseDatabase {
    *
    * @param isEnabled Set to true to enable disk persistence, set to false to disable it.
    */
-  @PublicApi
   public synchronized void setPersistenceEnabled(boolean isEnabled) {
     assertUnfrozen("setPersistenceEnabled");
     this.config.setPersistenceEnabled(isEnabled);
@@ -298,7 +283,6 @@ public class FirebaseDatabase {
    *
    * @param cacheSizeInBytes The new size of the cache in bytes.
    */
-  @PublicApi
   public synchronized void setPersistenceCacheSizeBytes(long cacheSizeInBytes) {
     assertUnfrozen("setPersistenceCacheSizeBytes");
     this.config.setPersistenceCacheSizeBytes(cacheSizeInBytes);
@@ -306,7 +290,6 @@ public class FirebaseDatabase {
 
   /** @return The semver version for this build of the Firebase Database client */
   @NonNull
-  @PublicApi
   public static String getSdkVersion() {
     return SDK_VERSION;
   }

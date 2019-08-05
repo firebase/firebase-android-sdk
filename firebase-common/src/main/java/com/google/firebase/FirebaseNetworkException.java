@@ -15,16 +15,13 @@
 package com.google.firebase;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
 
 /**
  * Exception thrown when a request to a Firebase service has failed due to a network error. Inspect
  * the device's network connectivity state or retry later to resolve.
  */
-@PublicApi
 public class FirebaseNetworkException extends FirebaseException {
 
-  @PublicApi
   public FirebaseNetworkException(@NonNull String detailMessage) {
     super(detailMessage);
   }

@@ -65,6 +65,7 @@ import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
+import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
 import com.google.protobuf.ByteString;
@@ -372,6 +373,24 @@ public class TestUtil {
 
   public static Map<Integer, QueryData> activeLimboQueries(String docKey, Integer... targets) {
     return activeLimboQueries(docKey, asList(targets));
+  }
+
+  public static RemoteEvent noChangeEvent(int targetId, int version) {
+    return noChangeEvent(targetId, version, resumeToken(version));
+  }
+
+  public static RemoteEvent noChangeEvent(int targetId, int version, ByteString resumeToken) {
+    QueryData queryData = TestUtil.queryData(targetId, QueryPurpose.LISTEN, "foo/bar");
+    TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
+    testTargetMetadataProvider.setSyncedKeys(queryData, DocumentKey.emptyKeySet());
+
+    WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
+
+    WatchChange.WatchTargetChange watchChange =
+        new WatchChange.WatchTargetChange(
+            WatchChange.WatchTargetChangeType.NoChange, asList(targetId), resumeToken);
+    aggregator.handleTargetChange(watchChange);
+    return aggregator.createRemoteEvent(version(version));
   }
 
   public static RemoteEvent addedRemoteEvent(

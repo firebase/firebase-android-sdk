@@ -19,25 +19,17 @@ import static com.google.firebase.firestore.testutil.TestUtil.docSet;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static org.mockito.Mockito.mock;
 
-import androidx.annotation.Nullable;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.ViewSnapshot;
-import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
-import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.remote.WatchChangeAggregator;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Assert;
-import org.robolectric.Robolectric;
 
 public class TestUtil {
 
@@ -45,14 +37,6 @@ public class TestUtil {
 
   public static FirebaseFirestore firestore() {
     return FIRESTORE;
-  }
-
-  public static CollectionReference collectionReference(String path) {
-    return new CollectionReference(ResourcePath.fromString(path), FIRESTORE);
-  }
-
-  public static DocumentReference documentReference(String path) {
-    return new DocumentReference(key(path), FIRESTORE);
   }
 
   public static DocumentSnapshot documentSnapshot(
@@ -136,44 +120,5 @@ public class TestUtil {
             true,
             /* excludesMetadataChanges= */ false);
     return new QuerySnapshot(query(path), viewSnapshot, FIRESTORE);
-  }
-
-  /**
-   * An implementation of TargetMetadataProvider that provides controlled access to the
-   * `TargetMetadataProvider` callbacks. Any target accessed via these callbacks must be registered
-   * beforehand via `setSyncedKeys()`.
-   */
-  public static class TestTargetMetadataProvider
-      implements WatchChangeAggregator.TargetMetadataProvider {
-    final Map<Integer, ImmutableSortedSet<DocumentKey>> syncedKeys = new HashMap<>();
-    final Map<Integer, QueryData> queryData = new HashMap<>();
-
-    @Override
-    public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
-      return syncedKeys.get(targetId) != null
-          ? syncedKeys.get(targetId)
-          : DocumentKey.emptyKeySet();
-    }
-
-    @Nullable
-    @Override
-    public QueryData getQueryDataForTarget(int targetId) {
-      return queryData.get(targetId);
-    }
-
-    /** Sets or replaces the local state for the provided query data. */
-    public void setSyncedKeys(QueryData queryData, ImmutableSortedSet<DocumentKey> keys) {
-      this.queryData.put(queryData.getTargetId(), queryData);
-      this.syncedKeys.put(queryData.getTargetId(), keys);
-    }
-  }
-
-  public static <T> T waitFor(Task<T> task) {
-    if (!task.isComplete()) {
-      Robolectric.flushBackgroundThreadScheduler();
-    }
-    Assert.assertTrue(
-        "Expected task to be completed after background thread flush", task.isComplete());
-    return task.getResult();
   }
 }

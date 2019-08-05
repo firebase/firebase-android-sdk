@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -21,10 +22,12 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.protobuf.ByteString;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /** A queue of mutations to apply to the remote store. */
 interface MutationQueue {
+  /** The tag used by the StatsCollector. */
+  String STATS_TAG = "mutations";
+
   /**
    * Starts the mutation queue, performing any initial reads that might be required to establish
    * invariants, etc.

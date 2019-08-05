@@ -176,83 +176,211 @@ public class AsyncQueue {
   }
 
   /**
-   * The single thread that will be used by the executor. This is created early and managed directly
-   * so that it's possible later to make assertions about executing on the correct thread.
+   * A wrapper around a {@link ScheduledThreadPoolExecutor} class that provides:
+   *
+   * <ol>
+   *   <li>Synchronized task scheduling. This is different from function 3, which is about task
+   *       execution in a single thread.
+   *   <li>Ability to do soft-shutdown: only critical tasks related to shutting Firestore SDK down
+   *       can be executed once the shutdown process initiated.
+   *   <li>Single threaded execution service, no concurrent execution among the `Runnable`s
+   *       scheduled in this Executor.
+   * </ol>
    */
-  private final Thread thread;
+  private class SynchronizedShutdownAwareExecutor implements Executor {
+    /**
+     * The single threaded executor that is backing this Executor. This is also the executor used
+     * when some tasks explicitly request to run after shutdown has been initiated.
+     */
+    private final ScheduledThreadPoolExecutor internalExecutor;
 
-  /** The single threaded executor that is backing this AsyncQueue */
-  private final ScheduledThreadPoolExecutor executor;
+    /** Whether the shutdown process has initiated, once it is started, it is not revertable. */
+    private boolean isShuttingDown;
 
+    /**
+     * The single thread that will be used by the executor. This is created early and managed
+     * directly so that it's possible later to make assertions about executing on the correct
+     * thread.
+     */
+    private final Thread thread;
+
+    /** A ThreadFactory for a single, pre-created thread. */
+    private class DelayedStartFactory implements Runnable, ThreadFactory {
+      private final CountDownLatch latch = new CountDownLatch(1);
+      private Runnable delegate;
+
+      @Override
+      public void run() {
+        try {
+          latch.await();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+        delegate.run();
+      }
+
+      @Override
+      public Thread newThread(@NonNull Runnable runnable) {
+        hardAssert(delegate == null, "Only one thread may be created in an AsyncQueue.");
+        delegate = runnable;
+        latch.countDown();
+        return thread;
+      }
+    }
+
+    SynchronizedShutdownAwareExecutor() {
+      DelayedStartFactory threadFactory = new DelayedStartFactory();
+
+      thread = Executors.defaultThreadFactory().newThread(threadFactory);
+      thread.setName("FirestoreWorker");
+      thread.setDaemon(true);
+      thread.setUncaughtExceptionHandler((crashingThread, throwable) -> panic(throwable));
+
+      internalExecutor =
+          new ScheduledThreadPoolExecutor(1, threadFactory) {
+            @Override
+            protected void afterExecute(Runnable r, Throwable t) {
+              super.afterExecute(r, t);
+              if (t == null && r instanceof Future<?>) {
+                Future<?> future = (Future<?>) r;
+                try {
+                  // Not all Futures will be done, e.g. when used with scheduledAtFixedRate
+                  if (future.isDone()) {
+                    future.get();
+                  }
+                } catch (CancellationException ce) {
+                  // Cancellation exceptions are okay, we expect them to happen sometimes
+                } catch (ExecutionException ee) {
+                  t = ee.getCause();
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+                }
+              }
+              if (t != null) {
+                panic(t);
+              }
+            }
+          };
+
+      // Core threads don't time out, this only takes effect when we drop the number of required
+      // core threads
+      internalExecutor.setKeepAliveTime(3, TimeUnit.SECONDS);
+
+      isShuttingDown = false;
+    }
+
+    /** Synchronized access to isShuttingDown */
+    private synchronized boolean isShuttingDown() {
+      return isShuttingDown;
+    }
+
+    /**
+     * Check if shutdown is initiated before scheduling. If it is initiated, the command will not be
+     * executed.
+     */
+    @Override
+    public synchronized void execute(Runnable command) {
+      if (!isShuttingDown) {
+        internalExecutor.execute(command);
+      }
+    }
+
+    /** Execute the command, regardless if shutdown has been initiated. */
+    public void executeEvenAfterShutdown(Runnable command) {
+      try {
+        internalExecutor.execute(command);
+      } catch (RejectedExecutionException e) {
+        // The only way we can get here is if the AsyncQueue has panicked and we're now racing with
+        // the post to the main looper that will crash the app.
+        Logger.warn(AsyncQueue.class.getSimpleName(), "Refused to enqueue task after panic");
+      }
+    }
+
+    /**
+     * Run a given `Callable` on this executor, and report the result of the `Callable` in a {@link
+     * Task}. The `Callable` will not be run if the executor started shutting down already.
+     *
+     * @return A {@link Task} resolves when the requested `Callable` completes, or reports error
+     *     when the `Callable` runs into exceptions.
+     */
+    private <T> Task<T> executeAndReportResult(Callable<T> task) {
+      final TaskCompletionSource<T> completionSource = new TaskCompletionSource<>();
+      try {
+        this.execute(
+            () -> {
+              try {
+                completionSource.setResult(task.call());
+              } catch (Exception e) {
+                completionSource.setException(e);
+                throw new RuntimeException(e);
+              }
+            });
+      } catch (RejectedExecutionException e) {
+        // The only way we can get here is if the AsyncQueue has panicked and we're now racing with
+        // the post to the main looper that will crash the app.
+        Logger.warn(AsyncQueue.class.getSimpleName(), "Refused to enqueue task after panic");
+      }
+      return completionSource.getTask();
+    }
+
+    /**
+     * Initiate the shutdown process. Once called, the only possible way to run `Runnable`s are by
+     * holding the `internalExecutor` reference.
+     */
+    private synchronized Task<Void> executeAndInitiateShutdown(Runnable task) {
+      if (isShuttingDown()) {
+        TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+        source.setResult(null);
+        return source.getTask();
+      }
+
+      // Not shutting down yet, execute and return a Task.
+      Task<Void> t =
+          executeAndReportResult(
+              () -> {
+                task.run();
+                return null;
+              });
+
+      // Mark the initiation of shut down.
+      isShuttingDown = true;
+
+      return t;
+    }
+
+    /**
+     * Wraps {@link ScheduledThreadPoolExecutor#schedule(Runnable, long, TimeUnit)} and provides
+     * shutdown state check: the command will not be scheduled if the shutdown has been initiated.
+     */
+    private synchronized ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+      if (!isShuttingDown) {
+        return internalExecutor.schedule(command, delay, unit);
+      }
+      return null;
+    }
+
+    /** Wraps around {@link ScheduledThreadPoolExecutor#shutdownNow()}. */
+    private void shutdownNow() {
+      internalExecutor.shutdownNow();
+    }
+
+    /** Wraps around {@link ScheduledThreadPoolExecutor#setCorePoolSize(int)}. */
+    private void setCorePoolSize(int size) {
+      internalExecutor.setCorePoolSize(size);
+    }
+  }
+
+  /** The executor backing this AsyncQueue. */
+  private final SynchronizedShutdownAwareExecutor executor;
   // Tasks scheduled to be queued in the future. Tasks are automatically removed after they are run
   // or canceled.
   // NOTE: We disallow duplicates currently, so this could be a Set<> which might have better
   // theoretical removal speed, except this list will always be small so ArrayList is fine.
   private final ArrayList<DelayedTask> delayedTasks;
 
-  /** A ThreadFactory for a single, pre-created thread. */
-  private class DelayedStartFactory implements Runnable, ThreadFactory {
-    private final CountDownLatch latch = new CountDownLatch(1);
-    private Runnable delegate;
-
-    @Override
-    public void run() {
-      try {
-        latch.await();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-      delegate.run();
-    }
-
-    @Override
-    public Thread newThread(@NonNull Runnable runnable) {
-      hardAssert(delegate == null, "Only one thread may be created in an AsyncQueue.");
-      delegate = runnable;
-      latch.countDown();
-      return thread;
-    }
-  }
-
   public AsyncQueue() {
     delayedTasks = new ArrayList<>();
-
-    DelayedStartFactory threadFactory = new DelayedStartFactory();
-
-    thread = Executors.defaultThreadFactory().newThread(threadFactory);
-    thread.setName("FirestoreWorker");
-    thread.setDaemon(true);
-    thread.setUncaughtExceptionHandler((crashingThread, throwable) -> panic(throwable));
-
-    executor =
-        new ScheduledThreadPoolExecutor(1, threadFactory) {
-          @Override
-          protected void afterExecute(Runnable r, Throwable t) {
-            super.afterExecute(r, t);
-            if (t == null && r instanceof Future<?>) {
-              Future<?> future = (Future<?>) r;
-              try {
-                // Not all Futures will be done, e.g. when used with scheduledAtFixedRate
-                if (future.isDone()) {
-                  future.get();
-                }
-              } catch (CancellationException ce) {
-                // Cancellation exceptions are okay, we expect them to happen sometimes
-              } catch (ExecutionException ee) {
-                t = ee.getCause();
-              } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-              }
-            }
-            if (t != null) {
-              panic(t);
-            }
-          }
-        };
-
-    // Core threads don't time out, this only takes effect when we drop the number of required
-    // core threads
-    executor.setKeepAliveTime(3, TimeUnit.SECONDS);
+    executor = new SynchronizedShutdownAwareExecutor();
   }
 
   public Executor getExecutor() {
@@ -262,11 +390,11 @@ public class AsyncQueue {
   /** Verifies that the current thread is the managed AsyncQueue thread. */
   public void verifyIsCurrentThread() {
     Thread current = Thread.currentThread();
-    if (thread != current) {
+    if (executor.thread != current) {
       throw fail(
           "We are running on the wrong thread. Expected to be on the AsyncQueue "
               + "thread %s/%d but was %s/%d",
-          thread.getName(), thread.getId(), current.getName(), current.getId());
+          executor.thread.getName(), executor.thread.getId(), current.getName(), current.getId());
     }
   }
 
@@ -279,23 +407,7 @@ public class AsyncQueue {
    */
   @CheckReturnValue
   public <T> Task<T> enqueue(Callable<T> task) {
-    final TaskCompletionSource<T> completionSource = new TaskCompletionSource<>();
-    try {
-      executor.execute(
-          () -> {
-            try {
-              completionSource.setResult(task.call());
-            } catch (Exception e) {
-              completionSource.setException(e);
-              throw new RuntimeException(e);
-            }
-          });
-    } catch (RejectedExecutionException e) {
-      // The only way we can get here is if the AsyncQueue has panicked and we're now racing with
-      // the post to the main looper that will crash the app.
-      Logger.warn(AsyncQueue.class.getSimpleName(), "Refused to enqueue task after panic");
-    }
-    return completionSource.getTask();
+    return executor.executeAndReportResult(task);
   }
 
   /**
@@ -311,6 +423,28 @@ public class AsyncQueue {
           task.run();
           return null;
         });
+  }
+
+  /**
+   * Queue a Runnable and immediately mark the initiation of shutdown process. Tasks queued after
+   * this method is called are not run unless they explicitly are requested via {@link
+   * AsyncQueue#enqueueAndForgetEvenAfterShutdown(Runnable)}.
+   */
+  public Task<Void> enqueueAndInitiateShutdown(Runnable task) {
+    return executor.executeAndInitiateShutdown(task);
+  }
+
+  /**
+   * Queue and run this Runnable task immediately after every other already queued task, regardless
+   * if shutdown has been initiated.
+   */
+  public void enqueueAndForgetEvenAfterShutdown(Runnable task) {
+    executor.executeEvenAfterShutdown(task);
+  }
+
+  /** Has the shutdown process been initiated. */
+  public boolean isShuttingDown() {
+    return executor.isShuttingDown();
   }
 
   /**
@@ -377,7 +511,7 @@ public class AsyncQueue {
             throw error;
           } else {
             throw new RuntimeException(
-                "Internal error in Firestore (" + BuildConfig.VERSION_NAME + ").", t);
+                "Internal error in Cloud Firestore (" + BuildConfig.VERSION_NAME + ").", t);
           }
         });
   }
