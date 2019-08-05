@@ -256,7 +256,7 @@ public class FirebaseRemoteConfig {
             newlyActivatedContainer -> {
               fetchedConfigsCache.clear();
               updateAbtWithActivatedExperiments(newlyActivatedContainer.getAbtExperiments());
-              updateGaWithEnabledRollouts(activatedContainer.getActiveRollouts());
+              updateGaWithEnabledRollouts(newlyActivatedContainer.getActiveRollouts());
               setEnabledFeatureKeys(newlyActivatedContainer.getEnabledFeatureKeys());
             });
     return true;
@@ -665,7 +665,16 @@ public class FirebaseRemoteConfig {
    * @hide
    */
   void startLoadingConfigsFromDisk() {
-    activatedConfigsCache.get();
+    activatedConfigsCache
+        .get()
+        .addOnSuccessListener(
+            executor,
+            activatedContainer -> {
+              if (activatedContainer == null) {
+                return;
+              }
+              updateGaWithEnabledRollouts(activatedContainer.getActiveRollouts());
+            });
     defaultConfigsCache.get();
     fetchedConfigsCache.get();
   }

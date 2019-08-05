@@ -484,7 +484,10 @@ public final class FirebaseRemoteConfigTest {
     assertWithMessage("fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
 
     verify(mockAnalyticsConnector)
-        .logEvent(eq("_ssr"), eq(FRC_ANALYTICS_ORIGIN_NAME), refEq(createFfrBundleForGa(/* rolloutIds= */ "1")));
+        .logEvent(
+            eq("_ssr"),
+            eq(FRC_ANALYTICS_ORIGIN_NAME),
+            refEq(createFfrBundleForGa(/* rolloutIds= */ "1")));
   }
 
   @Test
