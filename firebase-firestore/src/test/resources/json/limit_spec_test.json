@@ -1580,6 +1580,7 @@
           2,
           {
             "path": "collection",
+            "limit": 2,
             "filters": [
               [
                 "matches",
@@ -1595,6 +1596,7 @@
             "2": {
               "query": {
                 "path": "collection",
+                "limit": 2,
                 "filters": [
                   [
                     "matches",
@@ -1638,17 +1640,6 @@
                 "hasLocalMutations": false,
                 "hasCommittedMutations": false
               }
-            },
-            {
-              "key": "collection/c",
-              "version": 1003,
-              "value": {
-                "matches": true
-              },
-              "options": {
-                "hasLocalMutations": false,
-                "hasCommittedMutations": false
-              }
             }
           ],
           "targets": [
@@ -1661,13 +1652,117 @@
           [
             2
           ],
-          "resume-token-1003"
+          "resume-token-1002"
         ]
       },
       {
         "watchSnapshot": {
-          "version": 1003,
+          "version": 1002,
           "targetIds": []
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "limit": 2,
+              "filters": [
+                [
+                  "matches",
+                  "==",
+                  true
+                ]
+              ],
+              "orderBys": []
+            },
+            "added": [
+              {
+                "key": "collection/a",
+                "version": 1001,
+                "value": {
+                  "matches": true
+                },
+                "options": {
+                  "hasLocalMutations": false,
+                  "hasCommittedMutations": false
+                }
+              },
+              {
+                "key": "collection/b",
+                "version": 1002,
+                "value": {
+                  "matches": true
+                },
+                "options": {
+                  "hasLocalMutations": false,
+                  "hasCommittedMutations": false
+                }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": false,
+            "hasPendingWrites": false
+          }
+        ]
+      },
+      {
+        "userUnlisten": [
+          2,
+          {
+            "path": "collection",
+            "limit": 2,
+            "filters": [
+              [
+                "matches",
+                "==",
+                true
+              ]
+            ],
+            "orderBys": []
+          }
+        ],
+        "stateExpect": {
+          "activeTargets": {}
+        }
+      },
+      {
+        "watchRemove": {
+          "targetIds": [
+            2
+          ]
+        }
+      },
+      {
+        "userListen": [
+          4,
+          {
+            "path": "collection",
+            "filters": [
+              [
+                "matches",
+                "==",
+                true
+              ]
+            ],
+            "orderBys": []
+          }
+        ],
+        "stateExpect": {
+          "activeTargets": {
+            "4": {
+              "query": {
+                "path": "collection",
+                "filters": [
+                  [
+                    "matches",
+                    "==",
+                    true
+                  ]
+                ],
+                "orderBys": []
+              },
+              "resumeToken": ""
+            }
+          }
         },
         "expect": [
           {
@@ -1704,7 +1799,88 @@
                   "hasLocalMutations": false,
                   "hasCommittedMutations": false
                 }
+              }
+            ],
+            "errorCode": 0,
+            "fromCache": true,
+            "hasPendingWrites": false
+          }
+        ]
+      },
+      {
+        "watchAck": [
+          4
+        ]
+      },
+      {
+        "watchEntity": {
+          "docs": [
+            {
+              "key": "collection/a",
+              "version": 1001,
+              "value": {
+                "matches": true
               },
+              "options": {
+                "hasLocalMutations": false,
+                "hasCommittedMutations": false
+              }
+            },
+            {
+              "key": "collection/b",
+              "version": 1002,
+              "value": {
+                "matches": true
+              },
+              "options": {
+                "hasLocalMutations": false,
+                "hasCommittedMutations": false
+              }
+            },
+            {
+              "key": "collection/c",
+              "version": 1003,
+              "value": {
+                "matches": true
+              },
+              "options": {
+                "hasLocalMutations": false,
+                "hasCommittedMutations": false
+              }
+            }
+          ],
+          "targets": [
+            4
+          ]
+        }
+      },
+      {
+        "watchCurrent": [
+          [
+            4
+          ],
+          "resume-token-1003"
+        ]
+      },
+      {
+        "watchSnapshot": {
+          "version": 1003,
+          "targetIds": []
+        },
+        "expect": [
+          {
+            "query": {
+              "path": "collection",
+              "filters": [
+                [
+                  "matches",
+                  "==",
+                  true
+                ]
+              ],
+              "orderBys": []
+            },
+            "added": [
               {
                 "key": "collection/c",
                 "version": 1003,
@@ -1725,7 +1901,7 @@
       },
       {
         "userUnlisten": [
-          2,
+          4,
           {
             "path": "collection",
             "filters": [
@@ -1752,7 +1928,7 @@
       },
       {
         "userListen": [
-          4,
+          2,
           {
             "path": "collection",
             "limit": 2,
@@ -1768,7 +1944,7 @@
         ],
         "stateExpect": {
           "activeTargets": {
-            "4": {
+            "2": {
               "query": {
                 "path": "collection",
                 "limit": 2,
@@ -1781,7 +1957,7 @@
                 ],
                 "orderBys": []
               },
-              "resumeToken": ""
+              "resumeToken": "resume-token-1002"
             }
           }
         },
