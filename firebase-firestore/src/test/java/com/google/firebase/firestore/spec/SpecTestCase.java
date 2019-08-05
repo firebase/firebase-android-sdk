@@ -879,16 +879,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           // TODO: populate the purpose of the target once it's possible to encode that in the
           // spec tests. For now, hard-code that it's a listen despite the fact that it's not always
           // the right value.
-          expectedActiveTargets.put(
-              targetId,
-              new QueryData(
-                  query,
-                  targetId,
-                  ARBITRARY_SEQUENCE_NUMBER,
-                  QueryPurpose.LISTEN,
-                  SnapshotVersion.NONE,
-                  SnapshotVersion.NONE,
-                  ByteString.copyFromUtf8(resumeToken)));
+          QueryData queryData =
+              new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN)
+                  .withResumeToken(ByteString.copyFromUtf8(resumeToken), SnapshotVersion.NONE);
+          expectedActiveTargets.put(targetId, queryData);
         }
       }
     }

@@ -468,16 +468,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesFirstLevelKeyQueries() {
     Query q = Query.atPath(ResourcePath.fromString("docs/1"));
-    Target actual =
-        serializer.encodeTarget(
-            new QueryData(
-                q,
-                1,
-                2,
-                QueryPurpose.LISTEN,
-                SnapshotVersion.NONE,
-                SnapshotVersion.NONE,
-                WatchStream.EMPTY_RESUME_TOKEN));
+    Target actual = serializer.encodeTarget(new QueryData(q, 1, 2, QueryPurpose.LISTEN));
 
     DocumentsTarget.Builder docs =
         DocumentsTarget.newBuilder().addDocuments("projects/p/databases/d/documents/docs/1");
@@ -881,16 +872,10 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesResumeTokens() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
-    Target actual =
-        serializer.encodeTarget(
-            new QueryData(
-                q,
-                1,
-                2,
-                QueryPurpose.LISTEN,
-                SnapshotVersion.NONE,
-                SnapshotVersion.NONE,
-                TestUtil.resumeToken(1000)));
+    QueryData queryData =
+        new QueryData(q, 1, 2, QueryPurpose.LISTEN)
+            .withResumeToken(TestUtil.resumeToken(1000), SnapshotVersion.NONE);
+    Target actual = serializer.encodeTarget(queryData);
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -917,14 +902,7 @@ public final class RemoteSerializerTest {
    * QueryData, but for the most part we're just testing variations on Query.
    */
   private QueryData wrapQueryData(Query query) {
-    return new QueryData(
-        query,
-        1,
-        2,
-        QueryPurpose.LISTEN,
-        SnapshotVersion.NONE,
-        SnapshotVersion.NONE,
-        WatchStream.EMPTY_RESUME_TOKEN);
+    return new QueryData(query, 1, 2, QueryPurpose.LISTEN);
   }
 
   @Test

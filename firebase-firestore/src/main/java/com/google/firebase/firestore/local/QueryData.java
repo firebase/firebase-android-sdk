@@ -46,7 +46,7 @@ public final class QueryData {
    *     after disconnecting without retransmitting all the data that matches the query. The resume
    *     token essentially identifies a point in time from which the server should resume sending
    */
-  public QueryData(
+  QueryData(
       Query query,
       int targetId,
       long sequenceNumber,
@@ -73,6 +73,42 @@ public final class QueryData {
         SnapshotVersion.NONE,
         SnapshotVersion.NONE,
         WatchStream.EMPTY_RESUME_TOKEN);
+  }
+
+  /** Creates a new query data instance with an updated sequence number. */
+  public QueryData withSequenceNumber(long sequenceNumber) {
+    return new QueryData(
+        query,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
+  }
+
+  /** Creates a new query data instance with an updated resume token and snapshot version. */
+  public QueryData withResumeToken(ByteString resumeToken, SnapshotVersion snapshotVersion) {
+    return new QueryData(
+        query,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
+  }
+
+  /** Creates a new query data instance with an updated last limbo free snapshot version number. */
+  public QueryData withLastLimboFreeSnapshotVersion(SnapshotVersion lastLimboFreeSnapshotVersion) {
+    return new QueryData(
+        query,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
   }
 
   public Query getQuery() {
@@ -155,18 +191,5 @@ public final class QueryData {
         + ", resumeToken="
         + resumeToken
         + '}';
-  }
-
-  /** Creates a new query data instance with an updated snapshot version and resume token. */
-  public QueryData copy(
-      SnapshotVersion snapshotVersion, ByteString resumeToken, long sequenceNumber) {
-    return new QueryData(
-        query,
-        targetId,
-        sequenceNumber,
-        purpose,
-        snapshotVersion,
-        lastLimboFreeSnapshotVersion,
-        resumeToken);
   }
 }
