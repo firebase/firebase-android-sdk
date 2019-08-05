@@ -72,12 +72,7 @@ public class ParseUrlTest {
 
   @Test
   public void testUrlParsingWithNamespace() throws DatabaseException {
-    ParsedUrl parsed = Utilities.parseUrl("http://gsoltis.firebaseio.com/foo/bar?ns=mrschmidt");
-    assertEquals(parsed.path.toString(), "/foo/bar");
-    // The subdomain takes precedence if one is provided
-    assertEquals("gsoltis", parsed.repoInfo.namespace);
-
-    parsed = Utilities.parseUrl("http://localhost/foo/bar?ns=mrschmidt");
+    ParsedUrl parsed = Utilities.parseUrl("http://localhost/foo/bar?ns=mrschmidt");
     assertEquals("mrschmidt", parsed.repoInfo.namespace);
 
     parsed = Utilities.parseUrl("http://10.0.2.2:9000/foo/bar?ns=mrschmidt");
@@ -94,9 +89,5 @@ public class ParseUrlTest {
     // Hosts with the default ports are considered secure
     parsed = Utilities.parseUrl("http://gsoltis.firebaseio.com");
     assertTrue(parsed.repoInfo.secure);
-
-    // Localhost is special-cased as insecure
-    parsed = Utilities.parseUrl("http://localhost/");
-    assertFalse(parsed.repoInfo.secure);
   }
 }
