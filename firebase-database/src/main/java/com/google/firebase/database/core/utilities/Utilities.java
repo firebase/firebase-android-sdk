@@ -35,29 +35,34 @@ public class Utilities {
   public static ParsedUrl parseUrl(String url) throws DatabaseException {
     try {
       Uri uri = Uri.parse(url);
+
       String scheme = uri.getScheme();
+      if (scheme == null) {
+        throw new IllegalArgumentException("Database URL does not specify a URL scheme");
+      }
+
+      String host = uri.getHost();
+      if (host == null) {
+        throw new IllegalArgumentException("Database URL does not specify a valid host");
+      }
 
       RepoInfo repoInfo = new RepoInfo();
-      repoInfo.host = uri.getHost().toLowerCase();
+      repoInfo.host = host.toLowerCase();
 
       int port = uri.getPort();
       if (port != -1) {
-        repoInfo.secure = scheme.equals("https");
+        repoInfo.secure = scheme.equals("https") || scheme.equals("wss");
         repoInfo.host += ":" + port;
-      } else if (repoInfo.host.equals("localhost")) {
-        repoInfo.secure = scheme.equals("https");
       } else {
         repoInfo.secure = true;
       }
 
       String namespaceParam = uri.getQueryParameter("ns");
-      String[] parts = uri.getHost().split("\\.", -1);
-      if (parts.length == 3 || namespaceParam == null) {
-        // We use the subdomain from the provided host even when a query parameter is provided to
-        // maintain backward compatibility.
-        repoInfo.namespace = parts[0].toLowerCase();
-      } else {
+      if (namespaceParam != null) {
         repoInfo.namespace = namespaceParam;
+      } else {
+        String[] parts = host.split("\\.", -1);
+        repoInfo.namespace = parts[0].toLowerCase();
       }
 
       repoInfo.internalHost = repoInfo.host;
@@ -73,15 +78,6 @@ public class Utilities {
       return parsedUrl;
     } catch (Exception e) {
       throw new DatabaseException("Invalid Firebase Database url specified: " + url, e);
-    }
-  }
-
-  private static String tryUrlDecode(String url, String fallback) {
-    try {
-      return URLDecoder.decode(url, "UTF-8");
-    } catch (IllegalArgumentException | UnsupportedEncodingException e) {
-      // Manually replace "+" with space even if the decoding failed.
-      return fallback.replace("+", " ");
     }
   }
 
@@ -106,6 +102,15 @@ public class Utilities {
       }
     } else {
       return "";
+    }
+  }
+
+  private static String tryUrlDecode(String url, String fallback) {
+    try {
+      return URLDecoder.decode(url, "UTF-8");
+    } catch (IllegalArgumentException | UnsupportedEncodingException e) {
+      // Manually replace "+" with space even if the decoding failed.
+      return fallback.replace("+", " ");
     }
   }
 
