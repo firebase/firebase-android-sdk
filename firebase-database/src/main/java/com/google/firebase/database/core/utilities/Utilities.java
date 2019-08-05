@@ -24,7 +24,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoInfo;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -68,7 +67,9 @@ public class Utilities {
       repoInfo.internalHost = repoInfo.host;
 
       String originalPathString = extractPathString(url);
-      originalPathString = tryUrlDecode(originalPathString, /*fallback=*/ originalPathString);
+      // URLEncoding a space turns it into a '+', which is different
+      // from our expected behavior. Do a manual replace to fix it.
+      originalPathString = originalPathString.replace("+", " ");
       Validation.validateRootPathString(originalPathString);
 
       ParsedUrl parsedUrl = new ParsedUrl();
@@ -102,15 +103,6 @@ public class Utilities {
       }
     } else {
       return "";
-    }
-  }
-
-  private static String tryUrlDecode(String url, String fallback) {
-    try {
-      return URLDecoder.decode(url, "UTF-8");
-    } catch (IllegalArgumentException | UnsupportedEncodingException e) {
-      // Manually replace "+" with space even if the decoding failed.
-      return fallback.replace("+", " ");
     }
   }
 

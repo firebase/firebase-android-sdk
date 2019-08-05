@@ -1087,12 +1087,7 @@ public class DataTest {
 
     String child = "" + new Random().nextInt(100000000);
     new WriteFuture(ref.child(child), "testdata").timedGet();
-
     DataSnapshot snap = IntegrationTestHelpers.getSnap(ref.child(child));
-    assertEquals("testdata", snap.getValue());
-
-    DatabaseReference refWithEncoding = new DatabaseReference(encoded, ctx);
-    snap = IntegrationTestHelpers.getSnap(refWithEncoding.child(child));
     assertEquals("testdata", snap.getValue());
   }
 
