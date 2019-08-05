@@ -139,8 +139,9 @@ public abstract class DefaultRunLoop implements RunLoop {
     } else {
       return "Uncaught exception in Firebase Database runloop ("
           + FirebaseDatabase.getSdkVersion()
-          + "). If this is not a problem with your app, please file an issue at "
-          + " https://github.com/firebase/firebase-android-sdk";
+          + "). If you are not already on the latest version of the Firebase SDKs, try updating "
+          + "your dependencies. Should this problem persist, please file a report at "
+          + "https://github.com/firebase/firebase-android-sdk";
     }
   }
 }
