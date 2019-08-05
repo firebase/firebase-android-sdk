@@ -68,7 +68,7 @@ public class FieldFilter extends Filter {
       if (operator == Operator.IN) {
         hardAssert(
             value instanceof ArrayValue,
-            "Comparing on key with IN, but an array value was not a RefValue");
+            "Comparing on key with IN, but the value was not an ArrayValue");
         return new KeyFieldInFilter(path, (ArrayValue) value);
       } else {
         hardAssert(

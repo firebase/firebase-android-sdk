@@ -21,4 +21,15 @@ public class ParsedUrl {
 
   public RepoInfo repoInfo;
   public Path path;
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    ParsedUrl parsedUrl = (ParsedUrl) o;
+
+    if (!repoInfo.equals(parsedUrl.repoInfo)) return false;
+    return path.equals(parsedUrl.path);
+  }
 }
