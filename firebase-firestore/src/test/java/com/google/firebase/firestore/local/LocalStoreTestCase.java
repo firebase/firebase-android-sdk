@@ -145,7 +145,8 @@ public abstract class LocalStoreTestCase {
   }
 
   private void markSynced(int targetId) {
-    notifyLocalViewChanges(viewChanges(targetId, /* hasLimboDocuments= */ false, asList(), asList()));
+    notifyLocalViewChanges(
+        viewChanges(targetId, /* hasLimboDocuments= */ false, asList(), asList()));
   }
 
   private void acknowledgeMutation(long documentVersion, @Nullable Object transformResult) {
@@ -179,7 +180,7 @@ public abstract class LocalStoreTestCase {
 
   private void executeQuery(Query query) {
     resetPersistenceStats();
-    lastQueryResult = localStore.executeQuery(query, /* requiresFullScan= */false);
+    lastQueryResult = localStore.executeQuery(query, /* requiresFullScan= */ false);
   }
 
   private void releaseQuery(Query query) {

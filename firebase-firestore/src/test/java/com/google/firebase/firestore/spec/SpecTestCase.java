@@ -51,7 +51,6 @@ import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.QueryPurpose;
-import com.google.firebase.firestore.local.SimpleQueryEngine;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;

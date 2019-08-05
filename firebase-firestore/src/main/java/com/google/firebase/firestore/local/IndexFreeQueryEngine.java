@@ -47,29 +47,52 @@ public class IndexFreeQueryEngine implements QueryEngine {
     hardAssert(queryCache != null, "setQueryCache() not called");
 
     if (hasLimboFreeSnapshot(queryData) && !matchesAllDocuments(query)) {
+      // Merge with the documents that matched the query per the last remote snapshot.
+      ImmutableSortedSet<DocumentKey> remoteKeys =
+          queryCache.getMatchingKeysForTargetId(queryData.getTargetId());
+      ImmutableSortedMap<DocumentKey, MaybeDocument> previousResults =
+          localDocumentsView.getDocuments(remoteKeys);
+
+      if (query.hasLimit() && containsLocalEdits(previousResults)) {
+        return executeFullQuery(query);
+      }
+
       // Retrieve all results for documents that were updated since the last limbo-document free
       // remote snapshot.
       ImmutableSortedMap<DocumentKey, Document> docs =
           localDocumentsView.getDocumentsMatchingQuery(
               query, queryData.getLastLimboFreeSnapshotVersion());
 
-      // Merge with the documents that matched the query per the last remote snapshot.
-      ImmutableSortedSet<DocumentKey> remoteKeys =
-          queryCache.getMatchingKeysForTargetId(queryData.getTargetId());
-      ImmutableSortedMap<DocumentKey, MaybeDocument> previousResults =
-          localDocumentsView.getDocuments(remoteKeys);
       for (Map.Entry<DocumentKey, MaybeDocument> entry : previousResults) {
         MaybeDocument maybeDoc = entry.getValue();
         // Apply the query filter since previously matching documents do not necessarily still
         // match the query.
         if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
-          docs = docs.insert(entry.getKey(), (Document) maybeDoc);
+          Document doc = (Document) maybeDoc;
+          docs = docs.insert(entry.getKey(), doc);
+        } else if (query.hasLimit()) {
+          executeFullQuery(query);
         }
       }
       return docs;
     } else {
-      return localDocumentsView.getDocumentsMatchingQuery(query, SnapshotVersion.NONE);
+      return executeFullQuery(query);
     }
+  }
+
+  private boolean containsLocalEdits(
+      ImmutableSortedMap<DocumentKey, MaybeDocument> previousResults) {
+    for (Map.Entry<DocumentKey, MaybeDocument> doc : previousResults) {
+      if (doc.getValue().hasPendingWrites()) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private ImmutableSortedMap<DocumentKey, Document> executeFullQuery(Query query) {
+    return localDocumentsView.getDocumentsMatchingQuery(query, SnapshotVersion.NONE);
   }
 
   private boolean hasLimboFreeSnapshot(@Nullable QueryData queryData) {
