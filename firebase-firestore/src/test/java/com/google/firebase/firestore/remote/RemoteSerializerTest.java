@@ -476,6 +476,7 @@ public final class RemoteSerializerTest {
                 2,
                 QueryPurpose.LISTEN,
                 SnapshotVersion.NONE,
+                SnapshotVersion.NONE,
                 WatchStream.EMPTY_RESUME_TOKEN));
 
     DocumentsTarget.Builder docs =
@@ -883,7 +884,13 @@ public final class RemoteSerializerTest {
     Target actual =
         serializer.encodeTarget(
             new QueryData(
-                q, 1, 2, QueryPurpose.LISTEN, SnapshotVersion.NONE, TestUtil.resumeToken(1000)));
+                q,
+                1,
+                2,
+                QueryPurpose.LISTEN,
+                SnapshotVersion.NONE,
+                SnapshotVersion.NONE,
+                TestUtil.resumeToken(1000)));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -911,7 +918,13 @@ public final class RemoteSerializerTest {
    */
   private QueryData wrapQueryData(Query query) {
     return new QueryData(
-        query, 1, 2, QueryPurpose.LISTEN, SnapshotVersion.NONE, WatchStream.EMPTY_RESUME_TOKEN);
+        query,
+        1,
+        2,
+        QueryPurpose.LISTEN,
+        SnapshotVersion.NONE,
+        SnapshotVersion.NONE,
+        WatchStream.EMPTY_RESUME_TOKEN);
   }
 
   @Test

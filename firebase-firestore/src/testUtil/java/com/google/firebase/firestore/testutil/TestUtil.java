@@ -518,7 +518,7 @@ public class TestUtil {
     for (String keyPath : removedKeys) {
       removed = removed.insert(key(keyPath));
     }
-    return new LocalViewChanges(targetId, added, removed);
+    return new LocalViewChanges(targetId, false, added, removed);
   }
 
   /** Creates a resume token to match the given snapshot version. */

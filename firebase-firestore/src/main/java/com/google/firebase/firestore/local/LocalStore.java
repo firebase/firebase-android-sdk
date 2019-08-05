@@ -469,12 +469,35 @@ public final class LocalStore {
         "notifyLocalViewChanges",
         () -> {
           for (LocalViewChanges viewChange : viewChanges) {
-            localViewReferences.addReferences(viewChange.getAdded(), viewChange.getTargetId());
+            int targetId = viewChange.getTargetId();
+
+            localViewReferences.addReferences(viewChange.getAdded(), targetId);
             ImmutableSortedSet<DocumentKey> removed = viewChange.getRemoved();
             for (DocumentKey key : removed) {
               persistence.getReferenceDelegate().removeReference(key);
             }
-            localViewReferences.removeReferences(removed, viewChange.getTargetId());
+            localViewReferences.removeReferences(removed, targetId);
+
+            if (!viewChange.hasUnresolvedLimboDocuments()) {
+              QueryData queryData = targetIds.get(targetId);
+              hardAssert(
+                  queryData != null,
+                  "Can't set limbo-free snapshot version for unknown target: %s",
+                  targetId);
+
+              // Advance the last limbo free snapshot version
+              SnapshotVersion lastLimboFreeSnapshotVersion = queryData.getSnapshotVersion();
+              QueryData updatedQueryData =
+                  new QueryData(
+                      queryData.getQuery(),
+                      queryData.getTargetId(),
+                      queryData.getSequenceNumber(),
+                      queryData.getPurpose(),
+                      queryData.getSnapshotVersion(),
+                      lastLimboFreeSnapshotVersion,
+                      queryData.getResumeToken());
+              targetIds.put(targetId, updatedQueryData);
+            }
           }
         });
   }
@@ -548,10 +571,20 @@ public final class LocalStore {
 
           int targetId = queryData.getTargetId();
           QueryData cachedQueryData = targetIds.get(targetId);
+
+          boolean needsUpdate = false;
           if (cachedQueryData.getSnapshotVersion().compareTo(queryData.getSnapshotVersion()) > 0) {
             // If we've been avoiding persisting the resumeToken (see shouldPersistQueryData for
             // conditions and rationale) we need to persist the token now because there will no
             // longer be an in-memory version to fall back on.
+            needsUpdate = true;
+          } else if (!cachedQueryData
+              .getLastLimboFreeSnapshotVersion()
+              .equals(queryData.getLastLimboFreeSnapshotVersion())) {
+            needsUpdate = true;
+          }
+
+          if (needsUpdate) {
             queryData = cachedQueryData;
             queryCache.updateQueryData(queryData);
           }

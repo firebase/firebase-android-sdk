@@ -887,6 +887,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
                   ARBITRARY_SEQUENCE_NUMBER,
                   QueryPurpose.LISTEN,
                   SnapshotVersion.NONE,
+                  SnapshotVersion.NONE,
                   ByteString.copyFromUtf8(resumeToken)));
         }
       }
