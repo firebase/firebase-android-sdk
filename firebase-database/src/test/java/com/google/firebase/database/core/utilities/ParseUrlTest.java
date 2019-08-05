@@ -92,7 +92,7 @@ public class ParseUrlTest {
     assertFalse(parsed.repoInfo.secure);
 
     // Hosts with the default ports are considered secure
-    parsed = Utilities.parseUrl("http://gsoltis.firebaseio.comr");
+    parsed = Utilities.parseUrl("http://gsoltis.firebaseio.com");
     assertTrue(parsed.repoInfo.secure);
 
     // Localhost is special-cased as insecure
