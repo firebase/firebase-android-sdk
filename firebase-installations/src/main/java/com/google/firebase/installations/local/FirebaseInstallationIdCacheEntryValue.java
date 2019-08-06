@@ -31,9 +31,24 @@ public abstract class FirebaseInstallationIdCacheEntryValue {
   public abstract FirebaseInstallationIdCache.CacheStatus getCacheStatus();
 
   @NonNull
+  public abstract String getAuthToken();
+
+  @NonNull
+  public abstract String getRefreshToken();
+
+  public abstract long getExpiresIn();
+
+  public abstract long getTokenCreationTime();
+
+  @NonNull
   public static FirebaseInstallationIdCacheEntryValue create(
       @NonNull String firebaseInstallationId,
-      @NonNull FirebaseInstallationIdCache.CacheStatus cacheStatus) {
-    return new AutoValue_FirebaseInstallationIdCacheEntryValue(firebaseInstallationId, cacheStatus);
+      @NonNull FirebaseInstallationIdCache.CacheStatus cacheStatus,
+      @NonNull String authToken,
+      @NonNull String refreshToken,
+      long tokenCreationTime,
+      long expiresIn) {
+    return new AutoValue_FirebaseInstallationIdCacheEntryValue(
+        firebaseInstallationId, cacheStatus, authToken, refreshToken, expiresIn, tokenCreationTime);
   }
 }

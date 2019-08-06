@@ -14,8 +14,10 @@
 
 package com.google.firebase.installations;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import androidx.annotation.NonNull;
-import com.google.common.io.BaseEncoding;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
@@ -70,6 +72,25 @@ class Utils {
    * @return (22-character or shorter) String containing the base64-encoded value
    */
   private static String encodeFidBase64UrlSafe(byte[] rawValue) {
-    return BaseEncoding.base64Url().omitPadding().encode(rawValue).substring(0, FID_LENGTH);
+
+    return new String(
+            android.util.Base64.encode(
+                rawValue,
+                android.util.Base64.URL_SAFE
+                    | android.util.Base64.NO_PADDING
+                    | android.util.Base64.NO_WRAP),
+            Charset.defaultCharset())
+        .substring(0, FID_LENGTH);
+  }
+
+  public static boolean isNetworkAvailable(Context context) {
+    ConnectivityManager connectivityManager =
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+    return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+  }
+
+  public static long getCurrentTimeInSeconds() {
+    return System.currentTimeMillis() / 1000;
   }
 }

@@ -14,5 +14,42 @@
 
 package com.google.firebase.installations;
 
+import static org.junit.Assert.assertNotNull;
+
+import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+
 /** Tests for {@link FirebaseInstallationsRegistrar}. */
-public class FirebaseInstallationsRegistrarTest {}
+@RunWith(RobolectricTestRunner.class)
+public class FirebaseInstallationsRegistrarTest {
+  @Before
+  public void setUp() {
+    FirebaseApp.clearInstancesForTest();
+  }
+
+  @Test
+  public void getFirebaseInstallationsInstance() {
+    FirebaseApp defaultApp =
+        FirebaseApp.initializeApp(
+            ApplicationProvider.getApplicationContext(),
+            new FirebaseOptions.Builder().setApplicationId("1:123456789:android:abcdef").build());
+
+    FirebaseApp anotherApp =
+        FirebaseApp.initializeApp(
+            ApplicationProvider.getApplicationContext(),
+            new FirebaseOptions.Builder().setApplicationId("1:987654321:android:abcdef").build(),
+            "firebase_app_1");
+
+    FirebaseInstallations defaultFirebaseInstallation = FirebaseInstallations.getInstance();
+    assertNotNull(defaultFirebaseInstallation);
+
+    FirebaseInstallations anotherFirebaseInstallation =
+        FirebaseInstallations.getInstance(anotherApp);
+    assertNotNull(anotherFirebaseInstallation);
+  }
+}

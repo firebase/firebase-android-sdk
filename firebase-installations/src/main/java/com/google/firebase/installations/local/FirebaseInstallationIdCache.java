@@ -34,12 +34,18 @@ public class FirebaseInstallationIdCache {
     // Cache entry is waiting for Firebase backend response or internal network retry
     UNREGISTERED,
     // Cache entry is in error state when syncing with Firebase backend
-    REGISTER_ERROR
+    REGISTER_ERROR,
+    // Cache entry is in delete state before syncing with Firebase backend
+    DELETED
   }
 
   private static final String SHARED_PREFS_NAME = "FirebaseInstallationIdCache";
 
   private static final String FIREBASE_INSTALLATION_ID_KEY = "Fid";
+  private static final String AUTH_TOKEN_KEY = "AuthToken";
+  private static final String REFRESH_TOKEN_KEY = "RefreshToken";
+  private static final String TOKEN_CREATION_TIME_IN_SECONDS = "TokenCreationTime";
+  private static final String EXPIRES_IN_SECONDS = "ExpiresIn";
   private static final String CACHE_STATUS_KEY = "Status";
 
   private final SharedPreferences prefs;
@@ -59,12 +65,18 @@ public class FirebaseInstallationIdCache {
   public synchronized FirebaseInstallationIdCacheEntryValue readCacheEntryValue() {
     String iid = prefs.getString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
     int status = prefs.getInt(getSharedPreferencesKey(CACHE_STATUS_KEY), -1);
+    String authToken = prefs.getString(getSharedPreferencesKey(AUTH_TOKEN_KEY), null);
+    String refreshToken = prefs.getString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), null);
+    long tokenCreationTime =
+        prefs.getLong(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS), 0);
+    long expiresIn = prefs.getLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS), 0);
 
     if (iid == null || status == -1) {
       return null;
     }
 
-    return FirebaseInstallationIdCacheEntryValue.create(iid, CacheStatus.values()[status]);
+    return FirebaseInstallationIdCacheEntryValue.create(
+        iid, CacheStatus.values()[status], authToken, refreshToken, tokenCreationTime, expiresIn);
   }
 
   @NonNull
@@ -75,6 +87,11 @@ public class FirebaseInstallationIdCache {
         getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY),
         entryValue.getFirebaseInstallationId());
     editor.putInt(getSharedPreferencesKey(CACHE_STATUS_KEY), entryValue.getCacheStatus().ordinal());
+    editor.putString(getSharedPreferencesKey(AUTH_TOKEN_KEY), entryValue.getAuthToken());
+    editor.putString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), entryValue.getRefreshToken());
+    editor.putLong(
+        getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS), entryValue.getTokenCreationTime());
+    editor.putLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS), entryValue.getExpiresIn());
     return editor.commit();
   }
 
@@ -83,6 +100,10 @@ public class FirebaseInstallationIdCache {
     SharedPreferences.Editor editor = prefs.edit();
     editor.remove(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY));
     editor.remove(getSharedPreferencesKey(CACHE_STATUS_KEY));
+    editor.remove(getSharedPreferencesKey(AUTH_TOKEN_KEY));
+    editor.remove(getSharedPreferencesKey(REFRESH_TOKEN_KEY));
+    editor.remove(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS));
+    editor.remove(getSharedPreferencesKey(EXPIRES_IN_SECONDS));
     return editor.commit();
   }
 

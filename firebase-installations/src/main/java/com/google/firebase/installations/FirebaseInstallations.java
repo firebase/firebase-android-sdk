@@ -14,20 +14,18 @@
 
 package com.google.firebase.installations;
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseException;
 import com.google.firebase.installations.local.FirebaseInstallationIdCache;
 import com.google.firebase.installations.local.FirebaseInstallationIdCacheEntryValue;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
+import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
+import com.google.firebase.installations.remote.InstallationResponse;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -167,7 +165,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * Create firebase installation id of the {@link FirebaseApp} on Firebase Installation backend.
    */
   @WorkerThread
-  private String createFirebaseInstallationId() throws FirebaseException {
+  private String createFirebaseInstallationId() throws FirebaseInstallationException {
 
     FirebaseInstallationIdCacheEntryValue cacheEntryValue = localCache.readCacheEntryValue();
     if (cacheEntryValue != null && !cacheEntryValue.getFirebaseInstallationId().isEmpty()) {
@@ -176,7 +174,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         return cacheEntryValue.getFirebaseInstallationId();
       } else if (cacheEntryValue.getCacheStatus()
               == FirebaseInstallationIdCache.CacheStatus.UNREGISTERED
-          && isNetworkAvailable()) {
+          && Utils.isNetworkAvailable(firebaseApp.getApplicationContext())) {
         callCreateFirebaseInstallationService(cacheEntryValue.getFirebaseInstallationId());
         return cacheEntryValue.getFirebaseInstallationId();
       }
@@ -190,14 +188,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       boolean firstUpdateCacheResult =
           localCache.insertOrUpdateCacheEntry(
               FirebaseInstallationIdCacheEntryValue.create(
-                  fid, FirebaseInstallationIdCache.CacheStatus.UNREGISTERED));
+                  fid, FirebaseInstallationIdCache.CacheStatus.UNREGISTERED, "", "", 0, 0));
 
       if (!firstUpdateCacheResult) {
         throw new FirebaseInstallationException(
-            "Failed to update client side cache.", FirebaseInstallationException.Code.CLIENT_ERROR);
+            "Failed to update client side cache.",
+            FirebaseInstallationException.Status.CLIENT_ERROR);
       }
 
-      if (isNetworkAvailable()) {
+      if (Utils.isNetworkAvailable(firebaseApp.getApplicationContext())) {
         callCreateFirebaseInstallationService(fid);
       }
       return fid;
@@ -211,29 +210,30 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private void callCreateFirebaseInstallationService(String fid)
       throws FirebaseInstallationException {
     try {
-      serviceClient.createFirebaseInstallation(
-          firebaseApp.getOptions().getProjectId(),
-          firebaseApp.getOptions().getApiKey(),
-          fid,
-          getApplicationId());
+      long creationTime = Utils.getCurrentTimeInSeconds();
+      InstallationResponse installationResponse =
+          serviceClient.createFirebaseInstallation(
+              firebaseApp.getOptions().getProjectId(),
+              firebaseApp.getOptions().getApiKey(),
+              fid,
+              getApplicationId());
 
       localCache.insertOrUpdateCacheEntry(
           FirebaseInstallationIdCacheEntryValue.create(
-              fid, FirebaseInstallationIdCache.CacheStatus.REGISTERED));
+              fid,
+              FirebaseInstallationIdCache.CacheStatus.REGISTERED,
+              installationResponse.getAuthToken().getToken(),
+              installationResponse.getRefreshToken(),
+              creationTime,
+              installationResponse.getAuthToken().getTokenExpirationTimestampMillis()));
 
-    } catch (FirebaseInstallationException exception) {
+    } catch (FirebaseInstallationServiceException exception) {
       localCache.insertOrUpdateCacheEntry(
           FirebaseInstallationIdCacheEntryValue.create(
-              fid, FirebaseInstallationIdCache.CacheStatus.REGISTER_ERROR));
-      throw exception;
+              fid, FirebaseInstallationIdCache.CacheStatus.REGISTER_ERROR, "", "", 0, 0));
+      throw new FirebaseInstallationException(
+          "Failed to create a Firebase Installations.",
+          FirebaseInstallationException.Status.SDK_INTERNAL_ERROR);
     }
-  }
-
-  private boolean isNetworkAvailable() {
-    ConnectivityManager connectivityManager =
-        (ConnectivityManager)
-            firebaseApp.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-    return activeNetworkInfo != null && activeNetworkInfo.isConnected();
   }
 }
