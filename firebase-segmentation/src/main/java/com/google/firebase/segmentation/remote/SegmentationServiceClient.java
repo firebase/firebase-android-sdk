@@ -14,7 +14,14 @@
 
 package com.google.firebase.segmentation.remote;
 
+import static com.google.firebase.segmentation.FirebaseSegmentation.TAG;
+
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.util.Log;
 import androidx.annotation.NonNull;
+import com.google.android.gms.common.util.AndroidUtilsLight;
+import com.google.android.gms.common.util.Hex;
 import java.io.IOException;
 import java.net.URL;
 import java.util.zip.GZIPOutputStream;
@@ -37,6 +44,14 @@ public class SegmentationServiceClient {
   private static final String JSON_CONTENT_TYPE = "application/json";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
+  private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
+  private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
+
+  private final Context context;
+
+  public SegmentationServiceClient(@NonNull Context context) {
+    this.context = context;
+  }
 
   public enum Code {
     OK,
@@ -78,6 +93,9 @@ public class SegmentationServiceClient {
           "Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken);
       httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
       httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+      httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+      httpsURLConnection.addRequestProperty(
+          X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
       GZIPOutputStream gzipOutputStream =
           new GZIPOutputStream(httpsURLConnection.getOutputStream());
       try {
@@ -143,6 +161,9 @@ public class SegmentationServiceClient {
           "Authorization", "FIREBASE_INSTALLATIONS_AUTH " + firebaseInstanceIdToken);
       httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
       httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+      httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+      httpsURLConnection.addRequestProperty(
+          X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
       GZIPOutputStream gzipOutputStream =
           new GZIPOutputStream(httpsURLConnection.getOutputStream());
       try {
@@ -174,5 +195,25 @@ public class SegmentationServiceClient {
   private static JSONObject buildClearCustomSegmentationDataRequestBody(String resourceName)
       throws JSONException {
     return new JSONObject().put("name", resourceName);
+  }
+
+  /** Gets the Android package's SHA-1 fingerprint. */
+  private String getFingerprintHashForPackage() {
+    byte[] hash;
+
+    try {
+      hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
+
+      if (hash == null) {
+        Log.e(TAG, "Could not get fingerprint hash for package: " + context.getPackageName());
+        return null;
+      } else {
+        String cert = Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
+        return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.e(TAG, "No such package: " + context.getPackageName(), e);
+      return null;
+    }
   }
 }

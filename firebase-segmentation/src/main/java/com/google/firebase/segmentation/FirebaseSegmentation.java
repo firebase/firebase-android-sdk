@@ -35,6 +35,8 @@ import java.util.concurrent.Executors;
 /** Entry point of Firebase Segmentation SDK. */
 public class FirebaseSegmentation {
 
+  public static final String TAG = "FirebaseSegmentation";
+
   private final FirebaseApp firebaseApp;
   private final FirebaseInstanceId firebaseInstanceId;
   private final CustomInstallationIdCache localCache;
@@ -46,7 +48,7 @@ public class FirebaseSegmentation {
         firebaseApp,
         FirebaseInstanceId.getInstance(firebaseApp),
         new CustomInstallationIdCache(firebaseApp),
-        new SegmentationServiceClient());
+        new SegmentationServiceClient(firebaseApp.getApplicationContext()));
   }
 
   FirebaseSegmentation(
