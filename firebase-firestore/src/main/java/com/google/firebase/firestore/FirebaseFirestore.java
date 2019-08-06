@@ -362,6 +362,18 @@ public class FirebaseFirestore {
     return shutdownInternal();
   }
 
+  /**
+   * Wait for server acknowledgement for all pending writes existing at the time of calling this
+   * method.
+   *
+   * <p>Both acceptance and rejection count as server acknowledgement.
+   *
+   * @return A {@link Task} which resolves when all pending writes are acknowledged by the server.
+   */
+  Task<Void> awaitPendingWrites() {
+    return client.awaitPendingWrites();
+  }
+
   @VisibleForTesting
   AsyncQueue getAsyncQueue() {
     return asyncQueue;

@@ -1096,4 +1096,25 @@ public class FirestoreTest {
 
     expectError(() -> waitFor(reference.get()), expectedMessage);
   }
+
+  @Test
+  public void testAwaitPendingWritesResolves() {
+    DocumentReference documentReference = testCollection("abc").document("123");
+    FirebaseFirestore firestore = documentReference.getFirestore();
+    Map<String, Object> data = map("foo", "bar");
+
+    waitFor(firestore.disableNetwork());
+    Task<Void> awaitsPendingWrites1 = firestore.awaitPendingWrites();
+    Task<Void> pendingWrite = documentReference.set(data);
+    Task<Void> awaitsPendingWrites2 = firestore.awaitPendingWrites();
+
+    assertTrue(!awaitsPendingWrites1.isComplete());
+    assertTrue(!pendingWrite.isComplete());
+    assertTrue(!awaitsPendingWrites2.isComplete());
+
+    waitFor(firestore.enableNetwork());
+    waitFor(pendingWrite);
+    waitFor(awaitsPendingWrites1);
+    waitFor(awaitsPendingWrites2);
+  }
 }

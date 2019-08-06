@@ -282,6 +282,14 @@ public final class LocalStore {
         });
   }
 
+  /**
+   * Returns the largest (latest) batch id in mutation queue that is pending server response.
+   * Returns 0 if the queue is empty.
+   */
+  public int getHighestUnacknowledgedBatchId() {
+    return mutationQueue.getLargestUnacknowledgedBatchId();
+  }
+
   /** Returns the last recorded stream token for the current user. */
   public ByteString getLastStreamToken() {
     return mutationQueue.getLastStreamToken();

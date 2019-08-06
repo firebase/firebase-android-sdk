@@ -23,6 +23,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -133,6 +134,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   /** Stores user completion blocks, indexed by user and batch ID. */
   private final Map<User, Map<Integer, TaskCompletionSource<Void>>> mutationUserCallbacks;
 
+  /** Stores user callbacks waiting for all pending writes to be acknowledged. */
+  private final Map<Integer, List<TaskCompletionSource<Void>>> pendingWritesCallbacks;
+
   /** Used for creating the target IDs for the listens used to resolve limbo documents. */
   private final TargetIdGenerator targetIdGenerator;
 
@@ -154,6 +158,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     mutationUserCallbacks = new HashMap<>();
     targetIdGenerator = TargetIdGenerator.forSyncEngine();
     currentUser = initialUser;
+
+    pendingWritesCallbacks = new HashMap<>();
   }
 
   public void setCallback(SyncEngineCallback callback) {
@@ -407,6 +413,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     // they consistently happen before listen events.
     notifyUser(mutationBatchResult.getBatch().getBatchId(), /*status=*/ null);
 
+    resolveTasksAwaitingForPendingWritesIfAny(mutationBatchResult.getBatch().getBatchId());
+
     ImmutableSortedMap<DocumentKey, MaybeDocument> changes =
         localStore.acknowledgeBatch(mutationBatchResult);
 
@@ -427,7 +435,39 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     // they consistently happen before listen events.
     notifyUser(batchId, status);
 
+    resolveTasksAwaitingForPendingWritesIfAny(batchId);
+
     emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
+  }
+
+  /**
+   * Takes a snapshot of current local mutation queue, and register a user task which will resolve
+   * when all those mutations are either accepted or rejected by the server.
+   */
+  public void registerPendingWritesTask(TaskCompletionSource<Void> userTask) {
+    int largestPendingBatchId = localStore.getHighestUnacknowledgedBatchId();
+
+    if (largestPendingBatchId == 0) {
+      // Complete the task right away if there is no pending writes at the moment.
+      userTask.setResult(null);
+    }
+
+    if (pendingWritesCallbacks.containsKey(largestPendingBatchId)) {
+      pendingWritesCallbacks.get(largestPendingBatchId).add(userTask);
+    } else {
+      pendingWritesCallbacks.put(largestPendingBatchId, Lists.newArrayList(userTask));
+    }
+  }
+
+  /** Resolves tasks waiting for this batch id to get acknowledged by server, if there is any. */
+  private void resolveTasksAwaitingForPendingWritesIfAny(int batchId) {
+    if (pendingWritesCallbacks.containsKey(batchId)) {
+      for (TaskCompletionSource<Void> task : pendingWritesCallbacks.get(batchId)) {
+        task.setResult(null);
+      }
+
+      pendingWritesCallbacks.remove(batchId);
+    }
   }
 
   /** Resolves the task corresponding to this write result. */

@@ -1143,4 +1143,21 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
   }
+
+  @Test
+  public void testGetHighestUnacknowledgedBatchIdReturnsExpectedResult() {
+    assertEquals(0, localStore.getHighestUnacknowledgedBatchId());
+
+    writeMutation(setMutation("foo/bar", map("abc", 123)));
+    assertEquals(1, localStore.getHighestUnacknowledgedBatchId());
+
+    writeMutation(patchMutation("foo/bar", map("abc", 321)));
+    assertEquals(2, localStore.getHighestUnacknowledgedBatchId());
+
+    acknowledgeMutation(1);
+    assertEquals(2, localStore.getHighestUnacknowledgedBatchId());
+
+    rejectMutation();
+    assertEquals(0, localStore.getHighestUnacknowledgedBatchId());
+  }
 }

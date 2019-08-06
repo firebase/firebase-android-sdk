@@ -250,6 +250,16 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   @Override
+  public int getLargestUnacknowledgedBatchId() {
+    if (isEmpty()) {
+      return 0;
+    }
+    return db.query("SELECT MAX(batch_id) FROM mutations " + "WHERE uid = ?")
+        .binding(uid)
+        .firstValue(row -> row.getInt(0));
+  }
+
+  @Override
   public List<MutationBatch> getAllMutationBatches() {
     List<MutationBatch> result = new ArrayList<>();
     int rowsProcessed =
