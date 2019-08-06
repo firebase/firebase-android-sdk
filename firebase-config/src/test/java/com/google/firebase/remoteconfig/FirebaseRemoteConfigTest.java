@@ -464,7 +464,7 @@ public final class FirebaseRemoteConfigTest {
     assertWithMessage("fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
 
     verify(mockAnalyticsConnector)
-        .logEvent(eq("_ssr"), eq(FRC_ANALYTICS_ORIGIN_NAME), refEq(createFfrBundleForGa()));
+        .logEvent(eq(FRC_ANALYTICS_ORIGIN_NAME), eq("_ssr"), refEq(createFfrBundleForGa()));
   }
 
   @Test
@@ -485,8 +485,8 @@ public final class FirebaseRemoteConfigTest {
 
     verify(mockAnalyticsConnector)
         .logEvent(
-            eq("_ssr"),
             eq(FRC_ANALYTICS_ORIGIN_NAME),
+            eq("_ssr"),
             refEq(createFfrBundleForGa(/* rolloutIds= */ "1")));
   }
 
@@ -732,7 +732,7 @@ public final class FirebaseRemoteConfigTest {
         .isFalse();
 
     verify(mockAnalyticsConnector)
-        .logEvent(eq("_ssr"), eq(FRC_ANALYTICS_ORIGIN_NAME), refEq(createFfrBundleForGa()));
+        .logEvent(eq(FRC_ANALYTICS_ORIGIN_NAME), eq("_ssr"), refEq(createFfrBundleForGa()));
   }
 
   @Test
@@ -762,7 +762,7 @@ public final class FirebaseRemoteConfigTest {
         .isFalse();
 
     verify(mockAnalyticsConnector)
-        .logEvent(eq("_ssr"), eq(FRC_ANALYTICS_ORIGIN_NAME), refEq(createFfrBundleForGa()));
+        .logEvent(eq(FRC_ANALYTICS_ORIGIN_NAME), eq("_ssr"), refEq(createFfrBundleForGa()));
   }
 
   @Test
@@ -792,7 +792,7 @@ public final class FirebaseRemoteConfigTest {
         .isFalse();
 
     verify(mockAnalyticsConnector)
-        .logEvent(eq("_ssr"), eq(FRC_ANALYTICS_ORIGIN_NAME), refEq(createFfrBundleForGa()));
+        .logEvent(eq(FRC_ANALYTICS_ORIGIN_NAME), eq("_ssr"), refEq(createFfrBundleForGa()));
   }
 
   @Test

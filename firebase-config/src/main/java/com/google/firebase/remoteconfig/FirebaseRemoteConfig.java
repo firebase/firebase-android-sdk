@@ -288,7 +288,9 @@ public class FirebaseRemoteConfig {
             (unusedListOfCompletedTasks) -> {
               if (!fetchedConfigsTask.isSuccessful() || fetchedConfigsTask.getResult() == null) {
                 @Nullable ConfigContainer activatedContainer = activatedConfigsTask.getResult();
-                updateGaWithEnabledRollouts(activatedContainer.getActiveRollouts());
+                if (activatedContainer != null) {
+                  updateGaWithEnabledRollouts(activatedContainer.getActiveRollouts());
+                }
                 return Tasks.forResult(false);
               }
               ConfigContainer fetchedContainer = fetchedConfigsTask.getResult();
@@ -845,7 +847,7 @@ public class FirebaseRemoteConfig {
           TextUtils.join(",", base64RolloutIdsThatEnabledFeatures);
       Bundle parameters = new Bundle();
       parameters.putString("_ffr", base64RolloutIdsThatEnabledFeaturesCsv);
-      analyticsConnector.logEvent("_ssr", FRC_ANALYTICS_ORIGIN_NAME, parameters);
+      analyticsConnector.logEvent(FRC_ANALYTICS_ORIGIN_NAME, "_ssr", parameters);
     } catch (JSONException e) {
       Log.e(TAG, "Could not parse Feature Rollouts from the JSON response.", e);
     }
