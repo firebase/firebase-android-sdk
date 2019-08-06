@@ -370,8 +370,8 @@ public class FirebaseFirestore {
    *
    * @return A {@link Task} which resolves when all pending writes are acknowledged by the server.
    */
-  Task<Void> awaitPendingWrites() {
-    return client.awaitPendingWrites();
+  Task<Void> waitForPendingWrites() {
+    return client.waitForPendingWrites();
   }
 
   @VisibleForTesting

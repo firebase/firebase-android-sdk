@@ -450,6 +450,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     if (largestPendingBatchId == 0) {
       // Complete the task right away if there is no pending writes at the moment.
       userTask.setResult(null);
+      return;
     }
 
     if (pendingWritesCallbacks.containsKey(largestPendingBatchId)) {
@@ -468,6 +469,20 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
       pendingWritesCallbacks.remove(batchId);
     }
+  }
+
+  private void failOutstandingPendingWritesAwaitingTasks() {
+    for (Map.Entry<Integer, List<TaskCompletionSource<Void>>> entry :
+        pendingWritesCallbacks.entrySet()) {
+      for (TaskCompletionSource<Void> task : entry.getValue()) {
+        task.setException(
+            new FirebaseFirestoreException(
+                "'waitForPendingWrites' task is cancelled due to User change.",
+                FirebaseFirestoreException.Code.CANCELLED));
+      }
+    }
+
+    pendingWritesCallbacks.clear();
   }
 
   /** Resolves the task corresponding to this write result. */
@@ -605,6 +620,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       // Notify local store and emit any resulting events from swapping out the mutation queue.
       ImmutableSortedMap<DocumentKey, MaybeDocument> changes = localStore.handleUserChange(user);
       emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
+      failOutstandingPendingWritesAwaitingTasks();
     }
 
     // Notify remote store so it can restart its streams.

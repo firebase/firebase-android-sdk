@@ -228,7 +228,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
    * Returns a task resolves when all the pending writes at the time when this method is called
    * received server acknowledgement. An acknowledgement can be either acceptance or rejections.
    */
-  public Task<Void> awaitPendingWrites() {
+  public Task<Void> waitForPendingWrites() {
     this.verifyNotShutdown();
     if (!remoteStore.canUseNetwork()) {
       Logger.warn(

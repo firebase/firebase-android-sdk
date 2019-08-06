@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.AccessHelper.getAsyncQueue;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettings;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provider;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testChangeUserTo;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
@@ -44,6 +45,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.Query.Direction;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
@@ -1098,23 +1100,47 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testAwaitPendingWritesResolves() {
+  public void testWaitForPendingWritesResolves() {
     DocumentReference documentReference = testCollection("abc").document("123");
     FirebaseFirestore firestore = documentReference.getFirestore();
     Map<String, Object> data = map("foo", "bar");
 
     waitFor(firestore.disableNetwork());
-    Task<Void> awaitsPendingWrites1 = firestore.awaitPendingWrites();
+    Task<Void> awaitsPendingWrites1 = firestore.waitForPendingWrites();
     Task<Void> pendingWrite = documentReference.set(data);
-    Task<Void> awaitsPendingWrites2 = firestore.awaitPendingWrites();
+    Task<Void> awaitsPendingWrites2 = firestore.waitForPendingWrites();
 
-    assertTrue(!awaitsPendingWrites1.isComplete());
+    // `awaitsPendingWrites1` is complete immediately because there is no pending writes at
+    // the time it is created.
+    waitFor(awaitsPendingWrites1);
+    assertTrue(awaitsPendingWrites1.isComplete() && awaitsPendingWrites1.isSuccessful());
     assertTrue(!pendingWrite.isComplete());
     assertTrue(!awaitsPendingWrites2.isComplete());
 
     waitFor(firestore.enableNetwork());
     waitFor(pendingWrite);
-    waitFor(awaitsPendingWrites1);
     waitFor(awaitsPendingWrites2);
+    assertTrue(awaitsPendingWrites2.isComplete() && awaitsPendingWrites2.isSuccessful());
+  }
+
+  @Test
+  public void testWaitForPendingWritesFailsWhenUserChanges() {
+    DocumentReference documentReference = testCollection("abc").document("123");
+    FirebaseFirestore firestore = documentReference.getFirestore();
+    Map<String, Object> data = map("foo", "bar");
+
+    // Prevent pending writes receiving acknowledgement.
+    waitFor(firestore.disableNetwork());
+    Task<Void> pendingWrite = documentReference.set(data);
+    Task<Void> awaitsPendingWrites = firestore.waitForPendingWrites();
+    assertTrue(!pendingWrite.isComplete());
+    assertTrue(!awaitsPendingWrites.isComplete());
+
+    testChangeUserTo(new User("new user"));
+
+    assertTrue(!pendingWrite.isComplete());
+    assertEquals(
+        "'waitForPendingWrites' task is cancelled due to User change.",
+        waitForException(awaitsPendingWrites).getMessage());
   }
 }
