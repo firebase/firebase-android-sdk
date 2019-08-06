@@ -128,7 +128,7 @@ public class FirebaseSegmentation {
       instanceIdResult = Tasks.await(firebaseInstanceId.getInstanceId());
     } catch (ExecutionException | InterruptedException e) {
       throw new SetCustomInstallationIdException(
-          "Failed to get Firebase instance id", Status.CLIENT_ERROR);
+          Status.CLIENT_ERROR, "Failed to get Firebase instance id");
     }
 
     boolean firstUpdateCacheResult =
@@ -140,7 +140,7 @@ public class FirebaseSegmentation {
 
     if (!firstUpdateCacheResult) {
       throw new SetCustomInstallationIdException(
-          "Failed to update client side cache", Status.CLIENT_ERROR);
+          Status.CLIENT_ERROR, "Failed to update client side cache");
     }
 
     // Start requesting backend when first cache updae is done.
@@ -164,11 +164,22 @@ public class FirebaseSegmentation {
                     instanceIdResult.getId(),
                     CustomInstallationIdCache.CacheStatus.SYNCED));
         break;
-      case HTTP_CLIENT_ERROR:
-        throw new SetCustomInstallationIdException(Status.CLIENT_ERROR);
+      case UNAUTHORIZED:
+        localCache.clear();
+        throw new SetCustomInstallationIdException(
+            Status.CLIENT_ERROR, "Instance id token is invalid.");
       case CONFLICT:
-        throw new SetCustomInstallationIdException(Status.DUPLICATED_CUSTOM_INSTALLATION_ID);
+        localCache.clear();
+        throw new SetCustomInstallationIdException(
+            Status.DUPLICATED_CUSTOM_INSTALLATION_ID,
+            "The custom installation id is used by another Firebase installation in your project.");
+      case HTTP_CLIENT_ERROR:
+        localCache.clear();
+        throw new SetCustomInstallationIdException(Status.CLIENT_ERROR, "Http client error(4xx)");
+      case NETWORK_ERROR:
+      case SERVER_ERROR:
       default:
+        // These are considered retryable errors, so not to clean up the cache.
         throw new SetCustomInstallationIdException(Status.BACKEND_ERROR);
     }
 
@@ -176,7 +187,7 @@ public class FirebaseSegmentation {
       return null;
     } else {
       throw new SetCustomInstallationIdException(
-          "Failed to update client side cache", Status.CLIENT_ERROR);
+          Status.CLIENT_ERROR, "Failed to update client side cache");
     }
   }
 
@@ -204,7 +215,7 @@ public class FirebaseSegmentation {
       instanceIdResult = Tasks.await(firebaseInstanceId.getInstanceId());
     } catch (ExecutionException | InterruptedException e) {
       throw new SetCustomInstallationIdException(
-          "Failed to get Firebase instance id", Status.CLIENT_ERROR);
+          Status.CLIENT_ERROR, "Failed to get Firebase instance id");
     }
 
     boolean firstUpdateCacheResult =
@@ -214,7 +225,7 @@ public class FirebaseSegmentation {
 
     if (!firstUpdateCacheResult) {
       throw new SetCustomInstallationIdException(
-          "Failed to update client side cache", Status.CLIENT_ERROR);
+          Status.CLIENT_ERROR, "Failed to update client side cache");
     }
 
     String iid = instanceIdResult.getId();
@@ -231,9 +242,15 @@ public class FirebaseSegmentation {
       case OK:
         finalUpdateCacheResult = localCache.clear();
         break;
+      case UNAUTHORIZED:
+        throw new SetCustomInstallationIdException(
+            Status.CLIENT_ERROR, "Instance id token is invalid.");
       case HTTP_CLIENT_ERROR:
-        throw new SetCustomInstallationIdException(Status.CLIENT_ERROR);
+        throw new SetCustomInstallationIdException(Status.CLIENT_ERROR, "Http client error(4xx)");
+      case NETWORK_ERROR:
+      case SERVER_ERROR:
       default:
+        // These are considered retryable errors, so not to clean up the cache.
         throw new SetCustomInstallationIdException(Status.BACKEND_ERROR);
     }
 
@@ -241,7 +258,7 @@ public class FirebaseSegmentation {
       return null;
     } else {
       throw new SetCustomInstallationIdException(
-          "Failed to update client side cache", Status.CLIENT_ERROR);
+          Status.CLIENT_ERROR, "Failed to update client side cache");
     }
   }
 }
