@@ -53,7 +53,7 @@ public class IndexFreeQueryEngine implements QueryEngine {
       ImmutableSortedMap<DocumentKey, MaybeDocument> previousResults =
           localDocumentsView.getDocuments(remoteKeys);
 
-      if (query.hasLimit() && containsLocalEdits(previousResults)) {
+      if (query.hasLimit() && containsLocalEdits(previousResults, queryData.getLastLimboFreeSnapshotVersion())) {
         return executeFullQuery(query);
       }
 
@@ -81,9 +81,9 @@ public class IndexFreeQueryEngine implements QueryEngine {
   }
 
   private boolean containsLocalEdits(
-      ImmutableSortedMap<DocumentKey, MaybeDocument> previousResults) {
+          ImmutableSortedMap<DocumentKey, MaybeDocument> previousResults, SnapshotVersion baseVersion) {
     for (Map.Entry<DocumentKey, MaybeDocument> doc : previousResults) {
-      if (doc.getValue().hasPendingWrites()) {
+      if (doc.getValue().hasPendingWrites() || doc.getValue().getVersion().compareTo(baseVersion) > 0) {
         return true;
       }
     }
