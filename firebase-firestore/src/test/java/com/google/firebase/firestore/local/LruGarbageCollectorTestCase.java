@@ -109,8 +109,9 @@ public abstract class LruGarbageCollectorTestCase {
     SnapshotVersion version = version(2);
     ByteString resumeToken = resumeToken(2);
     QueryData updated =
-        queryData.copy(
-            version, resumeToken, persistence.getReferenceDelegate().getCurrentSequenceNumber());
+        queryData
+            .withResumeToken(resumeToken, version)
+            .withSequenceNumber(persistence.getReferenceDelegate().getCurrentSequenceNumber());
     queryCache.updateQueryData(updated);
   }
 

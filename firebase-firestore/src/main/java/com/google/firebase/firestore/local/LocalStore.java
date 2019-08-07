@@ -359,7 +359,9 @@ public final class LocalStore {
             if (!resumeToken.isEmpty()) {
               QueryData oldQueryData = queryData;
               queryData =
-                  queryData.copy(remoteEvent.getSnapshotVersion(), resumeToken, sequenceNumber);
+                  queryData
+                      .withResumeToken(resumeToken, remoteEvent.getSnapshotVersion())
+                      .withSequenceNumber(sequenceNumber);
               targetIds.put(boxedTargetId, queryData);
 
               if (shouldPersistQueryData(oldQueryData, queryData, change)) {
@@ -488,14 +490,7 @@ public final class LocalStore {
               // Advance the last limbo free snapshot version
               SnapshotVersion lastLimboFreeSnapshotVersion = queryData.getSnapshotVersion();
               QueryData updatedQueryData =
-                  new QueryData(
-                      queryData.getQuery(),
-                      queryData.getTargetId(),
-                      queryData.getSequenceNumber(),
-                      queryData.getPurpose(),
-                      queryData.getSnapshotVersion(),
-                      lastLimboFreeSnapshotVersion,
-                      queryData.getResumeToken());
+                  queryData.withLastLimboFreeSnapshotVersion(lastLimboFreeSnapshotVersion);
               targetIds.put(targetId, updatedQueryData);
             }
           }
