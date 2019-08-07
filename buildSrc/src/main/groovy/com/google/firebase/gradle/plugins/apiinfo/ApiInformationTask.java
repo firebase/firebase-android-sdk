@@ -16,9 +16,6 @@ package com.google.firebase.gradle.plugins.apiinfo;
 
 import groovy.transform.CompileStatic;
 import jdk.nashorn.internal.objects.annotations.Property;
-import org.eclipse.egit.github.core.RepositoryId;
-import org.eclipse.egit.github.core.client.GitHubClient;
-import org.eclipse.egit.github.core.service.IssueService;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
 
@@ -74,7 +71,7 @@ public class ApiInformationTask extends DefaultTask {
 
     }
 
-    void writeToFile(String output) {
+    private void writeToFile(String output) {
         try(BufferedWriter out = new BufferedWriter(new FileWriter(outputPath))) {
             out.write(output);
         } catch (IOException e) {

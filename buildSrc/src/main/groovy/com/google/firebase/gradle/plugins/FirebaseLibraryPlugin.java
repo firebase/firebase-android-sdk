@@ -95,6 +95,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
       });
     }
 
+
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab));
 
     setupStaticAnalysis(project, android, firebaseLibrary);
