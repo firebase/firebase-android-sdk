@@ -124,7 +124,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   Iterable<MaybeDocument> getDocuments() {
-    return new DocumentIterator();
+    return new DocumentIterable();
   }
 
   /**
@@ -144,15 +144,17 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
-    for (MaybeDocument doc : new DocumentIterator()) {
+    for (MaybeDocument doc : new DocumentIterable()) {
       count += getKeySize(doc.getKey());
       count += serializer.encodeMaybeDocument(doc).getSerializedSize();
     }
     return count;
   }
 
-  /** An Iterator that iterates the current set of documents in the RemoteDocumentCache. */
-  private class DocumentIterator implements Iterable<MaybeDocument> {
+  /**
+   * A proxy that exposes an iterator over the current set of documents in the RemoteDocumentCache.
+   */
+  private class DocumentIterable implements Iterable<MaybeDocument> {
     @NonNull
     @Override
     public Iterator<MaybeDocument> iterator() {
