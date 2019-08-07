@@ -1110,7 +1110,7 @@ public class FirestoreTest {
     Task<Void> pendingWrite = documentReference.set(data);
     Task<Void> awaitsPendingWrites2 = firestore.waitForPendingWrites();
 
-    // `awaitsPendingWrites1` is complete immediately because there is no pending writes at
+    // `awaitsPendingWrites1` completes immediately because there are no pending writes at
     // the time it is created.
     waitFor(awaitsPendingWrites1);
     assertTrue(awaitsPendingWrites1.isComplete() && awaitsPendingWrites1.isSuccessful());

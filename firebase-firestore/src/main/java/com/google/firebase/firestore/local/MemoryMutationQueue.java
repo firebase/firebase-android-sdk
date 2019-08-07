@@ -189,7 +189,7 @@ final class MemoryMutationQueue implements MutationQueue {
 
   @Override
   public int getHighestUnacknowledgedBatchId() {
-    return queue.isEmpty() ? 0 : nextBatchId - 1;
+    return queue.isEmpty() ? MutationBatch.UNKNOWN : nextBatchId - 1;
   }
 
   @Override

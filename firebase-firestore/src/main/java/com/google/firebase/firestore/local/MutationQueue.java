@@ -75,7 +75,7 @@ interface MutationQueue {
 
   /**
    * @return The largest (latest) batch id in mutation queue for the current user that is pending
-   *     server response, 0 if the queue is empty.
+   *     server response, {@link MutationBatch#UNKNOWN} if the queue is empty.
    */
   int getHighestUnacknowledgedBatchId();
 
