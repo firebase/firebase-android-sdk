@@ -17,22 +17,12 @@ package com.google.firebase.gradle.plugins;
 import com.android.build.gradle.LibraryExtension;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
-import java.util.Set;
-
 public class FirebaseLibraryPlugin implements Plugin<Project> {
-
-  private static final Set<String> KOTLIN_CHECKS =
-      ImmutableSet.of(
-          "FirebaseNoHardKeywords",
-          "FirebaseLambdaLast",
-          "FirebaseUnknownNullness",
-          "FirebaseKotlinPropertyAccess");
 
   @Override
   public void apply(Project project) {
@@ -105,11 +95,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                         }
                       }
                     }));
-
-    library.staticAnalysis.subscribeToKotlinInteropLintDisabled(
-        () ->
-            android.lintOptions(
-                lintOptions -> lintOptions.disable(KOTLIN_CHECKS.toArray(new String[0]))));
 
     project.getTasks().register("firebaseLint", task -> task.dependsOn("lint"));
   }
