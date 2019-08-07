@@ -24,7 +24,7 @@ import com.google.firebase.FirebaseApp;
  * A layer that locally caches a few Firebase Installation attributes on top the Firebase
  * Installation backend API.
  */
-public class FirebaseInstallationIdCache {
+public class FiidCache {
   // Status of each cache entry
   // NOTE: never change the ordinal of the enum values because the enum values are stored in cache
   // as their ordinal numbers.
@@ -39,19 +39,19 @@ public class FirebaseInstallationIdCache {
     DELETED
   }
 
-  private static final String SHARED_PREFS_NAME = "FirebaseInstallationIdCache";
+  private static final String SHARED_PREFS_NAME = "FiidCache";
 
   private static final String FIREBASE_INSTALLATION_ID_KEY = "Fid";
   private static final String AUTH_TOKEN_KEY = "AuthToken";
   private static final String REFRESH_TOKEN_KEY = "RefreshToken";
-  private static final String TOKEN_CREATION_TIME_IN_SECONDS = "TokenCreationTime";
-  private static final String EXPIRES_IN_SECONDS = "ExpiresIn";
+  private static final String TOKEN_CREATION_TIME_IN_SECONDS_KEY = "TokenCreationEpochInSecs";
+  private static final String EXPIRES_IN_SECONDS_KEY = "ExpiresInSecs";
   private static final String CACHE_STATUS_KEY = "Status";
 
   private final SharedPreferences prefs;
   private final String persistenceKey;
 
-  public FirebaseInstallationIdCache(@NonNull FirebaseApp firebaseApp) {
+  public FiidCache(@NonNull FirebaseApp firebaseApp) {
     // Different FirebaseApp in the same Android application should have the same application
     // context and same dir path
     prefs =
@@ -62,26 +62,25 @@ public class FirebaseInstallationIdCache {
   }
 
   @Nullable
-  public synchronized FirebaseInstallationIdCacheEntryValue readCacheEntryValue() {
+  public synchronized FiidCacheEntryValue readCacheEntryValue() {
     String iid = prefs.getString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
     int status = prefs.getInt(getSharedPreferencesKey(CACHE_STATUS_KEY), -1);
     String authToken = prefs.getString(getSharedPreferencesKey(AUTH_TOKEN_KEY), null);
     String refreshToken = prefs.getString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), null);
     long tokenCreationTime =
-        prefs.getLong(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS), 0);
-    long expiresIn = prefs.getLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS), 0);
+        prefs.getLong(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY), 0);
+    long expiresIn = prefs.getLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), 0);
 
     if (iid == null || status == -1) {
       return null;
     }
 
-    return FirebaseInstallationIdCacheEntryValue.create(
+    return FiidCacheEntryValue.create(
         iid, CacheStatus.values()[status], authToken, refreshToken, tokenCreationTime, expiresIn);
   }
 
   @NonNull
-  public synchronized boolean insertOrUpdateCacheEntry(
-      @NonNull FirebaseInstallationIdCacheEntryValue entryValue) {
+  public synchronized boolean insertOrUpdateCacheEntry(@NonNull FiidCacheEntryValue entryValue) {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putString(
         getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY),
@@ -90,8 +89,9 @@ public class FirebaseInstallationIdCache {
     editor.putString(getSharedPreferencesKey(AUTH_TOKEN_KEY), entryValue.getAuthToken());
     editor.putString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), entryValue.getRefreshToken());
     editor.putLong(
-        getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS), entryValue.getTokenCreationTime());
-    editor.putLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS), entryValue.getExpiresIn());
+        getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY),
+        entryValue.getTokenCreationEpochInSecs());
+    editor.putLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), entryValue.getExpiresInSecs());
     return editor.commit();
   }
 
@@ -102,8 +102,8 @@ public class FirebaseInstallationIdCache {
     editor.remove(getSharedPreferencesKey(CACHE_STATUS_KEY));
     editor.remove(getSharedPreferencesKey(AUTH_TOKEN_KEY));
     editor.remove(getSharedPreferencesKey(REFRESH_TOKEN_KEY));
-    editor.remove(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS));
-    editor.remove(getSharedPreferencesKey(EXPIRES_IN_SECONDS));
+    editor.remove(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY));
+    editor.remove(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY));
     return editor.commit();
   }
 
