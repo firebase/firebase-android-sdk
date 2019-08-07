@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.util.Util.autoId;
 import static org.junit.Assert.assertNull;
 
 import android.content.Context;
-import android.net.SSLCertificateSocketFactory;
 import android.os.StrictMode;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
@@ -40,12 +39,10 @@ import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.remote.GrpcCallProvider;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
-import io.grpc.okhttp.OkHttpChannelBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -117,25 +114,7 @@ public class IntegrationTestUtil {
 
     if (CONNECT_TO_EMULATOR) {
       settings.setHost(String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT));
-
-      // The `sslEnabled` flag in DatabaseInfo currently does not in fact disable all SSL checks.
-      // Instead, we manually disable the SSL certificate check and the hostname verification for
-      // connections to the emulator.
-      // TODO(mrschmidt): Update the client to respect the `sslEnabled` flag and remove these
-      // channel overrides.
-      OkHttpChannelBuilder channelBuilder =
-          new OkHttpChannelBuilder(EMULATOR_HOST, EMULATOR_PORT) {
-            @Override
-            protected String checkAuthority(String authority) {
-              return authority;
-            }
-          };
-      channelBuilder.hostnameVerifier((hostname, session) -> true);
-      SSLCertificateSocketFactory insecureFactory =
-          (SSLCertificateSocketFactory) SSLCertificateSocketFactory.getInsecure(0, null);
-      channelBuilder.sslSocketFactory(insecureFactory);
-      channelBuilder.usePlaintext();
-      GrpcCallProvider.overrideChannelBuilder(() -> channelBuilder);
+      settings.setSslEnabled(false);
     } else {
       settings.setHost(provider.firestoreHost());
     }

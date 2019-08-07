@@ -19,7 +19,6 @@ plugins {
 
 firebaseLibrary{
     publishJavadoc = false
-    staticAnalysis.disableKotlinInteropLint()
 }
 
 protobuf {
