@@ -131,7 +131,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(Query query) {
+  public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+      Query query, SnapshotVersion sinceUpdateTime) {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
@@ -142,6 +143,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
+    Timestamp updateTime = sinceUpdateTime.getTimestamp();
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
 
@@ -150,8 +152,16 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             new ImmutableSortedMap[] {DocumentCollections.emptyDocumentMap()};
 
     int rowsProcessed =
-        db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
-            .binding(prefixPath, prefixSuccessorPath)
+        db.query(
+                "SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ? "
+                    + "AND (read_time_seconds IS NULL OR read_time_seconds > ? "
+                    + "OR (read_time_seconds = ? AND read_time_nanos > ?))")
+            .binding(
+                prefixPath,
+                prefixSuccessorPath,
+                updateTime.getSeconds(),
+                updateTime.getSeconds(),
+                updateTime.getNanoseconds())
             .forEach(
                 row -> {
                   // TODO: Actually implement a single-collection query

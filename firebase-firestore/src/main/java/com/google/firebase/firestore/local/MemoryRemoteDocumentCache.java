@@ -82,7 +82,8 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(Query query) {
+  public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+      Query query, SnapshotVersion sinceUpdateTime) {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
@@ -109,6 +110,11 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
       MaybeDocument maybeDoc = entry.getValue().first;
       if (!(maybeDoc instanceof Document)) {
+        continue;
+      }
+
+      SnapshotVersion readTime = entry.getValue().second;
+      if (readTime.compareTo(sinceUpdateTime) <= 0) {
         continue;
       }
 

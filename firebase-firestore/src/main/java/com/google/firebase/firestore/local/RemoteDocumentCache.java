@@ -75,7 +75,10 @@ interface RemoteDocumentCache {
    * <p>Cached NoDocument entries have no bearing on query results.
    *
    * @param query The query to match documents against.
+   * @param sinceUpdateTime If not set to SnapshotVersion.MIN, return only documents that have been
+   *     modified since this snapshot version (exclusive).
    * @return The set of matching documents.
    */
-  ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(Query query);
+  ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+      Query query, SnapshotVersion sinceUpdateTime);
 }

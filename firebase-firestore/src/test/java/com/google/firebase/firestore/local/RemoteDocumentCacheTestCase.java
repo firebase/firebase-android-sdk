@@ -177,19 +177,48 @@ abstract class RemoteDocumentCacheTestCase {
 
     Query query = Query.atPath(path("b"));
     ImmutableSortedMap<DocumentKey, Document> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query);
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, SnapshotVersion.NONE);
     List<Document> expected = asList(doc("b/1", 42, docData), doc("b/2", 42, docData));
     assertEquals(expected, values(results));
   }
 
+  @Test
+  public void testDocumentsMatchingQuerySinceReadTime() {
+    Map<String, Object> docData = map("data", 2);
+    addTestDocumentAtPath("b/old", /* updateTime= */ 1, /* readTime= */ 11);
+    addTestDocumentAtPath("b/current", /* updateTime= */ 2, /*  readTime= = */ 12);
+    addTestDocumentAtPath("b/new", /* updateTime= */ 3, /*  readTime= = */ 13);
+
+    Query query = Query.atPath(path("b"));
+    ImmutableSortedMap<DocumentKey, Document> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, version(12));
+    List<Document> expected = asList(doc("b/new", 3, docData));
+    assertEquals(expected, values(results));
+  }
+
+  @Test
+  public void testDocumentsMatchingUsesReadTimeNotUpdateTime() {
+    Map<String, Object> docData = map("data", 2);
+    addTestDocumentAtPath("b/old", /* updateTime= */ 1, /* readTime= */ 2);
+    addTestDocumentAtPath("b/new", /* updateTime= */ 2, /* readTime= */ 1);
+
+    Query query = Query.atPath(path("b"));
+    ImmutableSortedMap<DocumentKey, Document> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, version(1));
+    List<Document> expected = asList(doc("b/old", 1, docData));
+    assertEquals(expected, values(results));
+  }
+
   private Document addTestDocumentAtPath(String path) {
-    Document doc = doc(path, 42, map("data", 2));
-    add(doc, version(42));
+    return addTestDocumentAtPath(path, 42, 42);
+  }
+
+  private Document addTestDocumentAtPath(String path, int updateTime, int readTime) {
+    Document doc = doc(path, updateTime, map("data", 2));
+    add(doc, version(readTime));
     return doc;
   }
 
-  // TODO(mrschmidt): Add a test uses different update and read times and verifies that we correctly
-  // filter by read time
   private void add(MaybeDocument doc, SnapshotVersion readTime) {
     persistence.runTransaction("add entry", () -> remoteDocumentCache.add(doc, readTime));
   }
