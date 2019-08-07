@@ -128,13 +128,20 @@ public abstract class DefaultRunLoop implements RunLoop {
           + "https://firebase.google.com/docs/database/ios/structure-data#best_practices_for_data_structure"
           + " and "
           + "https://firebase.google.com/docs/database/android/retrieve-data#filtering_data";
+    } else if (t instanceof NoClassDefFoundError) {
+      return "A symbol that the Firebase Database SDK depends on failed to load. This usually "
+          + "indicates that your project includes an incompatible version of another Firebase "
+          + "dependency. If updating your dependencies to the latest version does not resolve "
+          + "this issue, please file a report at https://github.com/firebase/firebase-android-sdk";
     } else if (t instanceof DatabaseException) {
       // Exception should be self-explanatory and they shouldn't contact support.
       return "";
     } else {
       return "Uncaught exception in Firebase Database runloop ("
           + FirebaseDatabase.getSdkVersion()
-          + "). Please report to firebase-database-client@google.com";
+          + "). If you are not already on the latest version of the Firebase SDKs, try updating "
+          + "your dependencies. Should this problem persist, please file a report at "
+          + "https://github.com/firebase/firebase-android-sdk";
     }
   }
 }
