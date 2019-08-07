@@ -858,7 +858,7 @@ public class FirebaseRemoteConfig {
     Set<String> rolloutsThatEnabledFeatures = new HashSet<>();
     for (int index = 0; index < rolloutsJson.length(); index++) {
       JSONObject rolloutJson = rolloutsJson.getJSONObject(index);
-      if (rolloutJson.getBoolean("featureEnabled")) {
+      if (rolloutJson.optBoolean("featureEnabled")) {
         try {
           String base64RolloutId =
               Base64.encodeToString(
