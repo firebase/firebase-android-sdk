@@ -413,7 +413,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     // they consistently happen before listen events.
     notifyUser(mutationBatchResult.getBatch().getBatchId(), /*status=*/ null);
 
-    resolveTasksAwaitingForPendingWritesIfAny(mutationBatchResult.getBatch().getBatchId());
+    resolvePendingWriteTasks(mutationBatchResult.getBatch().getBatchId());
 
     ImmutableSortedMap<DocumentKey, MaybeDocument> changes =
         localStore.acknowledgeBatch(mutationBatchResult);
@@ -435,16 +435,22 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     // they consistently happen before listen events.
     notifyUser(batchId, status);
 
-    resolveTasksAwaitingForPendingWritesIfAny(batchId);
+    resolvePendingWriteTasks(batchId);
 
     emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
   }
 
   /**
-   * Takes a snapshot of current local mutation queue, and register a user task which will resolve
-   * when all those mutations are either accepted or rejected by the server.
+   * Takes a snapshot of current mutation queue, and register a user task which will resolve when
+   * all those mutations are either accepted or rejected by the server.
    */
   public void registerPendingWritesTask(TaskCompletionSource<Void> userTask) {
+    if (!remoteStore.canUseNetwork()) {
+      Logger.debug(
+          TAG,
+          "The network is disabled. The task returned by 'awaitPendingWrites()' will not complete until the network is enabled.");
+    }
+
     int largestPendingBatchId = localStore.getHighestUnacknowledgedBatchId();
 
     if (largestPendingBatchId == 0) {
@@ -461,7 +467,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   /** Resolves tasks waiting for this batch id to get acknowledged by server, if there is any. */
-  private void resolveTasksAwaitingForPendingWritesIfAny(int batchId) {
+  private void resolvePendingWriteTasks(int batchId) {
     if (pendingWritesCallbacks.containsKey(batchId)) {
       for (TaskCompletionSource<Void> task : pendingWritesCallbacks.get(batchId)) {
         task.setResult(null);

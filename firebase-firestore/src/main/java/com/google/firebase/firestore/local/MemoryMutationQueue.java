@@ -188,8 +188,8 @@ final class MemoryMutationQueue implements MutationQueue {
   }
 
   @Override
-  public int getLargestUnacknowledgedBatchId() {
-    return queue.size() == 0 ? 0 : nextBatchId - 1;
+  public int getHighestUnacknowledgedBatchId() {
+    return queue.isEmpty() ? 0 : nextBatchId - 1;
   }
 
   @Override

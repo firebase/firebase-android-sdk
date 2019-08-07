@@ -77,7 +77,7 @@ interface MutationQueue {
    * @return The largest (latest) batch id in mutation queue for the current user that is pending
    *     server response, 0 if the queue is empty.
    */
-  int getLargestUnacknowledgedBatchId();
+  int getHighestUnacknowledgedBatchId();
 
   /** Returns all mutation batches in the mutation queue. */
   // TODO: PERF: Current consumer only needs mutated keys; if we can provide that

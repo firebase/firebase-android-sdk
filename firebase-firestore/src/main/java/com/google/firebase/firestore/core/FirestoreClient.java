@@ -230,12 +230,6 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
    */
   public Task<Void> waitForPendingWrites() {
     this.verifyNotShutdown();
-    if (!remoteStore.canUseNetwork()) {
-      Logger.warn(
-          LOG_TAG,
-          "Network is disabled, the Task created to wait for all writes getting"
-              + " acknowledged by server will not complete until network is enabled.");
-    }
 
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(() -> syncEngine.registerPendingWritesTask(source));

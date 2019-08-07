@@ -1117,8 +1117,7 @@ public class FirestoreTest {
     assertTrue(!pendingWrite.isComplete());
     assertTrue(!awaitsPendingWrites2.isComplete());
 
-    waitFor(firestore.enableNetwork());
-    waitFor(pendingWrite);
+    firestore.enableNetwork();
     waitFor(awaitsPendingWrites2);
     assertTrue(awaitsPendingWrites2.isComplete() && awaitsPendingWrites2.isSuccessful());
   }

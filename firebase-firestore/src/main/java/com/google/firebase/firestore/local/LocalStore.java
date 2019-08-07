@@ -287,7 +287,7 @@ public final class LocalStore {
    * Returns 0 if the queue is empty.
    */
   public int getHighestUnacknowledgedBatchId() {
-    return mutationQueue.getLargestUnacknowledgedBatchId();
+    return mutationQueue.getHighestUnacknowledgedBatchId();
   }
 
   /** Returns the last recorded stream token for the current user. */

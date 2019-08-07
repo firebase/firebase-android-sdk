@@ -363,12 +363,10 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Wait for server acknowledgement for all pending writes existing at the time of calling this
-   * method.
+   * Wait until all pending writes existed at the time of calling are sent to the backend.
    *
-   * <p>Both acceptance and rejection count as server acknowledgement.
-   *
-   * @return A {@link Task} which resolves when all pending writes are acknowledged by the server.
+   * @return A {@link Task} which resolves when all pending writes are sent to the backend. If there
+   *     is a Firebase user change, the return {@link Task} will resolve to an exception.
    */
   Task<Void> waitForPendingWrites() {
     return client.waitForPendingWrites();

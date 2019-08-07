@@ -1145,7 +1145,7 @@ public abstract class LocalStoreTestCase {
   }
 
   @Test
-  public void testGetHighestUnacknowledgedBatchIdReturnsExpectedResult() {
+  public void testGetHighestUnacknowledgedBatchId() {
     assertEquals(0, localStore.getHighestUnacknowledgedBatchId());
 
     writeMutation(setMutation("foo/bar", map("abc", 123)));
