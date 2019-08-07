@@ -363,10 +363,12 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Wait until all pending writes existed at the time of calling are sent to the backend.
+   * Waits until all pending writes that existed at the time of calling have been successfully
+   * written to the server.
    *
-   * @return A {@link Task} which resolves when all pending writes are sent to the backend. If there
-   *     is a Firebase user change, the return {@link Task} will resolve to an exception.
+   * @return A {@code Task} which resolves when all pending writes are written to the backend. If
+   *     there is a Firebase user change, the returned {@code Task} will resolve to an exception. If
+   *     the client is offline, the returned {@code Task} will not resolve.
    */
   Task<Void> waitForPendingWrites() {
     return client.waitForPendingWrites();
