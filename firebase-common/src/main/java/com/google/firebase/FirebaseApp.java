@@ -100,6 +100,7 @@ public class FirebaseApp {
 
   private static final String FIREBASE_ANDROID = "fire-android";
   private static final String FIREBASE_COMMON = "fire-core";
+  private static final String FIREBASE_KOTLIN = "fire-kotlin";
 
   private final Context applicationContext;
   private final String name;
@@ -397,6 +398,8 @@ public class FirebaseApp {
 
     List<ComponentRegistrar> registrars =
         ComponentDiscovery.forContext(applicationContext).discover();
+
+    String kotlinVersion = detectKotlinVersion();
     componentRuntime =
         new ComponentRuntime(
             UI_EXECUTOR,
@@ -406,7 +409,11 @@ public class FirebaseApp {
             Component.of(options, FirebaseOptions.class),
             LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
             LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
+            kotlinVersion != null
+                ? LibraryVersionComponent.create(FIREBASE_KOTLIN, kotlinVersion)
+                : null,
             DefaultUserAgentPublisher.component());
+
     dataCollectionConfigStorage =
         new Lazy<>(
             () ->
@@ -666,6 +673,15 @@ public class FirebaseApp {
     @Override
     public void execute(@NonNull Runnable command) {
       HANDLER.post(command);
+    }
+  }
+
+  @Nullable
+  private static String detectKotlinVersion() {
+    try {
+      return kotlin.KotlinVersion.CURRENT.toString();
+    } catch (NoClassDefFoundError ex) {
+      return null;
     }
   }
 }
