@@ -15,10 +15,10 @@
 package com.google.firebase.installations;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 
 /**
