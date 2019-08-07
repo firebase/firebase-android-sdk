@@ -25,7 +25,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -48,7 +47,6 @@ import java.util.concurrent.Executor;
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
  * code that does so.
  */
-@PublicApi
 public class FirebaseFirestore {
 
   /** Provides a registry management interface for {@code FirebaseFirestore} instances. */
@@ -74,7 +72,6 @@ public class FirebaseFirestore {
   private volatile FirestoreClient client;
 
   @NonNull
-  @PublicApi
   public static FirebaseFirestore getInstance() {
     FirebaseApp app = FirebaseApp.getInstance();
     if (app == null) {
@@ -84,7 +81,6 @@ public class FirebaseFirestore {
   }
 
   @NonNull
-  @PublicApi
   public static FirebaseFirestore getInstance(@NonNull FirebaseApp app) {
     return getInstance(app, DatabaseId.DEFAULT_DATABASE_ID);
   }
@@ -157,7 +153,6 @@ public class FirebaseFirestore {
 
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
   @NonNull
-  @PublicApi
   public FirebaseFirestoreSettings getFirestoreSettings() {
     return settings;
   }
@@ -166,7 +161,6 @@ public class FirebaseFirestore {
    * Sets any custom settings used to configure this {@code FirebaseFirestore} object. This method
    * can only be called before calling any other methods on this object.
    */
-  @PublicApi
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
@@ -201,7 +195,6 @@ public class FirebaseFirestore {
 
   /** Returns the FirebaseApp instance to which this {@code FirebaseFirestore} belongs. */
   @NonNull
-  @PublicApi
   public FirebaseApp getApp() {
     return firebaseApp;
   }
@@ -214,7 +207,6 @@ public class FirebaseFirestore {
    * @return The {@code CollectionReference} instance.
    */
   @NonNull
-  @PublicApi
   public CollectionReference collection(@NonNull String collectionPath) {
     checkNotNull(collectionPath, "Provided collection path must not be null.");
     ensureClientConfigured();
@@ -229,7 +221,6 @@ public class FirebaseFirestore {
    * @return The DocumentReference instance.
    */
   @NonNull
-  @PublicApi
   public DocumentReference document(@NonNull String documentPath) {
     checkNotNull(documentPath, "Provided document path must not be null.");
     ensureClientConfigured();
@@ -245,7 +236,6 @@ public class FirebaseFirestore {
    * @return The created Query.
    */
   @NonNull
-  @PublicApi
   public Query collectionGroup(@NonNull String collectionId) {
     checkNotNull(collectionId, "Provided collection ID must not be null.");
     if (collectionId.contains("/")) {
@@ -301,7 +291,6 @@ public class FirebaseFirestore {
    * @return The task returned from the updateFunction.
    */
   @NonNull
-  @PublicApi
   public <TResult> Task<TResult> runTransaction(
       @NonNull Transaction.Function<TResult> updateFunction) {
     checkNotNull(updateFunction, "Provided transaction update function must not be null.");
@@ -320,7 +309,6 @@ public class FirebaseFirestore {
    * @return The created WriteBatch object.
    */
   @NonNull
-  @PublicApi
   public WriteBatch batch() {
     ensureClientConfigured();
 
@@ -335,7 +323,6 @@ public class FirebaseFirestore {
    * @return A Task that will be resolved when the batch has been committed.
    */
   @NonNull
-  @PublicApi
   public Task<Void> runBatch(@NonNull WriteBatch.Function batchFunction) {
     WriteBatch batch = batch();
     batchFunction.apply(batch);
@@ -385,7 +372,7 @@ public class FirebaseFirestore {
    *
    * @return A Task that will be completed once networking is enabled.
    */
-  @PublicApi
+  @NonNull
   public Task<Void> enableNetwork() {
     ensureClientConfigured();
     return client.enableNetwork();
@@ -398,14 +385,13 @@ public class FirebaseFirestore {
    *
    * @return A Task that will be completed once networking is disabled.
    */
-  @PublicApi
+  @NonNull
   public Task<Void> disableNetwork() {
     ensureClientConfigured();
     return client.disableNetwork();
   }
 
   /** Globally enables / disables Cloud Firestore logging for the SDK. */
-  @PublicApi
   public static void setLoggingEnabled(boolean loggingEnabled) {
     if (loggingEnabled) {
       Logger.setLogLevel(Level.DEBUG);
@@ -432,7 +418,7 @@ public class FirebaseFirestore {
    * @return A {@code Task} that is resolved when the persistent storage is cleared. Otherwise, the
    *     {@code Task} is rejected with an error.
    */
-  @PublicApi
+  @NonNull
   public Task<Void> clearPersistence() {
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForgetEvenAfterShutdown(

@@ -14,11 +14,10 @@
 
 package com.google.firebase.storage;
 
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
 
 /** A listener that is called if the Task is paused via {@link ControllableTask#pause()}. */
-@PublicApi
 public interface OnPausedListener<ProgressT> {
-  @PublicApi
-  void onPaused(ProgressT snapshot);
+
+  void onPaused(@NonNull ProgressT snapshot);
 }

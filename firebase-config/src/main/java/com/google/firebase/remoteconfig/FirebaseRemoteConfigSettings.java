@@ -17,6 +17,8 @@ package com.google.firebase.remoteconfig;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.NETWORK_CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 
+import androidx.annotation.NonNull;
+
 /**
  * Wraps the settings for {@link FirebaseRemoteConfig} operations.
  *
@@ -60,6 +62,7 @@ public class FirebaseRemoteConfigSettings {
   }
 
   /** Constructs a builder initialized with the current FirebaseRemoteConfigSettings. */
+  @NonNull
   public FirebaseRemoteConfigSettings.Builder toBuilder() {
     FirebaseRemoteConfigSettings.Builder frcBuilder = new FirebaseRemoteConfigSettings.Builder();
     frcBuilder.setDeveloperModeEnabled(this.isDeveloperModeEnabled());
@@ -82,6 +85,7 @@ public class FirebaseRemoteConfigSettings {
      *     setting.
      * @deprecated Use {@link #setMinimumFetchIntervalInSeconds(long)} instead.
      */
+    @NonNull
     @Deprecated
     public Builder setDeveloperModeEnabled(boolean enabled) {
       enableDeveloperMode = enabled;
@@ -97,6 +101,7 @@ public class FirebaseRemoteConfigSettings {
      *
      * @param duration Timeout duration in seconds. Should be a non-negative number.
      */
+    @NonNull
     public Builder setFetchTimeoutInSeconds(long duration) throws IllegalArgumentException {
       if (duration < 0) {
         throw new IllegalArgumentException(
@@ -117,6 +122,7 @@ public class FirebaseRemoteConfigSettings {
      *
      * @param duration Interval duration in seconds. Should be a non-negative number.
      */
+    @NonNull
     public Builder setMinimumFetchIntervalInSeconds(long duration) {
       if (duration < 0) {
         throw new IllegalArgumentException(
@@ -131,6 +137,7 @@ public class FirebaseRemoteConfigSettings {
     /**
      * Returns a {@link FirebaseRemoteConfigSettings} with the settings provided to this builder.
      */
+    @NonNull
     public FirebaseRemoteConfigSettings build() {
       return new FirebaseRemoteConfigSettings(this);
     }

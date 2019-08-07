@@ -16,6 +16,8 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.common.base.Function;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
@@ -23,8 +25,6 @@ import com.google.firestore.v1.Value;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Represents a document in Firestore with a key, version, data and whether the data has local
@@ -90,7 +90,7 @@ public final class Document extends MaybeDocument {
     return proto;
   }
 
-  @Nonnull
+  @NonNull
   public ObjectValue getData() {
     if (objectValue == null) {
       hardAssert(proto != null && converter != null, "Expected proto and converter to be non-null");

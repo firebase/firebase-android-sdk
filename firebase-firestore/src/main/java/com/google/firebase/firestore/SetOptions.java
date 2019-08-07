@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +31,6 @@ import java.util.Set;
  * can be configured to perform granular merges instead of overwriting the target documents in their
  * entirety.
  */
-@PublicApi
 public final class SetOptions {
 
   static final SetOptions OVERWRITE = new SetOptions(false, null);
@@ -64,14 +62,13 @@ public final class SetOptions {
    * argument. Fields omitted from the {@code set()} call will remain untouched.
    */
   @NonNull
-  @PublicApi
   public static SetOptions merge() {
     return MERGE_ALL_FIELDS;
   }
 
   /**
-   * Changes the behavior of {@code set()} calls to only replace the fields under fieldPaths. Any
-   * field that is not specified in fieldPaths is ignored and remains untouched.
+   * Changes the behavior of {@code set()} calls to only replace the given fields. Any field that is
+   * not specified in {@code fields} is ignored and remains untouched.
    *
    * <p>It is an error to pass a {@code SetOptions} object to a {@code set()} call that is missing a
    * value for any of the fields specified here.
@@ -80,7 +77,6 @@ public final class SetOptions {
    *     within the document.
    */
   @NonNull
-  @PublicApi
   public static SetOptions mergeFields(@NonNull List<String> fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
@@ -92,8 +88,8 @@ public final class SetOptions {
   }
 
   /**
-   * Changes the behavior of {@code set()} calls to only replace the fields under fieldPaths. Any
-   * field that is not specified in fieldPaths is ignored and remains untouched.
+   * Changes the behavior of {@code set()} calls to only replace the given fields. Any field that is
+   * not specified in {@code fields} is ignored and remains untouched.
    *
    * <p>It is an error to pass a {@code SetOptions} object to a {@code set()} call that is missing a
    * value for any of the fields specified here.
@@ -102,7 +98,6 @@ public final class SetOptions {
    *     within the document.
    */
   @NonNull
-  @PublicApi
   public static SetOptions mergeFields(String... fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 
@@ -114,8 +109,8 @@ public final class SetOptions {
   }
 
   /**
-   * Changes the behavior of {@code set()} calls to only replace the fields under fieldPaths. Any
-   * field that is not specified in fieldPaths is ignored and remains untouched.
+   * Changes the behavior of {@code set()} calls to only replace the given fields. Any field that is
+   * not specified in {@code fields} is ignored and remains untouched.
    *
    * <p>It is an error to pass a {@code SetOptions} object to a {@code set()} call that is missing a
    * value for any of the fields specified here in its to data argument.
@@ -123,7 +118,6 @@ public final class SetOptions {
    * @param fields The list of fields to merge.
    */
   @NonNull
-  @PublicApi
   public static SetOptions mergeFieldPaths(@NonNull List<FieldPath> fields) {
     Set<com.google.firebase.firestore.model.FieldPath> fieldPaths = new HashSet<>();
 

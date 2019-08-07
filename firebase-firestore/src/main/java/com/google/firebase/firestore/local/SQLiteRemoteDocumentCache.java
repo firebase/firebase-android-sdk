@@ -17,7 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import com.google.firebase.Timestamp;
+import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
@@ -52,18 +51,13 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public void add(MaybeDocument maybeDocument) {
     String path = pathForKey(maybeDocument.getKey());
-    Timestamp timestamp = maybeDocument.getVersion().getTimestamp();
     MessageLite message = serializer.encodeMaybeDocument(maybeDocument);
 
     statsCollector.recordRowsWritten(STATS_TAG, 1);
 
     db.execute(
-        "INSERT OR REPLACE INTO remote_documents "
-            + "(path, update_time_seconds, update_time_nanos, contents) "
-            + "VALUES (?, ?, ?, ?)",
+        "INSERT OR REPLACE INTO remote_documents (path, contents) VALUES (?, ?)",
         path,
-        timestamp.getSeconds(),
-        timestamp.getNanoseconds(),
         message.toByteArray());
 
     db.getIndexManager().addToCollectionParentIndex(maybeDocument.getKey().getPath().popLast());

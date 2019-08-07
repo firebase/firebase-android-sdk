@@ -29,12 +29,6 @@ class PublishingPluginSpec extends Specification {
         plugins {
             id 'firebase-library'
         }
-        firebaseLibrary {
-          staticAnalysis {
-            errorproneCheckProjects = []
-            androidLintCheckProjects = []
-          }
-        }
         group = '${group}'
         version = '${version}'
         <% if (latestReleasedVersion) println "ext.latestReleasedVersion = $latestReleasedVersion" %>

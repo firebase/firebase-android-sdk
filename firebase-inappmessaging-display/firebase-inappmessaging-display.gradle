@@ -19,7 +19,6 @@ plugins {
 firebaseLibrary {
     testLab.enabled = true
     publishSources = true
-    staticAnalysis.disableKotlinInteropLint()
 }
 
 android {
@@ -34,9 +33,11 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // TODO: b/111563140
     lintOptions {
-        abortOnError false
+        // TODO: b/111563140
+        disable "InvalidPackage"
+
+        disable "FirebaseUnknownNullness"
     }
 
     compileOptions {

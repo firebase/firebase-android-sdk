@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.model.DocumentCollections.emptyDocum
 import static com.google.firebase.firestore.model.DocumentCollections.emptyMaybeDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -27,7 +28,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /** In-memory cache of remote documents. */
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {

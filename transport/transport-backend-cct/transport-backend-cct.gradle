@@ -19,7 +19,6 @@ plugins {
 
 firebaseLibrary{
     publishJavadoc = false
-    staticAnalysis.disableKotlinInteropLint()
 }
 
 protobuf {
@@ -54,6 +53,7 @@ android {
         minSdkVersion 14
         targetSdkVersion 28
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        versionName version
     }
     compileOptions {
         sourceCompatibility = '1.8'

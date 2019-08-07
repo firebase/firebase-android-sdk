@@ -3442,17 +3442,12 @@
     },
     "steps": [
       {
-        "drainQueue": true,
-        "clientIndex": 0
-      },
-      {
         "userSet": [
           "collection/a",
           {
             "matches": true
           }
-        ],
-        "clientIndex": 0
+        ]
       },
       {
         "userSet": [
@@ -3460,8 +3455,7 @@
           {
             "matches": true
           }
-        ],
-        "clientIndex": 0
+        ]
       },
       {
         "writeAck": {
@@ -3474,8 +3468,7 @@
             ],
             "rejectedDocs": []
           }
-        },
-        "clientIndex": 0
+        }
       },
       {
         "writeAck": {
@@ -3488,8 +3481,7 @@
             ],
             "rejectedDocs": []
           }
-        },
-        "clientIndex": 0
+        }
       },
       {
         "userListen": [
@@ -3547,14 +3539,12 @@
             "fromCache": true,
             "hasPendingWrites": false
           }
-        ],
-        "clientIndex": 0
+        ]
       },
       {
         "watchAck": [
           2
-        ],
-        "clientIndex": 0
+        ]
       },
       {
         "watchEntity": {
@@ -3574,8 +3564,7 @@
           "targets": [
             2
           ]
-        },
-        "clientIndex": 0
+        }
       },
       {
         "watchCurrent": [
@@ -3583,8 +3572,7 @@
             2
           ],
           "resume-token-2000"
-        ],
-        "clientIndex": 0
+        ]
       },
       {
         "watchSnapshot": {
@@ -3613,8 +3601,7 @@
               "resumeToken": ""
             }
           }
-        },
-        "clientIndex": 0
+        }
       },
       {
         "userListen": [
@@ -3706,8 +3693,7 @@
             "fromCache": true,
             "hasPendingWrites": false
           }
-        ],
-        "clientIndex": 0
+        ]
       },
       {
         "userUnlisten": [
@@ -3736,8 +3722,7 @@
             }
           },
           "limboDocs": []
-        },
-        "clientIndex": 0
+        }
       },
       {
         "userListen": [
@@ -3809,8 +3794,7 @@
             "fromCache": true,
             "hasPendingWrites": false
           }
-        ],
-        "clientIndex": 0
+        ]
       }
     ]
   }
