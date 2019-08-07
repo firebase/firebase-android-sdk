@@ -18,17 +18,17 @@ import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
 
 /**
- * This class represents a cache entry value in {@link FirebaseInstallationIdCache}, which contains
- * a Firebase instance id and the cache status of this entry.
+ * This class represents a cache entry value in {@link FiidCache}, which contains a Firebase
+ * instance id and the cache status of this entry.
  */
 @AutoValue
-public abstract class FirebaseInstallationIdCacheEntryValue {
+public abstract class FiidCacheEntryValue {
 
   @NonNull
   public abstract String getFirebaseInstallationId();
 
   @NonNull
-  public abstract FirebaseInstallationIdCache.CacheStatus getCacheStatus();
+  public abstract FiidCache.CacheStatus getCacheStatus();
 
   @NonNull
   public abstract String getAuthToken();
@@ -36,19 +36,24 @@ public abstract class FirebaseInstallationIdCacheEntryValue {
   @NonNull
   public abstract String getRefreshToken();
 
-  public abstract long getExpiresIn();
+  public abstract long getExpiresInSecs();
 
-  public abstract long getTokenCreationTime();
+  public abstract long getTokenCreationEpochInSecs();
 
   @NonNull
-  public static FirebaseInstallationIdCacheEntryValue create(
+  public static FiidCacheEntryValue create(
       @NonNull String firebaseInstallationId,
-      @NonNull FirebaseInstallationIdCache.CacheStatus cacheStatus,
+      @NonNull FiidCache.CacheStatus cacheStatus,
       @NonNull String authToken,
       @NonNull String refreshToken,
-      long tokenCreationTime,
-      long expiresIn) {
-    return new AutoValue_FirebaseInstallationIdCacheEntryValue(
-        firebaseInstallationId, cacheStatus, authToken, refreshToken, expiresIn, tokenCreationTime);
+      long tokenCreationEpochInSecs,
+      long expiresInSecs) {
+    return new AutoValue_FiidCacheEntryValue(
+        firebaseInstallationId,
+        cacheStatus,
+        authToken,
+        refreshToken,
+        expiresInSecs,
+        tokenCreationEpochInSecs);
   }
 }

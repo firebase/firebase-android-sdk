@@ -170,7 +170,7 @@ public class FirebaseDatabaseTest {
     config.setPersistenceCacheSizeBytes(1 * 1024 * 1024);
 
     try {
-      FirebaseDatabase db = new DatabaseReference("", config).getDatabase();
+      FirebaseDatabase db = new DatabaseReference("http://localhost", config).getDatabase();
       db.setPersistenceCacheSizeBytes(1 * 1024 * 1024);
       fail("should throw - can't modify after init");
     } catch (DatabaseException e) {
