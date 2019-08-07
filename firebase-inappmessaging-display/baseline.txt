@@ -1,0 +1,3 @@
+// Baseline format: 1.0
+HiddenSuperclass: com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay:
+    Public class com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay stripped of unavailable superclass com.google.firebase.inappmessaging.display.internal.FirebaseInAppMessagingDisplayImpl

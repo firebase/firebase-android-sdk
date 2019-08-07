@@ -1,0 +1,13 @@
+// Baseline format: 1.0
+HiddenTypeParameter: com.google.android.datatransport.runtime.TransportRuntime#send(com.google.android.datatransport.runtime.SendRequest) parameter #0:
+    Parameter request references hidden type com.google.android.datatransport.runtime.SendRequest.
+
+
+ReferencesHidden: com.google.android.datatransport.runtime.TransportRuntime#send(com.google.android.datatransport.runtime.SendRequest) parameter #0:
+    Class com.google.android.datatransport.runtime.SendRequest is not public but was referenced (as parameter type) from public parameter request in com.google.android.datatransport.runtime.TransportRuntime.send(com.google.android.datatransport.runtime.SendRequest request)
+
+
+RemovedInterface: com.google.android.datatransport.runtime.time.Monotonic:
+    Class com.google.android.datatransport.runtime.time.Monotonic no longer implements java.lang.annotation.Annotation
+RemovedInterface: com.google.android.datatransport.runtime.time.WallTime:
+    Class com.google.android.datatransport.runtime.time.WallTime no longer implements java.lang.annotation.Annotation

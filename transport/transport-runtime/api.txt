@@ -1,0 +1,297 @@
+// Signature format: 2.0
+package com.google.android.datatransport.runtime {
+
+  public abstract class EventInternal {
+    ctor public EventInternal();
+    method public static com.google.android.datatransport.runtime.EventInternal.Builder builder();
+    method public final String get(String);
+    method protected abstract Map<String,String> getAutoMetadata();
+    method @Nullable public abstract Integer getCode();
+    method public abstract long getEventMillis();
+    method public final int getInteger(String);
+    method public final long getLong(String);
+    method public final Map<String,String> getMetadata();
+    method public final String getOrDefault(String, String);
+    method public abstract byte[] getPayload();
+    method public abstract String getTransportName();
+    method public abstract long getUptimeMillis();
+    method public com.google.android.datatransport.runtime.EventInternal.Builder toBuilder();
+  }
+
+  public abstract static class EventInternal.Builder {
+    ctor public EventInternal.Builder();
+    method public final com.google.android.datatransport.runtime.EventInternal.Builder addMetadata(String, String);
+    method public final com.google.android.datatransport.runtime.EventInternal.Builder addMetadata(String, long);
+    method public final com.google.android.datatransport.runtime.EventInternal.Builder addMetadata(String, int);
+    method public abstract com.google.android.datatransport.runtime.EventInternal build();
+    method protected abstract Map<String,String> getAutoMetadata();
+    method protected abstract com.google.android.datatransport.runtime.EventInternal.Builder setAutoMetadata(Map<String,String>);
+    method public abstract com.google.android.datatransport.runtime.EventInternal.Builder setCode(Integer);
+    method public abstract com.google.android.datatransport.runtime.EventInternal.Builder setEventMillis(long);
+    method public abstract com.google.android.datatransport.runtime.EventInternal.Builder setPayload(byte[]);
+    method public abstract com.google.android.datatransport.runtime.EventInternal.Builder setTransportName(String);
+    method public abstract com.google.android.datatransport.runtime.EventInternal.Builder setUptimeMillis(long);
+  }
+
+  public abstract class TransportContext {
+    ctor public TransportContext();
+    method public static com.google.android.datatransport.runtime.TransportContext.Builder builder();
+    method public abstract String getBackendName();
+  }
+
+  public abstract static class TransportContext.Builder {
+    ctor public TransportContext.Builder();
+    method public abstract com.google.android.datatransport.runtime.TransportContext build();
+    method public abstract com.google.android.datatransport.runtime.TransportContext.Builder setBackendName(String);
+  }
+
+  public class TransportRuntime {
+    method public static com.google.android.datatransport.runtime.TransportRuntime getInstance();
+    method public com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader getUploader();
+    method public static void initialize(Context);
+    method public TransportFactory newFactory(String);
+    method public void send(com.google.android.datatransport.runtime.SendRequest);
+  }
+
+}
+
+package com.google.android.datatransport.runtime.backends {
+
+  public interface BackendFactory {
+    method public com.google.android.datatransport.runtime.backends.TransportBackend create(com.google.android.datatransport.runtime.backends.CreationContext);
+  }
+
+  public interface BackendRegistry {
+    method @Nullable public com.google.android.datatransport.runtime.backends.TransportBackend get(String);
+  }
+
+  public abstract class BackendRegistryModule {
+    ctor public BackendRegistryModule();
+  }
+
+  public abstract class BackendRequest {
+    ctor public BackendRequest();
+    method public static com.google.android.datatransport.runtime.backends.BackendRequest create(Iterable<EventInternal>);
+    method public abstract Iterable<EventInternal> getEvents();
+  }
+
+  public abstract class BackendResponse {
+    ctor public BackendResponse();
+    method public static com.google.android.datatransport.runtime.backends.BackendResponse fatalError();
+    method public abstract long getNextRequestWaitMillis();
+    method public abstract com.google.android.datatransport.runtime.backends.BackendResponse.Status getStatus();
+    method public static com.google.android.datatransport.runtime.backends.BackendResponse ok(long);
+    method public static com.google.android.datatransport.runtime.backends.BackendResponse transientError();
+  }
+
+  public enum BackendResponse.Status {
+    enum_constant public static final com.google.android.datatransport.runtime.backends.BackendResponse.Status FATAL_ERROR;
+    enum_constant public static final com.google.android.datatransport.runtime.backends.BackendResponse.Status OK;
+    enum_constant public static final com.google.android.datatransport.runtime.backends.BackendResponse.Status TRANSIENT_ERROR;
+  }
+
+  public abstract class CreationContext {
+    ctor public CreationContext();
+    method public static com.google.android.datatransport.runtime.backends.CreationContext create(Context, com.google.android.datatransport.runtime.time.Clock, com.google.android.datatransport.runtime.time.Clock);
+    method public abstract Context getApplicationContext();
+    method public abstract com.google.android.datatransport.runtime.time.Clock getMonotonicClock();
+    method public abstract com.google.android.datatransport.runtime.time.Clock getWallClock();
+  }
+
+  public interface TransportBackend {
+    method public com.google.android.datatransport.runtime.EventInternal decorate(com.google.android.datatransport.runtime.EventInternal);
+    method public com.google.android.datatransport.runtime.backends.BackendResponse send(com.google.android.datatransport.runtime.backends.BackendRequest);
+  }
+
+  public class TransportBackendDiscovery {
+    ctor public TransportBackendDiscovery();
+    method public IBinder onBind(Intent);
+  }
+
+}
+
+package com.google.android.datatransport.runtime.scheduling {
+
+  public class DefaultScheduler implements com.google.android.datatransport.runtime.scheduling.Scheduler {
+    method public void schedule(com.google.android.datatransport.runtime.TransportContext, com.google.android.datatransport.runtime.EventInternal);
+  }
+
+  public class ImmediateScheduler implements com.google.android.datatransport.runtime.scheduling.Scheduler {
+    ctor public ImmediateScheduler(Executor, com.google.android.datatransport.runtime.backends.BackendRegistry);
+    method public void schedule(com.google.android.datatransport.runtime.TransportContext, com.google.android.datatransport.runtime.EventInternal);
+  }
+
+  public interface Scheduler {
+    method public void schedule(com.google.android.datatransport.runtime.TransportContext, com.google.android.datatransport.runtime.EventInternal);
+  }
+
+  public abstract class SchedulingConfigModule {
+    ctor public SchedulingConfigModule();
+  }
+
+  public abstract class SchedulingModule {
+    ctor public SchedulingModule();
+  }
+
+}
+
+package com.google.android.datatransport.runtime.scheduling.jobscheduling {
+
+  public class AlarmManagerScheduler implements com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler {
+    ctor public AlarmManagerScheduler(Context, com.google.android.datatransport.runtime.scheduling.persistence.EventStore, com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig);
+    method public void schedule(com.google.android.datatransport.runtime.TransportContext, int);
+  }
+
+  public class AlarmManagerSchedulerBroadcastReceiver {
+    ctor public AlarmManagerSchedulerBroadcastReceiver();
+    method public void onReceive(Context, Intent);
+  }
+
+  public class JobInfoScheduler implements com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler {
+    ctor public JobInfoScheduler(Context, com.google.android.datatransport.runtime.scheduling.persistence.EventStore, com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig);
+    method public void schedule(com.google.android.datatransport.runtime.TransportContext, int);
+  }
+
+  public class JobInfoSchedulerService {
+    ctor public JobInfoSchedulerService();
+    method public boolean onStartJob(JobParameters);
+    method public boolean onStopJob(JobParameters);
+  }
+
+  public abstract class SchedulerConfig {
+    ctor public SchedulerConfig();
+    method public static com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.Builder builder();
+    method public JobInfo.Builder configureJob(JobInfo.Builder, Priority, long, int);
+    method public static com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig getDefault(com.google.android.datatransport.runtime.time.Clock);
+    method public Set<Flag> getFlags(Priority);
+    method public long getScheduleDelay(Priority, long, int);
+  }
+
+  public static class SchedulerConfig.Builder {
+    ctor public SchedulerConfig.Builder();
+    method public com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.Builder addConfig(Priority, com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.ConfigValue);
+    method public com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig build();
+    method public com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.Builder setClock(com.google.android.datatransport.runtime.time.Clock);
+  }
+
+  public abstract static class SchedulerConfig.ConfigValue {
+    ctor public SchedulerConfig.ConfigValue();
+    method public static com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.ConfigValue.Builder builder();
+  }
+
+  public abstract static class SchedulerConfig.ConfigValue.Builder {
+    ctor public SchedulerConfig.ConfigValue.Builder();
+    method public abstract com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.ConfigValue build();
+    method public abstract com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.ConfigValue.Builder setDelta(long);
+    method public abstract com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.ConfigValue.Builder setFlags(Set<Flag>);
+    method public abstract com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.ConfigValue.Builder setMaxAllowedDelay(long);
+  }
+
+  public enum SchedulerConfig.Flag {
+    enum_constant public static final com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.Flag DEVICE_CHARGING;
+    enum_constant public static final com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.Flag DEVICE_IDLE;
+    enum_constant public static final com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig.Flag NETWORK_UNMETERED;
+  }
+
+  public class Uploader {
+    ctor public Uploader(Context, com.google.android.datatransport.runtime.backends.BackendRegistry, com.google.android.datatransport.runtime.scheduling.persistence.EventStore, com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler, Executor, com.google.android.datatransport.runtime.synchronization.SynchronizationGuard, @com.google.android.datatransport.runtime.time.WallTime com.google.android.datatransport.runtime.time.Clock);
+    method public void upload(com.google.android.datatransport.runtime.TransportContext, int, Runnable);
+  }
+
+  public interface WorkScheduler {
+    method public void schedule(com.google.android.datatransport.runtime.TransportContext, int);
+  }
+
+}
+
+package com.google.android.datatransport.runtime.scheduling.persistence {
+
+  public interface EventStore {
+    method public int cleanUp();
+    method public long getNextCallTime(com.google.android.datatransport.runtime.TransportContext);
+    method public boolean hasPendingEventsFor(com.google.android.datatransport.runtime.TransportContext);
+    method public Iterable<PersistedEvent> loadBatch(com.google.android.datatransport.runtime.TransportContext);
+    method @Nullable public com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent persist(com.google.android.datatransport.runtime.TransportContext, com.google.android.datatransport.runtime.EventInternal);
+    method public void recordFailure(Iterable<PersistedEvent>);
+    method public void recordNextCallTime(com.google.android.datatransport.runtime.TransportContext, long);
+    method public void recordSuccess(Iterable<PersistedEvent>);
+  }
+
+  public abstract class EventStoreModule {
+    ctor public EventStoreModule();
+  }
+
+  public abstract class PersistedEvent {
+    ctor public PersistedEvent();
+    method public static com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent create(long, com.google.android.datatransport.runtime.TransportContext, com.google.android.datatransport.runtime.EventInternal);
+    method public abstract com.google.android.datatransport.runtime.EventInternal getEvent();
+    method public abstract long getId();
+    method public abstract com.google.android.datatransport.runtime.TransportContext getTransportContext();
+  }
+
+  public class SQLiteEventStore implements com.google.android.datatransport.runtime.scheduling.persistence.EventStore com.google.android.datatransport.runtime.synchronization.SynchronizationGuard {
+    method public int cleanUp();
+    method public void close();
+    method public long getNextCallTime(com.google.android.datatransport.runtime.TransportContext);
+    method public boolean hasPendingEventsFor(com.google.android.datatransport.runtime.TransportContext);
+    method public Iterable<PersistedEvent> loadBatch(com.google.android.datatransport.runtime.TransportContext);
+    method @Nullable public com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent persist(com.google.android.datatransport.runtime.TransportContext, com.google.android.datatransport.runtime.EventInternal);
+    method public void recordFailure(Iterable<PersistedEvent>);
+    method public void recordNextCallTime(com.google.android.datatransport.runtime.TransportContext, long);
+    method public void recordSuccess(Iterable<PersistedEvent>);
+    method public <T> T runCriticalSection(com.google.android.datatransport.runtime.synchronization.SynchronizationGuard.CriticalSection<T>);
+  }
+
+}
+
+package com.google.android.datatransport.runtime.synchronization {
+
+  public class SynchronizationException {
+    ctor public SynchronizationException(String, Throwable);
+  }
+
+  public interface SynchronizationGuard {
+    method public <T> T runCriticalSection(com.google.android.datatransport.runtime.synchronization.SynchronizationGuard.CriticalSection<T>);
+  }
+
+  public static interface SynchronizationGuard.CriticalSection<T> {
+    method public T execute();
+  }
+
+}
+
+package com.google.android.datatransport.runtime.time {
+
+  public interface Clock {
+    method public long getTime();
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Monotonic {
+  }
+
+  public class TestClock implements com.google.android.datatransport.runtime.time.Clock {
+    ctor public TestClock(long);
+    method public void advance(long);
+    method public long getTime();
+    method public void tick();
+  }
+
+  public abstract class TimeModule {
+    ctor public TimeModule();
+  }
+
+  public class UptimeClock implements com.google.android.datatransport.runtime.time.Clock {
+    ctor public UptimeClock();
+    method public long getTime();
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface WallTime {
+  }
+
+  public class WallTimeClock implements com.google.android.datatransport.runtime.time.Clock {
+    ctor public WallTimeClock();
+    method public long getTime();
+  }
+
+}
+

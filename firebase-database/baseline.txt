@@ -1,0 +1,9 @@
+// Baseline format: 1.0
+RemovedInterface: com.google.firebase.database.Exclude:
+    Class com.google.firebase.database.Exclude no longer implements java.lang.annotation.Annotation
+RemovedInterface: com.google.firebase.database.IgnoreExtraProperties:
+    Class com.google.firebase.database.IgnoreExtraProperties no longer implements java.lang.annotation.Annotation
+RemovedInterface: com.google.firebase.database.PropertyName:
+    Class com.google.firebase.database.PropertyName no longer implements java.lang.annotation.Annotation
+RemovedInterface: com.google.firebase.database.ThrowOnExtraProperties:
+    Class com.google.firebase.database.ThrowOnExtraProperties no longer implements java.lang.annotation.Annotation

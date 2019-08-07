@@ -1,0 +1,33 @@
+// Signature format: 2.0
+package com.google.android.datatransport {
+
+  public abstract class Event<T> {
+    ctor public Event();
+    method @Nullable public abstract Integer getCode();
+    method public abstract T getPayload();
+    method public abstract com.google.android.datatransport.Priority getPriority();
+    method public static <T> com.google.android.datatransport.Event<T> ofData(int, T);
+    method public static <T> com.google.android.datatransport.Event<T> ofData(T);
+    method public static <T> com.google.android.datatransport.Event<T> ofTelemetry(int, T);
+    method public static <T> com.google.android.datatransport.Event<T> ofTelemetry(T);
+  }
+
+  public enum Priority {
+    enum_constant public static final com.google.android.datatransport.Priority DEFAULT;
+    enum_constant public static final com.google.android.datatransport.Priority VERY_LOW;
+  }
+
+  public interface Transformer<T, U> {
+    method public U apply(T);
+  }
+
+  public interface Transport<T> {
+    method public void send(com.google.android.datatransport.Event<T>);
+  }
+
+  public interface TransportFactory {
+    method public <T> com.google.android.datatransport.Transport<T> getTransport(String, Class<T>, com.google.android.datatransport.Transformer<T,byte[]>);
+  }
+
+}
+

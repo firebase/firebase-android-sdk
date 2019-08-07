@@ -44,6 +44,7 @@ dependencies {
     runtime 'io.opencensus:opencensus-impl:0.18.0'
 
     implementation 'com.android.tools.build:gradle:3.4.1'
+    implementation 'org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5'
     testImplementation 'junit:junit:4.12'
     testImplementation('org.spockframework:spock-core:1.1-groovy-2.4') {
         exclude group: 'org.codehaus.groovy'

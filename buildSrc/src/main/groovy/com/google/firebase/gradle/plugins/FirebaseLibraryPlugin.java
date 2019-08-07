@@ -15,19 +15,28 @@
 package com.google.firebase.gradle.plugins;
 
 import com.android.build.gradle.LibraryExtension;
+import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.api.BaseVariant;
+import com.android.build.gradle.api.LibraryVariant;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
 import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
-import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTask;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.UnknownDomainObjectException;
+import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.SourceSetContainer;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class FirebaseLibraryPlugin implements Plugin<Project> {
@@ -69,19 +78,37 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 }
               });
     }
-    if(System.getenv().containsKey("METALAVA_BINARY_PATH")) {
-      String metalavaBinaryPath = System.getenv().get("METALAVA_BINARY_PATH");
-      String sourcePath = project.getProjectDir() + "/src/main/java";
+    if (System.getenv().containsKey("METALAVA_BINARY_PATH")) {
+      String METALAVA_BINARY_PATH = System.getenv("METALAVA_BINARY_PATH");
+      AndroidSourceSet mainSourceSet = android.getSourceSets().getByName("main");
+      List<String> sourcePaths = new ArrayList<>();
+      for (File directory : mainSourceSet.getJava().getSrcDirs()) {
+        sourcePaths.add(directory.getAbsolutePath());
+      }
+      String sourcePathArgument = String.join(",", sourcePaths);
       project.getTasks().create("apiInformation", ApiInformationTask.class, task -> {
         task.setProperty("apiTxt", project.getProjectDir() + "/api.txt");
-        task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
-        task.setProperty("sourcePath", sourcePath);
+        task.setProperty("metalavaBinaryPath", METALAVA_BINARY_PATH);
+        task.setProperty("sourcePath", sourcePathArgument);
+        task.setProperty("outputPath", project.getBuildDir() + "/outputs/api-info.txt");
+        task.setProperty("baselinePath", project.getProjectDir() + "/baseline.txt");
+        if (project.hasProperty("updateBaseline")) {
+          task.setProperty("updateBaseline", true);
+        } else {
+          task.setProperty("updateBaseline", false);
+        }
       });
 
-      project.getTasks().create("generateApiTxtFile", GenerateApiTask.class, task -> {
+      project.getTasks().create("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
         task.setProperty("apiTxt", project.getProjectDir() + "/api.txt");
-        task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
-        task.setProperty("sourcePath", sourcePath);
+        task.setProperty("metalavaBinaryPath", METALAVA_BINARY_PATH);
+        task.setProperty("sourcePath", sourcePathArgument);
+        task.setProperty("baselinePath", project.getProjectDir() + "/baseline.txt");
+        if (project.hasProperty("updateBaseline")) {
+          task.setProperty("updateBaseline", true);
+        } else {
+          task.setProperty("updateBaseline", false);
+        }
       });
     }
 

@@ -1,0 +1,11 @@
+// Baseline format: 1.0
+AddedClass: com.google.firebase.FirebaseTooManyRequestsException:
+    Added class com.google.firebase.FirebaseTooManyRequestsException
+
+
+HiddenTypeParameter: com.google.firebase.internal.DataCollectionConfigStorage#DataCollectionConfigStorage(Context, String, com.google.firebase.events.Publisher) parameter #2:
+    Parameter publisher references hidden type com.google.firebase.events.Publisher.
+
+
+ReferencesHidden: com.google.firebase.internal.DataCollectionConfigStorage#DataCollectionConfigStorage(Context, String, com.google.firebase.events.Publisher) parameter #2:
+    Class com.google.firebase.events.Publisher is hidden but was referenced (as parameter type) from public parameter publisher in com.google.firebase.internal.DataCollectionConfigStorage(Context applicationContext, String persistenceKey, com.google.firebase.events.Publisher publisher)

@@ -1,0 +1,10 @@
+// Signature format: 2.0
+package com.google.android.datatransport.cct {
+
+  public class CctBackendFactory {
+    ctor public CctBackendFactory();
+    method public TransportBackend create(CreationContext);
+  }
+
+}
+

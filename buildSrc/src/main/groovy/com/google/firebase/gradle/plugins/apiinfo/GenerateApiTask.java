@@ -12,32 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.gradle.plugins.apiinfo
+package com.google.firebase.gradle.plugins.apiinfo;
 
 import groovy.transform.CompileStatic;
-import org.gradle.api.DefaultTask
+import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
 
+import java.io.IOException;
 
+/**
+    Task generates the api txt file for the current source code.
+ */
 @CompileStatic
 class GenerateApiTask extends DefaultTask {
 
     @Input
-    String metalavaBinaryPath;
+    private String metalavaBinaryPath;
 
     @Input
-    String apiTxt;
+    private String apiTxt;
 
     @Input
-    String sourcePath
+    private String sourcePath;
 
-    String cmd = "%s --source-path %s --api %s --format=v2"
 
     @TaskAction
     void execute() {
-        println String.format(cmd, metalavaBinaryPath, sourcePath, apiTxt).execute().text
-        println String.format("Updated api information at %s", apiTxt);
+        String cmdTemplate = "%s --source-path %s --api %s --format=v2";
+        String cmdToRun = String.format(cmdTemplate, metalavaBinaryPath, sourcePath, apiTxt);
+        try {
+            Runtime.getRuntime().exec(cmdToRun);
+        } catch (IOException e) {
+            System.out.println("Failed to run command " + cmdToRun);
+            System.out.println(e.toString());
+        }
     }
 
 }
