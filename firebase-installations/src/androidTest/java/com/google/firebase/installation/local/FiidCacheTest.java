@@ -22,21 +22,21 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.installations.local.FirebaseInstallationIdCache;
-import com.google.firebase.installations.local.FirebaseInstallationIdCacheEntryValue;
+import com.google.firebase.installations.local.FiidCache;
+import com.google.firebase.installations.local.FiidCacheEntryValue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Instrumented tests for {@link FirebaseInstallationIdCache} */
+/** Instrumented tests for {@link FiidCache} */
 @RunWith(AndroidJUnit4.class)
-public class FirebaseInstallationIdCacheTest {
+public class FiidCacheTest {
 
   private FirebaseApp firebaseApp0;
   private FirebaseApp firebaseApp1;
-  private FirebaseInstallationIdCache cache0;
-  private FirebaseInstallationIdCache cache1;
+  private FiidCache cache0;
+  private FiidCache cache1;
   private final String AUTH_TOKEN = "auth_token";
   private final String REFRESH_TOKEN = "refresh_token";
 
@@ -54,8 +54,8 @@ public class FirebaseInstallationIdCacheTest {
             ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder().setApplicationId("1:987654321:android:abcdef").build(),
             "firebase_app_1");
-    cache0 = new FirebaseInstallationIdCache(firebaseApp0);
-    cache1 = new FirebaseInstallationIdCache(firebaseApp1);
+    cache0 = new FiidCache(firebaseApp0);
+    cache1 = new FiidCache(firebaseApp1);
   }
 
   @After
@@ -74,28 +74,27 @@ public class FirebaseInstallationIdCacheTest {
   public void testUpdateAndReadCacheEntry() throws Exception {
     assertTrue(
         cache0.insertOrUpdateCacheEntry(
-            FirebaseInstallationIdCacheEntryValue.create(
+            FiidCacheEntryValue.create(
                 "123456",
-                FirebaseInstallationIdCache.CacheStatus.UNREGISTERED,
+                FiidCache.CacheStatus.UNREGISTERED,
                 AUTH_TOKEN,
                 REFRESH_TOKEN,
                 TIMESTAMP_IN_SECONDS,
                 TIMESTAMP_IN_SECONDS)));
-    FirebaseInstallationIdCacheEntryValue entryValue = cache0.readCacheEntryValue();
+    FiidCacheEntryValue entryValue = cache0.readCacheEntryValue();
     assertThat(entryValue.getFirebaseInstallationId()).isEqualTo("123456");
     assertThat(entryValue.getAuthToken()).isEqualTo(AUTH_TOKEN);
     assertThat(entryValue.getRefreshToken()).isEqualTo(REFRESH_TOKEN);
-    assertThat(entryValue.getCacheStatus())
-        .isEqualTo(FirebaseInstallationIdCache.CacheStatus.UNREGISTERED);
+    assertThat(entryValue.getCacheStatus()).isEqualTo(FiidCache.CacheStatus.UNREGISTERED);
     assertThat(entryValue.getExpiresIn()).isEqualTo(TIMESTAMP_IN_SECONDS);
     assertThat(entryValue.getTokenCreationTime()).isEqualTo(TIMESTAMP_IN_SECONDS);
     assertNull(cache1.readCacheEntryValue());
 
     assertTrue(
         cache0.insertOrUpdateCacheEntry(
-            FirebaseInstallationIdCacheEntryValue.create(
+            FiidCacheEntryValue.create(
                 "123456",
-                FirebaseInstallationIdCache.CacheStatus.REGISTERED,
+                FiidCache.CacheStatus.REGISTERED,
                 AUTH_TOKEN,
                 REFRESH_TOKEN,
                 200L,
@@ -104,8 +103,7 @@ public class FirebaseInstallationIdCacheTest {
     assertThat(entryValue.getFirebaseInstallationId()).isEqualTo("123456");
     assertThat(entryValue.getAuthToken()).isEqualTo(AUTH_TOKEN);
     assertThat(entryValue.getRefreshToken()).isEqualTo(REFRESH_TOKEN);
-    assertThat(entryValue.getCacheStatus())
-        .isEqualTo(FirebaseInstallationIdCache.CacheStatus.REGISTERED);
+    assertThat(entryValue.getCacheStatus()).isEqualTo(FiidCache.CacheStatus.REGISTERED);
     assertThat(entryValue.getExpiresIn()).isEqualTo(TIMESTAMP_IN_SECONDS);
     assertThat(entryValue.getTokenCreationTime()).isEqualTo(200L);
   }
