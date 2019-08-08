@@ -83,9 +83,9 @@ def api_information(auth_token, repo_name, issue_number):
       outputlines = f.readlines()
       for line in outputlines:
         if 'error' in line:
-          formatted_output_lines.append(line.encode('ascii', 'ignore').decode('utf-8'))
+          formatted_output_lines.append(line[line.find('error:'):])
     if formatted_output_lines:
-      comment_string += 'The public api surface has changed for the subproject {}:\n.'.format(subproject[len('subproject:'):])
+      comment_string += 'The public api surface has changed for the subproject {}:\n'.format(subproject[len('subproject:'):])
       comment_string += ''.join(formatted_output_lines)
       comment_string += '\n'
   if comment_string:
@@ -93,7 +93,6 @@ def api_information(auth_token, repo_name, issue_number):
       'with the files present in the artifacts directory. Also perform a major/minor bump accordingly.\n')
   else:
     comment_string = 'No project\'s public api surface was changed due to this PR.\n'
-
   # Comment to github.
   github_client = Github(auth_token)
   repo = github_client.get_repo(repo_name)
