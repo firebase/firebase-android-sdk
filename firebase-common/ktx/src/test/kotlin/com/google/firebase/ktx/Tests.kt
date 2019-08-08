@@ -42,7 +42,7 @@ class VersionTests {
     fun libraryVersions_shouldBeRegisteredWithRuntime() {
         withApp("ktxTestApp") {
             val uaPublisher = get(UserAgentPublisher::class.java)
-            assertThat(uaPublisher.userAgent).contains("fire-kotlin")
+            assertThat(uaPublisher.userAgent).contains("kotlin")
             assertThat(uaPublisher.userAgent).contains(LIBRARY_NAME)
         }
     }

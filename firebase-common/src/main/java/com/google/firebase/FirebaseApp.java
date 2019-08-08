@@ -101,7 +101,7 @@ public class FirebaseApp {
 
   private static final String FIREBASE_ANDROID = "fire-android";
   private static final String FIREBASE_COMMON = "fire-core";
-  private static final String FIREBASE_KOTLIN = "fire-kotlin";
+  private static final String KOTLIN = "kotlin";
 
   private final Context applicationContext;
   private final String name;
@@ -410,9 +410,7 @@ public class FirebaseApp {
             Component.of(options, FirebaseOptions.class),
             LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
             LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
-            kotlinVersion != null
-                ? LibraryVersionComponent.create(FIREBASE_KOTLIN, kotlinVersion)
-                : null,
+            kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null,
             DefaultUserAgentPublisher.component());
 
     dataCollectionConfigStorage =
