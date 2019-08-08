@@ -29,6 +29,7 @@ import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.BooleanValue;
 import com.google.firebase.firestore.model.value.DoubleValue;
@@ -99,7 +100,7 @@ public class IndexedQueryEngine implements QueryEngine {
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(Query query) {
     return query.isDocumentQuery()
-        ? localDocuments.getDocumentsMatchingQuery(query)
+        ? localDocuments.getDocumentsMatchingQuery(query, SnapshotVersion.NONE)
         : performCollectionQuery(query);
   }
 
@@ -118,7 +119,7 @@ public class IndexedQueryEngine implements QueryEngine {
           "If there are any filters, we should be able to use an index.");
       // TODO: Call overlay.getCollectionDocuments(query.getPath()) and filter the
       // results (there may still be startAt/endAt bounds that apply).
-      filteredResults = localDocuments.getDocumentsMatchingQuery(query);
+      filteredResults = localDocuments.getDocumentsMatchingQuery(query, SnapshotVersion.NONE);
     }
 
     return filteredResults;

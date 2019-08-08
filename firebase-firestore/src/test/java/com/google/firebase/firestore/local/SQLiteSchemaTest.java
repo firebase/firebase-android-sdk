@@ -16,8 +16,11 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.local.EncodedPath.decodeResourcePath;
 import static com.google.firebase.firestore.local.EncodedPath.encode;
+import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
+import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -28,9 +31,13 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.proto.MaybeDocument;
 import com.google.firebase.firestore.proto.WriteBatch;
+import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firestore.v1.Document;
 import com.google.firestore.v1.Write;
 import java.util.ArrayList;
@@ -55,10 +62,11 @@ public class SQLiteSchemaTest {
 
   private SQLiteDatabase db;
   private SQLiteSchema schema;
+  private SQLiteOpenHelper opener;
 
   @Before
   public void setUp() {
-    SQLiteOpenHelper opener =
+    opener =
         new SQLiteOpenHelper(ApplicationProvider.getApplicationContext(), "foo", null, 1) {
           @Override
           public void onCreate(SQLiteDatabase db) {}
@@ -392,6 +400,68 @@ public class SQLiteSchemaTest {
     }
 
     assertEquals(expectedParents, actualParents);
+  }
+
+  @Test
+  public void existingDocumentsRemainReadableAfterIndexFreeMigration() {
+    // Initialize the schema to the state prior to the index-free migration.
+    schema.runMigrations(0, 8);
+    db.execSQL(
+        "INSERT INTO remote_documents (path, contents) VALUES (?, ?)",
+        new Object[] {encode(path("coll/existing")), createDummyDocument("coll/existing")});
+
+    // Run the index-free migration.
+    schema.runMigrations(8, 9);
+    db.execSQL(
+        "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
+        new Object[] {encode(path("coll/old")), 0, 1000, createDummyDocument("coll/old")});
+    db.execSQL(
+        "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
+        new Object[] {encode(path("coll/current")), 0, 2000, createDummyDocument("coll/current")});
+    db.execSQL(
+        "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
+        new Object[] {encode(path("coll/new")), 0, 3000, createDummyDocument("coll/new")});
+
+    SQLiteRemoteDocumentCache remoteDocumentCache = createRemoteDocumentCache();
+    ImmutableSortedMap<DocumentKey, com.google.firebase.firestore.model.Document> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(2));
+
+    // Verify that queries return the documents that existed prior to the index-free migration, as
+    // well as any documents with a newer read time than the one passed in.
+    assertResultsContain(results, "coll/existing", "coll/new");
+  }
+
+  private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
+    DatabaseId databaseId = DatabaseId.forProject("foo");
+    LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
+    SQLitePersistence persistence =
+        new SQLitePersistence(
+            serializer,
+            StatsCollector.NO_OP_STATS_COLLECTOR,
+            LruGarbageCollector.Params.Default(),
+            opener);
+    persistence.start();
+    return new SQLiteRemoteDocumentCache(
+        persistence, serializer, StatsCollector.NO_OP_STATS_COLLECTOR);
+  }
+
+  private byte[] createDummyDocument(String name) {
+    return MaybeDocument.newBuilder()
+        .setDocument(
+            Document.newBuilder()
+                .setName("projects/foo/databases/(default)/documents/" + name)
+                .build())
+        .build()
+        .toByteArray();
+  }
+
+  private void assertResultsContain(
+      ImmutableSortedMap<DocumentKey, com.google.firebase.firestore.model.Document> actualResults,
+      String... docs) {
+    for (String doc : docs) {
+      assertTrue("Expected result for " + doc, actualResults.containsKey(key(doc)));
+    }
+    assertEquals("Results contain unexpected entries", docs.length, actualResults.size());
   }
 
   private void assertNoResultsForQuery(String query, String[] args) {

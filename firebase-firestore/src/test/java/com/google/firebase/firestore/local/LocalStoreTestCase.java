@@ -727,12 +727,12 @@ public abstract class LocalStoreTestCase {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 0, map("foo", "old")), asList(targetId), emptyList()));
+        updateRemoteEvent(doc("foo/bar", 1, map("foo", "old")), asList(targetId), emptyList()));
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
     releaseQuery(query);
     writeMutation(setMutation("foo/bah", map("foo", "bah")));
     writeMutation(deleteMutation("foo/baz"));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bah", 0, map("foo", "bah"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(deletedDoc("foo/baz", 0));
 
@@ -761,13 +761,13 @@ public abstract class LocalStoreTestCase {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 0, map("foo", "old")), asList(targetId), emptyList()));
+        updateRemoteEvent(doc("foo/bar", 1, map("foo", "old")), asList(targetId), emptyList()));
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
     // Release the query so that our target count goes back to 0 and we are considered up-to-date.
     releaseQuery(query);
     writeMutation(setMutation("foo/bah", map("foo", "bah")));
     writeMutation(deleteMutation("foo/baz"));
-    assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
+    assertContains(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bah", 0, map("foo", "bah"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(deletedDoc("foo/baz", 0));
 
