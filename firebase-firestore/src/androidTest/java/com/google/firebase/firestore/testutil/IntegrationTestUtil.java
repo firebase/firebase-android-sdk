@@ -36,11 +36,13 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import java.util.ArrayList;
@@ -52,6 +54,31 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+class MockCredentialsProvider extends EmptyCredentialsProvider {
+
+  private static MockCredentialsProvider instance;
+  private Listener<User> listener;
+
+  public static MockCredentialsProvider instance() {
+    if (MockCredentialsProvider.instance == null) {
+      MockCredentialsProvider.instance = new MockCredentialsProvider();
+    }
+    return MockCredentialsProvider.instance;
+  }
+
+  private MockCredentialsProvider() {}
+
+  @Override
+  public void setChangeListener(Listener<User> changeListener) {
+    super.setChangeListener(changeListener);
+    this.listener = changeListener;
+  }
+
+  public void changeUserTo(User user) {
+    listener.onValue(user);
+  }
+}
 
 /** A set of helper methods for tests */
 public class IntegrationTestUtil {
@@ -239,7 +266,7 @@ public class IntegrationTestUtil {
             context,
             databaseId,
             persistenceKey,
-            new EmptyCredentialsProvider(),
+            MockCredentialsProvider.instance(),
             asyncQueue,
             /*firebaseApp=*/ null,
             /*instanceRegistry=*/ (dbId) -> {});
@@ -408,5 +435,9 @@ public class IntegrationTestUtil {
 
   public static boolean isRunningAgainstEmulator() {
     return CONNECT_TO_EMULATOR;
+  }
+
+  public static void testChangeUserTo(User user) {
+    MockCredentialsProvider.instance().changeUserTo(user);
   }
 }
