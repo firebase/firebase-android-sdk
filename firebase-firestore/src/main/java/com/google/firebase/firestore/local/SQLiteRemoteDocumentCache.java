@@ -147,7 +147,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
-    Timestamp updateTime = sinceReadTime.getTimestamp();
+    Timestamp readTime = sinceReadTime.getTimestamp();
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
 
@@ -163,9 +163,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             .binding(
                 prefixPath,
                 prefixSuccessorPath,
-                updateTime.getSeconds(),
-                updateTime.getSeconds(),
-                updateTime.getNanoseconds())
+                readTime.getSeconds(),
+                readTime.getSeconds(),
+                readTime.getNanoseconds())
             .forEach(
                 row -> {
                   // TODO: Actually implement a single-collection query

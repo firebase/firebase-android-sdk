@@ -46,9 +46,9 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    *
-   * <p>TODO(index-free): The migration to schema version 9 doesn't backfill `update_time` as this
+   * <p>TODO(index-free): The migration to schema version 9 doesn't backfill `read_time` as this
    * requires rewriting the RemoteDocumentCache. For index-free queries to efficiently handle
-   * existing documents, we still need to populate update_time for all existing entries, drop the
+   * existing documents, we still need to populate read_time for all existing entries, drop the
    * RemoteDocumentCache or ask users to invoke `clearPersistence()` manually. If we decide to
    * backfill or drop the contents of the RemoteDocumentCache, we need to perform an additional
    * schema migration.
