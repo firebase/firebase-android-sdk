@@ -224,6 +224,18 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
         () -> syncEngine.transaction(asyncQueue, updateFunction, retries));
   }
 
+  /**
+   * Returns a task resolves when all the pending writes at the time when this method is called
+   * received server acknowledgement. An acknowledgement can be either acceptance or rejections.
+   */
+  public Task<Void> waitForPendingWrites() {
+    this.verifyNotShutdown();
+
+    final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+    asyncQueue.enqueueAndForget(() -> syncEngine.registerPendingWritesTask(source));
+    return source.getTask();
+  }
+
   private void initialize(Context context, User user, boolean usePersistence, long cacheSizeBytes) {
     // Note: The initialization work must all be synchronous (we can't dispatch more work) since
     // external write/listen operations could get queued to run before that subsequent work
