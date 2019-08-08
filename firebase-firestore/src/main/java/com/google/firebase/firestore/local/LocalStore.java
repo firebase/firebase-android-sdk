@@ -28,6 +28,7 @@ import com.google.firebase.firestore.core.TargetIdGenerator;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -381,16 +382,17 @@ public final class LocalStore {
             MaybeDocument doc = entry.getValue();
             MaybeDocument existingDoc = existingDocs.get(key);
 
-            // If a document update isn't authoritative, make sure we don't
-            // apply an old document version to the remote cache. We make an
-            // exception for SnapshotVersion.MIN which can happen for
-            // manufactured events (e.g. in the case of a limbo document
-            // resolution failing).
+            // If a document update isn't authoritative, make sure we don't apply an old document
+            // version to the remote cache. We make an exception for SnapshotVersion.MIN which can
+            // happen for manufactured events (e.g. in the case of a limbo document resolution
+            // failing).
             if (existingDoc == null
-                || doc.getVersion().equals(SnapshotVersion.NONE)
                 || (authoritativeUpdates.contains(doc.getKey()) && !existingDoc.hasPendingWrites())
                 || doc.getVersion().compareTo(existingDoc.getVersion()) >= 0) {
               remoteDocuments.add(doc);
+              changedDocs.put(key, doc);
+            } else if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
+              remoteDocuments.remove(doc.getKey());
               changedDocs.put(key, doc);
             } else {
               Logger.debug(
