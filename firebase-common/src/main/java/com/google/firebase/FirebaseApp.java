@@ -46,6 +46,7 @@ import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
+import com.google.firebase.platforminfo.KotlinDetector;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -399,7 +400,7 @@ public class FirebaseApp {
     List<ComponentRegistrar> registrars =
         ComponentDiscovery.forContext(applicationContext).discover();
 
-    String kotlinVersion = detectKotlinVersion();
+    String kotlinVersion = KotlinDetector.detectVersion();
     componentRuntime =
         new ComponentRuntime(
             UI_EXECUTOR,
@@ -673,15 +674,6 @@ public class FirebaseApp {
     @Override
     public void execute(@NonNull Runnable command) {
       HANDLER.post(command);
-    }
-  }
-
-  @Nullable
-  private static String detectKotlinVersion() {
-    try {
-      return kotlin.KotlinVersion.CURRENT.toString();
-    } catch (NoClassDefFoundError ex) {
-      return null;
     }
   }
 }
