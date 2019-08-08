@@ -48,6 +48,9 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public void add(MaybeDocument document, SnapshotVersion readTime) {
+    hardAssert(
+        !readTime.equals(SnapshotVersion.NONE),
+        "Cannot add document to the RemoteDocumentCache with a read time of zero");
     docs = docs.insert(document.getKey(), new Pair<>(document, readTime));
 
     persistence.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
@@ -83,7 +86,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
-      Query query, SnapshotVersion sinceUpdateTime) {
+      Query query, SnapshotVersion sinceReadTime) {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
@@ -114,7 +117,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
       }
 
       SnapshotVersion readTime = entry.getValue().second;
-      if (readTime.compareTo(sinceUpdateTime) <= 0) {
+      if (readTime.compareTo(sinceReadTime) <= 0) {
         continue;
       }
 

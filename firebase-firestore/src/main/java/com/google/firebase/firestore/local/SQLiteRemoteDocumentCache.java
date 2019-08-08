@@ -52,6 +52,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public void add(MaybeDocument maybeDocument, SnapshotVersion readTime) {
+    hardAssert(
+        !readTime.equals(SnapshotVersion.NONE),
+        "Cannot add document to the RemoteDocumentCache with a read time of zero");
+
     String path = pathForKey(maybeDocument.getKey());
     Timestamp timestamp = readTime.getTimestamp();
     MessageLite message = serializer.encodeMaybeDocument(maybeDocument);
@@ -132,7 +136,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
-      Query query, SnapshotVersion sinceUpdateTime) {
+      Query query, SnapshotVersion sinceReadTime) {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
@@ -143,7 +147,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
-    Timestamp updateTime = sinceUpdateTime.getTimestamp();
+    Timestamp updateTime = sinceReadTime.getTimestamp();
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
 
