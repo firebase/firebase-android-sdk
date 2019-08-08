@@ -383,14 +383,15 @@ public final class LocalStore {
             MaybeDocument existingDoc = existingDocs.get(key);
 
             // If a document update isn't authoritative, make sure we don't apply an old document
-            // version to the remote cache. We make an exception for SnapshotVersion.MIN which can
-            // happen for manufactured events (e.g. in the case of a limbo document resolution
-            // failing).
+            // version to the remote cache.
             if (existingDoc == null
                 || (authoritativeUpdates.contains(doc.getKey()) && !existingDoc.hasPendingWrites())
                 || doc.getVersion().compareTo(existingDoc.getVersion()) >= 0) {
               remoteDocuments.add(doc);
               changedDocs.put(key, doc);
+              // NoDocuments with SnapshotVersion.MIN are used in manufactured events (e.g. in the
+              // case of a limbo document resolution failing). We remove these documents from cache
+              // since we lost access.
             } else if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
               remoteDocuments.remove(doc.getKey());
               changedDocs.put(key, doc);
