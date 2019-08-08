@@ -33,7 +33,6 @@ package com.google.firebase {
     method @Nullable public String getStorageBucket();
     method public int hashCode();
     method public String toString();
-    method public String helloWorld();
   }
 
   public static final class FirebaseOptions.Builder {
@@ -49,6 +48,7 @@ package com.google.firebase {
   }
 
   public class FirebaseTooManyRequestsException {
+    ctor public FirebaseTooManyRequestsException(@NonNull String);
   }
 
 }

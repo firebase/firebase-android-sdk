@@ -40,6 +40,14 @@ package com.google.firebase.firestore {
     method @NonNull public String getPath();
   }
 
+  public class DocumentChange {
+    method public boolean equals(@Nullable Object);
+    method @NonNull public com.google.firebase.firestore.QueryDocumentSnapshot getDocument();
+    method public int getNewIndex();
+    method public int getOldIndex();
+    method @NonNull public com.google.firebase.firestore.DocumentChange.Type getType();
+    method public int hashCode();
+  }
 
   public enum DocumentChange.Type {
     enum_constant public static final com.google.firebase.firestore.DocumentChange.Type ADDED;
