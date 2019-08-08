@@ -58,6 +58,7 @@ import java.util.concurrent.TimeoutException;
 class MockCredentialsProvider extends EmptyCredentialsProvider {
 
   private static MockCredentialsProvider instance;
+  private Listener<User> listener;
 
   public static MockCredentialsProvider instance() {
     if (MockCredentialsProvider.instance == null) {
@@ -66,9 +67,7 @@ class MockCredentialsProvider extends EmptyCredentialsProvider {
     return MockCredentialsProvider.instance;
   }
 
-  private MockCredentialsProvider() {
-    super();
-  }
+  private MockCredentialsProvider() {}
 
   @Override
   public void setChangeListener(Listener<User> changeListener) {
@@ -79,8 +78,6 @@ class MockCredentialsProvider extends EmptyCredentialsProvider {
   public void changeUserTo(User user) {
     listener.onValue(user);
   }
-
-  private Listener<User> listener;
 }
 
 /** A set of helper methods for tests */

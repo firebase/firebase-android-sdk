@@ -1142,4 +1142,18 @@ public class FirestoreTest {
         "'waitForPendingWrites' task is cancelled due to User change.",
         waitForException(awaitsPendingWrites).getMessage());
   }
+
+  @Test
+  public void testPendingWriteTaskResolveWhenOfflineIfThereIsNoPending() {
+    DocumentReference documentReference = testCollection("abc").document("123");
+    FirebaseFirestore firestore = documentReference.getFirestore();
+    Map<String, Object> data = map("foo", "bar");
+
+    // Prevent pending writes receiving acknowledgement.
+    waitFor(firestore.disableNetwork());
+    Task<Void> awaitsPendingWrites = firestore.waitForPendingWrites();
+    waitFor(awaitsPendingWrites);
+
+    assertTrue(awaitsPendingWrites.isComplete() && awaitsPendingWrites.isSuccessful());
+  }
 }

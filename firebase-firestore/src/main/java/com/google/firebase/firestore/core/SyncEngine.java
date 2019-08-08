@@ -449,8 +449,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     if (!remoteStore.canUseNetwork()) {
       Logger.debug(
           TAG,
-          "The network is disabled. The task returned by 'awaitPendingWrites()' will not"
-              + " complete until the network is enabled.");
+          "The network is disabled. The task returned by 'awaitPendingWrites()' will not "
+              + "complete until the network is enabled.");
     }
 
     int largestPendingBatchId = localStore.getHighestUnacknowledgedBatchId();
@@ -468,7 +468,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     }
   }
 
-  /** Resolves tasks waiting for this batch id to get acknowledged by server, if there is any. */
+  /** Resolves tasks waiting for this batch id to get acknowledged by server, if there are any. */
   private void resolvePendingWriteTasks(int batchId) {
     if (pendingWritesCallbacks.containsKey(batchId)) {
       for (TaskCompletionSource<Void> task : pendingWritesCallbacks.get(batchId)) {

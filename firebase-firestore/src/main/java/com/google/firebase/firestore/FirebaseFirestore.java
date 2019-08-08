@@ -369,9 +369,9 @@ public class FirebaseFirestore {
    * <p>The returned Task completes immediately if there are no outstanding writes. Otherwise, the
    * Task waits for all previously issued writes (including those written in a previous app
    * session), but it does not wait for writes that were added after the method is called. If you
-   * wish to wait for additional writes, you have to call `waitForPendingWrites()` again.
+   * wish to wait for additional writes, you have to call {@code waitForPendingWrites()} again.
    *
-   * <p>Any outstanding `waitForPendingWrites()` Tasks are cancelled during user changes.
+   * <p>Any outstanding {@code waitForPendingWrites()} Tasks are cancelled during user changes.
    *
    * @return A {@code Task} which resolves when all currently pending writes have been acknowledged
    *     by the backend.
