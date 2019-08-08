@@ -2,11 +2,11 @@
 package com.google.firebase.functions {
 
   public class FirebaseFunctions {
-    method public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(String);
-    method public static com.google.firebase.functions.FirebaseFunctions getInstance(FirebaseApp, String);
-    method public static com.google.firebase.functions.FirebaseFunctions getInstance(FirebaseApp);
-    method public static com.google.firebase.functions.FirebaseFunctions getInstance(String);
-    method public static com.google.firebase.functions.FirebaseFunctions getInstance();
+    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull FirebaseApp, @NonNull String);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull FirebaseApp);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull String);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance();
     method public void useFunctionsEmulator(@NonNull String);
   }
 
@@ -36,15 +36,15 @@ package com.google.firebase.functions {
   }
 
   public class HttpsCallableReference {
-    method public Task<HttpsCallableResult> call(@Nullable Object);
-    method public Task<HttpsCallableResult> call();
-    method @NonNull public long getTimeout();
-    method public void setTimeout(long, TimeUnit);
-    method public com.google.firebase.functions.HttpsCallableReference withTimeout(long, TimeUnit);
+    method @NonNull public Task<HttpsCallableResult> call(@Nullable Object);
+    method @NonNull public Task<HttpsCallableResult> call();
+    method public long getTimeout();
+    method public void setTimeout(long, @NonNull TimeUnit);
+    method @NonNull public com.google.firebase.functions.HttpsCallableReference withTimeout(long, @NonNull TimeUnit);
   }
 
   public class HttpsCallableResult {
-    method public Object getData();
+    method @Nullable public Object getData();
   }
 
 }

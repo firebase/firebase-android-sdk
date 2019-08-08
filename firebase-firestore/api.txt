@@ -3,9 +3,9 @@ package com.google.firebase {
 
   public final class Timestamp {
     ctor public Timestamp(long, int);
-    ctor protected Timestamp(Parcel);
-    ctor public Timestamp(Date);
-    method public int compareTo(com.google.firebase.Timestamp);
+    ctor protected Timestamp(@NonNull Parcel);
+    ctor public Timestamp(@NonNull Date);
+    method public int compareTo(@NonNull com.google.firebase.Timestamp);
     method public int describeContents();
     method public boolean equals(Object);
     method public int getNanoseconds();
@@ -14,7 +14,7 @@ package com.google.firebase {
     method @NonNull public static com.google.firebase.Timestamp now();
     method @NonNull public Date toDate();
     method public String toString();
-    method public void writeToParcel(Parcel, int);
+    method public void writeToParcel(@NonNull Parcel, int);
     field @NonNull public static final Parcelable.Creator<Timestamp> CREATOR;
   }
 
@@ -40,14 +40,6 @@ package com.google.firebase.firestore {
     method @NonNull public String getPath();
   }
 
-  public class DocumentChange {
-    method public boolean equals(@Nullable Object);
-    method @NonNull public com.google.firebase.firestore.QueryDocumentSnapshot getDocument();
-    method public int getNewIndex();
-    method public int getOldIndex();
-    method @NonNull public com.google.firebase.firestore.DocumentChange.Type getType();
-    method public int hashCode();
-  }
 
   public enum DocumentChange.Type {
     enum_constant public static final com.google.firebase.firestore.DocumentChange.Type ADDED;
@@ -134,13 +126,13 @@ package com.google.firebase.firestore {
     method @NonNull public static com.google.firebase.firestore.FieldPath documentId();
     method public boolean equals(Object);
     method public int hashCode();
-    method public static com.google.firebase.firestore.FieldPath of(@NonNull String...);
+    method @NonNull public static com.google.firebase.firestore.FieldPath of(String...);
     method public String toString();
   }
 
   public abstract class FieldValue {
-    method @NonNull public static com.google.firebase.firestore.FieldValue arrayRemove(@NonNull Object...);
-    method @NonNull public static com.google.firebase.firestore.FieldValue arrayUnion(@NonNull Object...);
+    method @NonNull public static com.google.firebase.firestore.FieldValue arrayRemove(Object...);
+    method @NonNull public static com.google.firebase.firestore.FieldValue arrayUnion(Object...);
     method @NonNull public static com.google.firebase.firestore.FieldValue delete();
     method @NonNull public static com.google.firebase.firestore.FieldValue increment(long);
     method @NonNull public static com.google.firebase.firestore.FieldValue increment(double);
@@ -149,12 +141,12 @@ package com.google.firebase.firestore {
 
   public class FirebaseFirestore {
     method @NonNull public com.google.firebase.firestore.WriteBatch batch();
-    method public Task<Void> clearPersistence();
+    method @NonNull public Task<Void> clearPersistence();
     method @NonNull public com.google.firebase.firestore.CollectionReference collection(@NonNull String);
     method @NonNull public com.google.firebase.firestore.Query collectionGroup(@NonNull String);
-    method public Task<Void> disableNetwork();
+    method @NonNull public Task<Void> disableNetwork();
     method @NonNull public com.google.firebase.firestore.DocumentReference document(@NonNull String);
-    method public Task<Void> enableNetwork();
+    method @NonNull public Task<Void> enableNetwork();
     method @NonNull public FirebaseApp getApp();
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings getFirestoreSettings();
     method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance();
@@ -171,7 +163,7 @@ package com.google.firebase.firestore {
 
   public class FirebaseFirestoreException {
     ctor public FirebaseFirestoreException(@NonNull String, @NonNull com.google.firebase.firestore.FirebaseFirestoreException.Code);
-    ctor public FirebaseFirestoreException(@NonNull String, @NonNull com.google.firebase.firestore.FirebaseFirestoreException.Code, Throwable);
+    ctor public FirebaseFirestoreException(@NonNull String, @NonNull com.google.firebase.firestore.FirebaseFirestoreException.Code, @Nullable Throwable);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreException.Code getCode();
   }
 
@@ -259,7 +251,7 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.Query endBefore(Object...);
     method public boolean equals(Object);
     method @NonNull public Task<QuerySnapshot> get();
-    method @NonNull public Task<QuerySnapshot> get(com.google.firebase.firestore.Source);
+    method @NonNull public Task<QuerySnapshot> get(@NonNull com.google.firebase.firestore.Source);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestore getFirestore();
     method public int hashCode();
     method @NonNull public com.google.firebase.firestore.Query limit(long);

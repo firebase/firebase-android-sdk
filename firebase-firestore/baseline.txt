@@ -1,4 +1,12 @@
 // Baseline format: 1.0
+InvalidNullConversion: com.google.firebase.firestore.FieldPath#of(String...) parameter #0:
+    Attempted to remove @NonNull annotation from parameter fieldNames in com.google.firebase.firestore.FieldPath.of(String... fieldNames)
+InvalidNullConversion: com.google.firebase.firestore.FieldValue#arrayRemove(Object...) parameter #0:
+    Attempted to remove @NonNull annotation from parameter elements in com.google.firebase.firestore.FieldValue.arrayRemove(Object... elements)
+InvalidNullConversion: com.google.firebase.firestore.FieldValue#arrayUnion(Object...) parameter #0:
+    Attempted to remove @NonNull annotation from parameter elements in com.google.firebase.firestore.FieldValue.arrayUnion(Object... elements)
+
+
 RemovedInterface: com.google.firebase.firestore.DocumentId:
     Class com.google.firebase.firestore.DocumentId no longer implements java.lang.annotation.Annotation
 RemovedInterface: com.google.firebase.firestore.Exclude:

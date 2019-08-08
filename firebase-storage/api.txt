@@ -3,9 +3,9 @@ package com.google.firebase.storage {
 
   public abstract class CancellableTask<StateT> {
     ctor public CancellableTask();
-    method public abstract com.google.firebase.storage.CancellableTask<StateT> addOnProgressListener(@NonNull com.google.firebase.storage.OnProgressListener<? super StateT>);
-    method public abstract com.google.firebase.storage.CancellableTask<StateT> addOnProgressListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnProgressListener<? super StateT>);
-    method public abstract com.google.firebase.storage.CancellableTask<StateT> addOnProgressListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnProgressListener<? super StateT>);
+    method @NonNull public abstract com.google.firebase.storage.CancellableTask<StateT> addOnProgressListener(@NonNull com.google.firebase.storage.OnProgressListener<? super StateT>);
+    method @NonNull public abstract com.google.firebase.storage.CancellableTask<StateT> addOnProgressListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnProgressListener<? super StateT>);
+    method @NonNull public abstract com.google.firebase.storage.CancellableTask<StateT> addOnProgressListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnProgressListener<? super StateT>);
     method public abstract boolean cancel();
     method public abstract boolean isCanceled();
     method public abstract boolean isInProgress();
@@ -13,9 +13,9 @@ package com.google.firebase.storage {
 
   public abstract class ControllableTask<StateT> extends com.google.firebase.storage.CancellableTask<StateT> {
     ctor public ControllableTask();
-    method public abstract com.google.firebase.storage.ControllableTask<StateT> addOnPausedListener(@NonNull com.google.firebase.storage.OnPausedListener<? super StateT>);
-    method public abstract com.google.firebase.storage.ControllableTask<StateT> addOnPausedListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnPausedListener<? super StateT>);
-    method public abstract com.google.firebase.storage.ControllableTask<StateT> addOnPausedListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnPausedListener<? super StateT>);
+    method @NonNull public abstract com.google.firebase.storage.ControllableTask<StateT> addOnPausedListener(@NonNull com.google.firebase.storage.OnPausedListener<? super StateT>);
+    method @NonNull public abstract com.google.firebase.storage.ControllableTask<StateT> addOnPausedListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnPausedListener<? super StateT>);
+    method @NonNull public abstract com.google.firebase.storage.ControllableTask<StateT> addOnPausedListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnPausedListener<? super StateT>);
     method public abstract boolean isPaused();
     method public abstract boolean pause();
     method public abstract boolean resume();
@@ -53,22 +53,22 @@ package com.google.firebase.storage {
   }
 
   public interface OnPausedListener<ProgressT> {
-    method public void onPaused(ProgressT);
+    method public void onPaused(@NonNull ProgressT);
   }
 
   public interface OnProgressListener<ProgressT> {
-    method public void onProgress(ProgressT);
+    method public void onProgress(@NonNull ProgressT);
   }
 
   public class StorageException {
     method @NonNull public static com.google.firebase.storage.StorageException fromErrorStatus(@NonNull Status);
     method @NonNull public static com.google.firebase.storage.StorageException fromException(@NonNull Throwable);
     method @Nullable public static com.google.firebase.storage.StorageException fromExceptionAndHttpCode(@Nullable Throwable, int);
-    method public Throwable getCause();
+    method @Nullable public Throwable getCause();
     method @com.google.firebase.storage.StorageException.ErrorCode public int getErrorCode();
     method public int getHttpResultCode();
     method public boolean getIsRecoverableException();
-    method public String getMessage();
+    method @NonNull public String getMessage();
     field public static final int ERROR_BUCKET_NOT_FOUND = -13011; // 0xffffcd2d
     field public static final int ERROR_CANCELED = -13040; // 0xffffcd10
     field public static final int ERROR_INVALID_CHECKSUM = -13031; // 0xffffcd19
@@ -91,9 +91,9 @@ package com.google.firebase.storage {
     method @Nullable public String getContentDisposition();
     method @Nullable public String getContentEncoding();
     method @Nullable public String getContentLanguage();
-    method public String getContentType();
+    method @Nullable public String getContentType();
     method public long getCreationTimeMillis();
-    method public String getCustomMetadata(@NonNull String);
+    method @Nullable public String getCustomMetadata(@NonNull String);
     method @NonNull public Set<String> getCustomMetadataKeys();
     method @Nullable public String getGeneration();
     method @Nullable public String getMd5Hash();
@@ -107,19 +107,19 @@ package com.google.firebase.storage {
 
   public static class StorageMetadata.Builder {
     ctor public StorageMetadata.Builder();
-    ctor public StorageMetadata.Builder(com.google.firebase.storage.StorageMetadata);
-    method public com.google.firebase.storage.StorageMetadata build();
-    method public com.google.firebase.storage.StorageMetadata.Builder setCacheControl(@Nullable String);
-    method public com.google.firebase.storage.StorageMetadata.Builder setContentDisposition(@Nullable String);
-    method public com.google.firebase.storage.StorageMetadata.Builder setContentEncoding(@Nullable String);
-    method public com.google.firebase.storage.StorageMetadata.Builder setContentLanguage(@Nullable String);
-    method public com.google.firebase.storage.StorageMetadata.Builder setContentType(@Nullable String);
-    method public com.google.firebase.storage.StorageMetadata.Builder setCustomMetadata(String, String);
+    ctor public StorageMetadata.Builder(@NonNull com.google.firebase.storage.StorageMetadata);
+    method @NonNull public com.google.firebase.storage.StorageMetadata build();
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setCacheControl(@Nullable String);
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setContentDisposition(@Nullable String);
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setContentEncoding(@Nullable String);
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setContentLanguage(@Nullable String);
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setContentType(@Nullable String);
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setCustomMetadata(@NonNull String, @Nullable String);
   }
 
   public class StorageReference {
     method @NonNull public com.google.firebase.storage.StorageReference child(@NonNull String);
-    method public int compareTo(com.google.firebase.storage.StorageReference);
+    method public int compareTo(@NonNull com.google.firebase.storage.StorageReference);
     method @NonNull public Task<Void> delete();
     method public boolean equals(Object);
     method @NonNull public List<FileDownloadTask> getActiveDownloadTasks();
@@ -163,12 +163,12 @@ package com.google.firebase.storage {
     method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnFailureListener(@NonNull OnFailureListener);
     method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnFailureListener(@NonNull Executor, @NonNull OnFailureListener);
     method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnFailureListener(@NonNull Activity, @NonNull OnFailureListener);
-    method public com.google.firebase.storage.StorageTask<ResultT> addOnPausedListener(@NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
-    method public com.google.firebase.storage.StorageTask<ResultT> addOnPausedListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
-    method public com.google.firebase.storage.StorageTask<ResultT> addOnPausedListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
-    method public com.google.firebase.storage.StorageTask<ResultT> addOnProgressListener(@NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
-    method public com.google.firebase.storage.StorageTask<ResultT> addOnProgressListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
-    method public com.google.firebase.storage.StorageTask<ResultT> addOnProgressListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnPausedListener(@NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnPausedListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnPausedListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnProgressListener(@NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnProgressListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnProgressListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
     method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnSuccessListener(@NonNull OnSuccessListener<? super ResultT>);
     method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnSuccessListener(@NonNull Executor, @NonNull OnSuccessListener<? super ResultT>);
     method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnSuccessListener(@NonNull Activity, @NonNull OnSuccessListener<? super ResultT>);
@@ -178,9 +178,9 @@ package com.google.firebase.storage {
     method @NonNull public <ContinuationResultT> Task<ContinuationResultT> continueWithTask(@NonNull Continuation<ResultT,Task<ContinuationResultT>>);
     method @NonNull public <ContinuationResultT> Task<ContinuationResultT> continueWithTask(@NonNull Executor, @NonNull Continuation<ResultT,Task<ContinuationResultT>>);
     method @Nullable public Exception getException();
-    method public ResultT getResult();
-    method public <X extends Throwable> ResultT getResult(@NonNull Class<X>) throws X;
-    method public ResultT getSnapshot();
+    method @NonNull public ResultT getResult();
+    method @NonNull public <X extends Throwable> ResultT getResult(@NonNull Class<X>) throws X;
+    method @NonNull public ResultT getSnapshot();
     method public boolean isCanceled();
     method public boolean isComplete();
     method public boolean isInProgress();
@@ -195,12 +195,12 @@ package com.google.firebase.storage {
     method @NonNull public <ContinuationResultT> Task<ContinuationResultT> onSuccessTask(@NonNull SuccessContinuation<ResultT,ContinuationResultT>);
     method @NonNull public <ContinuationResultT> Task<ContinuationResultT> onSuccessTask(@NonNull Executor, @NonNull SuccessContinuation<ResultT,ContinuationResultT>);
     method public boolean pause();
-    method public com.google.firebase.storage.StorageTask<ResultT> removeOnCanceledListener(@NonNull OnCanceledListener);
-    method public com.google.firebase.storage.StorageTask<ResultT> removeOnCompleteListener(@NonNull OnCompleteListener<ResultT>);
-    method public com.google.firebase.storage.StorageTask<ResultT> removeOnFailureListener(@NonNull OnFailureListener);
-    method public com.google.firebase.storage.StorageTask<ResultT> removeOnPausedListener(@NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
-    method public com.google.firebase.storage.StorageTask<ResultT> removeOnProgressListener(@NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
-    method public com.google.firebase.storage.StorageTask<ResultT> removeOnSuccessListener(@NonNull OnSuccessListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnCanceledListener(@NonNull OnCanceledListener);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnCompleteListener(@NonNull OnCompleteListener<ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnFailureListener(@NonNull OnFailureListener);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnPausedListener(@NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnProgressListener(@NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnSuccessListener(@NonNull OnSuccessListener<? super ResultT>);
     method public boolean resume();
     field protected final Object syncObject;
   }
@@ -210,7 +210,7 @@ package com.google.firebase.storage {
   }
 
   public class StorageTask.SnapshotBase implements com.google.firebase.storage.StorageTask.ProvideError {
-    ctor public StorageTask.SnapshotBase(Exception);
+    ctor public StorageTask.SnapshotBase(@Nullable Exception);
     method @Nullable public Exception getError();
     method @NonNull public com.google.firebase.storage.StorageReference getStorage();
     method @NonNull public com.google.firebase.storage.StorageTask<ResultT> getTask();
@@ -220,12 +220,12 @@ package com.google.firebase.storage {
   }
 
   public static interface StreamDownloadTask.StreamProcessor {
-    method public void doInBackground(com.google.firebase.storage.StreamDownloadTask.TaskSnapshot, InputStream);
+    method public void doInBackground(@NonNull com.google.firebase.storage.StreamDownloadTask.TaskSnapshot, @NonNull InputStream);
   }
 
   public class StreamDownloadTask.TaskSnapshot extends com.google.firebase.storage.StorageTask<com.google.firebase.storage.StreamDownloadTask.TaskSnapshot>.SnapshotBase {
     method public long getBytesTransferred();
-    method public InputStream getStream();
+    method @NonNull public InputStream getStream();
     method public long getTotalByteCount();
   }
 

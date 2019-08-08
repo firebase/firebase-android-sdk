@@ -27,11 +27,11 @@ package com.google.firebase.database {
   }
 
   public class DatabaseError {
-    method public static com.google.firebase.database.DatabaseError fromException(Throwable);
+    method @NonNull public static com.google.firebase.database.DatabaseError fromException(@NonNull Throwable);
     method public int getCode();
     method @NonNull public String getDetails();
     method @NonNull public String getMessage();
-    method public com.google.firebase.database.DatabaseException toException();
+    method @NonNull public com.google.firebase.database.DatabaseException toException();
     method public String toString();
     field public static final int DATA_STALE = -1; // 0xffffffff
     field public static final int DISCONNECTED = -4; // 0xfffffffc
@@ -131,7 +131,7 @@ package com.google.firebase.database {
     method @Nullable public Object getValue();
     method @Nullable public <T> T getValue(@NonNull Class<T>);
     method @Nullable public <T> T getValue(@NonNull com.google.firebase.database.GenericTypeIndicator<T>);
-    method public boolean hasChild(String);
+    method public boolean hasChild(@NonNull String);
     method public boolean hasChildren();
     method public void setPriority(@Nullable Object);
     method public void setValue(@Nullable Object) throws com.google.firebase.database.DatabaseException;

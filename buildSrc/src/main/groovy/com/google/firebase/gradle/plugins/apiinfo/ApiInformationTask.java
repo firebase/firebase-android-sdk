@@ -81,9 +81,9 @@ public class ApiInformationTask extends DefaultTask {
 
     @TaskAction
     void execute() {
-        String cmdTemplate = "%s --source-path %s --check-compatibility:api:current %s --format=v2 --baseline %s";
+        String cmdTemplate = "%s --source-path %s --check-compatibility:api:current %s --format=v2 --baseline %s --no-color";
         if(updateBaseline) {
-            cmdTemplate = "%s --source-path %s --check-compatibility:api:current %s --format=v2 --update-baseline %s";
+            cmdTemplate = "%s --source-path %s --check-compatibility:api:current %s --format=v2 --update-baseline %s --no-color";
         }
         String cmdToRun = String.format(cmdTemplate, metalavaBinaryPath, sourcePath, apiTxt, baselinePath);
         String cmdOutput = getCmdOutput(cmdToRun);

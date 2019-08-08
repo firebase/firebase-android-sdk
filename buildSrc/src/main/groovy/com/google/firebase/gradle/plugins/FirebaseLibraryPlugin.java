@@ -73,7 +73,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
         task.setProperty("apiTxt", project.getProjectDir() + "/api.txt");
         task.setProperty("metalavaBinaryPath", METALAVA_BINARY_PATH);
         task.setProperty("sourcePath", sourcePathArgument);
-        task.setProperty("outputPath", project.getBuildDir() + "/outputs/api-info.txt");
+        task.setProperty("outputPath", project.getRootProject().getBuildDir() + "/apiinfo/subproject" + project.getPath());
         task.setProperty("baselinePath", project.getProjectDir() + "/baseline.txt");
         if (project.hasProperty("updateBaseline")) {
           task.setProperty("updateBaseline", true);
