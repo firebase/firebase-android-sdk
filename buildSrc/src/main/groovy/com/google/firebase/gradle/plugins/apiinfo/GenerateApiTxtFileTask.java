@@ -23,41 +23,49 @@ import org.gradle.api.tasks.TaskAction;
 import java.io.File;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 
-public class GenerateApiTxtFileTask extends DefaultTask {
+public abstract class GenerateApiTxtFileTask extends DefaultTask {
 
     @Input
-    String metalavaBinaryPath;
+    abstract String getMetalavaBinaryPath();
 
     @InputFile
-    File apiTxt;
+    abstract File getApiTxt();
 
     @Input
-    String sourcePath;
+    abstract String getSourcePath();
 
     @InputFile
-    File baselineFile;
+    abstract File getBaselineFile();
 
     @Input
-    boolean updateBaseline;
+    abstract boolean getUpdateBaseline();
+
+    abstract void setSourcePath(String value);
+
+    abstract void setBaselineFile(File value);
+
+    abstract void setUpdateBaseline(boolean value);
+
+    abstract void setMetalavaBinaryPath(String value);
+
+    abstract void setApiTxt(File value);
+
 
 
 
     @TaskAction
     void execute() {
         String cmdTemplate = "%s --source-path %s --api %s --format=v2 --baseline %s";
-        if(updateBaseline) {
+        if(getUpdateBaseline()) {
             cmdTemplate = "%s --source-path %s --api %s --format=v2 --update-baseline %s";
         }
-        String cmdToRun = String.format(cmdTemplate, metalavaBinaryPath, sourcePath, apiTxt.getAbsolutePath(), baselineFile.getAbsolutePath());
-        try {
-            Process p = Runtime.getRuntime().exec(cmdToRun);
-            System.out.println("Generated api txt file at " + apiTxt);
-        } catch (IOException e) {
-            getLogger().error("Failed to run command " + cmdToRun);
-            getLogger().error(e.toString());
-        }
+        String cmdToRun = String.format(cmdTemplate, getMetalavaBinaryPath(), getSourcePath(), getApiTxt().getAbsolutePath(), getBaselineFile().getAbsolutePath());
+        getProject().exec(spec-> {
+            spec.setCommandLine(Arrays.asList(cmdToRun.split(" ")));
+        });
     }
 
 }

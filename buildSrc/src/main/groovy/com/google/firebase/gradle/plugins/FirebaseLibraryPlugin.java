@@ -26,6 +26,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,22 +66,19 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     if (System.getenv().containsKey("METALAVA_BINARY_PATH")) {
       String metalavaBinaryPath = System.getenv("METALAVA_BINARY_PATH");
       AndroidSourceSet mainSourceSet = android.getSourceSets().getByName("main");
-      File apiTxtFile = new File(project.getProjectDir() + "/api.txt");
-      File baseLineFile = new File(project.getProjectDir() + "/baseline.txt");
-      File outputFile = new File(project.getRootProject().getBuildDir() + "/apiinfo/" + project.getPath().substring(1).replace(":", "_"));
-      File outputFileDir = outputFile.getParentFile();
-      if(!outputFileDir.exists()) {
-        outputFileDir.mkdirs();
-      }
+      File outputFile = project.getRootProject().file(Paths.get(
+              project.getRootProject().getBuildDir().getPath(),
+              "apiinfo",
+              project.getPath().substring(1).replace(":", "_")));
       String sourcePathArgument = mainSourceSet.getJava().getSrcDirs().stream()
               .map(File::getAbsolutePath)
               .collect(Collectors.joining(":"));
       project.getTasks().register("apiInformation", ApiInformationTask.class, task -> {
-        task.setProperty("apiTxt", apiTxtFile);
+        task.setProperty("apiTxt", project.file("api.txt"));
         task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
         task.setProperty("sourcePath", sourcePathArgument);
         task.setProperty("outputFile", outputFile);
-        task.setProperty("baselineFile", baseLineFile);
+        task.setProperty("baselineFile", project.file("baseline.txt"));
         if (project.hasProperty("updateBaseline")) {
           task.setProperty("updateBaseline", true);
         } else {
@@ -89,10 +87,10 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
       });
 
       project.getTasks().register("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
-        task.setProperty("apiTxt", apiTxtFile);
+        task.setProperty("apiTxt", project.file("api.txt"));
         task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
         task.setProperty("sourcePath", sourcePathArgument);
-        task.setProperty("baselineFile", baseLineFile);
+        task.setProperty("baselineFile", project.file("baseline.txt"));
         if (project.hasProperty("updateBaseline")) {
           task.setProperty("updateBaseline", true);
         } else {

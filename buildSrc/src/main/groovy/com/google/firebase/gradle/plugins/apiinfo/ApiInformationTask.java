@@ -24,77 +24,70 @@ import org.gradle.api.tasks.TaskAction;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 
 /**
     Task generates the api diff of the current source code against the api.txt file stored
     alongside the project's src directory.
  */
-public class ApiInformationTask extends DefaultTask {
+public abstract class ApiInformationTask extends DefaultTask {
 
     @Input
-    String metalavaBinaryPath;
+    abstract String getMetalavaBinaryPath();
 
     @InputFile
-    File apiTxt;
+    abstract File getApiTxt();
 
     @Input
-    String sourcePath;
+    abstract String getSourcePath();
 
     @InputFile
-    File baselineFile;
+    abstract File getBaselineFile();
 
     @Input
-    boolean updateBaseline;
+    abstract boolean getUpdateBaseline();
 
     @OutputFile
-    File outputFile;
+    abstract File getOutputFile();
 
+    abstract void setSourcePath(String value);
 
-    private String getCmdOutput (String cmdToRun) {
-        ProcessBuilder processBuilder = new ProcessBuilder(cmdToRun.split(" "));
-        try {
-            Process p = processBuilder.start();
-            BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(p.getInputStream()));
-            StringBuilder builder = new StringBuilder();
-            String line = null;
-            while ( (line = reader.readLine()) != null) {
-                builder.append(line);
-                builder.append("\n");
-            }
-            return builder.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+    abstract void setBaselineFile(File value);
 
-    }
+    abstract void setUpdateBaseline(boolean value);
 
-    private void writeToFile(String output) {
-        try(BufferedWriter out = new BufferedWriter(new FileWriter(outputFile))) {
-            out.write(output);
-        } catch (IOException e) {
-            getLogger().error("Error: " + e.getMessage());
-        }
-    }
+    abstract void setMetalavaBinaryPath(String value);
+
+    abstract void setApiTxt(File value);
+
+    abstract void setOutputFile(File value);
+
 
     @TaskAction
     void execute() {
+        File outputFileDir = getOutputFile().getParentFile();
+        if(!outputFileDir.exists()) {
+            outputFileDir.mkdirs();
+        }
         String cmdTemplate = "%s --source-path %s --check-compatibility:api:current %s --format=v2 --baseline %s --no-color";
-        if(updateBaseline) {
+        if(getUpdateBaseline()) {
             cmdTemplate = "%s --source-path %s --check-compatibility:api:current %s --format=v2 --update-baseline %s --no-color";
         }
-        String cmdToRun = String.format(cmdTemplate, metalavaBinaryPath, sourcePath, apiTxt.getAbsolutePath(), baselineFile.getAbsolutePath());
-        String cmdOutput = getCmdOutput(cmdToRun);
-        if(cmdOutput == null ){
-            getLogger().error("Unable to run the command " + cmdToRun);
-        }
-        else {
-            writeToFile(cmdOutput);
-        }
+        String cmdToRun = String.format(cmdTemplate, getMetalavaBinaryPath(), getSourcePath(), getApiTxt().getAbsolutePath(), getBaselineFile().getAbsolutePath());
+        getProject().exec(spec-> {
+            spec.setCommandLine(Arrays.asList(cmdToRun.split(" ")));
+            try {
+                spec.setStandardOutput(new FileOutputStream(getOutputFile()));
+            } catch (FileNotFoundException e) {
+                getLogger().error(e.toString());
+            }
+        });
+
     }
 
 }
