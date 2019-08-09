@@ -58,10 +58,10 @@ public abstract class ImmutableSortedMap<K, V> implements Iterable<Map.Entry<K, 
 
   public ImmutableSortedMap<K, V> insertAll(ImmutableSortedMap<K, V> source) {
     ImmutableSortedMap<K, V> result = this;
-    for (Map.Entry<K, V> entry: source) {
+    for (Map.Entry<K, V> entry : source) {
       result = result.insert(entry.getKey(), entry.getValue());
     }
-    return  result;
+    return result;
   }
 
   @Override
