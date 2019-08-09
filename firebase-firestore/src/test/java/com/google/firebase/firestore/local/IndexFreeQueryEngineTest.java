@@ -148,11 +148,11 @@ public class IndexFreeQueryEngineTest {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> runQuery(
-          Query query, QueryData queryData, boolean expectIndexFree) {
+      Query query, QueryData queryData, boolean expectIndexFree) {
     expectIndexFreeExecution = expectIndexFree;
     ImmutableSortedSet<DocumentKey> remoteKeys =
-            new ImmutableSortedSet<>(
-                    new ArrayList<>(existingQueryResults.keySet()), DocumentKey.comparator());
+        new ImmutableSortedSet<>(
+            new ArrayList<>(existingQueryResults.keySet()), DocumentKey.comparator());
     return queryEngine.getDocumentsMatchingQuery(query, queryData, remoteKeys);
   }
 

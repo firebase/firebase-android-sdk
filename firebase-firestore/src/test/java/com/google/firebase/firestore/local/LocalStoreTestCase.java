@@ -1201,7 +1201,8 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testQueriesFilterDocumentsThatNoLongerMatch() {
-    // This test verifies that documents that once matched a query are post-filtered if they no longer match the query filter.
+    // This test verifies that documents that once matched a query are post-filtered if they no
+    // longer match the query filter.
     if (garbageCollectorIsEager()) {
       return;
     }
