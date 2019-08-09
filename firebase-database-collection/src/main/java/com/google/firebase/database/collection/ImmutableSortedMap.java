@@ -29,6 +29,8 @@ public abstract class ImmutableSortedMap<K, V> implements Iterable<Map.Entry<K, 
 
   public abstract ImmutableSortedMap<K, V> insert(K key, V value);
 
+
+
   public abstract K getMinKey();
 
   public abstract K getMaxKey();
@@ -55,6 +57,14 @@ public abstract class ImmutableSortedMap<K, V> implements Iterable<Map.Entry<K, 
   public abstract int indexOf(K key);
 
   public abstract Comparator<K> getComparator();
+
+  public ImmutableSortedMap<K, V> insertAll(ImmutableSortedMap<K, V> source) {
+    ImmutableSortedMap<K, V> result = this;
+    for (Map.Entry<K, V> entry: source) {
+      result = result.insert(entry.getKey(), entry.getValue());
+    }
+    return  result;
+  }
 
   @Override
   @SuppressWarnings("unchecked")
