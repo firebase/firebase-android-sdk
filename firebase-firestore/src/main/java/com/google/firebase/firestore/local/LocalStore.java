@@ -28,6 +28,7 @@ import com.google.firebase.firestore.core.TargetIdGenerator;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -282,6 +283,14 @@ public final class LocalStore {
         });
   }
 
+  /**
+   * Returns the largest (latest) batch id in mutation queue that is pending server response.
+   * Returns {@link MutationBatch#UNKNOWN} if the queue is empty.
+   */
+  public int getHighestUnacknowledgedBatchId() {
+    return mutationQueue.getHighestUnacknowledgedBatchId();
+  }
+
   /** Returns the last recorded stream token for the current user. */
   public ByteString getLastStreamToken() {
     return mutationQueue.getLastStreamToken();
@@ -383,16 +392,18 @@ public final class LocalStore {
             MaybeDocument doc = entry.getValue();
             MaybeDocument existingDoc = existingDocs.get(key);
 
-            // If a document update isn't authoritative, make sure we don't
-            // apply an old document version to the remote cache. We make an
-            // exception for SnapshotVersion.MIN which can happen for
-            // manufactured events (e.g. in the case of a limbo document
-            // resolution failing).
             if (existingDoc == null
-                || doc.getVersion().equals(SnapshotVersion.NONE)
                 || (authoritativeUpdates.contains(doc.getKey()) && !existingDoc.hasPendingWrites())
                 || doc.getVersion().compareTo(existingDoc.getVersion()) >= 0) {
+              // If a document update isn't authoritative, make sure we don't apply an old document
+              // version to the remote cache.
               remoteDocuments.add(doc, remoteEvent.getSnapshotVersion());
+              changedDocs.put(key, doc);
+            } else if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
+              // NoDocuments with SnapshotVersion.MIN are used in manufactured events (e.g. in the
+              // case of a limbo document resolution failing). We remove these documents from cache
+              // since we lost access.
+              remoteDocuments.remove(doc.getKey());
               changedDocs.put(key, doc);
             } else {
               Logger.debug(

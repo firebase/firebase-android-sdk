@@ -55,7 +55,11 @@ public class ComponentRuntime extends AbstractComponentContainer {
     for (ComponentRegistrar registrar : registrars) {
       componentsToAdd.addAll(registrar.getComponents());
     }
-    Collections.addAll(componentsToAdd, additionalComponents);
+    for (Component<?> additionalComponent : additionalComponents) {
+      if (additionalComponent != null) {
+        componentsToAdd.add(additionalComponent);
+      }
+    }
 
     CycleDetector.detect(componentsToAdd);
 

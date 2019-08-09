@@ -12,17 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.gradle.plugins;
+package com.google.firebase.platforminfo;
 
-import java.util.Set;
+import androidx.annotation.Nullable;
 
-public class FirebaseStaticAnalysis {
-  public Set<String> errorproneCheckProjects;
-  public Set<String> androidLintCheckProjects;
+/**
+ * Detects presence of Kotlin stdlib on the classpath.
+ *
+ * <p>If it is present, it is inferred that the application or its subset is written in Kotlin.
+ */
+public final class KotlinDetector {
+  private KotlinDetector() {}
 
-  public FirebaseStaticAnalysis(
-      Set<String> errorproneCheckProjects, Set<String> androidLintCheckProjects) {
-    this.errorproneCheckProjects = errorproneCheckProjects;
-    this.androidLintCheckProjects = androidLintCheckProjects;
+  /** Returns the version of Kotlin stdlib if found, {@code null} otherwise. */
+  @Nullable
+  public static String detectVersion() {
+    try {
+      return kotlin.KotlinVersion.CURRENT.toString();
+    } catch (NoClassDefFoundError ex) {
+      return null;
+    }
   }
 }
