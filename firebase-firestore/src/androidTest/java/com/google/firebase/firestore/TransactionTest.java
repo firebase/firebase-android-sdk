@@ -313,6 +313,7 @@ public class TransactionTest {
     AtomicInteger started = new AtomicInteger(0);
 
     FirebaseFirestore firestore = testFirestore();
+    firestore.removeTransactionBackoffs();
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 5.0)));
 
@@ -378,6 +379,7 @@ public class TransactionTest {
     AtomicInteger counter = new AtomicInteger(0);
 
     FirebaseFirestore firestore = testFirestore();
+    firestore.removeTransactionBackoffs();
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 5.0, "other", "yes")));
 
@@ -472,6 +474,7 @@ public class TransactionTest {
     AtomicInteger started = new AtomicInteger(0);
 
     FirebaseFirestore firestore = testFirestore();
+    firestore.removeTransactionBackoffs();
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(new POJO(5.0, "no", "clean")));
 

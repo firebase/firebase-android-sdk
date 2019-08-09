@@ -473,13 +473,6 @@ public class AsyncQueue {
    * @return A DelayedTask instance that can be used for cancellation.
    */
   public DelayedTask enqueueAfterDelay(TimerId timerId, long delayMs, Runnable task) {
-    // While not necessarily harmful, we currently don't expect to have multiple tasks with the same
-    // timer id in the queue, so defensively reject them.
-    hardAssert(
-        !containsDelayedTask(timerId),
-        "Attempted to schedule multiple operations with timer id %s.",
-        timerId);
-
     DelayedTask delayedTask = createAndScheduleDelayedTask(timerId, delayMs, task);
     delayedTasks.add(delayedTask);
 

@@ -387,9 +387,7 @@ public class FirebaseFirestore {
     return asyncQueue;
   }
 
-  /**
-   * For tests: Skip all transaction backoffs to make integration tests complete faster.
-   */
+  /** For tests: Skip all transaction backoffs to make integration tests complete faster. */
   @VisibleForTesting
   void removeTransactionBackoffs() {
     this.skipTransactionBackoffs = true;
