@@ -46,7 +46,7 @@ public abstract class ApiInformationTask extends DefaultTask {
     @Input
     abstract String getSourcePath();
 
-    @InputFile
+    @OutputFile
     abstract File getBaselineFile();
 
     @Input
@@ -74,13 +74,14 @@ public abstract class ApiInformationTask extends DefaultTask {
         if(!outputFileDir.exists()) {
             outputFileDir.mkdirs();
         }
-        String cmdTemplate = "%s --source-path %s --check-compatibility:api:current %s --format=v2 --baseline %s --no-color";
-        if(getUpdateBaseline()) {
-            cmdTemplate = "%s --source-path %s --check-compatibility:api:current %s --format=v2 --update-baseline %s --no-color";
-        }
+        String cmdTemplate = getUpdateBaseline() ?
+                "%s --source-path %s --check-compatibility:api:current %s --format=v2 --update-baseline %s --no-color"
+                : "%s --source-path %s --check-compatibility:api:current %s --format=v2 --baseline %s --no-color";
+
         String cmdToRun = String.format(cmdTemplate, getMetalavaBinaryPath(), getSourcePath(), getApiTxt().getAbsolutePath(), getBaselineFile().getAbsolutePath());
         getProject().exec(spec-> {
             spec.setCommandLine(Arrays.asList(cmdToRun.split(" ")));
+            spec.setIgnoreExitValue(true);
             try {
                 spec.setStandardOutput(new FileOutputStream(getOutputFile()));
             } catch (FileNotFoundException e) {

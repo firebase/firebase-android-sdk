@@ -18,11 +18,10 @@ package com.google.firebase.gradle.plugins.apiinfo;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import java.io.File;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 
@@ -31,13 +30,13 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
     @Input
     abstract String getMetalavaBinaryPath();
 
-    @InputFile
+    @OutputFile
     abstract File getApiTxt();
 
     @Input
     abstract String getSourcePath();
 
-    @InputFile
+    @OutputFile
     abstract File getBaselineFile();
 
     @Input
@@ -53,15 +52,10 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
 
     abstract void setApiTxt(File value);
 
-
-
-
     @TaskAction
     void execute() {
-        String cmdTemplate = "%s --source-path %s --api %s --format=v2 --baseline %s";
-        if(getUpdateBaseline()) {
-            cmdTemplate = "%s --source-path %s --api %s --format=v2 --update-baseline %s";
-        }
+        String cmdTemplate = getUpdateBaseline() ? "%s --source-path %s --api %s --format=v2 --update-baseline %s"
+                : "%s --source-path %s --api %s --format=v2 --baseline %s";
         String cmdToRun = String.format(cmdTemplate, getMetalavaBinaryPath(), getSourcePath(), getApiTxt().getAbsolutePath(), getBaselineFile().getAbsolutePath());
         getProject().exec(spec-> {
             spec.setCommandLine(Arrays.asList(cmdToRun.split(" ")));

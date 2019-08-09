@@ -73,30 +73,39 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
       String sourcePathArgument = mainSourceSet.getJava().getSrcDirs().stream()
               .map(File::getAbsolutePath)
               .collect(Collectors.joining(":"));
-      project.getTasks().register("apiInformation", ApiInformationTask.class, task -> {
-        task.setProperty("apiTxt", project.file("api.txt"));
-        task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
-        task.setProperty("sourcePath", sourcePathArgument);
-        task.setProperty("outputFile", outputFile);
-        task.setProperty("baselineFile", project.file("baseline.txt"));
-        if (project.hasProperty("updateBaseline")) {
-          task.setProperty("updateBaseline", true);
-        } else {
-          task.setProperty("updateBaseline", false);
-        }
-      });
+      boolean doesSourcePathExist = false;
+      for(String sourcePath : sourcePathArgument.split(":")) {
+          if(new File(sourcePath).exists()) {
+            doesSourcePathExist = true;
+            break;
+          }
+      }
+      if(doesSourcePathExist) {
+        project.getTasks().register("apiInformation", ApiInformationTask.class, task -> {
+          task.setProperty("apiTxt", project.file("api.txt"));
+          task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
+          task.setProperty("sourcePath", sourcePathArgument);
+          task.setProperty("outputFile", outputFile);
+          task.setProperty("baselineFile", project.file("baseline.txt"));
+          if (project.hasProperty("updateBaseline")) {
+            task.setProperty("updateBaseline", true);
+          } else {
+            task.setProperty("updateBaseline", false);
+          }
+        });
 
-      project.getTasks().register("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
-        task.setProperty("apiTxt", project.file("api.txt"));
-        task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
-        task.setProperty("sourcePath", sourcePathArgument);
-        task.setProperty("baselineFile", project.file("baseline.txt"));
-        if (project.hasProperty("updateBaseline")) {
-          task.setProperty("updateBaseline", true);
-        } else {
-          task.setProperty("updateBaseline", false);
-        }
-      });
+        project.getTasks().register("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
+          task.setProperty("apiTxt", project.file("api.txt"));
+          task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
+          task.setProperty("sourcePath", sourcePathArgument);
+          task.setProperty("baselineFile", project.file("baseline.txt"));
+          if (project.hasProperty("updateBaseline")) {
+            task.setProperty("updateBaseline", true);
+          } else {
+            task.setProperty("updateBaseline", false);
+          }
+        });
+      }
     }
 
 

@@ -86,7 +86,7 @@ def api_information(auth_token, repo_name, issue_number):
     if formatted_output_lines:
       comment_string += 'The public api surface has changed for the subproject {}:\n'.format(subproject)
       comment_string += ''.join(formatted_output_lines)
-      comment_string += '\n'
+      comment_string += '\n\n'
   if comment_string:
     comment_string += ('Please update the api.txt files for the subprojects being affected by this change '
       'with the files present in the artifacts directory. Also perform a major/minor bump accordingly.\n')
