@@ -17,8 +17,10 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -47,6 +49,7 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.ExponentialBackoff;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
@@ -250,9 +253,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   /**
    * Takes an updateFunction in which a set of reads and writes can be performed atomically. In the
    * updateFunction, the client can read and write values using the supplied transaction object.
-   * After the updateFunction, all changes will be committed. If some other client has changed any
-   * of the data referenced, then the updateFunction will be called again. If the updateFunction
-   * still fails after the given number of retries, then the transaction will be rejected.
+   * After the updateFunction, all changes will be committed. If a retryable error occurs (ex: some
+   * other client has changed any of the data referenced), then the updateFunction will be called
+   * again after a backoff. If the updateFunction still fails after the given number of retires,
+   * then the transaction will be rejected.
    *
    * <p>The transaction object passed to the updateFunction contains methods for accessing documents
    * and collections. Unlike other datastore access, data accessed with the transaction will not
@@ -261,36 +265,58 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    *
    * <p>The Task returned is resolved when the transaction is fully committed.
    */
-  public <TResult> Task<TResult> transaction(
-      AsyncQueue asyncQueue, Function<Transaction, Task<TResult>> updateFunction, int retries) {
+  public <TResult> void transaction(
+      AsyncQueue asyncQueue,
+      ExponentialBackoff backoff,
+      TaskCompletionSource<TResult> txTaskSource,
+      Function<Transaction, Task<TResult>> updateFunction,
+      int retries) {
     hardAssert(retries >= 0, "Got negative number of retries for transaction.");
-    final Transaction transaction = remoteStore.createTransaction();
-    return updateFunction
-        .apply(transaction)
-        .continueWithTask(
-            asyncQueue.getExecutor(),
-            userTask -> {
-              if (!userTask.isSuccessful()) {
-                if (retries > 0 && isRetryableTransactionError(userTask.getException())) {
-                  return transaction(asyncQueue, updateFunction, retries - 1);
-                }
-                return userTask;
-              }
-              return transaction
-                  .commit()
-                  .continueWithTask(
-                      asyncQueue.getExecutor(),
-                      commitTask -> {
-                        if (commitTask.isSuccessful()) {
-                          return Tasks.forResult(userTask.getResult());
+
+    backoff.backoffAndRun(
+        () -> {
+          final Transaction transaction = remoteStore.createTransaction();
+          updateFunction
+              .apply(transaction)
+              .addOnCompleteListener(
+                  asyncQueue.getExecutor(),
+                  new OnCompleteListener<TResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<TResult> userTask) {
+                      if (!userTask.isSuccessful()) {
+                        if (retries > 0 && isRetryableTransactionError(userTask.getException())) {
+                          transaction(
+                              asyncQueue, backoff, txTaskSource, updateFunction, retries - 1);
+                        } else {
+                          txTaskSource.setException(userTask.getException());
                         }
-                        Exception e = commitTask.getException();
-                        if (retries > 0 && isRetryableTransactionError(e)) {
-                          return transaction(asyncQueue, updateFunction, retries - 1);
-                        }
-                        return Tasks.forException(e);
-                      });
-            });
+                      } else {
+                        transaction
+                            .commit()
+                            .addOnCompleteListener(
+                                asyncQueue.getExecutor(),
+                                new OnCompleteListener<Void>() {
+                                  @Override
+                                  public void onComplete(@NonNull Task<Void> commitTask) {
+                                    if (commitTask.isSuccessful()) {
+                                      txTaskSource.setResult(userTask.getResult());
+                                    } else if (retries > 0
+                                        && isRetryableTransactionError(commitTask.getException())) {
+                                      transaction(
+                                          asyncQueue,
+                                          backoff,
+                                          txTaskSource,
+                                          updateFunction,
+                                          retries - 1);
+                                    } else {
+                                      txTaskSource.setException(commitTask.getException());
+                                    }
+                                  }
+                                });
+                      }
+                    }
+                  });
+        });
   }
 
   /** Called by FirestoreClient to notify us of a new remote event. */

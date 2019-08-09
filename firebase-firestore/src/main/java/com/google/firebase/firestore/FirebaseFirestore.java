@@ -71,6 +71,8 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
 
+  private boolean skipTransactionBackoffs = false;
+
   @NonNull
   public static FirebaseFirestore getInstance() {
     FirebaseApp app = FirebaseApp.getInstance();
@@ -279,7 +281,7 @@ public class FirebaseFirestore {
                     updateFunction.apply(
                         new Transaction(internalTransaction, FirebaseFirestore.this)));
 
-    return client.transaction(wrappedUpdateFunction, 5);
+    return client.transaction(wrappedUpdateFunction, 5, skipTransactionBackoffs);
   }
 
   /**
@@ -383,6 +385,14 @@ public class FirebaseFirestore {
   @VisibleForTesting
   AsyncQueue getAsyncQueue() {
     return asyncQueue;
+  }
+
+  /**
+   * For tests: Skip all transaction backoffs to make integration tests complete faster.
+   */
+  @VisibleForTesting
+  void removeTransactionBackoffs() {
+    this.skipTransactionBackoffs = true;
   }
 
   /**

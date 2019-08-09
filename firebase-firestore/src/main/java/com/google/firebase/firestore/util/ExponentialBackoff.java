@@ -20,6 +20,18 @@ import java.util.Date;
 
 /** Helper to implement exponential backoff. */
 public class ExponentialBackoff {
+
+  /**
+   * Initial backoff time in milliseconds after an error. Set to 1s according to
+   * https://cloud.google.com/apis/design/errors.
+   */
+  public static final long DEFAULT_BACKOFF_INITIAL_DELAY_MS = 1000;
+
+  public static final double DEFAULT_BACKOFF_FACTOR = 1.5;
+
+  /** Maximum backoff time in milliseconds */
+  public static final long DEFAULT_BACKOFF_MAX_DELAY_MS = 60 * 1000;
+
   private final AsyncQueue queue;
   private final TimerId timerId;
   private final long initialDelayMs;
@@ -59,6 +71,17 @@ public class ExponentialBackoff {
     this.initialDelayMs = initialDelayMs;
     this.backoffFactor = backoffFactor;
     this.maxDelayMs = maxDelayMs;
+    this.lastAttemptTime = new Date().getTime();
+
+    reset();
+  }
+
+  public ExponentialBackoff(AsyncQueue queue, AsyncQueue.TimerId timerId) {
+    this.queue = queue;
+    this.timerId = timerId;
+    this.initialDelayMs = DEFAULT_BACKOFF_INITIAL_DELAY_MS;
+    this.backoffFactor = DEFAULT_BACKOFF_FACTOR;
+    this.maxDelayMs = DEFAULT_BACKOFF_MAX_DELAY_MS;
     this.lastAttemptTime = new Date().getTime();
 
     reset();

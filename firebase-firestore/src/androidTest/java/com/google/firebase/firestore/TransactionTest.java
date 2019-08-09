@@ -546,6 +546,7 @@ public class TransactionTest {
   @Test
   public void testReadingADocTwiceWithDifferentVersions() {
     FirebaseFirestore firestore = testFirestore();
+    firestore.removeTransactionBackoffs();
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 15.0)));
     AtomicInteger counter = new AtomicInteger(0);
