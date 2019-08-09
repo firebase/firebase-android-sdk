@@ -18,29 +18,28 @@ package com.google.firebase.gradle.plugins.apiinfo;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.TaskAction;
+import java.io.File;
 
 import java.io.IOException;
 
-import groovy.transform.CompileStatic;
-import jdk.nashorn.internal.objects.annotations.Property;
 
-@CompileStatic
 public class GenerateApiTxtFileTask extends DefaultTask {
 
-    @Property
+    @Input
     String metalavaBinaryPath;
 
-    @Property
-    String apiTxt;
+    @InputFile
+    File apiTxt;
 
-    @Property
+    @Input
     String sourcePath;
 
-    @Property
-    String baselinePath;
+    @InputFile
+    File baselineFile;
 
-    @Property
+    @Input
     boolean updateBaseline;
 
 
@@ -51,13 +50,13 @@ public class GenerateApiTxtFileTask extends DefaultTask {
         if(updateBaseline) {
             cmdTemplate = "%s --source-path %s --api %s --format=v2 --update-baseline %s";
         }
-        String cmdToRun = String.format(cmdTemplate, metalavaBinaryPath, sourcePath, apiTxt, baselinePath);
+        String cmdToRun = String.format(cmdTemplate, metalavaBinaryPath, sourcePath, apiTxt.getAbsolutePath(), baselineFile.getAbsolutePath());
         try {
             Process p = Runtime.getRuntime().exec(cmdToRun);
             System.out.println("Generated api txt file at " + apiTxt);
         } catch (IOException e) {
-            System.out.println("Failed to run command " + cmdToRun);
-            System.out.println(e.toString());
+            getLogger().error("Failed to run command " + cmdToRun);
+            getLogger().error(e.toString());
         }
     }
 

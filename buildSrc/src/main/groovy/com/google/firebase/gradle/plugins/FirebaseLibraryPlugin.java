@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class FirebaseLibraryPlugin implements Plugin<Project> {
 
@@ -62,19 +63,24 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
               });
     }
     if (System.getenv().containsKey("METALAVA_BINARY_PATH")) {
-      String METALAVA_BINARY_PATH = System.getenv("METALAVA_BINARY_PATH");
+      String metalavaBinaryPath = System.getenv("METALAVA_BINARY_PATH");
       AndroidSourceSet mainSourceSet = android.getSourceSets().getByName("main");
-      List<String> sourcePaths = new ArrayList<>();
-      for (File directory : mainSourceSet.getJava().getSrcDirs()) {
-        sourcePaths.add(directory.getAbsolutePath());
+      File apiTxtFile = new File(project.getProjectDir() + "/api.txt");
+      File baseLineFile = new File(project.getProjectDir() + "/baseline.txt");
+      File outputFile = new File(project.getRootProject().getBuildDir() + "/apiinfo/" + project.getPath().substring(1).replace(":", "_"));
+      File outputFileDir = outputFile.getParentFile();
+      if(!outputFileDir.exists()) {
+        outputFileDir.mkdirs();
       }
-      String sourcePathArgument = String.join(",", sourcePaths);
-      project.getTasks().create("apiInformation", ApiInformationTask.class, task -> {
-        task.setProperty("apiTxt", project.getProjectDir() + "/api.txt");
-        task.setProperty("metalavaBinaryPath", METALAVA_BINARY_PATH);
+      String sourcePathArgument = mainSourceSet.getJava().getSrcDirs().stream()
+              .map(File::getAbsolutePath)
+              .collect(Collectors.joining(":"));
+      project.getTasks().register("apiInformation", ApiInformationTask.class, task -> {
+        task.setProperty("apiTxt", apiTxtFile);
+        task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
         task.setProperty("sourcePath", sourcePathArgument);
-        task.setProperty("outputPath", project.getRootProject().getBuildDir() + "/apiinfo/subproject" + project.getPath());
-        task.setProperty("baselinePath", project.getProjectDir() + "/baseline.txt");
+        task.setProperty("outputFile", outputFile);
+        task.setProperty("baselineFile", baseLineFile);
         if (project.hasProperty("updateBaseline")) {
           task.setProperty("updateBaseline", true);
         } else {
@@ -82,11 +88,11 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
         }
       });
 
-      project.getTasks().create("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
-        task.setProperty("apiTxt", project.getProjectDir() + "/api.txt");
-        task.setProperty("metalavaBinaryPath", METALAVA_BINARY_PATH);
+      project.getTasks().register("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
+        task.setProperty("apiTxt", apiTxtFile);
+        task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
         task.setProperty("sourcePath", sourcePathArgument);
-        task.setProperty("baselinePath", project.getProjectDir() + "/baseline.txt");
+        task.setProperty("baselineFile", baseLineFile);
         if (project.hasProperty("updateBaseline")) {
           task.setProperty("updateBaseline", true);
         } else {

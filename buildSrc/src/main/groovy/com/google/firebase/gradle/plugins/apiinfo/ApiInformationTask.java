@@ -14,13 +14,16 @@
 
 package com.google.firebase.gradle.plugins.apiinfo;
 
-import groovy.transform.CompileStatic;
-import jdk.nashorn.internal.objects.annotations.Property;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,26 +32,25 @@ import java.io.InputStreamReader;
     Task generates the api diff of the current source code against the api.txt file stored
     alongside the project's src directory.
  */
-@CompileStatic
 public class ApiInformationTask extends DefaultTask {
 
-    @Property
+    @Input
     String metalavaBinaryPath;
 
-    @Property
-    String apiTxt;
+    @InputFile
+    File apiTxt;
 
-    @Property
+    @Input
     String sourcePath;
 
-    @Property
-    String baselinePath;
+    @InputFile
+    File baselineFile;
 
-    @Property
+    @Input
     boolean updateBaseline;
 
-    @Property
-    String outputPath;
+    @OutputFile
+    File outputFile;
 
 
     private String getCmdOutput (String cmdToRun) {
@@ -61,7 +63,7 @@ public class ApiInformationTask extends DefaultTask {
             String line = null;
             while ( (line = reader.readLine()) != null) {
                 builder.append(line);
-                builder.append(System.getProperty("line.separator"));
+                builder.append("\n");
             }
             return builder.toString();
         } catch (IOException e) {
@@ -72,10 +74,10 @@ public class ApiInformationTask extends DefaultTask {
     }
 
     private void writeToFile(String output) {
-        try(BufferedWriter out = new BufferedWriter(new FileWriter(outputPath))) {
+        try(BufferedWriter out = new BufferedWriter(new FileWriter(outputFile))) {
             out.write(output);
         } catch (IOException e) {
-            System.err.println("Error: " + e.getMessage());
+            getLogger().error("Error: " + e.getMessage());
         }
     }
 
@@ -85,10 +87,10 @@ public class ApiInformationTask extends DefaultTask {
         if(updateBaseline) {
             cmdTemplate = "%s --source-path %s --check-compatibility:api:current %s --format=v2 --update-baseline %s --no-color";
         }
-        String cmdToRun = String.format(cmdTemplate, metalavaBinaryPath, sourcePath, apiTxt, baselinePath);
+        String cmdToRun = String.format(cmdTemplate, metalavaBinaryPath, sourcePath, apiTxt.getAbsolutePath(), baselineFile.getAbsolutePath());
         String cmdOutput = getCmdOutput(cmdToRun);
         if(cmdOutput == null ){
-            System.out.println("Unable to run the command " + cmdToRun);
+            getLogger().error("Unable to run the command " + cmdToRun);
         }
         else {
             writeToFile(cmdOutput);

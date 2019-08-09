@@ -65,15 +65,14 @@ def smoke_tests(app_build_variant, test_apps_dir):
     )
 
 
-@click.argument('issue_number', required=True)
-@click.argument('repo_name', required=True)
-@click.argument('auth_token', required=True)
+@click.option('--issue_number', 'issue_number', required=True)
+@click.option('--repo_name', 'repo_name', required=True)
+@click.option('--auth_token', 'auth_token', required=True)
 @ci_command()
 def api_information(auth_token, repo_name, issue_number):
   """Comments the api information on the pr"""
 
-  gradle.run('apiInformation')
-  gradle.run('generateApiTxtFile')
+  gradle.run('apiInformation', 'generateApiTxtFile')
   dir_suffix = 'build/apiinfo'
   comment_string = ""
   for filename in os.listdir(dir_suffix):
@@ -85,16 +84,14 @@ def api_information(auth_token, repo_name, issue_number):
         if 'error' in line:
           formatted_output_lines.append(line[line.find('error:'):])
     if formatted_output_lines:
-      comment_string += 'The public api surface has changed for the subproject {}:\n'.format(subproject[len('subproject:'):])
+      comment_string += 'The public api surface has changed for the subproject {}:\n'.format(subproject)
       comment_string += ''.join(formatted_output_lines)
       comment_string += '\n'
   if comment_string:
     comment_string += ('Please update the api.txt files for the subprojects being affected by this change '
       'with the files present in the artifacts directory. Also perform a major/minor bump accordingly.\n')
-  else:
-    comment_string = 'No project\'s public api surface was changed due to this PR.\n'
-  # Comment to github.
-  github_client = Github(auth_token)
-  repo = github_client.get_repo(repo_name)
-  pr = repo.get_pull(int(issue_number))
-  pr.create_issue_comment(comment_string)
+    # Comment to github.
+    github_client = Github(auth_token)
+    repo = github_client.get_repo(repo_name)
+    pr = repo.get_pull(int(issue_number))
+    pr.create_issue_comment(comment_string)
