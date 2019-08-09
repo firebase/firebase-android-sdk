@@ -19,6 +19,7 @@ import static java.util.Arrays.asList;
 
 import android.util.SparseArray;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
@@ -125,7 +126,7 @@ public final class LocalStore {
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
 
-  public LocalStore(Persistence persistence, User initialUser) {
+  public LocalStore(Persistence persistence, QueryEngine queryEngine, User initialUser) {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
@@ -135,8 +136,9 @@ public final class LocalStore {
     remoteDocuments = persistence.getRemoteDocumentCache();
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-    // TODO: Use IndexedQueryEngine as appropriate.
-    queryEngine = new SimpleQueryEngine(localDocuments);
+
+    this.queryEngine = queryEngine;
+    queryEngine.setLocalDocumentsView(localDocuments);
 
     localViewReferences = new ReferenceSet();
     persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
@@ -170,8 +172,7 @@ public final class LocalStore {
     // Recreate our LocalDocumentsView using the new MutationQueue.
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-    // TODO: Use IndexedQueryEngine as appropriate.
-    queryEngine = new SimpleQueryEngine(localDocuments);
+    queryEngine.setLocalDocumentsView(localDocuments);
 
     // Union the old/new changed keys.
     ImmutableSortedSet<DocumentKey> changedKeys = DocumentKey.emptyKeySet();
@@ -561,6 +562,21 @@ public final class LocalStore {
     return cached;
   }
 
+  /**
+   * Returns the QueryData as seen by the LocalStore, including updates that may have not yet been
+   * persisted to the QueryCache.
+   */
+  @VisibleForTesting
+  @Nullable
+  QueryData getQueryData(Query query) {
+    QueryData queryData = queryCache.getQueryData(query);
+    if (queryData == null) {
+      return null;
+    }
+    QueryData updatedQueryData = targetIds.get(queryData.getTargetId());
+    return updatedQueryData != null ? updatedQueryData : queryData;
+  }
+
   /** Mutable state for the transaction in allocateQuery. */
   private static class AllocateQueryHolder {
     QueryData cached;
@@ -611,7 +627,23 @@ public final class LocalStore {
 
   /** Runs the given query against all the documents in the local store and returns the results. */
   public ImmutableSortedMap<DocumentKey, Document> executeQuery(Query query) {
-    return queryEngine.getDocumentsMatchingQuery(query);
+    QueryData queryData = getQueryData(query);
+    if (queryData != null) {
+      ImmutableSortedSet<DocumentKey> remoteKeys =
+          this.queryCache.getMatchingKeysForTargetId(queryData.getTargetId());
+      return executeQuery(query, queryData, remoteKeys);
+    } else {
+      return executeQuery(query, null, DocumentKey.emptyKeySet());
+    }
+  }
+
+  /**
+   * Runs the given query against the local store and returns the results, potentially taking
+   * advantage of the provided query data and the set of remote document keys.
+   */
+  public ImmutableSortedMap<DocumentKey, Document> executeQuery(
+      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
+    return queryEngine.getDocumentsMatchingQuery(query, queryData, remoteKeys);
   }
 
   /**
