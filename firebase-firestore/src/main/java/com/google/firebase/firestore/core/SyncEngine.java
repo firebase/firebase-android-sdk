@@ -267,7 +267,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   public <TResult> void transaction(
       AsyncQueue asyncQueue,
       ExponentialBackoff backoff,
-      TaskCompletionSource<TResult> txTaskSource,
+      TaskCompletionSource<TResult> taskSource,
       Function<Transaction, Task<TResult>> updateFunction,
       int retries) {
     hardAssert(retries >= 0, "Got negative number of retries for transaction.");
@@ -285,9 +285,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
                       if (!userTask.isSuccessful()) {
                         if (retries > 0 && isRetryableTransactionError(userTask.getException())) {
                           transaction(
-                              asyncQueue, backoff, txTaskSource, updateFunction, retries - 1);
+                              asyncQueue, backoff, taskSource, updateFunction, retries - 1);
                         } else {
-                          txTaskSource.setException(userTask.getException());
+                          taskSource.setException(userTask.getException());
                         }
                       } else {
                         transaction
@@ -298,17 +298,17 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
                                   @Override
                                   public void onComplete(@NonNull Task<Void> commitTask) {
                                     if (commitTask.isSuccessful()) {
-                                      txTaskSource.setResult(userTask.getResult());
+                                      taskSource.setResult(userTask.getResult());
                                     } else if (retries > 0
                                         && isRetryableTransactionError(commitTask.getException())) {
                                       transaction(
                                           asyncQueue,
                                           backoff,
-                                          txTaskSource,
+                                          taskSource,
                                           updateFunction,
                                           retries - 1);
                                     } else {
-                                      txTaskSource.setException(commitTask.getException());
+                                      taskSource.setException(commitTask.getException());
                                     }
                                   }
                                 });
