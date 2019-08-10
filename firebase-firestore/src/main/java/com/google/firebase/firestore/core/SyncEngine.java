@@ -284,8 +284,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
                     public void onComplete(@NonNull Task<TResult> userTask) {
                       if (!userTask.isSuccessful()) {
                         if (retries > 0 && isRetryableTransactionError(userTask.getException())) {
-                          transaction(
-                              asyncQueue, backoff, taskSource, updateFunction, retries - 1);
+                          transaction(asyncQueue, backoff, taskSource, updateFunction, retries - 1);
                         } else {
                           taskSource.setException(userTask.getException());
                         }
