@@ -51,8 +51,6 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.AsyncQueue.TimerId;
-import com.google.firebase.firestore.util.ExponentialBackoff;
 import com.google.firebase.firestore.util.Logger;
 import io.grpc.Status;
 import java.util.Collections;
@@ -219,20 +217,10 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   /** Tries to execute the transaction in updateFunction up to retries times. */
   public <TResult> Task<TResult> transaction(
-      Function<Transaction, Task<TResult>> updateFunction,
-      int retries,
-      boolean skippedTransactionBackoffs) {
+      Function<Transaction, Task<TResult>> updateFunction, int retries) {
     this.verifyNotShutdown();
-    ExponentialBackoff backoff;
-    if (skippedTransactionBackoffs) {
-      backoff = new ExponentialBackoff(asyncQueue, TimerId.RETRY_TRANSACTION, 1, 2, 10);
-    } else {
-      backoff = new ExponentialBackoff(asyncQueue, AsyncQueue.TimerId.RETRY_TRANSACTION);
-    }
-    final TaskCompletionSource<TResult> txTaskSource = new TaskCompletionSource<>();
-    asyncQueue.enqueueAndForget(
-        () -> syncEngine.transaction(asyncQueue, backoff, txTaskSource, updateFunction, retries));
-    return txTaskSource.getTask();
+    return AsyncQueue.callTask(
+        asyncQueue.getExecutor(), () -> syncEngine.transaction(asyncQueue, updateFunction));
   }
 
   /**

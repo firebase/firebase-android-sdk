@@ -77,14 +77,12 @@ public class ExponentialBackoff {
   }
 
   public ExponentialBackoff(AsyncQueue queue, AsyncQueue.TimerId timerId) {
-    this.queue = queue;
-    this.timerId = timerId;
-    this.initialDelayMs = DEFAULT_BACKOFF_INITIAL_DELAY_MS;
-    this.backoffFactor = DEFAULT_BACKOFF_FACTOR;
-    this.maxDelayMs = DEFAULT_BACKOFF_MAX_DELAY_MS;
-    this.lastAttemptTime = new Date().getTime();
-
-    reset();
+    this(
+        queue,
+        timerId,
+        DEFAULT_BACKOFF_INITIAL_DELAY_MS,
+        DEFAULT_BACKOFF_FACTOR,
+        DEFAULT_BACKOFF_MAX_DELAY_MS);
   }
 
   /**

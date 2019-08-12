@@ -70,7 +70,10 @@ public class AsyncQueue {
     ONLINE_STATE_TIMEOUT,
     /** A timer used to periodically attempt LRU Garbage collection */
     GARBAGE_COLLECTION,
-    /** A timer used to retry transactions */
+    /**
+     * A timer used to retry transactions. Since there can be multiple concurrent transactions,
+     * multiple of these may be in the queue at a given time.
+     */
     RETRY_TRANSACTION
   }
 
@@ -380,6 +383,8 @@ public class AsyncQueue {
   // theoretical removal speed, except this list will always be small so ArrayList is fine.
   private final ArrayList<DelayedTask> delayedTasks;
 
+  private final ArrayList<TimerId> timerIdsToSkip = new ArrayList<>();
+
   public AsyncQueue() {
     delayedTasks = new ArrayList<>();
     executor = new SynchronizedShutdownAwareExecutor();
@@ -476,7 +481,16 @@ public class AsyncQueue {
     DelayedTask delayedTask = createAndScheduleDelayedTask(timerId, delayMs, task);
     delayedTasks.add(delayedTask);
 
+    for (TimerId timerIdToSkip : timerIdsToSkip) {
+      if (delayedTask.timerId == timerIdToSkip) {
+        delayedTask.skipDelay();
+      }
+    }
     return delayedTask;
+  }
+
+  public void skipDelaysForTimerId(TimerId timerId) {
+    timerIdsToSkip.add(timerId);
   }
 
   /**

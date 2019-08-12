@@ -17,10 +17,8 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.base.Function;
@@ -43,12 +41,10 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
-import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.ExponentialBackoff;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
@@ -264,57 +260,13 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    *
    * <p>The Task returned is resolved when the transaction is fully committed.
    */
-  public <TResult> void transaction(
-      AsyncQueue asyncQueue,
-      ExponentialBackoff backoff,
-      TaskCompletionSource<TResult> taskSource,
-      Function<Transaction, Task<TResult>> updateFunction,
-      int retries) {
-    hardAssert(retries >= 0, "Got negative number of retries for transaction.");
+  public <TResult> Task<TResult> transaction(
+      AsyncQueue asyncQueue, Function<Transaction, Task<TResult>> updateFunction) {
+    TransactionRunner<TResult> runner =
+        new TransactionRunner<>(asyncQueue, remoteStore, updateFunction, 5);
 
-    backoff.backoffAndRun(
-        () -> {
-          final Transaction transaction = remoteStore.createTransaction();
-          updateFunction
-              .apply(transaction)
-              .addOnCompleteListener(
-                  asyncQueue.getExecutor(),
-                  new OnCompleteListener<TResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<TResult> userTask) {
-                      if (!userTask.isSuccessful()) {
-                        if (retries > 0 && isRetryableTransactionError(userTask.getException())) {
-                          transaction(asyncQueue, backoff, taskSource, updateFunction, retries - 1);
-                        } else {
-                          taskSource.setException(userTask.getException());
-                        }
-                      } else {
-                        transaction
-                            .commit()
-                            .addOnCompleteListener(
-                                asyncQueue.getExecutor(),
-                                new OnCompleteListener<Void>() {
-                                  @Override
-                                  public void onComplete(@NonNull Task<Void> commitTask) {
-                                    if (commitTask.isSuccessful()) {
-                                      taskSource.setResult(userTask.getResult());
-                                    } else if (retries > 0
-                                        && isRetryableTransactionError(commitTask.getException())) {
-                                      transaction(
-                                          asyncQueue,
-                                          backoff,
-                                          taskSource,
-                                          updateFunction,
-                                          retries - 1);
-                                    } else {
-                                      taskSource.setException(commitTask.getException());
-                                    }
-                                  }
-                                });
-                      }
-                    }
-                  });
-        });
+    runner.runTransaction();
+    return runner.getTask();
   }
 
   /** Called by FirestoreClient to notify us of a new remote event. */
@@ -681,18 +633,6 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       return true;
     }
 
-    return false;
-  }
-
-  private boolean isRetryableTransactionError(Exception e) {
-    if (e instanceof FirebaseFirestoreException) {
-      // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION and
-      // non-matching document versions with ABORTED. These errors should be retried.
-      FirebaseFirestoreException.Code code = ((FirebaseFirestoreException) e).getCode();
-      return code == FirebaseFirestoreException.Code.ABORTED
-          || code == FirebaseFirestoreException.Code.FAILED_PRECONDITION
-          || !Datastore.isPermanentError(((FirebaseFirestoreException) e).getCode());
-    }
     return false;
   }
 }
