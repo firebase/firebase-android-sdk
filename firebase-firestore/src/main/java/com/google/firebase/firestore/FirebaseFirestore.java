@@ -49,7 +49,11 @@ import java.util.concurrent.Executor;
  */
 public class FirebaseFirestore {
 
-  /** Provides a registry management interface for {@code FirebaseFirestore} instances. */
+  /**
+   * Provides a registry management interface for {@code FirebaseFirestore} instances.
+   *
+   * @hide
+   */
   public interface InstanceRegistry {
     /** Removes the Cloud Firestore instance with given name from registry. */
     void remove(@NonNull String databaseId);
