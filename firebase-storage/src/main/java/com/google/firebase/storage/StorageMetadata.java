@@ -387,6 +387,11 @@ public class StorageMetadata {
       return this;
     }
 
+    @Nullable
+    public String getContentLanguage() {
+      return mMetadata.mContentLanguage.getValue();
+    }
+
     /**
      * Changes the content encoding for the {@link StorageReference}
      *
@@ -398,6 +403,10 @@ public class StorageMetadata {
       return this;
     }
 
+    public String getContentEncoding() {
+      return mMetadata.mContentEncoding.getValue();
+    }
+
     /**
      * @param contentDisposition changes the content disposition for the {@link StorageReference}
      */
@@ -405,6 +414,10 @@ public class StorageMetadata {
     public Builder setContentDisposition(@Nullable String contentDisposition) {
       mMetadata.mContentDisposition = MetadataValue.withUserValue(contentDisposition);
       return this;
+    }
+
+    public String getContentDisposition() {
+      return mMetadata.mContentDisposition.getValue();
     }
 
     /**
@@ -416,6 +429,10 @@ public class StorageMetadata {
     public Builder setCacheControl(@Nullable String cacheControl) {
       mMetadata.mCacheControl = MetadataValue.withUserValue(cacheControl);
       return this;
+    }
+
+    public String getCacheControl() {
+      return mMetadata.mCacheControl.getValue();
     }
 
     /**
@@ -443,5 +460,10 @@ public class StorageMetadata {
       mMetadata.mContentType = MetadataValue.withUserValue(contentType);
       return this;
     }
+
+    public String getContentType() {
+      return mMetadata.mContentType.getValue();
+    }
+
   }
 }
