@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.installation;
+package com.google.firebase.installations;
 
 import androidx.test.runner.AndroidJUnit4;
 import org.junit.FixMethodOrder;
@@ -26,4 +26,4 @@ import org.junit.runners.MethodSorters;
  */
 @RunWith(AndroidJUnit4.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class FirebaseInstallationInstrumentedTest {}
+public class FirebaseInstallationsInstrumentedTest {}

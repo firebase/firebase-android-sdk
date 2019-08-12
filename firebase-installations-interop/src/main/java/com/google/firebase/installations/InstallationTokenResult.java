@@ -21,12 +21,12 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class InstallationTokenResult {
 
-  /** A new FIS Auth-Token, created for this firebase installation. */
+  /** A new FIS Auth-Token, created for this Firebase Installation. */
   @NonNull
   public abstract String getToken();
   /**
-   * The amount of time, in milliseconds, before the auth-token expires for this firebase
-   * installation.
+   * The amount of time, in milliseconds, before the auth-token expires for this Firebase
+   * Installation.
    */
   @NonNull
   public abstract long getTokenExpirationTimestampMillis();

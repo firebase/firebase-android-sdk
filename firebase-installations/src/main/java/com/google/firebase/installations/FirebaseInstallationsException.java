@@ -18,8 +18,9 @@ import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseException;
 
 /** The class for all Exceptions thrown by {@link FirebaseInstallations}. */
-public class FirebaseInstallationException extends FirebaseException {
+public class FirebaseInstallationsException extends FirebaseException {
 
+  // TODO(ankitagj): Improve clear exception handling.
   public enum Status {
     SDK_INTERNAL_ERROR,
 
@@ -28,23 +29,23 @@ public class FirebaseInstallationException extends FirebaseException {
 
   @NonNull private final Status status;
 
-  public FirebaseInstallationException(@NonNull Status status) {
+  public FirebaseInstallationsException(@NonNull Status status) {
     this.status = status;
   }
 
-  public FirebaseInstallationException(@NonNull String message, @NonNull Status status) {
+  public FirebaseInstallationsException(@NonNull String message, @NonNull Status status) {
     super(message);
     this.status = status;
   }
 
-  public FirebaseInstallationException(
+  public FirebaseInstallationsException(
       @NonNull String message, @NonNull Status status, @NonNull Throwable cause) {
     super(message, cause);
     this.status = status;
   }
 
   /**
-   * Gets the status status for the operation that failed.
+   * Gets the status for the operation that failed.
    *
    * @return the status for the FirebaseInstallationsException
    */

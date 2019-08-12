@@ -50,8 +50,8 @@ public class FirebaseInstallationServiceClient {
 
   @NonNull
   public InstallationResponse createFirebaseInstallation(
-      @NonNull String projectID,
       @NonNull String apiKey,
+      @NonNull String projectID,
       @NonNull String firebaseInstallationId,
       @NonNull String appId)
       throws FirebaseInstallationServiceException {
@@ -115,8 +115,8 @@ public class FirebaseInstallationServiceClient {
 
   @NonNull
   public void deleteFirebaseInstallation(
-      @NonNull String projectID,
       @NonNull String apiKey,
+      @NonNull String projectID,
       @NonNull String fid,
       @NonNull String refreshToken)
       throws FirebaseInstallationServiceException {
@@ -159,8 +159,8 @@ public class FirebaseInstallationServiceClient {
 
   @NonNull
   public InstallationTokenResult generateAuthToken(
-      @NonNull String projectID,
       @NonNull String apiKey,
+      @NonNull String projectID,
       @NonNull String fid,
       @NonNull String refreshToken)
       throws FirebaseInstallationServiceException {

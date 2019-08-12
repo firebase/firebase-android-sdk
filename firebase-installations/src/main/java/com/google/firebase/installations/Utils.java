@@ -15,6 +15,7 @@
 package com.google.firebase.installations;
 
 import androidx.annotation.NonNull;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
@@ -34,7 +35,7 @@ class Utils {
    */
   public static final byte REMOVE_PREFIX_MASK = Byte.parseByte("00001111", 2);
 
-  /** Length of new-format FIDs. */
+  /** Length of new-format FIDs as introduced in 2019. */
   public static final int FID_LENGTH = 22;
 
   /**
@@ -49,13 +50,8 @@ class Utils {
   @NonNull
   public static String createRandomFid() {
     // A valid FID has exactly 22 base64 characters, which is 132 bits, or 16.5 bytes.
-    // We create 17 random bytes and ignore the last base64 character later.
-    byte[] bytes = UUID.randomUUID().toString().substring(0, 17).getBytes(Charset.defaultCharset());
-
-    // Replace the first 4 random bits with the constant FID header of 0x7 (0b0111).
-    bytes[0] = (byte) (FID_4BIT_PREFIX | (bytes[0] & REMOVE_PREFIX_MASK));
-
-    return encodeFidBase64UrlSafe(bytes);
+    byte[] uuidBytes = getBytesFromUUID(UUID.randomUUID());
+    return encodeFidBase64UrlSafe(uuidBytes);
   }
 
   /**
@@ -77,5 +73,23 @@ class Utils {
                     | android.util.Base64.NO_WRAP),
             Charset.defaultCharset())
         .substring(0, FID_LENGTH);
+  }
+
+  private static byte[] getBytesFromUUID(UUID uuid) {
+    ByteBuffer bb = ByteBuffer.wrap(new byte[17]);
+
+    // The first 4 bits with the constant FID header of 0x7 (0b0111) followed by the last 4 random
+    // bits of the UUID.
+    byte fidPrefixWithLast4bitsOfUUID =
+        (byte)
+            (FID_4BIT_PREFIX
+                | (ByteBuffer.allocate(8).putLong(uuid.getLeastSignificantBits()).array()[7]
+                    & REMOVE_PREFIX_MASK));
+
+    bb.put(fidPrefixWithLast4bitsOfUUID);
+    bb.putLong(uuid.getMostSignificantBits());
+    bb.putLong(uuid.getLeastSignificantBits());
+
+    return bb.array();
   }
 }

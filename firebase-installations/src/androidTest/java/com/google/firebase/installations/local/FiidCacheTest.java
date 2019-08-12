@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.installation.local;
+package com.google.firebase.installations.local;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertNull;
@@ -22,8 +22,6 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.installations.local.FiidCache;
-import com.google.firebase.installations.local.FiidCacheEntryValue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
