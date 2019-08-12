@@ -93,7 +93,7 @@ public final class EventManager implements SyncEngineCallback {
     return queryInfo.targetId;
   }
 
-  /** Removes a previously added listener and returns true if the listener was found. */
+  /** Removes a previously added listener. It's a no-op if the listener is not found. */
   public void removeQueryListener(QueryListener listener) {
     Query query = listener.getQuery();
     QueryListenersInfo queryInfo = queries.get(query);
