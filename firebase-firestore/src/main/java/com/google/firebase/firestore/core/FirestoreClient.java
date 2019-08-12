@@ -165,7 +165,6 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   /** Stops listening to a query previously listened to. */
   public void stopListening(QueryListener listener) {
-    this.verifyNotShutdown();
     asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(listener));
   }
 

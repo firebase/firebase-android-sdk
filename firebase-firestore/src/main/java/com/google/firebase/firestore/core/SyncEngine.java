@@ -336,6 +336,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   /** Applies an OnlineState change to the sync engine and notifies any views of the change. */
   @Override
   public void handleOnlineStateChange(OnlineState onlineState) {
+    assertCallback("handleOnlineStateChange");
     ArrayList<ViewSnapshot> newViewSnapshots = new ArrayList<>();
     for (Map.Entry<Query, QueryView> entry : queryViewsByQuery.entrySet()) {
       View view = entry.getValue().getView();
