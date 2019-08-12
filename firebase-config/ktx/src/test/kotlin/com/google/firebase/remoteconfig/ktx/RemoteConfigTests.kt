@@ -22,12 +22,10 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigBuilder
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
-import com.google.firebase.remoteconfig.internal.ConfigContainer
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
-import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
-import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import org.junit.After
@@ -128,6 +126,5 @@ class ConfigTests : BaseTestCase() {
 
         `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))
         assertThat(remoteConfig["KEY"].asString()).isEqualTo("non default value")
-
     }
 }

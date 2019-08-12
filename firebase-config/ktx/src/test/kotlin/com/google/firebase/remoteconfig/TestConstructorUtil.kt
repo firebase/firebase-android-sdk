@@ -14,15 +14,12 @@
 
 package com.google.firebase.remoteconfig
 
-import android.content.Context;
+import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
-import com.google.firebase.remoteconfig.internal.ConfigContainer
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
-import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
-import com.google.firebase.remoteconfig.internal.DefaultsXmlParser
 import java.util.concurrent.Executor
 import com.google.firebase.abt.FirebaseABTesting
 
@@ -38,7 +35,8 @@ fun FirebaseRemoteConfigBuilder(
     defaultConfigsCache: ConfigCacheClient,
     fetchHandler: ConfigFetchHandler,
     getHandler: ConfigGetParameterHandler,
-    frcMetadata: ConfigMetadataClient) : FirebaseRemoteConfig {
+    frcMetadata: ConfigMetadataClient
+): FirebaseRemoteConfig {
         return FirebaseRemoteConfig(
             context,
             firebaseApp,
