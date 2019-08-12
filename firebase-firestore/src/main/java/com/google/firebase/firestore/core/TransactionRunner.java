@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -33,10 +31,11 @@ import com.google.firebase.firestore.util.ExponentialBackoff;
  * does not have to manage the backoff and retry count through recursive calls.
  */
 public class TransactionRunner<TResult> {
+  private static final int RETRY_COUNT = 5;
   private AsyncQueue asyncQueue;
   private RemoteStore remoteStore;
   private Function<Transaction, Task<TResult>> updateFunction;
-  private int retries;
+  private int retriesLeft;
 
   private ExponentialBackoff backoff;
   private TaskCompletionSource<TResult> taskSource = new TaskCompletionSource<>();
@@ -44,20 +43,23 @@ public class TransactionRunner<TResult> {
   public TransactionRunner(
       AsyncQueue asyncQueue,
       RemoteStore remoteStore,
-      Function<Transaction, Task<TResult>> updateFunction,
-      int retries) {
-    hardAssert(retries >= 0, "Got negative number of retries for transaction.");
+      Function<Transaction, Task<TResult>> updateFunction) {
 
     this.asyncQueue = asyncQueue;
     this.remoteStore = remoteStore;
     this.updateFunction = updateFunction;
-    this.retries = retries;
+    this.retriesLeft = RETRY_COUNT;
 
     backoff = new ExponentialBackoff(asyncQueue, TimerId.RETRY_TRANSACTION);
   }
 
   /** Runs the transaction and sets the result in taskSource. */
-  public void runTransaction() {
+  public Task<TResult> run() {
+    runWithBackoff();
+    return taskSource.getTask();
+  }
+
+  private void runWithBackoff() {
     backoff.backoffAndRun(
         () -> {
           final Transaction transaction = remoteStore.createTransaction();
@@ -69,12 +71,7 @@ public class TransactionRunner<TResult> {
                     @Override
                     public void onComplete(@NonNull Task<TResult> userTask) {
                       if (!userTask.isSuccessful()) {
-                        if (retries > 0 && isRetryableTransactionError(userTask.getException())) {
-                          retries -= 1;
-                          runTransaction();
-                        } else {
-                          taskSource.setException(userTask.getException());
-                        }
+                        handleTransactionError(userTask);
                       } else {
                         transaction
                             .commit()
@@ -85,12 +82,8 @@ public class TransactionRunner<TResult> {
                                   public void onComplete(@NonNull Task<Void> commitTask) {
                                     if (commitTask.isSuccessful()) {
                                       taskSource.setResult(userTask.getResult());
-                                    } else if (retries > 0
-                                        && isRetryableTransactionError(commitTask.getException())) {
-                                      retries -= 1;
-                                      runTransaction();
                                     } else {
-                                      taskSource.setException(commitTask.getException());
+                                      handleTransactionError(commitTask);
                                     }
                                   }
                                 });
@@ -98,11 +91,6 @@ public class TransactionRunner<TResult> {
                     }
                   });
         });
-  }
-
-  /** Returns the result of the transaction after it has been run. */
-  public Task<TResult> getTask() {
-    return taskSource.getTask();
   }
 
   private static boolean isRetryableTransactionError(Exception e) {
@@ -115,5 +103,14 @@ public class TransactionRunner<TResult> {
           || !Datastore.isPermanentError(((FirebaseFirestoreException) e).getCode());
     }
     return false;
+  }
+
+  private void handleTransactionError(Task task) {
+    if (retriesLeft > 0 && isRetryableTransactionError(task.getException())) {
+      retriesLeft -= 1;
+      runWithBackoff();
+    } else {
+      taskSource.setException(task.getException());
+    }
   }
 }

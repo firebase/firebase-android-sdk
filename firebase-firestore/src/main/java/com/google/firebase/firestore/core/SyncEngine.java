@@ -262,11 +262,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    */
   public <TResult> Task<TResult> transaction(
       AsyncQueue asyncQueue, Function<Transaction, Task<TResult>> updateFunction) {
-    TransactionRunner<TResult> runner =
-        new TransactionRunner<>(asyncQueue, remoteStore, updateFunction, 5);
-
-    runner.runTransaction();
-    return runner.getTask();
+    return new TransactionRunner<TResult>(asyncQueue, remoteStore, updateFunction).run();
   }
 
   /** Called by FirestoreClient to notify us of a new remote event. */

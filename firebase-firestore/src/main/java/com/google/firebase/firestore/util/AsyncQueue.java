@@ -483,16 +483,14 @@ public class AsyncQueue {
     delayedTasks.add(delayedTask);
 
     // Fast-forward delays for timerIds that have been overridden.
-    for (TimerId timerIdToSkip : timerIdsToSkip) {
-      if (delayedTask.timerId == timerIdToSkip) {
-        delayedTask.skipDelay();
-      }
+    if (timerIdsToSkip.contains(delayedTask.timerId)) {
+      delayedTask.skipDelay();
     }
     return delayedTask;
   }
 
   /**
-   * For Tests: Skip all delays for a timer id.
+   * For Tests: Skip all subsequent delays for a timer id.
    *
    * @param timerId The timerId to skip delays for.
    */
