@@ -94,13 +94,12 @@ public final class EventManager implements SyncEngineCallback {
   }
 
   /** Removes a previously added listener and returns true if the listener was found. */
-  public boolean removeQueryListener(QueryListener listener) {
+  public void removeQueryListener(QueryListener listener) {
     Query query = listener.getQuery();
     QueryListenersInfo queryInfo = queries.get(query);
     boolean lastListen = false;
-    boolean found = false;
     if (queryInfo != null) {
-      found = queryInfo.listeners.remove(listener);
+      queryInfo.listeners.remove(listener);
       lastListen = queryInfo.listeners.isEmpty();
     }
 
@@ -108,8 +107,6 @@ public final class EventManager implements SyncEngineCallback {
       queries.remove(query);
       syncEngine.stopListening(query);
     }
-
-    return found;
   }
 
   @Override
