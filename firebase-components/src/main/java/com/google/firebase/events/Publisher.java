@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.inject;
+package com.google.firebase.events;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
-
-/**
- * Provides instances of T.
- *
- * @hide
- */
-@KeepForSdk
-public interface Provider<T> {
-  /** Provides a fully constructed instance of T. */
-  @KeepForSdk
-  T get();
+/** Defines API for event publication. */
+public interface Publisher {
+  /**
+   * Publish the event.
+   *
+   * <p>Subscribers will receive the event on the executor they specified during subscription
+   */
+  void publish(Event<?> event);
 }

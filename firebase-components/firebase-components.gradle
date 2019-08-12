@@ -34,18 +34,7 @@ android {
       multiDexEnabled true
       testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    sourceSets {
-        androidTest {
-            java {
-                srcDir 'src/testUtil'
-            }
-        }
-        test {
-            java {
-                srcDir 'src/testUtil'
-            }
-        }
-    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -55,21 +44,12 @@ android {
             includeAndroidResources = true
         }
     }
-    lintOptions {
-        baseline file("lint-baseline.xml")
-    }
 }
 
 dependencies {
-    implementation project(':firebase-components')
-    implementation 'com.google.android.gms:play-services-basement:17.0.0'
-    implementation "com.google.android.gms:play-services-tasks:17.0.0"
 
-    api 'com.google.auto.value:auto-value-annotations:1.6.5'
-    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
-
-    // needed for Kotlin detection to compile, but not necessarily present at runtime.
-    compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'androidx.collection:collection:1.1.0'
 
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation 'androidx.test.ext:junit:1.1.1'

@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
 
 package com.google.firebase.components;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
-
-/** Thrown when a missing dependency is detected. */
-@KeepForSdk
-public class MissingDependencyException extends DependencyException {
-  @KeepForSdk
-  public MissingDependencyException(String msg) {
-    super(msg);
-  }
+/** A factory interface that must be provided when creating a {@link Component}. */
+public interface ComponentFactory<T> {
+  /**
+   * Provided a {@link ComponentContainer}, creates an instance of {@code T}.
+   *
+   * <p>Note: It is only allowed to request declared dependencies from the container, otherwise the
+   * container will throw {@link IllegalArgumentException}.
+   */
+  T create(ComponentContainer container);
 }

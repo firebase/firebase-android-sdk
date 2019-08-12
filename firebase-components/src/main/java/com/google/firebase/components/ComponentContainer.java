@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,19 +14,16 @@
 
 package com.google.firebase.components;
 
-import android.app.Service;
-import android.content.Intent;
-import android.os.IBinder;
-import androidx.annotation.Nullable;
-import com.google.android.gms.common.annotation.KeepForSdk;
+import com.google.firebase.inject.Provider;
+import java.util.Set;
 
-/** Container for component definition in <meta-data/>. */
-@KeepForSdk
-public class ComponentDiscoveryService extends Service {
+/** Provides a means to retrieve instances of requested classes/interfaces. */
+public interface ComponentContainer {
+  <T> T get(Class<T> anInterface);
 
-  @Override
-  @Nullable
-  public IBinder onBind(Intent intent) {
-    return null;
-  }
+  <T> Provider<T> getProvider(Class<T> anInterface);
+
+  <T> Set<T> setOf(Class<T> anInterface);
+
+  <T> Provider<Set<T>> setOfProvider(Class<T> anInterface);
 }

@@ -115,6 +115,7 @@ configurations.all {
 
 dependencies {
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation project(':protolite-well-known-types')
     implementation project(':firebase-database-collection')
 

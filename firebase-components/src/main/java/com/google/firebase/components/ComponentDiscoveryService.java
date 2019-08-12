@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.events;
+package com.google.firebase.components;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
+import android.app.Service;
+import android.content.Intent;
+import android.os.IBinder;
+import androidx.annotation.Nullable;
 
-/**
- * Defines the event subscription handler.
- *
- * @hide
- */
-@KeepForSdk
-public interface EventHandler<T> {
-  @KeepForSdk
-  void handle(Event<T> event);
+/** Container for component definition in <meta-data/>. */
+public class ComponentDiscoveryService extends Service {
+
+  @Override
+  @Nullable
+  public IBinder onBind(Intent intent) {
+    return null;
+  }
 }

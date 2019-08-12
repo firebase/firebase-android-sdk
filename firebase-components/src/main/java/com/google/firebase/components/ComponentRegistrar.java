@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,17 +14,15 @@
 
 package com.google.firebase.components;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
+import java.util.List;
 
-/** A factory interface that must be provided when creating a {@link Component}. */
-@KeepForSdk
-public interface ComponentFactory<T> {
-  /**
-   * Provided a {@link ComponentContainer}, creates an instance of {@code T}.
-   *
-   * <p>Note: It is only allowed to request declared dependencies from the container, otherwise the
-   * container will throw {@link IllegalArgumentException}.
-   */
-  @KeepForSdk
-  T create(ComponentContainer container);
+/**
+ * Represents an SDK Registrar.
+ *
+ * <p>Individual SDKs are expected to provide an implementation of this interface in order to
+ * register themselves and to participate in dependency injection.
+ */
+public interface ComponentRegistrar {
+  /** Returns a list of components provided by this registrar. */
+  List<Component<?>> getComponents();
 }

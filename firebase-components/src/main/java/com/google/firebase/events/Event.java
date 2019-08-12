@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +14,7 @@
 
 package com.google.firebase.events;
 
-import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
-
-import com.google.android.gms.common.annotation.KeepForSdk;
+import com.google.firebase.components.Preconditions;
 
 /**
  * Generic event object identified by its type and payload of that type.
@@ -24,26 +22,22 @@ import com.google.android.gms.common.annotation.KeepForSdk;
  * @param <T> event type
  * @hide
  */
-@KeepForSdk
 public class Event<T> {
   private final Class<T> type;
 
   private final T payload;
 
-  @KeepForSdk
   public Event(Class<T> type, T payload) {
-    this.type = checkNotNull(type);
-    this.payload = checkNotNull(payload);
+    this.type = Preconditions.checkNotNull(type);
+    this.payload = Preconditions.checkNotNull(payload);
   }
 
   /** The type of the event's payload. */
-  @KeepForSdk
   public Class<T> getType() {
     return type;
   }
 
   /** The payload of the event. */
-  @KeepForSdk
   public T getPayload() {
     return payload;
   }
