@@ -18,7 +18,16 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigBuilder
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.remoteconfig.internal.ConfigCacheClient
+import com.google.firebase.remoteconfig.internal.ConfigContainer
+import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
+import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse
+import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import org.junit.After
@@ -27,11 +36,26 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 
 const val APP_ID = "APP_ID"
 const val API_KEY = "API_KEY"
 
 const val EXISTING_APP = "existing"
+
+open class DefaultFirebaseRemoteConfigValue : FirebaseRemoteConfigValue {
+    override fun asLong(): Long = throw UnsupportedOperationException("Unimplementend")
+    override fun asDouble(): Double = throw UnsupportedOperationException("Unimplementend")
+    override fun asString(): String = throw UnsupportedOperationException("Unimplementend")
+    override fun asByteArray(): ByteArray = throw UnsupportedOperationException("Unimplementend")
+    override fun asBoolean(): Boolean = throw UnsupportedOperationException("Unimplementend")
+    override fun getSource(): Int = throw UnsupportedOperationException("Unimplementend")
+}
+
+class StringRemoteConfigValue(val value: String) : DefaultFirebaseRemoteConfigValue() {
+    override fun asString() = value
+}
 
 abstract class BaseTestCase {
     @Before
@@ -74,5 +98,36 @@ class ConfigTests : BaseTestCase() {
     fun `Firebase#remoteConfig should delegate to FirebaseRemoteConfig#getInstance(FirebaseApp, region)`() {
         val app = Firebase.app(EXISTING_APP)
         assertThat(Firebase.remoteConfig(app)).isSameInstanceAs(FirebaseRemoteConfig.getInstance(app))
+    }
+
+    @Test
+    fun `Overloaded get() operator returns default value when key doesn't exist`() {
+        val remoteConfig = Firebase.remoteConfig
+        assertThat(remoteConfig["non_existing_key"].asString())
+                .isEqualTo(FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING)
+        assertThat(remoteConfig["another_non_exisiting_key"].asDouble())
+                .isEqualTo(FirebaseRemoteConfig.DEFAULT_VALUE_FOR_DOUBLE)
+    }
+
+    @Test
+    fun `Overloaded get() operator returns value when key exists`() {
+        val mockGetHandler = mock(ConfigGetParameterHandler::class.java)
+        val directExecutor = MoreExecutors.directExecutor()
+
+        val remoteConfig = FirebaseRemoteConfigBuilder(
+            context = null,
+            firebaseApp = Firebase.app(EXISTING_APP),
+            firebaseAbt = null,
+            executor = directExecutor,
+            fetchedConfigsCache = mock(ConfigCacheClient::class.java),
+            activatedConfigsCache = mock(ConfigCacheClient::class.java),
+            defaultConfigsCache = mock(ConfigCacheClient::class.java),
+            fetchHandler = mock(ConfigFetchHandler::class.java),
+            getHandler = mockGetHandler,
+            frcMetadata = mock(ConfigMetadataClient::class.java))
+
+        `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))
+        assertThat(remoteConfig["KEY"].asString()).isEqualTo("non default value")
+
     }
 }

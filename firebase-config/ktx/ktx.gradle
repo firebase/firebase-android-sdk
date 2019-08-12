@@ -48,9 +48,11 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-config')
+    implementation project (':firebase-abt')
     implementation 'androidx.annotation:annotation:1.1.0'
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'org.mockito:mockito-core:2.25.0'
 }

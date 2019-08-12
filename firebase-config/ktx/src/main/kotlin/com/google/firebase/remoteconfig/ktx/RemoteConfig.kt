@@ -17,18 +17,24 @@ package com.google.firebase.remoteconfig.ktx
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
-/** Returns the [FirebaseConfig] instance of the default [FirebaseApp]. */
+/** Returns the [FirebaseRemoteConfig] instance of the default [FirebaseApp]. */
 val Firebase.remoteConfig: FirebaseRemoteConfig
     get() = FirebaseRemoteConfig.getInstance()
 
-/** Returns the [FirebaseConfig] instance of a given [FirebaseApp]. */
+/** Returns the [FirebaseRemoteConfig] instance of a given [FirebaseApp]. */
 fun Firebase.remoteConfig(app: FirebaseApp): FirebaseRemoteConfig = FirebaseRemoteConfig.getInstance(app)
+
+/** See [FirebaseRemoteConfig#getValue] */
+operator fun FirebaseRemoteConfig.get(key: String): FirebaseRemoteConfigValue {
+    return this.getValue(key)
+}
 
 internal const val LIBRARY_NAME: String = "fire-cfg-ktx"
 
