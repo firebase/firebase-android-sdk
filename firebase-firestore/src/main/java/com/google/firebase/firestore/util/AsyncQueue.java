@@ -383,6 +383,7 @@ public class AsyncQueue {
   // theoretical removal speed, except this list will always be small so ArrayList is fine.
   private final ArrayList<DelayedTask> delayedTasks;
 
+  // List of TimerIds to fast-forward delays for.
   private final ArrayList<TimerId> timerIdsToSkip = new ArrayList<>();
 
   public AsyncQueue() {
@@ -481,6 +482,7 @@ public class AsyncQueue {
     DelayedTask delayedTask = createAndScheduleDelayedTask(timerId, delayMs, task);
     delayedTasks.add(delayedTask);
 
+    // Fast-forward delays for timerIds that have been overridden.
     for (TimerId timerIdToSkip : timerIdsToSkip) {
       if (delayedTask.timerId == timerIdToSkip) {
         delayedTask.skipDelay();
@@ -489,6 +491,12 @@ public class AsyncQueue {
     return delayedTask;
   }
 
+  /**
+   * For Tests: Skip all delays for a timer id.
+   *
+   * @param timerId The timerId to skip delays for.
+   */
+  @VisibleForTesting
   public void skipDelaysForTimerId(TimerId timerId) {
     timerIdsToSkip.add(timerId);
   }
