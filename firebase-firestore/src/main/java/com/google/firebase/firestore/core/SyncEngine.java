@@ -21,7 +21,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -42,7 +41,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
-import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.TargetChange;
@@ -250,9 +248,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   /**
    * Takes an updateFunction in which a set of reads and writes can be performed atomically. In the
    * updateFunction, the client can read and write values using the supplied transaction object.
-   * After the updateFunction, all changes will be committed. If some other client has changed any
-   * of the data referenced, then the updateFunction will be called again. If the updateFunction
-   * still fails after the given number of retries, then the transaction will be rejected.
+   * After the updateFunction, all changes will be committed. If a retryable error occurs (ex: some
+   * other client has changed any of the data referenced), then the updateFunction will be called
+   * again after a backoff. If the updateFunction still fails after all retries, then the
+   * transaction will be rejected.
    *
    * <p>The transaction object passed to the updateFunction contains methods for accessing documents
    * and collections. Unlike other datastore access, data accessed with the transaction will not
@@ -262,35 +261,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * <p>The Task returned is resolved when the transaction is fully committed.
    */
   public <TResult> Task<TResult> transaction(
-      AsyncQueue asyncQueue, Function<Transaction, Task<TResult>> updateFunction, int retries) {
-    hardAssert(retries >= 0, "Got negative number of retries for transaction.");
-    final Transaction transaction = remoteStore.createTransaction();
-    return updateFunction
-        .apply(transaction)
-        .continueWithTask(
-            asyncQueue.getExecutor(),
-            userTask -> {
-              if (!userTask.isSuccessful()) {
-                if (retries > 0 && isRetryableTransactionError(userTask.getException())) {
-                  return transaction(asyncQueue, updateFunction, retries - 1);
-                }
-                return userTask;
-              }
-              return transaction
-                  .commit()
-                  .continueWithTask(
-                      asyncQueue.getExecutor(),
-                      commitTask -> {
-                        if (commitTask.isSuccessful()) {
-                          return Tasks.forResult(userTask.getResult());
-                        }
-                        Exception e = commitTask.getException();
-                        if (retries > 0 && isRetryableTransactionError(e)) {
-                          return transaction(asyncQueue, updateFunction, retries - 1);
-                        }
-                        return Tasks.forException(e);
-                      });
-            });
+      AsyncQueue asyncQueue, Function<Transaction, Task<TResult>> updateFunction) {
+    return new TransactionRunner<TResult>(asyncQueue, remoteStore, updateFunction).run();
   }
 
   /** Called by FirestoreClient to notify us of a new remote event. */
@@ -658,18 +630,6 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       return true;
     }
 
-    return false;
-  }
-
-  private boolean isRetryableTransactionError(Exception e) {
-    if (e instanceof FirebaseFirestoreException) {
-      // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION and
-      // non-matching document versions with ABORTED. These errors should be retried.
-      FirebaseFirestoreException.Code code = ((FirebaseFirestoreException) e).getCode();
-      return code == FirebaseFirestoreException.Code.ABORTED
-          || code == FirebaseFirestoreException.Code.FAILED_PRECONDITION
-          || !Datastore.isPermanentError(((FirebaseFirestoreException) e).getCode());
-    }
     return false;
   }
 }
