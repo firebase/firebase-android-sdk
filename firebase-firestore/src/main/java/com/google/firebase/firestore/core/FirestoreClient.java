@@ -219,8 +219,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       Function<Transaction, Task<TResult>> updateFunction, int retries) {
     this.verifyNotShutdown();
     return AsyncQueue.callTask(
-        asyncQueue.getExecutor(),
-        () -> syncEngine.transaction(asyncQueue, updateFunction, retries));
+        asyncQueue.getExecutor(), () -> syncEngine.transaction(asyncQueue, updateFunction));
   }
 
   /**

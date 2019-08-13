@@ -1,4 +1,7 @@
 # Unreleased
+- [changed] Transactions now perform exponential backoff before retrying.
+  This means transactions on highly contended documents are more likely to
+  succeed.
 
 # 21.0.0
 - [changed] Transactions are now more flexible. Some sequences of operations
