@@ -14,13 +14,17 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
+
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
+import javax.inject.Named;
 
 @Module
 public abstract class EventStoreModule {
+
   @Provides
   static EventStoreConfig storeConfig() {
     return EventStoreConfig.DEFAULT;
@@ -31,4 +35,10 @@ public abstract class EventStoreModule {
 
   @Binds
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
+
+  @Provides
+  @Named("SCHEMA_VERSION")
+  static int schemaVersion() {
+    return SCHEMA_VERSION;
+  }
 }

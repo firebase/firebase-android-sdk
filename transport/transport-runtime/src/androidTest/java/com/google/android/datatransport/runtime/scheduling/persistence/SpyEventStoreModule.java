@@ -20,6 +20,7 @@ import com.google.android.datatransport.runtime.synchronization.SynchronizationG
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 @Module
@@ -37,4 +38,10 @@ public abstract class SpyEventStoreModule {
 
   @Binds
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
+
+  @Provides
+  @Named("SCHEMA_VERSION")
+  static int schemaVersion() {
+    return SchemaManager.SCHEMA_VERSION;
+  }
 }
