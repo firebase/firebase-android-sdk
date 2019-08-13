@@ -25,9 +25,7 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.ExponentialBackoff;
 
-/**
- * TransactionRunner encapsulates the logic needed to run and retry transactions with backoff.
- */
+/** TransactionRunner encapsulates the logic needed to run and retry transactions with backoff. */
 public class TransactionRunner<TResult> {
   private static final int RETRY_COUNT = 5;
   private AsyncQueue asyncQueue;
