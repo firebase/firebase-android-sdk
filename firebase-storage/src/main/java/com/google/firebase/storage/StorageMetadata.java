@@ -403,6 +403,7 @@ public class StorageMetadata {
       return this;
     }
 
+    @Nullable
     public String getContentEncoding() {
       return mMetadata.mContentEncoding.getValue();
     }
@@ -416,6 +417,7 @@ public class StorageMetadata {
       return this;
     }
 
+    @Nullable
     public String getContentDisposition() {
       return mMetadata.mContentDisposition.getValue();
     }
@@ -431,6 +433,7 @@ public class StorageMetadata {
       return this;
     }
 
+    @Nullable
     public String getCacheControl() {
       return mMetadata.mCacheControl.getValue();
     }
@@ -461,6 +464,7 @@ public class StorageMetadata {
       return this;
     }
 
+    @Nullable
     public String getContentType() {
       return mMetadata.mContentType.getValue();
     }
