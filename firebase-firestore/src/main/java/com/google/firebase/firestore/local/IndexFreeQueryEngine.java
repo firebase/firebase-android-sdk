@@ -93,9 +93,8 @@ public class IndexFreeQueryEngine implements QueryEngine {
         localDocumentsView.getDocuments(remoteKeys);
 
     // Limit queries are not eligible for index-free query execution if any part of the result was
-    // modified
-    // after we received the last query snapshot. This makes sure that we re-populate the view with
-    // older documents that may sort before the modified document.
+    // modified after we received the last query snapshot. This makes sure that we re-populate the
+    // view with older documents that may sort before the modified document.
     if (query.hasLimit()
         && containsUpdatesSinceSnapshotVersion(previousResults, queryData.getSnapshotVersion())) {
       return null;
