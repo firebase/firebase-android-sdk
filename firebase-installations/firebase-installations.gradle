@@ -58,4 +58,6 @@ dependencies {
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation "androidx.annotation:annotation:1.0.0"
+    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation 'org.mockito:mockito-android:2.25.0'
 }

@@ -14,6 +14,9 @@
 
 package com.google.firebase.installations;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import androidx.annotation.NonNull;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -91,5 +94,16 @@ class Utils {
     bb.putLong(uuid.getLeastSignificantBits());
 
     return bb.array();
+  }
+
+  public static long getCurrentTimeInSeconds() {
+    return System.currentTimeMillis() / 1000;
+  }
+
+  public static boolean isNetworkAvailable(Context context) {
+    ConnectivityManager connectivityManager =
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+    return activeNetworkInfo != null && activeNetworkInfo.isConnected();
   }
 }
