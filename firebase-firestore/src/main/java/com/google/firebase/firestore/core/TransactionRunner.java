@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.core;
 
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.base.Function;
@@ -27,8 +26,7 @@ import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.ExponentialBackoff;
 
 /**
- * TransactionRunner encapsulates the logic needed to run and retry transactions so that the caller
- * does not have to manage the backoff and retry count through recursive calls.
+ * TransactionRunner encapsulates the logic needed to run and retry transactions without backoff.
  */
 public class TransactionRunner<TResult> {
   private static final int RETRY_COUNT = 5;
@@ -53,7 +51,7 @@ public class TransactionRunner<TResult> {
     backoff = new ExponentialBackoff(asyncQueue, TimerId.RETRY_TRANSACTION);
   }
 
-  /** Runs the transaction and sets the result in taskSource. */
+  /** Runs the transaction and returns a Task containing the result. */
   public Task<TResult> run() {
     runWithBackoff();
     return taskSource.getTask();
@@ -67,30 +65,33 @@ public class TransactionRunner<TResult> {
               .apply(transaction)
               .addOnCompleteListener(
                   asyncQueue.getExecutor(),
-                  new OnCompleteListener<TResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<TResult> userTask) {
-                      if (!userTask.isSuccessful()) {
-                        handleTransactionError(userTask);
-                      } else {
-                        transaction
-                            .commit()
-                            .addOnCompleteListener(
-                                asyncQueue.getExecutor(),
-                                new OnCompleteListener<Void>() {
-                                  @Override
-                                  public void onComplete(@NonNull Task<Void> commitTask) {
-                                    if (commitTask.isSuccessful()) {
-                                      taskSource.setResult(userTask.getResult());
-                                    } else {
-                                      handleTransactionError(commitTask);
-                                    }
-                                  }
-                                });
-                      }
+                  (@NonNull Task<TResult> userTask) -> {
+                    if (!userTask.isSuccessful()) {
+                      handleTransactionError(userTask);
+                    } else {
+                      transaction
+                          .commit()
+                          .addOnCompleteListener(
+                              asyncQueue.getExecutor(),
+                              (@NonNull Task<Void> commitTask) -> {
+                                if (commitTask.isSuccessful()) {
+                                  taskSource.setResult(userTask.getResult());
+                                } else {
+                                  handleTransactionError(commitTask);
+                                }
+                              });
                     }
                   });
         });
+  }
+
+  private void handleTransactionError(Task task) {
+    if (retriesLeft > 0 && isRetryableTransactionError(task.getException())) {
+      retriesLeft -= 1;
+      runWithBackoff();
+    } else {
+      taskSource.setException(task.getException());
+    }
   }
 
   private static boolean isRetryableTransactionError(Exception e) {
@@ -103,14 +104,5 @@ public class TransactionRunner<TResult> {
           || !Datastore.isPermanentError(((FirebaseFirestoreException) e).getCode());
     }
     return false;
-  }
-
-  private void handleTransactionError(Task task) {
-    if (retriesLeft > 0 && isRetryableTransactionError(task.getException())) {
-      retriesLeft -= 1;
-      runWithBackoff();
-    } else {
-      taskSource.setException(task.getException());
-    }
   }
 }

@@ -250,8 +250,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * updateFunction, the client can read and write values using the supplied transaction object.
    * After the updateFunction, all changes will be committed. If a retryable error occurs (ex: some
    * other client has changed any of the data referenced), then the updateFunction will be called
-   * again after a backoff. If the updateFunction still fails after the given number of retires,
-   * then the transaction will be rejected.
+   * again after a backoff. If the updateFunction still fails after all retries, then the
+   * transaction will be rejected.
    *
    * <p>The transaction object passed to the updateFunction contains methods for accessing documents
    * and collections. Unlike other datastore access, data accessed with the transaction will not
