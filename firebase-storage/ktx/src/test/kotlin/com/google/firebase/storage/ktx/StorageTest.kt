@@ -92,14 +92,15 @@ class StorageTests : BaseTestCase() {
     }
 
     @Test
-    fun `StorageMetadata#Builder works with apply`() {
-        val metadata: StorageMetadata = StorageMetadata.Builder().apply {
+    fun `storageMetadata type-safe builder extension works`() {
+        val storage = Firebase.storage
+        val metadata: StorageMetadata = storageMetadata {
             contentLanguage = "en_us"
             contentType = "text/html"
             contentEncoding = "utf-8"
             cacheControl = "no-cache"
             contentDisposition = "attachment"
-        }.build()
+        }
 
         assertThat(metadata.getContentType()).isEqualTo("text/html")
         assertThat(metadata.getCacheControl()).isEqualTo("no-cache")

@@ -38,6 +38,13 @@ fun Firebase.storage(app: FirebaseApp): FirebaseStorage = FirebaseStorage.getIns
 fun Firebase.storage(app: FirebaseApp, url: String): FirebaseStorage =
         FirebaseStorage.getInstance(app, url)
 
+/** Returns a [StorageMetadata] object initialized using the [init] function. */
+fun storageMetadata(init: StorageMetadata.Builder.() -> Unit): StorageMetadata {
+    val builder = StorageMetadata.Builder()
+    builder.init()
+    return builder.build()
+}
+
 internal const val LIBRARY_NAME: String = "fire-stg-ktx"
 
 /** @suppress */
