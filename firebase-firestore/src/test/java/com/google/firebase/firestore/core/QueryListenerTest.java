@@ -108,7 +108,7 @@ public class QueryListenerTest {
             asList(change1, change4),
             snap2.isFromCache(),
             snap2.getMutatedKeys(),
-            /* hasLimboDocuments= */ false,
+            /* synced= */ false,
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ false);
     assertEquals(asList(snap2Prime), otherAccum);
@@ -266,7 +266,7 @@ public class QueryListenerTest {
             asList(),
             snap4.isFromCache(),
             snap4.getMutatedKeys(),
-            snap4.hasLimboDocuments(),
+            snap4.isSynced(),
             snap4.didSyncStateChange(),
             /* excludeMetadataChanges= */ true); // This test excludes document metadata changes
 
@@ -308,7 +308,7 @@ public class QueryListenerTest {
             asList(change3),
             snap2.isFromCache(),
             snap2.getMutatedKeys(),
-            snap2.hasLimboDocuments(),
+            snap2.isSynced(),
             snap2.didSyncStateChange(),
             /* excludesMetadataChanges= */ true);
     assertEquals(
@@ -351,7 +351,7 @@ public class QueryListenerTest {
             asList(change1, change2),
             /* isFromCache= */ false,
             snap3.getMutatedKeys(),
-            /* hasLimboDocuments= */ false,
+            /* synced= */ true,
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ true);
     assertEquals(asList(expectedSnapshot), events);
@@ -390,7 +390,7 @@ public class QueryListenerTest {
             asList(change1),
             /* isFromCache= */ true,
             snap1.getMutatedKeys(),
-            snap1.hasLimboDocuments(),
+            snap1.isSynced(),
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ true);
     ViewSnapshot expectedSnapshot2 =
@@ -401,7 +401,7 @@ public class QueryListenerTest {
             asList(change2),
             /* isFromCache= */ true,
             snap2.getMutatedKeys(),
-            snap2.hasLimboDocuments(),
+            snap2.isSynced(),
             /* didSyncStateChange= */ false,
             /* excludesMetadataChanges= */ true);
     assertEquals(asList(expectedSnapshot1, expectedSnapshot2), events);
@@ -429,7 +429,7 @@ public class QueryListenerTest {
             asList(),
             /* isFromCache= */ true,
             snap1.getMutatedKeys(),
-            snap1.hasLimboDocuments(),
+            snap1.isSynced(),
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ true);
     assertEquals(asList(expectedSnapshot), events);
@@ -456,7 +456,7 @@ public class QueryListenerTest {
             asList(),
             /* isFromCache= */ true,
             snap1.getMutatedKeys(),
-            snap1.hasLimboDocuments(),
+            snap1.isSynced(),
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ true);
     assertEquals(asList(expectedSnapshot), events);
@@ -470,7 +470,7 @@ public class QueryListenerTest {
         snap.getChanges(),
         snap.isFromCache(),
         snap.getMutatedKeys(),
-        snap.hasLimboDocuments(),
+        snap.isSynced(),
         snap.didSyncStateChange(),
         MetadataChanges.EXCLUDE.equals(metadata));
   }

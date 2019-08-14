@@ -49,22 +49,22 @@ public final class LocalViewChanges {
       }
     }
 
-    return new LocalViewChanges(targetId, snapshot.hasLimboDocuments(), addedKeys, removedKeys);
+    return new LocalViewChanges(targetId, snapshot.isSynced(), addedKeys, removedKeys);
   }
 
   private final int targetId;
-  private final boolean hasUnresolvedLimboDocuments;
+  private final boolean synced;
 
   private final ImmutableSortedSet<DocumentKey> added;
   private final ImmutableSortedSet<DocumentKey> removed;
 
   public LocalViewChanges(
       int targetId,
-      boolean hasUnresolvedLimboDocuments,
+      boolean synced,
       ImmutableSortedSet<DocumentKey> added,
       ImmutableSortedSet<DocumentKey> removed) {
     this.targetId = targetId;
-    this.hasUnresolvedLimboDocuments = hasUnresolvedLimboDocuments;
+    this.synced = synced;
     this.added = added;
     this.removed = removed;
   }
@@ -73,12 +73,8 @@ public final class LocalViewChanges {
     return targetId;
   }
 
-  /**
-   * Returns whether there were any unresolved limbo documents in the corresponding view when this
-   * change was computed.
-   */
-  public boolean hasUnresolvedLimboDocuments() {
-    return hasUnresolvedLimboDocuments;
+  public boolean isSynced() {
+    return synced;
   }
 
   public ImmutableSortedSet<DocumentKey> getAdded() {

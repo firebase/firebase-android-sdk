@@ -491,7 +491,7 @@ public final class LocalStore {
             }
             localViewReferences.removeReferences(removed, targetId);
 
-            if (!viewChange.hasUnresolvedLimboDocuments()) {
+            if (viewChange.isSynced()) {
               QueryData queryData = targetIds.get(targetId);
               hardAssert(
                   queryData != null,
