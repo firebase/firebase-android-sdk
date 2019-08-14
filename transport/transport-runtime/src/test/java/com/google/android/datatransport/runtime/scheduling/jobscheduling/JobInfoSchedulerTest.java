@@ -150,6 +150,31 @@ public class JobInfoSchedulerTest {
   }
 
   @Test
+  public void schedule_withMultipleContexts_whenExtrasAvailable_schedulesForBothContexts() {
+    String extras1 = "e1";
+    String extras2 = "e2";
+    TransportContext ctx1 =
+        TransportContext.builder().setBackendName("backend1").setExtras(extras1.getBytes()).build();
+    TransportContext ctx2 =
+        TransportContext.builder().setBackendName("backend1").setExtras(extras2.getBytes()).build();
+
+    store.recordNextCallTime(ctx1, 1000000);
+    store.recordNextCallTime(ctx2, 1000000);
+    scheduler.schedule(ctx1, 1);
+    scheduler.schedule(ctx2, 1);
+    assertThat(jobScheduler.getAllPendingJobs()).hasSize(2);
+    JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
+    PersistableBundle bundle = jobInfo.getExtras();
+    assertThat(bundle.get(JobInfoScheduler.EXTRAS))
+        .isEqualTo(Base64.encodeToString(extras1.getBytes(), Base64.DEFAULT));
+
+    jobInfo = jobScheduler.getAllPendingJobs().get(1);
+    bundle = jobInfo.getExtras();
+    assertThat(bundle.get(JobInfoScheduler.EXTRAS))
+        .isEqualTo(Base64.encodeToString(extras2.getBytes(), Base64.DEFAULT));
+  }
+
+  @Test
   public void schedule_smallWaitTImeFirstAttempt_multiplePriorities() {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
     scheduler.schedule(TRANSPORT_CONTEXT, 1);

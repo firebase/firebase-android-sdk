@@ -60,6 +60,9 @@ public class JobInfoScheduler implements WorkScheduler {
     checksum.update(transportContext.getBackendName().getBytes());
     checksum.update(
         ByteBuffer.allocate(4).putInt(transportContext.getPriority().ordinal()).array());
+    if (transportContext.getExtras() != null) {
+      checksum.update(transportContext.getExtras());
+    }
     return (int) checksum.getValue();
   }
 
