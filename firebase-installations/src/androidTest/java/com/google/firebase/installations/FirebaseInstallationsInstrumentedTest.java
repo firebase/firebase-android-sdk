@@ -15,6 +15,12 @@
 package com.google.firebase.installations;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_FID_1;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_PROJECT_ID;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_REFRESH_TOKEN;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -25,8 +31,8 @@ import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.installations.local.FiidCache;
-import com.google.firebase.installations.local.FiidCacheEntryValue;
+import com.google.firebase.installations.local.PersistedFid;
+import com.google.firebase.installations.local.PersistedFidEntryValue;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
@@ -51,8 +57,8 @@ public class FirebaseInstallationsInstrumentedTest {
   private FirebaseApp firebaseApp;
   @Mock private FirebaseInstallationServiceClient backendClientReturnsOk;
   @Mock private FirebaseInstallationServiceClient backendClientReturnsError;
-  private FiidCache actualCache;
-  @Mock private FiidCache cacheReturnsError;
+  private PersistedFid persistedFid;
+  @Mock private PersistedFid persistedFidReturnsError;
 
   @Before
   public void setUp() throws FirebaseInstallationServiceException {
@@ -62,21 +68,21 @@ public class FirebaseInstallationsInstrumentedTest {
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
-                .setApplicationId("1:123456789:android:abcdef")
-                .setProjectId("project-id")
+                .setApplicationId(TEST_APP_ID_1)
+                .setProjectId(TEST_PROJECT_ID)
                 .setApiKey("api_key")
                 .build());
-    actualCache = new FiidCache(firebaseApp);
+    persistedFid = new PersistedFid(firebaseApp);
     when(backendClientReturnsOk.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(
             InstallationResponse.builder()
-                .setName("/projects/123456789/installations/fid")
-                .setRefreshToken("refresh-token")
+                .setName("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)
+                .setRefreshToken(TEST_REFRESH_TOKEN)
                 .setAuthToken(
                     InstallationTokenResult.builder()
-                        .setToken("auth-token")
-                        .setTokenExpirationTimestampMillis(1000L)
+                        .setToken(TEST_AUTH_TOKEN)
+                        .setTokenExpirationTimestampMillis(TEST_TOKEN_EXPIRATION_TIMESTAMP)
                         .build())
                 .build());
     when(backendClientReturnsError.createFirebaseInstallation(
@@ -84,31 +90,31 @@ public class FirebaseInstallationsInstrumentedTest {
         .thenThrow(
             new FirebaseInstallationServiceException(
                 "SDK Error", FirebaseInstallationServiceException.Status.SERVER_ERROR));
-    when(cacheReturnsError.insertOrUpdateCacheEntry(any())).thenReturn(false);
-    when(cacheReturnsError.readCacheEntryValue()).thenReturn(null);
+    when(persistedFidReturnsError.insertOrUpdatePersistedFidEntry(any())).thenReturn(false);
+    when(persistedFidReturnsError.readPersistedFidEntryValue()).thenReturn(null);
   }
 
   @After
   public void cleanUp() throws Exception {
-    actualCache.clear();
+    persistedFid.clear();
   }
 
   @Test
-  public void testCreateFirebaseInstallation_CacheOk_BackendOk() throws Exception {
+  public void testCreateFirebaseInstallation_PersistedFidOk_BackendOk() throws Exception {
     FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(firebaseApp, actualCache, backendClientReturnsOk);
+        new FirebaseInstallations(firebaseApp, persistedFid, backendClientReturnsOk);
 
     // No exception, means success.
     assertThat(Tasks.await(firebaseInstallations.getId())).isNotEmpty();
-    FiidCacheEntryValue entryValue = actualCache.readCacheEntryValue();
+    PersistedFidEntryValue entryValue = persistedFid.readPersistedFidEntryValue();
     assertThat(entryValue.getFirebaseInstallationId()).isNotEmpty();
-    assertThat(entryValue.getCacheStatus()).isEqualTo(FiidCache.CacheStatus.REGISTERED);
+    assertThat(entryValue.getPersistedStatus()).isEqualTo(PersistedFid.PersistedStatus.REGISTERED);
   }
 
   @Test
-  public void testCreateFirebaseInstallation_CacheOk_BackendError() throws Exception {
+  public void testCreateFirebaseInstallation_PersistedFidOk_BackendError() throws Exception {
     FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(firebaseApp, actualCache, backendClientReturnsError);
+        new FirebaseInstallations(firebaseApp, persistedFid, backendClientReturnsError);
 
     // Expect exception
     try {
@@ -121,15 +127,17 @@ public class FirebaseInstallationsInstrumentedTest {
           .isEqualTo(FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
 
-    FiidCacheEntryValue entryValue = actualCache.readCacheEntryValue();
+    PersistedFidEntryValue entryValue = persistedFid.readPersistedFidEntryValue();
     assertThat(entryValue.getFirebaseInstallationId()).isNotEmpty();
-    assertThat(entryValue.getCacheStatus()).isEqualTo(FiidCache.CacheStatus.REGISTER_ERROR);
+    assertThat(entryValue.getPersistedStatus())
+        .isEqualTo(PersistedFid.PersistedStatus.REGISTER_ERROR);
   }
 
   @Test
-  public void testCreateFirebaseInstallation_CacheError_BackendOk() throws InterruptedException {
+  public void testCreateFirebaseInstallation_PersistedFidError_BackendOk()
+      throws InterruptedException {
     FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(firebaseApp, cacheReturnsError, backendClientReturnsOk);
+        new FirebaseInstallations(firebaseApp, persistedFidReturnsError, backendClientReturnsOk);
 
     // Expect exception
     try {

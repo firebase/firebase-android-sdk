@@ -50,10 +50,7 @@ public class FirebaseInstallationServiceClient {
 
   @NonNull
   public InstallationResponse createFirebaseInstallation(
-      @NonNull String apiKey,
-      @NonNull String projectID,
-      @NonNull String firebaseInstallationId,
-      @NonNull String appId)
+      @NonNull String apiKey, @NonNull String fid, @NonNull String projectID, @NonNull String appId)
       throws FirebaseInstallationServiceException {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
     try {
@@ -76,9 +73,7 @@ public class FirebaseInstallationServiceClient {
           new GZIPOutputStream(httpsURLConnection.getOutputStream());
       try {
         gzipOutputStream.write(
-            buildCreateFirebaseInstallationRequestBody(firebaseInstallationId, appId)
-                .toString()
-                .getBytes("UTF-8"));
+            buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
       } catch (JSONException e) {
         throw new IllegalStateException(e);
       } finally {
@@ -116,8 +111,8 @@ public class FirebaseInstallationServiceClient {
   @NonNull
   public void deleteFirebaseInstallation(
       @NonNull String apiKey,
-      @NonNull String projectID,
       @NonNull String fid,
+      @NonNull String projectID,
       @NonNull String refreshToken)
       throws FirebaseInstallationServiceException {
     String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
@@ -160,8 +155,8 @@ public class FirebaseInstallationServiceClient {
   @NonNull
   public InstallationTokenResult generateAuthToken(
       @NonNull String apiKey,
-      @NonNull String projectID,
       @NonNull String fid,
+      @NonNull String projectID,
       @NonNull String refreshToken)
       throws FirebaseInstallationServiceException {
     String resourceName =
