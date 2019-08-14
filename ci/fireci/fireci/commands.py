@@ -72,7 +72,7 @@ def smoke_tests(app_build_variant, test_apps_dir):
 def api_information(auth_token, repo_name, issue_number):
   """Comments the api information on the pr"""
 
-  gradle.run('apiInformation', 'generateApiTxtFile')
+  gradle.run('apiInformation')
   dir_suffix = 'build/apiinfo'
   comment_string = ""
   for filename in os.listdir(dir_suffix):

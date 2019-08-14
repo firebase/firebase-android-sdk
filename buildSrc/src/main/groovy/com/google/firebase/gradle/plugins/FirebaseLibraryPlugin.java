@@ -16,14 +16,20 @@ package com.google.firebase.gradle.plugins;
 
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.api.LibraryVariant;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
 import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 
+import java.util.Collection;
+import org.codehaus.groovy.util.ReleaseInfo;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.attributes.Attribute;
+import org.gradle.api.file.FileCollection;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 import java.io.File;
 import java.nio.file.Paths;
@@ -64,48 +70,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
               });
     }
     if (System.getenv().containsKey("METALAVA_BINARY_PATH")) {
-      String metalavaBinaryPath = System.getenv("METALAVA_BINARY_PATH");
-      AndroidSourceSet mainSourceSet = android.getSourceSets().getByName("main");
-      File outputFile = project.getRootProject().file(Paths.get(
-              project.getRootProject().getBuildDir().getPath(),
-              "apiinfo",
-              project.getPath().substring(1).replace(":", "_")));
-      String sourcePathArgument = mainSourceSet.getJava().getSrcDirs().stream()
-              .map(File::getAbsolutePath)
-              .collect(Collectors.joining(":"));
-      boolean doesSourcePathExist = false;
-      for(String sourcePath : sourcePathArgument.split(":")) {
-          if(new File(sourcePath).exists()) {
-            doesSourcePathExist = true;
-            break;
-          }
-      }
-      if(doesSourcePathExist) {
-        project.getTasks().register("apiInformation", ApiInformationTask.class, task -> {
-          task.setProperty("apiTxt", project.file("api.txt"));
-          task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
-          task.setProperty("sourcePath", sourcePathArgument);
-          task.setProperty("outputFile", outputFile);
-          task.setProperty("baselineFile", project.file("baseline.txt"));
-          if (project.hasProperty("updateBaseline")) {
-            task.setProperty("updateBaseline", true);
-          } else {
-            task.setProperty("updateBaseline", false);
-          }
-        });
-
-        project.getTasks().register("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
-          task.setProperty("apiTxt", project.file("api.txt"));
-          task.setProperty("metalavaBinaryPath", metalavaBinaryPath);
-          task.setProperty("sourcePath", sourcePathArgument);
-          task.setProperty("baselineFile", project.file("baseline.txt"));
-          if (project.hasProperty("updateBaseline")) {
-            task.setProperty("updateBaseline", true);
-          } else {
-            task.setProperty("updateBaseline", false);
-          }
-        });
-      }
+      setupApiInfomrationAnalysis(project, android);
     }
 
 
@@ -123,6 +88,55 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                     .getKotlinOptions()
                     .setFreeCompilerArgs(
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
+  }
+
+  private static void setupApiInfomrationAnalysis(Project project, LibraryExtension android) {
+
+    String metalavaBinaryPath = System.getenv("METALAVA_BINARY_PATH");
+    AndroidSourceSet mainSourceSet = android.getSourceSets().getByName("main");
+    File outputFile = project.getRootProject().file(Paths.get(
+        project.getRootProject().getBuildDir().getPath(),
+        "apiinfo",
+        project.getPath().substring(1).replace(":", "_")));
+    File outputApiFile = new File(outputFile.getAbsolutePath() + "_api.txt");
+    String sourcePathArgument = mainSourceSet.getJava().getSrcDirs().stream()
+        .map(File::getAbsolutePath)
+        .collect(Collectors.joining(":"));
+    boolean doesSourcePathExist = false;
+    for(String sourcePath : sourcePathArgument.split(":")) {
+      if(new File(sourcePath).exists()) {
+        doesSourcePathExist = true;
+        break;
+      }
+    }
+
+    if(!doesSourcePathExist) return;
+
+    project.getTasks().register("apiInformation", ApiInformationTask.class, task -> {
+      task.setApiTxt(project.file("api.txt"));
+      task.setMetalavaBinaryPath(metalavaBinaryPath);
+      task.setSourcePath(sourcePathArgument);
+      task.setOutputFile(outputFile);
+      task.setBaselineFile(project.file("baseline.txt"));
+      task.setOutputApiFile(outputApiFile);
+      if (project.hasProperty("updateBaseline")) {
+        task.setUpdateBaseline(true);
+      } else {
+        task.setUpdateBaseline(false);
+      }
+    });
+
+    project.getTasks().register("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
+      task.setApiTxt(project.file("api.txt"));
+      task.setMetalavaBinaryPath(metalavaBinaryPath);
+      task.setSourcePath(sourcePathArgument);
+      task.setBaselineFile(project.file("baseline.txt"));
+      if (project.hasProperty("updateBaseline")) {
+        task.setUpdateBaseline(true);
+      } else {
+        task.setUpdateBaseline(false);
+      }
+    });
   }
 
   private static void setupStaticAnalysis(

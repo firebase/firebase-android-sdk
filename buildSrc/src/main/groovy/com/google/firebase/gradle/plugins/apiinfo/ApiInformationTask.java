@@ -14,21 +14,21 @@
 
 package com.google.firebase.gradle.plugins.apiinfo;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Arrays;
 
 /**
@@ -49,23 +49,28 @@ public abstract class ApiInformationTask extends DefaultTask {
     @OutputFile
     abstract File getBaselineFile();
 
+    @OutputFile
+    abstract File getOutputApiFile();
+
     @Input
     abstract boolean getUpdateBaseline();
 
     @OutputFile
     abstract File getOutputFile();
 
-    abstract void setSourcePath(String value);
+    public abstract void setSourcePath(String value);
 
-    abstract void setBaselineFile(File value);
+    public abstract void setBaselineFile(File value);
 
-    abstract void setUpdateBaseline(boolean value);
+    public abstract void setUpdateBaseline(boolean value);
 
-    abstract void setMetalavaBinaryPath(String value);
+    public abstract void setMetalavaBinaryPath(String value);
 
-    abstract void setApiTxt(File value);
+    public abstract void setApiTxt(File value);
 
-    abstract void setOutputFile(File value);
+    public abstract void setOutputApiFile(File value);
+
+    public abstract void setOutputFile(File value);
 
 
     @TaskAction
@@ -74,18 +79,37 @@ public abstract class ApiInformationTask extends DefaultTask {
         if(!outputFileDir.exists()) {
             outputFileDir.mkdirs();
         }
-        String cmdTemplate = getUpdateBaseline() ?
-                "%s --source-path %s --check-compatibility:api:current %s --format=v2 --update-baseline %s --no-color"
-                : "%s --source-path %s --check-compatibility:api:current %s --format=v2 --baseline %s --no-color";
 
-        String cmdToRun = String.format(cmdTemplate, getMetalavaBinaryPath(), getSourcePath(), getApiTxt().getAbsolutePath(), getBaselineFile().getAbsolutePath());
+        // Generate api.txt file and store it in the  build directory.
         getProject().exec(spec-> {
-            spec.setCommandLine(Arrays.asList(cmdToRun.split(" ")));
+            spec.setCommandLine(Arrays.asList(
+                getMetalavaBinaryPath(),
+                "--source-path", getSourcePath(),
+                "--api", getOutputApiFile().getAbsolutePath(),
+                "--format=v2"
+            ));
+            spec.setIgnoreExitValue(true);
+        });
+        getProject().exec(spec-> {
+            List<String> cmd = new ArrayList<>(Arrays.asList(
+                getMetalavaBinaryPath(),
+                "--source-files", getOutputApiFile().getAbsolutePath(),
+                "--check-compatibility:api:current", getApiTxt().getAbsolutePath(),
+                "--format=v2",
+                "--no-color",
+                "--delete-empty-baselines"
+            ));
+            if(getUpdateBaseline()) {
+                cmd.addAll(Arrays.asList("--update-baseline", getBaselineFile().getAbsolutePath()));
+            } else if(getBaselineFile().exists()) {
+                cmd.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
+            }
+            spec.setCommandLine(cmd);
             spec.setIgnoreExitValue(true);
             try {
                 spec.setStandardOutput(new FileOutputStream(getOutputFile()));
             } catch (FileNotFoundException e) {
-                getLogger().error(e.toString());
+                throw new GradleException("Unable to run the command", e);
             }
         });
 

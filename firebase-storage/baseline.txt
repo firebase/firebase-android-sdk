@@ -1,3 +1,1 @@
 // Baseline format: 1.0
-RemovedInterface: com.google.firebase.storage.StorageException.ErrorCode:
-    Class com.google.firebase.storage.StorageException.ErrorCode no longer implements java.lang.annotation.Annotation

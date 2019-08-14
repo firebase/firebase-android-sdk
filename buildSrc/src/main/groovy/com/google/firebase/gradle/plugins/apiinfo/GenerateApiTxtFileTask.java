@@ -15,7 +15,8 @@
 package com.google.firebase.gradle.plugins.apiinfo;
 
 
-
+import java.util.ArrayList;
+import java.util.List;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
@@ -36,30 +37,44 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
     @Input
     abstract String getSourcePath();
 
+
     @OutputFile
     abstract File getBaselineFile();
 
     @Input
     abstract boolean getUpdateBaseline();
 
-    abstract void setSourcePath(String value);
 
-    abstract void setBaselineFile(File value);
+    public abstract void setSourcePath(String value);
 
-    abstract void setUpdateBaseline(boolean value);
+    public abstract void setBaselineFile(File value);
 
-    abstract void setMetalavaBinaryPath(String value);
+    public abstract void setUpdateBaseline(boolean value);
 
-    abstract void setApiTxt(File value);
+    public abstract void setMetalavaBinaryPath(String value);
+
+    public abstract void setApiTxt(File value);
 
     @TaskAction
     void execute() {
-        String cmdTemplate = getUpdateBaseline() ? "%s --source-path %s --api %s --format=v2 --update-baseline %s"
-                : "%s --source-path %s --api %s --format=v2 --baseline %s";
-        String cmdToRun = String.format(cmdTemplate, getMetalavaBinaryPath(), getSourcePath(), getApiTxt().getAbsolutePath(), getBaselineFile().getAbsolutePath());
-        getProject().exec(spec-> {
-            spec.setCommandLine(Arrays.asList(cmdToRun.split(" ")));
-        });
-    }
+        List<String> cmd =  new ArrayList<String>(Arrays.asList(
+            getMetalavaBinaryPath(),
+            "--source-path", getSourcePath(),
+            "--api", getApiTxt().getAbsolutePath(),
+            "--format=v2",
+            "--delete-empty-baselines"
+        ));
 
+        if(getUpdateBaseline()) {
+            cmd.addAll(Arrays.asList("--update-baseline", getBaselineFile().getAbsolutePath()));
+        } else if(getBaselineFile().exists()) {
+            cmd.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
+        }
+
+        getProject().exec(spec -> {
+            spec.setCommandLine(cmd);
+            spec.setIgnoreExitValue(true);
+        });
+
+    }
 }
