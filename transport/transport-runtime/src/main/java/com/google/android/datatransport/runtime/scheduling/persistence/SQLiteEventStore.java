@@ -275,6 +275,28 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   }
 
   @Override
+  public Iterable<TransportContext> loadActiveContexts() {
+    return inTransaction(
+        db ->
+            tryWithCursor(
+                db.rawQuery(
+                    "SELECT t.backend_name, t.priority, t.extras FROM transport_contexts AS t, events AS e WHERE e.context_id = t._id",
+                    new String[] {}),
+                cursor -> {
+                  List<TransportContext> results = new ArrayList<>();
+                  while (cursor.moveToNext()) {
+                    results.add(
+                        TransportContext.builder()
+                            .setBackendName(cursor.getString(0))
+                            .setPriority(cursor.getInt(1))
+                            .setExtras(maybeBase64Decode(cursor.getString(2)))
+                            .build());
+                  }
+                  return results;
+                }));
+  }
+
+  @Override
   public int cleanUp() {
     long oneWeekAgo = wallClock.getTime() - config.getEventCleanUpAge();
     return inTransaction(
@@ -284,6 +306,13 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   @Override
   public void close() {
     schemaManager.close();
+  }
+
+  private static byte[] maybeBase64Decode(@Nullable String value) {
+    if (value == null) {
+      return null;
+    }
+    return Base64.decode(value, Base64.DEFAULT);
   }
 
   /** Loads all events for a backend. */
