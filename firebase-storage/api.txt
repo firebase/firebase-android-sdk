@@ -1,0 +1,245 @@
+// Signature format: 2.0
+package com.google.firebase.storage {
+
+  public abstract class CancellableTask<StateT> {
+    ctor public CancellableTask();
+    method @NonNull public abstract com.google.firebase.storage.CancellableTask<StateT> addOnProgressListener(@NonNull com.google.firebase.storage.OnProgressListener<? super StateT>);
+    method @NonNull public abstract com.google.firebase.storage.CancellableTask<StateT> addOnProgressListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnProgressListener<? super StateT>);
+    method @NonNull public abstract com.google.firebase.storage.CancellableTask<StateT> addOnProgressListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnProgressListener<? super StateT>);
+    method public abstract boolean cancel();
+    method public abstract boolean isCanceled();
+    method public abstract boolean isInProgress();
+  }
+
+  public abstract class ControllableTask<StateT> extends com.google.firebase.storage.CancellableTask<StateT> {
+    ctor public ControllableTask();
+    method @NonNull public abstract com.google.firebase.storage.ControllableTask<StateT> addOnPausedListener(@NonNull com.google.firebase.storage.OnPausedListener<? super StateT>);
+    method @NonNull public abstract com.google.firebase.storage.ControllableTask<StateT> addOnPausedListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnPausedListener<? super StateT>);
+    method @NonNull public abstract com.google.firebase.storage.ControllableTask<StateT> addOnPausedListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnPausedListener<? super StateT>);
+    method public abstract boolean isPaused();
+    method public abstract boolean pause();
+    method public abstract boolean resume();
+  }
+
+  public class FileDownloadTask extends com.google.firebase.storage.StorageTask<com.google.firebase.storage.FileDownloadTask.TaskSnapshot> {
+  }
+
+  public class FileDownloadTask.TaskSnapshot extends com.google.firebase.storage.StorageTask<com.google.firebase.storage.FileDownloadTask.TaskSnapshot>.SnapshotBase {
+    method public long getBytesTransferred();
+    method public long getTotalByteCount();
+  }
+
+  public class FirebaseStorage {
+    method @NonNull public FirebaseApp getApp();
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage getInstance();
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage getInstance(@NonNull String);
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage getInstance(@NonNull FirebaseApp);
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage getInstance(@NonNull FirebaseApp, @NonNull String);
+    method public long getMaxDownloadRetryTimeMillis();
+    method public long getMaxOperationRetryTimeMillis();
+    method public long getMaxUploadRetryTimeMillis();
+    method @NonNull public com.google.firebase.storage.StorageReference getReference();
+    method @NonNull public com.google.firebase.storage.StorageReference getReference(@NonNull String);
+    method @NonNull public com.google.firebase.storage.StorageReference getReferenceFromUrl(@NonNull String);
+    method public void setMaxDownloadRetryTimeMillis(long);
+    method public void setMaxOperationRetryTimeMillis(long);
+    method public void setMaxUploadRetryTimeMillis(long);
+  }
+
+  public final class ListResult {
+    method @NonNull public List<StorageReference> getItems();
+    method @Nullable public String getPageToken();
+    method @NonNull public List<StorageReference> getPrefixes();
+  }
+
+  public interface OnPausedListener<ProgressT> {
+    method public void onPaused(@NonNull ProgressT);
+  }
+
+  public interface OnProgressListener<ProgressT> {
+    method public void onProgress(@NonNull ProgressT);
+  }
+
+  public class StorageException {
+    method @NonNull public static com.google.firebase.storage.StorageException fromErrorStatus(@NonNull Status);
+    method @NonNull public static com.google.firebase.storage.StorageException fromException(@NonNull Throwable);
+    method @Nullable public static com.google.firebase.storage.StorageException fromExceptionAndHttpCode(@Nullable Throwable, int);
+    method @Nullable public Throwable getCause();
+    method @com.google.firebase.storage.StorageException.ErrorCode public int getErrorCode();
+    method public int getHttpResultCode();
+    method public boolean getIsRecoverableException();
+    method @NonNull public String getMessage();
+    field public static final int ERROR_BUCKET_NOT_FOUND = -13011; // 0xffffcd2d
+    field public static final int ERROR_CANCELED = -13040; // 0xffffcd10
+    field public static final int ERROR_INVALID_CHECKSUM = -13031; // 0xffffcd19
+    field public static final int ERROR_NOT_AUTHENTICATED = -13020; // 0xffffcd24
+    field public static final int ERROR_NOT_AUTHORIZED = -13021; // 0xffffcd23
+    field public static final int ERROR_OBJECT_NOT_FOUND = -13010; // 0xffffcd2e
+    field public static final int ERROR_PROJECT_NOT_FOUND = -13012; // 0xffffcd2c
+    field public static final int ERROR_QUOTA_EXCEEDED = -13013; // 0xffffcd2b
+    field public static final int ERROR_RETRY_LIMIT_EXCEEDED = -13030; // 0xffffcd1a
+    field public static final int ERROR_UNKNOWN = -13000; // 0xffffcd38
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface StorageException.ErrorCode {
+  }
+
+  public class StorageMetadata {
+    ctor public StorageMetadata();
+    method @Nullable public String getBucket();
+    method @Nullable public String getCacheControl();
+    method @Nullable public String getContentDisposition();
+    method @Nullable public String getContentEncoding();
+    method @Nullable public String getContentLanguage();
+    method @Nullable public String getContentType();
+    method public long getCreationTimeMillis();
+    method @Nullable public String getCustomMetadata(@NonNull String);
+    method @NonNull public Set<String> getCustomMetadataKeys();
+    method @Nullable public String getGeneration();
+    method @Nullable public String getMd5Hash();
+    method @Nullable public String getMetadataGeneration();
+    method @Nullable public String getName();
+    method @NonNull public String getPath();
+    method @Nullable public com.google.firebase.storage.StorageReference getReference();
+    method public long getSizeBytes();
+    method public long getUpdatedTimeMillis();
+  }
+
+  public static class StorageMetadata.Builder {
+    ctor public StorageMetadata.Builder();
+    ctor public StorageMetadata.Builder(@NonNull com.google.firebase.storage.StorageMetadata);
+    method @NonNull public com.google.firebase.storage.StorageMetadata build();
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setCacheControl(@Nullable String);
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setContentDisposition(@Nullable String);
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setContentEncoding(@Nullable String);
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setContentLanguage(@Nullable String);
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setContentType(@Nullable String);
+    method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setCustomMetadata(@NonNull String, @Nullable String);
+  }
+
+  public class StorageReference {
+    method @NonNull public com.google.firebase.storage.StorageReference child(@NonNull String);
+    method public int compareTo(@NonNull com.google.firebase.storage.StorageReference);
+    method @NonNull public Task<Void> delete();
+    method public boolean equals(Object);
+    method @NonNull public List<FileDownloadTask> getActiveDownloadTasks();
+    method @NonNull public List<UploadTask> getActiveUploadTasks();
+    method @NonNull public String getBucket();
+    method @NonNull public Task<byte[]> getBytes(long);
+    method @NonNull public Task<Uri> getDownloadUrl();
+    method @NonNull public com.google.firebase.storage.FileDownloadTask getFile(@NonNull Uri);
+    method @NonNull public com.google.firebase.storage.FileDownloadTask getFile(@NonNull File);
+    method @NonNull public Task<StorageMetadata> getMetadata();
+    method @NonNull public String getName();
+    method @Nullable public com.google.firebase.storage.StorageReference getParent();
+    method @NonNull public String getPath();
+    method @NonNull public com.google.firebase.storage.StorageReference getRoot();
+    method @NonNull public com.google.firebase.storage.FirebaseStorage getStorage();
+    method @NonNull public com.google.firebase.storage.StreamDownloadTask getStream();
+    method @NonNull public com.google.firebase.storage.StreamDownloadTask getStream(@NonNull com.google.firebase.storage.StreamDownloadTask.StreamProcessor);
+    method public int hashCode();
+    method @NonNull public Task<ListResult> list(int);
+    method @NonNull public Task<ListResult> list(int, @NonNull String);
+    method @NonNull public Task<ListResult> listAll();
+    method @NonNull public com.google.firebase.storage.UploadTask putBytes(@NonNull byte[]);
+    method @NonNull public com.google.firebase.storage.UploadTask putBytes(@NonNull byte[], @NonNull com.google.firebase.storage.StorageMetadata);
+    method @NonNull public com.google.firebase.storage.UploadTask putFile(@NonNull Uri);
+    method @NonNull public com.google.firebase.storage.UploadTask putFile(@NonNull Uri, @NonNull com.google.firebase.storage.StorageMetadata);
+    method @NonNull public com.google.firebase.storage.UploadTask putFile(@NonNull Uri, @Nullable com.google.firebase.storage.StorageMetadata, @Nullable Uri);
+    method @NonNull public com.google.firebase.storage.UploadTask putStream(@NonNull InputStream);
+    method @NonNull public com.google.firebase.storage.UploadTask putStream(@NonNull InputStream, @NonNull com.google.firebase.storage.StorageMetadata);
+    method public String toString();
+    method @NonNull public Task<StorageMetadata> updateMetadata(@NonNull com.google.firebase.storage.StorageMetadata);
+  }
+
+  public abstract class StorageTask<ResultT extends com.google.firebase.storage.StorageTask.ProvideError> extends com.google.firebase.storage.ControllableTask<ResultT> {
+    ctor protected StorageTask();
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnCanceledListener(@NonNull OnCanceledListener);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnCanceledListener(@NonNull Executor, @NonNull OnCanceledListener);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnCanceledListener(@NonNull Activity, @NonNull OnCanceledListener);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnCompleteListener(@NonNull OnCompleteListener<ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnCompleteListener(@NonNull Executor, @NonNull OnCompleteListener<ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnCompleteListener(@NonNull Activity, @NonNull OnCompleteListener<ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnFailureListener(@NonNull OnFailureListener);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnFailureListener(@NonNull Executor, @NonNull OnFailureListener);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnFailureListener(@NonNull Activity, @NonNull OnFailureListener);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnPausedListener(@NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnPausedListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnPausedListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnProgressListener(@NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnProgressListener(@NonNull Executor, @NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnProgressListener(@NonNull Activity, @NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnSuccessListener(@NonNull OnSuccessListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnSuccessListener(@NonNull Executor, @NonNull OnSuccessListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> addOnSuccessListener(@NonNull Activity, @NonNull OnSuccessListener<? super ResultT>);
+    method public boolean cancel();
+    method @NonNull public <ContinuationResultT> Task<ContinuationResultT> continueWith(@NonNull Continuation<ResultT,ContinuationResultT>);
+    method @NonNull public <ContinuationResultT> Task<ContinuationResultT> continueWith(@NonNull Executor, @NonNull Continuation<ResultT,ContinuationResultT>);
+    method @NonNull public <ContinuationResultT> Task<ContinuationResultT> continueWithTask(@NonNull Continuation<ResultT,Task<ContinuationResultT>>);
+    method @NonNull public <ContinuationResultT> Task<ContinuationResultT> continueWithTask(@NonNull Executor, @NonNull Continuation<ResultT,Task<ContinuationResultT>>);
+    method @Nullable public Exception getException();
+    method @NonNull public ResultT getResult();
+    method @NonNull public <X extends Throwable> ResultT getResult(@NonNull Class<X>) throws X;
+    method @NonNull public ResultT getSnapshot();
+    method public boolean isCanceled();
+    method public boolean isComplete();
+    method public boolean isInProgress();
+    method public boolean isPaused();
+    method public boolean isSuccessful();
+    method protected void onCanceled();
+    method protected void onFailure();
+    method protected void onPaused();
+    method protected void onProgress();
+    method protected void onQueued();
+    method protected void onSuccess();
+    method @NonNull public <ContinuationResultT> Task<ContinuationResultT> onSuccessTask(@NonNull SuccessContinuation<ResultT,ContinuationResultT>);
+    method @NonNull public <ContinuationResultT> Task<ContinuationResultT> onSuccessTask(@NonNull Executor, @NonNull SuccessContinuation<ResultT,ContinuationResultT>);
+    method public boolean pause();
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnCanceledListener(@NonNull OnCanceledListener);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnCompleteListener(@NonNull OnCompleteListener<ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnFailureListener(@NonNull OnFailureListener);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnPausedListener(@NonNull com.google.firebase.storage.OnPausedListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnProgressListener(@NonNull com.google.firebase.storage.OnProgressListener<? super ResultT>);
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> removeOnSuccessListener(@NonNull OnSuccessListener<? super ResultT>);
+    method public boolean resume();
+    field protected final Object syncObject;
+  }
+
+  protected static interface StorageTask.ProvideError {
+    method public Exception getError();
+  }
+
+  public class StorageTask.SnapshotBase implements com.google.firebase.storage.StorageTask.ProvideError {
+    ctor public StorageTask.SnapshotBase(@Nullable Exception);
+    method @Nullable public Exception getError();
+    method @NonNull public com.google.firebase.storage.StorageReference getStorage();
+    method @NonNull public com.google.firebase.storage.StorageTask<ResultT> getTask();
+  }
+
+  public class StreamDownloadTask extends com.google.firebase.storage.StorageTask<com.google.firebase.storage.StreamDownloadTask.TaskSnapshot> {
+  }
+
+  public static interface StreamDownloadTask.StreamProcessor {
+    method public void doInBackground(@NonNull com.google.firebase.storage.StreamDownloadTask.TaskSnapshot, @NonNull InputStream);
+  }
+
+  public class StreamDownloadTask.TaskSnapshot extends com.google.firebase.storage.StorageTask<com.google.firebase.storage.StreamDownloadTask.TaskSnapshot>.SnapshotBase {
+    method public long getBytesTransferred();
+    method @NonNull public InputStream getStream();
+    method public long getTotalByteCount();
+  }
+
+  public class UploadTask extends com.google.firebase.storage.StorageTask<com.google.firebase.storage.UploadTask.TaskSnapshot> {
+    method protected void resetState();
+    method protected void schedule();
+  }
+
+  public class UploadTask.TaskSnapshot extends com.google.firebase.storage.StorageTask<com.google.firebase.storage.UploadTask.TaskSnapshot>.SnapshotBase {
+    method public long getBytesTransferred();
+    method @Nullable public com.google.firebase.storage.StorageMetadata getMetadata();
+    method public long getTotalByteCount();
+    method @Nullable public Uri getUploadSessionUri();
+  }
+
+}
+
