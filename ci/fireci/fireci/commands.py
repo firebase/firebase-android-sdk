@@ -83,6 +83,9 @@ def api_information(auth_token, repo_name, issue_number):
       for line in outputlines:
         if 'error' in line:
           formatted_output_lines.append(line[line.find('error:'):])
+        elif 'warning' in line:
+          formatted_output_lines.append(line[line.find('warning:'):])
+          
     if formatted_output_lines:
       comment_string += 'The public api surface has changed for the subproject {}:\n'.format(subproject)
       comment_string += ''.join(formatted_output_lines)

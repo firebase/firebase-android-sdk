@@ -102,15 +102,9 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     String sourcePathArgument = mainSourceSet.getJava().getSrcDirs().stream()
         .map(File::getAbsolutePath)
         .collect(Collectors.joining(":"));
-    boolean doesSourcePathExist = false;
-    for(String sourcePath : sourcePathArgument.split(":")) {
-      if(new File(sourcePath).exists()) {
-        doesSourcePathExist = true;
-        break;
-      }
+    if(mainSourceSet.getJava().getSrcDirs().stream().noneMatch(File::exists)) {
+      return;
     }
-
-    if(!doesSourcePathExist) return;
 
     project.getTasks().register("apiInformation", ApiInformationTask.class, task -> {
       task.setApiTxt(project.file("api.txt"));
