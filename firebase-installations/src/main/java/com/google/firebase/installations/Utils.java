@@ -53,7 +53,9 @@ class Utils {
   @NonNull
   public static String createRandomFid() {
     // A valid FID has exactly 22 base64 characters, which is 132 bits, or 16.5 bytes.
-    byte[] uuidBytes = getBytesFromUUID(UUID.randomUUID());
+    byte[] uuidBytes = getBytesFromUUID(UUID.randomUUID(), new byte[17]);
+    uuidBytes[16] = uuidBytes[0];
+    uuidBytes[0] = (byte) ((REMOVE_PREFIX_MASK & uuidBytes[0]) | FID_4BIT_PREFIX);
     return encodeFidBase64UrlSafe(uuidBytes);
   }
 
@@ -78,21 +80,10 @@ class Utils {
         .substring(0, FID_LENGTH);
   }
 
-  private static byte[] getBytesFromUUID(UUID uuid) {
-    ByteBuffer bb = ByteBuffer.wrap(new byte[17]);
-
-    // The first 4 bits with the constant FID header of 0x7 (0b0111) followed by the last 4 random
-    // bits of the UUID.
-    byte fidPrefixWithLast4bitsOfUUID =
-        (byte)
-            (FID_4BIT_PREFIX
-                | (ByteBuffer.allocate(8).putLong(uuid.getLeastSignificantBits()).array()[7]
-                    & REMOVE_PREFIX_MASK));
-
-    bb.put(fidPrefixWithLast4bitsOfUUID);
+  private static byte[] getBytesFromUUID(UUID uuid, byte[] output) {
+    ByteBuffer bb = ByteBuffer.wrap(output);
     bb.putLong(uuid.getMostSignificantBits());
     bb.putLong(uuid.getLeastSignificantBits());
-
     return bb.array();
   }
 
