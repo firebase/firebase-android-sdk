@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,16 +52,16 @@ public class UploaderIntegrationTest {
   private final TransportBackend mockBackend = mock(TransportBackend.class);
   private final BackendRegistry mockRegistry = mock(BackendRegistry.class);
   private final Context context = InstrumentationRegistry.getInstrumentation().getContext();
-  private final WorkScheduler spyScheduler = spy(new TestWorkScheduler(context));
 
-  private final TransportRuntimeComponent component =
+  private final UploaderTestRuntimeComponent component =
       DaggerUploaderTestRuntimeComponent.builder()
           .setApplicationContext(context)
           .setBackendRegistry(mockRegistry)
-          .setWorkScheduler(spyScheduler)
           .setEventClock(() -> 3)
           .setUptimeClock(() -> 1)
           .build();
+
+  private final WorkScheduler spyScheduler = component.getWorkScheduler();
 
   @Rule public final TransportRuntimeRule runtimeRule = new TransportRuntimeRule(component);
 

@@ -308,6 +308,16 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     schemaManager.close();
   }
 
+  @VisibleForTesting
+  public void clearDb() {
+    inTransaction(
+        db -> {
+          db.delete("events", null, new String[] {});
+          db.delete("transport_contexts", null, new String[] {});
+          return null;
+        });
+  }
+
   private static byte[] maybeBase64Decode(@Nullable String value) {
     if (value == null) {
       return null;
