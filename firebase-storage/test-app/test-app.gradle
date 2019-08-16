@@ -68,5 +68,3 @@ dependencies {
 // ==========================================================================
 ext.packageName = "com.example.storage"
 apply from: '../../gradle/googleServices.gradle'
-
-apply plugin: "com.google.gms.google-services"
