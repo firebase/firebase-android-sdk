@@ -535,10 +535,13 @@ public class QueryTest {
     Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
     assertTrue(baseQuery.matchesAllDocuments());
 
-    Query query = baseQuery.filter(filter("foo", "==", "bar"));
-    assertFalse(query.matchesAllDocuments());
+    Query query = baseQuery.orderBy(orderBy("__name__"));
+    assertTrue(query.matchesAllDocuments());
 
     query = baseQuery.orderBy(orderBy("foo"));
+    assertFalse(query.matchesAllDocuments());
+
+    query = baseQuery.filter(filter("foo", "==", "bar"));
     assertFalse(query.matchesAllDocuments());
 
     query = baseQuery.limit(1);

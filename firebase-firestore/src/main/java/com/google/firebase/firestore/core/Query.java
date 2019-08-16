@@ -122,10 +122,12 @@ public final class Query {
    */
   public boolean matchesAllDocuments() {
     return filters.isEmpty()
-        && getExplicitOrderBy().isEmpty()
         && limit == NO_LIMIT
         && startAt == null
-        && endAt == null;
+        && endAt == null
+        && (getExplicitOrderBy().isEmpty()
+            || (getExplicitOrderBy().size() == 1
+                && getFirstOrderByField().isKeyField()));
   }
 
   /** The filters on the documents returned by the query. */

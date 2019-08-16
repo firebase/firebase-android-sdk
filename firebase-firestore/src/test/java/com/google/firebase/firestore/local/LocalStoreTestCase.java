@@ -41,6 +41,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import com.google.common.collect.Iterables;
@@ -75,6 +76,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -927,10 +929,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testPersistsResumeTokens() {
-    // This test only works in the absence of the EagerGarbageCollector.
-    if (garbageCollectorIsEager()) {
-      return;
-    }
+    assumeFalse(garbageCollectorIsEager());
 
     Query query = query("foo/bar");
     int targetId = allocateQuery(query);
@@ -947,10 +946,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testDoesNotReplaceResumeTokenWithEmptyByteString() {
-    // This test only works in the absence of the EagerGarbageCollector.
-    if (garbageCollectorIsEager()) {
-      return;
-    }
+    assumeFalse(garbageCollectorIsEager());
 
     Query query = query("foo/bar");
     int targetId = allocateQuery(query);
@@ -1005,12 +1001,10 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesSetMutationThenAckThenTransformMutationThenAckThenTransformMutation() {
-    if (garbageCollectorIsEager()) {
-      // Since this test doesn't start a listen, Eager GC removes the documents from the cache as
-      // soon as the mutation is applied. This creates a lot of special casing in this unit test but
-      // does not expand its test coverage.
-      return;
-    }
+    // Since this test doesn't start a listen, Eager GC removes the documents from the cache as
+    // soon as the mutation is applied. This creates a lot of special casing in this unit test but
+    // does not expand its test coverage.
+    assumeFalse(garbageCollectorIsEager());
 
     writeMutation(setMutation("foo/bar", map("sum", 0)));
     assertContains(doc("foo/bar", 0, map("sum", 0), Document.DocumentState.LOCAL_MUTATIONS));
@@ -1035,13 +1029,11 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testUsesTargetMappingToExecuteQueries() {
-    // This test verifies that once a target mapping has been written, only documents that match
-    // the query are read from the RemoteDocumentCache.
+    assumeFalse(garbageCollectorIsEager());
     assumeTrue(queryEngine instanceof IndexFreeQueryEngine);
 
-    if (garbageCollectorIsEager()) {
-      return;
-    }
+    // This test verifies that once a target mapping has been written, only documents that match
+    // the query are read from the RemoteDocumentCache.
 
     Query query =
         Query.atPath(ResourcePath.fromString("foo")).filter(filter("matches", "==", true));
@@ -1077,13 +1069,11 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testLastLimboFreeSnapshotIsAdvancedDuringViewProcessing() {
-    // This test verifies that the `lastLimboFreeSnapshot` version for QueryData is advanced when
-    // we compute a limbo-free free view and that the mapping is persisted when we release a query.
+    assumeFalse(garbageCollectorIsEager());
     assumeTrue(queryEngine instanceof IndexFreeQueryEngine);
 
-    if (garbageCollectorIsEager()) {
-      return;
-    }
+    // This test verifies that the `lastLimboFreeSnapshot` version for QueryData is advanced when
+    // we compute a limbo-free free view and that the mapping is persisted when we release a query.
 
     writeMutation(setMutation("foo/ignored", map("matches", false)));
     acknowledgeMutation(10);
@@ -1121,12 +1111,10 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testQueriesIncludeLocallyModifiedDocuments() {
+    assumeFalse(garbageCollectorIsEager());
+
     // This test verifies that queries that have a persisted TargetMapping include documents that
     // were modified by local edits after the target mapping was written.
-    if (garbageCollectorIsEager()) {
-      return;
-    }
-
     Query query =
         Query.atPath(ResourcePath.fromString("foo")).filter(filter("matches", "==", true));
     int targetId = allocateQuery(query);
@@ -1159,11 +1147,10 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testQueriesIncludeDocumentsFromOtherQueries() {
+    assumeFalse(garbageCollectorIsEager());
+
     // This test verifies that queries that have a persisted TargetMapping include documents that
     // were modified by other queries after the target mapping was written.
-    if (garbageCollectorIsEager()) {
-      return;
-    }
 
     Query filteredQuery =
         Query.atPath(ResourcePath.fromString("foo")).filter(filter("matches", "==", true));
@@ -1201,11 +1188,10 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testQueriesFilterDocumentsThatNoLongerMatch() {
+    assumeFalse(garbageCollectorIsEager());
+
     // This test verifies that documents that once matched a query are post-filtered if they no
     // longer match the query filter.
-    if (garbageCollectorIsEager()) {
-      return;
-    }
 
     // Add two document results for a simple filter query
     Query filteredQuery =

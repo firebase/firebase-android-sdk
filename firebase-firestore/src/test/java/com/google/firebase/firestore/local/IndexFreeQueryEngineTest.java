@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static org.junit.Assert.assertEquals;
 
+import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
@@ -34,6 +35,8 @@ import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
+import java.util.concurrent.Callable;
+import javax.annotation.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,11 +71,11 @@ public class IndexFreeQueryEngineTest {
   private QueryCache queryCache;
   private QueryEngine queryEngine;
 
-  private boolean expectIndexFreeExecution;
+  private @Nullable Boolean expectIndexFreeExecution;
 
   @Before
   public void setUp() {
-    expectIndexFreeExecution = false;
+    expectIndexFreeExecution = null;
 
     persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     queryCache = new MemoryQueryCache(persistence);
@@ -98,24 +101,52 @@ public class IndexFreeQueryEngineTest {
     queryEngine.setLocalDocumentsView(localDocuments);
   }
 
-  /** Add a document to local cache and the remote key mapping. */
-  private void addDocumentToRemoteResult(Document doc) {
+  /** Adds the provided documents to the query target mapping. */
+  private void persistQueryMapping(Document ... docs) {
     persistence.runTransaction(
-        "addDocumentToRemoteResult",
+        "persistQueryMapping",
         () -> {
-          queryCache.addMatchingKeys(
-              DocumentKey.emptyKeySet().insert(doc.getKey()), TEST_TARGET_ID);
-          remoteDocumentCache.add(doc, doc.getVersion());
+          ImmutableSortedSet<DocumentKey> remoteKeys =  DocumentKey.emptyKeySet();
+          for (Document doc: docs) {
+            remoteKeys = remoteKeys.insert(doc.getKey());
+          }
+          queryCache.addMatchingKeys(remoteKeys, TEST_TARGET_ID);
         });
   }
 
-  /** Add a document to local cache but not the remote key mapping. */
-  private void addDocumentToLocalResult(Document doc) {
-    remoteDocumentCache.add(doc, doc.getVersion());
+  /** Adds the provided documents to the remote document cache. */
+  private void addDocument(Document ... docs) {
+    persistence.runTransaction(
+        "addDocument",
+        () -> {
+          for (Document doc : docs) {
+            remoteDocumentCache.add(doc, doc.getVersion());
+          }
+        });
   }
 
-  private DocumentSet runQuery(Query query, QueryData queryData, boolean expectIndexFree) {
-    expectIndexFreeExecution = expectIndexFree;
+  private <T> T expectIndexFreeQuery(Callable<T> c) throws Exception {
+    try {
+      expectIndexFreeExecution = true;
+      return c.call();
+    } finally {
+      expectIndexFreeExecution = null;
+    }
+  }
+
+  private <T> T expectFullCollectionQuery(Callable<T> c) throws Exception {
+    try {
+      expectIndexFreeExecution = false;
+      return c.call();
+    } finally {
+      expectIndexFreeExecution = null;
+    }
+  }
+
+  private DocumentSet runQuery(Query query, QueryData queryData) {
+    Preconditions.checkNotNull(
+        expectIndexFreeExecution,
+        "Encountered runQuery() call not wrapped in expectIndexFreeQuery()/expectFullCollectionQuery()");
     ImmutableSortedMap<DocumentKey, Document> docs =
         queryEngine.getDocumentsMatchingQuery(
             query, queryData, queryCache.getMatchingKeysForTargetId(TEST_TARGET_ID));
@@ -126,80 +157,85 @@ public class IndexFreeQueryEngineTest {
   }
 
   @Test
-  public void usesTargetMappingForInitialView() {
+  public void usesTargetMappingForInitialView() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true));
     QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
-    addDocumentToRemoteResult(MATCHING_DOC_A);
-    addDocumentToRemoteResult(MATCHING_DOC_B);
+    addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
+    persistQueryMapping(MATCHING_DOC_A, MATCHING_DOC_B);
 
-    DocumentSet docs = runQuery(query, queryData, /* expectIndexFree= */ true);
+    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, queryData));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, MATCHING_DOC_B), docs);
   }
 
   @Test
-  public void filtersNonMatchingInitialResults() {
+  public void filtersNonMatchingInitialResults() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true));
     QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
-    addDocumentToRemoteResult(MATCHING_DOC_A);
-    addDocumentToRemoteResult(MATCHING_DOC_B);
+    addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
+    persistQueryMapping(MATCHING_DOC_A, MATCHING_DOC_B);
 
-    addDocumentToLocalResult(PENDING_NON_MATCHING_DOC_A);
+    // Add a mutated document that is not yet part of query's set of remote keys.
+    addDocument(PENDING_NON_MATCHING_DOC_A);
 
-    DocumentSet docs = runQuery(query, queryData, /* expectIndexFree= */ true);
+    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, queryData));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
   @Test
-  public void includesChangesSinceInitialResults() {
+  public void includesChangesSinceInitialResults() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true));
     QueryData originalQueryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
-    addDocumentToRemoteResult(MATCHING_DOC_A);
-    addDocumentToRemoteResult(NON_MATCHING_DOC_B);
+    addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
+    persistQueryMapping(MATCHING_DOC_A, MATCHING_DOC_B);
 
-    DocumentSet docs = runQuery(query, originalQueryData, /* expectIndexFree= */ true);
-    assertEquals(docSet(query.comparator(), MATCHING_DOC_A), docs);
+    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, originalQueryData));
+    assertEquals(docSet(query.comparator(), MATCHING_DOC_A, MATCHING_DOC_B), docs);
 
-    addDocumentToLocalResult(UPDATED_MATCHING_DOC_B);
+    addDocument(UPDATED_MATCHING_DOC_B);
 
-    docs = runQuery(query, originalQueryData, /* expectIndexFree= */ true);
+    docs = expectIndexFreeQuery(() -> runQuery(query, originalQueryData));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, UPDATED_MATCHING_DOC_B), docs);
   }
 
   @Test
-  public void doesNotUseInitialResultsWithoutLimboFreeSnapshotVersion() {
+  public void doesNotUseInitialResultsWithoutLimboFreeSnapshotVersion() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true));
     QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ false);
 
-    DocumentSet docs = runQuery(query, queryData, /* expectIndexFree= */ false);
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
     assertEquals(docSet(query.comparator()), docs);
   }
 
   @Test
-  public void doesNotUseInitialResultsForUnfilteredCollectionQuery() {
+  public void doesNotUseInitialResultsForUnfilteredCollectionQuery() throws Exception {
     Query query = query("coll");
     QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
-    DocumentSet docs = runQuery(query, queryData, /* expectIndexFree= */ false);
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
     assertEquals(docSet(query.comparator()), docs);
   }
 
   @Test
-  public void doesNotUseInitialResultsForLimitQueryWithDocumentRemoval() {
+  public void doesNotUseInitialResultsForLimitQueryWithDocumentRemoval() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true)).limit(1);
 
-    addDocumentToRemoteResult(NON_MATCHING_DOC_A);
-    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
-    addDocumentToLocalResult(MATCHING_DOC_B);
+    // While the backend would never add DocA to the set of remote keys, this allows us to easily
+    // simulate what would happen when a document no longer matches due to an out-of-band update.
+    addDocument(NON_MATCHING_DOC_A);
+    persistQueryMapping(NON_MATCHING_DOC_A);
 
-    DocumentSet docs = runQuery(query, queryData, /* expectIndexFree= */ false);
+    addDocument(MATCHING_DOC_B);
+
+    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
   @Test
-  public void doesNotUseInitialResultsForLimitQueryWithPendingWrite() {
+  public void doesNotUseInitialResultsForLimitQueryWithPendingWrite() throws Exception {
     Query query =
         query("coll")
             .filter(filter("matches", "==", true))
@@ -208,18 +244,20 @@ public class IndexFreeQueryEngineTest {
 
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
-    addDocumentToRemoteResult(PENDING_MATCHING_DOC_A);
+    addDocument(PENDING_MATCHING_DOC_A);
+    persistQueryMapping(PENDING_MATCHING_DOC_A);
 
     QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
-    addDocumentToLocalResult(MATCHING_DOC_B);
+    addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = runQuery(query, queryData, /* expectIndexFree= */ false);
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
   @Test
-  public void doesNotUseInitialResultsForLimitQueryWithDocumentThatHasBeenUpdatedOutOfBand() {
+  public void doesNotUseInitialResultsForLimitQueryWithDocumentThatHasBeenUpdatedOutOfBand()
+      throws Exception {
     Query query =
         query("coll")
             .filter(filter("matches", "==", true))
@@ -228,13 +266,14 @@ public class IndexFreeQueryEngineTest {
 
     // Add a query mapping for a document that matches, but that sorts below another document based
     // due to an update that the SDK received after the query's snapshot was persisted.
-    addDocumentToRemoteResult(UDPATED_DOC_A);
+    addDocument(UDPATED_DOC_A);
+    persistQueryMapping(UDPATED_DOC_A);
 
     QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
-    addDocumentToLocalResult(MATCHING_DOC_B);
+    addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = runQuery(query, queryData, /* expectIndexFree= */ false);
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
