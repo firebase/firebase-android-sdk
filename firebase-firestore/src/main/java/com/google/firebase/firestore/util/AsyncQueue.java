@@ -479,13 +479,14 @@ public class AsyncQueue {
    * @return A DelayedTask instance that can be used for cancellation.
    */
   public DelayedTask enqueueAfterDelay(TimerId timerId, long delayMs, Runnable task) {
+    // Fast-forward delays for timerIds that have been overridden.
+    if (timerIdsToSkip.contains(timerId)) {
+      delayMs = 0;
+    }
+
     DelayedTask delayedTask = createAndScheduleDelayedTask(timerId, delayMs, task);
     delayedTasks.add(delayedTask);
 
-    // Fast-forward delays for timerIds that have been overridden.
-    if (timerIdsToSkip.contains(delayedTask.timerId)) {
-      delayedTask.skipDelay();
-    }
     return delayedTask;
   }
 
