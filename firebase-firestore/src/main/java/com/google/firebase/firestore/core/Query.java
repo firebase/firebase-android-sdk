@@ -121,7 +121,11 @@ public final class Query {
    * Returns true if this query does not specify any query constraints that could remove results.
    */
   public boolean matchesAllDocuments() {
-    return filters.isEmpty() && limit == NO_LIMIT && startAt == null && endAt == null;
+    return filters.isEmpty()
+        && getExplicitOrderBy().isEmpty()
+        && limit == NO_LIMIT
+        && startAt == null
+        && endAt == null;
   }
 
   /** The filters on the documents returned by the query. */

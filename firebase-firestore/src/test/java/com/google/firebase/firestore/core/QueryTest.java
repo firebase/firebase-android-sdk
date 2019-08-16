@@ -538,6 +538,9 @@ public class QueryTest {
     Query query = baseQuery.filter(filter("foo", "==", "bar"));
     assertFalse(query.matchesAllDocuments());
 
+    query = baseQuery.orderBy(orderBy("foo"));
+    assertFalse(query.matchesAllDocuments());
+
     query = baseQuery.limit(1);
     assertFalse(query.matchesAllDocuments());
 
