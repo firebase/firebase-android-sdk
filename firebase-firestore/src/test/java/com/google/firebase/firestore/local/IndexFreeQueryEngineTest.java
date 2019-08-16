@@ -102,12 +102,12 @@ public class IndexFreeQueryEngineTest {
   }
 
   /** Adds the provided documents to the query target mapping. */
-  private void persistQueryMapping(Document ... docs) {
+  private void persistQueryMapping(Document... docs) {
     persistence.runTransaction(
         "persistQueryMapping",
         () -> {
-          ImmutableSortedSet<DocumentKey> remoteKeys =  DocumentKey.emptyKeySet();
-          for (Document doc: docs) {
+          ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
+          for (Document doc : docs) {
             remoteKeys = remoteKeys.insert(doc.getKey());
           }
           queryCache.addMatchingKeys(remoteKeys, TEST_TARGET_ID);
@@ -115,7 +115,7 @@ public class IndexFreeQueryEngineTest {
   }
 
   /** Adds the provided documents to the remote document cache. */
-  private void addDocument(Document ... docs) {
+  private void addDocument(Document... docs) {
     persistence.runTransaction(
         "addDocument",
         () -> {

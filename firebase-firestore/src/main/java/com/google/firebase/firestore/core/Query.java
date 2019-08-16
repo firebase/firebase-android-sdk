@@ -126,8 +126,7 @@ public final class Query {
         && startAt == null
         && endAt == null
         && (getExplicitOrderBy().isEmpty()
-            || (getExplicitOrderBy().size() == 1
-                && getFirstOrderByField().isKeyField()));
+            || (getExplicitOrderBy().size() == 1 && getFirstOrderByField().isKeyField()));
   }
 
   /** The filters on the documents returned by the query. */
