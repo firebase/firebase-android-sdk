@@ -32,7 +32,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.local.PersistedFid;
-import com.google.firebase.installations.local.PersistedFidEntryValue;
+import com.google.firebase.installations.local.PersistedFidEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
@@ -106,7 +106,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
     // No exception, means success.
     assertThat(Tasks.await(firebaseInstallations.getId())).isNotEmpty();
-    PersistedFidEntryValue entryValue = persistedFid.readPersistedFidEntryValue();
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
     assertThat(entryValue.getFirebaseInstallationId()).isNotEmpty();
     assertThat(entryValue.getPersistedStatus()).isEqualTo(PersistedFid.PersistedStatus.REGISTERED);
   }
@@ -127,7 +127,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .isEqualTo(FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
 
-    PersistedFidEntryValue entryValue = persistedFid.readPersistedFidEntryValue();
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
     assertThat(entryValue.getFirebaseInstallationId()).isNotEmpty();
     assertThat(entryValue.getPersistedStatus())
         .isEqualTo(PersistedFid.PersistedStatus.REGISTER_ERROR);

@@ -76,7 +76,7 @@ public class PersistedFidTest {
   public void testUpdateAndReadCacheEntry() throws Exception {
     assertTrue(
         cache0.insertOrUpdatePersistedFidEntry(
-            PersistedFidEntryValue.builder()
+            PersistedFidEntry.builder()
                 .setFirebaseInstallationId(TEST_FID_1)
                 .setAuthToken(TEST_AUTH_TOKEN)
                 .setRefreshToken(TEST_REFRESH_TOKEN)
@@ -84,7 +84,7 @@ public class PersistedFidTest {
                 .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_1)
                 .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
                 .build()));
-    PersistedFidEntryValue entryValue = cache0.readPersistedFidEntryValue();
+    PersistedFidEntry entryValue = cache0.readPersistedFidEntryValue();
     assertThat(entryValue.getFirebaseInstallationId()).isEqualTo(TEST_FID_1);
     assertThat(entryValue.getAuthToken()).isEqualTo(TEST_AUTH_TOKEN);
     assertThat(entryValue.getRefreshToken()).isEqualTo(TEST_REFRESH_TOKEN);
@@ -96,7 +96,7 @@ public class PersistedFidTest {
 
     assertTrue(
         cache0.insertOrUpdatePersistedFidEntry(
-            PersistedFidEntryValue.builder()
+            PersistedFidEntry.builder()
                 .setFirebaseInstallationId(TEST_FID_1)
                 .setAuthToken(TEST_AUTH_TOKEN)
                 .setRefreshToken(TEST_REFRESH_TOKEN)

@@ -19,11 +19,11 @@ import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
 /**
- * This class represents a cache entry value in {@link PersistedFid}, which contains a Firebase
- * instance id and the cache status of this entry.
+ * This class represents a persisted fid entry in {@link PersistedFid}, which contains a few
+ * Firebase Installation attributes and the persisted status of this entry.
  */
 @AutoValue
-public abstract class PersistedFidEntryValue {
+public abstract class PersistedFidEntry {
 
   @NonNull
   public abstract String getFirebaseInstallationId();
@@ -44,10 +44,12 @@ public abstract class PersistedFidEntryValue {
   @NonNull
   public abstract Builder toBuilder();
 
-  /** Returns a default Builder object to create an InstallationResponse object */
+  /** Returns a default Builder object to create an PersistedFidEntry object */
   @NonNull
-  public static PersistedFidEntryValue.Builder builder() {
-    return new AutoValue_PersistedFidEntryValue.Builder();
+  public static PersistedFidEntry.Builder builder() {
+    return new AutoValue_PersistedFidEntry.Builder()
+        .setTokenCreationEpochInSecs(0)
+        .setExpiresInSecs(0);
   }
 
   @AutoValue.Builder
@@ -71,6 +73,6 @@ public abstract class PersistedFidEntryValue {
     public abstract Builder setTokenCreationEpochInSecs(long value);
 
     @NonNull
-    public abstract PersistedFidEntryValue build();
+    public abstract PersistedFidEntry build();
   }
 }

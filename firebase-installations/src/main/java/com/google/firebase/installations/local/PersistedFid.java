@@ -22,7 +22,7 @@ import com.google.firebase.FirebaseApp;
 
 /**
  * A layer that locally persists a few Firebase Installation attributes on top the Firebase
- * Installation backend API.
+ * Installation API.
  */
 public class PersistedFid {
   // Status of each presisted fid entry
@@ -63,7 +63,7 @@ public class PersistedFid {
   }
 
   @Nullable
-  public synchronized PersistedFidEntryValue readPersistedFidEntryValue() {
+  public synchronized PersistedFidEntry readPersistedFidEntryValue() {
     String fid = prefs.getString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
     int status = prefs.getInt(getSharedPreferencesKey(PERSISTED_STATUS_KEY), -1);
     String authToken = prefs.getString(getSharedPreferencesKey(AUTH_TOKEN_KEY), null);
@@ -76,7 +76,7 @@ public class PersistedFid {
       return null;
     }
 
-    return PersistedFidEntryValue.builder()
+    return PersistedFidEntry.builder()
         .setFirebaseInstallationId(fid)
         .setPersistedStatus(PersistedStatus.values()[status])
         .setAuthToken(authToken)
@@ -88,7 +88,7 @@ public class PersistedFid {
 
   @NonNull
   public synchronized boolean insertOrUpdatePersistedFidEntry(
-      @NonNull PersistedFidEntryValue entryValue) {
+      @NonNull PersistedFidEntry entryValue) {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putString(
         getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY),

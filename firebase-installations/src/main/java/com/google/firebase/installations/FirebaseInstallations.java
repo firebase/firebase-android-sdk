@@ -22,7 +22,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.local.PersistedFid;
-import com.google.firebase.installations.local.PersistedFidEntryValue;
+import com.google.firebase.installations.local.PersistedFidEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
@@ -147,7 +147,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *
    *                  Persisted Fid exists and is in Unregistered state
    *                                     |
-   *                Register the Fid on FIS backened and update the PersistedFidEntry
+   *                Register the Fid on FIS Server and update the PersistedFidEntry
    *                                     |
    *                            return the Persisted Fid
    *
@@ -156,41 +156,37 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @WorkerThread
   private String getFirebaseInstallationId() throws FirebaseInstallationsException {
 
-    PersistedFidEntryValue persistedFidEntryValue = persistedFid.readPersistedFidEntryValue();
+    PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-    if (persistedFidDoesNotExistsOrInErrorState(persistedFidEntryValue)) {
+    if (persistedFidExistsAndRegistered(persistedFidEntry)) {
+      return persistedFidEntry.getFirebaseInstallationId();
+    }
+
+    if (persistedFidMissingOrInErrorState(persistedFidEntry)) {
       return createFidAndPersistFidEntry();
     }
 
-    if (persistedFidExistsAndRegistered(persistedFidEntryValue)) {
-      return persistedFidEntryValue.getFirebaseInstallationId();
-    }
-
-    if (persistedFidExistsAndUnregistered(persistedFidEntryValue)) {
-      registerAndSaveFid(persistedFidEntryValue.getFirebaseInstallationId());
-      return persistedFidEntryValue.getFirebaseInstallationId();
+    if (persistedFidExistsAndUnregistered(persistedFidEntry)) {
+      Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry.getFirebaseInstallationId()));
+      return persistedFidEntry.getFirebaseInstallationId();
     }
 
     return null;
   }
 
-  private static boolean persistedFidDoesNotExistsOrInErrorState(
-      PersistedFidEntryValue persistedFidEntryValue) {
-    return persistedFidEntryValue == null
-        || persistedFidEntryValue.getPersistedStatus()
-            == PersistedFid.PersistedStatus.REGISTER_ERROR;
+  private static boolean persistedFidMissingOrInErrorState(PersistedFidEntry persistedFidEntry) {
+    return persistedFidEntry == null
+        || persistedFidEntry.getPersistedStatus() == PersistedFid.PersistedStatus.REGISTER_ERROR;
   }
 
-  private static boolean persistedFidExistsAndRegistered(
-      PersistedFidEntryValue persistedFidEntryValue) {
-    return persistedFidEntryValue != null
-        && persistedFidEntryValue.getPersistedStatus() == PersistedFid.PersistedStatus.REGISTERED;
+  private static boolean persistedFidExistsAndRegistered(PersistedFidEntry persistedFidEntry) {
+    return persistedFidEntry != null
+        && persistedFidEntry.getPersistedStatus() == PersistedFid.PersistedStatus.REGISTERED;
   }
 
-  private static boolean persistedFidExistsAndUnregistered(
-      PersistedFidEntryValue persistedFidEntryValue) {
-    return persistedFidEntryValue != null
-        && persistedFidEntryValue.getPersistedStatus() == PersistedFid.PersistedStatus.UNREGISTERED;
+  private static boolean persistedFidExistsAndUnregistered(PersistedFidEntry persistedFidEntry) {
+    return persistedFidEntry != null
+        && persistedFidEntry.getPersistedStatus() == PersistedFid.PersistedStatus.UNREGISTERED;
   }
 
   private String createFidAndPersistFidEntry() throws FirebaseInstallationsException {
@@ -198,11 +194,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     boolean firstUpdateCacheResult =
         persistedFid.insertOrUpdatePersistedFidEntry(
-            PersistedFidEntryValue.builder()
+            PersistedFidEntry.builder()
                 .setFirebaseInstallationId(fid)
                 .setPersistedStatus(PersistedFid.PersistedStatus.UNREGISTERED)
-                .setTokenCreationEpochInSecs(0)
-                .setExpiresInSecs(0)
                 .build());
 
     if (!firstUpdateCacheResult) {
@@ -211,8 +205,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           FirebaseInstallationsException.Status.CLIENT_ERROR);
     }
 
-    registerAndSaveFid(fid);
-
+    Tasks.call(executor, () -> registerAndSaveFid(fid));
     return fid;
   }
 
@@ -220,9 +213,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * Registers the created Fid with FIS Servers if the Network is available and update the shared
    * prefs.
    */
-  private void registerAndSaveFid(String fid) throws FirebaseInstallationsException {
+  private Void registerAndSaveFid(String fid) throws FirebaseInstallationsException {
     if (!Utils.isNetworkAvailable(firebaseApp.getApplicationContext())) {
-      return;
+      return null;
     }
 
     try {
@@ -236,7 +229,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               getApplicationId());
 
       persistedFid.insertOrUpdatePersistedFidEntry(
-          PersistedFidEntryValue.builder()
+          PersistedFidEntry.builder()
               .setFirebaseInstallationId(fid)
               .setPersistedStatus(PersistedFid.PersistedStatus.REGISTERED)
               .setAuthToken(installationResponse.getAuthToken().getToken())
@@ -248,14 +241,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     } catch (FirebaseInstallationServiceException exception) {
       persistedFid.insertOrUpdatePersistedFidEntry(
-          PersistedFidEntryValue.builder()
+          PersistedFidEntry.builder()
               .setFirebaseInstallationId(fid)
               .setPersistedStatus(PersistedFid.PersistedStatus.REGISTER_ERROR)
-              .setTokenCreationEpochInSecs(0)
-              .setExpiresInSecs(0)
               .build());
       throw new FirebaseInstallationsException(
           exception.getMessage(), FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
+    return null;
   }
 }
