@@ -242,12 +242,12 @@ public class TestCommandHelper {
           public void onComplete(@NonNull Task<ListResult> task) {
             ++pagesReceived[0];
 
-            ListResult listResult = task.getResult();
-
             builder.append("\nlist:");
             builder.append("\n  onComplete:Success=").append(task.isSuccessful());
 
             if (task.isSuccessful()) {
+              ListResult listResult = task.getResult();
+
               builder.append("\n  Received Prefixes:");
               for (StorageReference prefix : listResult.getPrefixes()) {
                 builder.append("\n    ").append(prefix.getPath());
@@ -257,12 +257,14 @@ public class TestCommandHelper {
                 builder.append("\n    ").append(item.getPath());
               }
               builder.append("\n  Page Token:").append(listResult.getPageToken());
-            }
 
-            if (pagesReceived[0] == pageCount) {
-              result.setResult(builder);
+              if (pagesReceived[0] == pageCount) {
+                result.setResult(builder);
+              } else {
+                reference.list(pageSize, listResult.getPageToken()).addOnCompleteListener(this);
+              }
             } else {
-              reference.list(pageSize, listResult.getPageToken()).addOnCompleteListener(this);
+              result.setResult(builder);
             }
           }
         });
@@ -280,12 +282,11 @@ public class TestCommandHelper {
     listFiles.addOnCompleteListener(
         executor,
         task -> {
-          ListResult listResult = task.getResult();
-
           builder.append("\nlistAll:");
           builder.append("\n  onComplete:Success=").append(task.isSuccessful());
 
           if (task.isSuccessful()) {
+            ListResult listResult = task.getResult();
             builder.append("\n  Received Prefixes:");
             for (StorageReference prefix : listResult.getPrefixes()) {
               builder.append("\n    ").append(prefix.getPath());
