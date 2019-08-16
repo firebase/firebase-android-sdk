@@ -106,7 +106,7 @@ public class ListTest {
   @Test
   public void listFailure() throws InterruptedException {
     MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("listSinglePageFailed", true);
+        NetworkLayerMock.ensureNetworkMock("listSinglePageFailed", false);
     Task<StringBuilder> task = TestCommandHelper.listFiles(/* pageSize= */ 10, /* pageCount= */ 1);
 
     TestUtil.await(task);
@@ -128,7 +128,7 @@ public class ListTest {
 
   @Test
   public void listAllWithFailure() throws InterruptedException {
-    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("listAllFailed", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("listAllFailed", false);
     Task<StringBuilder> task = TestCommandHelper.listAllFiles();
 
     TestUtil.await(task);

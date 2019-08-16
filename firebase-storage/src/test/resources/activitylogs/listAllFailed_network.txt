@@ -1,6 +1,6 @@
 
 <new>
-Url:https://firebasestorage.googleapis.com/v0/b/fooeylistAllFailed_network.txt.appspot.com/o?prefix=largeDirectory%2F&delimiter=%2F
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=largeDirectory%2F&delimiter=%2F
 setRequestMethod:GET
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
