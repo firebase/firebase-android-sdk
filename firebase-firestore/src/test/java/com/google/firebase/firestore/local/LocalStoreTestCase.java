@@ -146,8 +146,8 @@ public abstract class LocalStoreTestCase {
     localStore.notifyLocalViewChanges(asList(changes));
   }
 
-  private void udpateViews(int targetId) {
-    notifyLocalViewChanges(viewChanges(targetId, asList(), asList()));
+  private void udpateViews(int targetId, boolean synced) {
+    notifyLocalViewChanges(viewChanges(targetId, synced, asList(), asList()));
   }
 
   private void acknowledgeMutation(long documentVersion, @Nullable Object transformResult) {
@@ -311,7 +311,7 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    notifyLocalViewChanges(viewChanges(2, asList("foo/bar"), emptyList()));
+    notifyLocalViewChanges(viewChanges(2, /* synced= */ false, asList("foo/bar"), emptyList()));
 
     assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
@@ -831,14 +831,16 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 1, map("foo", "bar")));
     assertContains(doc("foo/baz", 0, map("foo", "baz"), Document.DocumentState.LOCAL_MUTATIONS));
 
-    notifyLocalViewChanges(viewChanges(2, asList("foo/bar", "foo/baz"), emptyList()));
+    notifyLocalViewChanges(
+        viewChanges(2, /* synced= */ false, asList("foo/bar", "foo/baz"), emptyList()));
     applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 1, map("foo", "bar")), none, two));
     applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 2, map("foo", "baz")), two, none));
     acknowledgeMutation(2);
     assertContains(doc("foo/bar", 1, map("foo", "bar")));
     assertContains(doc("foo/baz", 2, map("foo", "baz")));
 
-    notifyLocalViewChanges(viewChanges(2, emptyList(), asList("foo/bar", "foo/baz")));
+    notifyLocalViewChanges(
+        viewChanges(2, /* synced= */ false, emptyList(), asList("foo/bar", "foo/baz")));
     releaseQuery(query);
 
     assertNotContains("foo/bar");
@@ -1057,7 +1059,7 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId);
+    udpateViews(targetId, /* synced= */ true);
 
     // Execute the query again, this time verifying that we only read the two documents that match
     // the query.
@@ -1092,9 +1094,14 @@ public abstract class LocalStoreTestCase {
     // At this point, we have not yet confirmed that the query is limbo free.
     Assert.assertEquals(
         SnapshotVersion.NONE, localStore.getQueryData(query).getLastLimboFreeSnapshotVersion());
-    udpateViews(targetId);
 
-    // The query is marked limbo-free during the view computation.
+    // Update the view, but don't mark the view synced.
+    Assert.assertEquals(
+        SnapshotVersion.NONE, localStore.getQueryData(query).getLastLimboFreeSnapshotVersion());
+    udpateViews(targetId, /* synced=*/ true);
+
+    // The query is marked limbo-free only when we mark the view synced.
+    udpateViews(targetId, /* synced=*/ true);
     Assert.assertNotEquals(
         SnapshotVersion.NONE, localStore.getQueryData(query).getLastLimboFreeSnapshotVersion());
 
@@ -1124,7 +1131,7 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId);
+    udpateViews(targetId, /* synced= */ true);
 
     // Execute the query based on the RemoteEvent.
     executeQuery(query);
@@ -1161,7 +1168,7 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId);
+    udpateViews(targetId, /* synced=*/ true);
     releaseQuery(filteredQuery);
 
     // Start another query and add more matching documents to the collection.
@@ -1203,7 +1210,7 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId);
+    udpateViews(targetId, /* synced=*/ true);
     releaseQuery(filteredQuery);
 
     // Modify one of the documents to no longer match while the filtered query is inactive.
