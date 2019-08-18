@@ -37,7 +37,7 @@ public class ViewSnapshot {
   private final List<DocumentViewChange> changes;
   private final boolean isFromCache;
   private final ImmutableSortedSet<DocumentKey> mutatedKeys;
-  private final boolean hasLimboDocuments;
+  private final boolean synced;
   private final boolean didSyncStateChange;
   private boolean excludesMetadataChanges;
 
@@ -48,7 +48,7 @@ public class ViewSnapshot {
       List<DocumentViewChange> changes,
       boolean isFromCache,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
-      boolean hasLimboDocuments,
+      boolean synced,
       boolean didSyncStateChange,
       boolean excludesMetadataChanges) {
     this.query = query;
@@ -57,7 +57,7 @@ public class ViewSnapshot {
     this.changes = changes;
     this.isFromCache = isFromCache;
     this.mutatedKeys = mutatedKeys;
-    this.hasLimboDocuments = hasLimboDocuments;
+    this.synced = synced;
     this.didSyncStateChange = didSyncStateChange;
     this.excludesMetadataChanges = excludesMetadataChanges;
   }
@@ -68,7 +68,7 @@ public class ViewSnapshot {
       DocumentSet documents,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
       boolean fromCache,
-      boolean hasLimboDocuments,
+      boolean synced,
       boolean excludesMetadataChanges) {
     List<DocumentViewChange> viewChanges = new ArrayList<>();
     for (Document doc : documents) {
@@ -81,7 +81,7 @@ public class ViewSnapshot {
         viewChanges,
         fromCache,
         mutatedKeys,
-        hasLimboDocuments,
+        synced,
         /* didSyncStateChange= */ true,
         excludesMetadataChanges);
   }
@@ -90,8 +90,8 @@ public class ViewSnapshot {
     return query;
   }
 
-  public boolean hasLimboDocuments() {
-    return hasLimboDocuments;
+  public boolean isSynced() {
+    return synced;
   }
 
   public DocumentSet getDocuments() {
@@ -140,7 +140,7 @@ public class ViewSnapshot {
     if (isFromCache != that.isFromCache) {
       return false;
     }
-    if (hasLimboDocuments != that.hasLimboDocuments) {
+    if (synced != that.synced) {
       return false;
     }
     if (didSyncStateChange != that.didSyncStateChange) {
@@ -172,7 +172,7 @@ public class ViewSnapshot {
     result = 31 * result + changes.hashCode();
     result = 31 * result + mutatedKeys.hashCode();
     result = 31 * result + (isFromCache ? 1 : 0);
-    result = 31 * result + (hasLimboDocuments ? 1 : 0);
+    result = 31 * result + (synced ? 1 : 0);
     result = 31 * result + (didSyncStateChange ? 1 : 0);
     result = 31 * result + (excludesMetadataChanges ? 1 : 0);
     return result;
@@ -192,8 +192,8 @@ public class ViewSnapshot {
         + isFromCache
         + ", mutatedKeys="
         + mutatedKeys.size()
-        + ", hasLimboDocuments="
-        + hasLimboDocuments
+        + ", synced="
+        + synced
         + ", didSyncStateChange="
         + didSyncStateChange
         + ", excludesMetadataChanges="
