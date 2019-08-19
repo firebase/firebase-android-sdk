@@ -19,41 +19,67 @@ import android.database.sqlite.SQLiteStatement;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.proto.MaybeDocument;
+import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Timestamp;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Migration logic to backfill data after a schema migration. Backfill logic in this class runs
- * unconditionally at client startup and is idempotent once the backfill completes.
+ * Migration logic to periodically backfill data after a schema migration. Backfill logic in this
+ * class runs unconditionally at least once and is idempotent once the backfill completes. All
+ * backfills are scheduled with a delay to reduce the impact on client startup performance.
  *
- * <p>Backfills are not guaranteed to process all entries at once. Instead, only a small subset is
- * migrated at client startup to decrease the overall impact on performance.
+ * <p>Backfills are not guaranteed to process all entries. Instead, a small subset is migrated
+ * periodically to decrease the overall impact on performance. If there is more data left to
+ * migrate, the backfill logic schedules a further delayed run on the AsyncQueue.
  */
 class SQLiteDataBackfill {
   private static final String LOG_TAG = "SQLiteDataBackfill";
 
+  // We wait 43 seconds between cycles to reduce potential clashes with LRU GC.
+  private static final long MIGRATION_DELAY_MS = TimeUnit.SECONDS.toMillis(43);
+
   @VisibleForTesting static final int BACKFILL_MIGRATION_SIZE = 100;
 
-  private SQLiteDatabase db;
+  private final SQLiteDatabase db;
+  private AsyncQueue asyncQueue;
 
-  SQLiteDataBackfill(SQLiteDatabase db) {
+  SQLiteDataBackfill(SQLiteDatabase db, AsyncQueue queue) {
     this.db = db;
+    this.asyncQueue = queue;
   }
 
-  /** Synchronously run all data backfills. */
-  void start() {
-    db.beginTransaction();
-    try {
-      populateReadTime();
-      db.setTransactionSuccessful();
-    } finally {
-      db.endTransaction();
-    }
+  /** Schedules a delayed backfill on the AsyncQueue. */
+  void enqueue() {
+    asyncQueue.enqueueAfterDelay(
+        AsyncQueue.TimerId.DATA_BACKFILL,
+        MIGRATION_DELAY_MS,
+        () -> {
+          boolean done;
+
+          db.beginTransaction();
+          try {
+            done = populateReadTime();
+            db.setTransactionSuccessful();
+          } finally {
+            db.endTransaction();
+          }
+
+          if (!done) {
+            enqueue();
+          }
+        });
   }
 
-  /** Populates the read time used during Index-Free query processing. */
-  void populateReadTime() {
+  /**
+   * Populates the read time used during Index-Free query processing.
+   *
+   * @return Whether the migration finished.
+   */
+  boolean populateReadTime() {
+    boolean[] done = new boolean[] {false};
+
     SQLitePersistence.Query watermarkQuery =
         new SQLitePersistence.Query(
             db, "SELECT first_document_without_read_time FROM target_globals");
@@ -115,12 +141,16 @@ class SQLiteDataBackfill {
             updateStatement.bindString(1, nextKey);
             Logger.debug(
                 LOG_TAG, "Backfilled the read time for all documents up until %s", nextKey);
+            done[0] = false;
           } else {
             updateStatement.bindNull(1);
             Logger.debug(LOG_TAG, "Backfill for read time complete");
+            done[0] = true;
           }
           updateStatement.executeUpdateDelete();
         });
+
+    return done[0];
   }
 
   @Nullable

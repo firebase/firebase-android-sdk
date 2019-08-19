@@ -69,7 +69,10 @@ public class AsyncQueue {
      */
     ONLINE_STATE_TIMEOUT,
     /** A timer used to periodically attempt LRU Garbage collection */
-    GARBAGE_COLLECTION
+    GARBAGE_COLLECTION,
+
+    /** A timer for the data backfill after a schema migration. */
+    DATA_BACKFILL;
   }
 
   /**

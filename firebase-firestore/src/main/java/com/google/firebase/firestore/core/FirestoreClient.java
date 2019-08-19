@@ -254,6 +254,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
               databaseInfo.getPersistenceKey(),
               databaseInfo.getDatabaseId(),
               serializer,
+              asyncQueue,
               params);
       LruDelegate lruDelegate = sqlitePersistence.getReferenceDelegate();
       gc = lruDelegate.getGarbageCollector();

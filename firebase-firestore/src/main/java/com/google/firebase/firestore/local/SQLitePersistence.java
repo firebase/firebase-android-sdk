@@ -34,6 +34,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.FileUtil;
 import com.google.firebase.firestore.util.Logger;
@@ -79,6 +80,7 @@ public final class SQLitePersistence extends Persistence {
 
   private final SQLiteOpenHelper opener;
   private final LocalSerializer serializer;
+  private final AsyncQueue asyncQueue;
   private final StatsCollector statsCollector;
   private final SQLiteQueryCache queryCache;
   private final SQLiteIndexManager indexManager;
@@ -108,12 +110,14 @@ public final class SQLitePersistence extends Persistence {
       String persistenceKey,
       DatabaseId databaseId,
       LocalSerializer serializer,
+      AsyncQueue queue,
       LruGarbageCollector.Params params) {
     this(
         context,
         persistenceKey,
         databaseId,
         serializer,
+        queue,
         StatsCollector.NO_OP_STATS_COLLECTOR,
         params);
   }
@@ -123,10 +127,12 @@ public final class SQLitePersistence extends Persistence {
       String persistenceKey,
       DatabaseId databaseId,
       LocalSerializer serializer,
+      AsyncQueue queue,
       StatsCollector statsCollector,
       LruGarbageCollector.Params params) {
     this(
         serializer,
+        queue,
         statsCollector,
         params,
         new OpenHelper(context, databaseName(persistenceKey, databaseId)));
@@ -134,11 +140,13 @@ public final class SQLitePersistence extends Persistence {
 
   public SQLitePersistence(
       LocalSerializer serializer,
+      AsyncQueue queue,
       StatsCollector statsCollector,
       LruGarbageCollector.Params params,
       SQLiteOpenHelper openHelper) {
     this.opener = openHelper;
     this.serializer = serializer;
+    this.asyncQueue = queue;
     this.statsCollector = statsCollector;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
     this.indexManager = new SQLiteIndexManager(this);
@@ -166,7 +174,7 @@ public final class SQLitePersistence extends Persistence {
     }
     queryCache.start();
     referenceDelegate.start(queryCache.getHighestListenSequenceNumber());
-    new SQLiteDataBackfill(db).start();
+    new SQLiteDataBackfill(db, asyncQueue).enqueue();
   }
 
   @Override

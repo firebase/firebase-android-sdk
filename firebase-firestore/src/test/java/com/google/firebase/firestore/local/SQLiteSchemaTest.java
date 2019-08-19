@@ -38,6 +38,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firestore.v1.Document;
 import com.google.firestore.v1.Write;
 import java.util.ArrayList;
@@ -444,9 +445,11 @@ public class SQLiteSchemaTest {
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
     DatabaseId databaseId = DatabaseId.forProject("foo");
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
+    AsyncQueue queue = new AsyncQueue();
     SQLitePersistence persistence =
         new SQLitePersistence(
             serializer,
+            queue,
             StatsCollector.NO_OP_STATS_COLLECTOR,
             LruGarbageCollector.Params.Default(),
             opener);

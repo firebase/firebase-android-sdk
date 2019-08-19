@@ -24,6 +24,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.firestore.util.AsyncQueue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,7 +51,7 @@ public class SQLiteDataBackfillTest {
           public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {}
         };
     db = opener.getWritableDatabase();
-    backfill = new SQLiteDataBackfill(db);
+    backfill = new SQLiteDataBackfill(db, new AsyncQueue());
     schema = new SQLiteSchema(db);
   }
 

@@ -19,6 +19,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.proto.MaybeDocument;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firestore.v1.Document;
 
 public final class PersistenceTestHelpers {
@@ -90,8 +91,9 @@ public final class PersistenceTestHelpers {
     DatabaseId databaseId = DatabaseId.forProject("projectId");
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     Context context = ApplicationProvider.getApplicationContext();
+    AsyncQueue queue = new AsyncQueue();
     SQLitePersistence persistence =
-        new SQLitePersistence(context, name, databaseId, serializer, statsCollector, params);
+        new SQLitePersistence(context, name, databaseId, serializer, queue, statsCollector, params);
     persistence.start();
     return persistence;
   }
