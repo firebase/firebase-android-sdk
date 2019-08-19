@@ -21,6 +21,7 @@ import android.database.sqlite.SQLiteDatabaseLockedException;
 import android.os.SystemClock;
 import android.util.Base64;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.android.datatransport.runtime.EventInternal;
@@ -308,7 +309,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     schemaManager.close();
   }
 
-  @VisibleForTesting
+  @RestrictTo(RestrictTo.Scope.TESTS)
   public void clearDb() {
     inTransaction(
         db -> {

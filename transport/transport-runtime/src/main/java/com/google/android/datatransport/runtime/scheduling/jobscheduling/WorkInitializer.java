@@ -20,6 +20,19 @@ import com.google.android.datatransport.runtime.synchronization.SynchronizationG
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
 
+/**
+ * Re-schedules any contexts that have pending events and are not currently scheduled.
+ *
+ * <p>The reasons for them not to be scheduled include:
+ *
+ * <ul>
+ *   <li>Host application update to newer version
+ *   <li>Device restart
+ * </ul>
+ *
+ * Note: there is no way for us to know how many attempts had been previously tried, so we
+ * re-schedule from attempt 1.
+ */
 public class WorkInitializer {
   private final Executor executor;
   private final EventStore store;
