@@ -92,7 +92,7 @@ def api_information(auth_token, repo_name, issue_number):
       comment_string += '\n\n'
   if comment_string:
     comment_string += ('Please update the api.txt files for the subprojects being affected by this change '
-      'with the files present in the artifacts directory. Also perform a major/minor bump accordingly.\n')
+      'by running ./gradlew ${subproject}:generateApiTxtFile. Also perform a major/minor bump accordingly.\n')
     # Comment to github.
     github_client = Github(auth_token)
     repo = github_client.get_repo(repo_name)
