@@ -17,6 +17,7 @@ package com.google.firebase.gradle.plugins.apiinfo;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -43,11 +44,9 @@ public abstract class GetMetalavaJarTask extends DefaultTask {
     if (getOutputFile().exists()) {
       return;
     }
-    try {
-      URL jarUrl = new URL("https://storage.googleapis.com/android-ci/metalava-full-1.3.0-SNAPSHOT.jar");
-      Files.copy(jarUrl.openStream(), getOutputFile().toPath(), StandardCopyOption.REPLACE_EXISTING);
-    } catch (MalformedURLException e) {
-      throw new GradleException("Bad url provided to download the metalava jar", e);
+
+    try (InputStream stream = new URL("https://storage.googleapis.com/android-ci/metalava-full-1.3.0-SNAPSHOT.jar").openStream()){
+      Files.copy(stream, getOutputFile().toPath(), StandardCopyOption.REPLACE_EXISTING);
     } catch (IOException e) {
       throw new GradleException("Unable to read the jar file from GCS", e);
     }

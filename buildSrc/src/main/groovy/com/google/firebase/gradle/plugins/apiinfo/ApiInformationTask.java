@@ -75,6 +75,7 @@ public abstract class ApiInformationTask extends DefaultTask {
 
     @TaskAction
     void execute() {
+
         File outputFileDir = getOutputFile().getParentFile();
         if(!outputFileDir.exists()) {
             outputFileDir.mkdirs();
@@ -92,9 +93,10 @@ public abstract class ApiInformationTask extends DefaultTask {
             ));
             spec.setIgnoreExitValue(true);
         });
-        getProject().exec(spec-> {
-            List<String> cmd = new ArrayList<>(Arrays.asList(
-                "-jar",
+        getProject().javaexec(spec-> {
+            spec.setClasspath(getProject().files(getMetalavaJarPath()));
+            spec.setMain("-jar");
+            List<String> args = new ArrayList<>(Arrays.asList(
                 getMetalavaJarPath(),
                 "--source-files", getOutputApiFile().getAbsolutePath(),
                 "--check-compatibility:api:current", getApiTxt().getAbsolutePath(),
@@ -103,12 +105,11 @@ public abstract class ApiInformationTask extends DefaultTask {
                 "--delete-empty-baselines"
             ));
             if(getUpdateBaseline()) {
-                cmd.addAll(Arrays.asList("--update-baseline", getBaselineFile().getAbsolutePath()));
+                args.addAll(Arrays.asList("--update-baseline", getBaselineFile().getAbsolutePath()));
             } else if(getBaselineFile().exists()) {
-                cmd.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
+                args.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
             }
-            spec.setExecutable("java");
-            spec.setArgs(cmd);
+            spec.setArgs(args);
             spec.setIgnoreExitValue(true);
             try {
                 spec.setStandardOutput(new FileOutputStream(getOutputFile()));

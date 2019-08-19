@@ -58,7 +58,6 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
     @TaskAction
     void execute() {
         List<String> args =  new ArrayList<String>(Arrays.asList(
-            "-jar",
             getMetalavaJarPath(),
             "--source-path", getSourcePath(),
             "--api", getApiTxt().getAbsolutePath(),
@@ -72,8 +71,9 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
             args.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
         }
 
-        getProject().exec(spec -> {
-            spec.setExecutable("java");
+        getProject().javaexec(spec -> {
+            spec.setClasspath(getProject().files(getMetalavaJarPath()));
+            spec.setMain("-jar");
             spec.setArgs(args);
             spec.setIgnoreExitValue(true);
         });

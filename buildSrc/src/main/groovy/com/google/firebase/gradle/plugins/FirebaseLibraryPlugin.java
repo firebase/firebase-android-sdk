@@ -72,14 +72,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 }
               });
     }
-    if (System.getenv().containsKey("METALAVA_BINARY_PATH")) {
-      try {
-        setupApiInformationAnalysis(project, android);
-      } catch (IOException e) {
 
-      }
-    }
-
+    setupApiInformationAnalysis(project, android);
 
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab));
 
@@ -97,7 +91,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
   }
 
-  private static void setupApiInformationAnalysis(Project project, LibraryExtension android) throws IOException {
+  private static void setupApiInformationAnalysis(Project project, LibraryExtension android) {
     File metalavaOutputJarFile = new File(project.getRootProject().getBuildDir(), "metalava.jar");
     AndroidSourceSet mainSourceSet = android.getSourceSets().getByName("main");
     File outputFile = project.getRootProject().file(Paths.get(
