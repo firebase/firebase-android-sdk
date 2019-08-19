@@ -38,7 +38,7 @@ import java.util.Arrays;
 public abstract class ApiInformationTask extends DefaultTask {
 
     @Input
-    abstract String getMetalavaBinaryPath();
+    abstract String getMetalavaJarPath();
 
     @InputFile
     abstract File getApiTxt();
@@ -64,7 +64,7 @@ public abstract class ApiInformationTask extends DefaultTask {
 
     public abstract void setUpdateBaseline(boolean value);
 
-    public abstract void setMetalavaBinaryPath(String value);
+    public abstract void setMetalavaJarPath(String value);
 
     public abstract void setApiTxt(File value);
 
@@ -82,8 +82,10 @@ public abstract class ApiInformationTask extends DefaultTask {
 
         // Generate api.txt file and store it in the  build directory.
         getProject().exec(spec-> {
-            spec.setCommandLine(Arrays.asList(
-                getMetalavaBinaryPath(),
+            spec.setExecutable("java");
+            spec.setArgs(Arrays.asList(
+                "-jar",
+                getMetalavaJarPath(),
                 "--source-path", getSourcePath(),
                 "--api", getOutputApiFile().getAbsolutePath(),
                 "--format=v2"
@@ -92,7 +94,8 @@ public abstract class ApiInformationTask extends DefaultTask {
         });
         getProject().exec(spec-> {
             List<String> cmd = new ArrayList<>(Arrays.asList(
-                getMetalavaBinaryPath(),
+                "-jar",
+                getMetalavaJarPath(),
                 "--source-files", getOutputApiFile().getAbsolutePath(),
                 "--check-compatibility:api:current", getApiTxt().getAbsolutePath(),
                 "--format=v2",
@@ -104,7 +107,8 @@ public abstract class ApiInformationTask extends DefaultTask {
             } else if(getBaselineFile().exists()) {
                 cmd.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
             }
-            spec.setCommandLine(cmd);
+            spec.setExecutable("java");
+            spec.setArgs(cmd);
             spec.setIgnoreExitValue(true);
             try {
                 spec.setStandardOutput(new FileOutputStream(getOutputFile()));

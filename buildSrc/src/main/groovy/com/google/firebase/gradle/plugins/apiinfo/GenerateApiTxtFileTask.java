@@ -29,7 +29,7 @@ import java.util.Arrays;
 public abstract class GenerateApiTxtFileTask extends DefaultTask {
 
     @Input
-    abstract String getMetalavaBinaryPath();
+    abstract String getMetalavaJarPath();
 
     @OutputFile
     abstract File getApiTxt();
@@ -51,14 +51,15 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
 
     public abstract void setUpdateBaseline(boolean value);
 
-    public abstract void setMetalavaBinaryPath(String value);
+    public abstract void setMetalavaJarPath(String value);
 
     public abstract void setApiTxt(File value);
 
     @TaskAction
     void execute() {
-        List<String> cmd =  new ArrayList<String>(Arrays.asList(
-            getMetalavaBinaryPath(),
+        List<String> args =  new ArrayList<String>(Arrays.asList(
+            "-jar",
+            getMetalavaJarPath(),
             "--source-path", getSourcePath(),
             "--api", getApiTxt().getAbsolutePath(),
             "--format=v2",
@@ -66,13 +67,14 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
         ));
 
         if(getUpdateBaseline()) {
-            cmd.addAll(Arrays.asList("--update-baseline", getBaselineFile().getAbsolutePath()));
+            args.addAll(Arrays.asList("--update-baseline", getBaselineFile().getAbsolutePath()));
         } else if(getBaselineFile().exists()) {
-            cmd.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
+            args.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
         }
 
         getProject().exec(spec -> {
-            spec.setCommandLine(cmd);
+            spec.setExecutable("java");
+            spec.setArgs(args);
             spec.setIgnoreExitValue(true);
         });
 

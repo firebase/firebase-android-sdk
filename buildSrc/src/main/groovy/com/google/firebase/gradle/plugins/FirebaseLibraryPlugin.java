@@ -21,8 +21,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
 import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
+import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collection;
 import org.codehaus.groovy.util.ReleaseInfo;
 import org.gradle.api.Plugin;
@@ -70,7 +73,11 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
               });
     }
     if (System.getenv().containsKey("METALAVA_BINARY_PATH")) {
-      setupApiInfomrationAnalysis(project, android);
+      try {
+        setupApiInformationAnalysis(project, android);
+      } catch (IOException e) {
+
+      }
     }
 
 
@@ -90,9 +97,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
   }
 
-  private static void setupApiInfomrationAnalysis(Project project, LibraryExtension android) {
-
-    String metalavaBinaryPath = System.getenv("METALAVA_BINARY_PATH");
+  private static void setupApiInformationAnalysis(Project project, LibraryExtension android) throws IOException {
+    File metalavaOutputJarFile = new File(project.getRootProject().getBuildDir(), "metalava.jar");
     AndroidSourceSet mainSourceSet = android.getSourceSets().getByName("main");
     File outputFile = project.getRootProject().file(Paths.get(
         project.getRootProject().getBuildDir().getPath(),
@@ -105,10 +111,12 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     if(mainSourceSet.getJava().getSrcDirs().stream().noneMatch(File::exists)) {
       return;
     }
-
+    project.getTasks().register("getMetalavaJar", GetMetalavaJarTask.class, task -> {
+      task.setOutputFile(metalavaOutputJarFile);
+    });
     project.getTasks().register("apiInformation", ApiInformationTask.class, task -> {
       task.setApiTxt(project.file("api.txt"));
-      task.setMetalavaBinaryPath(metalavaBinaryPath);
+      task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
       task.setSourcePath(sourcePathArgument);
       task.setOutputFile(outputFile);
       task.setBaselineFile(project.file("baseline.txt"));
@@ -118,11 +126,12 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
       } else {
         task.setUpdateBaseline(false);
       }
+      task.dependsOn("getMetalavaJar");
     });
 
     project.getTasks().register("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
       task.setApiTxt(project.file("api.txt"));
-      task.setMetalavaBinaryPath(metalavaBinaryPath);
+      task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
       task.setSourcePath(sourcePathArgument);
       task.setBaselineFile(project.file("baseline.txt"));
       if (project.hasProperty("updateBaseline")) {
@@ -130,6 +139,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
       } else {
         task.setUpdateBaseline(false);
       }
+      task.dependsOn("getMetalavaJar");
     });
   }
 
