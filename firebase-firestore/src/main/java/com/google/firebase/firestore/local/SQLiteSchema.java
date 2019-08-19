@@ -45,13 +45,6 @@ class SQLiteSchema {
   /**
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
-   *
-   * <p>TODO(index-free): The migration to schema version 9 doesn't backfill `read_time` as this
-   * requires rewriting the RemoteDocumentCache. For index-free queries to efficiently handle
-   * existing documents, we still need to populate read_time for all existing entries, drop the
-   * RemoteDocumentCache or ask users to invoke `clearPersistence()` manually. If we decide to
-   * backfill or drop the contents of the RemoteDocumentCache, we need to perform an additional
-   * schema migration.
    */
   static final int VERSION = 9;
 
@@ -137,6 +130,7 @@ class SQLiteSchema {
 
     if (fromVersion < 9 && toVersion >= 9) {
       addReadTime();
+      addReadTimeMigrationWatermark();
     }
 
     /*
@@ -371,6 +365,22 @@ class SQLiteSchema {
       db.execSQL("ALTER TABLE remote_documents ADD COLUMN read_time_seconds INTEGER");
       db.execSQL("ALTER TABLE remote_documents ADD COLUMN read_time_nanos INTEGER");
     }
+  }
+
+  private void addReadTimeMigrationWatermark() {
+    if (!tableContainsColumn("target_globals", "first_document_without_read_time")) {
+      db.execSQL("ALTER TABLE target_globals ADD COLUMN first_document_without_read_time TEXT");
+    }
+
+    SQLiteStatement insertFirstMissingReadTime =
+        db.compileStatement(
+            "UPDATE target_globals SET first_document_without_read_time = ("
+                + "SELECT path FROM remote_documents "
+                + "WHERE read_time_seconds IS NULL ORDER BY path LIMIT 1)");
+
+    hardAssert(
+        insertFirstMissingReadTime.executeInsert() != -1,
+        "Failed to insert read time migration watermark");
   }
 
   /**

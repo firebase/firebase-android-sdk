@@ -166,6 +166,7 @@ public final class SQLitePersistence extends Persistence {
     }
     queryCache.start();
     referenceDelegate.start(queryCache.getHighestListenSequenceNumber());
+    new SQLiteDataBackfill(db).start();
   }
 
   @Override

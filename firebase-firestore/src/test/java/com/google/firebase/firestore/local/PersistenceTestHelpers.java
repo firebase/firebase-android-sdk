@@ -17,7 +17,9 @@ package com.google.firebase.firestore.local;
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.proto.MaybeDocument;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firestore.v1.Document;
 
 public final class PersistenceTestHelpers {
 
@@ -92,5 +94,15 @@ public final class PersistenceTestHelpers {
         new SQLitePersistence(context, name, databaseId, serializer, statsCollector, params);
     persistence.start();
     return persistence;
+  }
+
+  static byte[] createDummyDocument(String name) {
+    return MaybeDocument.newBuilder()
+        .setDocument(
+            Document.newBuilder()
+                .setName("projects/foo/databases/(default)/documents/" + name)
+                .build())
+        .build()
+        .toByteArray();
   }
 }
