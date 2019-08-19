@@ -72,7 +72,6 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
         }
 
         getProject().javaexec(spec -> {
-            spec.setClasspath(getProject().files(getMetalavaJarPath()));
             spec.setMain("-jar");
             spec.setArgs(args);
             spec.setIgnoreExitValue(true);

@@ -83,7 +83,6 @@ public abstract class ApiInformationTask extends DefaultTask {
 
         // Generate api.txt file and store it in the  build directory.
         getProject().javaexec(spec-> {
-            spec.setClasspath(getProject().files(getMetalavaJarPath()));
             spec.setMain("-jar");
             spec.setArgs(Arrays.asList(
                 getMetalavaJarPath(),
@@ -94,7 +93,6 @@ public abstract class ApiInformationTask extends DefaultTask {
             spec.setIgnoreExitValue(true);
         });
         getProject().javaexec(spec-> {
-            spec.setClasspath(getProject().files(getMetalavaJarPath()));
             spec.setMain("-jar");
             List<String> args = new ArrayList<>(Arrays.asList(
                 getMetalavaJarPath(),
