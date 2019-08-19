@@ -82,10 +82,10 @@ public abstract class ApiInformationTask extends DefaultTask {
         }
 
         // Generate api.txt file and store it in the  build directory.
-        getProject().exec(spec-> {
-            spec.setExecutable("java");
+        getProject().javaexec(spec-> {
+            spec.setClasspath(getProject().files(getMetalavaJarPath()));
+            spec.setMain("-jar");
             spec.setArgs(Arrays.asList(
-                "-jar",
                 getMetalavaJarPath(),
                 "--source-path", getSourcePath(),
                 "--api", getOutputApiFile().getAbsolutePath(),
