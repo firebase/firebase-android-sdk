@@ -268,4 +268,36 @@ public class SQLiteEventStoreTest {
     assertThat(store.cleanUp()).isEqualTo(1);
     assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
   }
+
+  @Test
+  public void loadActiveContexts_whenNoContextsAvailable_shouldReturnEmptyList() {
+    assertThat(store.loadActiveContexts()).isEmpty();
+  }
+
+  @Test
+  public void loadActiveContexts_whenTwoContextsAvailable_shouldReturnThem() {
+    TransportContext ctx1 =
+        TransportContext.builder().setBackendName("backend1").setExtras(null).build();
+    TransportContext ctx2 =
+        TransportContext.builder().setBackendName("backend1").setExtras("e1".getBytes()).build();
+
+    store.persist(ctx1, EVENT);
+    store.persist(ctx2, EVENT);
+
+    assertThat(store.loadActiveContexts()).containsExactly(ctx1, ctx2);
+  }
+
+  @Test
+  public void loadActiveContexts_whenTwoContextsWithOneAvailable_shouldReturnIt() {
+    TransportContext ctx1 =
+        TransportContext.builder().setBackendName("backend1").setExtras(null).build();
+    TransportContext ctx2 =
+        TransportContext.builder().setBackendName("backend1").setExtras("e1".getBytes()).build();
+
+    store.persist(ctx1, EVENT);
+    PersistedEvent persistedEvent2 = store.persist(ctx2, EVENT);
+    store.recordSuccess(Collections.singleton(persistedEvent2));
+
+    assertThat(store.loadActiveContexts()).containsExactly(ctx1);
+  }
 }

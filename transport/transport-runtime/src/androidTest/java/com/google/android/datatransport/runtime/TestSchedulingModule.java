@@ -14,14 +14,27 @@
 
 package com.google.android.datatransport.runtime;
 
+import static org.mockito.Mockito.spy;
+
 import com.google.android.datatransport.runtime.scheduling.DefaultScheduler;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import dagger.Binds;
 import dagger.Module;
+import dagger.Provides;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 
 @Module
 abstract class TestSchedulingModule {
 
   @Binds
   abstract Scheduler scheduler(DefaultScheduler scheduler);
+
+  @Provides
+  @Singleton
+  static WorkScheduler workScheduler(Provider<Uploader> uploader) {
+    return spy(new TestWorkScheduler(uploader));
+  }
 }
