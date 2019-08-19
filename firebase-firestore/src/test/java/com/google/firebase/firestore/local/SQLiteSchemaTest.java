@@ -408,14 +408,6 @@ public class SQLiteSchemaTest {
     // Initialize the schema to the state prior to the index-free migration.
     schema.runMigrations(0, 8);
 
-    for (int i = 0; i <= SQLiteDataBackfill.BACKFILL_MIGRATION_SIZE; ++i) {
-      // Insert 100 documents to make sure that the backfill at startup (during
-      // `createRemoteDocumentCache()`) does not populate the read time for "coll/existing".
-      db.execSQL(
-          "INSERT INTO remote_documents (path, contents) VALUES (?, ?)",
-          new Object[] {encode(path("a/b_" + i)), createDummyDocument("a/b_" + i)});
-    }
-
     // Insert a document whose read time will remain NULL.
     db.execSQL(
         "INSERT INTO remote_documents (path, contents) VALUES (?, ?)",
