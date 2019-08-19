@@ -17,6 +17,9 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 import static org.mockito.Mockito.spy;
 
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
+import com.google.android.datatransport.runtime.time.Clock;
+import com.google.android.datatransport.runtime.time.Monotonic;
+import com.google.android.datatransport.runtime.time.WallTime;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
@@ -32,9 +35,16 @@ public abstract class SpyEventStoreModule {
 
   @Provides
   @Singleton
-  static EventStore eventStore(SQLiteEventStore store) {
-    return spy(store);
+  static SQLiteEventStore sqliteEventStore(
+      @WallTime Clock wallClock,
+      @Monotonic Clock clock,
+      EventStoreConfig config,
+      SchemaManager schemaManager) {
+    return spy(new SQLiteEventStore(wallClock, clock, config, schemaManager));
   }
+
+  @Binds
+  abstract EventStore eventStore(SQLiteEventStore store);
 
   @Binds
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
