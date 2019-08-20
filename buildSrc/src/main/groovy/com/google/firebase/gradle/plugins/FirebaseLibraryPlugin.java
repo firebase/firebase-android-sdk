@@ -24,15 +24,8 @@ import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
 import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Collection;
-import org.codehaus.groovy.util.ReleaseInfo;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.attributes.Attribute;
-import org.gradle.api.file.FileCollection;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 import java.io.File;
 import java.nio.file.Paths;
@@ -99,9 +92,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
         "apiinfo",
         project.getPath().substring(1).replace(":", "_")));
     File outputApiFile = new File(outputFile.getAbsolutePath() + "_api.txt");
-    String sourcePathArgument = mainSourceSet.getJava().getSrcDirs().stream()
-        .map(File::getAbsolutePath)
-        .collect(Collectors.joining(":"));
+    List<File> sourcePath = mainSourceSet.getJava().getSrcDirs().stream().collect(Collectors.toList());
     if(mainSourceSet.getJava().getSrcDirs().stream().noneMatch(File::exists)) {
       return;
     }
@@ -111,7 +102,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     project.getTasks().register("apiInformation", ApiInformationTask.class, task -> {
       task.setApiTxt(project.file("api.txt"));
       task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-      task.setSourcePath(sourcePathArgument);
+      task.setSourcePath(sourcePath);
       task.setOutputFile(outputFile);
       task.setBaselineFile(project.file("baseline.txt"));
       task.setOutputApiFile(outputApiFile);
@@ -126,7 +117,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     project.getTasks().register("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
       task.setApiTxt(project.file("api.txt"));
       task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-      task.setSourcePath(sourcePathArgument);
+      task.setSourcePath(sourcePath);
       task.setBaselineFile(project.file("baseline.txt"));
       if (project.hasProperty("updateBaseline")) {
         task.setUpdateBaseline(true);
