@@ -20,6 +20,7 @@ import java.util.List;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import java.io.File;
@@ -37,7 +38,7 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
     @OutputFile
     abstract File getApiTxt();
 
-    @Input
+    @InputFiles
     abstract List<File> getSourcePath();
 
 
