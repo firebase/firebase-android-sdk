@@ -55,6 +55,7 @@ import java.util.List;
  * helper routines that make dealing with SQLite much more pleasant.
  */
 public final class SQLitePersistence extends Persistence {
+
   /**
    * Creates the database name that is used to identify the database to be used with a Firestore
    * instance. Note that this needs to stay stable across releases. The database is uniquely
@@ -80,7 +81,7 @@ public final class SQLitePersistence extends Persistence {
 
   private final SQLiteOpenHelper opener;
   private final LocalSerializer serializer;
-  private final SQLiteDataBackfill dataBackfill;
+  private final AsyncQueue asyncQueue;
   private final StatsCollector statsCollector;
   private final SQLiteQueryCache queryCache;
   private final SQLiteIndexManager indexManager;
@@ -103,6 +104,7 @@ public final class SQLitePersistence extends Persistence {
       };
 
   private SQLiteDatabase db;
+  private SQLiteDataBackfill dataBackfill;
   private boolean started;
 
   public SQLitePersistence(
@@ -146,12 +148,12 @@ public final class SQLitePersistence extends Persistence {
       SQLiteOpenHelper openHelper) {
     this.opener = openHelper;
     this.serializer = serializer;
+    this.asyncQueue = queue;
     this.statsCollector = statsCollector;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
     this.indexManager = new SQLiteIndexManager(this);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer, statsCollector);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
-    this.dataBackfill = new SQLiteDataBackfill(db, queue);
   }
 
   @Override
@@ -160,6 +162,7 @@ public final class SQLitePersistence extends Persistence {
     started = true;
     try {
       db = opener.getWritableDatabase();
+      dataBackfill = new SQLiteDataBackfill(db, asyncQueue);
     } catch (SQLiteDatabaseLockedException e) {
       // TODO: Use a better exception type
       throw new RuntimeException(
