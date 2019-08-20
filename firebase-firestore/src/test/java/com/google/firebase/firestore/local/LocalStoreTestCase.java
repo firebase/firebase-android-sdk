@@ -1177,8 +1177,10 @@ public abstract class LocalStoreTestCase {
             asList(doc("foo/bar", 1, map("val", "new")), doc("foo/baz", 2, map("val", "new"))),
             asList(2),
             emptyList()));
-    // The update for foo/bar is ignored.
+
     assertChanged(doc("foo/baz", 2, map("val", "new"), Document.DocumentState.SYNCED));
+    // The update for foo/bar is ignored.
+    assertContains(doc("foo/bar", 1, map("val", "old"), Document.DocumentState.SYNCED));
     assertContains(doc("foo/baz", 2, map("val", "new"), Document.DocumentState.SYNCED));
   }
 }
