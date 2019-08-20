@@ -19,11 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import java.io.File;
 
 import java.util.Arrays;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 
 public abstract class GenerateApiTxtFileTask extends DefaultTask {
@@ -35,7 +38,7 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
     abstract File getApiTxt();
 
     @Input
-    abstract String getSourcePath();
+    abstract List<File> getSourcePath();
 
 
     @OutputFile
@@ -45,7 +48,7 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
     abstract boolean getUpdateBaseline();
 
 
-    public abstract void setSourcePath(String value);
+    public abstract void setSourcePath(List<File> value);
 
     public abstract void setBaselineFile(File value);
 
@@ -57,9 +60,10 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
 
     @TaskAction
     void execute() {
+        String sourcePath =  getSourcePath().stream().map(File::getAbsolutePath).collect(Collectors.joining(":"));
         List<String> args =  new ArrayList<String>(Arrays.asList(
             getMetalavaJarPath(),
-            "--source-path", getSourcePath(),
+            "--source-path", sourcePath,
             "--api", getApiTxt().getAbsolutePath(),
             "--format=v2",
             "--delete-empty-baselines"
