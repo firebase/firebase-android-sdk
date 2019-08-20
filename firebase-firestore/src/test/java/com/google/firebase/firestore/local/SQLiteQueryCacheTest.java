@@ -21,7 +21,6 @@ import static org.junit.Assert.assertTrue;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -30,18 +29,10 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public final class SQLiteQueryCacheTest extends QueryCacheTestCase {
-  private String databaseName;
-
-  @Override
-  @Before
-  public void setUp() {
-    databaseName = PersistenceTestHelpers.nextSQLiteDatabaseName();
-    super.setUp();
-  }
 
   @Override
   Persistence getPersistence() {
-    return PersistenceTestHelpers.createSQLitePersistence(databaseName);
+    return PersistenceTestHelpers.createSQLitePersistence();
   }
 
   @Test

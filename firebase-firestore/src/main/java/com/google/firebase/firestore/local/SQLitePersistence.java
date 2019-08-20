@@ -80,7 +80,7 @@ public final class SQLitePersistence extends Persistence {
 
   private final SQLiteOpenHelper opener;
   private final LocalSerializer serializer;
-  private final AsyncQueue asyncQueue;
+  private final SQLiteDataBackfill dataBackfill;
   private final StatsCollector statsCollector;
   private final SQLiteQueryCache queryCache;
   private final SQLiteIndexManager indexManager;
@@ -146,12 +146,12 @@ public final class SQLitePersistence extends Persistence {
       SQLiteOpenHelper openHelper) {
     this.opener = openHelper;
     this.serializer = serializer;
-    this.asyncQueue = queue;
     this.statsCollector = statsCollector;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
     this.indexManager = new SQLiteIndexManager(this);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer, statsCollector);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
+    this.dataBackfill = new SQLiteDataBackfill(db, queue);
   }
 
   @Override
@@ -174,13 +174,14 @@ public final class SQLitePersistence extends Persistence {
     }
     queryCache.start();
     referenceDelegate.start(queryCache.getHighestListenSequenceNumber());
-    new SQLiteDataBackfill(db, asyncQueue).enqueue();
+    dataBackfill.start();
   }
 
   @Override
   public void shutdown() {
     hardAssert(started, "SQLitePersistence shutdown without start!");
     started = false;
+    dataBackfill.shutdown();
     db.close();
     db = null;
   }

@@ -44,32 +44,38 @@ class SQLiteDataBackfill {
 
   private final SQLiteDatabase db;
   private AsyncQueue asyncQueue;
+  private AsyncQueue.DelayedTask backfillTask;
 
   SQLiteDataBackfill(SQLiteDatabase db, AsyncQueue queue) {
     this.db = db;
     this.asyncQueue = queue;
   }
 
-  /** Schedules a delayed backfill on the AsyncQueue. */
-  void enqueue() {
-    asyncQueue.enqueueAfterDelay(
-        AsyncQueue.TimerId.DATA_BACKFILL,
-        MIGRATION_DELAY_MS,
-        () -> {
-          boolean done;
+  /** Schedules delayed backfills on the AsyncQueue. */
+  void start() {
+    backfillTask =
+        asyncQueue.enqueueAfterDelay(
+            AsyncQueue.TimerId.DATA_BACKFILL,
+            MIGRATION_DELAY_MS,
+            () -> {
+              boolean done;
 
-          db.beginTransaction();
-          try {
-            done = populateReadTime();
-            db.setTransactionSuccessful();
-          } finally {
-            db.endTransaction();
-          }
+              db.beginTransaction();
+              try {
+                done = populateReadTime();
+                db.setTransactionSuccessful();
+              } finally {
+                db.endTransaction();
+              }
 
-          if (!done) {
-            enqueue();
-          }
-        });
+              if (!done) {
+                start();
+              }
+            });
+  }
+
+  void shutdown() {
+    backfillTask.cancel();
   }
 
   /**

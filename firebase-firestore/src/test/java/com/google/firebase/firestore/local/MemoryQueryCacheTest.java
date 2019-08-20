@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -23,17 +22,8 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public final class MemoryQueryCacheTest extends QueryCacheTestCase {
 
-  private MemoryPersistence memoryPersistence;
-
-  @Override
-  @Before
-  public void setUp() {
-    memoryPersistence = PersistenceTestHelpers.createEagerGCMemoryPersistence();
-    super.setUp();
-  }
-
   @Override
   Persistence getPersistence() {
-    return memoryPersistence;
+    return PersistenceTestHelpers.createEagerGCMemoryPersistence();
   }
 }

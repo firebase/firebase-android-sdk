@@ -295,15 +295,7 @@ public abstract class QueryCacheTestCase {
 
     // Verify that the highestTargetID even survives restarts.
     persistence.shutdown();
-    persistence = getPersistence();
-
-    if (!persistence.isStarted()) {
-      // During the lifetime of a single test, the MemoryQueryCacheTestCase returns the same
-      // instance for each `getPersistence()` call. This preserves the shutdown state initiated
-      // above and hence we need to restart persistence.
-      persistence.start();
-    }
-
+    persistence.start();
     queryCache = persistence.getQueryCache();
     assertEquals(42, queryCache.getHighestTargetId());
   }
@@ -318,15 +310,7 @@ public abstract class QueryCacheTestCase {
 
     // Snapshot version persists restarts.
     persistence.shutdown();
-    persistence = getPersistence();
-
-    if (!persistence.isStarted()) {
-      // During the lifetime of a single test, the MemoryQueryCacheTestCase returns the same
-      // instance for each `getPersistence()` call. This preserves the shutdown state initiated
-      // above and hence we need to restart persistence.
-      persistence.start();
-    }
-
+    persistence.start();
     queryCache = persistence.getQueryCache();
     assertEquals(version(42), queryCache.getLastRemoteSnapshotVersion());
   }
