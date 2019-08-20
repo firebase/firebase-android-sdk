@@ -43,7 +43,7 @@ class SQLiteDataBackfill {
   @VisibleForTesting static final int BACKFILL_MIGRATION_SIZE = 100;
 
   private final SQLiteDatabase db;
-  private AsyncQueue asyncQueue;
+  private final AsyncQueue asyncQueue;
   private AsyncQueue.DelayedTask backfillTask;
 
   SQLiteDataBackfill(SQLiteDatabase db, AsyncQueue queue) {
