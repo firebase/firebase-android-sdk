@@ -22,7 +22,9 @@ import java.util.stream.Stream;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
@@ -43,8 +45,8 @@ public abstract class ApiInformationTask extends DefaultTask {
     @InputFile
     abstract File getApiTxt();
 
-    @Input
-    abstract String getSourcePath();
+    @InputFiles
+    abstract List<File> getSourcePath();
 
     @OutputFile
     abstract File getBaselineFile();
@@ -58,7 +60,7 @@ public abstract class ApiInformationTask extends DefaultTask {
     @OutputFile
     abstract File getOutputFile();
 
-    public abstract void setSourcePath(String value);
+    public abstract void setSourcePath(List<File> value);
 
     public abstract void setBaselineFile(File value);
 
@@ -75,7 +77,7 @@ public abstract class ApiInformationTask extends DefaultTask {
 
     @TaskAction
     void execute() {
-
+        String sourcePath = getSourcePath().stream().map(File::getAbsolutePath).collect(Collectors.joining(":"));
         File outputFileDir = getOutputFile().getParentFile();
         if(!outputFileDir.exists()) {
             outputFileDir.mkdirs();
@@ -86,7 +88,7 @@ public abstract class ApiInformationTask extends DefaultTask {
             spec.setMain("-jar");
             spec.setArgs(Arrays.asList(
                 getMetalavaJarPath(),
-                "--source-path", getSourcePath(),
+                "--source-path", sourcePath,
                 "--api", getOutputApiFile().getAbsolutePath(),
                 "--format=v2"
             ));
