@@ -824,10 +824,13 @@ public abstract class LocalStoreTestCase {
       return;
     }
 
-    int targetID = 321;
+    int unknownTargetID = 321;
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 1, map()), emptyList(), emptyList(), asList(targetID)));
-
+        updateRemoteEvent(
+            doc("foo/bar", 1, map()),
+            /* updatedInTargets= */ asList(unknownTargetID),
+            /* removedFromTargets= */ emptyList(),
+            /* activeTargets= */ emptyList()));
     assertNotContains("foo/bar");
   }
 

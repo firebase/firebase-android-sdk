@@ -416,14 +416,17 @@ public class TestUtil {
 
   public static RemoteEvent updateRemoteEvent(
       MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
-    return updateRemoteEvent(doc, updatedInTargets, removedFromTargets, Collections.emptyList());
+    List<Integer> activeTargets = new ArrayList<>();
+    activeTargets.addAll(updatedInTargets);
+    activeTargets.addAll(removedFromTargets);
+    return updateRemoteEvent(doc, updatedInTargets, removedFromTargets, activeTargets);
   }
 
   public static RemoteEvent updateRemoteEvent(
       MaybeDocument doc,
       List<Integer> updatedInTargets,
       List<Integer> removedFromTargets,
-      List<Integer> limboTargets) {
+      List<Integer> activeTargets) {
     DocumentChange change =
         new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
     WatchChangeAggregator aggregator =
@@ -436,11 +439,9 @@ public class TestUtil {
 
               @Override
               public QueryData getQueryDataForTarget(int targetId) {
-                boolean isLimbo =
-                    !(updatedInTargets.contains(targetId) || removedFromTargets.contains(targetId));
-                QueryPurpose purpose =
-                    isLimbo ? QueryPurpose.LIMBO_RESOLUTION : QueryPurpose.LISTEN;
-                return queryData(targetId, purpose, doc.getKey().toString());
+                return activeTargets.contains(targetId)
+                    ? queryData(targetId, QueryPurpose.LISTEN, doc.getKey().toString())
+                    : null;
               }
             });
     aggregator.handleDocumentChange(change);
