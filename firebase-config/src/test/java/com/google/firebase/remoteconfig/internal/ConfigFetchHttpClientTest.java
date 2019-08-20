@@ -103,7 +103,12 @@ public class ConfigFetchHttpClientTest {
     hasChangeResponseBody =
         new JSONObject()
             .put(STATE, "UPDATE")
-            .put(ENTRIES, new JSONObject().put("key_1", "value_1").put("key2", "value_2").put("key_emoji","\uD83C\uDDFA\uD83C\uDDF3"))
+            .put(
+                ENTRIES,
+                new JSONObject()
+                    .put("key_1", "value_1")
+                    .put("key2", "value_2")
+                    .put("key_emoji", "\uD83C\uDDFA\uD83C\uDDF3"))
             .put(
                 EXPERIMENT_DESCRIPTIONS,
                 new JSONArray()

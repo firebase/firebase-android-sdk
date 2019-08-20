@@ -46,11 +46,9 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -323,7 +321,8 @@ public class ConfigFetchHttpClient {
 
   private JSONObject getFetchResponseBody(URLConnection urlConnection)
       throws IOException, JSONException {
-    BufferedReader br = new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), "utf-8"));
+    BufferedReader br =
+        new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), "utf-8"));
     StringBuilder responseStringBuilder = new StringBuilder();
     int current = 0;
     while ((current = br.read()) != -1) {
