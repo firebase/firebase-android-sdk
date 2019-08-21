@@ -21,6 +21,8 @@ import com.google.firebase.database.core.EventTarget;
 public class AndroidEventTarget implements EventTarget {
   private final Handler handler;
 
+  public static final String TEST_DATABASE_APP = "testDatabaseApp";
+
   public AndroidEventTarget() {
     this.handler = new Handler(Looper.getMainLooper());
   }
