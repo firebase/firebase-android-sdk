@@ -79,7 +79,7 @@ message Target {
     google.firestore.v1.Target.DocumentsTarget documents = 6;
   }
 
-  // Denotes the maximum snapshot version at which the associated querye view
+  // Denotes the maximum snapshot version at which the associated query view
   // contained no limbo documents.
   google.protobuf.Timestamp last_limbo_free_snapshot_version = 7;
 }
