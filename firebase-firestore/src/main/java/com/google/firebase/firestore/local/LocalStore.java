@@ -325,11 +325,12 @@ public final class LocalStore {
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */
   public ImmutableSortedMap<DocumentKey, MaybeDocument> applyRemoteEvent(RemoteEvent remoteEvent) {
+    SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
+
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
     return persistence.runTransaction(
         "Apply remote event",
         () -> {
-          SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
           Map<Integer, TargetChange> targetChanges = remoteEvent.getTargetChanges();
           long sequenceNumber = persistence.getReferenceDelegate().getCurrentSequenceNumber();
 
@@ -339,25 +340,26 @@ public final class LocalStore {
             TargetChange change = entry.getValue();
 
             QueryData oldQueryData = targetIds.get(targetId);
-            if (oldQueryData != null) {
-              // Only update the remote keys if the query is still active. This ensures that we can
-              // persist the updated query data along with the updated assignment.
-              queryCache.removeMatchingKeys(change.getRemovedDocuments(), targetId);
-              queryCache.addMatchingKeys(change.getAddedDocuments(), targetId);
+            if (oldQueryData == null) {
+              // We don't update the remote keys if the query is not active. This ensures that
+              // we persist the updated query data along with the updated assignment.
+              continue;
+            }
 
-              // Update the resume token if the change includes one. Don't clear any preexisting
-              // value.
-              ByteString resumeToken = change.getResumeToken();
-              if (!resumeToken.isEmpty()) {
-                QueryData newQueryData =
-                    oldQueryData.copy(remoteVersion, resumeToken, sequenceNumber);
-                targetIds.put(boxedTargetId, newQueryData);
+            queryCache.removeMatchingKeys(change.getRemovedDocuments(), targetId);
+            queryCache.addMatchingKeys(change.getAddedDocuments(), targetId);
 
-                // Update the query data if there are target changes (or if sufficient time has
-                // passed since the last update).
-                if (shouldPersistQueryData(oldQueryData, newQueryData, change)) {
-                  queryCache.updateQueryData(newQueryData);
-                }
+            ByteString resumeToken = change.getResumeToken();
+            // Update the resume token if the change includes one.
+            if (!resumeToken.isEmpty()) {
+              QueryData newQueryData =
+                  oldQueryData.copy(remoteVersion, resumeToken, sequenceNumber);
+              targetIds.put(boxedTargetId, newQueryData);
+
+              // Update the query data if there are target changes (or if sufficient time has
+              // passed since the last update).
+              if (shouldPersistQueryData(oldQueryData, newQueryData, change)) {
+                queryCache.updateQueryData(newQueryData);
               }
             }
           }

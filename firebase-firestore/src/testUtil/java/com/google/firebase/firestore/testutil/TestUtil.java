@@ -403,9 +403,6 @@ public class TestUtil {
       List<MaybeDocument> docs, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     Preconditions.checkArgument(!docs.isEmpty(), "Cannot pass empty docs array");
 
-    ResourcePath collectionPath = docs.get(0).getKey().getPath().popLast();
-    SnapshotVersion version = docs.get(0).getVersion();
-
     WatchChangeAggregator aggregator =
         new WatchChangeAggregator(
             new WatchChangeAggregator.TargetMetadataProvider() {
@@ -416,6 +413,7 @@ public class TestUtil {
 
               @Override
               public QueryData getQueryDataForTarget(int targetId) {
+                ResourcePath collectionPath = docs.get(0).getKey().getPath().popLast();
                 return queryData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
               }
             });
@@ -425,6 +423,8 @@ public class TestUtil {
           new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
       aggregator.handleDocumentChange(change);
     }
+
+    SnapshotVersion version = docs.get(0).getVersion();
     return aggregator.createRemoteEvent(version);
   }
 
