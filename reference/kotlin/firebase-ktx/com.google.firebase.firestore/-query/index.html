@@ -9,8 +9,8 @@
 <br/>
 <h1>Query</h1>
 <code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">Query</span></code>
-<p>A Query which you can read or listen to. You can also construct refined Query objects by adding filters and ordering. </p>
-<p><strong>Subclassing Note</strong>: Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
+<p>A <code>Query</code> which you can read or listen to. You can also construct refined <code>Query</code> objects by adding filters and ordering. </p>
+<p><strong>Subclassing Note</strong>: Cloud Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
 <h3>Types</h3>
 <table>
 <tbody>
@@ -51,9 +51,9 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">endAt</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$endAt(com.google.firebase.firestore.DocumentSnapshot)/snapshot">snapshot</span><span class="symbol">:</span>&nbsp;<a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that ends at the provided document (inclusive). The end position is relative to the order of the query. The document must contain all of the fields provided in the orderBy of this query.</p>
+<p>Creates and returns a new <code>Query</code> that ends at the provided document (inclusive). The end position is relative to the order of the query. The document must contain all of the fields provided in the orderBy of this query.</p>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">endAt</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.Query$endAt(kotlin.Array((kotlin.Any)))/fieldValues">fieldValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that ends at the provided fields relative to the order of the query. The order of the field values must match the order of the order by clauses of the query.</p>
+<p>Creates and returns a new <code>Query</code> that ends at the provided fields relative to the order of the query. The order of the field values must match the order of the order by clauses of the query.</p>
 </td>
 </tr>
 <tr>
@@ -62,9 +62,9 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">endBefore</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$endBefore(com.google.firebase.firestore.DocumentSnapshot)/snapshot">snapshot</span><span class="symbol">:</span>&nbsp;<a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that ends before the provided document (exclusive). The end position is relative to the order of the query. The document must contain all of the fields provided in the orderBy of this query.</p>
+<p>Creates and returns a new <code>Query</code> that ends before the provided document (exclusive). The end position is relative to the order of the query. The document must contain all of the fields provided in the orderBy of this query.</p>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">endBefore</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.Query$endBefore(kotlin.Array((kotlin.Any)))/fieldValues">fieldValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that ends before the provided fields relative to the order of the query. The order of the field values must match the order of the order by clauses of the query.</p>
+<p>Creates and returns a new <code>Query</code> that ends before the provided fields relative to the order of the query. The order of the field values must match the order of the order by clauses of the query.</p>
 </td>
 </tr>
 <tr>
@@ -80,9 +80,9 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
-<p>Executes the query and returns the results as a QuerySnapshot.</p>
+<p>Executes the query and returns the results as a <code>QuerySnapshot</code>.</p>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">get</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$get(com.google.firebase.firestore.Source)/source">source</span><span class="symbol">:</span>&nbsp;<a href="../-source/index.html"><span class="identifier">Source</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
-<p>Executes the query and returns the results as a QuerySnapshot. </p>
+<p>Executes the query and returns the results as a <code>QuerySnapshot</code>. </p>
 </td>
 </tr>
 <tr>
@@ -91,7 +91,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getFirestore</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-firebase-firestore/index.html"><span class="identifier">FirebaseFirestore</span></a><span class="symbol">!</span></code>
-<p>Gets the Firestore instance associated with this query.</p>
+<p>Gets the Cloud Firestore instance associated with this query.</p>
 </td>
 </tr>
 <tr>
@@ -107,7 +107,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">limit</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$limit(kotlin.Long)/limit">limit</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that's additionally limited to only return up to the specified number of documents.</p>
+<p>Creates and returns a new <code>Query</code> that's additionally limited to only return up to the specified number of documents.</p>
 </td>
 </tr>
 <tr>
@@ -117,10 +117,10 @@
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">orderBy</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$orderBy(kotlin.String)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code><br/>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">orderBy</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$orderBy(com.google.firebase.firestore.FieldPath)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that's additionally sorted by the specified field.</p>
+<p>Creates and returns a new <code>Query</code> that's additionally sorted by the specified field.</p>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">orderBy</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$orderBy(kotlin.String, com.google.firebase.firestore.Query.Direction)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$orderBy(kotlin.String, com.google.firebase.firestore.Query.Direction)/direction">direction</span><span class="symbol">:</span>&nbsp;<a href="-direction/index.html"><span class="identifier">Query.Direction</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code><br/>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">orderBy</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$orderBy(com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.Query.Direction)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$orderBy(com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.Query.Direction)/direction">direction</span><span class="symbol">:</span>&nbsp;<a href="-direction/index.html"><span class="identifier">Query.Direction</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that's additionally sorted by the specified field, optionally in descending order instead of ascending.</p>
+<p>Creates and returns a new <code>Query</code> that's additionally sorted by the specified field, optionally in descending order instead of ascending.</p>
 </td>
 </tr>
 <tr>
@@ -129,9 +129,9 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">startAfter</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$startAfter(com.google.firebase.firestore.DocumentSnapshot)/snapshot">snapshot</span><span class="symbol">:</span>&nbsp;<a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that starts after the provided document (exclusive). The starting position is relative to the order of the query. The document must contain all of the fields provided in the orderBy of this query.</p>
+<p>Creates and returns a new <code>Query</code> that starts after the provided document (exclusive). The starting position is relative to the order of the query. The document must contain all of the fields provided in the orderBy of this query.</p>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">startAfter</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.Query$startAfter(kotlin.Array((kotlin.Any)))/fieldValues">fieldValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that starts after the provided fields relative to the order of the query. The order of the field values must match the order of the order by clauses of the query.</p>
+<p>Creates and returns a new <code>Query</code> that starts after the provided fields relative to the order of the query. The order of the field values must match the order of the order by clauses of the query.</p>
 </td>
 </tr>
 <tr>
@@ -140,9 +140,9 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">startAt</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$startAt(com.google.firebase.firestore.DocumentSnapshot)/snapshot">snapshot</span><span class="symbol">:</span>&nbsp;<a href="../-document-snapshot/index.html"><span class="identifier">DocumentSnapshot</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that starts at the provided document (inclusive). The starting position is relative to the order of the query. The document must contain all of the fields provided in the orderBy of this query.</p>
+<p>Creates and returns a new <code>Query</code> that starts at the provided document (inclusive). The starting position is relative to the order of the query. The document must contain all of the fields provided in the orderBy of this query.</p>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">startAt</span><span class="symbol">(</span><span class="keyword">vararg</span> <span class="identifier" id="com.google.firebase.firestore.Query$startAt(kotlin.Array((kotlin.Any)))/fieldValues">fieldValues</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query that starts at the provided fields relative to the order of the query. The order of the field values must match the order of the order by clauses of the query.</p>
+<p>Creates and returns a new <code>Query</code> that starts at the provided fields relative to the order of the query. The order of the field values must match the order of the order by clauses of the query.</p>
 </td>
 </tr>
 <tr>
@@ -152,7 +152,7 @@
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereArrayContains</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereArrayContains(kotlin.String, kotlin.Any)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereArrayContains(kotlin.String, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code><br/>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereArrayContains</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereArrayContains(com.google.firebase.firestore.FieldPath, kotlin.Any)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereArrayContains(com.google.firebase.firestore.FieldPath, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query with the additional filter that documents must contain the specified field, the value must be an array, and that the array must contain the provided value. </p>
+<p>Creates and returns a new <code>Query</code> with the additional filter that documents must contain the specified field, the value must be an array, and that the array must contain the provided value. </p>
 </td>
 </tr>
 <tr>
@@ -162,7 +162,7 @@
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereEqualTo</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereEqualTo(kotlin.String, kotlin.Any)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereEqualTo(kotlin.String, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code><br/>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereEqualTo</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereEqualTo(com.google.firebase.firestore.FieldPath, kotlin.Any)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereEqualTo(com.google.firebase.firestore.FieldPath, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query with the additional filter that documents must contain the specified field and the value should be equal to the specified value.</p>
+<p>Creates and returns a new <code>Query</code> with the additional filter that documents must contain the specified field and the value should be equal to the specified value.</p>
 </td>
 </tr>
 <tr>
@@ -172,7 +172,7 @@
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereGreaterThan</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereGreaterThan(kotlin.String, kotlin.Any)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereGreaterThan(kotlin.String, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code><br/>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereGreaterThan</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereGreaterThan(com.google.firebase.firestore.FieldPath, kotlin.Any)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereGreaterThan(com.google.firebase.firestore.FieldPath, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query with the additional filter that documents must contain the specified field and the value should be greater than the specified value.</p>
+<p>Creates and returns a new <code>Query</code> with the additional filter that documents must contain the specified field and the value should be greater than the specified value.</p>
 </td>
 </tr>
 <tr>
@@ -182,7 +182,7 @@
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereGreaterThanOrEqualTo</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereGreaterThanOrEqualTo(kotlin.String, kotlin.Any)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereGreaterThanOrEqualTo(kotlin.String, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code><br/>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereGreaterThanOrEqualTo</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereGreaterThanOrEqualTo(com.google.firebase.firestore.FieldPath, kotlin.Any)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereGreaterThanOrEqualTo(com.google.firebase.firestore.FieldPath, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query with the additional filter that documents must contain the specified field and the value should be greater than or equal to the specified value.</p>
+<p>Creates and returns a new <code>Query</code> with the additional filter that documents must contain the specified field and the value should be greater than or equal to the specified value.</p>
 </td>
 </tr>
 <tr>
@@ -192,7 +192,7 @@
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereLessThan</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereLessThan(kotlin.String, kotlin.Any)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereLessThan(kotlin.String, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code><br/>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereLessThan</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereLessThan(com.google.firebase.firestore.FieldPath, kotlin.Any)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereLessThan(com.google.firebase.firestore.FieldPath, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query with the additional filter that documents must contain the specified field and the value should be less than the specified value.</p>
+<p>Creates and returns a new <code>Query</code> with the additional filter that documents must contain the specified field and the value should be less than the specified value.</p>
 </td>
 </tr>
 <tr>
@@ -202,7 +202,7 @@
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereLessThanOrEqualTo</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereLessThanOrEqualTo(kotlin.String, kotlin.Any)/field">field</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereLessThanOrEqualTo(kotlin.String, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code><br/>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">whereLessThanOrEqualTo</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.Query$whereLessThanOrEqualTo(com.google.firebase.firestore.FieldPath, kotlin.Any)/fieldPath">fieldPath</span><span class="symbol">:</span>&nbsp;<a href="../-field-path/index.html"><span class="identifier">FieldPath</span></a><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.Query$whereLessThanOrEqualTo(com.google.firebase.firestore.FieldPath, kotlin.Any)/value">value</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
-<p>Creates and returns a new Query with the additional filter that documents must contain the specified field and the value should be less than or equal to the specified value.</p>
+<p>Creates and returns a new <code>Query</code> with the additional filter that documents must contain the specified field and the value should be less than or equal to the specified value.</p>
 </td>
 </tr>
 </tbody>
@@ -216,7 +216,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">CollectionReference</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="./index.html"><span class="identifier">Query</span></a></code>
-<p>A CollectionReference can be used for adding documents, getting document references, and querying for documents (using the methods inherited from Query). </p>
+<p>A <code>CollectionReference</code> can be used for adding documents, getting document references, and querying for documents (using the methods inherited from <code>Query</code>). </p>
 </td>
 </tr>
 </tbody>

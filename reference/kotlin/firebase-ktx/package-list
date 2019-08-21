@@ -11,8 +11,9 @@ $dokka.location:com.google.firebase.firestore.ktx$toObject(com.google.firebase.f
 $dokka.location:com.google.firebase.firestore.ktx$toObjects(com.google.firebase.firestore.QuerySnapshot)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-snapshot/to-objects.html
 $dokka.location:com.google.firebase.firestore.ktx$toObjects(com.google.firebase.firestore.QuerySnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)com.google.firebase.firestore.ktx/com.google.firebase.firestore.-query-snapshot/to-objects.html
 com.google.firebase
-com.google.firebase.auth
 com.google.firebase.firestore
 com.google.firebase.firestore.ktx
+com.google.firebase.functions
+com.google.firebase.functions.ktx
 com.google.firebase.ktx
 com.google.firebase.provider

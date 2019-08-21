@@ -12,28 +12,40 @@
 <td>
 <a href="../com.google.firebase.firestore/-blob/index.html">com.google.firebase.firestore.Blob</a></td>
 <td>
-<p>Immutable class representing an array of bytes in Firestore.</p>
+<p>Immutable class representing an array of bytes in Cloud Firestore.</p>
 </td>
 </tr>
 <tr>
 <td>
 <a href="../com.google.firebase.firestore/-collection-reference/index.html">com.google.firebase.firestore.CollectionReference</a></td>
 <td>
-<p>A CollectionReference can be used for adding documents, getting document references, and querying for documents (using the methods inherited from Query). </p>
+<p>A <code>CollectionReference</code> can be used for adding documents, getting document references, and querying for documents (using the methods inherited from <code>Query</code>). </p>
 </td>
 </tr>
 <tr>
 <td>
 <a href="../com.google.firebase.firestore/-document-change/index.html">com.google.firebase.firestore.DocumentChange</a></td>
 <td>
-<p>A DocumentChange represents a change to the documents matching a query. It contains the document affected and a the type of change that occurred (added, modified, or removed). </p>
+<p>A <code>DocumentChange</code> represents a change to the documents matching a query. It contains the document affected and a the type of change that occurred (added, modified, or removed). </p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.firestore/-document-id/index.html">com.google.firebase.firestore.DocumentId</a></td>
+<td>
+<p>Annotation used to mark a POJO property to be automatically populated with the document's ID when the POJO is created from a Cloud Firestore document (for example, via <code><a href="../com.google.firebase.firestore/-document-snapshot/to-object.html"> </a></code>). <ul> Any of the following will throw a runtime exception: <li>This annotation is applied to a property of a type other than String or . </li>
+<li>This annotation is applied to a property that is not writable (for example, a Java Bean getter without a backing field). </li>
+<li>This annotation is applied to a property with a name that conflicts with a read document field. For example, if a POJO has a field `firstName` annotated by <code>@DocumentId</code>, and there is a property from the document named `firstName` as well, an exception is thrown when you try to read the document into the POJO via <code><a href="../com.google.firebase.firestore/-document-snapshot/to-object.html">DocumentSnapshot#toObject</a></code> or <code><a href="../com.google.firebase.firestore/-document-reference/get.html">DocumentReference#get</a></code>. </li>
+<li> </li>
+</ul>
+ </p>
 </td>
 </tr>
 <tr>
 <td>
 <a href="../com.google.firebase.firestore/-document-reference/index.html">com.google.firebase.firestore.DocumentReference</a></td>
 <td>
-<p>A DocumentReference refers to a document location in a Firestore database and can be used to write, read, or listen to the location. There may or may not exist a document at the referenced location. A DocumentReference can also be used to create a CollectionReference to a subcollection. </p>
+<p>A <code>DocumentReference</code> refers to a document location in a Cloud Firestore database and can be used to write, read, or listen to the location. There may or may not exist a document at the referenced location. A <code>DocumentReference</code> can also be used to create a to a subcollection. </p>
 </td>
 </tr>
 <tr>
@@ -46,7 +58,7 @@
 <td>
 <a href="../com.google.firebase.firestore/-document-snapshot/index.html">com.google.firebase.firestore.DocumentSnapshot</a></td>
 <td>
-<p>A DocumentSnapshot contains data read from a document in your Firestore database. The data can be extracted with the getData() or get() methods. </p>
+<p>A <code>DocumentSnapshot</code> contains data read from a document in your Cloud Firestore database. The data can be extracted with the <code><a href="../com.google.firebase.firestore/-document-snapshot/get-data.html">getData()</a></code> or <code><a href="../com.google.firebase.firestore/-document-snapshot/get.html">get(String)</a></code> methods. </p>
 </td>
 </tr>
 <tr>
@@ -60,7 +72,7 @@
 <td>
 <a href="../com.google.firebase.firestore/-exclude/index.html">com.google.firebase.firestore.Exclude</a></td>
 <td>
-<p>Marks a field as excluded from the Database.</p>
+<p>Marks a field as excluded from the database instance.</p>
 </td>
 </tr>
 <tr>
@@ -74,7 +86,7 @@
 <td>
 <a href="../com.google.firebase.firestore/-field-value/index.html">com.google.firebase.firestore.FieldValue</a></td>
 <td>
-<p>Sentinel values that can be used when writing document fields with set() or update().</p>
+<p>Sentinel values that can be used when writing document fields with <code>set()</code> or <code>update()</code>.</p>
 </td>
 </tr>
 <tr>
@@ -93,36 +105,37 @@
 </tr>
 <tr>
 <td>
-<a href="../com.google.firebase.auth/-firebase-auth-exception/index.html">com.google.firebase.auth.FirebaseAuthException</a></td>
-<td>
-<p>Generic exception related to Firebase Authentication. Check the error code and message for more details.</p>
-</td>
-</tr>
-<tr>
-<td>
 <a href="../com.google.firebase.firestore/-firebase-firestore/index.html">com.google.firebase.firestore.FirebaseFirestore</a></td>
 <td>
-<p>Represents a Firestore Database and is the entry point for all Firestore operations </p>
+<p>Represents a Cloud Firestore database and is the entry point for all Cloud Firestore operations. </p>
 </td>
 </tr>
 <tr>
 <td>
 <a href="../com.google.firebase.firestore/-firebase-firestore-exception/index.html">com.google.firebase.firestore.FirebaseFirestoreException</a></td>
 <td>
-<p>A class of exceptions thrown by Firestore</p>
-</td>
-</tr>
-<tr>
-<td>
-<a href="../com.google.firebase.firestore.ktx/-firebase-firestore-ktx-registrar/index.html">com.google.firebase.firestore.ktx.FirebaseFirestoreKtxRegistrar</a></td>
-<td>
+<p>A class of exceptions thrown by Cloud Firestore.</p>
 </td>
 </tr>
 <tr>
 <td>
 <a href="../com.google.firebase.firestore/-firebase-firestore-settings/index.html">com.google.firebase.firestore.FirebaseFirestoreSettings</a></td>
 <td>
-<p>Settings used to configure a FirebaseFirestore instance.</p>
+<p>Settings used to configure a <code><a href="../com.google.firebase.firestore/-firebase-firestore/index.html">FirebaseFirestore</a></code> instance.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.functions/-firebase-functions/index.html">com.google.firebase.functions.FirebaseFunctions</a></td>
+<td>
+<p>FirebaseFunctions lets you call Cloud Functions for Firebase.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.functions/-firebase-functions-exception/index.html">com.google.firebase.functions.FirebaseFunctionsException</a></td>
+<td>
+<p>The class for all Exceptions thrown by FirebaseFunctions.</p>
 </td>
 </tr>
 <tr>
@@ -157,14 +170,21 @@
 <td>
 <a href="../com.google.firebase.firestore/-geo-point/index.html">com.google.firebase.firestore.GeoPoint</a></td>
 <td>
-<p>Immutable class representing a GeoPoint in Firestore</p>
+<p>Immutable class representing a <code>GeoPoint</code> in Cloud Firestore</p>
 </td>
 </tr>
 <tr>
 <td>
-<a href="../com.google.firebase.auth/-get-token-result/index.html">com.google.firebase.auth.GetTokenResult</a></td>
+<a href="../com.google.firebase.functions/-https-callable-reference/index.html">com.google.firebase.functions.HttpsCallableReference</a></td>
 <td>
-<p>Result object that contains a Firebase Auth ID Token.</p>
+<p>A reference to a particular Callable HTTPS trigger in Cloud Functions.</p>
+</td>
+</tr>
+<tr>
+<td>
+<a href="../com.google.firebase.functions/-https-callable-result/index.html">com.google.firebase.functions.HttpsCallableResult</a></td>
+<td>
+<p>The result of calling a HttpsCallableReference function.</p>
 </td>
 </tr>
 <tr>
@@ -178,14 +198,14 @@
 <td>
 <a href="../com.google.firebase.firestore/-listener-registration/index.html">com.google.firebase.firestore.ListenerRegistration</a></td>
 <td>
-<p>Represents a listener that can be removed by calling remove().</p>
+<p>Represents a listener that can be removed by calling <code><a href="../com.google.firebase.firestore/-listener-registration/remove.html">remove()</a></code>.</p>
 </td>
 </tr>
 <tr>
 <td>
 <a href="../com.google.firebase.firestore/-metadata-changes/index.html">com.google.firebase.firestore.MetadataChanges</a></td>
 <td>
-<p>Indicates whether metadata-only changes (i.e. only <code>DocumentSnapshot.getMetadata()</code> or <code>Query.getMetadata()</code> changed) should trigger snapshot events.</p>
+<p>Indicates whether metadata-only changes (that is, only <code>DocumentSnapshot.getMetadata()</code> or <code>Query.getMetadata()</code> changed) should trigger snapshot events.</p>
 </td>
 </tr>
 <tr>
@@ -199,7 +219,7 @@
 <td>
 <a href="../com.google.firebase.firestore/-query/index.html">com.google.firebase.firestore.Query</a></td>
 <td>
-<p>A Query which you can read or listen to. You can also construct refined Query objects by adding filters and ordering. </p>
+<p>A <code>Query</code> which you can read or listen to. You can also construct refined <code>Query</code> objects by adding filters and ordering. </p>
 </td>
 </tr>
 <tr>
@@ -212,7 +232,7 @@
 <td>
 <a href="../com.google.firebase.firestore/-query-document-snapshot/index.html">com.google.firebase.firestore.QueryDocumentSnapshot</a></td>
 <td>
-<p>A QueryDocumentSnapshot contains data read from a document in your Firestore database as part of a query. The document is guaranteed to exist and its data can be extracted using the getData() or get() methods. </p>
+<p>A <code>QueryDocumentSnapshot</code> contains data read from a document in your Cloud Firestore database as part of a query. The document is guaranteed to exist and its data can be extracted using the <code><a href="../com.google.firebase.firestore/-query-document-snapshot/get-data.html">getData()</a></code> or #get() methods. </p>
 </td>
 </tr>
 <tr>
@@ -225,21 +245,21 @@
 <td>
 <a href="../com.google.firebase.firestore/-query-snapshot/index.html">com.google.firebase.firestore.QuerySnapshot</a></td>
 <td>
-<p>A QuerySnapshot contains the results of a query. It can contain zero or more DocumentSnapshot objects. </p>
+<p>A <code>QuerySnapshot</code> contains the results of a query. It can contain zero or more objects. </p>
 </td>
 </tr>
 <tr>
 <td>
 <a href="../com.google.firebase.firestore/-server-timestamp/index.html">com.google.firebase.firestore.ServerTimestamp</a></td>
 <td>
-<p>Annotation used to mark a timestamp field to be populated with a server timestamp. If a POJO being written contains null for a @ServerTimestamp-annotated field, it will be replaced with a server-generated timestamp.</p>
+<p>Annotation used to mark a timestamp field to be populated with a server timestamp. If a POJO being written contains <code>null</code> for a @ServerTimestamp-annotated field, it will be replaced with a server-generated timestamp.</p>
 </td>
 </tr>
 <tr>
 <td>
 <a href="../com.google.firebase.firestore/-set-options/index.html">com.google.firebase.firestore.SetOptions</a></td>
 <td>
-<p>An options object that configures the behavior of set() calls. By providing one of the SetOptions objects returned by <code><a href="../com.google.firebase.firestore/-set-options/merge.html">merge</a></code>, <code><a href="../com.google.firebase.firestore/-set-options/merge-fields.html">mergeFields</a></code> and <code><a href="../com.google.firebase.firestore/-set-options/merge-field-paths.html">mergeFieldPaths</a></code>, the set() calls in <code><a href="../com.google.firebase.firestore/-document-reference/index.html">DocumentReference</a></code>, <code><a href="../com.google.firebase.firestore/-write-batch/index.html">WriteBatch</a></code> and <code><a href="../com.google.firebase.firestore/-transaction/index.html">Transaction</a></code> can be configured to perform granular merges instead of overwriting the target documents in their entirety.</p>
+<p>An options object that configures the behavior of <code>set()</code> calls. By providing one of the SetOptions objects returned by <code><a href="../com.google.firebase.firestore/-set-options/merge.html">merge</a></code>, <code><a href="../com.google.firebase.firestore/-set-options/merge-fields.html">mergeFields</a></code> and <code><a href="../com.google.firebase.firestore/-set-options/merge-field-paths.html">mergeFieldPaths</a></code>, the <code>set()</code> calls in <code><a href="../com.google.firebase.firestore/-document-reference/index.html">DocumentReference</a></code>, <code><a href="../com.google.firebase.firestore/-write-batch/index.html">WriteBatch</a></code> and <code><a href="../com.google.firebase.firestore/-transaction/index.html">Transaction</a></code> can be configured to perform granular merges instead of overwriting the target documents in their entirety.</p>
 </td>
 </tr>
 <tr>
@@ -253,7 +273,7 @@
 <td>
 <a href="../com.google.firebase.firestore/-source/index.html">com.google.firebase.firestore.Source</a></td>
 <td>
-<p>Configures the behavior of <code>get()</code> calls on <code><a href="../com.google.firebase.firestore/-document-reference/index.html">DocumentReference</a></code> and <code><a href="../com.google.firebase.firestore/-query/index.html">Query</a></code>. By providing a Source value, these methods can be configured to fetch results only from the server, only from the local cache, or attempt to fetch results from the server and fall back to the cache (which is the default).</p>
+<p>Configures the behavior of <code>get()</code> calls on <code><a href="../com.google.firebase.firestore/-document-reference/index.html">DocumentReference</a></code> and <code><a href="../com.google.firebase.firestore/-query/index.html">Query</a></code>. By providing a <code>Source</code> value, these methods can be configured to fetch results only from the server, only from the local cache, or attempt to fetch results from the server and fall back to the cache (which is the default).</p>
 </td>
 </tr>
 <tr>
@@ -274,7 +294,7 @@
 <td>
 <a href="../com.google.firebase.firestore/-transaction/index.html">com.google.firebase.firestore.Transaction</a></td>
 <td>
-<p>A Transaction is passed to a Function to provide the methods to read and write data within the transaction context. </p>
+<p>A <code>Transaction</code> is passed to a Function to provide the methods to read and write data within the transaction context. </p>
 </td>
 </tr>
 <tr>

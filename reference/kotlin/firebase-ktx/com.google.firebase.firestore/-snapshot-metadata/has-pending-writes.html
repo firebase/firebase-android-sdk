@@ -11,6 +11,6 @@
 <a name="com.google.firebase.firestore.SnapshotMetadata$hasPendingWrites()"></a>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">hasPendingWrites</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code>
 <p><strong>Return</strong><br/>
-<span class="symbol">:</span> true if the snapshot contains the result of local writes (e.g. set() or update() calls) that have not yet been committed to the backend. If your listener has opted into metadata updates (via `MetadataChanges.INCLUDE`) you will receive another snapshot with `hasPendingWrites()` equal to false once the writes have been committed to the backend.</p>
+<span class="symbol">:</span> true if the snapshot contains the result of local writes (for example, <code>set()</code> or <code>update()</code> calls) that have not yet been committed to the backend. If your listener has opted into metadata updates (via <code><a href="../-metadata-changes/index.html">MetadataChanges#INCLUDE</a></code>) you will receive another snapshot with <code>hasPendingWrites()</code> equal to false once the writes have been committed to the backend.</p>
 </BODY>
 </HTML>

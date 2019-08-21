@@ -10,7 +10,8 @@
 <h1>batch</h1>
 <a name="com.google.firebase.firestore.FirebaseFirestore$batch()"></a>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">batch</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-write-batch/index.html"><span class="identifier">WriteBatch</span></a><span class="symbol">!</span></code>
-<p>Creates a write batch, used for performing multiple writes as a single atomic operation.</p>
+<p>Creates a write batch, used for performing multiple writes as a single atomic operation. </p>
+<p>The maximum number of writes allowed in a single batch is 500, but note that each usage of <code><a href="../-field-value/server-timestamp.html">FieldValue#serverTimestamp()</a></code>, FieldValue#arrayUnion(), FieldValue#arrayRemove(), or FieldValue#increment() inside a transaction counts as an additional write.</p>
 <p><strong>Return</strong><br/>
 <span class="symbol">:</span> The created WriteBatch object.</p>
 </BODY>

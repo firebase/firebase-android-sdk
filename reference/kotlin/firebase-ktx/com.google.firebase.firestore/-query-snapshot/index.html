@@ -9,8 +9,8 @@
 <br/>
 <h1>QuerySnapshot</h1>
 <code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">QuerySnapshot</span></code>
-<p>A QuerySnapshot contains the results of a query. It can contain zero or more DocumentSnapshot objects. </p>
-<p><strong>Subclassing Note</strong>: Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
+<p>A <code>QuerySnapshot</code> contains the results of a query. It can contain zero or more objects. </p>
+<p><strong>Subclassing Note</strong>: Cloud Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
 <h3>Functions</h3>
 <table>
 <tbody>
@@ -38,7 +38,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getDocuments</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code>
-<p>Returns the documents in this QuerySnapshot as a List in order of the query.</p>
+<p>Returns the documents in this <code>QuerySnapshot</code> as a List in order of the query.</p>
 </td>
 </tr>
 <tr>
@@ -68,7 +68,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">isEmpty</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code>
-<p>Returns true if there are no documents in the QuerySnapshot.</p>
+<p>Returns true if there are no documents in the <code>QuerySnapshot</code>.</p>
 </td>
 </tr>
 <tr>
@@ -84,7 +84,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">size</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code>
-<p>Returns the number of documents in the QuerySnapshot.</p>
+<p>Returns the number of documents in the <code>QuerySnapshot</code>.</p>
 </td>
 </tr>
 <tr>
@@ -94,7 +94,7 @@
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">toObjects</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.QuerySnapshot$toObjects(java.lang.Class((com.google.firebase.firestore.QuerySnapshot.toObjects.T)))/clazz">clazz</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/java/lang/Class.html"><span class="identifier">Class</span></a><span class="symbol">&lt;</span><a href="to-objects.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code><br/>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="symbol">&lt;</span><span class="identifier">T</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">&gt;</span> <span class="identifier">toObjects</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.QuerySnapshot$toObjects(java.lang.Class((com.google.firebase.firestore.QuerySnapshot.toObjects.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/clazz">clazz</span><span class="symbol">:</span>&nbsp;<a href="https://developer.android.com/reference/java/lang/Class.html"><span class="identifier">Class</span></a><span class="symbol">&lt;</span><a href="to-objects.html#T"><span class="identifier">T</span></a><span class="symbol">&gt;</span><span class="symbol">!</span><span class="symbol">, </span><span class="identifier" id="com.google.firebase.firestore.QuerySnapshot$toObjects(java.lang.Class((com.google.firebase.firestore.QuerySnapshot.toObjects.T)), com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior)/serverTimestampBehavior">serverTimestampBehavior</span><span class="symbol">:</span>&nbsp;<a href="../-document-snapshot/-server-timestamp-behavior/index.html"><span class="identifier">DocumentSnapshot.ServerTimestampBehavior</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">List</span><span class="symbol">!</span></code>
-<p>Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as a list.</p>
+<p>Returns the contents of the documents in the <code>QuerySnapshot</code>, converted to the provided class, as a list.</p>
 </td>
 </tr>
 </tbody>

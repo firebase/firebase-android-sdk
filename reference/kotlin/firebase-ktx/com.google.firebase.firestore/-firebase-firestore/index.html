@@ -9,8 +9,8 @@
 <br/>
 <h1>FirebaseFirestore</h1>
 <code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">FirebaseFirestore</span></code>
-<p>Represents a Firestore Database and is the entry point for all Firestore operations </p>
-<p><strong>Subclassing Note</strong>: Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
+<p>Represents a Cloud Firestore database and is the entry point for all Cloud Firestore operations. </p>
+<p><strong>Subclassing Note</strong>: Cloud Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
 <h3>Functions</h3>
 <table>
 <tbody>
@@ -20,7 +20,16 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">batch</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-write-batch/index.html"><span class="identifier">WriteBatch</span></a><span class="symbol">!</span></code>
-<p>Creates a write batch, used for performing multiple writes as a single atomic operation.</p>
+<p>Creates a write batch, used for performing multiple writes as a single atomic operation. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="clear-persistence.html">clearPersistence</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">clearPersistence</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Clears the persistent storage, including pending writes and cached documents. </p>
 </td>
 </tr>
 <tr>
@@ -29,7 +38,16 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">collection</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$collection(kotlin.String)/collectionPath">collectionPath</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-collection-reference/index.html"><span class="identifier">CollectionReference</span></a><span class="symbol">!</span></code>
-<p>Gets a CollectionReference instance that refers to the collection at the specified path within the database.</p>
+<p>Gets a <code>CollectionReference</code> instance that refers to the collection at the specified path within the database.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="collection-group.html">collectionGroup</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">collectionGroup</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$collectionGroup(kotlin.String)/collectionId">collectionId</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-query/index.html"><span class="identifier">Query</span></a><span class="symbol">!</span></code>
+<p>Creates and returns a new <code>Query</code> that includes all documents in the database that are contained in a collection or subcollection with the given <code>collectionId</code>.</p>
 </td>
 </tr>
 <tr>
@@ -38,7 +56,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">disableNetwork</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
-<p>Disables network access for this instance. While the network is disabled, any snapshot listeners or get() calls will return results from cache, and any write operations will be queued until network usage is re-enabled via a call to enableNetwork().</p>
+<p>Disables network access for this instance. While the network is disabled, any snapshot listeners or <code>get()</code> calls will return results from cache, and any write operations will be queued until network usage is re-enabled via a call to <code><a href="enable-network.html">enableNetwork()</a></code>.</p>
 </td>
 </tr>
 <tr>
@@ -56,7 +74,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">enableNetwork</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
-<p>Re-enables network usage for this instance after a prior call to disableNetwork().</p>
+<p>Re-enables network usage for this instance after a prior call to <code><a href="disable-network.html">disableNetwork()</a></code>.</p>
 </td>
 </tr>
 <tr>
@@ -65,7 +83,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getApp</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">FirebaseApp</span><span class="symbol">!</span></code>
-<p>Returns the FirebaseApp instance to which this FirebaseFirestore belongs.</p>
+<p>Returns the FirebaseApp instance to which this <code>FirebaseFirestore</code> belongs.</p>
 </td>
 </tr>
 <tr>
@@ -74,7 +92,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getFirestoreSettings</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-firebase-firestore-settings/index.html"><span class="identifier">FirebaseFirestoreSettings</span></a><span class="symbol">!</span></code>
-<p>Returns the settings used by this FirebaseFirestore object.</p>
+<p>Returns the settings used by this <code>FirebaseFirestore</code> object.</p>
 </td>
 </tr>
 <tr>
@@ -109,7 +127,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">setFirestoreSettings</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$setFirestoreSettings(com.google.firebase.firestore.FirebaseFirestoreSettings)/settings">settings</span><span class="symbol">:</span>&nbsp;<a href="../-firebase-firestore-settings/index.html"><span class="identifier">FirebaseFirestoreSettings</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code>
-<p>Sets any custom settings used to configure this FirebaseFirestore object. This method can only be called before calling any other methods on this object.</p>
+<p>Sets any custom settings used to configure this <code>FirebaseFirestore</code> object. This method can only be called before calling any other methods on this object.</p>
 </td>
 </tr>
 <tr>
@@ -118,7 +136,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">static</span> <span class="keyword">fun </span><span class="identifier">setLoggingEnabled</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.firestore.FirebaseFirestore$setLoggingEnabled(kotlin.Boolean)/loggingEnabled">loggingEnabled</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code>
-<p>Globally enables / disables Firestore logging for the SDK.</p>
+<p>Globally enables / disables Cloud Firestore logging for the SDK.</p>
 </td>
 </tr>
 </tbody>
