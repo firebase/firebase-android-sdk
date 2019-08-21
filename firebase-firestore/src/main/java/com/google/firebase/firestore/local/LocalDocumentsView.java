@@ -40,7 +40,7 @@ import java.util.Map;
  * mutations in the MutationQueue to the RemoteDocumentCache.
  */
 // TODO: Turn this into the UnifiedDocumentCache / whatever.
-final class LocalDocumentsView {
+class LocalDocumentsView {
 
   private final RemoteDocumentCache remoteDocumentCache;
   private final MutationQueue mutationQueue;

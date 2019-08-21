@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
@@ -88,17 +89,23 @@ public class IndexedQueryEngine implements QueryEngine {
   private static final List<Class> lowCardinalityTypes =
       Arrays.asList(BooleanValue.class, ArrayValue.class, ObjectValue.class);
 
-  private final LocalDocumentsView localDocuments;
   private final SQLiteCollectionIndex collectionIndex;
+  private LocalDocumentsView localDocuments;
 
-  public IndexedQueryEngine(
-      LocalDocumentsView localDocuments, SQLiteCollectionIndex collectionIndex) {
-    this.localDocuments = localDocuments;
+  public IndexedQueryEngine(SQLiteCollectionIndex collectionIndex) {
     this.collectionIndex = collectionIndex;
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(Query query) {
+  public void setLocalDocumentsView(LocalDocumentsView localDocuments) {
+    this.localDocuments = localDocuments;
+  }
+
+  @Override
+  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
+    hardAssert(localDocuments != null, "setLocalDocumentsView() not called");
+
     return query.isDocumentQuery()
         ? localDocuments.getDocumentsMatchingQuery(query, SnapshotVersion.NONE)
         : performCollectionQuery(query);

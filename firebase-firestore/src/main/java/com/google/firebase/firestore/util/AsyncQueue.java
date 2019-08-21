@@ -69,7 +69,13 @@ public class AsyncQueue {
      */
     ONLINE_STATE_TIMEOUT,
     /** A timer used to periodically attempt LRU Garbage collection */
-    GARBAGE_COLLECTION,
+    GARBAGE_COLLECTION
+
+    /**
+     * A timer used to retry transactions. Since there can be multiple concurrent transactions,
+     * multiple of these may be in the queue at a given time.
+     */
+    RETRY_TRANSACTION,
 
     /** Represents a task that backfills data after a schema change. */
     DATA_BACKFILL
@@ -381,6 +387,9 @@ public class AsyncQueue {
   // theoretical removal speed, except this list will always be small so ArrayList is fine.
   private final ArrayList<DelayedTask> delayedTasks;
 
+  // List of TimerIds to fast-forward delays for.
+  private final ArrayList<TimerId> timerIdsToSkip = new ArrayList<>();
+
   public AsyncQueue() {
     delayedTasks = new ArrayList<>();
     executor = new SynchronizedShutdownAwareExecutor();
@@ -474,17 +483,25 @@ public class AsyncQueue {
    * @return A DelayedTask instance that can be used for cancellation.
    */
   public DelayedTask enqueueAfterDelay(TimerId timerId, long delayMs, Runnable task) {
-    // While not necessarily harmful, we currently don't expect to have multiple tasks with the same
-    // timer id in the queue, so defensively reject them.
-    hardAssert(
-        !containsDelayedTask(timerId),
-        "Attempted to schedule multiple operations with timer id %s.",
-        timerId);
+    // Fast-forward delays for timerIds that have been overridden.
+    if (timerIdsToSkip.contains(timerId)) {
+      delayMs = 0;
+    }
 
     DelayedTask delayedTask = createAndScheduleDelayedTask(timerId, delayMs, task);
     delayedTasks.add(delayedTask);
 
     return delayedTask;
+  }
+
+  /**
+   * For Tests: Skip all subsequent delays for a timer id.
+   *
+   * @param timerId The timerId to skip delays for.
+   */
+  @VisibleForTesting
+  public void skipDelaysForTimerId(TimerId timerId) {
+    timerIdsToSkip.add(timerId);
   }
 
   /**

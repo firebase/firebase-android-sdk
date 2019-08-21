@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime.backends;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.auto.value.AutoValue;
 
@@ -25,6 +26,7 @@ import com.google.auto.value.AutoValue;
  */
 @AutoValue
 public abstract class CreationContext {
+  private static final String DEFAULT_BACKEND_NAME = "cct";
 
   /** Returns the {@link Context application context}. */
   public abstract Context getApplicationContext();
@@ -38,6 +40,17 @@ public abstract class CreationContext {
   /** Creates a new instance of {@link CreationContext}. */
   public static CreationContext create(
       Context applicationContext, Clock wallClock, Clock monotonicClock) {
-    return new AutoValue_CreationContext(applicationContext, wallClock, monotonicClock);
+
+    return new AutoValue_CreationContext(
+        applicationContext, wallClock, monotonicClock, DEFAULT_BACKEND_NAME);
   }
+
+  public static CreationContext create(
+      Context applicationContext, Clock wallClock, Clock monotonicClock, String backendName) {
+    return new AutoValue_CreationContext(
+        applicationContext, wallClock, monotonicClock, backendName);
+  }
+  /** Returns the backend name. */
+  @NonNull
+  public abstract String getBackendName();
 }

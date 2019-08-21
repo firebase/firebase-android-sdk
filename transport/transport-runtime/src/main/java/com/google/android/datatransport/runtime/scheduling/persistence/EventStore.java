@@ -50,6 +50,9 @@ public interface EventStore extends Closeable {
   /** Load all pending events for a given backend. */
   Iterable<PersistedEvent> loadBatch(TransportContext transportContext);
 
+  /** Load all {@link TransportContext}s that have pending events. */
+  Iterable<TransportContext> loadActiveContexts();
+
   /** Remove events that have been stored for more than 7 days. */
   int cleanUp();
 }

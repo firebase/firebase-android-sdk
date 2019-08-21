@@ -98,7 +98,7 @@ public class Uploader {
     Iterable<PersistedEvent> persistedEvents =
         guard.runCriticalSection(() -> eventStore.loadBatch(transportContext));
 
-    // Donot make a call to the backend if the list is empty.
+    // Do not make a call to the backend if the list is empty.
     if (!persistedEvents.iterator().hasNext()) {
       return;
     }
@@ -106,7 +106,14 @@ public class Uploader {
     for (PersistedEvent persistedEvent : persistedEvents) {
       eventInternals.add(persistedEvent.getEvent());
     }
-    BackendResponse response = backend.send(BackendRequest.create(eventInternals));
+
+    BackendResponse response =
+        backend.send(
+            BackendRequest.builder()
+                .setEvents(eventInternals)
+                .setExtras(transportContext.getExtras())
+                .build());
+
     guard.runCriticalSection(
         () -> {
           if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {

@@ -15,12 +15,23 @@
 package com.google.firebase.gradle.plugins;
 
 import com.android.build.gradle.LibraryExtension;
+import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.api.LibraryVariant;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
+import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
+import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
+
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
+import java.io.File;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class FirebaseLibraryPlugin implements Plugin<Project> {
 
@@ -55,6 +66,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
               });
     }
 
+    setupApiInformationAnalysis(project, android);
+
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab));
 
     setupStaticAnalysis(project, android, firebaseLibrary);
@@ -69,6 +82,50 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                     .getKotlinOptions()
                     .setFreeCompilerArgs(
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
+  }
+
+  private static void setupApiInformationAnalysis(Project project, LibraryExtension android) {
+    File metalavaOutputJarFile = new File(project.getRootProject().getBuildDir(), "metalava.jar");
+    AndroidSourceSet mainSourceSet = android.getSourceSets().getByName("main");
+    File outputFile = project.getRootProject().file(Paths.get(
+        project.getRootProject().getBuildDir().getPath(),
+        "apiinfo",
+        project.getPath().substring(1).replace(":", "_")));
+    File outputApiFile = new File(outputFile.getAbsolutePath() + "_api.txt");
+    List<File> sourcePath = mainSourceSet.getJava().getSrcDirs().stream().collect(Collectors.toList());
+    if(mainSourceSet.getJava().getSrcDirs().stream().noneMatch(File::exists)) {
+      return;
+    }
+    project.getTasks().register("getMetalavaJar", GetMetalavaJarTask.class, task -> {
+      task.setOutputFile(metalavaOutputJarFile);
+    });
+    project.getTasks().register("apiInformation", ApiInformationTask.class, task -> {
+      task.setApiTxt(project.file("api.txt"));
+      task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
+      task.setSourcePath(sourcePath);
+      task.setOutputFile(outputFile);
+      task.setBaselineFile(project.file("baseline.txt"));
+      task.setOutputApiFile(outputApiFile);
+      if (project.hasProperty("updateBaseline")) {
+        task.setUpdateBaseline(true);
+      } else {
+        task.setUpdateBaseline(false);
+      }
+      task.dependsOn("getMetalavaJar");
+    });
+
+    project.getTasks().register("generateApiTxtFile", GenerateApiTxtFileTask.class, task -> {
+      task.setApiTxt(project.file("api.txt"));
+      task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
+      task.setSourcePath(sourcePath);
+      task.setBaselineFile(project.file("baseline.txt"));
+      if (project.hasProperty("updateBaseline")) {
+        task.setUpdateBaseline(true);
+      } else {
+        task.setUpdateBaseline(false);
+      }
+      task.dependsOn("getMetalavaJar");
+    });
   }
 
   private static void setupStaticAnalysis(

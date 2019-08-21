@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkInitializer;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
@@ -48,11 +49,14 @@ public class TransportRuntime implements TransportInternal {
       @WallTime Clock eventClock,
       @Monotonic Clock uptimeClock,
       Scheduler scheduler,
-      Uploader uploader) {
+      Uploader uploader,
+      WorkInitializer initializer) {
     this.eventClock = eventClock;
     this.uptimeClock = uptimeClock;
     this.scheduler = scheduler;
     this.uploader = uploader;
+
+    initializer.ensureContextsScheduled();
   }
 
   /**
@@ -106,9 +110,20 @@ public class TransportRuntime implements TransportInternal {
   }
 
   /** Returns a {@link TransportFactory} for a given {@code backendName}. */
+  @Deprecated
   public TransportFactory newFactory(String backendName) {
     return new TransportFactoryImpl(
         TransportContext.builder().setBackendName(backendName).build(), this);
+  }
+
+  /** Returns a {@link TransportFactory} for a given {@code backendName}. */
+  public TransportFactory newFactory(Destination destination) {
+    return new TransportFactoryImpl(
+        TransportContext.builder()
+            .setBackendName(destination.getName())
+            .setExtras(destination.getExtras())
+            .build(),
+        this);
   }
 
   @RestrictTo(RestrictTo.Scope.LIBRARY)
