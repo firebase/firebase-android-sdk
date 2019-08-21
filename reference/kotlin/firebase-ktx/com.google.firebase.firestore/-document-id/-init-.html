@@ -1,0 +1,21 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>DocumentId.<init> - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">DocumentId</a>&nbsp;/&nbsp;<a href="./-init-.html">&lt;init&gt;</a><br/>
+<br/>
+<h1>&lt;init&gt;</h1>
+<a name="com.google.firebase.firestore.DocumentId$&lt;init&gt;()"></a>
+<code><span class="identifier">DocumentId</span><span class="symbol">(</span><span class="symbol">)</span></code>
+<p>Annotation used to mark a POJO property to be automatically populated with the document's ID when the POJO is created from a Cloud Firestore document (for example, via <code><a href="../-document-snapshot/to-object.html"> </a></code>). <ul> Any of the following will throw a runtime exception: <li>This annotation is applied to a property of a type other than String or . </li>
+<li>This annotation is applied to a property that is not writable (for example, a Java Bean getter without a backing field). </li>
+<li>This annotation is applied to a property with a name that conflicts with a read document field. For example, if a POJO has a field `firstName` annotated by <code>@DocumentId</code>, and there is a property from the document named `firstName` as well, an exception is thrown when you try to read the document into the POJO via <code><a href="../-document-snapshot/to-object.html">DocumentSnapshot#toObject</a></code> or <code><a href="../-document-reference/get.html">DocumentReference#get</a></code>. </li>
+<li> </li>
+</ul>
+ </p>
+<p>When using a POJO to write to a document (via <code><a href="../-document-reference/set.html">DocumentReference#set</a></code> or @<code><a href="../-write-batch/set.html"> </a></code>), the property annotated by <code>@DocumentId</code> is ignored, which allows writing the POJO back to any document, even if it's not the origin of the POJO.</p>
+</BODY>
+</HTML>

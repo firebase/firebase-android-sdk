@@ -9,8 +9,8 @@
 <br/>
 <h1>DocumentChange</h1>
 <code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">DocumentChange</span></code>
-<p>A DocumentChange represents a change to the documents matching a query. It contains the document affected and a the type of change that occurred (added, modified, or removed). </p>
-<p><strong>Subclassing Note</strong>: Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
+<p>A <code>DocumentChange</code> represents a change to the documents matching a query. It contains the document affected and a the type of change that occurred (added, modified, or removed). </p>
+<p><strong>Subclassing Note</strong>: Cloud Firestore classes are not meant to be subclassed except for use in test mocks. Subclassing is not supported in production code and new SDK releases may break code that does so.</p>
 <h3>Types</h3>
 <table>
 <tbody>
@@ -41,7 +41,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getDocument</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="../-query-document-snapshot/index.html"><span class="identifier">QueryDocumentSnapshot</span></a><span class="symbol">!</span></code>
-<p>Returns the newly added or modified document if this DocumentChange is for an updated document. Returns the deleted document if this document change represents a removal.</p>
+<p>Returns the newly added or modified document if this <code>DocumentChange</code> is for an updated document. Returns the deleted document if this document change represents a removal.</p>
 </td>
 </tr>
 <tr>
@@ -50,7 +50,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getNewIndex</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code>
-<p>The index of the changed document in the result set immediately after this DocumentChange (i.e. supposing that all prior DocumentChange objects and the current DocumentChange object have been applied). Returns -1 for 'removed' events.</p>
+<p>The index of the changed document in the result set immediately after this <code>DocumentChange</code> (assuming that all prior <code>DocumentChange</code> objects and the current <code>DocumentChange</code> object have been applied). Returns -1 for 'removed' events.</p>
 </td>
 </tr>
 <tr>
@@ -59,7 +59,7 @@
 </td>
 <td>
 <code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getOldIndex</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code>
-<p>The index of the changed document in the result set immediately prior to this DocumentChange (i.e. supposing that all prior DocumentChange objects have been applied). Returns -1 for 'added' events.</p>
+<p>The index of the changed document in the result set immediately prior to this <code>DocumentChange</code> (assuming that all prior <code>DocumentChange</code> objects have been applied). Returns -1 for 'added' events.</p>
 </td>
 </tr>
 <tr>

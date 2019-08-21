@@ -1,0 +1,57 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>HttpsCallableReference - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.functions</a>&nbsp;/&nbsp;<a href="./index.html">HttpsCallableReference</a><br/>
+<br/>
+<h1>HttpsCallableReference</h1>
+<code><span class="keyword">open</span> <span class="keyword">class </span><span class="identifier">HttpsCallableReference</span></code>
+<p>A reference to a particular Callable HTTPS trigger in Cloud Functions.</p>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a href="call.html">call</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">call</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.functions.HttpsCallableReference$call(kotlin.Any)/data">data</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Executes this Callable HTTPS trigger asynchronously. </p>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">call</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Executes this HTTPS endpoint asynchronously without arguments. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="get-timeout.html">getTimeout</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">getTimeout</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code>
+<p>Returns the timeout for calls from this instance of Functions.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="set-timeout.html">setTimeout</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">setTimeout</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.functions.HttpsCallableReference$setTimeout(kotlin.Long, TimeUnit)/timeout">timeout</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">, </span><span class="identifier" id="com.google.firebase.functions.HttpsCallableReference$setTimeout(kotlin.Long, TimeUnit)/units">units</span><span class="symbol">:</span>&nbsp;<span class="identifier">TimeUnit</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code>
+<p>Changes the timeout for calls from this instance of Functions. The default is 60 seconds.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p><a href="with-timeout.html">withTimeout</a></p>
+</td>
+<td>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">withTimeout</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.functions.HttpsCallableReference$withTimeout(kotlin.Long, TimeUnit)/timeout">timeout</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">, </span><span class="identifier" id="com.google.firebase.functions.HttpsCallableReference$withTimeout(kotlin.Long, TimeUnit)/units">units</span><span class="symbol">:</span>&nbsp;<span class="identifier">TimeUnit</span><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><a href="./index.html"><span class="identifier">HttpsCallableReference</span></a><span class="symbol">!</span></code>
+<p>Creates a new reference with the given timeout for calls. The default is 60 seconds.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

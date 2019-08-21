@@ -1,0 +1,46 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>HttpsCallableReference.call - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.functions</a>&nbsp;/&nbsp;<a href="index.html">HttpsCallableReference</a>&nbsp;/&nbsp;<a href="./call.html">call</a><br/>
+<br/>
+<h1>call</h1>
+<a name="com.google.firebase.functions.HttpsCallableReference$call(kotlin.Any)"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">call</span><span class="symbol">(</span><span class="identifier" id="com.google.firebase.functions.HttpsCallableReference$call(kotlin.Any)/data">data</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">!</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Executes this Callable HTTPS trigger asynchronously. </p>
+<p>The data passed into the trigger can be any of the following types: </p>
+<ul> <li>Any primitive type, including null, int, long, float, and boolean. </li>
+<li>String </li>
+<li>List&lt;?&gt;, where the contained objects are also one of these types. </li>
+<li>Map&lt;String, ?&gt;, where the values are also one of these types. </li>
+<li>JSONArray </li>
+<li>JSONObject </li>
+<li>JSONObject.NULL </li>
+</ul>
+ 
+<p>If the returned task fails, the Exception will be one of the following types: </p>
+<ul> <li>IOException - if the HTTPS request failed to connect. </li>
+<li>FirebaseFunctionsException - if the request connected, but the function returned an error. </li>
+</ul>
+ 
+<p>The request to the Cloud Functions backend made by this method automatically includes a Firebase Instance ID token to identify the app instance. If a user is logged in with Firebase Auth, an auth token for the user will also be automatically included. </p>
+<p>Firebase Instance ID sends data to the Firebase backend periodically to collect information regarding the app instance. To stop this, see com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId. It will resume with a new Instance ID the next time you call this method.</p>
+<h3>Parameters</h3>
+<p><a name="data"></a>
+<code>data</code> - <span class="symbol">:</span> Parameters to pass to the trigger.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A Task that will be completed when the HTTPS request has completed.</p>
+<p><strong>See Also</strong><br/>
+<a href="https://developer.android.com/reference/org/json/JSONArray.html">org.json.JSONArray</a><a href="https://developer.android.com/reference/org/json/JSONObject.html">org.json.JSONObject</a><a href="https://developer.android.com/reference/java/io/IOException.html">java.io.IOException</a><a href="../-firebase-functions-exception/index.html">FirebaseFunctionsException</a></p>
+<a name="com.google.firebase.functions.HttpsCallableReference$call()"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">call</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Executes this HTTPS endpoint asynchronously without arguments. </p>
+<p>The request to the Cloud Functions backend made by this method automatically includes a Firebase Instance ID token to identify the app instance. If a user is logged in with Firebase Auth, an auth token for the user will also be automatically included. </p>
+<p>Firebase Instance ID sends data to the Firebase backend periodically to collect information regarding the app instance. To stop this, see com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId. It will resume with a new Instance ID the next time you call this method.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A Task that will be completed when the HTTPS request has completed.</p>
+</BODY>
+</HTML>

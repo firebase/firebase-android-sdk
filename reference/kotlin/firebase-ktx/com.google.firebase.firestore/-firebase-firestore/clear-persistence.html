@@ -1,0 +1,19 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>FirebaseFirestore.clearPersistence - firebase-ktx</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">firebase-ktx</a>&nbsp;/&nbsp;<a href="../index.html">com.google.firebase.firestore</a>&nbsp;/&nbsp;<a href="index.html">FirebaseFirestore</a>&nbsp;/&nbsp;<a href="./clear-persistence.html">clearPersistence</a><br/>
+<br/>
+<h1>clearPersistence</h1>
+<a name="com.google.firebase.firestore.FirebaseFirestore$clearPersistence()"></a>
+<code><span class="keyword">open</span> <span class="keyword">fun </span><span class="identifier">clearPersistence</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><span class="identifier">Task</span><span class="symbol">!</span></code>
+<p>Clears the persistent storage, including pending writes and cached documents. </p>
+<p>Must be called while the <code>FirebaseFirestore</code> instance is not started (after the app is shutdown or when the app is first initialized). On startup, this method must be called before other methods (other than #setFirestoreSettings()). If the <code>FirebaseFirestore</code> instance is still running, the <code>Task</code> will fail with an error code of <code>FAILED_PRECONDITION</code>. </p>
+<p>Note: <code>clearPersistence()</code> is primarily intended to help write reliable tests that use Cloud Firestore. It uses an efficient mechanism for dropping existing data but does not attempt to securely overwrite or otherwise make cached data unrecoverable. For applications that are sensitive to the disclosure of cached data in between user sessions, we strongly recommend not enabling persistence at all.</p>
+<p><strong>Return</strong><br/>
+<span class="symbol">:</span> A <code>Task</code> that is resolved when the persistent storage is cleared. Otherwise, the <code>Task</code> is rejected with an error.</p>
+</BODY>
+</HTML>
