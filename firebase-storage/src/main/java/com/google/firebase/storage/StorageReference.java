@@ -626,15 +626,20 @@ public class StorageReference implements Comparable<StorageReference> {
         new Continuation<ListResult, Task<Void>>() {
           @Override
           public Task<Void> then(@NonNull Task<ListResult> currentPage) {
-            ListResult result = currentPage.getResult();
-            prefixes.addAll(result.getPrefixes());
-            items.addAll(result.getItems());
+            if (currentPage.isSuccessful()) {
+              ListResult result = currentPage.getResult();
+              prefixes.addAll(result.getPrefixes());
+              items.addAll(result.getItems());
 
-            if (result.getPageToken() != null) {
-              Task<ListResult> nextPage = listHelper(/* maxResults= */ null, result.getPageToken());
-              nextPage.continueWithTask(executor, this);
+              if (result.getPageToken() != null) {
+                Task<ListResult> nextPage =
+                    listHelper(/* maxResults= */ null, result.getPageToken());
+                nextPage.continueWithTask(executor, this);
+              } else {
+                pendingResult.setResult(new ListResult(prefixes, items, /* pageToken= */ null));
+              }
             } else {
-              pendingResult.setResult(new ListResult(prefixes, items, /* pageToken= */ null));
+              pendingResult.setException(currentPage.getException());
             }
 
             return Tasks.forResult(null);

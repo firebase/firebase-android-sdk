@@ -1,0 +1,51 @@
+// Signature format: 2.0
+package com.google.firebase.functions {
+
+  public class FirebaseFunctions {
+    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull FirebaseApp, @NonNull String);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull FirebaseApp);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull String);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance();
+    method public void useFunctionsEmulator(@NonNull String);
+  }
+
+  public class FirebaseFunctionsException {
+    method @NonNull public com.google.firebase.functions.FirebaseFunctionsException.Code getCode();
+    method @Nullable public Object getDetails();
+  }
+
+  public enum FirebaseFunctionsException.Code {
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code ABORTED;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code ALREADY_EXISTS;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code CANCELLED;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code DATA_LOSS;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code DEADLINE_EXCEEDED;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code FAILED_PRECONDITION;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code INTERNAL;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code INVALID_ARGUMENT;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code NOT_FOUND;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code OK;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code OUT_OF_RANGE;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code PERMISSION_DENIED;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code RESOURCE_EXHAUSTED;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code UNAUTHENTICATED;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code UNAVAILABLE;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code UNIMPLEMENTED;
+    enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code UNKNOWN;
+  }
+
+  public class HttpsCallableReference {
+    method @NonNull public Task<HttpsCallableResult> call(@Nullable Object);
+    method @NonNull public Task<HttpsCallableResult> call();
+    method public long getTimeout();
+    method public void setTimeout(long, @NonNull TimeUnit);
+    method @NonNull public com.google.firebase.functions.HttpsCallableReference withTimeout(long, @NonNull TimeUnit);
+  }
+
+  public class HttpsCallableResult {
+    method @Nullable public Object getData();
+  }
+
+}
+

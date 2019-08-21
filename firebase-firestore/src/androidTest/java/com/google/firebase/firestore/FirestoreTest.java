@@ -1100,6 +1100,22 @@ public class FirestoreTest {
   }
 
   @Test
+  public void testCanStopListeningAfterShutdown() {
+    FirebaseFirestore instance = testFirestore();
+    DocumentReference reference = instance.document("abc/123");
+    EventAccumulator<DocumentSnapshot> eventAccumulator = new EventAccumulator<>();
+    ListenerRegistration registration = reference.addSnapshotListener(eventAccumulator.listener());
+    eventAccumulator.await();
+
+    waitFor(instance.shutdown());
+
+    // This should proceed without error.
+    registration.remove();
+    // Multiple calls should proceed as an effectively no-op.
+    registration.remove();
+  }
+
+  @Test
   public void testWaitForPendingWritesResolves() {
     DocumentReference documentReference = testCollection("abc").document("123");
     FirebaseFirestore firestore = documentReference.getFirestore();
