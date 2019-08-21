@@ -14,6 +14,9 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import androidx.annotation.Nullable;
@@ -26,21 +29,15 @@ import com.google.protobuf.Timestamp;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Migration logic to periodically backfill data after a schema migration. Backfill logic in this
- * class runs unconditionally at least once and is idempotent once the backfill completes. All
- * backfills are scheduled with a delay to reduce the impact on client startup performance.
- *
- * <p>Backfills are not guaranteed to process all entries. Instead, a small subset is migrated
- * periodically to decrease the overall impact on performance. If there is more data left to
- * migrate, the backfill logic schedules a further delayed run on the AsyncQueue.
+ * Migration logic to backfill data after a schema migration. Backfills run periodically and migrate
+ * a subset of data at a time until all data has been converted.
  */
 class SQLiteDataBackfill {
   private static final String LOG_TAG = "SQLiteDataBackfill";
 
-  // We wait 43 seconds between cycles to reduce potential clashes with LRU GC.
-  private static final long MIGRATION_DELAY_MS = TimeUnit.SECONDS.toMillis(43);
+  private static final long MIGRATION_DELAY_MS = TimeUnit.SECONDS.toMillis(2);
 
-  @VisibleForTesting static final int BACKFILL_MIGRATION_SIZE = 100;
+  @VisibleForTesting static final int BACKFILL_BATCH_SIZE = 20;
 
   private final SQLiteDatabase db;
   private final AsyncQueue asyncQueue;
@@ -51,48 +48,51 @@ class SQLiteDataBackfill {
     this.asyncQueue = queue;
   }
 
-  /** Schedules delayed backfills on the AsyncQueue. */
+  /**
+   * Schedules data backfill on the AsyncQueue. The backfill runs periodically until all data has
+   * been processed. If all data has already been processed, the backfill exits early.
+   */
   void start() {
+    hardAssert(backfillTask == null, "start() called multiple times");
+    enqueue();
+  }
+
+  private void enqueue() {
     backfillTask =
         asyncQueue.enqueueAfterDelay(
             AsyncQueue.TimerId.DATA_BACKFILL,
             MIGRATION_DELAY_MS,
             () -> {
-              boolean done;
+              if (db.isOpen()) {
+                boolean done;
+                db.beginTransaction();
+                try {
+                  done = populateReadTime();
+                  db.setTransactionSuccessful();
+                } finally {
+                  db.endTransaction();
+                }
 
-              db.beginTransaction();
-              try {
-                done = populateReadTime();
-                db.setTransactionSuccessful();
-              } finally {
-                db.endTransaction();
-              }
-
-              if (!done) {
-                start();
+                if (!done) {
+                  start();
+                }
               }
             });
-  }
-
-  void shutdown() {
-    backfillTask.cancel();
   }
 
   /**
    * Populates the read time used during Index-Free query processing.
    *
-   * @return Whether the migration finished.
+   * @return Whether the backfill finished.
    */
   boolean populateReadTime() {
     boolean[] done = new boolean[] {false};
 
     SQLitePersistence.Query watermarkQuery =
-        new SQLitePersistence.Query(
-            db, "SELECT first_document_without_read_time FROM target_globals");
+        new SQLitePersistence.Query(db, "SELECT read_time_backfill_watermark FROM target_globals");
     watermarkQuery.first(
         value -> {
-          // The read time migration sets the watermark to NULL when the migration
-          // completes.
+          // The read time backfill sets the watermark to NULL when the migration completes.
           if (value.isNull(0)) {
             Logger.debug(LOG_TAG, "No read times to backfill");
             return;
@@ -106,8 +106,8 @@ class SQLiteDataBackfill {
               new SQLitePersistence.Query(
                       db,
                       "SELECT path, contents FROM remote_documents "
-                          + "WHERE read_time_seconds IS NULL AND path >= ? ORDER BY path LIMIT ?")
-                  .binding(encodedFirstDocumentWithoutReadTime, BACKFILL_MIGRATION_SIZE);
+                          + "WHERE read_time_seconds IS NULL AND path > ? ORDER BY path LIMIT ?")
+                  .binding(encodedFirstDocumentWithoutReadTime, BACKFILL_BATCH_SIZE);
 
           query.forEach(
               cursor -> {
@@ -116,13 +116,10 @@ class SQLiteDataBackfill {
                 String encodedCurrentPath = cursor.getString(0);
                 try {
                   Timestamp readTime = extractReadTime(cursor.getBlob(1));
-                  if (readTime == null) {
-                    Logger.warn(
-                        LOG_TAG,
-                        "Failed to detect document for key %s during read time backfill",
-                        EncodedPath.decodeFieldPath(encodedCurrentPath));
-                    return;
-                  }
+                  hardAssert(
+                      readTime != null,
+                      "Failed to detect read time for document %s",
+                      EncodedPath.decodeFieldPath(encodedCurrentPath));
 
                   SQLiteStatement updateStatement =
                       db.compileStatement(
@@ -133,20 +130,20 @@ class SQLiteDataBackfill {
                   updateStatement.executeUpdateDelete();
                   lastMigratedKey[0] = encodedCurrentPath;
                 } catch (InvalidProtocolBufferException e) {
-                  Logger.warn(
-                      LOG_TAG,
-                      "Failed to decode document for key %s during read time backfill",
+                  throw fail(
+                      "Failed to decode document %s during read time backfill",
                       EncodedPath.decodeFieldPath(encodedCurrentPath));
                 }
               });
 
           SQLiteStatement updateStatement =
-              db.compileStatement("UPDATE target_globals SET first_document_without_read_time = ?");
-          if (rowCount[0] == BACKFILL_MIGRATION_SIZE && lastMigratedKey[0] != null) {
-            String nextKey = EncodedPath.prefixSuccessor(lastMigratedKey[0]);
-            updateStatement.bindString(1, nextKey);
+              db.compileStatement("UPDATE target_globals SET read_time_backfill_watermark = ?");
+          if (rowCount[0] == BACKFILL_BATCH_SIZE && lastMigratedKey[0] != null) {
+            updateStatement.bindString(1, lastMigratedKey[0]);
             Logger.debug(
-                LOG_TAG, "Backfilled the read time for all documents up until %s", nextKey);
+                LOG_TAG,
+                "Backfilled the read time for all documents up until %s",
+                lastMigratedKey[0]);
             done[0] = false;
           } else {
             updateStatement.bindNull(1);

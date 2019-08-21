@@ -368,19 +368,15 @@ class SQLiteSchema {
   }
 
   private void addReadTimeMigrationWatermark() {
-    if (!tableContainsColumn("target_globals", "first_document_without_read_time")) {
-      db.execSQL("ALTER TABLE target_globals ADD COLUMN first_document_without_read_time TEXT");
+    if (!tableContainsColumn("target_globals", "read_time_backfill_watermark")) {
+      db.execSQL("ALTER TABLE target_globals ADD COLUMN read_time_backfill_watermark TEXT");
     }
 
-    SQLiteStatement insertFirstMissingReadTime =
-        db.compileStatement(
-            "UPDATE target_globals SET first_document_without_read_time = ("
-                + "SELECT path FROM remote_documents "
-                + "WHERE read_time_seconds IS NULL ORDER BY path LIMIT 1)");
+    SQLiteStatement setReadTimeWatermark =
+        db.compileStatement("UPDATE target_globals SET read_time_backfill_watermark = ''");
 
     hardAssert(
-        insertFirstMissingReadTime.executeInsert() != -1,
-        "Failed to insert read time migration watermark");
+        setReadTimeWatermark.executeInsert() != -1, "Failed to set read time migration watermark");
   }
 
   /**

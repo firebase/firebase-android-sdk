@@ -55,7 +55,6 @@ import java.util.List;
  * helper routines that make dealing with SQLite much more pleasant.
  */
 public final class SQLitePersistence extends Persistence {
-
   /**
    * Creates the database name that is used to identify the database to be used with a Firestore
    * instance. Note that this needs to stay stable across releases. The database is uniquely
@@ -184,7 +183,6 @@ public final class SQLitePersistence extends Persistence {
   public void shutdown() {
     hardAssert(started, "SQLitePersistence shutdown without start!");
     started = false;
-    dataBackfill.shutdown();
     db.close();
     db = null;
   }

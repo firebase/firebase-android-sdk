@@ -71,8 +71,8 @@ public class AsyncQueue {
     /** A timer used to periodically attempt LRU Garbage collection */
     GARBAGE_COLLECTION,
 
-    /** A timer for the data backfill after a schema migration. */
-    DATA_BACKFILL;
+    /** Represents a task that backfills data after a schema change. */
+    DATA_BACKFILL
   }
 
   /**
@@ -116,6 +116,7 @@ public class AsyncQueue {
      * the AsyncQueue) provides a guarantee that the task will not be run.
      */
     public void cancel() {
+      verifyIsCurrentThread();
       if (scheduledFuture != null) {
         // NOTE: We don't rely on this cancel() succeeding since handleDelayElapsed() will become
         // a no-op anyway (since markDone() sets scheduledFuture to null).

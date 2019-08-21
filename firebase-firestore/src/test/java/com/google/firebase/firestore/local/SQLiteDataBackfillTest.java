@@ -68,23 +68,21 @@ public class SQLiteDataBackfillTest {
     schema.runMigrations(0, 8);
 
     // Use one more document than fits in a single batch.
-    int documentCount = SQLiteDataBackfill.BACKFILL_MIGRATION_SIZE + 1;
+    int documentCount = SQLiteDataBackfill.BACKFILL_BATCH_SIZE + 1;
     for (int i = 0; i < documentCount; ++i) {
       String paddedPath = String.format("coll/doc_%03d", i);
-      db.execSQL(
-          "INSERT INTO remote_documents (path, contents) VALUES (?, ?)",
-          new Object[] {encode(path(paddedPath)), createDummyDocument(paddedPath)});
+      insertDocument(paddedPath);
     }
 
     // Run the index-free migration.
     schema.runMigrations(8, 9);
 
     verifyRemainingBackfillCount(documentCount);
-    verifyReadTimeWatermark(encode(path("coll/doc_000")));
+    verifyReadTimeWatermark("");
 
     backfill.populateReadTime();
     verifyRemainingBackfillCount(1);
-    verifyReadTimeWatermark(EncodedPath.prefixSuccessor(encode(path("coll/doc_099"))));
+    verifyReadTimeWatermark("coll/doc_019");
 
     backfill.populateReadTime();
     verifyRemainingBackfillCount(0);
@@ -97,25 +95,56 @@ public class SQLiteDataBackfillTest {
   }
 
   @Test
-  public void runsOnEmptyDatabase() {
+  public void deosNotMissDocumentsThatSharePrefix() {
     // Initialize the schema to the state prior to the index-free migration.
-    schema.runMigrations(0, 9);
-    verifyRemainingBackfillCount(0);
-    verifyReadTimeWatermark(null);
+    schema.runMigrations(0, 8);
+
+    int batchSize = SQLiteDataBackfill.BACKFILL_BATCH_SIZE;
+    String lastDocumentPathOfFirstBatch = "";
+    for (int i = 0; i < batchSize; ++i) {
+      lastDocumentPathOfFirstBatch = "coll/doc_" + (char) (i + 'a');
+      insertDocument(lastDocumentPathOfFirstBatch);
+    }
+
+    String nextDocument = lastDocumentPathOfFirstBatch + "a";
+    insertDocument(nextDocument);
+
+    // Run the index-free migration.
+    schema.runMigrations(8, 9);
+
+    verifyRemainingBackfillCount(batchSize + 1);
+    verifyReadTimeWatermark("");
+
+    backfill.populateReadTime();
+    verifyRemainingBackfillCount(1);
+    verifyReadTimeWatermark(lastDocumentPathOfFirstBatch);
 
     backfill.populateReadTime();
     verifyRemainingBackfillCount(0);
     verifyReadTimeWatermark(null);
   }
 
-  private void verifyReadTimeWatermark(@Nullable String expectedWatermark) {
-    new SQLitePersistence.Query(db, "SELECT first_document_without_read_time FROM target_globals")
+  @Test
+  public void runsOnEmptyDatabase() {
+    schema.runMigrations(0, 9);
+    verifyRemainingBackfillCount(0);
+    verifyReadTimeWatermark("");
+
+    backfill.populateReadTime();
+    verifyRemainingBackfillCount(0);
+    verifyReadTimeWatermark(null);
+  }
+
+  private void verifyReadTimeWatermark(@Nullable String path) {
+    new SQLitePersistence.Query(db, "SELECT read_time_backfill_watermark FROM target_globals")
         .first(
             value -> {
-              if (expectedWatermark != null) {
-                assertEquals(expectedWatermark, value.getString(0));
-              } else {
+              if (path == null) {
                 assertTrue(value.isNull(0));
+              } else if (path.equals("")) {
+                assertEquals("", value.getString(0));
+              } else {
+                assertEquals(encode(path(path)), value.getString(0));
               }
             });
   }
@@ -124,5 +153,11 @@ public class SQLiteDataBackfillTest {
     new SQLitePersistence.Query(
             db, "SELECT COUNT(*) FROM remote_documents WHERE read_time_seconds IS NULL")
         .first(value -> assertEquals(expectedDocumentCount, value.getInt(0)));
+  }
+
+  private void insertDocument(String path) {
+    db.execSQL(
+        "INSERT INTO remote_documents (path, contents) VALUES (?, ?)",
+        new Object[] {encode(path(path)), createDummyDocument(path)});
   }
 }
