@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 import androidx.annotation.NonNull;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.android.gms.common.internal.Preconditions;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -395,8 +396,16 @@ public class TestUtil {
 
   public static RemoteEvent addedRemoteEvent(
       MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
-    DocumentChange change =
-        new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
+    return addedRemoteEvent(Collections.singletonList(doc), updatedInTargets, removedFromTargets);
+  }
+
+  public static RemoteEvent addedRemoteEvent(
+      List<MaybeDocument> docs, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+    Preconditions.checkArgument(!docs.isEmpty(), "Cannot pass empty docs array");
+
+    ResourcePath collectionPath = docs.get(0).getKey().getPath().popLast();
+    SnapshotVersion version = docs.get(0).getVersion();
+
     WatchChangeAggregator aggregator =
         new WatchChangeAggregator(
             new WatchChangeAggregator.TargetMetadataProvider() {
@@ -407,11 +416,16 @@ public class TestUtil {
 
               @Override
               public QueryData getQueryDataForTarget(int targetId) {
-                return queryData(targetId, QueryPurpose.LISTEN, doc.getKey().toString());
+                return queryData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
               }
             });
-    aggregator.handleDocumentChange(change);
-    return aggregator.createRemoteEvent(doc.getVersion());
+
+    for (MaybeDocument doc : docs) {
+      DocumentChange change =
+          new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
+      aggregator.handleDocumentChange(change);
+    }
+    return aggregator.createRemoteEvent(version);
   }
 
   public static RemoteEvent updateRemoteEvent(
@@ -510,7 +524,7 @@ public class TestUtil {
   }
 
   public static LocalViewChanges viewChanges(
-      int targetId, List<String> addedKeys, List<String> removedKeys) {
+      int targetId, boolean synced, List<String> addedKeys, List<String> removedKeys) {
     ImmutableSortedSet<DocumentKey> added = DocumentKey.emptyKeySet();
     for (String keyPath : addedKeys) {
       added = added.insert(key(keyPath));
@@ -519,7 +533,7 @@ public class TestUtil {
     for (String keyPath : removedKeys) {
       removed = removed.insert(key(keyPath));
     }
-    return new LocalViewChanges(targetId, false, added, removed);
+    return new LocalViewChanges(targetId, synced, added, removed);
   }
 
   /** Creates a resume token to match the given snapshot version. */
