@@ -69,7 +69,7 @@ public class AsyncQueue {
      */
     ONLINE_STATE_TIMEOUT,
     /** A timer used to periodically attempt LRU Garbage collection */
-    GARBAGE_COLLECTION
+    GARBAGE_COLLECTION,
 
     /**
      * A timer used to retry transactions. Since there can be multiple concurrent transactions,
