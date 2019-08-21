@@ -98,3 +98,4 @@ def api_information(auth_token, repo_name, issue_number):
     repo = github_client.get_repo(repo_name)
     pr = repo.get_pull(int(issue_number))
     pr.create_issue_comment(comment_string)
+    exit(1)
