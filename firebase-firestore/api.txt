@@ -165,10 +165,6 @@ package com.google.firebase.firestore {
     method public static void setLoggingEnabled(boolean);
   }
 
-  public static interface FirebaseFirestore.InstanceRegistry {
-    method public void remove(@NonNull String);
-  }
-
   public class FirebaseFirestoreException {
     ctor public FirebaseFirestoreException(@NonNull String, @NonNull com.google.firebase.firestore.FirebaseFirestoreException.Code);
     ctor public FirebaseFirestoreException(@NonNull String, @NonNull com.google.firebase.firestore.FirebaseFirestoreException.Code, @Nullable Throwable);
