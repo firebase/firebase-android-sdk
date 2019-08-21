@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 import androidx.annotation.NonNull;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.android.gms.common.internal.Preconditions;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -395,8 +396,13 @@ public class TestUtil {
 
   public static RemoteEvent addedRemoteEvent(
       MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
-    DocumentChange change =
-        new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
+    return addedRemoteEvent(Collections.singletonList(doc), updatedInTargets, removedFromTargets);
+  }
+
+  public static RemoteEvent addedRemoteEvent(
+      List<MaybeDocument> docs, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+    Preconditions.checkArgument(!docs.isEmpty(), "Cannot pass empty docs array");
+
     WatchChangeAggregator aggregator =
         new WatchChangeAggregator(
             new WatchChangeAggregator.TargetMetadataProvider() {
@@ -407,11 +413,19 @@ public class TestUtil {
 
               @Override
               public QueryData getQueryDataForTarget(int targetId) {
-                return queryData(targetId, QueryPurpose.LISTEN, doc.getKey().toString());
+                ResourcePath collectionPath = docs.get(0).getKey().getPath().popLast();
+                return queryData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
               }
             });
-    aggregator.handleDocumentChange(change);
-    return aggregator.createRemoteEvent(doc.getVersion());
+
+    for (MaybeDocument doc : docs) {
+      DocumentChange change =
+          new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
+      aggregator.handleDocumentChange(change);
+    }
+
+    SnapshotVersion version = docs.get(0).getVersion();
+    return aggregator.createRemoteEvent(version);
   }
 
   public static RemoteEvent updateRemoteEvent(
