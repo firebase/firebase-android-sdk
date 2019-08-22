@@ -1386,4 +1386,27 @@ public abstract class LocalStoreTestCase {
     rejectMutation();
     assertEquals(MutationBatch.UNKNOWN, localStore.getHighestUnacknowledgedBatchId());
   }
+
+  @Test
+  public void testOnlyPersistsUpdatesForDocumentsWhenVersionChanges() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+    assertTargetId(2);
+
+    applyRemoteEvent(
+        addedRemoteEvent(doc("foo/bar", 1, map("val", "old")), asList(2), emptyList()));
+    assertChanged(doc("foo/bar", 1, map("val", "old"), Document.DocumentState.SYNCED));
+    assertContains(doc("foo/bar", 1, map("val", "old"), Document.DocumentState.SYNCED));
+
+    applyRemoteEvent(
+        addedRemoteEvent(
+            asList(doc("foo/bar", 1, map("val", "new")), doc("foo/baz", 2, map("val", "new"))),
+            asList(2),
+            emptyList()));
+
+    assertChanged(doc("foo/baz", 2, map("val", "new"), Document.DocumentState.SYNCED));
+    // The update for foo/bar is ignored.
+    assertContains(doc("foo/bar", 1, map("val", "old"), Document.DocumentState.SYNCED));
+    assertContains(doc("foo/baz", 2, map("val", "new"), Document.DocumentState.SYNCED));
+  }
 }
