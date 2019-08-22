@@ -155,48 +155,59 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         (ImmutableSortedMap<DocumentKey, Document>[])
             new ImmutableSortedMap[] {DocumentCollections.emptyDocumentMap()};
 
+    SQLitePersistence.Query sqlQuery;
+    if (sinceReadTime.equals(SnapshotVersion.NONE)) {
+      sqlQuery =
+          db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
+              .binding(prefixPath, prefixSuccessorPath);
+    } else {
+      // Execute an index-free query and filter by read time. This is safe since all document
+      // changes to queries that have a lastLimboFreeSnapshotVersion (`sinceReadTime`) have a read
+      // time set.
+      sqlQuery =
+          db.query(
+                  "SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?"
+                      + "AND (read_time_seconds > ? OR (read_time_seconds = ? AND read_time_nanos > ?))")
+              .binding(
+                  prefixPath,
+                  prefixSuccessorPath,
+                  readTime.getSeconds(),
+                  readTime.getSeconds(),
+                  readTime.getNanoseconds());
+    }
+
     int rowsProcessed =
-        db.query(
-                "SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ? "
-                    + "AND (read_time_seconds IS NULL OR read_time_seconds > ? "
-                    + "OR (read_time_seconds = ? AND read_time_nanos > ?))")
-            .binding(
-                prefixPath,
-                prefixSuccessorPath,
-                readTime.getSeconds(),
-                readTime.getSeconds(),
-                readTime.getNanoseconds())
-            .forEach(
-                row -> {
-                  // TODO: Actually implement a single-collection query
-                  //
-                  // The query is actually returning any path that starts with the query path prefix
-                  // which may include documents in subcollections. For example, a query on 'rooms'
-                  // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
-                  // discarding rows with document keys more than one segment longer than the query
-                  // path.
-                  ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
-                  if (path.length() != immediateChildrenPathLength) {
-                    return;
-                  }
+        sqlQuery.forEach(
+            row -> {
+              // TODO: Actually implement a single-collection query
+              //
+              // The query is actually returning any path that starts with the query path prefix
+              // which may include documents in subcollections. For example, a query on 'rooms'
+              // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
+              // discarding rows with document keys more than one segment longer than the query
+              // path.
+              ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+              if (path.length() != immediateChildrenPathLength) {
+                return;
+              }
 
-                  byte[] rawDocument = row.getBlob(1);
+              byte[] rawDocument = row.getBlob(1);
 
-                  // Since scheduling background tasks incurs overhead, we only dispatch to a
-                  // background thread if there are still some documents remaining.
-                  Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
-                  executor.execute(
-                      () -> {
-                        MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
+              // Since scheduling background tasks incurs overhead, we only dispatch to a
+              // background thread if there are still some documents remaining.
+              Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
+              executor.execute(
+                  () -> {
+                    MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
 
-                        if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
-                          synchronized (SQLiteRemoteDocumentCache.this) {
-                            matchingDocuments[0] =
-                                matchingDocuments[0].insert(maybeDoc.getKey(), (Document) maybeDoc);
-                          }
-                        }
-                      });
-                });
+                    if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
+                      synchronized (SQLiteRemoteDocumentCache.this) {
+                        matchingDocuments[0] =
+                            matchingDocuments[0].insert(maybeDoc.getKey(), (Document) maybeDoc);
+                      }
+                    }
+                  });
+            });
 
     statsCollector.recordRowsRead(STATS_TAG, rowsProcessed);
 

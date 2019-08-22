@@ -423,12 +423,17 @@ public class SQLiteSchemaTest {
         new Object[] {encode(path("coll/new")), 0, 3000, createDummyDocument("coll/new")});
 
     SQLiteRemoteDocumentCache remoteDocumentCache = createRemoteDocumentCache();
-    ImmutableSortedMap<DocumentKey, com.google.firebase.firestore.model.Document> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(2));
 
-    // Verify that queries return the documents that existed prior to the index-free migration, as
-    // well as any documents with a newer read time than the one passed in.
-    assertResultsContain(results, "coll/existing", "coll/new");
+    // Verify that queries with SnapshotVersion.NONE return all results, regardless of whether the
+    // read time has been set.
+    ImmutableSortedMap<DocumentKey, com.google.firebase.firestore.model.Document> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(0));
+    assertResultsContain(results, "coll/existing", "coll/old", "coll/current", "coll/new");
+
+    // Queries that filter by read time only return documents that were written after the index-free
+    // migration.
+    results = remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(2));
+    assertResultsContain(results, "coll/new");
   }
 
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
