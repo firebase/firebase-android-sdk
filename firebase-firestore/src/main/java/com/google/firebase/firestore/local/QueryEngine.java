@@ -24,7 +24,7 @@ import com.google.firebase.firestore.model.MaybeDocument;
 
 /**
  * Represents a query engine capable of performing queries over the local document cache. You must
- * call setQueryDataProvider() and setLocalDocumentsView() before using.
+ * call setLocalDocumentsView() before using.
  */
 public interface QueryEngine {
 
