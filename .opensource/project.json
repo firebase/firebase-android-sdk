@@ -8,7 +8,7 @@
     "pages": {
         "README.md": "Development Guide",
         "docs/ktx/common.md": "Common KTX",
-        "docs/ktx/firestore.md": "Firestore KTX"
+        "docs/ktx/firestore.md": "Firestore KTX",
         "docs/ktx/functions.md": "Functions KTX"
     },
     "related": [
