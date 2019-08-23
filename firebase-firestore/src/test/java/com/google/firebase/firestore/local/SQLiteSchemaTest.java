@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
+import static com.google.firebase.firestore.util.Assert.fail;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -36,10 +37,13 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.MaybeDocument;
+import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firestore.v1.Document;
 import com.google.firestore.v1.Write;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -436,6 +440,68 @@ public class SQLiteSchemaTest {
     assertResultsContain(results, "coll/new");
   }
 
+  @Test
+  public void dropsLastLimboFreeSnapshotIfPreviouslyDowngraded() {
+    schema.runMigrations(0, 9);
+
+    db.execSQL(
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        new Object[] {1, "foo", createDummyQueryTargetWithLimboFreeVersion(1).toByteArray()});
+    db.execSQL(
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?, ?, ?)",
+        new Object[] {2, "bar", createDummyQueryTargetWithLimboFreeVersion(2).toByteArray()});
+    db.execSQL(
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        new Object[] {3, "baz", createDummyQueryTargetWithLimboFreeVersion(3).toByteArray()});
+
+    schema.runMigrations(0, 8);
+    schema.runMigrations(8, 9);
+
+    int rowCount =
+        new SQLitePersistence.Query(db, "SELECT target_id, target_proto FROM targets")
+            .forEach(
+                cursor -> {
+                  int targetId = cursor.getInt(0);
+                  byte[] targetProtoBytes = cursor.getBlob(1);
+
+                  try {
+                    Target targetProto = Target.parseFrom(targetProtoBytes);
+                    assertEquals(targetId, targetProto.getTargetId());
+                    assertFalse(targetProto.hasLastLimboFreeSnapshotVersion());
+                  } catch (InvalidProtocolBufferException e) {
+                    fail("Failed to decode Query data");
+                  }
+                });
+
+    assertEquals(3, rowCount);
+  }
+
+  @Test
+  public void keepsLastLimboFreeSnapshotIfNotDowngraded() {
+    schema.runMigrations(0, 9);
+
+    db.execSQL(
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        new Object[] {1, "foo", createDummyQueryTargetWithLimboFreeVersion(1).toByteArray()});
+
+    // Make sure that we don't drop the lastLimboFreeSnapshotVersion if we are already on schema
+    // version 9.
+    schema.runMigrations(9, 9);
+
+    new SQLitePersistence.Query(db, "SELECT target_proto FROM targets")
+        .forEach(
+            cursor -> {
+              byte[] targetProtoBytes = cursor.getBlob(0);
+
+              try {
+                Target targetProto = Target.parseFrom(targetProtoBytes);
+                assertTrue(targetProto.hasLastLimboFreeSnapshotVersion());
+              } catch (InvalidProtocolBufferException e) {
+                fail("Failed to decode Query data");
+              }
+            });
+  }
+
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
     DatabaseId databaseId = DatabaseId.forProject("foo");
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
@@ -458,6 +524,13 @@ public class SQLiteSchemaTest {
                 .build())
         .build()
         .toByteArray();
+  }
+
+  private Target createDummyQueryTargetWithLimboFreeVersion(int targetId) {
+    return Target.newBuilder()
+        .setTargetId(targetId)
+        .setLastLimboFreeSnapshotVersion(Timestamp.newBuilder().setSeconds(42))
+        .build();
   }
 
   private void assertResultsContain(
