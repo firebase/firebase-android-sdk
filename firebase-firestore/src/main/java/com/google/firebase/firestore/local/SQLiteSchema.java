@@ -405,7 +405,7 @@ class SQLiteSchema {
                     "UPDATE targets SET target_proto = ? WHERE target_id = ?",
                     new Object[] {targetProto.toByteArray(), targetId});
               } catch (InvalidProtocolBufferException e) {
-                fail("Failed to decode Query data for target %s", targetId);
+                throw fail("Failed to decode Query data for target %s", targetId);
               }
             });
   }
