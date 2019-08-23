@@ -2,6 +2,9 @@
 - [changed] Transactions now perform exponential backoff before retrying.
   This means transactions on highly contended documents are more likely to
   succeed.
+- [feature] Added a `terminate` method to `FirebaseFirestore` which can
+  terminate the Firestore SDK instance and release the resources held by
+  the instance.
 
 # 21.0.0
 - [changed] Transactions are now more flexible. Some sequences of operations
