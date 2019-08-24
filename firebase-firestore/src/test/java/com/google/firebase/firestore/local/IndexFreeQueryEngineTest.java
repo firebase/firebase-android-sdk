@@ -75,6 +75,8 @@ public class IndexFreeQueryEngineTest {
 
   @Before
   public void setUp() {
+    IndexFreeQueryEngine.ENABLE_FALLBACK = false;
+
     expectIndexFreeExecution = null;
 
     persistence = MemoryPersistence.createEagerGcMemoryPersistence();

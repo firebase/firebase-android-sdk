@@ -14,8 +14,10 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.os.Debug;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
@@ -51,6 +53,8 @@ import java.util.Map;
  * </ol>
  */
 public class IndexFreeQueryEngine implements QueryEngine {
+  static boolean ENABLE_FALLBACK = true;
+
   private LocalDocumentsView localDocumentsView;
 
   @Override
@@ -62,6 +66,11 @@ public class IndexFreeQueryEngine implements QueryEngine {
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
     hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
+
+    if (ENABLE_FALLBACK && !Debug.isDebuggerConnected()) {
+      // TODO(index-free): Enable index-free queries for non-debug builds
+      return executeFullCollectionScan(query);
+    }
 
     // Queries that match all document don't benefit from using IndexFreeQueries. It is more
     // efficient to scan all documents in a collection, rather than to perform individual lookups.
@@ -76,10 +85,24 @@ public class IndexFreeQueryEngine implements QueryEngine {
       return executeFullCollectionScan(query);
     }
 
-    ImmutableSortedMap<DocumentKey, Document> result =
+    ImmutableSortedMap<DocumentKey, Document> indexFreeResult =
         executeIndexFreeQuery(query, queryData, remoteKeys);
-
-    return result != null ? result : executeFullCollectionScan(query);
+    ImmutableSortedMap<DocumentKey, Document> fullCollectionScanResult =
+        executeFullCollectionScan(query);
+    
+    if (indexFreeResult == null) {
+      return fullCollectionScanResult;
+    } else {
+      if (!indexFreeResult.equals(fullCollectionScanResult)) {
+        throw fail(
+            "Unexpected query results detected in experimental query engine "
+                + "(original result size: %s, experimental result size: %s). Please file an "
+                + " issue at https://github.com/firebase/firebase-android-sdk and downgrade to "
+                + "Firestore v21.0.0. Query: %s",
+            fullCollectionScanResult.size(), indexFreeResult.size(), query.toString());
+      }
+      return indexFreeResult;
+    }
   }
 
   /**
