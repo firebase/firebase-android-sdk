@@ -25,6 +25,8 @@ import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -76,43 +78,13 @@ public class IndexFreeQueryEngine implements QueryEngine {
       return executeFullCollectionScan(query);
     }
 
-    ImmutableSortedMap<DocumentKey, Document> result =
-        executeIndexFreeQuery(query, queryData, remoteKeys);
+    ImmutableSortedMap<DocumentKey, Document> previousResults =
+        getPreviousResults(query, remoteKeys);
 
-    return result != null ? result : executeFullCollectionScan(query);
-  }
-
-  /**
-   * Attempts index-free query execution. Returns the set of query results on success, otherwise
-   * returns null.
-   */
-  private @Nullable ImmutableSortedMap<DocumentKey, Document> executeIndexFreeQuery(
-      Query query, QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
-    // Fetch the documents that matched the query at the last snapshot.
-    ImmutableSortedMap<DocumentKey, MaybeDocument> previousResults =
-        localDocumentsView.getDocuments(remoteKeys);
-
-    // Limit queries are not eligible for index-free query execution if any part of the result was
-    // modified after we received the last query snapshot. This makes sure that we re-populate the
-    // view with older documents that may sort before the modified document.
     if (query.hasLimit()
-        && containsUpdatesSinceSnapshotVersion(previousResults, queryData.getSnapshotVersion())) {
-      return null;
-    }
-
-    ImmutableSortedMap<DocumentKey, Document> results = DocumentCollections.emptyDocumentMap();
-
-    // Re-apply the query filter since previously matching documents do not necessarily still
-    // match the query.
-    for (Map.Entry<DocumentKey, MaybeDocument> entry : previousResults) {
-      MaybeDocument maybeDoc = entry.getValue();
-      if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
-        Document doc = (Document) maybeDoc;
-        results = results.insert(entry.getKey(), doc);
-      } else if (query.hasLimit()) {
-        // Limit queries with documents that no longer match need to be re-filled from cache.
-        return null;
-      }
+        && needsRefill(
+            query, queryData.getLastLimboFreeSnapshotVersion(), previousResults, remoteKeys)) {
+      return executeFullCollectionScan(query);
     }
 
     // Retrieve all results for documents that were updated since the last limbo-document free
@@ -120,28 +92,78 @@ public class IndexFreeQueryEngine implements QueryEngine {
     ImmutableSortedMap<DocumentKey, Document> updatedResults =
         localDocumentsView.getDocumentsMatchingQuery(
             query, queryData.getLastLimboFreeSnapshotVersion());
+    return previousResults.insertAll(updatedResults);
+  }
 
-    results = results.insertAll(updatedResults);
+  /**
+   * Returns the documents for the specified remote keys if they still match the query.
+   */
+  private ImmutableSortedMap<DocumentKey, Document> getPreviousResults(
+      Query query, ImmutableSortedSet<DocumentKey> remoteKeys) {
+    // Fetch the documents that matched the query at the last snapshot.
+    ImmutableSortedMap<DocumentKey, MaybeDocument> previousResults =
+        localDocumentsView.getDocuments(remoteKeys);
+
+    // Re-apply the query filter since previously matching documents do not necessarily still
+    // match the query.
+    ImmutableSortedMap<DocumentKey, Document> results = DocumentCollections.emptyDocumentMap();
+    for (Map.Entry<DocumentKey, MaybeDocument> entry : previousResults) {
+      MaybeDocument maybeDoc = entry.getValue();
+      if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
+        Document doc = (Document) maybeDoc;
+        results = results.insert(entry.getKey(), doc);
+      }
+    }
 
     return results;
+  }
+
+  /**
+   * Determines if a limit query needs to be refilled from cache, making it ineligible for
+   * index-free execution.
+   */
+  private boolean needsRefill(
+      Query query,
+      SnapshotVersion limboFreeSnapshotVersion,
+      ImmutableSortedMap<DocumentKey, Document> previousResults,
+      ImmutableSortedSet<DocumentKey> remoteKeys) {
+    hardAssert(query.hasLimit(), "Only limit queries should be refilled");
+
+    // The query doesn't need to be refilled if there were never any documents that matched the
+    // query constraint.
+    if (remoteKeys.isEmpty()) {
+      return false;
+    }
+
+    // The query needs to be refilled if a previously matching document no longer matches.
+    if (remoteKeys.size() != previousResults.size()) {
+      return true;
+    }
+
+    // Limit queries are not eligible for index-free query execution if an older document from cache
+    // may sort before a document that was previously part of the limit. This can happen if the last
+    // document of the limit could sort lower than it did when the query was last synchronized. To
+    // verify this, we use the query's comparator to determine the last document that fit the
+    // limit. If the last document was edited after the query was last synchronized, there is a
+    // chance that another document from cache sorts higher, in which case we have to perform a full
+    // cache scan.
+    Comparator<Document> comparator = query.comparator();
+    Iterator<Map.Entry<DocumentKey, Document>> it = previousResults.iterator();
+    Document lastDocumentInLimit = it.next().getValue();
+    while (it.hasNext()) {
+      Document doc = it.next().getValue();
+      if (comparator.compare(lastDocumentInLimit, doc) < 0) {
+        lastDocumentInLimit = doc;
+      }
+    }
+
+    return lastDocumentInLimit.hasPendingWrites()
+        || lastDocumentInLimit.getVersion().compareTo(limboFreeSnapshotVersion) > 0;
   }
 
   @Override
   public void handleDocumentChange(MaybeDocument oldDocument, MaybeDocument newDocument) {
     // No indexes to update.
-  }
-
-  private boolean containsUpdatesSinceSnapshotVersion(
-      ImmutableSortedMap<DocumentKey, MaybeDocument> previousResults,
-      SnapshotVersion sinceSnapshotVersion) {
-    for (Map.Entry<DocumentKey, MaybeDocument> doc : previousResults) {
-      if (doc.getValue().hasPendingWrites()
-          || doc.getValue().getVersion().compareTo(sinceSnapshotVersion) > 0) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(Query query) {
