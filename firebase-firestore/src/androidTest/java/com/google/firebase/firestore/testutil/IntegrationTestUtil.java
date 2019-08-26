@@ -280,7 +280,7 @@ public class IntegrationTestUtil {
   public static void tearDown() {
     try {
       for (FirebaseFirestore firestore : firestoreStatus.keySet()) {
-        Task<Void> result = AccessHelper.shutdown(firestore);
+        Task<Void> result = firestore.terminate();
         waitFor(result);
       }
     } finally {
