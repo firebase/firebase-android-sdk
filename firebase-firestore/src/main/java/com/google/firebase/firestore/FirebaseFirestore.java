@@ -69,7 +69,7 @@ public class FirebaseFirestore {
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataConverter dataConverter;
-  // When user requests to shutdown, use this to notify `FirestoreMultiDbComponent` to deregister
+  // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
   // this instance.
   private final InstanceRegistry instanceRegistry;
   private FirebaseFirestoreSettings settings;
@@ -333,37 +333,36 @@ public class FirebaseFirestore {
     return batch.commit();
   }
 
-  Task<Void> shutdownInternal() {
+  Task<Void> terminateInternal() {
     // The client must be initialized to ensure that all subsequent API usage throws an exception.
     this.ensureClientConfigured();
-    return client.shutdown();
+    return client.terminate();
   }
 
   /**
-   * Shuts down this {@code FirebaseFirestore} instance.
+   * Terminates this {@code FirebaseFirestore} instance.
    *
-   * <p>After shutdown only the {@link #clearPersistence()} method may be used. Any other method
-   * will throw an {@link IllegalStateException}.
+   * <p>After calling {@code terminate()} only the {@link #clearPersistence()} method may be used.
+   * Any other method will throw an {@link IllegalStateException}.
    *
-   * <p>To restart after shutdown, simply create a new instance of {@code FirebaseFirestore} with
+   * <p>To restart after termination, simply create a new instance of {@code FirebaseFirestore} with
    * {@link #getInstance()} or {@link #getInstance(FirebaseApp)}.
    *
-   * <p>Shutdown does not cancel any pending writes and any tasks that are awaiting a response from
-   * the server will not be resolved. The next time you start this instance, it will resume
-   * attempting to send these writes to the server.
+   * <p>{@code terminate()} does not cancel any pending writes and any tasks that are awaiting a
+   * response from the server will not be resolved. The next time you start this instance, it will
+   * resume attempting to send these writes to the server.
    *
-   * <p>Note: Under normal circumstances, calling {@code shutdown()} is not required. This method is
-   * useful only when you want to force this instance to release all of its resources or in
+   * <p>Note: Under normal circumstances, calling {@code terminate()} is not required. This method
+   * is useful only when you want to force this instance to release all of its resources or in
    * combination with {@link #clearPersistence} to ensure that all local state is destroyed between
    * test runs.
    *
-   * @return A {@code Task} that is resolved when the instance has been successfully shut down.
+   * @return A {@code Task} that is resolved when the instance has been successfully terminated.
    */
-  @VisibleForTesting
-  // TODO(b/135755126): Make this public and remove @VisibleForTesting
-  Task<Void> shutdown() {
+  @NonNull
+  public Task<Void> terminate() {
     instanceRegistry.remove(this.getDatabaseId().getDatabaseId());
-    return shutdownInternal();
+    return terminateInternal();
   }
 
   /**
@@ -446,7 +445,7 @@ public class FirebaseFirestore {
     asyncQueue.enqueueAndForgetEvenAfterShutdown(
         () -> {
           try {
-            if (client != null && !client.isShutdown()) {
+            if (client != null && !client.isTerminated()) {
               throw new FirebaseFirestoreException(
                   "Persistence cannot be cleared while the firestore instance is running.",
                   Code.FAILED_PRECONDITION);

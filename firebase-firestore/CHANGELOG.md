@@ -2,6 +2,10 @@
 - [changed] Transactions now perform exponential backoff before retrying.
   This means transactions on highly contended documents are more likely to
   succeed.
+- [feature] Added a `terminate()` method to `FirebaseFirestore` which
+  terminates the instance, releasing any held resources. Once it completes,
+  you can optionally call `clearPersistence()` to wipe persisted Firestore
+  data from disk.
 
 # 21.0.0
 - [changed] Transactions are now more flexible. Some sequences of operations
