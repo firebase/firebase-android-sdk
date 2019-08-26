@@ -89,6 +89,8 @@ public class FirebaseApp {
 
   private static final String LOG_TAG = "FirebaseApp";
 
+  public static final String TEST_APP = "TestApp";
+
   public static final @NonNull String DEFAULT_APP_NAME = "[DEFAULT]";
 
   private static final Object LOCK = new Object();
