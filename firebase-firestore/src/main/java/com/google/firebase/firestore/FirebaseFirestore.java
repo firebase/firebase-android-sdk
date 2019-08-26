@@ -342,13 +342,13 @@ public class FirebaseFirestore {
   /**
    * Terminates this {@code FirebaseFirestore} instance.
    *
-   * <p>After terminate only the {@link #clearPersistence()} method may be used. Any other method
-   * will throw an {@link IllegalStateException}.
+   * <p>After calling {@code termination()} only the {@link #clearPersistence()} method may be used.
+   * Any other method will throw an {@link IllegalStateException}.
    *
-   * <p>To restart after terminate, simply create a new instance of {@code FirebaseFirestore} with
+   * <p>To restart after termination, simply create a new instance of {@code FirebaseFirestore} with
    * {@link #getInstance()} or {@link #getInstance(FirebaseApp)}.
    *
-   * <p>{@code terminate} does not cancel any pending writes and any tasks that are awaiting a
+   * <p>{@code terminate()} does not cancel any pending writes and any tasks that are awaiting a
    * response from the server will not be resolved. The next time you start this instance, it will
    * resume attempting to send these writes to the server.
    *
