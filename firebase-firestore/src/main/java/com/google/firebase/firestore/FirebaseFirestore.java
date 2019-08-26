@@ -342,7 +342,7 @@ public class FirebaseFirestore {
   /**
    * Terminates this {@code FirebaseFirestore} instance.
    *
-   * <p>After calling {@code termination()} only the {@link #clearPersistence()} method may be used.
+   * <p>After calling {@code terminate()} only the {@link #clearPersistence()} method may be used.
    * Any other method will throw an {@link IllegalStateException}.
    *
    * <p>To restart after termination, simply create a new instance of {@code FirebaseFirestore} with
