@@ -95,9 +95,7 @@ public class IndexFreeQueryEngine implements QueryEngine {
     return previousResults.insertAll(updatedResults);
   }
 
-  /**
-   * Returns the documents for the specified remote keys if they still match the query.
-   */
+  /** Returns the documents for the specified remote keys if they still match the query. */
   private ImmutableSortedMap<DocumentKey, Document> getPreviousResults(
       Query query, ImmutableSortedSet<DocumentKey> remoteKeys) {
     // Fetch the documents that matched the query at the last snapshot.
