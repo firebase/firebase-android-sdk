@@ -29,7 +29,7 @@ public abstract class PersistedFidEntry {
   public abstract String getFirebaseInstallationId();
 
   @NonNull
-  public abstract PersistedFid.PersistedStatus getPersistedStatus();
+  public abstract PersistedFid.RegistrationStatus getRegistrationStatus();
 
   @Nullable
   public abstract String getAuthToken();
@@ -58,7 +58,7 @@ public abstract class PersistedFidEntry {
     public abstract Builder setFirebaseInstallationId(@NonNull String value);
 
     @NonNull
-    public abstract Builder setPersistedStatus(@NonNull PersistedFid.PersistedStatus value);
+    public abstract Builder setRegistrationStatus(@NonNull PersistedFid.RegistrationStatus value);
 
     @NonNull
     public abstract Builder setAuthToken(@Nullable String value);

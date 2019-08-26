@@ -14,7 +14,7 @@
 
 package com.google.firebase.installations;
 
-import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_FID_1;
@@ -37,6 +37,10 @@ import com.google.firebase.installations.remote.FirebaseInstallationServiceClien
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -55,15 +59,18 @@ import org.mockito.MockitoAnnotations;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FirebaseInstallationsInstrumentedTest {
   private FirebaseApp firebaseApp;
+  private Executor executor;
+  private PersistedFid persistedFid;
   @Mock private FirebaseInstallationServiceClient backendClientReturnsOk;
   @Mock private FirebaseInstallationServiceClient backendClientReturnsError;
-  private PersistedFid persistedFid;
   @Mock private PersistedFid persistedFidReturnsError;
+  @Mock private Utils mockUtils;
 
   @Before
   public void setUp() throws FirebaseInstallationServiceException {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
+    executor = new ThreadPoolExecutor(0, 2, 30L, TimeUnit.SECONDS, new SynchronousQueue<>());
     firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
@@ -92,6 +99,7 @@ public class FirebaseInstallationsInstrumentedTest {
                 "SDK Error", FirebaseInstallationServiceException.Status.SERVER_ERROR));
     when(persistedFidReturnsError.insertOrUpdatePersistedFidEntry(any())).thenReturn(false);
     when(persistedFidReturnsError.readPersistedFidEntryValue()).thenReturn(null);
+    when(mockUtils.createRandomFid()).thenReturn(TEST_FID_1);
   }
 
   @After
@@ -100,21 +108,100 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   @Test
-  public void testCreateFirebaseInstallation_PersistedFidOk_BackendOk() throws Exception {
+  public void testGetId_PersistedFidOk_BackendOk() throws Exception {
     FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(firebaseApp, persistedFid, backendClientReturnsOk);
+        new FirebaseInstallations(
+            executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
 
     // No exception, means success.
-    assertThat(Tasks.await(firebaseInstallations.getId())).isNotEmpty();
+    assertWithMessage("getId Task fails.")
+        .that(Tasks.await(firebaseInstallations.getId()))
+        .isNotEmpty();
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertThat(entryValue.getFirebaseInstallationId()).isNotEmpty();
-    assertThat(entryValue.getPersistedStatus()).isEqualTo(PersistedFid.PersistedStatus.REGISTERED);
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(entryValue.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+    assertWithMessage("Registration status doesn't match")
+        .that(entryValue.getRegistrationStatus())
+        .isEqualTo(PersistedFid.RegistrationStatus.PENDING);
+
+    // Waiting for Task that registers FID on the FIS Servers
+    Thread.sleep(500);
+
+    PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(updatedFidEntry.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+    assertWithMessage("Registration status doesn't match")
+        .that(updatedFidEntry.getRegistrationStatus())
+        .isEqualTo(PersistedFid.RegistrationStatus.REGISTERED);
   }
 
   @Test
-  public void testCreateFirebaseInstallation_PersistedFidOk_BackendError() throws Exception {
+  public void testGetId_multipleCalls_sameFIDReturned() throws Exception {
     FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(firebaseApp, persistedFid, backendClientReturnsError);
+        new FirebaseInstallations(
+            executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
+
+    // No exception, means success.
+    assertWithMessage("getId Task fails.")
+        .that(Tasks.await(firebaseInstallations.getId()))
+        .isNotEmpty();
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(entryValue.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+    assertWithMessage("Registration status doesn't match")
+        .that(entryValue.getRegistrationStatus())
+        .isEqualTo(PersistedFid.RegistrationStatus.PENDING);
+
+    Tasks.await(firebaseInstallations.getId());
+
+    // Waiting for Task that registers FID on the FIS Servers
+    Thread.sleep(500);
+
+    PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(updatedFidEntry.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+    assertWithMessage("Registration status doesn't match")
+        .that(updatedFidEntry.getRegistrationStatus())
+        .isEqualTo(PersistedFid.RegistrationStatus.REGISTERED);
+  }
+
+  @Test
+  public void testGetId_PersistedFidOk_BackendError() throws Exception {
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            executor, firebaseApp, backendClientReturnsError, persistedFid, mockUtils);
+
+    Tasks.await(firebaseInstallations.getId());
+
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(entryValue.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+    assertWithMessage("Registration Fid doesn't match")
+        .that(entryValue.getRegistrationStatus())
+        .isEqualTo(PersistedFid.RegistrationStatus.PENDING);
+
+    // Waiting for Task that registers FID on the FIS Servers
+    Thread.sleep(500);
+
+    PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(updatedFidEntry.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+    assertWithMessage("Registration Fid doesn't match")
+        .that(updatedFidEntry.getRegistrationStatus())
+        .isEqualTo(PersistedFid.RegistrationStatus.REGISTER_ERROR);
+  }
+
+  @Test
+  public void testGetId_PersistedFidError_BackendOk() throws InterruptedException {
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            executor, firebaseApp, backendClientReturnsOk, persistedFidReturnsError, mockUtils);
 
     // Expect exception
     try {
@@ -122,31 +209,11 @@ public class FirebaseInstallationsInstrumentedTest {
       fail();
     } catch (ExecutionException expected) {
       Throwable cause = expected.getCause();
-      assertThat(cause).isInstanceOf(FirebaseInstallationsException.class);
-      assertThat(((FirebaseInstallationsException) cause).getStatus())
-          .isEqualTo(FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
-    }
-
-    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertThat(entryValue.getFirebaseInstallationId()).isNotEmpty();
-    assertThat(entryValue.getPersistedStatus())
-        .isEqualTo(PersistedFid.PersistedStatus.REGISTER_ERROR);
-  }
-
-  @Test
-  public void testCreateFirebaseInstallation_PersistedFidError_BackendOk()
-      throws InterruptedException {
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(firebaseApp, persistedFidReturnsError, backendClientReturnsOk);
-
-    // Expect exception
-    try {
-      Tasks.await(firebaseInstallations.getId());
-      fail();
-    } catch (ExecutionException expected) {
-      Throwable cause = expected.getCause();
-      assertThat(cause).isInstanceOf(FirebaseInstallationsException.class);
-      assertThat(((FirebaseInstallationsException) cause).getStatus())
+      assertWithMessage("Exception class doesn't match")
+          .that(cause)
+          .isInstanceOf(FirebaseInstallationsException.class);
+      assertWithMessage("Exception status doesn't match")
+          .that(((FirebaseInstallationsException) cause).getStatus())
           .isEqualTo(FirebaseInstallationsException.Status.CLIENT_ERROR);
     }
   }

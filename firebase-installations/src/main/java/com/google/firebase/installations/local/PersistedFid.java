@@ -19,6 +19,8 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A layer that locally persists a few Firebase Installation attributes on top the Firebase
@@ -29,15 +31,15 @@ public class PersistedFid {
   // NOTE: never change the ordinal of the enum values because the enum values are stored in shared
   // prefs
   // as their ordinal numbers.
-  public enum PersistedStatus {
-    // Persisted Fid entry is synced to Firebase backend
+  public enum RegistrationStatus {
+    // Persisted Fid entry is synced to FIS servers
     REGISTERED,
-    // Persisted Fid entry is waiting for Firebase backend response or internal network retry
+    // Persisted Fid entry is not synced with FIS server
     UNREGISTERED,
-    // Persisted Fid entry is in error state when syncing with Firebase backend
+    // Persisted Fid entry is in error state when syncing with FIS server
     REGISTER_ERROR,
-    // Persisted Fid entry is in delete state before syncing with Firebase backend
-    DELETED
+    // Persisted Fid entry is in pending state when waiting for FIS server response
+    PENDING
   }
 
   private static final String SHARED_PREFS_NAME = "PersistedFid";
@@ -48,6 +50,15 @@ public class PersistedFid {
   private static final String TOKEN_CREATION_TIME_IN_SECONDS_KEY = "TokenCreationEpochInSecs";
   private static final String EXPIRES_IN_SECONDS_KEY = "ExpiresInSecs";
   private static final String PERSISTED_STATUS_KEY = "Status";
+
+  private static final List<String> FID_PREF_KEYS =
+      Arrays.asList(
+          FIREBASE_INSTALLATION_ID_KEY,
+          AUTH_TOKEN_KEY,
+          REFRESH_TOKEN_KEY,
+          TOKEN_CREATION_TIME_IN_SECONDS_KEY,
+          EXPIRES_IN_SECONDS_KEY,
+          PERSISTED_STATUS_KEY);
 
   private final SharedPreferences prefs;
   private final String persistenceKey;
@@ -78,7 +89,7 @@ public class PersistedFid {
 
     return PersistedFidEntry.builder()
         .setFirebaseInstallationId(fid)
-        .setPersistedStatus(PersistedStatus.values()[status])
+        .setRegistrationStatus(RegistrationStatus.values()[status])
         .setAuthToken(authToken)
         .setRefreshToken(refreshToken)
         .setTokenCreationEpochInSecs(tokenCreationTime)
@@ -94,7 +105,8 @@ public class PersistedFid {
         getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY),
         entryValue.getFirebaseInstallationId());
     editor.putInt(
-        getSharedPreferencesKey(PERSISTED_STATUS_KEY), entryValue.getPersistedStatus().ordinal());
+        getSharedPreferencesKey(PERSISTED_STATUS_KEY),
+        entryValue.getRegistrationStatus().ordinal());
     editor.putString(getSharedPreferencesKey(AUTH_TOKEN_KEY), entryValue.getAuthToken());
     editor.putString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), entryValue.getRefreshToken());
     editor.putLong(
@@ -107,12 +119,10 @@ public class PersistedFid {
   @NonNull
   public synchronized boolean clear() {
     SharedPreferences.Editor editor = prefs.edit();
-    editor.remove(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY));
-    editor.remove(getSharedPreferencesKey(PERSISTED_STATUS_KEY));
-    editor.remove(getSharedPreferencesKey(AUTH_TOKEN_KEY));
-    editor.remove(getSharedPreferencesKey(REFRESH_TOKEN_KEY));
-    editor.remove(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY));
-    editor.remove(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY));
+    for (String k : FID_PREF_KEYS) {
+      editor.remove(getSharedPreferencesKey(k));
+    }
+    editor.commit();
     return editor.commit();
   }
 

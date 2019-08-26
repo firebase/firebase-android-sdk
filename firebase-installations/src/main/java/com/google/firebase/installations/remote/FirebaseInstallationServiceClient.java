@@ -48,6 +48,15 @@ public class FirebaseInstallationServiceClient {
   private static final String INTERNAL_SERVER_ERROR_MESSAGE = "There was an internal server error.";
   private static final String NETWORK_ERROR_MESSAGE = "The server returned an unexpected error:";
 
+  /**
+   * Creates a FID on the FIS Servers by calling create API.
+   *
+   * @param apiKey API Key that has access to FIS APIs
+   * @param fid Firebase Installation Identifier
+   * @param projectID Project Id
+   * @param appId the identifier of a Firebase application
+   * @return {@link InstallationResponse} generated from the response body
+   */
   @NonNull
   public InstallationResponse createFirebaseInstallation(
       @NonNull String apiKey, @NonNull String fid, @NonNull String projectID, @NonNull String appId)
@@ -108,6 +117,14 @@ public class FirebaseInstallationServiceClient {
     return firebaseInstallationData;
   }
 
+  /**
+   * Deletes a FID on the FIS Servers by calling delete API.
+   *
+   * @param apiKey API Key that has access to FIS APIs
+   * @param fid Firebase Installation Identifier
+   * @param projectID Project Id
+   * @param refreshToken a token used to authenticate FIS requests
+   */
   @NonNull
   public void deleteFirebaseInstallation(
       @NonNull String apiKey,
@@ -152,6 +169,14 @@ public class FirebaseInstallationServiceClient {
     }
   }
 
+  /**
+   * Generates a new auth token for a FID on the FIS Servers by calling generateAuthToken API.
+   *
+   * @param apiKey API Key that has access to FIS APIs
+   * @param fid Firebase Installation Identifier
+   * @param projectID Project Id
+   * @param refreshToken a token used to authenticate FIS requests
+   */
   @NonNull
   public InstallationTokenResult generateAuthToken(
       @NonNull String apiKey,

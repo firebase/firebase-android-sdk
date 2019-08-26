@@ -14,16 +14,13 @@
 
 package com.google.firebase.installations;
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import androidx.annotation.NonNull;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
 /** Util methods used for {@link FirebaseInstallations} */
-class Utils {
+public class Utils {
 
   /**
    * 1 Byte with the first 4 header-bits set to the identifying FID prefix 0111 (0x7). Use this
@@ -51,7 +48,7 @@ class Utils {
    * @return random FID value
    */
   @NonNull
-  public static String createRandomFid() {
+  public String createRandomFid() {
     // A valid FID has exactly 22 base64 characters, which is 132 bits, or 16.5 bytes.
     byte[] uuidBytes = getBytesFromUUID(UUID.randomUUID(), new byte[17]);
     uuidBytes[16] = uuidBytes[0];
@@ -85,16 +82,5 @@ class Utils {
     bb.putLong(uuid.getMostSignificantBits());
     bb.putLong(uuid.getLeastSignificantBits());
     return bb.array();
-  }
-
-  public static long getCurrentTimeInSeconds() {
-    return System.currentTimeMillis() / 1000;
-  }
-
-  public static boolean isNetworkAvailable(Context context) {
-    ConnectivityManager connectivityManager =
-        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-    return activeNetworkInfo != null && activeNetworkInfo.isConnected();
   }
 }
