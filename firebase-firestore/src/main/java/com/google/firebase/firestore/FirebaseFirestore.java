@@ -379,7 +379,8 @@ public class FirebaseFirestore {
    * @return A {@code Task} which resolves when all currently pending writes have been acknowledged
    *     by the backend.
    */
-  Task<Void> waitForPendingWrites() {
+  @NonNull
+  public Task<Void> waitForPendingWrites() {
     return client.waitForPendingWrites();
   }
 
