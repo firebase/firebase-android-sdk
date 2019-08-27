@@ -49,7 +49,7 @@ public class FirebaseInstallationServiceClient {
   private static final String NETWORK_ERROR_MESSAGE = "The server returned an unexpected error:";
 
   /**
-   * Creates a FID on the FIS Servers by calling create API.
+   * Creates a FID on the FIS Servers by calling FirebaseInstallations API create method.
    *
    * @param apiKey API Key that has access to FIS APIs
    * @param fid Firebase Installation Identifier
@@ -118,7 +118,7 @@ public class FirebaseInstallationServiceClient {
   }
 
   /**
-   * Deletes a FID on the FIS Servers by calling delete API.
+   * Deletes a FID on the FIS Servers by calling FirebaseInstallations API delete method.
    *
    * @param apiKey API Key that has access to FIS APIs
    * @param fid Firebase Installation Identifier
@@ -170,7 +170,8 @@ public class FirebaseInstallationServiceClient {
   }
 
   /**
-   * Generates a new auth token for a FID on the FIS Servers by calling generateAuthToken API.
+   * Generates a new auth token for a FID on the FIS Servers by calling FirebaseInstallations API
+   * generateAuthToken method.
    *
    * @param apiKey API Key that has access to FIS APIs
    * @param fid Firebase Installation Identifier
