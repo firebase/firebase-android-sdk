@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docSet;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
+import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -61,8 +62,6 @@ public class IndexFreeQueryEngineTest {
       doc("coll/a", 11, map("matches", true, "order", 1), Document.DocumentState.SYNCED);
   private static final Document MATCHING_DOC_B =
       doc("coll/b", 1, map("matches", true, "order", 2), Document.DocumentState.SYNCED);
-  private static final Document NON_MATCHING_DOC_B =
-      doc("coll/b", 1, map("matches", false, "order", 2), Document.DocumentState.SYNCED);
   private static final Document UPDATED_MATCHING_DOC_B =
       doc("coll/b", 11, map("matches", true, "order", 2), Document.DocumentState.SYNCED);
 
@@ -102,13 +101,13 @@ public class IndexFreeQueryEngineTest {
   }
 
   /** Adds the provided documents to the query target mapping. */
-  private void persistQueryMapping(Document... docs) {
+  private void persistQueryMapping(DocumentKey... documentKeys) {
     persistence.runTransaction(
         "persistQueryMapping",
         () -> {
           ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
-          for (Document doc : docs) {
-            remoteKeys = remoteKeys.insert(doc.getKey());
+          for (DocumentKey documentKey : documentKeys) {
+            remoteKeys = remoteKeys.insert(documentKey);
           }
           queryCache.addMatchingKeys(remoteKeys, TEST_TARGET_ID);
         });
@@ -162,7 +161,7 @@ public class IndexFreeQueryEngineTest {
     QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
     addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
-    persistQueryMapping(MATCHING_DOC_A, MATCHING_DOC_B);
+    persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
     DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, queryData));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, MATCHING_DOC_B), docs);
@@ -174,7 +173,7 @@ public class IndexFreeQueryEngineTest {
     QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
     addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
-    persistQueryMapping(MATCHING_DOC_A, MATCHING_DOC_B);
+    persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
     // Add a mutated document that is not yet part of query's set of remote keys.
     addDocument(PENDING_NON_MATCHING_DOC_A);
@@ -189,7 +188,7 @@ public class IndexFreeQueryEngineTest {
     QueryData originalQueryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
     addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
-    persistQueryMapping(MATCHING_DOC_A, MATCHING_DOC_B);
+    persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
     DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, originalQueryData));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, MATCHING_DOC_B), docs);
@@ -225,7 +224,7 @@ public class IndexFreeQueryEngineTest {
     // While the backend would never add DocA to the set of remote keys, this allows us to easily
     // simulate what would happen when a document no longer matches due to an out-of-band update.
     addDocument(NON_MATCHING_DOC_A);
-    persistQueryMapping(NON_MATCHING_DOC_A);
+    persistQueryMapping(NON_MATCHING_DOC_A.getKey());
 
     addDocument(MATCHING_DOC_B);
 
@@ -235,7 +234,8 @@ public class IndexFreeQueryEngineTest {
   }
 
   @Test
-  public void doesNotUseInitialResultsForLimitQueryWithPendingWrite() throws Exception {
+  public void doesNotUseInitialResultsForLimitQueryWhenLastDocumentHasPendingWrite()
+      throws Exception {
     Query query =
         query("coll")
             .filter(filter("matches", "==", true))
@@ -245,7 +245,7 @@ public class IndexFreeQueryEngineTest {
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
     addDocument(PENDING_MATCHING_DOC_A);
-    persistQueryMapping(PENDING_MATCHING_DOC_A);
+    persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
 
     QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
@@ -256,7 +256,7 @@ public class IndexFreeQueryEngineTest {
   }
 
   @Test
-  public void doesNotUseInitialResultsForLimitQueryWithDocumentThatHasBeenUpdatedOutOfBand()
+  public void doesNotUseInitialResultsForLimitQueryWhenLastDocumentHasBeenUpdatedOutOfBand()
       throws Exception {
     Query query =
         query("coll")
@@ -267,7 +267,7 @@ public class IndexFreeQueryEngineTest {
     // Add a query mapping for a document that matches, but that sorts below another document based
     // due to an update that the SDK received after the query's snapshot was persisted.
     addDocument(UDPATED_DOC_A);
-    persistQueryMapping(UDPATED_DOC_A);
+    persistQueryMapping(UDPATED_DOC_A.getKey());
 
     QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
@@ -275,6 +275,30 @@ public class IndexFreeQueryEngineTest {
 
     DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
+  }
+
+  @Test
+  public void limitQueriesUseInitialResultsIfLastDocumentInLimitIsUnchanged() throws Exception {
+    Query query = query("coll").orderBy(orderBy("order")).limit(2);
+
+    addDocument(doc("coll/a", 1, map("order", 1)));
+    addDocument(doc("coll/b", 1, map("order", 3)));
+    persistQueryMapping(key("coll/a"), key("coll/b"));
+    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
+
+    // Update "coll/a" but make sure it still sorts before "coll/b"
+    addDocument(doc("coll/a", 1, map("order", 2), Document.DocumentState.LOCAL_MUTATIONS));
+
+    // Since the last document in the limit didn't change (and hence we know that all documents
+    // written prior to query execution still sort after "coll/b"), we should use an Index-Free
+    // query.
+    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, queryData));
+    assertEquals(
+        docSet(
+            query.comparator(),
+            doc("coll/a", 1, map("order", 2), Document.DocumentState.LOCAL_MUTATIONS),
+            doc("coll/b", 1, map("order", 3))),
+        docs);
   }
 
   private QueryData queryData(Query query, boolean hasLimboFreeSnapshot) {
