@@ -259,9 +259,9 @@ public class FirebaseFirestore {
    * be retried. If it fails to commit after 5 attempts, the transaction will fail.
    *
    * <p>The maximum number of writes allowed in a single transaction is 500, but note that each
-   * usage of {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion()}, {@link
-   * FieldValue#arrayRemove()}, or {@link FieldValue#increment()} inside a transaction counts as an
-   * additional write.
+   * usage of {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion(Object...)}, {@link
+   * FieldValue#arrayRemove(Object...)}, or {@link FieldValue#increment(long)} inside a transaction
+   * counts as an additional write.
    *
    * @param updateFunction The function to execute within the transaction context.
    * @param executor The executor to run the transaction callback on.
@@ -306,9 +306,9 @@ public class FirebaseFirestore {
    * Creates a write batch, used for performing multiple writes as a single atomic operation.
    *
    * <p>The maximum number of writes allowed in a single batch is 500, but note that each usage of
-   * {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion()}, {@link
-   * FieldValue#arrayRemove()}, or {@link FieldValue#increment()} inside a transaction counts as an
-   * additional write.
+   * {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion(Object...)}, {@link
+   * FieldValue#arrayRemove(Object...)}, or {@link FieldValue#increment(long)} inside a transaction
+   * counts as an additional write.
    *
    * @return The created WriteBatch object.
    */
@@ -427,9 +427,9 @@ public class FirebaseFirestore {
    *
    * <p>Must be called while the {@code FirebaseFirestore} instance is not started (after the app is
    * shutdown or when the app is first initialized). On startup, this method must be called before
-   * other methods (other than {@link #setFirestoreSettings()}). If the {@code FirebaseFirestore}
-   * instance is still running, the {@code Task} will fail with an error code of {@code
-   * FAILED_PRECONDITION}.
+   * other methods (other than {@link #setFirestoreSettings(FirebaseFirestoreSettings)}). If the
+   * {@code FirebaseFirestore} instance is still running, the {@code Task} will fail with an error
+   * code of {@code FAILED_PRECONDITION}.
    *
    * <p>Note: {@code clearPersistence()} is primarily intended to help write reliable tests that use
    * Cloud Firestore. It uses an efficient mechanism for dropping existing data but does not attempt
