@@ -9,6 +9,8 @@
 - [feature] Added a `waitForPendingWrites()` method to `FirebaseFirestore`
   class which allows users to wait on a promise that resolves when all
   pending writes are acknowledged by the Firestore backend.
+- [fixed] Fixed a memory leak that occurred on certain devices while reading
+  from the local database.
 
 # 21.0.0
 - [changed] Transactions are now more flexible. Some sequences of operations

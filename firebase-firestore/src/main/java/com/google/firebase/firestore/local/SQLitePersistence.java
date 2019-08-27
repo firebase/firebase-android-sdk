@@ -468,10 +468,16 @@ public final class SQLitePersistence extends Persistence {
      */
     int forEach(Consumer<Cursor> consumer) {
       int rowsProcessed = 0;
-      try (Cursor cursor = startQuery()) {
+      Cursor cursor = null;
+      try {
+        cursor = startQuery();
         while (cursor.moveToNext()) {
           ++rowsProcessed;
           consumer.accept(cursor);
+        }
+      } finally {
+        if (cursor != null) {
+          cursor.close();
         }
       }
       return rowsProcessed;
