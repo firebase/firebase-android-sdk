@@ -27,18 +27,17 @@ import java.util.List;
  * Installation API.
  */
 public class PersistedFid {
-  // Status of each presisted fid entry
+  // Registration Status of each persisted fid entry
   // NOTE: never change the ordinal of the enum values because the enum values are stored in shared
-  // prefs
-  // as their ordinal numbers.
+  // prefs as their ordinal numbers.
   public enum RegistrationStatus {
-    // Persisted Fid entry is synced to FIS servers
+    /** {@link PersistedFidEntry} is synced to FIS servers */
     REGISTERED,
-    // Persisted Fid entry is not synced with FIS server
+    /** {@link PersistedFidEntry} is not synced with FIS server */
     UNREGISTERED,
-    // Persisted Fid entry is in error state when syncing with FIS server
+    /** {@link PersistedFidEntry} is in error state when syncing with FIS server */
     REGISTER_ERROR,
-    // Persisted Fid entry is in pending state when waiting for FIS server response
+    /** {@link PersistedFidEntry} is in pending state when waiting for FIS server response */
     PENDING
   }
 

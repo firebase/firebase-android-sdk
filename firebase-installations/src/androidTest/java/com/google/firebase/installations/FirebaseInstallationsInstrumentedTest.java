@@ -17,6 +17,7 @@ package com.google.firebase.installations;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_CREATION_TIMESTAMP_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_FID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_PROJECT_ID;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_REFRESH_TOKEN;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.when;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
+import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -37,7 +39,7 @@ import com.google.firebase.installations.remote.FirebaseInstallationServiceClien
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -59,18 +61,19 @@ import org.mockito.MockitoAnnotations;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FirebaseInstallationsInstrumentedTest {
   private FirebaseApp firebaseApp;
-  private Executor executor;
+  private ExecutorService executor;
   private PersistedFid persistedFid;
   @Mock private FirebaseInstallationServiceClient backendClientReturnsOk;
   @Mock private FirebaseInstallationServiceClient backendClientReturnsError;
   @Mock private PersistedFid persistedFidReturnsError;
   @Mock private Utils mockUtils;
+  @Mock private Clock mockClock;
 
   @Before
   public void setUp() throws FirebaseInstallationServiceException {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
-    executor = new ThreadPoolExecutor(0, 2, 30L, TimeUnit.SECONDS, new SynchronousQueue<>());
+    executor = new ThreadPoolExecutor(0, 2, 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
     firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
@@ -100,6 +103,7 @@ public class FirebaseInstallationsInstrumentedTest {
     when(persistedFidReturnsError.insertOrUpdatePersistedFidEntry(any())).thenReturn(false);
     when(persistedFidReturnsError.readPersistedFidEntryValue()).thenReturn(null);
     when(mockUtils.createRandomFid()).thenReturn(TEST_FID_1);
+    when(mockClock.currentTimeMillis()).thenReturn(TEST_CREATION_TIMESTAMP_1);
   }
 
   @After
@@ -111,7 +115,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetId_PersistedFidOk_BackendOk() throws Exception {
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
-            executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
+            mockClock, executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
 
     // No exception, means success.
     assertWithMessage("getId Task fails.")
@@ -126,7 +130,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .isEqualTo(PersistedFid.RegistrationStatus.PENDING);
 
     // Waiting for Task that registers FID on the FIS Servers
-    Thread.sleep(500);
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
     assertWithMessage("Persisted Fid doesn't match")
@@ -141,7 +145,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetId_multipleCalls_sameFIDReturned() throws Exception {
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
-            executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
+            mockClock, executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
 
     // No exception, means success.
     assertWithMessage("getId Task fails.")
@@ -158,7 +162,7 @@ public class FirebaseInstallationsInstrumentedTest {
     Tasks.await(firebaseInstallations.getId());
 
     // Waiting for Task that registers FID on the FIS Servers
-    Thread.sleep(500);
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
     assertWithMessage("Persisted Fid doesn't match")
@@ -173,7 +177,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetId_PersistedFidOk_BackendError() throws Exception {
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
-            executor, firebaseApp, backendClientReturnsError, persistedFid, mockUtils);
+            mockClock, executor, firebaseApp, backendClientReturnsError, persistedFid, mockUtils);
 
     Tasks.await(firebaseInstallations.getId());
 
@@ -186,7 +190,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .isEqualTo(PersistedFid.RegistrationStatus.PENDING);
 
     // Waiting for Task that registers FID on the FIS Servers
-    Thread.sleep(500);
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
     assertWithMessage("Persisted Fid doesn't match")
@@ -201,7 +205,12 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetId_PersistedFidError_BackendOk() throws InterruptedException {
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
-            executor, firebaseApp, backendClientReturnsOk, persistedFidReturnsError, mockUtils);
+            mockClock,
+            executor,
+            firebaseApp,
+            backendClientReturnsOk,
+            persistedFidReturnsError,
+            mockUtils);
 
     // Expect exception
     try {

@@ -20,7 +20,7 @@ import java.nio.charset.Charset;
 import java.util.UUID;
 
 /** Util methods used for {@link FirebaseInstallations} */
-public class Utils {
+class Utils {
 
   /**
    * 1 Byte with the first 4 header-bits set to the identifying FID prefix 0111 (0x7). Use this
