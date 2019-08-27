@@ -48,7 +48,9 @@ import com.google.firebase.firestore.core.SyncEngine;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryData;
+import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.SimpleQueryEngine;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -262,7 +264,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
    */
   private void initClient() {
     localPersistence = getPersistence(garbageCollectionEnabled);
-    LocalStore localStore = new LocalStore(localPersistence, currentUser);
+    // TODO(index-free): Update to index-free query engine when it becomes default.
+    QueryEngine queryEngine = new SimpleQueryEngine();
+    LocalStore localStore = new LocalStore(localPersistence, queryEngine, currentUser);
 
     queue = new AsyncQueue();
 
@@ -879,15 +883,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           // TODO: populate the purpose of the target once it's possible to encode that in the
           // spec tests. For now, hard-code that it's a listen despite the fact that it's not always
           // the right value.
-          expectedActiveTargets.put(
-              targetId,
-              new QueryData(
-                  query,
-                  targetId,
-                  ARBITRARY_SEQUENCE_NUMBER,
-                  QueryPurpose.LISTEN,
-                  SnapshotVersion.NONE,
-                  ByteString.copyFromUtf8(resumeToken)));
+          QueryData queryData =
+              new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN)
+                  .withResumeToken(ByteString.copyFromUtf8(resumeToken), SnapshotVersion.NONE);
+          expectedActiveTargets.put(targetId, queryData);
         }
       }
     }

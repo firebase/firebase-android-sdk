@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.content.ContentValues;
@@ -26,7 +27,9 @@ import android.util.Log;
 import androidx.annotation.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.util.Consumer;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +49,8 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 8;
+  static final int VERSION = 9;
+
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
@@ -125,6 +129,19 @@ class SQLiteSchema {
 
     if (fromVersion < 8 && toVersion >= 8) {
       createV8CollectionParentsIndex();
+    }
+
+    if (fromVersion < 9 && toVersion >= 9) {
+      if (!hasReadTime()) {
+        addReadTime();
+      } else {
+        // Index-free queries rely on the fact that documents updated after a query's last limbo
+        // free snapshot version are persisted with their read-time. If a customer upgrades to
+        // schema version 9, downgrades and then upgrades again, some queries may have a last limbo
+        // free snapshot version despite the fact that not all updated document have an associated
+        // read time.
+        dropLastLimboFreeSnapshotVersion();
+      }
     }
 
     /*
@@ -349,6 +366,41 @@ class SQLiteSchema {
     if (!tableContainsColumn("target_documents", "sequence_number")) {
       db.execSQL("ALTER TABLE target_documents ADD COLUMN sequence_number INTEGER");
     }
+  }
+
+  private boolean hasReadTime() {
+    boolean hasReadTimeSeconds = tableContainsColumn("remote_documents", "read_time_seconds");
+    boolean hasReadTimeNanos = tableContainsColumn("remote_documents", "read_time_nanos");
+
+    hardAssert(
+        hasReadTimeSeconds == hasReadTimeNanos,
+        "Table contained just one of read_time_seconds or read_time_nanos");
+
+    return hasReadTimeSeconds && hasReadTimeNanos;
+  }
+
+  private void addReadTime() {
+    db.execSQL("ALTER TABLE remote_documents ADD COLUMN read_time_seconds INTEGER");
+    db.execSQL("ALTER TABLE remote_documents ADD COLUMN read_time_nanos INTEGER");
+  }
+
+  private void dropLastLimboFreeSnapshotVersion() {
+    new SQLitePersistence.Query(db, "SELECT target_id, target_proto FROM targets")
+        .forEach(
+            cursor -> {
+              int targetId = cursor.getInt(0);
+              byte[] targetProtoBytes = cursor.getBlob(1);
+
+              try {
+                Target targetProto = Target.parseFrom(targetProtoBytes);
+                targetProto = targetProto.toBuilder().clearLastLimboFreeSnapshotVersion().build();
+                db.execSQL(
+                    "UPDATE targets SET target_proto = ? WHERE target_id = ?",
+                    new Object[] {targetProto.toByteArray(), targetId});
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Failed to decode Query data for target %s", targetId);
+              }
+            });
   }
 
   /**
