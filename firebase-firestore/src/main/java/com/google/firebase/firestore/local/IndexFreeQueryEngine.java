@@ -97,7 +97,7 @@ public class IndexFreeQueryEngine implements QueryEngine {
 
   /**
    * Returns the documents for the specified remote keys if they still match the query, sorted by
-   * the query's comparator
+   * the query's comparator.
    */
   private ImmutableSortedSet<Document> getSortedPreviousResults(
       Query query, ImmutableSortedSet<DocumentKey> remoteKeys) {
@@ -143,13 +143,13 @@ public class IndexFreeQueryEngine implements QueryEngine {
       return false;
     }
 
-    // Limit queries are not eligible for index-free query execution if an older document from cache
-    // may sort before a document that was previously part of the limit. This can happen if the last
-    // document of the limit could sort lower than it did when the query was last synchronized. To
-    // verify this, we use the query's comparator to determine the last document that fit the
-    // limit. If the last document was edited after the query was last synchronized, there is a
-    // chance that another document from cache sorts higher, in which case we have to perform a full
-    // cache scan.
+    // Limit queries are not eligible for index-free query execution if there is a potential that an
+    // older document from cache now sorts before a document that was previously part of the limit.
+    // This, however, can only happen if the last document of the limit sorts lower than it did when
+    // the query was last synchronized. If a document that is not the limit boundary sorts
+    // differently, the boundary of the limit itself did not change and documents from cache will
+    // continue to be "rejected" by this boundary. Therefore, we can ignore any modifications that
+    // don't affect the last document.
     Document lastDocumentInLimit = sortedPreviousResults.getMaxEntry();
     return lastDocumentInLimit.hasPendingWrites()
         || lastDocumentInLimit.getVersion().compareTo(limboFreeSnapshotVersion) > 0;
