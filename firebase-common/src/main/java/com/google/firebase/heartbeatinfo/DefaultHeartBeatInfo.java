@@ -25,7 +25,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   private static final String GLOBAL = "fire-global";
   private static HeartBeatInfoStorage storage;
 
-  private DefaultHeartBeatInfo(Context context) {
+  DefaultHeartBeatInfo(Context context) {
     HeartBeatInfoStorage.initialize(context);
     storage = HeartBeatInfoStorage.getInstance();
   }
