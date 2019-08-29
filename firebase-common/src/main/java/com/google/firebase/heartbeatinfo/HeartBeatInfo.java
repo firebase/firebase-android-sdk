@@ -14,7 +14,9 @@
 
 package com.google.firebase.heartbeatinfo;
 
+import org.jetbrains.annotations.NotNull;
+
 /** Component that publishes heartbeat information */
 public interface HeartBeatInfo {
-  int getHeartBeatCode(String sdkName);
+  int getHeartBeatCode(@NotNull String sdkName);
 }

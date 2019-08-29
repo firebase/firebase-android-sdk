@@ -18,6 +18,7 @@ import android.content.Context;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.internal.HeartBeatInfoStorage;
+import org.jetbrains.annotations.NotNull;
 
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
@@ -58,7 +59,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   }
 
   @Override
-  public int getHeartBeatCode(String sdkName) {
+  public int getHeartBeatCode(@NotNull String sdkName) {
     long presentTime = System.currentTimeMillis();
     if (!shouldSendSdkHeartBeat(sdkName, presentTime)) {
       return 0;
@@ -67,7 +68,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     else return 1;
   }
 
-  public static Component<HeartBeatInfo> component() {
+  public static @NotNull Component<HeartBeatInfo> component() {
     return Component.builder(HeartBeatInfo.class)
         .add(Dependency.required(Context.class))
         .factory(c -> new DefaultHeartBeatInfo(c.get(Context.class)))
