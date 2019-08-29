@@ -19,6 +19,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Base64;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
@@ -31,6 +32,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
   static final String ATTEMPT_NUMBER = "attemptNumber";
   static final String BACKEND_NAME = "backendName";
   static final String EVENT_PRIORITY = "priority";
+  static final String EXTRAS = "extras";
 
   private final Context context;
 
@@ -78,6 +80,10 @@ public class AlarmManagerScheduler implements WorkScheduler {
     intentDataBuilder.appendQueryParameter(BACKEND_NAME, transportContext.getBackendName());
     intentDataBuilder.appendQueryParameter(
         EVENT_PRIORITY, String.valueOf(transportContext.getPriority().ordinal()));
+    if (transportContext.getExtras() != null) {
+      intentDataBuilder.appendQueryParameter(
+          EXTRAS, Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
+    }
     Intent intent = new Intent(context, AlarmManagerSchedulerBroadcastReceiver.class);
     intent.setData(intentDataBuilder.build());
     intent.putExtra(ATTEMPT_NUMBER, attemptNumber);

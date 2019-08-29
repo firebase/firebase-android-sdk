@@ -205,6 +205,8 @@ public final class LocalSerializer {
     result
         .setTargetId(queryData.getTargetId())
         .setLastListenSequenceNumber(queryData.getSequenceNumber())
+        .setLastLimboFreeSnapshotVersion(
+            rpcSerializer.encodeVersion(queryData.getLastLimboFreeSnapshotVersion()))
         .setSnapshotVersion(rpcSerializer.encodeVersion(queryData.getSnapshotVersion()))
         .setResumeToken(queryData.getResumeToken());
 
@@ -221,6 +223,8 @@ public final class LocalSerializer {
   QueryData decodeQueryData(com.google.firebase.firestore.proto.Target target) {
     int targetId = target.getTargetId();
     SnapshotVersion version = rpcSerializer.decodeVersion(target.getSnapshotVersion());
+    SnapshotVersion lastLimboFreeSnapshotVersion =
+        rpcSerializer.decodeVersion(target.getLastLimboFreeSnapshotVersion());
     ByteString resumeToken = target.getResumeToken();
     long sequenceNumber = target.getLastListenSequenceNumber();
 
@@ -239,6 +243,12 @@ public final class LocalSerializer {
     }
 
     return new QueryData(
-        query, targetId, sequenceNumber, QueryPurpose.LISTEN, version, resumeToken);
+        query,
+        targetId,
+        sequenceNumber,
+        QueryPurpose.LISTEN,
+        version,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
   }
 }

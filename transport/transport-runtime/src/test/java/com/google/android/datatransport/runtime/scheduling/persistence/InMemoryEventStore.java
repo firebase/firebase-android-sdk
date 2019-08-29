@@ -103,6 +103,18 @@ public class InMemoryEventStore implements EventStore {
   }
 
   @Override
+  public synchronized Iterable<TransportContext> loadActiveContexts() {
+    List<TransportContext> results = new ArrayList<>();
+    for (Map.Entry<TransportContext, Map<Long, EventInternal>> entry : store.entrySet()) {
+      if (entry.getValue().isEmpty()) {
+        continue;
+      }
+      results.add(entry.getKey());
+    }
+    return results;
+  }
+
+  @Override
   public int cleanUp() {
     return 0;
   }

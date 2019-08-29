@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.values;
+import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -32,6 +33,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -134,7 +136,7 @@ abstract class RemoteDocumentCacheTestCase {
   public void testSetAndReadDeletedDocument() {
     String path = "a/b";
     NoDocument deletedDoc = deletedDoc(path, 42);
-    add(deletedDoc);
+    add(deletedDoc, version(42));
     assertEquals(deletedDoc, get(path));
   }
 
@@ -144,7 +146,7 @@ abstract class RemoteDocumentCacheTestCase {
     Document written = addTestDocumentAtPath(path);
 
     Document newDoc = doc(path, 57, map("data", 5));
-    add(newDoc);
+    add(newDoc, version(57));
 
     assertNotEquals(written, newDoc);
     assertEquals(newDoc, get(path));
@@ -175,19 +177,50 @@ abstract class RemoteDocumentCacheTestCase {
 
     Query query = Query.atPath(path("b"));
     ImmutableSortedMap<DocumentKey, Document> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query);
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, SnapshotVersion.NONE);
     List<Document> expected = asList(doc("b/1", 42, docData), doc("b/2", 42, docData));
     assertEquals(expected, values(results));
   }
 
+  @Test
+  public void testDocumentsMatchingQuerySinceReadTime() {
+    Map<String, Object> docData = map("data", 2);
+    addTestDocumentAtPath("b/old", /* updateTime= */ 1, /* readTime= */ 11);
+    addTestDocumentAtPath("b/current", /* updateTime= */ 2, /*  readTime= = */ 12);
+    addTestDocumentAtPath("b/new", /* updateTime= */ 3, /*  readTime= = */ 13);
+
+    Query query = Query.atPath(path("b"));
+    ImmutableSortedMap<DocumentKey, Document> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, version(12));
+    List<Document> expected = asList(doc("b/new", 3, docData));
+    assertEquals(expected, values(results));
+  }
+
+  @Test
+  public void testDocumentsMatchingUsesReadTimeNotUpdateTime() {
+    Map<String, Object> docData = map("data", 2);
+    addTestDocumentAtPath("b/old", /* updateTime= */ 1, /* readTime= */ 2);
+    addTestDocumentAtPath("b/new", /* updateTime= */ 2, /* readTime= */ 1);
+
+    Query query = Query.atPath(path("b"));
+    ImmutableSortedMap<DocumentKey, Document> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, version(1));
+    List<Document> expected = asList(doc("b/old", 1, docData));
+    assertEquals(expected, values(results));
+  }
+
   private Document addTestDocumentAtPath(String path) {
-    Document doc = doc(path, 42, map("data", 2));
-    add(doc);
+    return addTestDocumentAtPath(path, 42, 42);
+  }
+
+  private Document addTestDocumentAtPath(String path, int updateTime, int readTime) {
+    Document doc = doc(path, updateTime, map("data", 2));
+    add(doc, version(readTime));
     return doc;
   }
 
-  private void add(MaybeDocument doc) {
-    persistence.runTransaction("add entry", () -> remoteDocumentCache.add(doc));
+  private void add(MaybeDocument doc, SnapshotVersion readTime) {
+    persistence.runTransaction("add entry", () -> remoteDocumentCache.add(doc, readTime));
   }
 
   @Nullable

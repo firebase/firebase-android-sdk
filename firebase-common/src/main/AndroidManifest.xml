@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.google.firebase">
   <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
   <!--<uses-sdk android:minSdkVersion="14"/>-->
   <application>
 
     <service android:name="com.google.firebase.components.ComponentDiscoveryService"
-        android:directBootAware="true" android:exported="false"
-        tools:targetApi="n" />
+        android:directBootAware="true" android:exported="false"/>
 
     <provider
         android:name="com.google.firebase.provider.FirebaseInitProvider"
