@@ -23,7 +23,7 @@ package com.google.firebase.remoteconfig {
     method @Deprecated public void setConfigSettings(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings);
     method @NonNull public Task<Void> setConfigSettingsAsync(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings);
     method @Deprecated public void setDefaults(@NonNull Map<String,Object>);
-    method public void setDefaults(int);
+    method @Deprecated public void setDefaults(int);
     method @NonNull public Task<Void> setDefaultsAsync(@NonNull Map<String,Object>);
     method @NonNull public Task<Void> setDefaultsAsync(int);
     field public static final boolean DEFAULT_VALUE_FOR_BOOLEAN = false;
