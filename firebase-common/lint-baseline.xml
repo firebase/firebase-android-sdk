@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="5" by="lint 3.4.1" client="gradle" variant="all" version="3.4.1">
+  <!-- TODO: remove when bazel support tools:targetApi -->
+    <issue
+        id="UnusedAttribute"
+        message="Attribute `directBootAware` is only used in API level 24 and higher (current min is 14)"
+        errorLine1="        android:directBootAware=&quot;true&quot; android:exported=&quot;false&quot;/>"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="11"
+            column="9"/>
+    </issue>
+
+</issues>

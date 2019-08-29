@@ -26,9 +26,10 @@ import java.util.Map;
 /**
  * A {@code QueryDocumentSnapshot} contains data read from a document in your Cloud Firestore
  * database as part of a query. The document is guaranteed to exist and its data can be extracted
- * using the {@link #getData()} or {@link #get()} methods.
+ * using the {@link #getData()} or the various {@code get()} methods in {@link DocumentSnapshot}
+ * (such as {@link DocumentSnapshot#get(String)}).
  *
- * <p>{@code QueryDocumentSnapshot} offers the same API surface as {@link DocumentSnapshot}. Since
+ * <p>{@code QueryDocumentSnapshot} offers the same API surface as {@code DocumentSnapshot}. Since
  * query results contain only existing documents, the {@link #exists()} method will always return
  * true and {@link #getData()} will never be {@code null}.
  *

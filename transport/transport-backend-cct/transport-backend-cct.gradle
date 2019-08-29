@@ -66,6 +66,10 @@ dependencies {
     implementation project(':transport:transport-runtime')
     implementation 'com.google.protobuf:protobuf-lite:3.0.1'
 
+    compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
+
+    annotationProcessor "com.google.auto.value:auto-value:1.6.2"
+
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation("com.github.tomakehurst:wiremock-jre8:2.21.0") {

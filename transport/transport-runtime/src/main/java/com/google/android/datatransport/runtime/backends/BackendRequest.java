@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime.backends;
 
+import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.auto.value.AutoValue;
 
@@ -23,8 +24,24 @@ public abstract class BackendRequest {
   /** Events to be sent to the backend. */
   public abstract Iterable<EventInternal> getEvents();
 
+  @Nullable
+  public abstract byte[] getExtras();
+
   /** Creates a new instance of the request. */
   public static BackendRequest create(Iterable<EventInternal> events) {
-    return new AutoValue_BackendRequest(events);
+    return BackendRequest.builder().setEvents(events).build();
+  }
+
+  public static Builder builder() {
+    return new AutoValue_BackendRequest.Builder();
+  }
+
+  @AutoValue.Builder
+  public abstract static class Builder {
+    public abstract Builder setEvents(Iterable<EventInternal> events);
+
+    public abstract Builder setExtras(@Nullable byte[] extras);
+
+    public abstract BackendRequest build();
   }
 }

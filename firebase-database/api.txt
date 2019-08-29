@@ -1,0 +1,224 @@
+// Signature format: 2.0
+package com.google.firebase.database {
+
+  public interface ChildEventListener {
+    method public void onCancelled(@NonNull com.google.firebase.database.DatabaseError);
+    method public void onChildAdded(@NonNull com.google.firebase.database.DataSnapshot, @Nullable String);
+    method public void onChildChanged(@NonNull com.google.firebase.database.DataSnapshot, @Nullable String);
+    method public void onChildMoved(@NonNull com.google.firebase.database.DataSnapshot, @Nullable String);
+    method public void onChildRemoved(@NonNull com.google.firebase.database.DataSnapshot);
+  }
+
+  public class DataSnapshot {
+    method @NonNull public com.google.firebase.database.DataSnapshot child(@NonNull String);
+    method public boolean exists();
+    method @NonNull public Iterable<DataSnapshot> getChildren();
+    method public long getChildrenCount();
+    method @Nullable public String getKey();
+    method @Nullable public Object getPriority();
+    method @NonNull public com.google.firebase.database.DatabaseReference getRef();
+    method @Nullable public Object getValue();
+    method @Nullable public Object getValue(boolean);
+    method @Nullable public <T> T getValue(@NonNull Class<T>);
+    method @Nullable public <T> T getValue(@NonNull com.google.firebase.database.GenericTypeIndicator<T>);
+    method public boolean hasChild(@NonNull String);
+    method public boolean hasChildren();
+    method public String toString();
+  }
+
+  public class DatabaseError {
+    method @NonNull public static com.google.firebase.database.DatabaseError fromException(@NonNull Throwable);
+    method public int getCode();
+    method @NonNull public String getDetails();
+    method @NonNull public String getMessage();
+    method @NonNull public com.google.firebase.database.DatabaseException toException();
+    method public String toString();
+    field public static final int DATA_STALE = -1; // 0xffffffff
+    field public static final int DISCONNECTED = -4; // 0xfffffffc
+    field public static final int EXPIRED_TOKEN = -6; // 0xfffffffa
+    field public static final int INVALID_TOKEN = -7; // 0xfffffff9
+    field public static final int MAX_RETRIES = -8; // 0xfffffff8
+    field public static final int NETWORK_ERROR = -24; // 0xffffffe8
+    field public static final int OPERATION_FAILED = -2; // 0xfffffffe
+    field public static final int OVERRIDDEN_BY_SET = -9; // 0xfffffff7
+    field public static final int PERMISSION_DENIED = -3; // 0xfffffffd
+    field public static final int UNAVAILABLE = -10; // 0xfffffff6
+    field public static final int UNKNOWN_ERROR = -999; // 0xfffffc19
+    field public static final int USER_CODE_EXCEPTION = -11; // 0xfffffff5
+    field public static final int WRITE_CANCELED = -25; // 0xffffffe7
+  }
+
+  public class DatabaseException {
+  }
+
+  public class DatabaseReference extends com.google.firebase.database.Query {
+    method @NonNull public com.google.firebase.database.DatabaseReference child(@NonNull String);
+    method public boolean equals(Object);
+    method @NonNull public com.google.firebase.database.FirebaseDatabase getDatabase();
+    method @Nullable public String getKey();
+    method @Nullable public com.google.firebase.database.DatabaseReference getParent();
+    method @NonNull public com.google.firebase.database.DatabaseReference getRoot();
+    method public static void goOffline();
+    method public static void goOnline();
+    method public int hashCode();
+    method @NonNull public com.google.firebase.database.OnDisconnect onDisconnect();
+    method @NonNull public com.google.firebase.database.DatabaseReference push();
+    method @NonNull public Task<Void> removeValue();
+    method public void removeValue(@Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method public void runTransaction(@NonNull com.google.firebase.database.Transaction.Handler);
+    method public void runTransaction(@NonNull com.google.firebase.database.Transaction.Handler, boolean);
+    method @NonNull public Task<Void> setPriority(@Nullable Object);
+    method public void setPriority(@Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method @NonNull public Task<Void> setValue(@Nullable Object);
+    method @NonNull public Task<Void> setValue(@Nullable Object, @Nullable Object);
+    method public void setValue(@Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method public void setValue(@Nullable Object, @Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method public String toString();
+    method @NonNull public Task<Void> updateChildren(@NonNull Map<String,Object>);
+    method public void updateChildren(@NonNull Map<String,Object>, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+  }
+
+  public static interface DatabaseReference.CompletionListener {
+    method public void onComplete(@Nullable com.google.firebase.database.DatabaseError, @NonNull com.google.firebase.database.DatabaseReference);
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Exclude {
+  }
+
+  public class FirebaseDatabase {
+    method @NonNull public FirebaseApp getApp();
+    method @NonNull public static com.google.firebase.database.FirebaseDatabase getInstance();
+    method @NonNull public static com.google.firebase.database.FirebaseDatabase getInstance(@NonNull String);
+    method @NonNull public static com.google.firebase.database.FirebaseDatabase getInstance(@NonNull FirebaseApp);
+    method @NonNull public static com.google.firebase.database.FirebaseDatabase getInstance(@NonNull FirebaseApp, @NonNull String);
+    method @NonNull public com.google.firebase.database.DatabaseReference getReference();
+    method @NonNull public com.google.firebase.database.DatabaseReference getReference(@NonNull String);
+    method @NonNull public com.google.firebase.database.DatabaseReference getReferenceFromUrl(@NonNull String);
+    method @NonNull public static String getSdkVersion();
+    method public void goOffline();
+    method public void goOnline();
+    method public void purgeOutstandingWrites();
+    method public void setLogLevel(@NonNull com.google.firebase.database.Logger.Level);
+    method public void setPersistenceCacheSizeBytes(long);
+    method public void setPersistenceEnabled(boolean);
+  }
+
+  public abstract class GenericTypeIndicator<T> {
+    ctor public GenericTypeIndicator();
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface IgnoreExtraProperties {
+  }
+
+  public interface Logger {
+  }
+
+  public enum Logger.Level {
+    enum_constant public static final com.google.firebase.database.Logger.Level DEBUG;
+    enum_constant public static final com.google.firebase.database.Logger.Level ERROR;
+    enum_constant public static final com.google.firebase.database.Logger.Level INFO;
+    enum_constant public static final com.google.firebase.database.Logger.Level NONE;
+    enum_constant public static final com.google.firebase.database.Logger.Level WARN;
+  }
+
+  public class MutableData {
+    method @NonNull public com.google.firebase.database.MutableData child(@NonNull String);
+    method public boolean equals(Object);
+    method @NonNull public Iterable<MutableData> getChildren();
+    method public long getChildrenCount();
+    method @Nullable public String getKey();
+    method @Nullable public Object getPriority();
+    method @Nullable public Object getValue();
+    method @Nullable public <T> T getValue(@NonNull Class<T>);
+    method @Nullable public <T> T getValue(@NonNull com.google.firebase.database.GenericTypeIndicator<T>);
+    method public boolean hasChild(@NonNull String);
+    method public boolean hasChildren();
+    method public void setPriority(@Nullable Object);
+    method public void setValue(@Nullable Object) throws com.google.firebase.database.DatabaseException;
+    method public String toString();
+  }
+
+  public class OnDisconnect {
+    method @NonNull public Task<Void> cancel();
+    method public void cancel(@NonNull com.google.firebase.database.DatabaseReference.CompletionListener);
+    method @NonNull public Task<Void> removeValue();
+    method public void removeValue(@Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method @NonNull public Task<Void> setValue(@Nullable Object);
+    method @NonNull public Task<Void> setValue(@Nullable Object, @Nullable String);
+    method @NonNull public Task<Void> setValue(@Nullable Object, double);
+    method public void setValue(@Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method public void setValue(@Nullable Object, @Nullable String, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method public void setValue(@Nullable Object, double, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method public void setValue(@Nullable Object, @Nullable Map, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method @NonNull public Task<Void> updateChildren(@NonNull Map<String,Object>);
+    method public void updateChildren(@NonNull Map<String,Object>, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface PropertyName {
+    method public abstract String value();
+  }
+
+  public class Query {
+    method @NonNull public com.google.firebase.database.ChildEventListener addChildEventListener(@NonNull com.google.firebase.database.ChildEventListener);
+    method public void addListenerForSingleValueEvent(@NonNull com.google.firebase.database.ValueEventListener);
+    method @NonNull public com.google.firebase.database.ValueEventListener addValueEventListener(@NonNull com.google.firebase.database.ValueEventListener);
+    method @NonNull public com.google.firebase.database.Query endAt(@Nullable String);
+    method @NonNull public com.google.firebase.database.Query endAt(double);
+    method @NonNull public com.google.firebase.database.Query endAt(boolean);
+    method @NonNull public com.google.firebase.database.Query endAt(@Nullable String, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query endAt(double, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query endAt(boolean, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query equalTo(@Nullable String);
+    method @NonNull public com.google.firebase.database.Query equalTo(double);
+    method @NonNull public com.google.firebase.database.Query equalTo(boolean);
+    method @NonNull public com.google.firebase.database.Query equalTo(@Nullable String, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query equalTo(double, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query equalTo(boolean, @Nullable String);
+    method @NonNull public com.google.firebase.database.DatabaseReference getRef();
+    method public void keepSynced(boolean);
+    method @NonNull public com.google.firebase.database.Query limitToFirst(int);
+    method @NonNull public com.google.firebase.database.Query limitToLast(int);
+    method @NonNull public com.google.firebase.database.Query orderByChild(@NonNull String);
+    method @NonNull public com.google.firebase.database.Query orderByKey();
+    method @NonNull public com.google.firebase.database.Query orderByPriority();
+    method @NonNull public com.google.firebase.database.Query orderByValue();
+    method public void removeEventListener(@NonNull com.google.firebase.database.ValueEventListener);
+    method public void removeEventListener(@NonNull com.google.firebase.database.ChildEventListener);
+    method @NonNull public com.google.firebase.database.Query startAt(@Nullable String);
+    method @NonNull public com.google.firebase.database.Query startAt(double);
+    method @NonNull public com.google.firebase.database.Query startAt(boolean);
+    method @NonNull public com.google.firebase.database.Query startAt(@Nullable String, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query startAt(double, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query startAt(boolean, @Nullable String);
+  }
+
+  public class ServerValue {
+    ctor public ServerValue();
+    field @NonNull public static final Map<String,String> TIMESTAMP;
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ThrowOnExtraProperties {
+  }
+
+  public class Transaction {
+    ctor public Transaction();
+    method @NonNull public static com.google.firebase.database.Transaction.Result abort();
+    method @NonNull public static com.google.firebase.database.Transaction.Result success(@NonNull com.google.firebase.database.MutableData);
+  }
+
+  public static interface Transaction.Handler {
+    method @NonNull public com.google.firebase.database.Transaction.Result doTransaction(@NonNull com.google.firebase.database.MutableData);
+    method public void onComplete(@Nullable com.google.firebase.database.DatabaseError, boolean, @Nullable com.google.firebase.database.DataSnapshot);
+  }
+
+  public static class Transaction.Result {
+    method public boolean isSuccess();
+  }
+
+  public interface ValueEventListener {
+    method public void onCancelled(@NonNull com.google.firebase.database.DatabaseError);
+    method public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot);
+  }
+
+}
+
