@@ -17,9 +17,6 @@ package com.google.firebase.heartbeatinfo;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
-import com.google.firebase.platforminfo.GlobalLibraryVersionRegistrar;
-import com.google.firebase.platforminfo.LibraryVersion;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,9 +24,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
