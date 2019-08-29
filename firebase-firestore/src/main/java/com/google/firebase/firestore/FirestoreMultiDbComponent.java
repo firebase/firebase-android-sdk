@@ -75,7 +75,7 @@ class FirestoreMultiDbComponent
   public synchronized void onDeleted(String firebaseAppName, FirebaseOptions options) {
     // Shuts down all database instances and remove them from registry map when App is deleted.
     for (Map.Entry<String, FirebaseFirestore> entry : instances.entrySet()) {
-      entry.getValue().shutdownInternal();
+      entry.getValue().terminateInternal();
       instances.remove(entry.getKey());
     }
   }

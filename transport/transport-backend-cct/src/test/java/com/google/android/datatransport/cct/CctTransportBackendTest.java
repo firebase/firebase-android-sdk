@@ -73,6 +73,7 @@ public class CctTransportBackendTest {
       firstLogRequestMatcher.zoom(b -> b.getLogEvent(1));
 
   private static final String TEST_ENDPOINT = "http://localhost:8999/api";
+  private static final String API_KEY = "api_key";
   private TestClock wallClock = new TestClock(INITIAL_WALL_TIME);
   private TestClock uptimeClock = new TestClock(INITIAL_UPTIME);
   private CctTransportBackend BACKEND =
@@ -81,7 +82,7 @@ public class CctTransportBackendTest {
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(8999);
 
-  private BackendRequest getBackendRequest() {
+  private BackendRequest getCCTBackendRequest() {
     return BackendRequest.create(
         Arrays.asList(
             BACKEND.decorate(
@@ -101,8 +102,31 @@ public class CctTransportBackendTest {
                     .build())));
   }
 
+  private BackendRequest getLegacyFirelogBackendRequest() {
+    return BackendRequest.builder()
+        .setEvents(
+            Arrays.asList(
+                BACKEND.decorate(
+                    EventInternal.builder()
+                        .setEventMillis(INITIAL_WALL_TIME)
+                        .setUptimeMillis(INITIAL_UPTIME)
+                        .setTransportName("4")
+                        .setPayload(PAYLOAD.toByteArray())
+                        .build()),
+                BACKEND.decorate(
+                    EventInternal.builder()
+                        .setEventMillis(INITIAL_WALL_TIME)
+                        .setUptimeMillis(INITIAL_UPTIME)
+                        .setTransportName("4")
+                        .setPayload(PAYLOAD.toByteArray())
+                        .setCode(CODE)
+                        .build())))
+        .setExtras(LegacyFlgDestination.encodeString(API_KEY))
+        .build();
+  }
+
   @Test
-  public void testSuccessLoggingRequest() {
+  public void testCCTSuccessLoggingRequest() {
     stubFor(
         post(urlEqualTo("/api"))
             .willReturn(
@@ -114,7 +138,7 @@ public class CctTransportBackendTest {
                             .setNextRequestWaitMillis(3)
                             .build()
                             .toByteArray())));
-    BackendRequest backendRequest = getBackendRequest();
+    BackendRequest backendRequest = getCCTBackendRequest();
     wallClock.tick();
     uptimeClock.tick();
 
@@ -154,27 +178,50 @@ public class CctTransportBackendTest {
             .andMatching(firstLogEventMatcher.test(e -> e.getEventCode() == 0))
             .andMatching(secondLogEventMatcher.test(e -> e.getEventCode() == 5)));
 
-    assertEquals(response, BackendResponse.ok(3));
+    assertEquals(BackendResponse.ok(3), response);
+  }
+
+  @Test
+  public void testLegacyFlgSuccessLoggingRequest_containsAPIKey() {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BACKEND.send(getLegacyFirelogBackendRequest());
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, equalTo(API_KEY)));
   }
 
   @Test
   public void testUnsuccessfulLoggingRequest() {
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(404)));
-    BackendResponse response = BACKEND.send(getBackendRequest());
+    BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response, BackendResponse.transientError());
+    assertEquals(BackendResponse.transientError(), response);
   }
 
   @Test
   public void testServerErrorLoggingRequest() {
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(500)));
-    BackendResponse response = BACKEND.send(getBackendRequest());
+    BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response, BackendResponse.transientError());
+    assertEquals(BackendResponse.transientError(), response);
   }
 
   @Test
@@ -186,21 +233,21 @@ public class CctTransportBackendTest {
                     .withStatus(200)
                     .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
                     .withBody("{\"status\":\"Error\",\"message\":\"Endpoint not found\"}")));
-    BackendResponse response = BACKEND.send(getBackendRequest());
+    BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response, BackendResponse.fatalError());
+    assertEquals(BackendResponse.fatalError(), response);
   }
 
   @Test
   public void testNonHandledResponseCode() {
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(300)));
-    BackendResponse response = BACKEND.send(getBackendRequest());
+    BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response, BackendResponse.fatalError());
+    assertEquals(BackendResponse.fatalError(), response);
   }
 
   @Test
@@ -209,9 +256,9 @@ public class CctTransportBackendTest {
         new CctTransportBackend(
             RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock, 300);
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withFixedDelay(500)));
-    BackendResponse response = backend.send(getBackendRequest());
+    BackendResponse response = backend.send(getCCTBackendRequest());
 
-    assertEquals(response, BackendResponse.transientError());
+    assertEquals(BackendResponse.transientError(), response);
   }
 
   @Test
