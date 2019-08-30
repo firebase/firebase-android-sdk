@@ -218,10 +218,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
       InstallationResponse installationResponse =
           serviceClient.createFirebaseInstallation(
-              firebaseApp.getOptions().getApiKey(),
-              persistedFidEntry.getFirebaseInstallationId(),
-              firebaseApp.getOptions().getProjectId(),
-              getApplicationId());
+              /*apiKey= */ firebaseApp.getOptions().getApiKey(),
+              /*fid= */ persistedFidEntry.getFirebaseInstallationId(),
+              /*projectID= */ firebaseApp.getOptions().getProjectId(),
+              /*appId= */ getApplicationId());
       persistedFid.insertOrUpdatePersistedFidEntry(
           PersistedFidEntry.builder()
               .setFirebaseInstallationId(persistedFidEntry.getFirebaseInstallationId())
