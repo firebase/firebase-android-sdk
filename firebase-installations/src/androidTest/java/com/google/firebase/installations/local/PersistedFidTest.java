@@ -14,7 +14,6 @@
 
 package com.google.firebase.installations.local;
 
-import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_2;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
@@ -23,6 +22,7 @@ import static com.google.firebase.installations.FisAndroidTestConstants.TEST_CRE
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_FID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_REFRESH_TOKEN;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP;
+import static com.google.firebase.installations.local.PersistedFidEntrySubject.assertThat;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -30,6 +30,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.installations.local.PersistedFid.RegistrationStatus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,25 +89,12 @@ public class PersistedFidTest {
     PersistedFidEntry entryValue = persistedFid0.readPersistedFidEntryValue();
 
     // Validate insertion was successful
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(entryValue.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
-    assertWithMessage("Persisted Auth Token doesn't match")
-        .that(entryValue.getAuthToken())
-        .isEqualTo(TEST_AUTH_TOKEN);
-    assertWithMessage("Persisted Refresh Token doesn't match")
-        .that(entryValue.getRefreshToken())
-        .isEqualTo(TEST_REFRESH_TOKEN);
-    assertWithMessage("Persisted Registration Status doesn't match")
-        .that(entryValue.getRegistrationStatus())
-        .isEqualTo(PersistedFid.RegistrationStatus.UNREGISTERED);
-    assertWithMessage("Persisted Token expiration timestamp doesn't match")
-        .that(entryValue.getExpiresInSecs())
-        .isEqualTo(TEST_TOKEN_EXPIRATION_TIMESTAMP);
-    assertWithMessage("Persisted Creation time doesn't match")
-        .that(entryValue.getTokenCreationEpochInSecs())
-        .isEqualTo(TEST_CREATION_TIMESTAMP_1);
-    assertNull(persistedFid1.readPersistedFidEntryValue());
+    assertThat(entryValue).hasFid(TEST_FID_1);
+    assertThat(entryValue).hasAuthToken(TEST_AUTH_TOKEN);
+    assertThat(entryValue).hasRefreshToken(TEST_REFRESH_TOKEN);
+    assertThat(entryValue).hasRegistrationStatus(RegistrationStatus.UNREGISTERED);
+    assertThat(entryValue).hasTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP);
+    assertThat(entryValue).hasCreationTimestamp(TEST_CREATION_TIMESTAMP_1);
 
     // Update Persisted Fid Entry with Registered status in Shared Prefs
     assertTrue(
@@ -122,23 +110,11 @@ public class PersistedFidTest {
     entryValue = persistedFid0.readPersistedFidEntryValue();
 
     // Validate update was successful
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(entryValue.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
-    assertWithMessage("Persisted Auth Token doesn't match")
-        .that(entryValue.getAuthToken())
-        .isEqualTo(TEST_AUTH_TOKEN);
-    assertWithMessage("Persisted Refresh Token doesn't match")
-        .that(entryValue.getRefreshToken())
-        .isEqualTo(TEST_REFRESH_TOKEN);
-    assertWithMessage("Persisted Registration Status doesn't match")
-        .that(entryValue.getRegistrationStatus())
-        .isEqualTo(PersistedFid.RegistrationStatus.REGISTERED);
-    assertWithMessage("Persisted Token expiration timestamp doesn't match")
-        .that(entryValue.getExpiresInSecs())
-        .isEqualTo(TEST_TOKEN_EXPIRATION_TIMESTAMP);
-    assertWithMessage("Persisted Creation time doesn't match")
-        .that(entryValue.getTokenCreationEpochInSecs())
-        .isEqualTo(TEST_CREATION_TIMESTAMP_2);
+    assertThat(entryValue).hasFid(TEST_FID_1);
+    assertThat(entryValue).hasAuthToken(TEST_AUTH_TOKEN);
+    assertThat(entryValue).hasRefreshToken(TEST_REFRESH_TOKEN);
+    assertThat(entryValue).hasRegistrationStatus(RegistrationStatus.REGISTERED);
+    assertThat(entryValue).hasTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP);
+    assertThat(entryValue).hasCreationTimestamp(TEST_CREATION_TIMESTAMP_2);
   }
 }
