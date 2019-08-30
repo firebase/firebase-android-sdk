@@ -42,22 +42,22 @@ public class StorageException extends FirebaseException {
 
   private final int errorCode;
   private final int httpResultCode;
-  private String detailMessage;
   private Throwable cause;
 
   StorageException(@ErrorCode int errorCode, Throwable inner, int httpResultCode) {
-    this.detailMessage = getErrorMessageForCode(errorCode);
+    super(getErrorMessageForCode(errorCode));
+
     this.cause = inner;
     this.errorCode = errorCode;
     this.httpResultCode = httpResultCode;
     Log.e(
         TAG,
         "StorageException has occurred.\n"
-            + detailMessage
+            + getErrorMessageForCode(errorCode)
             + "\n Code: "
-            + Integer.toString(this.errorCode)
+            + this.errorCode
             + " HttpResult: "
-            + Integer.toString(this.httpResultCode));
+            + this.httpResultCode);
     if (cause != null) {
       Log.e(TAG, cause.getMessage(), cause);
     }
@@ -153,16 +153,6 @@ public class StorageException extends FirebaseException {
         return "An unknown error occurred, please check the HTTP result code and inner "
             + "exception for server response.";
     }
-  }
-
-  /**
-   * Returns the detail message which was provided when this {@code Throwable} was created. Returns
-   * {@code null} if no message was provided at creation time.
-   */
-  @NonNull
-  @Override
-  public String getMessage() {
-    return detailMessage;
   }
 
   /** Returns the cause of this {@code Throwable}, or {@code null} if there is no cause. */

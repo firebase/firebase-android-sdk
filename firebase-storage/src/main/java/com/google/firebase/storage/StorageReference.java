@@ -33,7 +33,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,17 +85,8 @@ public class StorageReference implements Comparable<StorageReference> {
 
     pathString = Slashes.normalizeSlashes(pathString);
     Uri child;
-    try {
-      child =
-          mStorageUri
-              .buildUpon()
-              .appendEncodedPath(Slashes.preserveSlashEncode(pathString))
-              .build();
-    } catch (UnsupportedEncodingException e) {
-      Log.e(TAG, "Unable to create a valid default Uri. " + pathString, e);
-
-      throw new IllegalArgumentException("childName");
-    }
+    child =
+        mStorageUri.buildUpon().appendEncodedPath(Slashes.preserveSlashEncode(pathString)).build();
     return new StorageReference(child, mFirebaseStorage);
   }
 
