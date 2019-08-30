@@ -16,12 +16,15 @@ package com.google.firebase.internal;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 
-import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-
+/**
+ * Class responsible for storing all heartbeat related information. Store a key value pair with the
+ * key being either the heartbeat tag (one for each firebase sdk) or the global heart beat tag and
+ * the value being the timestamp(in millis) as to when the last heart beat was sent. Class also
+ * provides helper functions to check if there is a need to send the global/sdk heart beat.
+ */
 public class HeartBeatInfoStorage {
   private static HeartBeatInfoStorage instance = null;
   private static final String GLOBAL = "fire-global";
@@ -55,20 +58,29 @@ public class HeartBeatInfoStorage {
     return instance;
   }
 
-  public boolean shouldSendSdkHeartBeat(String sdkName, long millis) {
-    if (sharedPreferences.contains(sdkName)) {
-      long timeElapsed = millis - sharedPreferences.getLong(sdkName, -1);
+  /*
+   Indicates whether or not we have to send a sdk heartbeat.
+   A sdk heartbeat is sent either when there is no heartbeat sent ever for the sdk or
+   when the last heartbeat send for the sdk was later than a day before.
+  */
+  public boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
+    if (sharedPreferences.contains(heartBeatTag)) {
+      long timeElapsed = millis - sharedPreferences.getLong(heartBeatTag, -1);
       if (timeElapsed >= (long) 1000 * 60 * 60 * 24) {
-        sharedPreferences.edit().putLong(sdkName, millis).apply();
+        sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
         return true;
       }
       return false;
     } else {
-      sharedPreferences.edit().putLong(sdkName, millis).apply();
+      sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
       return true;
     }
   }
 
+  /*
+   Indicates whether or not we have to send a global heartbeat.
+   A global heartbeat is set only once per day.
+  */
   public boolean shouldSendGlobalHeartBeat(long millis) {
     return shouldSendSdkHeartBeat(GLOBAL, millis);
   }

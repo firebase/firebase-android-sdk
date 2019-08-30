@@ -15,15 +15,14 @@
 package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
-
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.internal.HeartBeatInfoStorage;
 import org.jetbrains.annotations.NotNull;
 
+/** Provides information as whether to send heart beat or not. */
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
   private static HeartBeatInfoStorage storage;
@@ -34,7 +33,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     GLOBAL_HEART_BEAT
   }
 
-  DefaultHeartBeatInfo(Context context) {
+  private DefaultHeartBeatInfo(Context context) {
     HeartBeatInfoStorage.initialize(context);
     storage = HeartBeatInfoStorage.getInstance();
   }
@@ -44,7 +43,6 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   DefaultHeartBeatInfo(HeartBeatInfoStorage testStorage) {
     storage = testStorage;
   }
-
 
   @Override
   public @NotNull Enum getHeartBeatCode(@NotNull String heartBeatTag) {

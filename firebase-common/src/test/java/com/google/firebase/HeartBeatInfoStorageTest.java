@@ -14,70 +14,58 @@
 
 package com.google.firebase;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import android.content.Context;
 import android.content.SharedPreferences;
-
-
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
-
 import com.google.firebase.internal.HeartBeatInfoStorage;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.Random;
-
 @RunWith(AndroidJUnit4.class)
-public class HeartBeatInfoStorageTest{
-    private final String testSdk = "testSdk";
-    private final String GLOBAL = "fire-global";
-    private static Context applicationContext = ApplicationProvider.getApplicationContext();
-    private static SharedPreferences sharedPreferences = applicationContext.getSharedPreferences("test", Context.MODE_PRIVATE);
-    private HeartBeatInfoStorage heartBeatInfoStorage = new HeartBeatInfoStorage(sharedPreferences);
+public class HeartBeatInfoStorageTest {
+  private final String testSdk = "testSdk";
+  private final String GLOBAL = "fire-global";
+  private static Context applicationContext = ApplicationProvider.getApplicationContext();
+  private static SharedPreferences sharedPreferences =
+      applicationContext.getSharedPreferences("test", Context.MODE_PRIVATE);
+  private HeartBeatInfoStorage heartBeatInfoStorage = new HeartBeatInfoStorage(sharedPreferences);
 
-    @After
-    public void tearDown() {
-        sharedPreferences.edit().clear().apply();
-    }
+  @After
+  public void tearDown() {
+    sharedPreferences.edit().clear().apply();
+  }
 
-    @Test
-    public void shouldSendSdkHeartBeat_answerIsNo() {
-        sharedPreferences.edit().putLong(testSdk, 1).apply();
-        assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1)).isFalse();
-    }
+  @Test
+  public void shouldSendSdkHeartBeat_answerIsNo() {
+    sharedPreferences.edit().putLong(testSdk, 1).apply();
+    assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1)).isFalse();
+  }
 
-    @Test
-    public void shouldSendSdkHeartBeat_answerIsYes() {
-        long currentTime = System.currentTimeMillis();
-        assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1)).isTrue();
-        assertThat(sharedPreferences.getLong(testSdk, -1)).isEqualTo(1);
-        assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, currentTime)).isTrue();
-        assertThat(sharedPreferences.getLong(testSdk, -1)).isEqualTo(currentTime);
-    }
+  @Test
+  public void shouldSendSdkHeartBeat_answerIsYes() {
+    long currentTime = System.currentTimeMillis();
+    assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1)).isTrue();
+    assertThat(sharedPreferences.getLong(testSdk, -1)).isEqualTo(1);
+    assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, currentTime)).isTrue();
+    assertThat(sharedPreferences.getLong(testSdk, -1)).isEqualTo(currentTime);
+  }
 
-    @Test
-    public void shouldSendGlobalHeartBeat_answerIsNo() {
-        sharedPreferences.edit().putLong(GLOBAL, 1).apply();
-        assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1)).isFalse();
-    }
+  @Test
+  public void shouldSendGlobalHeartBeat_answerIsNo() {
+    sharedPreferences.edit().putLong(GLOBAL, 1).apply();
+    assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1)).isFalse();
+  }
 
-    @Test
-    public void shouldSendGlobalHeartBeat_answerIsYes() {
-        long currentTime = System.currentTimeMillis();
-        assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1)).isTrue();
-        assertThat(sharedPreferences.getLong(GLOBAL, -1)).isEqualTo(1);
-        assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(currentTime)).isTrue();
-        assertThat(sharedPreferences.getLong(GLOBAL, -1)).isEqualTo(currentTime);
-    }
-
+  @Test
+  public void shouldSendGlobalHeartBeat_answerIsYes() {
+    long currentTime = System.currentTimeMillis();
+    assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1)).isTrue();
+    assertThat(sharedPreferences.getLong(GLOBAL, -1)).isEqualTo(1);
+    assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(currentTime)).isTrue();
+    assertThat(sharedPreferences.getLong(GLOBAL, -1)).isEqualTo(currentTime);
+  }
 }
