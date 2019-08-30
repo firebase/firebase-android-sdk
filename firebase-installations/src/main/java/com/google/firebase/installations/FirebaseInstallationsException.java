@@ -12,42 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.installations.remote;
+package com.google.firebase.installations;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseException;
 
-/** The class for all Exceptions thrown by {@link FirebaseInstallationServiceClient}. */
-public class FirebaseInstallationServiceException extends FirebaseException {
+/** The class for all Exceptions thrown by {@link FirebaseInstallations}. */
+public class FirebaseInstallationsException extends FirebaseException {
+
+  // TODO(ankitagj): Improve clear exception handling.
   public enum Status {
-    SERVER_ERROR,
+    SDK_INTERNAL_ERROR,
 
-    NETWORK_ERROR,
-
-    UNAUTHORIZED
+    CLIENT_ERROR
   }
 
   @NonNull private final Status status;
 
-  public FirebaseInstallationServiceException(@NonNull Status status) {
+  public FirebaseInstallationsException(@NonNull Status status) {
     this.status = status;
   }
 
-  public FirebaseInstallationServiceException(@NonNull String message, @NonNull Status status) {
+  public FirebaseInstallationsException(@NonNull String message, @NonNull Status status) {
     super(message);
     this.status = status;
   }
 
-  public FirebaseInstallationServiceException(
+  public FirebaseInstallationsException(
       @NonNull String message, @NonNull Status status, @NonNull Throwable cause) {
     super(message, cause);
     this.status = status;
   }
 
   /**
-   * Gets the status status for the operation that failed.
+   * Gets the status for the operation that failed.
    *
-   * @return the status for the FirebaseInstallationServiceException
+   * @return the status for the FirebaseInstallationsException
    */
   @NonNull
   public Status getStatus() {
