@@ -17,16 +17,28 @@ package com.google.firebase.internal;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
+
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+
 public class HeartBeatInfoStorage {
   private static HeartBeatInfoStorage instance = null;
+  private static final String GLOBAL = "fire-global";
 
   private static final String preferencesName = "FirebaseAppHeartBeat";
 
-  public final SharedPreferences sharedPreferences;
+  private final SharedPreferences sharedPreferences;
 
   private HeartBeatInfoStorage(Context applicationContext) {
     this.sharedPreferences =
         applicationContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE);
+  }
+
+  @VisibleForTesting
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  public HeartBeatInfoStorage(SharedPreferences preferences) {
+    this.sharedPreferences = preferences;
   }
 
   public static void initialize(Context applicationContext) {
@@ -41,5 +53,23 @@ public class HeartBeatInfoStorage {
       throw new IllegalStateException("Not initialized!");
     }
     return instance;
+  }
+
+  public boolean shouldSendSdkHeartBeat(String sdkName, long millis) {
+    if (sharedPreferences.contains(sdkName)) {
+      long timeElapsed = millis - sharedPreferences.getLong(sdkName, -1);
+      if (timeElapsed >= (long) 1000 * 60 * 60 * 24) {
+        sharedPreferences.edit().putLong(sdkName, millis).apply();
+        return true;
+      }
+      return false;
+    } else {
+      sharedPreferences.edit().putLong(sdkName, millis).apply();
+      return true;
+    }
+  }
+
+  public boolean shouldSendGlobalHeartBeat(long millis) {
+    return shouldSendSdkHeartBeat(GLOBAL, millis);
   }
 }

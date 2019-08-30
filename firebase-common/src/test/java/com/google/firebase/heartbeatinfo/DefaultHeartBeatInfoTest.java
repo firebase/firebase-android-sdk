@@ -18,8 +18,12 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 
+import com.google.firebase.internal.HeartBeatInfoStorage;
+
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,20 +35,33 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class DefaultHeartBeatInfoTest {
-    private final String testSdk = "fire-test";
-    private final SharedPreferences sharedPreferences = mock(SharedPreferences.class);
-    private HeartBeatInfo heartBeatInfo;
-    @Before
-    public void before() {
-        final Context context = mock(Context.class);
-        when(context.getSharedPreferences(anyString(), any())).thenReturn(sharedPreferences);
-        heartBeatInfo = new DefaultHeartBeatInfo(context);
-    }
+    private String testSdk = "fire-test";
+    private HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
+    private DefaultHeartBeatInfo heartBeatInfo = new DefaultHeartBeatInfo(storage);
 
     @Test
     public void getHeartBeatCode_noHeartBeat() {
-        assertThat(heartBeatInfo.getHeartBeatCode(testSdk)).isEqualTo(0);
-
+        when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.FALSE);
+        heartBeatInfo.getHeartBeatCode(testSdk);
+        assertThat(heartBeatInfo.getHeartBeatCode(testSdk)).isEqualTo(DefaultHeartBeatInfo.HeartBeat.NO_HEART_BEAT);
     }
+
+    @Test
+    public void getHeartBeatCode_sdkHeartBeat() {
+        when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
+        when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.FALSE);
+        heartBeatInfo.getHeartBeatCode(testSdk);
+        assertThat(heartBeatInfo.getHeartBeatCode(testSdk)).isEqualTo(DefaultHeartBeatInfo.HeartBeat.SDK_HEART_BEAT);
+    }
+
+    @Test
+    public void getHeartBeatCode_globalHeartBeat() {
+        when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
+        when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
+        heartBeatInfo.getHeartBeatCode(testSdk);
+        assertThat(heartBeatInfo.getHeartBeatCode(testSdk)).isEqualTo(DefaultHeartBeatInfo.HeartBeat.GLOBAL_HEART_BEAT);
+    }
+
+
 
 }

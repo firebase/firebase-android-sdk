@@ -18,5 +18,5 @@ import org.jetbrains.annotations.NotNull;
 
 /** Component that publishes heartbeat information */
 public interface HeartBeatInfo {
-  int getHeartBeatCode(@NotNull String sdkName);
+  @NotNull Enum getHeartBeatCode(@NotNull String heartBeatTag);
 }

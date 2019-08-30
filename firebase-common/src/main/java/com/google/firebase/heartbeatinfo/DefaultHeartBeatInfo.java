@@ -15,6 +15,10 @@
 package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
+
+import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.internal.HeartBeatInfoStorage;
@@ -22,50 +26,34 @@ import org.jetbrains.annotations.NotNull;
 
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
-  private static final String GLOBAL = "fire-global";
   private static HeartBeatInfoStorage storage;
+
+  enum HeartBeat {
+    NO_HEART_BEAT,
+    SDK_HEART_BEAT,
+    GLOBAL_HEART_BEAT
+  }
 
   DefaultHeartBeatInfo(Context context) {
     HeartBeatInfoStorage.initialize(context);
     storage = HeartBeatInfoStorage.getInstance();
   }
 
-  private boolean shouldSendSdkHeartBeat(String sdkName, long millis) {
-    if (storage.sharedPreferences.contains(sdkName)) {
-      long timeElapsed = storage.sharedPreferences.getLong(sdkName, -1) - millis;
-      if (timeElapsed >= (long) 1000 * 60 * 60 * 24) {
-        storage.sharedPreferences.edit().putLong(sdkName, millis).apply();
-        return true;
-      }
-      return false;
-    } else {
-      storage.sharedPreferences.edit().putLong(sdkName, millis).apply();
-      return true;
-    }
+  @VisibleForTesting
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  DefaultHeartBeatInfo(HeartBeatInfoStorage testStorage) {
+    storage = testStorage;
   }
 
-  private boolean shouldSendGlobalHeartBeat(long millis) {
-    if (storage.sharedPreferences.contains(GLOBAL)) {
-      long timeElapsed = storage.sharedPreferences.getLong(GLOBAL, -1) - millis;
-      if (timeElapsed >= (long) 1000 * 60 * 60 * 24) {
-        storage.sharedPreferences.edit().putLong(GLOBAL, millis).apply();
-        return true;
-      }
-      return false;
-    } else {
-      storage.sharedPreferences.edit().putLong(GLOBAL, millis).apply();
-      return true;
-    }
-  }
 
   @Override
-  public int getHeartBeatCode(@NotNull String sdkName) {
+  public @NotNull Enum getHeartBeatCode(@NotNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
-    if (!shouldSendSdkHeartBeat(sdkName, presentTime)) {
-      return 0;
+    if (!storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime)) {
+      return HeartBeat.NO_HEART_BEAT;
     }
-    if (shouldSendGlobalHeartBeat(presentTime)) return 2;
-    else return 1;
+    if (storage.shouldSendGlobalHeartBeat(presentTime)) return HeartBeat.GLOBAL_HEART_BEAT;
+    else return HeartBeat.SDK_HEART_BEAT;
   }
 
   public static @NotNull Component<HeartBeatInfo> component() {
