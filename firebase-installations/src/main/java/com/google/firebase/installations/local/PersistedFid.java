@@ -19,39 +19,50 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
+import java.util.Arrays;
+import java.util.List;
 
 /**
- * A layer that locally caches a few Firebase Installation attributes on top the Firebase
- * Installation backend API.
+ * A layer that locally persists a few Firebase Installation attributes on top the Firebase
+ * Installation API.
  */
-public class FiidCache {
-  // Status of each cache entry
-  // NOTE: never change the ordinal of the enum values because the enum values are stored in cache
-  // as their ordinal numbers.
-  public enum CacheStatus {
-    // Cache entry is synced to Firebase backend
+public class PersistedFid {
+  // Registration Status of each persisted fid entry
+  // NOTE: never change the ordinal of the enum values because the enum values are stored in shared
+  // prefs as their ordinal numbers.
+  public enum RegistrationStatus {
+    /** {@link PersistedFidEntry} is synced to FIS servers */
     REGISTERED,
-    // Cache entry is waiting for Firebase backend response or internal network retry
+    /** {@link PersistedFidEntry} is not synced with FIS server */
     UNREGISTERED,
-    // Cache entry is in error state when syncing with Firebase backend
+    /** {@link PersistedFidEntry} is in error state when syncing with FIS server */
     REGISTER_ERROR,
-    // Cache entry is in delete state before syncing with Firebase backend
-    DELETED
+    /** {@link PersistedFidEntry} is in pending state when waiting for FIS server response */
+    PENDING
   }
 
-  private static final String SHARED_PREFS_NAME = "FiidCache";
+  private static final String SHARED_PREFS_NAME = "PersistedFid";
 
   private static final String FIREBASE_INSTALLATION_ID_KEY = "Fid";
   private static final String AUTH_TOKEN_KEY = "AuthToken";
   private static final String REFRESH_TOKEN_KEY = "RefreshToken";
   private static final String TOKEN_CREATION_TIME_IN_SECONDS_KEY = "TokenCreationEpochInSecs";
   private static final String EXPIRES_IN_SECONDS_KEY = "ExpiresInSecs";
-  private static final String CACHE_STATUS_KEY = "Status";
+  private static final String PERSISTED_STATUS_KEY = "Status";
+
+  private static final List<String> FID_PREF_KEYS =
+      Arrays.asList(
+          FIREBASE_INSTALLATION_ID_KEY,
+          AUTH_TOKEN_KEY,
+          REFRESH_TOKEN_KEY,
+          TOKEN_CREATION_TIME_IN_SECONDS_KEY,
+          EXPIRES_IN_SECONDS_KEY,
+          PERSISTED_STATUS_KEY);
 
   private final SharedPreferences prefs;
   private final String persistenceKey;
 
-  public FiidCache(@NonNull FirebaseApp firebaseApp) {
+  public PersistedFid(@NonNull FirebaseApp firebaseApp) {
     // Different FirebaseApp in the same Android application should have the same application
     // context and same dir path
     prefs =
@@ -62,30 +73,41 @@ public class FiidCache {
   }
 
   @Nullable
-  public synchronized FiidCacheEntryValue readCacheEntryValue() {
-    String iid = prefs.getString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
-    int status = prefs.getInt(getSharedPreferencesKey(CACHE_STATUS_KEY), -1);
+  public synchronized PersistedFidEntry readPersistedFidEntryValue() {
+    String fid = prefs.getString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
+    int status = prefs.getInt(getSharedPreferencesKey(PERSISTED_STATUS_KEY), -1);
     String authToken = prefs.getString(getSharedPreferencesKey(AUTH_TOKEN_KEY), null);
     String refreshToken = prefs.getString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), null);
     long tokenCreationTime =
         prefs.getLong(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY), 0);
     long expiresIn = prefs.getLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), 0);
 
-    if (iid == null || status == -1) {
+    if (fid == null
+        || status == -1
+        || !(status >= 0 && status < RegistrationStatus.values().length)) {
       return null;
     }
 
-    return FiidCacheEntryValue.create(
-        iid, CacheStatus.values()[status], authToken, refreshToken, tokenCreationTime, expiresIn);
+    return PersistedFidEntry.builder()
+        .setFirebaseInstallationId(fid)
+        .setRegistrationStatus(RegistrationStatus.values()[status])
+        .setAuthToken(authToken)
+        .setRefreshToken(refreshToken)
+        .setTokenCreationEpochInSecs(tokenCreationTime)
+        .setExpiresInSecs(expiresIn)
+        .build();
   }
 
   @NonNull
-  public synchronized boolean insertOrUpdateCacheEntry(@NonNull FiidCacheEntryValue entryValue) {
+  public synchronized boolean insertOrUpdatePersistedFidEntry(
+      @NonNull PersistedFidEntry entryValue) {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putString(
         getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY),
         entryValue.getFirebaseInstallationId());
-    editor.putInt(getSharedPreferencesKey(CACHE_STATUS_KEY), entryValue.getCacheStatus().ordinal());
+    editor.putInt(
+        getSharedPreferencesKey(PERSISTED_STATUS_KEY),
+        entryValue.getRegistrationStatus().ordinal());
     editor.putString(getSharedPreferencesKey(AUTH_TOKEN_KEY), entryValue.getAuthToken());
     editor.putString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), entryValue.getRefreshToken());
     editor.putLong(
@@ -98,12 +120,10 @@ public class FiidCache {
   @NonNull
   public synchronized boolean clear() {
     SharedPreferences.Editor editor = prefs.edit();
-    editor.remove(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY));
-    editor.remove(getSharedPreferencesKey(CACHE_STATUS_KEY));
-    editor.remove(getSharedPreferencesKey(AUTH_TOKEN_KEY));
-    editor.remove(getSharedPreferencesKey(REFRESH_TOKEN_KEY));
-    editor.remove(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY));
-    editor.remove(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY));
+    for (String k : FID_PREF_KEYS) {
+      editor.remove(getSharedPreferencesKey(k));
+    }
+    editor.commit();
     return editor.commit();
   }
 

@@ -32,10 +32,10 @@ public class FirebaseInstallationServiceClient {
       "firebaseinstallations.googleapis.com";
   private static final String CREATE_REQUEST_RESOURCE_NAME_FORMAT = "projects/%s/installations";
   private static final String GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT =
-      "projects/%s/installations/%s/auth:generate";
+      "projects/%s/installations/%s/authTokens:generate";
   private static final String DELETE_REQUEST_RESOURCE_NAME_FORMAT = "projects/%s/installations/%s";
   private static final String FIREBASE_INSTALLATIONS_API_VERSION = "v1";
-  private static final String FIREBASE_INSTALLATION_AUTH_VERSION = "FIS_V2";
+  private static final String FIREBASE_INSTALLATION_AUTH_VERSION = "FIS_v2";
 
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
   private static final String ACCEPT_HEADER_KEY = "Accept";
@@ -48,14 +48,20 @@ public class FirebaseInstallationServiceClient {
   private static final String INTERNAL_SERVER_ERROR_MESSAGE = "There was an internal server error.";
   private static final String NETWORK_ERROR_MESSAGE = "The server returned an unexpected error:";
 
+  /**
+   * Creates a FID on the FIS Servers by calling FirebaseInstallations API create method.
+   *
+   * @param apiKey API Key that has access to FIS APIs
+   * @param fid Firebase Installation Identifier
+   * @param projectID Project Id
+   * @param appId the identifier of a Firebase application
+   * @return {@link InstallationResponse} generated from the response body
+   */
   @NonNull
   public InstallationResponse createFirebaseInstallation(
-      long projectNumber,
-      @NonNull String apiKey,
-      @NonNull String firebaseInstallationId,
-      @NonNull String appId)
+      @NonNull String apiKey, @NonNull String fid, @NonNull String projectID, @NonNull String appId)
       throws FirebaseInstallationServiceException {
-    String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectNumber);
+    String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
     try {
       URL url =
           new URL(
@@ -76,9 +82,7 @@ public class FirebaseInstallationServiceClient {
           new GZIPOutputStream(httpsURLConnection.getOutputStream());
       try {
         gzipOutputStream.write(
-            buildCreateFirebaseInstallationRequestBody(firebaseInstallationId, appId)
-                .toString()
-                .getBytes("UTF-8"));
+            buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
       } catch (JSONException e) {
         throw new IllegalStateException(e);
       } finally {
@@ -91,16 +95,16 @@ public class FirebaseInstallationServiceClient {
           return readCreateResponse(httpsURLConnection);
         case 401:
           throw new FirebaseInstallationServiceException(
-              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Code.UNAUTHORIZED);
+              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Status.UNAUTHORIZED);
         default:
           throw new FirebaseInstallationServiceException(
               INTERNAL_SERVER_ERROR_MESSAGE,
-              FirebaseInstallationServiceException.Code.SERVER_ERROR);
+              FirebaseInstallationServiceException.Status.SERVER_ERROR);
       }
     } catch (IOException e) {
       throw new FirebaseInstallationServiceException(
           NETWORK_ERROR_MESSAGE + e.getMessage(),
-          FirebaseInstallationServiceException.Code.NETWORK_ERROR);
+          FirebaseInstallationServiceException.Status.NETWORK_ERROR);
     }
   }
 
@@ -109,15 +113,26 @@ public class FirebaseInstallationServiceClient {
     JSONObject firebaseInstallationData = new JSONObject();
     firebaseInstallationData.put("fid", fid);
     firebaseInstallationData.put("appId", appId);
-    firebaseInstallationData.put("appVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
+    firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
     return firebaseInstallationData;
   }
 
+  /**
+   * Deletes a FID on the FIS Servers by calling FirebaseInstallations API delete method.
+   *
+   * @param apiKey API Key that has access to FIS APIs
+   * @param fid Firebase Installation Identifier
+   * @param projectID Project Id
+   * @param refreshToken a token used to authenticate FIS requests
+   */
   @NonNull
   public void deleteFirebaseInstallation(
-      long projectNumber, @NonNull String apiKey, @NonNull String fid, @NonNull String refreshToken)
+      @NonNull String apiKey,
+      @NonNull String fid,
+      @NonNull String projectID,
+      @NonNull String refreshToken)
       throws FirebaseInstallationServiceException {
-    String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, fid);
+    String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
     try {
       URL url =
           new URL(
@@ -131,7 +146,7 @@ public class FirebaseInstallationServiceClient {
       HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
       httpsURLConnection.setDoOutput(true);
       httpsURLConnection.setRequestMethod("DELETE");
-      httpsURLConnection.addRequestProperty("Authorization", "FIS_V2 " + refreshToken);
+      httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
       httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
       httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
 
@@ -141,25 +156,37 @@ public class FirebaseInstallationServiceClient {
           return;
         case 401:
           throw new FirebaseInstallationServiceException(
-              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Code.UNAUTHORIZED);
+              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Status.UNAUTHORIZED);
         default:
           throw new FirebaseInstallationServiceException(
               INTERNAL_SERVER_ERROR_MESSAGE,
-              FirebaseInstallationServiceException.Code.SERVER_ERROR);
+              FirebaseInstallationServiceException.Status.SERVER_ERROR);
       }
     } catch (IOException e) {
       throw new FirebaseInstallationServiceException(
           NETWORK_ERROR_MESSAGE + e.getMessage(),
-          FirebaseInstallationServiceException.Code.NETWORK_ERROR);
+          FirebaseInstallationServiceException.Status.NETWORK_ERROR);
     }
   }
 
+  /**
+   * Generates a new auth token for a FID on the FIS Servers by calling FirebaseInstallations API
+   * generateAuthToken method.
+   *
+   * @param apiKey API Key that has access to FIS APIs
+   * @param fid Firebase Installation Identifier
+   * @param projectID Project Id
+   * @param refreshToken a token used to authenticate FIS requests
+   */
   @NonNull
   public InstallationTokenResult generateAuthToken(
-      long projectNumber, @NonNull String apiKey, @NonNull String fid, @NonNull String refreshToken)
+      @NonNull String apiKey,
+      @NonNull String fid,
+      @NonNull String projectID,
+      @NonNull String refreshToken)
       throws FirebaseInstallationServiceException {
     String resourceName =
-        String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectNumber, fid);
+        String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
     try {
       URL url =
           new URL(
@@ -173,7 +200,7 @@ public class FirebaseInstallationServiceClient {
       HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
       httpsURLConnection.setDoOutput(true);
       httpsURLConnection.setRequestMethod("POST");
-      httpsURLConnection.addRequestProperty("Authorization", "FIS_V2 " + refreshToken);
+      httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
       httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
       httpsURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
       httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
@@ -184,16 +211,16 @@ public class FirebaseInstallationServiceClient {
           return readGenerateAuthTokenResponse(httpsURLConnection);
         case 401:
           throw new FirebaseInstallationServiceException(
-              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Code.UNAUTHORIZED);
+              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Status.UNAUTHORIZED);
         default:
           throw new FirebaseInstallationServiceException(
               INTERNAL_SERVER_ERROR_MESSAGE,
-              FirebaseInstallationServiceException.Code.SERVER_ERROR);
+              FirebaseInstallationServiceException.Status.SERVER_ERROR);
       }
     } catch (IOException e) {
       throw new FirebaseInstallationServiceException(
           NETWORK_ERROR_MESSAGE + e.getMessage(),
-          FirebaseInstallationServiceException.Code.NETWORK_ERROR);
+          FirebaseInstallationServiceException.Status.NETWORK_ERROR);
     }
   }
   // Read the response from the createFirebaseInstallation API.
@@ -214,7 +241,7 @@ public class FirebaseInstallationServiceClient {
         while (reader.hasNext()) {
           String key = reader.nextName();
           if (key.equals("token")) {
-            installationTokenResult.setAuthToken(reader.nextString());
+            installationTokenResult.setToken(reader.nextString());
           } else if (key.equals("expiresIn")) {
             installationTokenResult.setTokenExpirationTimestampMillis(reader.nextLong());
           } else {
@@ -242,7 +269,7 @@ public class FirebaseInstallationServiceClient {
     while (reader.hasNext()) {
       String name = reader.nextName();
       if (name.equals("token")) {
-        builder.setAuthToken(reader.nextString());
+        builder.setToken(reader.nextString());
       } else if (name.equals("expiresIn")) {
         builder.setTokenExpirationTimestampMillis(reader.nextLong());
       } else {
