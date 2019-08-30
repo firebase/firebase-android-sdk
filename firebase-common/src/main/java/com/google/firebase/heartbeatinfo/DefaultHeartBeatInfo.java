@@ -25,13 +25,7 @@ import org.jetbrains.annotations.NotNull;
 /** Provides information as whether to send heart beat or not. */
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
-  private static HeartBeatInfoStorage storage;
-
-  enum HeartBeat {
-    NO_HEART_BEAT,
-    SDK_HEART_BEAT,
-    GLOBAL_HEART_BEAT
-  }
+  private HeartBeatInfoStorage storage;
 
   private DefaultHeartBeatInfo(Context context) {
     HeartBeatInfoStorage.initialize(context);
@@ -45,7 +39,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   }
 
   @Override
-  public @NotNull Enum getHeartBeatCode(@NotNull String heartBeatTag) {
+  public @NotNull HeartBeat getHeartBeatCode(@NotNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
     if (!storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime)) {
       return HeartBeat.NO_HEART_BEAT;
