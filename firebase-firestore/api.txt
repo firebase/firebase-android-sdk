@@ -163,6 +163,8 @@ package com.google.firebase.firestore {
     method @NonNull public <TResult> Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
     method public void setFirestoreSettings(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
     method public static void setLoggingEnabled(boolean);
+    method @NonNull public Task<Void> terminate();
+    method @NonNull public Task<Void> waitForPendingWrites();
   }
 
   public class FirebaseFirestoreException {
