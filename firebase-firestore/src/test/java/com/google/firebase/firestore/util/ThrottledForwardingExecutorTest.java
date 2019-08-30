@@ -23,7 +23,10 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
+import org.robolectric.annotation.Config;
 
+@org.junit.runner.RunWith(org.robolectric.RobolectricTestRunner.class)
+@Config(manifest = Config.NONE)
 public class ThrottledForwardingExecutorTest {
   @Test
   public void limitsNumberOfForwardedTasks() throws InterruptedException {
