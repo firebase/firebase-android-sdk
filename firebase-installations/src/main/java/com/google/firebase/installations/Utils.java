@@ -48,7 +48,7 @@ class Utils {
    * @return random FID value
    */
   @NonNull
-  public static String createRandomFid() {
+  public String createRandomFid() {
     // A valid FID has exactly 22 base64 characters, which is 132 bits, or 16.5 bytes.
     byte[] uuidBytes = getBytesFromUUID(UUID.randomUUID(), new byte[17]);
     uuidBytes[16] = uuidBytes[0];

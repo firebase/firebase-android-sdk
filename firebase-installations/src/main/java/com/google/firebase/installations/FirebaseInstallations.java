@@ -17,9 +17,22 @@ package com.google.firebase.installations;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
+import com.google.android.gms.common.util.Clock;
+import com.google.android.gms.common.util.DefaultClock;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.installations.local.PersistedFid;
+import com.google.firebase.installations.local.PersistedFid.RegistrationStatus;
+import com.google.firebase.installations.local.PersistedFidEntry;
+import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
+import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
+import com.google.firebase.installations.remote.InstallationResponse;
+import java.util.concurrent.Executor;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Entry point for Firebase Installations.
@@ -35,10 +48,36 @@ import com.google.firebase.FirebaseApp;
 public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private final FirebaseApp firebaseApp;
+  private final FirebaseInstallationServiceClient serviceClient;
+  private final PersistedFid persistedFid;
+  private final Executor executor;
+  private final Clock clock;
+  private final Utils utils;
 
   /** package private constructor. */
   FirebaseInstallations(FirebaseApp firebaseApp) {
+    this(
+        DefaultClock.getInstance(),
+        new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new SynchronousQueue<>()),
+        firebaseApp,
+        new FirebaseInstallationServiceClient(),
+        new PersistedFid(firebaseApp),
+        new Utils());
+  }
+
+  FirebaseInstallations(
+      Clock clock,
+      Executor executor,
+      FirebaseApp firebaseApp,
+      FirebaseInstallationServiceClient serviceClient,
+      PersistedFid persistedFid,
+      Utils utils) {
+    this.clock = clock;
     this.firebaseApp = firebaseApp;
+    this.serviceClient = serviceClient;
+    this.executor = executor;
+    this.persistedFid = persistedFid;
+    this.utils = utils;
   }
 
   /**
@@ -71,7 +110,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<String> getId() {
-    return Tasks.forResult("fid-is-better-than-iid");
+    return Tasks.call(executor, this::getPersistedFid)
+        .continueWith(orElse(this::createAndPersistNewFid))
+        .onSuccessTask(this::registerFidIfNecessary);
   }
 
   /** Returns a auth token(public key) of this Firebase app installation. */
@@ -103,4 +144,108 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   String getName() {
     return firebaseApp.getName();
   }
+
+  private PersistedFidEntry getPersistedFid() throws FirebaseInstallationsException {
+    PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+    if (persistedFidMissingOrInErrorState(persistedFidEntry)) {
+      throw new FirebaseInstallationsException(
+          "Failed to get existing fid.", FirebaseInstallationsException.Status.CLIENT_ERROR);
+    }
+    return persistedFidEntry;
+  }
+
+  private static boolean persistedFidMissingOrInErrorState(PersistedFidEntry persistedFidEntry) {
+    return persistedFidEntry == null
+        || persistedFidEntry.getRegistrationStatus() == RegistrationStatus.REGISTER_ERROR;
+  }
+
+  @NonNull
+  private static <F, T> Continuation<F, T> orElse(@NonNull Supplier<T> supplier) {
+    return t -> {
+      if (t.isSuccessful()) {
+        return (T) t.getResult();
+      }
+      return supplier.get();
+    };
+  }
+
+  private PersistedFidEntry createAndPersistNewFid() throws FirebaseInstallationsException {
+    String fid = utils.createRandomFid();
+    persistFid(fid);
+    PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+    return persistedFidEntry;
+  }
+
+  private void persistFid(String fid) throws FirebaseInstallationsException {
+    boolean firstUpdateCacheResult =
+        persistedFid.insertOrUpdatePersistedFidEntry(
+            PersistedFidEntry.builder()
+                .setFirebaseInstallationId(fid)
+                .setRegistrationStatus(RegistrationStatus.UNREGISTERED)
+                .build());
+
+    if (!firstUpdateCacheResult) {
+      throw new FirebaseInstallationsException(
+          "Failed to update client side cache.",
+          FirebaseInstallationsException.Status.CLIENT_ERROR);
+    }
+  }
+
+  private Task<String> registerFidIfNecessary(PersistedFidEntry persistedFidEntry) {
+    String fid = persistedFidEntry.getFirebaseInstallationId();
+
+    // Check if the fid is unregistered
+    if (persistedFidEntry.getRegistrationStatus() == RegistrationStatus.UNREGISTERED) {
+      updatePersistedFidWithPendingStatus(fid);
+      Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry));
+    }
+    return Tasks.forResult(fid);
+  }
+
+  private void updatePersistedFidWithPendingStatus(String fid) {
+    persistedFid.insertOrUpdatePersistedFidEntry(
+        PersistedFidEntry.builder()
+            .setFirebaseInstallationId(fid)
+            .setRegistrationStatus(RegistrationStatus.PENDING)
+            .build());
+  }
+
+  /** Registers the created Fid with FIS servers and update the shared prefs. */
+  private Void registerAndSaveFid(PersistedFidEntry persistedFidEntry)
+      throws FirebaseInstallationsException {
+    try {
+      long creationTime = TimeUnit.MILLISECONDS.toSeconds(clock.currentTimeMillis());
+
+      InstallationResponse installationResponse =
+          serviceClient.createFirebaseInstallation(
+              /*apiKey= */ firebaseApp.getOptions().getApiKey(),
+              /*fid= */ persistedFidEntry.getFirebaseInstallationId(),
+              /*projectID= */ firebaseApp.getOptions().getProjectId(),
+              /*appId= */ getApplicationId());
+      persistedFid.insertOrUpdatePersistedFidEntry(
+          PersistedFidEntry.builder()
+              .setFirebaseInstallationId(persistedFidEntry.getFirebaseInstallationId())
+              .setRegistrationStatus(RegistrationStatus.REGISTERED)
+              .setAuthToken(installationResponse.getAuthToken().getToken())
+              .setRefreshToken(installationResponse.getRefreshToken())
+              .setExpiresInSecs(
+                  installationResponse.getAuthToken().getTokenExpirationTimestampMillis())
+              .setTokenCreationEpochInSecs(creationTime)
+              .build());
+
+    } catch (FirebaseInstallationServiceException exception) {
+      persistedFid.insertOrUpdatePersistedFidEntry(
+          PersistedFidEntry.builder()
+              .setFirebaseInstallationId(persistedFidEntry.getFirebaseInstallationId())
+              .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
+              .build());
+      throw new FirebaseInstallationsException(
+          exception.getMessage(), FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+    }
+    return null;
+  }
+}
+
+interface Supplier<T> {
+  T get() throws Exception;
 }
