@@ -237,7 +237,7 @@ public class CctTransportBackendTest {
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(BackendResponse.fatalError(), response);
+    assertEquals(BackendResponse.transientError(), response);
   }
 
   @Test
@@ -303,6 +303,69 @@ public class CctTransportBackendTest {
     assertThat(result.get(CctTransportBackend.KEY_MOBILE_SUBTYPE))
         .isEqualTo(
             String.valueOf(NetworkConnectionInfo.MobileSubtype.UNKNOWN_MOBILE_SUBTYPE_VALUE));
+  }
+
+  @Test
+  public void send_whenBackendRedirects_shouldCorrectlyFollowTheRedirectViaPost() {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse().withStatus(302).withHeader("Location", TEST_ENDPOINT + "/hello")));
+    stubFor(
+        post(urlEqualTo("/api/hello"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    BackendRequest backendRequest = getCCTBackendRequest();
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+
+    verify(
+        postRequestedFor(urlEqualTo("/api/hello"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+
+    assertEquals(BackendResponse.ok(3), response);
+  }
+
+  @Test
+  public void send_whenBackendRedirectsMoreThan5Times_shouldOnlyRedirect4Times() {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse().withStatus(302).withHeader("Location", TEST_ENDPOINT + "/hello")));
+    stubFor(
+        post(urlEqualTo("/api/hello"))
+            .willReturn(
+                aResponse().withStatus(302).withHeader("Location", TEST_ENDPOINT + "/hello")));
+
+    BackendRequest backendRequest = getCCTBackendRequest();
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+
+    verify(
+        4,
+        postRequestedFor(urlEqualTo("/api/hello"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+
+    assertEquals(BackendResponse.fatalError(), response);
   }
 
   // When there is no active network, the ConnectivityManager returns null when
