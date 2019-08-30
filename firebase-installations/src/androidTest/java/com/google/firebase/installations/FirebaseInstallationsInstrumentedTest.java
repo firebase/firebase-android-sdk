@@ -125,9 +125,6 @@ public class FirebaseInstallationsInstrumentedTest {
     assertWithMessage("Persisted Fid doesn't match")
         .that(entryValue.getFirebaseInstallationId())
         .isEqualTo(TEST_FID_1);
-    assertWithMessage("Registration status doesn't match")
-        .that(entryValue.getRegistrationStatus())
-        .isEqualTo(PersistedFid.RegistrationStatus.PENDING);
 
     // Waiting for Task that registers FID on the FIS Servers
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
@@ -155,9 +152,6 @@ public class FirebaseInstallationsInstrumentedTest {
     assertWithMessage("Persisted Fid doesn't match")
         .that(entryValue.getFirebaseInstallationId())
         .isEqualTo(TEST_FID_1);
-    assertWithMessage("Registration status doesn't match")
-        .that(entryValue.getRegistrationStatus())
-        .isEqualTo(PersistedFid.RegistrationStatus.PENDING);
 
     Tasks.await(firebaseInstallations.getId());
 
@@ -185,9 +179,6 @@ public class FirebaseInstallationsInstrumentedTest {
     assertWithMessage("Persisted Fid doesn't match")
         .that(entryValue.getFirebaseInstallationId())
         .isEqualTo(TEST_FID_1);
-    assertWithMessage("Registration Fid doesn't match")
-        .that(entryValue.getRegistrationStatus())
-        .isEqualTo(PersistedFid.RegistrationStatus.PENDING);
 
     // Waiting for Task that registers FID on the FIS Servers
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
