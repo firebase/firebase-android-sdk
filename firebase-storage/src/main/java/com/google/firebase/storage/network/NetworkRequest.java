@@ -37,11 +37,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -196,7 +194,7 @@ public abstract class NetworkRequest {
    * @return query parameters in string form.
    */
   @Nullable
-  protected String getQueryParameters() throws UnsupportedEncodingException {
+  protected String getQueryParameters() {
     return null;
   }
 
@@ -508,8 +506,7 @@ public abstract class NetworkRequest {
     return resultCode >= 200 && resultCode < 300;
   }
 
-  String getPostDataString(@Nullable List<String> keys, List<String> values, boolean encode)
-      throws UnsupportedEncodingException {
+  String getPostDataString(@Nullable List<String> keys, List<String> values, boolean encode) {
     if (keys == null || keys.size() == 0) {
       return null;
     }
@@ -523,9 +520,9 @@ public abstract class NetworkRequest {
         result.append("&");
       }
 
-      result.append(encode ? URLEncoder.encode(keys.get(i), "UTF-8") : keys.get(i));
+      result.append(encode ? Uri.encode(keys.get(i), "UTF-8") : keys.get(i));
       result.append("=");
-      result.append(encode ? URLEncoder.encode(values.get(i), "UTF-8") : values.get(i));
+      result.append(encode ? Uri.encode(values.get(i), "UTF-8") : values.get(i));
     }
 
     return result.toString();
