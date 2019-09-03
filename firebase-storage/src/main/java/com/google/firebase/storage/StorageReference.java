@@ -84,8 +84,7 @@ public class StorageReference implements Comparable<StorageReference> {
         !TextUtils.isEmpty(pathString), "childName cannot be null or empty");
 
     pathString = Slashes.normalizeSlashes(pathString);
-    Uri child;
-    child =
+    Uri child =
         mStorageUri.buildUpon().appendEncodedPath(Slashes.preserveSlashEncode(pathString)).build();
     return new StorageReference(child, mFirebaseStorage);
   }

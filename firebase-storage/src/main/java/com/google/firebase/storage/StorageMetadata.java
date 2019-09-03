@@ -254,8 +254,7 @@ public class StorageMetadata {
         if (TextUtils.isEmpty(bucket) || TextUtils.isEmpty(path)) {
           return null;
         }
-        Uri uri;
-        uri =
+        Uri uri =
             new Uri.Builder()
                 .scheme("gs")
                 .authority(bucket)

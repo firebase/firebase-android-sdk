@@ -50,8 +50,7 @@ class UpdateMetadataTask implements Runnable {
 
   @Override
   public void run() {
-    final NetworkRequest request;
-    request =
+    final NetworkRequest request =
         new UpdateMetadataNetworkRequest(
             mStorageRef.getStorageUri(), mStorageRef.getApp(), mNewMetadata.createJSONObject());
 

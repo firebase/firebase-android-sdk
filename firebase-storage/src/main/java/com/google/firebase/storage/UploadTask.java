@@ -258,8 +258,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     if (TextUtils.isEmpty(mimeType)) {
       mimeType = APPLICATION_OCTET_STREAM;
     }
-    NetworkRequest startRequest;
-    startRequest =
+    NetworkRequest startRequest =
         new ResumableUploadStartRequest(
             mStorageRef.getStorageUri(),
             mStorageRef.getApp(),
