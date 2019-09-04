@@ -21,7 +21,8 @@ public interface HeartBeatInfo {
   enum HeartBeat {
     NO_HEART_BEAT,
     SDK_HEART_BEAT,
-    GLOBAL_HEART_BEAT
+    GLOBAL_HEART_BEAT,
+    COMBINED_HEART_BEAT,
   }
 
   @NotNull

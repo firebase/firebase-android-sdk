@@ -41,11 +41,17 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   @Override
   public @NotNull HeartBeat getHeartBeatCode(@NotNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
-    if (!storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime)) {
+    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
+    boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime);
+    if (!shouldSendSdkHB && !shouldSendGlobalHB) {
       return HeartBeat.NO_HEART_BEAT;
+    } else if (shouldSendSdkHB && !shouldSendGlobalHB) {
+      return HeartBeat.SDK_HEART_BEAT;
+    } else if (!shouldSendSdkHB && shouldSendGlobalHB) {
+      return HeartBeat.GLOBAL_HEART_BEAT;
+    } else {
+      return HeartBeat.COMBINED_HEART_BEAT;
     }
-    if (storage.shouldSendGlobalHeartBeat(presentTime)) return HeartBeat.GLOBAL_HEART_BEAT;
-    else return HeartBeat.SDK_HEART_BEAT;
   }
 
   public static @NotNull Component<HeartBeatInfo> component() {

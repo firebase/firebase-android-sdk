@@ -50,10 +50,19 @@ public class DefaultHeartBeatInfoTest {
 
   @Test
   public void getHeartBeatCode_globalHeartBeat() {
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.FALSE);
     when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk))
         .isEqualTo(DefaultHeartBeatInfo.HeartBeat.GLOBAL_HEART_BEAT);
+  }
+
+  @Test
+  public void getHeartBeatCode_combinedHeartBeat() {
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
+    heartBeatInfo.getHeartBeatCode(testSdk);
+    assertThat(heartBeatInfo.getHeartBeatCode(testSdk))
+        .isEqualTo(DefaultHeartBeatInfo.HeartBeat.COMBINED_HEART_BEAT);
   }
 }
