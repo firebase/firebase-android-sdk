@@ -40,7 +40,6 @@ public class GetNetworkRequest extends NetworkRequest {
   @Override
   @NonNull
   protected String getQueryParameters() {
-    return getPostDataString(
-        Collections.singletonList("alt"), Collections.singletonList("media"), true);
+    return getPostDataString(Collections.singletonList("alt"), Collections.singletonList("media"));
   }
 }

@@ -19,7 +19,6 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.storage.internal.Slashes;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONObject;
@@ -65,10 +64,10 @@ public class ResumableUploadStartRequest extends ResumableNetworkRequest {
 
     String pathWithoutBucket = getPathWithoutBucket();
     keys.add("name");
-    values.add(pathWithoutBucket != null ? Slashes.unSlashize(pathWithoutBucket) : "");
+    values.add(pathWithoutBucket != null ? pathWithoutBucket : "");
     keys.add("uploadType");
     values.add("resumable");
-    return getPostDataString(keys, values, false);
+    return getPostDataString(keys, values);
   }
 
   @Override

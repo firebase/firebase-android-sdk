@@ -28,7 +28,6 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.StorageException;
-import com.google.firebase.storage.internal.Slashes;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactoryImpl;
 import java.io.BufferedOutputStream;
@@ -116,18 +115,18 @@ public abstract class NetworkRequest {
         + "/b/"
         + gsUri.getAuthority()
         + "/o/"
-        + (pathWithoutBucket != null ? Slashes.unSlashize(pathWithoutBucket) : "");
+        + (pathWithoutBucket != null ? Uri.encode(pathWithoutBucket) : "");
   }
 
   /**
-   * Returns the path of the object but excludes the bucket name
+   * Returns the decoded path of the object but excludes the bucket name
    *
    * @param gsUri the "gs://" Uri of the blob.
    * @return the path in string form.
    */
   @Nullable
   public static String getPathWithoutBucket(@NonNull Uri gsUri) {
-    String path = gsUri.getEncodedPath();
+    String path = gsUri.getPath();
     if (path != null && path.startsWith("/")) {
       // this should always be true.
       path = path.substring(1);
@@ -136,7 +135,7 @@ public abstract class NetworkRequest {
   }
 
   /**
-   * Returns the path of the object but excludes the bucket name
+   * Returns the decoded path of the object but excludes the bucket name
    *
    * @return the path in string form.
    */
@@ -506,7 +505,7 @@ public abstract class NetworkRequest {
     return resultCode >= 200 && resultCode < 300;
   }
 
-  String getPostDataString(@Nullable List<String> keys, List<String> values, boolean encode) {
+  String getPostDataString(@Nullable List<String> keys, List<String> values) {
     if (keys == null || keys.size() == 0) {
       return null;
     }
@@ -520,9 +519,9 @@ public abstract class NetworkRequest {
         result.append("&");
       }
 
-      result.append(encode ? Uri.encode(keys.get(i), "UTF-8") : keys.get(i));
+      result.append(Uri.encode(keys.get(i), "UTF-8"));
       result.append("=");
-      result.append(encode ? Uri.encode(values.get(i), "UTF-8") : values.get(i));
+      result.append(Uri.encode(values.get(i), "UTF-8"));
     }
 
     return result.toString();

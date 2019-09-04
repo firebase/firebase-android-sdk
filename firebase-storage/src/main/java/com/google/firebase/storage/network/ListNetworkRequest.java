@@ -79,6 +79,6 @@ public class ListNetworkRequest extends NetworkRequest {
       values.add(nextPageToken);
     }
 
-    return getPostDataString(keys, values, true);
+    return getPostDataString(keys, values);
   }
 }
