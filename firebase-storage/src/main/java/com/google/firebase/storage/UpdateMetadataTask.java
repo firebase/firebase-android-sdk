@@ -50,17 +50,9 @@ class UpdateMetadataTask implements Runnable {
 
   @Override
   public void run() {
-    final NetworkRequest request;
-    try {
-      request =
-          new UpdateMetadataNetworkRequest(
-              mStorageRef.getStorageUri(), mStorageRef.getApp(), mNewMetadata.createJSONObject());
-    } catch (final JSONException e) {
-      Log.e(TAG, "Unable to create the request from metadata.", e);
-
-      mPendingResult.setException(StorageException.fromException(e));
-      return;
-    }
+    final NetworkRequest request =
+        new UpdateMetadataNetworkRequest(
+            mStorageRef.getStorageUri(), mStorageRef.getApp(), mNewMetadata.createJSONObject());
 
     mSender.sendWithExponentialBackoff(request);
     if (request.isResultSuccess()) {

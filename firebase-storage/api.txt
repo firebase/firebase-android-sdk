@@ -68,7 +68,6 @@ package com.google.firebase.storage {
     method @com.google.firebase.storage.StorageException.ErrorCode public int getErrorCode();
     method public int getHttpResultCode();
     method public boolean getIsRecoverableException();
-    method @NonNull public String getMessage();
     field public static final int ERROR_BUCKET_NOT_FOUND = -13011; // 0xffffcd2d
     field public static final int ERROR_CANCELED = -13040; // 0xffffcd10
     field public static final int ERROR_INVALID_CHECKSUM = -13031; // 0xffffcd19
