@@ -44,16 +44,9 @@ public class HeartBeatInfoStorage {
     this.sharedPreferences = preferences;
   }
 
-  public static void initialize(Context applicationContext) {
+  public static HeartBeatInfoStorage getInstance(Context applicationContext) {
     if (instance == null) {
       instance = new HeartBeatInfoStorage(applicationContext);
-    }
-    // send warning
-  }
-
-  public static HeartBeatInfoStorage getInstance() {
-    if (instance == null) {
-      throw new IllegalStateException("Not initialized!");
     }
     return instance;
   }
@@ -63,7 +56,7 @@ public class HeartBeatInfoStorage {
    A sdk heartbeat is sent either when there is no heartbeat sent ever for the sdk or
    when the last heartbeat send for the sdk was later than a day before.
   */
-  public boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
+  public synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
     if (sharedPreferences.contains(heartBeatTag)) {
       long timeElapsed = millis - sharedPreferences.getLong(heartBeatTag, -1);
       if (timeElapsed >= (long) 1000 * 60 * 60 * 24) {
@@ -81,7 +74,7 @@ public class HeartBeatInfoStorage {
    Indicates whether or not we have to send a global heartbeat.
    A global heartbeat is set only once per day.
   */
-  public boolean shouldSendGlobalHeartBeat(long millis) {
+  public synchronized boolean shouldSendGlobalHeartBeat(long millis) {
     return shouldSendSdkHeartBeat(GLOBAL, millis);
   }
 }

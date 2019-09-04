@@ -12,19 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/** @hide */
 package com.google.firebase.heartbeatinfo;
-
-import org.jetbrains.annotations.NotNull;
-
-/** Component that publishes heartbeat information */
-public interface HeartBeatInfo {
-  enum HeartBeat {
-    NONE,
-    SDK,
-    GLOBAL,
-    COMBINED,
-  }
-
-  @NotNull
-  HeartBeat getHeartBeatCode(@NotNull String heartBeatTag);
-}

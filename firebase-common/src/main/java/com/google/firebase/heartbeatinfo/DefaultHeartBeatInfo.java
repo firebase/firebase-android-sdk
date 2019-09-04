@@ -28,8 +28,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   private HeartBeatInfoStorage storage;
 
   private DefaultHeartBeatInfo(Context context) {
-    HeartBeatInfoStorage.initialize(context);
-    storage = HeartBeatInfoStorage.getInstance();
+    storage = HeartBeatInfoStorage.getInstance(context);
   }
 
   @VisibleForTesting
@@ -43,15 +42,14 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     long presentTime = System.currentTimeMillis();
     boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
     boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime);
-    if (!shouldSendSdkHB && !shouldSendGlobalHB) {
-      return HeartBeat.NO_HEART_BEAT;
-    } else if (shouldSendSdkHB && !shouldSendGlobalHB) {
-      return HeartBeat.SDK_HEART_BEAT;
-    } else if (!shouldSendSdkHB && shouldSendGlobalHB) {
-      return HeartBeat.GLOBAL_HEART_BEAT;
-    } else {
-      return HeartBeat.COMBINED_HEART_BEAT;
+    if (shouldSendSdkHB && shouldSendGlobalHB) {
+      return HeartBeat.COMBINED;
+    } else if (shouldSendGlobalHB) {
+      return HeartBeat.GLOBAL;
+    } else if (shouldSendSdkHB) {
+      return HeartBeat.SDK;
     }
+    return HeartBeat.NONE;
   }
 
   public static @NotNull Component<HeartBeatInfo> component() {
