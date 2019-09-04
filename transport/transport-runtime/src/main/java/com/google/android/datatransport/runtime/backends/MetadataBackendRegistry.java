@@ -49,15 +49,21 @@ class MetadataBackendRegistry implements BackendRegistry {
   private static final String TAG = "BackendRegistry";
   private static final String BACKEND_KEY_PREFIX = "backend:";
 
-  private final Context applicationContext;
-  private final CreationContext creationContext;
+  private final BackendFactoryProvider backendFactoryProvider;
+  private final CreationContextFactory creationContextFactory;
   private final Map<String, TransportBackend> backends = new HashMap<>();
-  private Map<String, String> backendProviders = null;
 
   @Inject
-  MetadataBackendRegistry(Context applicationContext, CreationContext creationContext) {
-    this.applicationContext = applicationContext;
-    this.creationContext = creationContext;
+  MetadataBackendRegistry(
+      Context applicationContext, CreationContextFactory creationContextFactory) {
+    this(new BackendFactoryProvider(applicationContext), creationContextFactory);
+  }
+
+  MetadataBackendRegistry(
+      BackendFactoryProvider backendFactoryProvider,
+      CreationContextFactory creationContextFactory) {
+    this.backendFactoryProvider = backendFactoryProvider;
+    this.creationContextFactory = creationContextFactory;
   }
 
   @Override
@@ -66,85 +72,102 @@ class MetadataBackendRegistry implements BackendRegistry {
     if (backends.containsKey(name)) {
       return backends.get(name);
     }
-    String backendProviderName = getBackendProviders().get(name);
-    if (backendProviderName == null) {
+
+    BackendFactory factory = backendFactoryProvider.get(name);
+    if (factory == null) {
+      return null;
+    }
+    TransportBackend backend = factory.create(creationContextFactory.create(name));
+    backends.put(name, backend);
+    return backend;
+  }
+
+  static class BackendFactoryProvider {
+    private final Context applicationContext;
+    private Map<String, String> backendProviders = null;
+
+    BackendFactoryProvider(Context applicationContext) {
+      this.applicationContext = applicationContext;
+    }
+
+    @Nullable
+    BackendFactory get(String name) {
+      String backendProviderName = getBackendProviders().get(name);
+      if (backendProviderName == null) {
+        return null;
+      }
+
+      try {
+        return Class.forName(backendProviderName)
+            .asSubclass(BackendFactory.class)
+            .getDeclaredConstructor()
+            .newInstance();
+      } catch (ClassNotFoundException e) {
+        Log.w(TAG, String.format("Class %s is not found.", backendProviderName), e);
+      } catch (IllegalAccessException e) {
+        Log.w(TAG, String.format("Could not instantiate %s.", backendProviderName), e);
+      } catch (InstantiationException e) {
+        Log.w(TAG, String.format("Could not instantiate %s.", backendProviderName), e);
+      } catch (NoSuchMethodException e) {
+        Log.w(TAG, String.format("Could not instantiate %s", backendProviderName), e);
+      } catch (InvocationTargetException e) {
+        Log.w(TAG, String.format("Could not instantiate %s", backendProviderName), e);
+      }
+
       return null;
     }
 
-    try {
-      BackendFactory provider =
-          Class.forName(backendProviderName)
-              .asSubclass(BackendFactory.class)
-              .getDeclaredConstructor()
-              .newInstance();
-      TransportBackend newBackend = provider.create(creationContext);
-      backends.put(name, newBackend);
-      return newBackend;
-    } catch (ClassNotFoundException e) {
-      Log.w(TAG, String.format("Class %s is not found.", backendProviderName), e);
-    } catch (IllegalAccessException e) {
-      Log.w(TAG, String.format("Could not instantiate %s.", backendProviderName), e);
-    } catch (InstantiationException e) {
-      Log.w(TAG, String.format("Could not instantiate %s.", backendProviderName), e);
-    } catch (NoSuchMethodException e) {
-      Log.w(TAG, String.format("Could not instantiate %s", backendProviderName), e);
-    } catch (InvocationTargetException e) {
-      Log.w(TAG, String.format("Could not instantiate %s", backendProviderName), e);
+    private Map<String, String> getBackendProviders() {
+      if (backendProviders == null) {
+        backendProviders = discover(applicationContext);
+      }
+      return backendProviders;
     }
 
-    return null;
-  }
+    private Map<String, String> discover(Context ctx) {
+      Bundle metadata = getMetadata(ctx);
 
-  private Map<String, String> getBackendProviders() {
-    if (backendProviders == null) {
-      backendProviders = discover(applicationContext);
-    }
-    return backendProviders;
-  }
+      if (metadata == null) {
+        Log.w(TAG, "Could not retrieve metadata, returning empty list of transport backends.");
+        return Collections.emptyMap();
+      }
 
-  private Map<String, String> discover(Context ctx) {
-    Bundle metadata = getMetadata(ctx);
-
-    if (metadata == null) {
-      Log.w(TAG, "Could not retrieve metadata, returning empty list of transport backends.");
-      return Collections.emptyMap();
-    }
-
-    Map<String, String> backendNames = new HashMap<>();
-    for (String key : metadata.keySet()) {
-      Object rawValue = metadata.get(key);
-      if (rawValue instanceof String && key.startsWith(BACKEND_KEY_PREFIX)) {
-        for (String name : ((String) rawValue).split(",", -1)) {
-          name = name.trim();
-          if (name.isEmpty()) {
-            continue;
+      Map<String, String> backendNames = new HashMap<>();
+      for (String key : metadata.keySet()) {
+        Object rawValue = metadata.get(key);
+        if (rawValue instanceof String && key.startsWith(BACKEND_KEY_PREFIX)) {
+          for (String name : ((String) rawValue).split(",", -1)) {
+            name = name.trim();
+            if (name.isEmpty()) {
+              continue;
+            }
+            backendNames.put(name, key.substring(BACKEND_KEY_PREFIX.length()));
           }
-          backendNames.put(name, key.substring(BACKEND_KEY_PREFIX.length()));
         }
       }
+      return backendNames;
     }
-    return backendNames;
-  }
 
-  private static Bundle getMetadata(Context context) {
-    try {
-      PackageManager manager = context.getPackageManager();
-      if (manager == null) {
-        Log.w(TAG, "Context has no PackageManager.");
+    private static Bundle getMetadata(Context context) {
+      try {
+        PackageManager manager = context.getPackageManager();
+        if (manager == null) {
+          Log.w(TAG, "Context has no PackageManager.");
+          return null;
+        }
+        ServiceInfo info =
+            manager.getServiceInfo(
+                new ComponentName(context, TransportBackendDiscovery.class),
+                PackageManager.GET_META_DATA);
+        if (info == null) {
+          Log.w(TAG, "TransportBackendDiscovery has no service info.");
+          return null;
+        }
+        return info.metaData;
+      } catch (PackageManager.NameNotFoundException e) {
+        Log.w(TAG, "Application info not found.");
         return null;
       }
-      ServiceInfo info =
-          manager.getServiceInfo(
-              new ComponentName(context, TransportBackendDiscovery.class),
-              PackageManager.GET_META_DATA);
-      if (info == null) {
-        Log.w(TAG, "TransportBackendDiscovery has no service info.");
-        return null;
-      }
-      return info.metaData;
-    } catch (PackageManager.NameNotFoundException e) {
-      Log.w(TAG, "Application info not found.");
-      return null;
     }
   }
 }
