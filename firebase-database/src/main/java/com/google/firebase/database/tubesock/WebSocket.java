@@ -428,8 +428,7 @@ public class WebSocket {
     } catch (WebSocketException wse) {
       eventHandler.onError(wse);
     } catch (Throwable t) {
-      eventHandler.onError(
-          new WebSocketException("error while connecting: " + t.getMessage(), t));
+      eventHandler.onError(new WebSocketException("error while connecting: " + t.getMessage(), t));
     } finally {
       close();
     }
