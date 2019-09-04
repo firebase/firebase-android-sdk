@@ -53,26 +53,6 @@ package com.google.firebase {
 
 }
 
-package com.google.firebase.heartbeatinfo {
-
-  public class DefaultHeartBeatInfo implements com.google.firebase.heartbeatinfo.HeartBeatInfo {
-    method @NonNull public static com.google.firebase.components.Component<com.google.firebase.heartbeatinfo.HeartBeatInfo> component();
-    method @NonNull public com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat getHeartBeatCode(@NonNull String);
-  }
-
-  public interface HeartBeatInfo {
-    method @NonNull public com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat getHeartBeatCode(@NonNull String);
-  }
-
-  public enum HeartBeatInfo.HeartBeat {
-    enum_constant public static final com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat COMBINED_HEART_BEAT;
-    enum_constant public static final com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat GLOBAL_HEART_BEAT;
-    enum_constant public static final com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat NO_HEART_BEAT;
-    enum_constant public static final com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat SDK_HEART_BEAT;
-  }
-
-}
-
 package com.google.firebase.provider {
 
   public class FirebaseInitProvider {
