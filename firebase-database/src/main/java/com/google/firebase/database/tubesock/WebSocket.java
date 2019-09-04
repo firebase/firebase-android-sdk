@@ -427,9 +427,9 @@ public class WebSocket {
       receiver.run();
     } catch (WebSocketException wse) {
       eventHandler.onError(wse);
-    } catch (IOException ioe) {
+    } catch (Throwable t) {
       eventHandler.onError(
-          new WebSocketException("error while connecting: " + ioe.getMessage(), ioe));
+          new WebSocketException("error while connecting: " + t.getMessage(), t));
     } finally {
       close();
     }
