@@ -64,8 +64,8 @@ class SmokeTestsPlugin implements Plugin<Project> {
         allArtifacts.each { all.put(it) }
 
         def json = new JSONObject()
-        json.put("all", all)
-        json.put("changed", changed)
+        json.put("headGit", all)
+        json.put("default", changed)
 
         def path = project.buildDir.toPath()
         path.resolve("m2repository/changed-artifacts.json").write(json.toString())
