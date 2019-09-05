@@ -15,14 +15,13 @@
 package com.google.firebase.storage.network;
 
 import android.net.Uri;
-import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 
 /** A request to upload a single chunk of a large blob. */
 public class ResumableUploadByteRequest extends ResumableNetworkRequest {
-  private final String uploadURL;
+  private final Uri uploadURL;
   private final byte[] chunk;
   private final long offset;
   private final boolean isFinal;
@@ -31,15 +30,12 @@ public class ResumableUploadByteRequest extends ResumableNetworkRequest {
   public ResumableUploadByteRequest(
       @NonNull Uri gsUri,
       @NonNull FirebaseApp app,
-      @NonNull String uploadURL,
+      @NonNull Uri uploadURL,
       @Nullable byte[] chunk,
       long offset,
       int bytesToWrite,
       boolean isFinal) {
     super(gsUri, app);
-    if (TextUtils.isEmpty(uploadURL)) {
-      super.mException = new IllegalArgumentException("uploadURL is null or empty");
-    }
     if (chunk == null && bytesToWrite != -1) {
       super.mException = new IllegalArgumentException("contentType is null or empty");
     }
@@ -71,7 +67,7 @@ public class ResumableUploadByteRequest extends ResumableNetworkRequest {
 
   @Override
   @NonNull
-  protected String getURL() {
+  protected Uri getURL() {
     return uploadURL;
   }
 
