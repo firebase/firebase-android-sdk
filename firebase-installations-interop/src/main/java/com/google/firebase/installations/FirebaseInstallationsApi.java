@@ -31,7 +31,7 @@ public interface FirebaseInstallationsApi {
   Task<String> getId();
 
   /** Async function that returns a auth token(public key) of this Firebase app installation. */
-  Task<InstallationTokenResult> getAuthToken(boolean forceRefresh);
+  Task<String> getAuthToken(boolean forceRefresh);
 
   /**
    * Async function that deletes this Firebase app installation from Firebase backend. This call
