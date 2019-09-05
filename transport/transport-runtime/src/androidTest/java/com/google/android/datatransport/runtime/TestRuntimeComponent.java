@@ -20,11 +20,13 @@ import com.google.android.datatransport.runtime.scheduling.SchedulingModule;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule;
+import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import dagger.BindsInstance;
 import dagger.Component;
+import java.io.IOException;
 import javax.inject.Singleton;
 
 @Component(
@@ -37,6 +39,14 @@ import javax.inject.Singleton;
 abstract class TestRuntimeComponent extends TransportRuntimeComponent {
 
   abstract TransportRuntime getTransportRuntime();
+
+  abstract SQLiteEventStore getEventStore();
+
+  @Override
+  public void close() throws IOException {
+    getEventStore().clearDb();
+    super.close();
+  }
 
   @Component.Builder
   interface Builder {

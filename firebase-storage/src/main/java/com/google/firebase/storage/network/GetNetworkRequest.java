@@ -17,7 +17,6 @@ package com.google.firebase.storage.network;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 
 /** A network request that returns bytes of a gcs object. */
@@ -40,7 +39,7 @@ public class GetNetworkRequest extends NetworkRequest {
 
   @Override
   @NonNull
-  protected String getQueryParameters() throws UnsupportedEncodingException {
+  protected String getQueryParameters() {
     return getPostDataString(
         Collections.singletonList("alt"), Collections.singletonList("media"), true);
   }

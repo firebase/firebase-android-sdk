@@ -43,11 +43,6 @@ public final class AccessHelper {
         instanceRegistry);
   }
 
-  /** Makes the shutdown method accessible. */
-  public static Task<Void> shutdown(FirebaseFirestore firestore) {
-    return firestore.shutdown();
-  }
-
   public static AsyncQueue getAsyncQueue(FirebaseFirestore firestore) {
     return firestore.getAsyncQueue();
   }

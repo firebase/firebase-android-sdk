@@ -77,7 +77,7 @@ public final class SQLitePersistence extends Persistence {
     }
   }
 
-  private final OpenHelper opener;
+  private final SQLiteOpenHelper opener;
   private final LocalSerializer serializer;
   private final StatsCollector statsCollector;
   private final SQLiteQueryCache queryCache;
@@ -125,8 +125,19 @@ public final class SQLitePersistence extends Persistence {
       LocalSerializer serializer,
       StatsCollector statsCollector,
       LruGarbageCollector.Params params) {
-    String databaseName = databaseName(persistenceKey, databaseId);
-    this.opener = new OpenHelper(context, databaseName);
+    this(
+        serializer,
+        statsCollector,
+        params,
+        new OpenHelper(context, databaseName(persistenceKey, databaseId)));
+  }
+
+  public SQLitePersistence(
+      LocalSerializer serializer,
+      StatsCollector statsCollector,
+      LruGarbageCollector.Params params,
+      SQLiteOpenHelper openHelper) {
+    this.opener = openHelper;
     this.serializer = serializer;
     this.statsCollector = statsCollector;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);

@@ -258,19 +258,12 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     if (TextUtils.isEmpty(mimeType)) {
       mimeType = APPLICATION_OCTET_STREAM;
     }
-    NetworkRequest startRequest;
-    try {
-      startRequest =
-          new ResumableUploadStartRequest(
-              mStorageRef.getStorageUri(),
-              mStorageRef.getApp(),
-              mMetadata != null ? mMetadata.createJSONObject() : null,
-              mimeType);
-    } catch (JSONException e) {
-      Log.e(TAG, "Unable to create a network request from metadata", e);
-      mException = e;
-      return;
-    }
+    NetworkRequest startRequest =
+        new ResumableUploadStartRequest(
+            mStorageRef.getStorageUri(),
+            mStorageRef.getApp(),
+            mMetadata != null ? mMetadata.createJSONObject() : null,
+            mimeType);
 
     if (!sendWithRetry(startRequest)) {
       return;

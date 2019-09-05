@@ -19,6 +19,7 @@ import static java.util.Arrays.asList;
 
 import android.util.SparseArray;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
@@ -125,7 +126,7 @@ public final class LocalStore {
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
 
-  public LocalStore(Persistence persistence, User initialUser) {
+  public LocalStore(Persistence persistence, QueryEngine queryEngine, User initialUser) {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
@@ -135,8 +136,9 @@ public final class LocalStore {
     remoteDocuments = persistence.getRemoteDocumentCache();
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-    // TODO: Use IndexedQueryEngine as appropriate.
-    queryEngine = new SimpleQueryEngine(localDocuments);
+
+    this.queryEngine = queryEngine;
+    queryEngine.setLocalDocumentsView(localDocuments);
 
     localViewReferences = new ReferenceSet();
     persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
@@ -170,8 +172,7 @@ public final class LocalStore {
     // Recreate our LocalDocumentsView using the new MutationQueue.
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-    // TODO: Use IndexedQueryEngine as appropriate.
-    queryEngine = new SimpleQueryEngine(localDocuments);
+    queryEngine.setLocalDocumentsView(localDocuments);
 
     // Union the old/new changed keys.
     ImmutableSortedSet<DocumentKey> changedKeys = DocumentKey.emptyKeySet();
@@ -325,54 +326,43 @@ public final class LocalStore {
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */
   public ImmutableSortedMap<DocumentKey, MaybeDocument> applyRemoteEvent(RemoteEvent remoteEvent) {
+    SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
+
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
     return persistence.runTransaction(
         "Apply remote event",
         () -> {
-          long sequenceNumber = persistence.getReferenceDelegate().getCurrentSequenceNumber();
-          Set<DocumentKey> authoritativeUpdates = new HashSet<>();
-
           Map<Integer, TargetChange> targetChanges = remoteEvent.getTargetChanges();
+          long sequenceNumber = persistence.getReferenceDelegate().getCurrentSequenceNumber();
+
           for (Map.Entry<Integer, TargetChange> entry : targetChanges.entrySet()) {
             Integer boxedTargetId = entry.getKey();
             int targetId = boxedTargetId;
             TargetChange change = entry.getValue();
 
-            // Do not ref/unref unassigned targetIds - it may lead to leaks.
-            QueryData queryData = targetIds.get(targetId);
-            if (queryData == null) {
+            QueryData oldQueryData = targetIds.get(targetId);
+            if (oldQueryData == null) {
+              // We don't update the remote keys if the query is not active. This ensures that
+              // we persist the updated query data along with the updated assignment.
               continue;
-            }
-
-            // When a global snapshot contains updates (either add or modify) we can completely
-            // trust these updates as authoritative and blindly apply them to our cache (as a
-            // defensive measure to promote self-healing in the unfortunate case that our cache
-            // is ever somehow corrupted / out-of-sync).
-            //
-            // If the document is only updated while removing it from a target then watch isn't
-            // obligated to send the absolute latest version: it can send the first version that
-            // caused the document not to match.
-            for (DocumentKey key : change.getAddedDocuments()) {
-              authoritativeUpdates.add(key);
-            }
-            for (DocumentKey key : change.getModifiedDocuments()) {
-              authoritativeUpdates.add(key);
             }
 
             queryCache.removeMatchingKeys(change.getRemovedDocuments(), targetId);
             queryCache.addMatchingKeys(change.getAddedDocuments(), targetId);
 
-            // Update the resume token if the change includes one. Don't clear any preexisting
-            // value.
             ByteString resumeToken = change.getResumeToken();
+            // Update the resume token if the change includes one.
             if (!resumeToken.isEmpty()) {
-              QueryData oldQueryData = queryData;
-              queryData =
-                  queryData.copy(remoteEvent.getSnapshotVersion(), resumeToken, sequenceNumber);
-              targetIds.put(boxedTargetId, queryData);
+              QueryData newQueryData =
+                  oldQueryData
+                      .withResumeToken(resumeToken, remoteEvent.getSnapshotVersion())
+                      .withSequenceNumber(sequenceNumber);
+              targetIds.put(boxedTargetId, newQueryData);
 
-              if (shouldPersistQueryData(oldQueryData, queryData, change)) {
-                queryCache.updateQueryData(queryData);
+              // Update the query data if there are target changes (or if sufficient time has
+              // passed since the last update).
+              if (shouldPersistQueryData(oldQueryData, newQueryData, change)) {
+                queryCache.updateQueryData(newQueryData);
               }
             }
           }
@@ -391,11 +381,10 @@ public final class LocalStore {
             MaybeDocument existingDoc = existingDocs.get(key);
 
             if (existingDoc == null
-                || (authoritativeUpdates.contains(doc.getKey()) && !existingDoc.hasPendingWrites())
-                || doc.getVersion().compareTo(existingDoc.getVersion()) >= 0) {
-              // If a document update isn't authoritative, make sure we don't apply an old document
-              // version to the remote cache.
-              remoteDocuments.add(doc);
+                || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
+                || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
+                    && existingDoc.hasPendingWrites())) {
+              remoteDocuments.add(doc, remoteEvent.getSnapshotVersion());
               changedDocs.put(key, doc);
             } else if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
               // NoDocuments with SnapshotVersion.MIN are used in manufactured events (e.g. in the
@@ -422,7 +411,6 @@ public final class LocalStore {
           // remote events when we get permission denied errors while trying to resolve the
           // state of a locally cached document that is in limbo.
           SnapshotVersion lastRemoteVersion = queryCache.getLastRemoteSnapshotVersion();
-          SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
           if (!remoteVersion.equals(SnapshotVersion.NONE)) {
             hardAssert(
                 remoteVersion.compareTo(lastRemoteVersion) >= 0,
@@ -448,10 +436,11 @@ public final class LocalStore {
    */
   private static boolean shouldPersistQueryData(
       QueryData oldQueryData, QueryData newQueryData, TargetChange change) {
-    // Avoid clearing any existing value
-    if (newQueryData.getResumeToken().isEmpty()) return false;
+    hardAssert(
+        !newQueryData.getResumeToken().isEmpty(),
+        "Attempted to persist query data with empty resume token");
 
-    // Any resume token is interesting if there isn't one already.
+    // Always persist query data if we don't already have a resume token.
     if (oldQueryData.getResumeToken().isEmpty()) return true;
 
     // Don't allow resume token changes to be buffered indefinitely. This allows us to be reasonably
@@ -480,12 +469,28 @@ public final class LocalStore {
         "notifyLocalViewChanges",
         () -> {
           for (LocalViewChanges viewChange : viewChanges) {
-            localViewReferences.addReferences(viewChange.getAdded(), viewChange.getTargetId());
+            int targetId = viewChange.getTargetId();
+
+            localViewReferences.addReferences(viewChange.getAdded(), targetId);
             ImmutableSortedSet<DocumentKey> removed = viewChange.getRemoved();
             for (DocumentKey key : removed) {
               persistence.getReferenceDelegate().removeReference(key);
             }
-            localViewReferences.removeReferences(removed, viewChange.getTargetId());
+            localViewReferences.removeReferences(removed, targetId);
+
+            if (viewChange.isSynced()) {
+              QueryData queryData = targetIds.get(targetId);
+              hardAssert(
+                  queryData != null,
+                  "Can't set limbo-free snapshot version for unknown target: %s",
+                  targetId);
+
+              // Advance the last limbo free snapshot version
+              SnapshotVersion lastLimboFreeSnapshotVersion = queryData.getSnapshotVersion();
+              QueryData updatedQueryData =
+                  queryData.withLastLimboFreeSnapshotVersion(lastLimboFreeSnapshotVersion);
+              targetIds.put(targetId, updatedQueryData);
+            }
           }
         });
   }
@@ -543,6 +548,21 @@ public final class LocalStore {
     return cached;
   }
 
+  /**
+   * Returns the QueryData as seen by the LocalStore, including updates that may have not yet been
+   * persisted to the QueryCache.
+   */
+  @VisibleForTesting
+  @Nullable
+  QueryData getQueryData(Query query) {
+    QueryData queryData = queryCache.getQueryData(query);
+    if (queryData == null) {
+      return null;
+    }
+    QueryData updatedQueryData = targetIds.get(queryData.getTargetId());
+    return updatedQueryData != null ? updatedQueryData : queryData;
+  }
+
   /** Mutable state for the transaction in allocateQuery. */
   private static class AllocateQueryHolder {
     QueryData cached;
@@ -559,10 +579,20 @@ public final class LocalStore {
 
           int targetId = queryData.getTargetId();
           QueryData cachedQueryData = targetIds.get(targetId);
+
+          boolean needsUpdate = false;
           if (cachedQueryData.getSnapshotVersion().compareTo(queryData.getSnapshotVersion()) > 0) {
             // If we've been avoiding persisting the resumeToken (see shouldPersistQueryData for
             // conditions and rationale) we need to persist the token now because there will no
             // longer be an in-memory version to fall back on.
+            needsUpdate = true;
+          } else if (!cachedQueryData
+              .getLastLimboFreeSnapshotVersion()
+              .equals(queryData.getLastLimboFreeSnapshotVersion())) {
+            needsUpdate = true;
+          }
+
+          if (needsUpdate) {
             queryData = cachedQueryData;
             queryCache.updateQueryData(queryData);
           }
@@ -583,7 +613,23 @@ public final class LocalStore {
 
   /** Runs the given query against all the documents in the local store and returns the results. */
   public ImmutableSortedMap<DocumentKey, Document> executeQuery(Query query) {
-    return queryEngine.getDocumentsMatchingQuery(query);
+    QueryData queryData = getQueryData(query);
+    if (queryData != null) {
+      ImmutableSortedSet<DocumentKey> remoteKeys =
+          this.queryCache.getMatchingKeysForTargetId(queryData.getTargetId());
+      return executeQuery(query, queryData, remoteKeys);
+    } else {
+      return executeQuery(query, null, DocumentKey.emptyKeySet());
+    }
+  }
+
+  /**
+   * Runs the given query against the local store and returns the results, potentially taking
+   * advantage of the provided query data and the set of remote document keys.
+   */
+  public ImmutableSortedMap<DocumentKey, Document> executeQuery(
+      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
+    return queryEngine.getDocumentsMatchingQuery(query, queryData, remoteKeys);
   }
 
   /**
@@ -612,7 +658,7 @@ public final class LocalStore {
               batch,
               remoteDoc);
         } else {
-          remoteDocuments.add(doc);
+          remoteDocuments.add(doc, batchResult.getCommitVersion());
         }
       }
     }

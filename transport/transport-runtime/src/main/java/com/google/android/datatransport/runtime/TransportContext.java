@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import com.google.android.datatransport.Priority;
 import com.google.auto.value.AutoValue;
@@ -25,6 +26,9 @@ import com.google.auto.value.AutoValue;
 public abstract class TransportContext {
   /** Backend events are sent to. */
   public abstract String getBackendName();
+
+  @Nullable
+  public abstract byte[] getExtras();
 
   /**
    * Priority of the event.
@@ -57,6 +61,8 @@ public abstract class TransportContext {
     private static final Priority[] ALL_PRIORITIES = Priority.values();
 
     public abstract Builder setBackendName(String name);
+
+    public abstract Builder setExtras(@Nullable byte[] extras);
 
     /** @hide */
     @RestrictTo(RestrictTo.Scope.LIBRARY)

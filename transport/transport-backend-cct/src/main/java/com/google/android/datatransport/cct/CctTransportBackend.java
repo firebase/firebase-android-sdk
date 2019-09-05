@@ -14,10 +14,13 @@
 
 package com.google.android.datatransport.cct;
 
+import static com.google.android.datatransport.runtime.retries.Retries.retry;
+
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.proto.AndroidClientInfo;
@@ -36,7 +39,6 @@ import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,6 +67,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
+  static final String API_KEY_HEADER_KEY = "X-Goog-Api-Key";
   private static final String PROTOBUF_CONTENT_TYPE = "application/x-protobuf";
 
   @VisibleForTesting static final String KEY_NETWORK_TYPE = "net-type";
@@ -81,7 +84,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String KEY_TIMEZONE_OFFSET = "tz-offset";
 
   private final ConnectivityManager connectivityManager;
-  private final URL endPoint;
+  final URL endPoint;
   private final Clock uptimeClock;
   private final Clock wallTimeClock;
   private final int readTimeout;
@@ -211,8 +214,9 @@ final class CctTransportBackend implements TransportBackend {
     return batchedRequestBuilder.build();
   }
 
-  private BackendResponse doSend(BatchedLogRequest requestBody) throws IOException {
-    HttpURLConnection connection = (HttpURLConnection) endPoint.openConnection();
+  private HttpResponse doSend(HttpRequest request) throws IOException {
+
+    HttpURLConnection connection = (HttpURLConnection) request.url.openConnection();
     connection.setConnectTimeout(CONNECTION_TIME_OUT);
     connection.setReadTimeout(readTimeout);
     connection.setDoOutput(true);
@@ -223,13 +227,17 @@ final class CctTransportBackend implements TransportBackend {
     connection.setRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
     connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, PROTOBUF_CONTENT_TYPE);
 
+    if (request.apiKey != null) {
+      connection.setRequestProperty(API_KEY_HEADER_KEY, request.apiKey);
+    }
+
     WritableByteChannel channel = Channels.newChannel(connection.getOutputStream());
     try {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output);
 
       try {
-        requestBody.writeTo(gzipOutputStream);
+        request.requestBody.writeTo(gzipOutputStream);
       } finally {
         gzipOutputStream.close();
       }
@@ -237,23 +245,20 @@ final class CctTransportBackend implements TransportBackend {
       int responseCode = connection.getResponseCode();
       LOGGER.info("Status Code: " + responseCode);
 
-      long nextRequestMillis;
+      if (responseCode == 302 || responseCode == 301) {
+        String redirect = connection.getHeaderField("Location");
+        return new HttpResponse(responseCode, new URL(redirect), 0);
+      }
+      if (responseCode != 200) {
+        return new HttpResponse(responseCode, null, 0);
+      }
+
       InputStream inputStream = connection.getInputStream();
       try {
-        try {
-          nextRequestMillis = LogResponse.parseFrom(inputStream).getNextRequestWaitMillis();
-        } catch (InvalidProtocolBufferException e) {
-          return BackendResponse.fatalError();
-        }
+        long nextRequestMillis = LogResponse.parseFrom(inputStream).getNextRequestWaitMillis();
+        return new HttpResponse(responseCode, null, nextRequestMillis);
       } finally {
         inputStream.close();
-      }
-      if (responseCode == 200) {
-        return BackendResponse.ok(nextRequestMillis);
-      } else if (responseCode >= 500 || responseCode == 404) {
-        return BackendResponse.transientError();
-      } else {
-        return BackendResponse.fatalError();
       }
     } finally {
       channel.close();
@@ -263,8 +268,34 @@ final class CctTransportBackend implements TransportBackend {
   @Override
   public BackendResponse send(BackendRequest request) {
     BatchedLogRequest requestBody = getRequestBody(request);
+    // CCT backend supports 2 different endpoints
+    // We route to CCT backend if extras are null and to LegacyFlg otherwise.
+    // This (anti-) pattern should not be required for other backends
+    final String apiKey =
+        request.getExtras() == null ? null : LegacyFlgDestination.decodeExtras(request.getExtras());
+
     try {
-      return doSend(requestBody);
+      HttpResponse response =
+          retry(
+              5,
+              new HttpRequest(endPoint, requestBody, apiKey),
+              this::doSend,
+              (req, resp) -> {
+                if (resp.redirectUrl != null) {
+                  // retry with different url
+                  return req.withUrl(resp.redirectUrl);
+                }
+                // don't retry
+                return null;
+              });
+
+      if (response.code == 200) {
+        return BackendResponse.ok(response.nextRequestMillis);
+      } else if (response.code >= 500 || response.code == 404) {
+        return BackendResponse.transientError();
+      } else {
+        return BackendResponse.fatalError();
+      }
     } catch (IOException e) {
       LOGGER.log(Level.SEVERE, "Could not make request to the backend", e);
       return BackendResponse.transientError();
@@ -276,5 +307,33 @@ final class CctTransportBackend implements TransportBackend {
     Calendar.getInstance();
     TimeZone tz = TimeZone.getDefault();
     return tz.getOffset(Calendar.getInstance().getTimeInMillis()) / 1000;
+  }
+
+  static final class HttpResponse {
+    final int code;
+    @Nullable final URL redirectUrl;
+    final long nextRequestMillis;
+
+    HttpResponse(int code, @Nullable URL redirectUrl, long nextRequestMillis) {
+      this.code = code;
+      this.redirectUrl = redirectUrl;
+      this.nextRequestMillis = nextRequestMillis;
+    }
+  }
+
+  static final class HttpRequest {
+    final URL url;
+    final BatchedLogRequest requestBody;
+    @Nullable final String apiKey;
+
+    HttpRequest(URL url, BatchedLogRequest requestBody, @Nullable String apiKey) {
+      this.url = url;
+      this.requestBody = requestBody;
+      this.apiKey = apiKey;
+    }
+
+    HttpRequest withUrl(URL newUrl) {
+      return new HttpRequest(newUrl, requestBody, apiKey);
+    }
   }
 }
