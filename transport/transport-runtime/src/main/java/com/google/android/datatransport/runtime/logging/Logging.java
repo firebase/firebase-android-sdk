@@ -40,7 +40,7 @@ public final class Logging {
   }
 
   public static void i(String tag, String message) {
-    Log.d(getTag(tag), message);
+    Log.i(getTag(tag), message);
   }
 
   public static void e(String tag, String message, Throwable e) {
