@@ -134,7 +134,7 @@ public class IntegrationTest {
 
   @Test
   public void pagedListFiles() throws ExecutionException, InterruptedException {
-    Task<ListResult> listTask = storageClient.getReference(randomPrefix).list(2);
+    Task<ListResult> listTask = getReference().list(2);
     ListResult listResult = Tasks.await(listTask);
 
     assertThat(listResult.getItems())
@@ -142,7 +142,7 @@ public class IntegrationTest {
     assertThat(listResult.getPrefixes()).isEmpty();
     assertThat(listResult.getPageToken()).isNotEmpty();
 
-    listTask = storageClient.getReference(randomPrefix).list(2, listResult.getPageToken());
+    listTask = getReference().list(2, listResult.getPageToken());
     listResult = Tasks.await(listTask);
 
     assertThat(listResult.getItems()).isEmpty();
@@ -152,13 +152,18 @@ public class IntegrationTest {
 
   @Test
   public void listAllFiles() throws ExecutionException, InterruptedException {
-    Task<ListResult> listTask = storageClient.getReference(randomPrefix).listAll();
+    Task<ListResult> listTask = getReference().listAll();
     ListResult listResult = Tasks.await(listTask);
 
     assertThat(listResult.getPrefixes()).containsExactly(getReference("prefix"));
     assertThat(listResult.getItems())
         .containsExactly(getReference("metadata.dat"), getReference("download.dat"));
     assertThat(listResult.getPageToken()).isNull();
+  }
+
+  @NonNull
+  private StorageReference getReference() {
+    return storageClient.getReference(randomPrefix);
   }
 
   @NonNull

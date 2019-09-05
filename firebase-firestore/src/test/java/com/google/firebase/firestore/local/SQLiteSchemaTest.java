@@ -16,8 +16,12 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.local.EncodedPath.decodeResourcePath;
 import static com.google.firebase.firestore.local.EncodedPath.encode;
+import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
+import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static com.google.firebase.firestore.testutil.TestUtil.version;
+import static com.google.firebase.firestore.util.Assert.fail;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -28,11 +32,18 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.proto.MaybeDocument;
+import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.proto.WriteBatch;
+import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firestore.v1.Document;
 import com.google.firestore.v1.Write;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,10 +66,11 @@ public class SQLiteSchemaTest {
 
   private SQLiteDatabase db;
   private SQLiteSchema schema;
+  private SQLiteOpenHelper opener;
 
   @Before
   public void setUp() {
-    SQLiteOpenHelper opener =
+    opener =
         new SQLiteOpenHelper(ApplicationProvider.getApplicationContext(), "foo", null, 1) {
           @Override
           public void onCreate(SQLiteDatabase db) {}
@@ -392,6 +404,142 @@ public class SQLiteSchemaTest {
     }
 
     assertEquals(expectedParents, actualParents);
+  }
+
+  @Test
+  public void existingDocumentsRemainReadableAfterIndexFreeMigration() {
+    // Initialize the schema to the state prior to the index-free migration.
+    schema.runMigrations(0, 8);
+    db.execSQL(
+        "INSERT INTO remote_documents (path, contents) VALUES (?, ?)",
+        new Object[] {encode(path("coll/existing")), createDummyDocument("coll/existing")});
+
+    // Run the index-free migration.
+    schema.runMigrations(8, 9);
+    db.execSQL(
+        "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
+        new Object[] {encode(path("coll/old")), 0, 1000, createDummyDocument("coll/old")});
+    db.execSQL(
+        "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
+        new Object[] {encode(path("coll/current")), 0, 2000, createDummyDocument("coll/current")});
+    db.execSQL(
+        "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
+        new Object[] {encode(path("coll/new")), 0, 3000, createDummyDocument("coll/new")});
+
+    SQLiteRemoteDocumentCache remoteDocumentCache = createRemoteDocumentCache();
+
+    // Verify that queries with SnapshotVersion.NONE return all results, regardless of whether the
+    // read time has been set.
+    ImmutableSortedMap<DocumentKey, com.google.firebase.firestore.model.Document> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(0));
+    assertResultsContain(results, "coll/existing", "coll/old", "coll/current", "coll/new");
+
+    // Queries that filter by read time only return documents that were written after the index-free
+    // migration.
+    results = remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(2));
+    assertResultsContain(results, "coll/new");
+  }
+
+  @Test
+  public void dropsLastLimboFreeSnapshotIfPreviouslyDowngraded() {
+    schema.runMigrations(0, 9);
+
+    db.execSQL(
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        new Object[] {1, "foo", createDummyQueryTargetWithLimboFreeVersion(1).toByteArray()});
+    db.execSQL(
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?, ?, ?)",
+        new Object[] {2, "bar", createDummyQueryTargetWithLimboFreeVersion(2).toByteArray()});
+    db.execSQL(
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        new Object[] {3, "baz", createDummyQueryTargetWithLimboFreeVersion(3).toByteArray()});
+
+    schema.runMigrations(0, 8);
+    schema.runMigrations(8, 9);
+
+    int rowCount =
+        new SQLitePersistence.Query(db, "SELECT target_id, target_proto FROM targets")
+            .forEach(
+                cursor -> {
+                  int targetId = cursor.getInt(0);
+                  byte[] targetProtoBytes = cursor.getBlob(1);
+
+                  try {
+                    Target targetProto = Target.parseFrom(targetProtoBytes);
+                    assertEquals(targetId, targetProto.getTargetId());
+                    assertFalse(targetProto.hasLastLimboFreeSnapshotVersion());
+                  } catch (InvalidProtocolBufferException e) {
+                    fail("Failed to decode Query data");
+                  }
+                });
+
+    assertEquals(3, rowCount);
+  }
+
+  @Test
+  public void keepsLastLimboFreeSnapshotIfNotDowngraded() {
+    schema.runMigrations(0, 9);
+
+    db.execSQL(
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        new Object[] {1, "foo", createDummyQueryTargetWithLimboFreeVersion(1).toByteArray()});
+
+    // Make sure that we don't drop the lastLimboFreeSnapshotVersion if we are already on schema
+    // version 9.
+    schema.runMigrations(9, 9);
+
+    new SQLitePersistence.Query(db, "SELECT target_proto FROM targets")
+        .forEach(
+            cursor -> {
+              byte[] targetProtoBytes = cursor.getBlob(0);
+
+              try {
+                Target targetProto = Target.parseFrom(targetProtoBytes);
+                assertTrue(targetProto.hasLastLimboFreeSnapshotVersion());
+              } catch (InvalidProtocolBufferException e) {
+                fail("Failed to decode Query data");
+              }
+            });
+  }
+
+  private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
+    DatabaseId databaseId = DatabaseId.forProject("foo");
+    LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
+    SQLitePersistence persistence =
+        new SQLitePersistence(
+            serializer,
+            StatsCollector.NO_OP_STATS_COLLECTOR,
+            LruGarbageCollector.Params.Default(),
+            opener);
+    persistence.start();
+    return new SQLiteRemoteDocumentCache(
+        persistence, serializer, StatsCollector.NO_OP_STATS_COLLECTOR);
+  }
+
+  private byte[] createDummyDocument(String name) {
+    return MaybeDocument.newBuilder()
+        .setDocument(
+            Document.newBuilder()
+                .setName("projects/foo/databases/(default)/documents/" + name)
+                .build())
+        .build()
+        .toByteArray();
+  }
+
+  private Target createDummyQueryTargetWithLimboFreeVersion(int targetId) {
+    return Target.newBuilder()
+        .setTargetId(targetId)
+        .setLastLimboFreeSnapshotVersion(Timestamp.newBuilder().setSeconds(42))
+        .build();
+  }
+
+  private void assertResultsContain(
+      ImmutableSortedMap<DocumentKey, com.google.firebase.firestore.model.Document> actualResults,
+      String... docs) {
+    for (String doc : docs) {
+      assertTrue("Expected result for " + doc, actualResults.containsKey(key(doc)));
+    }
+    assertEquals("Results contain unexpected entries", docs.length, actualResults.size());
   }
 
   private void assertNoResultsForQuery(String query, String[] args) {

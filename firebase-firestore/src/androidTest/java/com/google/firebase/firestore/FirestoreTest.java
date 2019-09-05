@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.AccessHelper.getAsyncQueue;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettings;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provider;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testChangeUserTo;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
@@ -44,6 +45,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.Query.Direction;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
@@ -969,10 +971,11 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testClientCallsAfterShutdownFails() {
+  public void testClientCallsAfterTerminateFails() {
     FirebaseFirestore firestore = testFirestore();
-    waitFor(firestore.shutdown());
-    expectError(() -> waitFor(firestore.disableNetwork()), "The client has already been shutdown");
+    waitFor(firestore.terminate());
+    expectError(
+        () -> waitFor(firestore.disableNetwork()), "The client has already been terminated");
   }
 
   @Test
@@ -981,7 +984,7 @@ public class FirestoreTest {
         testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
-    waitFor(AccessHelper.shutdown(firestore));
+    waitFor(firestore.terminate());
     IntegrationTestUtil.removeFirestore(firestore);
 
     // We restart the app with the same name and options to check that the previous instance's
@@ -1000,7 +1003,7 @@ public class FirestoreTest {
         testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
-    waitFor(AccessHelper.shutdown(firestore));
+    waitFor(firestore.terminate());
     IntegrationTestUtil.removeFirestore(firestore);
     waitFor(AccessHelper.clearPersistence(firestore));
 
@@ -1036,7 +1039,7 @@ public class FirestoreTest {
     assertSame(instance, sameInstance);
     waitFor(instance.document("abc/123").set(Collections.singletonMap("field", 100L)));
 
-    instance.shutdown();
+    instance.terminate();
     FirebaseFirestore newInstance = FirebaseFirestore.getInstance(app);
 
     // Verify new instance works.
@@ -1049,25 +1052,25 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testAppDeleteLeadsToFirestoreShutdown() {
+  public void testAppDeleteLeadsToFirestoreTerminate() {
     FirebaseApp app = testFirebaseApp();
     FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
     waitFor(instance.document("abc/123").set(Collections.singletonMap("Field", 100)));
 
     app.delete();
 
-    assertTrue(instance.getClient().isShutdown());
+    assertTrue(instance.getClient().isTerminated());
   }
 
   @Test
-  public void testNewOperationThrowsAfterFirestoreShutdown() {
+  public void testNewOperationThrowsAfterFirestoreTerminate() {
     FirebaseFirestore instance = testFirestore();
     DocumentReference reference = instance.document("abc/123");
     waitFor(reference.set(Collections.singletonMap("Field", 100)));
 
-    instance.shutdown();
+    instance.terminate();
 
-    final String expectedMessage = "The client has already been shutdown";
+    final String expectedMessage = "The client has already been terminated";
     expectError(() -> waitFor(reference.get()), expectedMessage);
     expectError(() -> waitFor(reference.update("Field", 1)), expectedMessage);
     expectError(
@@ -1081,19 +1084,93 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testShutdownCalledMultipleTimes() {
+  public void testTerminateCalledMultipleTimes() {
     FirebaseFirestore instance = testFirestore();
     DocumentReference reference = instance.document("abc/123");
     waitFor(reference.set(Collections.singletonMap("Field", 100)));
 
-    instance.shutdown();
+    instance.terminate();
 
-    final String expectedMessage = "The client has already been shutdown";
+    final String expectedMessage = "The client has already been terminated";
     expectError(() -> waitFor(reference.get()), expectedMessage);
 
     // Calling a second time should go through and change nothing.
-    instance.shutdown();
+    instance.terminate();
 
     expectError(() -> waitFor(reference.get()), expectedMessage);
+  }
+
+  @Test
+  public void testCanStopListeningAfterTerminate() {
+    FirebaseFirestore instance = testFirestore();
+    DocumentReference reference = instance.document("abc/123");
+    EventAccumulator<DocumentSnapshot> eventAccumulator = new EventAccumulator<>();
+    ListenerRegistration registration = reference.addSnapshotListener(eventAccumulator.listener());
+    eventAccumulator.await();
+
+    waitFor(instance.terminate());
+
+    // This should proceed without error.
+    registration.remove();
+    // Multiple calls should proceed as an effectively no-op.
+    registration.remove();
+  }
+
+  @Test
+  public void testWaitForPendingWritesResolves() {
+    DocumentReference documentReference = testCollection("abc").document("123");
+    FirebaseFirestore firestore = documentReference.getFirestore();
+    Map<String, Object> data = map("foo", "bar");
+
+    waitFor(firestore.disableNetwork());
+    Task<Void> awaitsPendingWrites1 = firestore.waitForPendingWrites();
+    Task<Void> pendingWrite = documentReference.set(data);
+    Task<Void> awaitsPendingWrites2 = firestore.waitForPendingWrites();
+
+    // `awaitsPendingWrites1` completes immediately because there are no pending writes at
+    // the time it is created.
+    waitFor(awaitsPendingWrites1);
+    assertTrue(awaitsPendingWrites1.isComplete() && awaitsPendingWrites1.isSuccessful());
+    assertTrue(!pendingWrite.isComplete());
+    assertTrue(!awaitsPendingWrites2.isComplete());
+
+    firestore.enableNetwork();
+    waitFor(awaitsPendingWrites2);
+    assertTrue(awaitsPendingWrites2.isComplete() && awaitsPendingWrites2.isSuccessful());
+  }
+
+  @Test
+  public void testWaitForPendingWritesFailsWhenUserChanges() {
+    DocumentReference documentReference = testCollection("abc").document("123");
+    FirebaseFirestore firestore = documentReference.getFirestore();
+    Map<String, Object> data = map("foo", "bar");
+
+    // Prevent pending writes receiving acknowledgement.
+    waitFor(firestore.disableNetwork());
+    Task<Void> pendingWrite = documentReference.set(data);
+    Task<Void> awaitsPendingWrites = firestore.waitForPendingWrites();
+    assertTrue(!pendingWrite.isComplete());
+    assertTrue(!awaitsPendingWrites.isComplete());
+
+    testChangeUserTo(new User("new user"));
+
+    assertTrue(!pendingWrite.isComplete());
+    assertEquals(
+        "'waitForPendingWrites' task is cancelled due to User change.",
+        waitForException(awaitsPendingWrites).getMessage());
+  }
+
+  @Test
+  public void testPendingWriteTaskResolveWhenOfflineIfThereIsNoPending() {
+    DocumentReference documentReference = testCollection("abc").document("123");
+    FirebaseFirestore firestore = documentReference.getFirestore();
+    Map<String, Object> data = map("foo", "bar");
+
+    // Prevent pending writes receiving acknowledgement.
+    waitFor(firestore.disableNetwork());
+    Task<Void> awaitsPendingWrites = firestore.waitForPendingWrites();
+    waitFor(awaitsPendingWrites);
+
+    assertTrue(awaitsPendingWrites.isComplete() && awaitsPendingWrites.isSuccessful());
   }
 }

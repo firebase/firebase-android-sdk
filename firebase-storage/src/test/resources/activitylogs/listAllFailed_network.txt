@@ -1,0 +1,29 @@
+
+<new>
+Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?prefix=largeDirectory%2F&delimiter=%2F
+setRequestMethod:GET
+setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
+setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:Content-Length,0
+setUseCaches:false
+setDoInput:true
+getResponseCode:403
+getHeaderFields:
+ null:[HTTP/1.1 403 Forbidden]
+ Access-Control-Allow-Origin:[*]
+ Access-Control-Expose-Headers:[Content-Range, X-Firebase-Storage-XSRF]
+ Alt-Svc:[quic=":443"; ma=2592000; v="46,43,39"]
+ Cache-Control:[private, max-age=0]
+ Content-Length:[106]
+ Content-Type:[application/json; charset=UTF-8]
+ Date:[Fri, 16 Aug 2019 17:51:19 GMT]
+ Expires:[Fri, 16 Aug 2019 17:51:19 GMT]
+ Server:[UploadServer]
+ X-Android-Received-Millis:[1565977885114]
+ X-Android-Response-Source:[NETWORK 403]
+ X-Android-Selected-Protocol:[http/1.1]
+ X-Android-Sent-Millis:[1565977884943]
+ X-Content-Type-Options:[nosniff]
+ X-GUploader-UploadID:[AEnB2Up1Fu4ZwtUsQe7mXrzuQ_S2KZvRwUttfOYcrQsZm4kuJcUJFvMzTRxkmydO8ErBV1bI_Ku_B7xqFBp5r4bt-hEu4a2JBQ]
+getErrorStream:{  "error": {    "code": 403,    "message": "Permission denied. Could not perform this operation"  }}
+disconnect:

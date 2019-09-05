@@ -18,9 +18,9 @@ package com.google.firebase.gradle.plugins.measurement.apksize
 /** A helper class that generates the APK size measurement JSON report. */
 class ApkSizeJsonBuilder {
 
-    private static final String PULL_REQUEST_TABLE = "PullRequests"
+    private static final String PULL_REQUEST_TABLE = "AndroidPullRequests"
     private static final String PULL_REQUEST_COLUMN = "pull_request_id"
-    private static final String APK_SIZE_TABLE = "ApkSizes"
+    private static final String APK_SIZE_TABLE = "AndroidApkSizes"
     private static final String SDK_COLUMN = "sdk_id"
     private static final String APK_SIZE_COLUMN = "apk_size"
 

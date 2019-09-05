@@ -117,8 +117,8 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   public int removeOrphanedDocuments(long upperBound) {
     int count = 0;
     MemoryRemoteDocumentCache cache = persistence.getRemoteDocumentCache();
-    for (Map.Entry<DocumentKey, MaybeDocument> entry : cache.getDocuments()) {
-      DocumentKey key = entry.getKey();
+    for (MaybeDocument doc : cache.getDocuments()) {
+      DocumentKey key = doc.getKey();
       if (!isPinned(key, upperBound)) {
         cache.remove(key);
         orphanedSequenceNumbers.remove(key);
@@ -135,9 +135,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
   @Override
   public void removeTarget(QueryData queryData) {
-    QueryData updated =
-        queryData.copy(
-            queryData.getSnapshotVersion(), queryData.getResumeToken(), getCurrentSequenceNumber());
+    QueryData updated = queryData.withSequenceNumber(getCurrentSequenceNumber());
     persistence.getQueryCache().updateQueryData(updated);
   }
 

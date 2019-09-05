@@ -37,7 +37,9 @@ import com.google.firebase.firestore.local.LruDelegate;
 import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
+import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.SQLitePersistence;
+import com.google.firebase.firestore.local.SimpleQueryEngine;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -125,17 +127,17 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   }
 
   public Task<Void> disableNetwork() {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     return asyncQueue.enqueue(() -> remoteStore.disableNetwork());
   }
 
   public Task<Void> enableNetwork() {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     return asyncQueue.enqueue(() -> remoteStore.enableNetwork());
   }
 
-  /** Shuts down this client, cancels all writes / listeners, and releases all resources. */
-  public Task<Void> shutdown() {
+  /** Terminates this client, cancels all writes / listeners, and releases all resources. */
+  public Task<Void> terminate() {
     credentialsProvider.removeChangeListener();
     return asyncQueue.enqueueAndInitiateShutdown(
         () -> {
@@ -147,17 +149,17 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
         });
   }
 
-  /** Returns true if this client has been shutdown. */
-  public boolean isShutdown() {
-    // Technically, the asyncQueue is still running, but only accepting tasks related to shutdown
-    // or supposed to be run after shutdown. It is effectively shut down to the eyes of users.
+  /** Returns true if this client has been terminated. */
+  public boolean isTerminated() {
+    // Technically, the asyncQueue is still running, but only accepting tasks related to terminating
+    // or supposed to be run after terminate(). It is effectively terminated to the eyes of users.
     return this.asyncQueue.isShuttingDown();
   }
 
   /** Starts listening to a query. */
   public QueryListener listen(
       Query query, ListenOptions options, EventListener<ViewSnapshot> listener) {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     QueryListener queryListener = new QueryListener(query, options, listener);
     asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
     return queryListener;
@@ -165,12 +167,16 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   /** Stops listening to a query previously listened to. */
   public void stopListening(QueryListener listener) {
-    this.verifyNotShutdown();
+    // Checks for terminate but does not raise error, allowing it to be a no-op if client is already
+    // terminated.
+    if (this.isTerminated()) {
+      return;
+    }
     asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(listener));
   }
 
   public Task<Document> getDocumentFromLocalCache(DocumentKey docKey) {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     return asyncQueue
         .enqueue(() -> localStore.readDocument(docKey))
         .continueWith(
@@ -192,7 +198,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   }
 
   public Task<ViewSnapshot> getDocumentsFromLocalCache(Query query) {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     return asyncQueue.enqueue(
         () -> {
           ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
@@ -209,7 +215,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   /** Writes mutations. The returned task will be notified when it's written to the backend. */
   public Task<Void> write(final List<Mutation> mutations) {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(() -> syncEngine.writeMutations(mutations, source));
     return source.getTask();
@@ -218,10 +224,21 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   /** Tries to execute the transaction in updateFunction up to retries times. */
   public <TResult> Task<TResult> transaction(
       Function<Transaction, Task<TResult>> updateFunction, int retries) {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     return AsyncQueue.callTask(
-        asyncQueue.getExecutor(),
-        () -> syncEngine.transaction(asyncQueue, updateFunction, retries));
+        asyncQueue.getExecutor(), () -> syncEngine.transaction(asyncQueue, updateFunction));
+  }
+
+  /**
+   * Returns a task resolves when all the pending writes at the time when this method is called
+   * received server acknowledgement. An acknowledgement can be either acceptance or rejections.
+   */
+  public Task<Void> waitForPendingWrites() {
+    this.verifyNotTerminated();
+
+    final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+    asyncQueue.enqueueAndForget(() -> syncEngine.registerPendingWritesTask(source));
+    return source.getTask();
   }
 
   private void initialize(Context context, User user, boolean usePersistence, long cacheSizeBytes) {
@@ -251,7 +268,9 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     }
 
     persistence.start();
-    localStore = new LocalStore(persistence, user);
+    // TODO(index-free): Use IndexFreeQueryEngine/IndexedQueryEngine as appropriate.
+    QueryEngine queryEngine = new SimpleQueryEngine();
+    localStore = new LocalStore(persistence, queryEngine, user);
     if (gc != null) {
       lruScheduler = gc.newScheduler(asyncQueue, localStore);
       lruScheduler.start();
@@ -270,9 +289,9 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     remoteStore.start();
   }
 
-  private void verifyNotShutdown() {
-    if (this.isShutdown()) {
-      throw new IllegalStateException("The client has already been shutdown");
+  private void verifyNotTerminated() {
+    if (this.isTerminated()) {
+      throw new IllegalStateException("The client has already been terminated");
     }
   }
 

@@ -20,7 +20,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.internal.Slashes;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONObject;
@@ -60,7 +59,7 @@ public class ResumableUploadStartRequest extends ResumableNetworkRequest {
 
   @Override
   @NonNull
-  protected String getQueryParameters() throws UnsupportedEncodingException {
+  protected String getQueryParameters() {
     List<String> keys = new ArrayList<>();
     List<String> values = new ArrayList<>();
 

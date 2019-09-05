@@ -17,10 +17,6 @@ plugins {
     id 'com.google.protobuf'
 }
 
-firebaseLibrary {
-    staticAnalysis.disableKotlinInteropLint()
-}
-
 
 protobuf {
     protoc {
