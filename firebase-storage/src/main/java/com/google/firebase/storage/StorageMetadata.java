@@ -468,6 +468,5 @@ public class StorageMetadata {
     public String getContentType() {
       return mMetadata.mContentType.getValue();
     }
-
   }
 }
