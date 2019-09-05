@@ -25,6 +25,7 @@ import android.os.PersistableBundle;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import java.nio.ByteBuffer;
 import java.util.zip.Adler32;
@@ -35,6 +36,8 @@ import java.util.zip.Adler32;
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JobInfoScheduler implements WorkScheduler {
+  private static final String LOG_TAG = "JobInfoScheduler";
+
   static final String ATTEMPT_NUMBER = "attemptNumber";
   static final String BACKEND_NAME = "backendName";
   static final String EVENT_PRIORITY = "priority";
@@ -89,14 +92,20 @@ public class JobInfoScheduler implements WorkScheduler {
         (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
     int jobId = getJobId(transportContext);
     // Check if there exists a job scheduled for this backend name.
-    if (isJobServiceOn(jobScheduler, jobId, attemptNumber)) return;
+    if (isJobServiceOn(jobScheduler, jobId, attemptNumber)) {
+      Logging.d(
+          LOG_TAG, "Upload for context %s is already scheduled. Returning...", transportContext);
+      return;
+    }
+
+    long nextCallTime = eventStore.getNextCallTime(transportContext);
 
     // Schedule the build.
     JobInfo.Builder builder =
         config.configureJob(
             new JobInfo.Builder(jobId, serviceComponent),
             transportContext.getPriority(),
-            eventStore.getNextCallTime(transportContext),
+            nextCallTime,
             attemptNumber);
 
     PersistableBundle bundle = new PersistableBundle();
@@ -107,6 +116,15 @@ public class JobInfoScheduler implements WorkScheduler {
       bundle.putString(EXTRAS, encodeToString(transportContext.getExtras(), DEFAULT));
     }
     builder.setExtras(bundle);
+
+    Logging.d(
+        LOG_TAG,
+        "Scheduling upload for context %s with jobId=%d in %dms(Backend next call timestamp %d). Attempt %d",
+        transportContext,
+        jobId,
+        config.getScheduleDelay(transportContext.getPriority(), nextCallTime, attemptNumber),
+        nextCallTime,
+        attemptNumber);
 
     jobScheduler.schedule(builder.build());
   }
