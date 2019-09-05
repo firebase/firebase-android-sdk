@@ -19,7 +19,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigBuilder
+import com.google.firebase.remoteconfig.createRemoteConfig
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
@@ -43,12 +43,12 @@ const val API_KEY = "API_KEY"
 const val EXISTING_APP = "existing"
 
 open class DefaultFirebaseRemoteConfigValue : FirebaseRemoteConfigValue {
-    override fun asLong(): Long = throw UnsupportedOperationException("Unimplementend")
-    override fun asDouble(): Double = throw UnsupportedOperationException("Unimplementend")
-    override fun asString(): String = throw UnsupportedOperationException("Unimplementend")
-    override fun asByteArray(): ByteArray = throw UnsupportedOperationException("Unimplementend")
-    override fun asBoolean(): Boolean = throw UnsupportedOperationException("Unimplementend")
-    override fun getSource(): Int = throw UnsupportedOperationException("Unimplementend")
+    override fun asLong(): Long = TODO("Unimplementend")
+    override fun asDouble(): Double = TODO("Unimplementend")
+    override fun asString(): String = TODO("Unimplementend")
+    override fun asByteArray(): ByteArray = TODO("Unimplementend")
+    override fun asBoolean(): Boolean = TODO("Unimplementend")
+    override fun getSource(): Int = TODO("Unimplementend")
 }
 
 class StringRemoteConfigValue(val value: String) : DefaultFirebaseRemoteConfigValue() {
@@ -112,7 +112,7 @@ class ConfigTests : BaseTestCase() {
         val mockGetHandler = mock(ConfigGetParameterHandler::class.java)
         val directExecutor = MoreExecutors.directExecutor()
 
-        val remoteConfig = FirebaseRemoteConfigBuilder(
+        val remoteConfig = createRemoteConfig(
             context = null,
             firebaseApp = Firebase.app(EXISTING_APP),
             firebaseAbt = null,

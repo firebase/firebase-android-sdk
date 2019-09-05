@@ -25,7 +25,7 @@ import com.google.firebase.abt.FirebaseABTesting
 
 // This method is a workaround for testing. It enable us to create a FirebaseRemoteConfig object
 // with mocks using the package-private constructor.
-fun FirebaseRemoteConfigBuilder(
+fun createRemoteConfig(
     context: Context?,
     firebaseApp: FirebaseApp,
     firebaseAbt: FirebaseABTesting?,
