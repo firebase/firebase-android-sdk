@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.internal;
+package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -20,12 +20,11 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 
 /**
- * Class responsible for storing all heartbeat related information. Store a key value pair with the
- * key being either the heartbeat tag (one for each firebase sdk) or the global heart beat tag and
- * the value being the timestamp(in millis) as to when the last heart beat was sent. Class also
- * provides helper functions to check if there is a need to send the global/sdk heart beat.
+ * Class responsible for storing all heartbeat related information.
+ *
+ * <p>This exposes functions to check if there is a need to send global/sdk heartbeat.
  */
-public class HeartBeatInfoStorage {
+class HeartBeatInfoStorage {
   private static HeartBeatInfoStorage instance = null;
   private static final String GLOBAL = "fire-global";
 
@@ -40,11 +39,11 @@ public class HeartBeatInfoStorage {
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  public HeartBeatInfoStorage(SharedPreferences preferences) {
+  HeartBeatInfoStorage(SharedPreferences preferences) {
     this.sharedPreferences = preferences;
   }
 
-  public static HeartBeatInfoStorage getInstance(Context applicationContext) {
+  static synchronized HeartBeatInfoStorage getInstance(Context applicationContext) {
     if (instance == null) {
       instance = new HeartBeatInfoStorage(applicationContext);
     }
@@ -56,7 +55,7 @@ public class HeartBeatInfoStorage {
    A sdk heartbeat is sent either when there is no heartbeat sent ever for the sdk or
    when the last heartbeat send for the sdk was later than a day before.
   */
-  public synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
+  synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
     if (sharedPreferences.contains(heartBeatTag)) {
       long timeElapsed = millis - sharedPreferences.getLong(heartBeatTag, -1);
       if (timeElapsed >= (long) 1000 * 60 * 60 * 24) {
@@ -74,7 +73,7 @@ public class HeartBeatInfoStorage {
    Indicates whether or not we have to send a global heartbeat.
    A global heartbeat is set only once per day.
   */
-  public synchronized boolean shouldSendGlobalHeartBeat(long millis) {
+  synchronized boolean shouldSendGlobalHeartBeat(long millis) {
     return shouldSendSdkHeartBeat(GLOBAL, millis);
   }
 }

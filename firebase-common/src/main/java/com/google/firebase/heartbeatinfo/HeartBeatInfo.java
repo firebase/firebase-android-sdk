@@ -16,7 +16,14 @@ package com.google.firebase.heartbeatinfo;
 
 import org.jetbrains.annotations.NotNull;
 
-/** Component that publishes heartbeat information */
+/**
+ * Class provides information about heartbeats.
+ *
+ * <p>This exposes a function which returns the `HeartBeatCode` if both sdk heartbeat and global
+ * heartbeat needs to sent then HeartBeat.COMBINED is returned. if only sdk heart beat needs to be
+ * sent then HeartBeat.SDK is returned. if only global heart beat needs to be sent then
+ * HeartBeat.GLOBAL is returned. if no heart beat needs to be sent then HeartBeat.NONE is returned.
+ */
 public interface HeartBeatInfo {
   enum HeartBeat {
     NONE,

@@ -19,7 +19,6 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
-import com.google.firebase.internal.HeartBeatInfoStorage;
 import org.jetbrains.annotations.NotNull;
 
 /** Provides information as whether to send heart beat or not. */
