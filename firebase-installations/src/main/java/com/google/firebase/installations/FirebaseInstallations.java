@@ -29,6 +29,7 @@ import com.google.firebase.installations.local.PersistedFidEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
+import com.google.firebase.installations.remote.InstallationTokenResult;
 import java.util.concurrent.Executor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -53,6 +54,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Executor executor;
   private final Clock clock;
   private final Utils utils;
+
+  private static final long TOKEN_EXPIRATION_BUFFER = 3600L;
 
   /** package private constructor. */
   FirebaseInstallations(FirebaseApp firebaseApp) {
@@ -115,11 +118,17 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         .onSuccessTask(this::registerFidIfNecessary);
   }
 
-  /** Returns a auth token(public key) of this Firebase app installation. */
+  /**
+   * Returns a valid authentication token for the Firebase installation. Generates a new token if
+   * one doesn't exist, is expired or about to expire.
+   *
+   * <p>Should only be called if the Firebase Installation is registered.
+   */
   @NonNull
   @Override
-  public Task<InstallationTokenResult> getAuthToken(boolean forceRefresh) {
-    return Tasks.forResult(InstallationTokenResult.builder().build());
+  public Task<String> getAuthToken(final boolean forceRefresh) {
+    return Tasks.call(executor, this::getId)
+        .continueWith(call(() -> refreshAuthTokenIfNecessary(forceRefresh)));
   }
 
   /**
@@ -164,6 +173,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return t -> {
       if (t.isSuccessful()) {
         return (T) t.getResult();
+      }
+      return supplier.get();
+    };
+  }
+
+  @NonNull
+  private static <F, T> Continuation<F, T> call(@NonNull Supplier<T> supplier) {
+    return t -> {
+      if (!t.isComplete()) {
+        Tasks.await(t);
       }
       return supplier.get();
     };
@@ -214,7 +233,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private Void registerAndSaveFid(PersistedFidEntry persistedFidEntry)
       throws FirebaseInstallationsException {
     try {
-      long creationTime = TimeUnit.MILLISECONDS.toSeconds(clock.currentTimeMillis());
+      long creationTime = currentTime();
 
       InstallationResponse installationResponse =
           serviceClient.createFirebaseInstallation(
@@ -243,6 +262,79 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           exception.getMessage(), FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
     return null;
+  }
+
+  private String refreshAuthTokenIfNecessary(boolean forceRefresh)
+      throws FirebaseInstallationsException {
+
+    PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+
+    if (persistedFidEntry == null) {
+      throw new FirebaseInstallationsException(
+          "Failed to create Firebase Installation.",
+          FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+    }
+
+    return forceRefresh
+        ? fetchAuthTokenFromServer(persistedFidEntry)
+        : getPersistedAuthToken(persistedFidEntry);
+  }
+
+  private String getPersistedAuthToken(PersistedFidEntry persistedFidEntry)
+      throws FirebaseInstallationsException {
+    if (!isPersistedFidRegistered(persistedFidEntry)) {
+      throw new FirebaseInstallationsException(
+          "Firebase Installation is not registered.",
+          FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+    }
+
+    return isAuthTokenExpired(persistedFidEntry)
+        ? fetchAuthTokenFromServer(persistedFidEntry)
+        : persistedFidEntry.getAuthToken();
+  }
+
+  private boolean isPersistedFidRegistered(PersistedFidEntry persistedFidEntry) {
+    return persistedFidEntry != null
+        && persistedFidEntry.getRegistrationStatus() == RegistrationStatus.REGISTERED;
+  }
+
+  /** Calls the FIS servers to generate an auth token for this Firebase installation. */
+  private String fetchAuthTokenFromServer(PersistedFidEntry persistedFidEntry)
+      throws FirebaseInstallationsException {
+    try {
+      long creationTime = currentTime();
+      InstallationTokenResult tokenResult =
+          serviceClient.generateAuthToken(
+              /*apiKey= */ firebaseApp.getOptions().getApiKey(),
+              /*fid= */ persistedFidEntry.getFirebaseInstallationId(),
+              /*projectID= */ firebaseApp.getOptions().getProjectId(),
+              /*refreshToken= */ persistedFidEntry.getRefreshToken());
+
+      persistedFid.insertOrUpdatePersistedFidEntry(
+          PersistedFidEntry.builder()
+              .setFirebaseInstallationId(persistedFidEntry.getFirebaseInstallationId())
+              .setRegistrationStatus(RegistrationStatus.REGISTERED)
+              .setAuthToken(tokenResult.getToken())
+              .setRefreshToken(persistedFidEntry.getRefreshToken())
+              .setExpiresInSecs(tokenResult.getTokenExpirationTimestampMillis())
+              .setTokenCreationEpochInSecs(creationTime)
+              .build());
+
+      return tokenResult.getToken();
+    } catch (FirebaseInstallationServiceException exception) {
+      throw new FirebaseInstallationsException(
+          "Failed to generate auth token for a Firebase Installation.",
+          FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+    }
+  }
+
+  private boolean isAuthTokenExpired(PersistedFidEntry persistedFidEntry) {
+    return (persistedFidEntry.getTokenCreationEpochInSecs() + persistedFidEntry.getExpiresInSecs()
+        < currentTime() + TOKEN_EXPIRATION_BUFFER);
+  }
+
+  private long currentTime() {
+    return TimeUnit.MILLISECONDS.toSeconds(clock.currentTimeMillis());
   }
 }
 
