@@ -50,7 +50,7 @@ public class ListNetworkRequest extends NetworkRequest {
   }
 
   @Override
-  @Nullable
+  @NonNull
   protected Map<String, String> getQueryParameters() {
     Map<String, String> headers = new HashMap<>();
 

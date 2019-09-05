@@ -186,7 +186,7 @@ public abstract class NetworkRequest {
   /**
    * If overridden, returns the query parameters to send on the REST request.
    *
-   * @return query parameters in string form.
+   * @return If applicable, query params as a Map.
    */
   @Nullable
   protected Map<String, String> getQueryParameters() {
