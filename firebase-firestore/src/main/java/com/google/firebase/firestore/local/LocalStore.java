@@ -478,7 +478,7 @@ public final class LocalStore {
             }
             localViewReferences.removeReferences(removed, targetId);
 
-            if (viewChange.isSynced()) {
+            if (!viewChange.isFromCache()) {
               QueryData queryData = targetIds.get(targetId);
               hardAssert(
                   queryData != null,
