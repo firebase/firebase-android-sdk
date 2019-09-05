@@ -15,11 +15,11 @@
 package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
-import org.jetbrains.annotations.NotNull;
 
 /** Provides information as whether to send heart beat or not. */
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
@@ -37,7 +37,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   }
 
   @Override
-  public @NotNull HeartBeat getHeartBeatCode(@NotNull String heartBeatTag) {
+  public @NonNull HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
     boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
     boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime);
@@ -51,7 +51,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     return HeartBeat.NONE;
   }
 
-  public static @NotNull Component<HeartBeatInfo> component() {
+  public static @NonNull Component<HeartBeatInfo> component() {
     return Component.builder(HeartBeatInfo.class)
         .add(Dependency.required(Context.class))
         .factory(c -> new DefaultHeartBeatInfo(c.get(Context.class)))

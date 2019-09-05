@@ -14,7 +14,7 @@
 
 package com.google.firebase.heartbeatinfo;
 
-import org.jetbrains.annotations.NotNull;
+import androidx.annotation.NonNull;
 
 /**
  * Class provides information about heartbeats.
@@ -32,6 +32,6 @@ public interface HeartBeatInfo {
     COMBINED,
   }
 
-  @NotNull
-  HeartBeat getHeartBeatCode(@NotNull String heartBeatTag);
+  @NonNull
+  HeartBeat getHeartBeatCode(@NonNull String heartBeatTag);
 }
