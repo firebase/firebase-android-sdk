@@ -26,6 +26,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
@@ -47,6 +48,7 @@ import javax.inject.Singleton;
 @Singleton
 @WorkerThread
 public class SQLiteEventStore implements EventStore, SynchronizationGuard {
+  private static final String LOG_TAG = "SQLiteEventStore";
 
   static final int MAX_RETRIES = 10;
 
@@ -81,6 +83,12 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   @Override
   @Nullable
   public PersistedEvent persist(TransportContext transportContext, EventInternal event) {
+    Logging.d(
+        LOG_TAG,
+        "Storing event with priority=%s, name=%s for destination %s",
+        transportContext.getPriority(),
+        event.getTransportName(),
+        transportContext.getBackendName());
     long newRowId =
         inTransaction(
             db -> {

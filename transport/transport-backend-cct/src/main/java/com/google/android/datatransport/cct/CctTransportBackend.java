@@ -37,6 +37,7 @@ import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.protobuf.ByteString;
 import java.io.ByteArrayOutputStream;
@@ -54,13 +55,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
 final class CctTransportBackend implements TransportBackend {
 
-  private static final Logger LOGGER = Logger.getLogger(CctTransportBackend.class.getName());
+  private static final String LOG_TAG = "CctTransportBackend";
 
   private static final int CONNECTION_TIME_OUT = 30000;
   private static final int READ_TIME_OUT = 40000;
@@ -216,6 +215,7 @@ final class CctTransportBackend implements TransportBackend {
 
   private HttpResponse doSend(HttpRequest request) throws IOException {
 
+    Logging.d(LOG_TAG, "Making request to: %s", request.url);
     HttpURLConnection connection = (HttpURLConnection) request.url.openConnection();
     connection.setConnectTimeout(CONNECTION_TIME_OUT);
     connection.setReadTimeout(readTimeout);
@@ -243,7 +243,8 @@ final class CctTransportBackend implements TransportBackend {
       }
       channel.write(ByteBuffer.wrap(output.toByteArray()));
       int responseCode = connection.getResponseCode();
-      LOGGER.info("Status Code: " + responseCode);
+      Logging.i(LOG_TAG, "Status Code: " + responseCode);
+      Logging.i(LOG_TAG, "Content-Type:" + connection.getHeaderField("Content-Type"));
 
       if (responseCode == 302 || responseCode == 301) {
         String redirect = connection.getHeaderField("Location");
@@ -283,6 +284,7 @@ final class CctTransportBackend implements TransportBackend {
               (req, resp) -> {
                 if (resp.redirectUrl != null) {
                   // retry with different url
+                  Logging.d(LOG_TAG, "Following redirect to: %s", resp.redirectUrl);
                   return req.withUrl(resp.redirectUrl);
                 }
                 // don't retry
@@ -297,7 +299,7 @@ final class CctTransportBackend implements TransportBackend {
         return BackendResponse.fatalError();
       }
     } catch (IOException e) {
-      LOGGER.log(Level.SEVERE, "Could not make request to the backend", e);
+      Logging.e(LOG_TAG, "Could not make request to the backend", e);
       return BackendResponse.transientError();
     }
   }
