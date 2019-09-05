@@ -1,3 +1,7 @@
+# 19.1.1
+- [fixed] Fixed a crash that occurred when we attempted to start a network
+  connection during app shutdown (#672).
+
 # 19.1.0
 - [feature] Added support for the Firebase Database Emulator. To connect to
   the emulator, specify "http://<emulatorHost>/?ns=<projectId>" as your

@@ -19,7 +19,6 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +51,7 @@ public class ListNetworkRequest extends NetworkRequest {
 
   @Override
   @Nullable
-  protected String getQueryParameters() throws UnsupportedEncodingException {
+  protected String getQueryParameters() {
     List<String> keys = new ArrayList<>();
     List<String> values = new ArrayList<>();
 

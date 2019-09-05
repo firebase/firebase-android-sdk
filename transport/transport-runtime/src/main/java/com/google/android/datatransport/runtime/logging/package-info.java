@@ -12,13 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.backends;
-
-import dagger.Binds;
-import dagger.Module;
-
-@Module
-public abstract class BackendRegistryModule {
-  @Binds
-  abstract BackendRegistry backendRegistry(MetadataBackendRegistry registry);
-}
+/** @hide */
+package com.google.android.datatransport.runtime.logging;
