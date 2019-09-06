@@ -28,6 +28,27 @@ import java.lang.annotation.Retention;
  */
 public interface FirebaseInstallationsApi {
 
+  /** Specifies the refresh options to get a FIS AuthToken. */
+  @IntDef({FORCE_REFRESH, DO_NOT_FORCE_REFRESH})
+  @Retention(SOURCE)
+  @interface RefreshAuthTokenOption {}
+  /**
+   * AuthToken is forcefully refreshed on calling the {@link
+   * FirebaseInstallationsApi#getAuthToken()}.
+   */
+  int FORCE_REFRESH = 0;
+
+  /**
+   * AuthToken is not refreshed until requested by the developer or if one doesn't exist, is expired
+   * or about to expire.
+   */
+  int DO_NOT_FORCE_REFRESH = 1;
+
+  void setRefreshAuthTokenOption(@RefreshAuthTokenOption int refreshAuthTokenOption);
+
+  @RefreshAuthTokenOption
+  int getRefreshAuthTokenOption();
+
   /**
    * Specifies the refresh options to get a FIS AuthToken. Default value of refreshAuthTokenOption =
    * DO_NOT_FORCE_REFRESH.
