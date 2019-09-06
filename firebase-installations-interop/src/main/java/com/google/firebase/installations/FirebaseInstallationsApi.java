@@ -29,7 +29,7 @@ import java.lang.annotation.Retention;
 public interface FirebaseInstallationsApi {
 
   /**
-   * Specifies the refresh options to get a FIS AuthToken. Default value of refreshAuthTokenOption =
+   * Specifies the refresh options to get a FIS AuthToken. Default value of RefreshAuthTokenOption =
    * DO_NOT_FORCE_REFRESH.
    */
   @IntDef({DO_NOT_FORCE_REFRESH, FORCE_REFRESH})
