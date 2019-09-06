@@ -413,7 +413,7 @@ public class StorageMetadata {
     /**
      * Changes the content disposition for the {@link StorageReference}
      *
-     * @param contentDisposition changes the new content disposition to use.
+     * @param contentDisposition the new content disposition to use.
      */
     @NonNull
     public Builder setContentDisposition(@Nullable String contentDisposition) {
