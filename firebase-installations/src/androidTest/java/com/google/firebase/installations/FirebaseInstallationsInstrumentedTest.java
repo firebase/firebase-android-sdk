@@ -231,9 +231,8 @@ public class FirebaseInstallationsInstrumentedTest {
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             mockClock, executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
-    firebaseInstallations.setRefreshAuthTokenOption(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
 
-    Tasks.await(firebaseInstallations.getAuthToken());
+    Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
 
     // Waiting for Task that registers FID on the FIS Servers
     executor.awaitTermination(1000, TimeUnit.MILLISECONDS);

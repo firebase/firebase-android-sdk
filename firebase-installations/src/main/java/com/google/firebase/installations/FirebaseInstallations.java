@@ -48,19 +48,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class FirebaseInstallations implements FirebaseInstallationsApi {
 
-  @RefreshAuthTokenOption int refreshAuthTokenOption;
-
-  @Override
-  public void setRefreshAuthTokenOption(@RefreshAuthTokenOption int mode) {
-    refreshAuthTokenOption = mode;
-  }
-
-  @Override
-  @RefreshAuthTokenOption
-  public int getRefreshAuthTokenOption() {
-    return refreshAuthTokenOption;
-  }
-
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationServiceClient serviceClient;
   private final PersistedFid persistedFid;
@@ -139,9 +126,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   @NonNull
   @Override
-  public Task<String> getAuthToken() {
-    return getId()
-        .continueWith(executor, call(() -> refreshAuthTokenIfNecessary(refreshAuthTokenOption)));
+  public Task<String> getAuthToken(@AuthTokenOption int authTokenOption) {
+    return getId().continueWith(executor, call(() -> refreshAuthTokenIfNecessary(authTokenOption)));
   }
 
   /**
@@ -275,7 +261,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return null;
   }
 
-  private String refreshAuthTokenIfNecessary(int refreshAuthTokenOption)
+  private String refreshAuthTokenIfNecessary(int authTokenOption)
       throws FirebaseInstallationsException {
 
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
@@ -286,7 +272,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
 
-    switch (refreshAuthTokenOption) {
+    switch (authTokenOption) {
       case FORCE_REFRESH:
         return fetchAuthTokenFromServer(persistedFidEntry);
       case DO_NOT_FORCE_REFRESH:
