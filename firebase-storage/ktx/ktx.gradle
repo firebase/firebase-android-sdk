@@ -21,7 +21,6 @@ firebaseLibrary {
     releaseWith project(':firebase-storage')
     publishJavadoc = false
     publishSources = true
-    testLab.enabled = true
 }
 
 android {
