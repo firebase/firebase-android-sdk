@@ -30,7 +30,7 @@ import com.google.firebase.installations.remote.FirebaseInstallationServiceClien
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.InstallationTokenResult;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -48,14 +48,27 @@ import java.util.concurrent.TimeUnit;
  */
 public class FirebaseInstallations implements FirebaseInstallationsApi {
 
+  @RefreshAuthTokenOption int refreshAuthTokenOption;
+
+  @Override
+  public void setRefreshAuthTokenOption(@RefreshAuthTokenOption int mode) {
+    refreshAuthTokenOption = mode;
+  }
+
+  @Override
+  @RefreshAuthTokenOption
+  public int getRefreshAuthTokenOption() {
+    return refreshAuthTokenOption;
+  }
+
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationServiceClient serviceClient;
   private final PersistedFid persistedFid;
-  private final Executor executor;
+  private final ExecutorService executor;
   private final Clock clock;
   private final Utils utils;
 
-  private static final long TOKEN_EXPIRATION_BUFFER = 3600L;
+  private static final long AUTH_TOKEN_EXPIRATION_BUFFER = 3600L; // 1 hour
 
   /** package private constructor. */
   FirebaseInstallations(FirebaseApp firebaseApp) {
@@ -70,7 +83,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   FirebaseInstallations(
       Clock clock,
-      Executor executor,
+      ExecutorService executor,
       FirebaseApp firebaseApp,
       FirebaseInstallationServiceClient serviceClient,
       PersistedFid persistedFid,
@@ -126,9 +139,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   @NonNull
   @Override
-  public Task<String> getAuthToken(final boolean forceRefresh) {
-    return Tasks.call(executor, this::getId)
-        .continueWith(call(() -> refreshAuthTokenIfNecessary(forceRefresh)));
+  public Task<String> getAuthToken() {
+    return getId()
+        .continueWith(executor, call(() -> refreshAuthTokenIfNecessary(refreshAuthTokenOption)));
   }
 
   /**
@@ -179,11 +192,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   @NonNull
-  private static <F, T> Continuation<F, T> call(@NonNull Supplier<T> supplier) {
+  private <F, T> Continuation<F, T> call(@NonNull Supplier<T> supplier) {
     return t -> {
-      if (!t.isComplete()) {
-        Tasks.await(t);
-      }
+      // Waiting for Task that registers FID on the FIS Servers
+      executor.awaitTermination(1000, TimeUnit.MILLISECONDS);
       return supplier.get();
     };
   }
@@ -247,8 +259,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .setRegistrationStatus(RegistrationStatus.REGISTERED)
               .setAuthToken(installationResponse.getAuthToken().getToken())
               .setRefreshToken(installationResponse.getRefreshToken())
-              .setExpiresInSecs(
-                  installationResponse.getAuthToken().getTokenExpirationTimestampMillis())
+              .setExpiresInSecs(installationResponse.getAuthToken().getTokenExpirationInSecs())
               .setTokenCreationEpochInSecs(creationTime)
               .build());
 
@@ -264,7 +275,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return null;
   }
 
-  private String refreshAuthTokenIfNecessary(boolean forceRefresh)
+  private String refreshAuthTokenIfNecessary(int refreshAuthTokenOption)
       throws FirebaseInstallationsException {
 
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
@@ -275,9 +286,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
 
-    return forceRefresh
-        ? fetchAuthTokenFromServer(persistedFidEntry)
-        : getPersistedAuthToken(persistedFidEntry);
+    switch (refreshAuthTokenOption) {
+      case FORCE_REFRESH:
+        return fetchAuthTokenFromServer(persistedFidEntry);
+      case DO_NOT_FORCE_REFRESH:
+        return getPersistedAuthToken(persistedFidEntry);
+      default:
+        throw new FirebaseInstallationsException(
+            "Incorrect refreshAuthTokenOption.",
+            FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+    }
   }
 
   private String getPersistedAuthToken(PersistedFidEntry persistedFidEntry)
@@ -316,7 +334,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .setRegistrationStatus(RegistrationStatus.REGISTERED)
               .setAuthToken(tokenResult.getToken())
               .setRefreshToken(persistedFidEntry.getRefreshToken())
-              .setExpiresInSecs(tokenResult.getTokenExpirationTimestampMillis())
+              .setExpiresInSecs(tokenResult.getTokenExpirationInSecs())
               .setTokenCreationEpochInSecs(creationTime)
               .build());
 
@@ -330,7 +348,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private boolean isAuthTokenExpired(PersistedFidEntry persistedFidEntry) {
     return (persistedFidEntry.getTokenCreationEpochInSecs() + persistedFidEntry.getExpiresInSecs()
-        < currentTime() + TOKEN_EXPIRATION_BUFFER);
+        > currentTime() + AUTH_TOKEN_EXPIRATION_BUFFER);
   }
 
   private long currentTime() {
