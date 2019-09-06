@@ -93,8 +93,15 @@ public class FirebaseInstallationsInstrumentedTest {
                 .setAuthToken(
                     InstallationTokenResult.builder()
                         .setToken(TEST_AUTH_TOKEN)
-                        .setTokenExpirationTimestampMillis(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                        .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
                         .build())
+                .build());
+    when(backendClientReturnsOk.generateAuthToken(
+            anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(
+            InstallationTokenResult.builder()
+                .setToken(TEST_AUTH_TOKEN)
+                .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
                 .build());
     when(backendClientReturnsError.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
@@ -217,5 +224,23 @@ public class FirebaseInstallationsInstrumentedTest {
           .that(((FirebaseInstallationsException) cause).getStatus())
           .isEqualTo(FirebaseInstallationsException.Status.CLIENT_ERROR);
     }
+  }
+
+  @Test
+  public void testGetAuthToken_registeredFid_successful() throws Exception {
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            mockClock, executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
+    firebaseInstallations.setRefreshAuthTokenOption(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+
+    Tasks.await(firebaseInstallations.getAuthToken());
+
+    // Waiting for Task that registers FID on the FIS Servers
+    executor.awaitTermination(1000, TimeUnit.MILLISECONDS);
+
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Auth Token doesn't match")
+        .that(entryValue.getAuthToken())
+        .isEqualTo(TEST_AUTH_TOKEN);
   }
 }
