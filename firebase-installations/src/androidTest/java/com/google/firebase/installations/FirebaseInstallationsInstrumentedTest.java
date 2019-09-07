@@ -234,9 +234,6 @@ public class FirebaseInstallationsInstrumentedTest {
 
     Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
 
-    // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(1000, TimeUnit.MILLISECONDS);
-
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
     assertWithMessage("Persisted Auth Token doesn't match")
         .that(entryValue.getAuthToken())

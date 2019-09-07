@@ -30,6 +30,7 @@ import com.google.firebase.installations.remote.FirebaseInstallationServiceClien
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.InstallationTokenResult;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -56,6 +57,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Utils utils;
 
   private static final long AUTH_TOKEN_EXPIRATION_BUFFER = 3600L; // 1 hour
+
+  private CountDownLatch latch = new CountDownLatch(1);
 
   /** package private constructor. */
   FirebaseInstallations(FirebaseApp firebaseApp) {
@@ -115,7 +118,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public Task<String> getId() {
     return Tasks.call(executor, this::getPersistedFid)
         .continueWith(orElse(this::createAndPersistNewFid))
-        .onSuccessTask(this::registerFidIfNecessary);
+        .onSuccessTask(persistedFidEntry -> registerFidIfNecessary(persistedFidEntry));
   }
 
   /**
@@ -181,7 +184,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private <F, T> Continuation<F, T> call(@NonNull Supplier<T> supplier) {
     return t -> {
       // Waiting for Task that registers FID on the FIS Servers
-      executor.awaitTermination(1000, TimeUnit.MILLISECONDS);
+      latch.await(10, TimeUnit.SECONDS);
       return supplier.get();
     };
   }
@@ -214,7 +217,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // Check if the fid is unregistered
     if (persistedFidEntry.getRegistrationStatus() == RegistrationStatus.UNREGISTERED) {
       updatePersistedFidWithPendingStatus(fid);
-      Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry));
+      Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry))
+          .addOnCompleteListener(
+              task -> {
+                if (task.isSuccessful()) {
+                  latch.countDown();
+                }
+              });
     }
     return Tasks.forResult(fid);
   }
