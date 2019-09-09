@@ -6,6 +6,11 @@
   <!--<uses-sdk android:minSdkVersion="14"/>-->
   <application>
 
+    <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
+      <meta-data android:name="com.google.firebase.components:com.google.firebase.FirebaseCommonRegistrar"
+          android:value="com.google.firebase.components.ComponentRegistrar" />
+    </service>
+
     <provider
         android:name="com.google.firebase.provider.FirebaseInitProvider"
         android:authorities="${applicationId}.firebaseinitprovider"

@@ -42,6 +42,7 @@ android {
 
 dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'androidx.collection:collection:1.1.0'
 
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation 'androidx.test.ext:junit:1.1.1'
