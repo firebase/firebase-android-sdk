@@ -31,7 +31,7 @@ public interface HeartBeatInfo {
     GLOBAL(2),
     COMBINED(3);
 
-    private int code;
+    private final int code;
 
     HeartBeat(int code) {
       this.code = code;
