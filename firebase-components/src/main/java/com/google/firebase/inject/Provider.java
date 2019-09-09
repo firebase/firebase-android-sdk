@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.components;
+package com.google.firebase.inject;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
-
-/** Thrown when a missing dependency is detected. */
-@KeepForSdk
-public class MissingDependencyException extends DependencyException {
-  @KeepForSdk
-  public MissingDependencyException(String msg) {
-    super(msg);
-  }
+/**
+ * Provides instances of T.
+ *
+ * @hide
+ */
+public interface Provider<T> {
+  /** Provides a fully constructed instance of T. */
+  T get();
 }

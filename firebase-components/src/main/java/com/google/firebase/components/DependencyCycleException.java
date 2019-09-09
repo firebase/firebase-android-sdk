@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,23 +14,19 @@
 
 package com.google.firebase.components;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
 import java.util.Arrays;
 import java.util.List;
 
 /** Exception thrown when a dependency cycle is detected. */
-@KeepForSdk
 public class DependencyCycleException extends DependencyException {
   private final List<Component<?>> componentsInCycle;
 
-  @KeepForSdk
   public DependencyCycleException(List<Component<?>> componentsInCycle) {
     super("Dependency cycle detected: " + Arrays.toString(componentsInCycle.toArray()));
     this.componentsInCycle = componentsInCycle;
   }
 
   /** Returns a list of components that form a dependency cycle. */
-  @KeepForSdk
   public List<Component<?>> getComponentsInCycle() {
     return componentsInCycle;
   }

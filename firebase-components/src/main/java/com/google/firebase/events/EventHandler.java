@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.components;
-
-import com.google.android.gms.common.annotation.KeepForSdk;
-import java.util.List;
+package com.google.firebase.events;
 
 /**
- * Represents an SDK Registrar.
+ * Defines the event subscription handler.
  *
- * <p>Individual SDKs are expected to provide an implementation of this interface in order to
- * register themselves and to participate in dependency injection.
+ * @hide
  */
-@KeepForSdk
-public interface ComponentRegistrar {
-  /** Returns a list of components provided by this registrar. */
-  @KeepForSdk
-  List<Component<?>> getComponents();
+public interface EventHandler<T> {
+  void handle(Event<T> event);
 }
