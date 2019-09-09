@@ -61,6 +61,7 @@ android {
 
 dependencies {
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation project(':firebase-inappmessaging')
 
     implementation ('com.google.firebase:firebase-iid:19.0.0') {

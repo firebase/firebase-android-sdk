@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,22 +13,22 @@
 // limitations under the License.
 
 plugins {
-    id 'com.android.application'
+    id 'firebase-library'
+}
+
+firebaseLibrary {
+    publishSources = true
 }
 
 android {
-    adbOptions {
-        timeOutInMs 60 * 1000
-    }
-
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
-        versionName version
-        multiDexEnabled true
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+      minSdkVersion project.minSdkVersion
+      targetSdkVersion project.targetSdkVersion
+      versionName version
+      testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -41,13 +41,13 @@ android {
 }
 
 dependencies {
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
+    implementation 'androidx.annotation:annotation:1.1.0'
+
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation 'androidx.test.ext:junit:1.1.1'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'com.google.auto.value:auto-value-annotations:1.6.5'
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
+
 }

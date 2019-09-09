@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@
 
 package com.google.firebase.events;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
-
 /** Defines API for event publication. */
-@KeepForSdk
 public interface Publisher {
   /**
    * Publish the event.
    *
    * <p>Subscribers will receive the event on the executor they specified during subscription
    */
-  @KeepForSdk
   void publish(Event<?> event);
 }

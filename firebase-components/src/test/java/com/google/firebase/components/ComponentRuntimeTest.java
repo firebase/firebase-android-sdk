@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.google.firebase.components;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
+import com.google.common.truth.Truth;
 import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,11 +94,11 @@ public final class ComponentRuntimeTest {
             Collections.singletonList(new ComponentRegistrarImpl()),
             Component.of(initTracker, InitTracker.class));
 
-    assertThat(initTracker.isInitialized()).isFalse();
+    Truth.assertThat(initTracker.isInitialized()).isFalse();
 
     runtime.initializeEagerComponents(true);
 
-    assertThat(initTracker.isInitialized()).isTrue();
+    Truth.assertThat(initTracker.isInitialized()).isTrue();
   }
 
   @Test
@@ -110,13 +111,13 @@ public final class ComponentRuntimeTest {
             Collections.singletonList(new ComponentRegistrarImpl()),
             Component.of(initTracker, InitTracker.class));
 
-    assertThat(initTracker.isInitialized()).isFalse();
+    Truth.assertThat(initTracker.isInitialized()).isFalse();
 
     ComponentTwo componentTwo = runtime.get(ComponentTwo.class);
     assertThat(componentTwo.getOne()).isNotNull();
-    assertThat(componentTwo.getOne().getTracker()).isSameInstanceAs(initTracker);
+    Truth.assertThat(componentTwo.getOne().getTracker()).isSameInstanceAs(initTracker);
 
-    assertThat(initTracker.isInitialized()).isTrue();
+    Truth.assertThat(initTracker.isInitialized()).isTrue();
   }
 
   @Test

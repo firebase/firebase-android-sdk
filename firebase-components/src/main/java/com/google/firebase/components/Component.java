@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
 package com.google.firebase.components;
 
 import androidx.annotation.IntDef;
-import com.google.android.gms.common.annotation.KeepForSdk;
-import com.google.android.gms.common.internal.Preconditions;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
@@ -33,7 +31,6 @@ import java.util.Set;
  *
  * @param <T> Interface that a component provides.
  */
-@KeepForSdk
 public final class Component<T> {
 
   /** Specifies instantiation behavior of a {@link Component}. */
@@ -172,13 +169,11 @@ public final class Component<T> {
   }
 
   /** Returns a Component<T> builder. */
-  @KeepForSdk
   public static <T> Component.Builder<T> builder(Class<T> anInterface) {
     return new Builder<>(anInterface);
   }
 
   /** Returns a Component<T> builder. */
-  @KeepForSdk
   @SafeVarargs
   public static <T> Component.Builder<T> builder(
       Class<T> anInterface, Class<? super T>... additionalInterfaces) {
@@ -191,13 +186,11 @@ public final class Component<T> {
    * @deprecated Use {@link #of(Object, Class, Class[])} instead.
    */
   @Deprecated
-  @KeepForSdk
   public static <T> Component<T> of(Class<T> anInterface, T value) {
     return builder(anInterface).factory((args) -> value).build();
   }
 
   /** Wraps a value in a {@link Component} with no dependencies. */
-  @KeepForSdk
   @SafeVarargs
   public static <T> Component<T> of(
       T value, Class<T> anInterface, Class<? super T>... additionalInterfaces) {
@@ -210,7 +203,6 @@ public final class Component<T> {
    * <p>Such components can be requested by dependents via {@link ComponentContainer#setOf(Class)} *
    * or {@link ComponentContainer#setOfProvider(Class)}.
    */
-  @KeepForSdk
   public static <T> Component.Builder<T> intoSetBuilder(Class<T> anInterface) {
     return builder(anInterface).intoSet();
   }
@@ -221,13 +213,11 @@ public final class Component<T> {
    * <p>Such components can be requested by dependents via {@link ComponentContainer#setOf(Class)} *
    * or {@link ComponentContainer#setOfProvider(Class)}.
    */
-  @KeepForSdk
   public static <T> Component<T> intoSet(T value, Class<T> anInterface) {
     return intoSetBuilder(anInterface).factory(c -> value).build();
   }
 
   /** FirebaseComponent builder. */
-  @KeepForSdk
   public static class Builder<T> {
     private final Set<Class<? super T>> providedInterfaces = new HashSet<>();
     private final Set<Dependency> dependencies = new HashSet<>();
@@ -247,7 +237,6 @@ public final class Component<T> {
     }
 
     /** Add a {@link Dependency} to the {@link Component} being built. */
-    @KeepForSdk
     public Builder<T> add(Dependency dependency) {
       Preconditions.checkNotNull(dependency, "Null dependency");
       validateInterface(dependency.getInterface());
@@ -256,19 +245,16 @@ public final class Component<T> {
     }
 
     /** Make the {@link Component} initialize upon startup. */
-    @KeepForSdk
     public Builder<T> alwaysEager() {
       return setInstantiation(Instantiation.ALWAYS_EAGER);
     }
 
     /** Make the component initialize upon startup in default app. */
-    @KeepForSdk
     public Builder<T> eagerInDefaultApp() {
       return setInstantiation(Instantiation.EAGER_IN_DEFAULT_APP);
     }
 
     /** Make the {@link Component} eligible to publish events of provided eventType. */
-    @KeepForSdk
     public Builder<T> publishes(Class<?> eventType) {
       publishedEvents.add(eventType);
       return this;
@@ -288,7 +274,6 @@ public final class Component<T> {
     }
 
     /** Set the factory that will be used to initialize the {@link Component}. */
-    @KeepForSdk
     public Builder<T> factory(ComponentFactory<T> value) {
       factory = Preconditions.checkNotNull(value, "Null factory");
       return this;
@@ -300,7 +285,6 @@ public final class Component<T> {
     }
 
     /** Return the built {@link Component} definition. */
-    @KeepForSdk
     public Component<T> build() {
       Preconditions.checkState(factory != null, "Missing required property: factory.");
       return new Component<>(

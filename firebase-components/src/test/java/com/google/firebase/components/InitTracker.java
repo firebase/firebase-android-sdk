@@ -14,13 +14,17 @@
 
 package com.google.firebase.components;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Base type of all dependency related exceptions. */
-@KeepForSdk
-public class DependencyException extends RuntimeException {
-  @KeepForSdk
-  public DependencyException(String msg) {
-    super(msg);
+/** Records a side-effect by a depended upon component. */
+public class InitTracker {
+  private final AtomicBoolean initialized = new AtomicBoolean(false);
+
+  public void initialize() {
+    initialized.set(true);
+  }
+
+  public boolean isInitialized() {
+    return initialized.get();
   }
 }
