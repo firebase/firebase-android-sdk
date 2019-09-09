@@ -289,6 +289,18 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     remoteStore.start();
   }
 
+  public void addSnapshotsInSyncListener(EventListener<Void> listener) {
+    verifyNotTerminated();
+    asyncQueue.enqueueAndForget(() -> eventManager.addSnapshotsInSyncListener(listener));
+  }
+
+  public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
+    if (isTerminated()) {
+      return;
+    }
+    eventManager.removeSnapshotsInSyncListener(listener);
+  }
+
   private void verifyNotTerminated() {
     if (this.isTerminated()) {
       throw new IllegalStateException("The client has already been terminated");

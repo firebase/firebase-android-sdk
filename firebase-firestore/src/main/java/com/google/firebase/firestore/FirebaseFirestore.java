@@ -30,12 +30,14 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
+import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import java.util.concurrent.Executor;
@@ -458,6 +460,40 @@ public class FirebaseFirestore {
           }
         });
     return source.getTask();
+  }
+
+  ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable runnable) {
+    return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, runnable);
+  }
+
+  /**
+   * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that
+   * all listeners affected by a given change have fired, even if a single server-generated change
+   * affects multiple listeners.
+   *
+   * <p>NOTE: The snapshots-in-sync event only indicates that listeners are in sync with each other,
+   * but does not relate to whether those snapshots are in sync with the server. Use
+   * SnapshotMetadata in the individual listeners to determine if a snapshot is from the cache or
+   * the server.
+   *
+   * @param executor The executor to use to call the listener.
+   * @param runnable A callback to be called every time all snapshot listeners are in sync with each
+   *     other.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  ListenerRegistration addSnapshotsInSyncListener(Executor executor, @NonNull Runnable runnable) {
+    ensureClientConfigured();
+    EventListener<Void> eventListener =
+        (Void v, FirebaseFirestoreException error) -> {
+          runnable.run();
+        };
+    AsyncEventListener<Void> asyncListener = new AsyncEventListener<Void>(executor, eventListener);
+    client.addSnapshotsInSyncListener(asyncListener);
+    return () -> {
+      asyncListener.mute();
+      client.removeSnapshotsInSyncListener(asyncListener);
+    };
   }
 
   FirestoreClient getClient() {
