@@ -26,10 +26,20 @@ import androidx.annotation.NonNull;
  */
 public interface HeartBeatInfo {
   enum HeartBeat {
-    NONE,
-    SDK,
-    GLOBAL,
-    COMBINED,
+    NONE(0),
+    SDK(1),
+    GLOBAL(2),
+    COMBINED(3);
+
+    private final int code;
+
+    HeartBeat(int code) {
+      this.code = code;
+    }
+
+    public int getCode() {
+      return this.code;
+    }
   }
 
   @NonNull
