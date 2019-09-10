@@ -15,7 +15,9 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.app.Activity;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,12 +32,15 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
+import com.google.firebase.firestore.core.ActivityScope;
+import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import java.util.concurrent.Executor;
@@ -458,6 +463,94 @@ public class FirebaseFirestore {
           }
         });
     return source.getTask();
+  }
+
+  /**
+   * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that
+   * all listeners affected by a given change have fired, even if a single server-generated change
+   * affects multiple listeners.
+   *
+   * <p>NOTE: The snapshots-in-sync event only indicates that listeners are in sync with each other,
+   * but does not relate to whether those snapshots are in sync with the server. Use
+   * SnapshotMetadata in the individual listeners to determine if a snapshot is from the cache or
+   * the server.
+   *
+   * @param runnable A callback to be called every time all snapshot listeners are in sync with each
+   *     other.
+   * @return A registration object that can be used to remove the listener.
+   */
+  ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable runnable) {
+    return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, runnable);
+  }
+
+  /**
+   * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that
+   * all listeners affected by a given change have fired, even if a single server-generated change
+   * affects multiple listeners.
+   *
+   * <p>NOTE: The snapshots-in-sync event only indicates that listeners are in sync with each other,
+   * but does not relate to whether those snapshots are in sync with the server. Use
+   * SnapshotMetadata in the individual listeners to determine if a snapshot is from the cache or
+   * the server.
+   *
+   * @param activity The activity to scope the listener to.
+   * @param runnable A callback to be called every time all snapshot listeners are in sync with each
+   *     other.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  ListenerRegistration addSnapshotsInSyncListener(Activity activity, @NonNull Runnable runnable) {
+    return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, activity, runnable);
+  }
+
+  /**
+   * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that
+   * all listeners affected by a given change have fired, even if a single server-generated change
+   * affects multiple listeners.
+   *
+   * <p>NOTE: The snapshots-in-sync event only indicates that listeners are in sync with each other,
+   * but does not relate to whether those snapshots are in sync with the server. Use
+   * SnapshotMetadata in the individual listeners to determine if a snapshot is from the cache or
+   * the server.
+   *
+   * @param executor The executor to use to call the listener.
+   * @param runnable A callback to be called every time all snapshot listeners are in sync with each
+   *     other.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  ListenerRegistration addSnapshotsInSyncListener(Executor executor, @NonNull Runnable runnable) {
+    return addSnapshotsInSyncListener(executor, null, runnable);
+  }
+
+  /**
+   * Internal helper method to add a snapshotsInSync listener.
+   *
+   * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
+   *
+   * @param userExecutor The executor to use to call the listener.
+   * @param activity Optional activity this listener is scoped to.
+   * @param runnable A callback to be called every time all snapshot listeners are in sync with each
+   *     other.
+   * @return A registration object that can be used to remove the listener.
+   */
+  private ListenerRegistration addSnapshotsInSyncListener(
+      Executor userExecutor, @Nullable Activity activity, @NonNull Runnable runnable) {
+    ensureClientConfigured();
+    EventListener<Void> eventListener =
+        (Void v, FirebaseFirestoreException error) -> {
+          hardAssert(error == null, "snapshots-in-sync listeners should never get errors.");
+          runnable.run();
+        };
+    AsyncEventListener<Void> asyncListener =
+        new AsyncEventListener<Void>(userExecutor, eventListener);
+    client.addSnapshotsInSyncListener(asyncListener);
+    return ActivityScope.bind(
+        activity,
+        () -> {
+          asyncListener.mute();
+          client.removeSnapshotsInSyncListener(asyncListener);
+        });
   }
 
   FirestoreClient getClient() {

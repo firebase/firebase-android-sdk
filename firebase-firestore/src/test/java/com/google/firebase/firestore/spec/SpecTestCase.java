@@ -36,6 +36,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.collect.Sets;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
@@ -187,6 +189,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private final List<DocumentKey> acknowledgedDocs =
       Collections.synchronizedList(new ArrayList<>());
   private final List<DocumentKey> rejectedDocs = Collections.synchronizedList(new ArrayList<>());
+  private List<EventListener<Void>> snapshotsInSyncListeners;
+  private int snapshotsInSyncEvents = 0;
 
   /** An executor to use for test callbacks. */
   private final RoboExecutorService backgroundExecutor = new RoboExecutorService();
@@ -249,6 +253,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     expectedLimboDocs = new HashSet<>();
     expectedActiveTargets = new HashMap<>();
+
+    snapshotsInSyncListeners = Collections.synchronizedList(new ArrayList<>());
   }
 
   protected void specTearDown() throws Exception {
@@ -490,6 +496,22 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     doMutation(deleteMutation(key));
   }
 
+  private void doAddSnapshotsInSyncListener() {
+    EventListener<Void> eventListener =
+        (Void v, FirebaseFirestoreException error) -> snapshotsInSyncEvents += 1;
+    snapshotsInSyncListeners.add(eventListener);
+    eventManager.addSnapshotsInSyncListener(eventListener);
+  }
+
+  private void doRemoveSnapshotsInSyncListener() throws Exception {
+    if (snapshotsInSyncListeners.size() == 0) {
+      throw Assert.fail("There must be a listener to unlisten to");
+    } else {
+      EventListener<Void> listenerToRemove = snapshotsInSyncListeners.remove(0);
+      eventManager.removeSnapshotsInSyncListener(listenerToRemove);
+    }
+  }
+
   // Helper for calling datastore.writeWatchChange() on the AsyncQueue.
   private void writeWatchChange(WatchChange change, SnapshotVersion version) throws Exception {
     queue.runSync(() -> datastore.writeWatchChange(change, version));
@@ -724,6 +746,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       doPatch(step.getJSONArray("userPatch"));
     } else if (step.has("userDelete")) {
       doDelete(step.getString("userDelete"));
+    } else if (step.has("addSnapshotsInSyncListener")) {
+      doAddSnapshotsInSyncListener();
+    } else if (step.has("removeSnapshotsInSyncListener")) {
+      doRemoveSnapshotsInSyncListener();
     } else if (step.has("drainQueue")) {
       doDrainQueue();
     } else if (step.has("watchAck")) {
@@ -899,6 +925,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     validateActiveTargets();
   }
 
+  private void validateSnapshotsInSyncEvents(int expectedCount) {
+    assertEquals(expectedCount, snapshotsInSyncEvents);
+    snapshotsInSyncEvents = 0;
+  }
+
   private void validateUserCallbacks(@Nullable JSONObject expected) throws JSONException {
     if (expected != null && expected.has("userCallbacks")) {
       JSONObject userCallbacks = expected.getJSONObject("userCallbacks");
@@ -986,6 +1017,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         step.remove("expect");
         @Nullable JSONObject stateExpect = step.optJSONObject("stateExpect");
         step.remove("stateExpect");
+        int expectedSnapshotsInSyncEvents = step.optInt("expectedSnapshotsInSyncEvents");
+        step.remove("expectedSnapshotsInSyncEvents");
 
         log("    Doing step " + step);
         doStep(step);
@@ -1002,6 +1035,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           log("      Validating state expectations " + stateExpect);
         }
         validateStateExpectations(stateExpect);
+        validateSnapshotsInSyncEvents(expectedSnapshotsInSyncEvents);
         events.clear();
         acknowledgedDocs.clear();
         rejectedDocs.clear();
