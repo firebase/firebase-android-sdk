@@ -1034,6 +1034,7 @@ public class FirestoreTest {
   public void testRestartFirestoreLeadsToNewInstance() {
     FirebaseApp app = testFirebaseApp();
     FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
+    instance.setFirestoreSettings(newTestSettings());
     FirebaseFirestore sameInstance = FirebaseFirestore.getInstance(app);
 
     assertSame(instance, sameInstance);
@@ -1041,6 +1042,7 @@ public class FirestoreTest {
 
     instance.terminate();
     FirebaseFirestore newInstance = FirebaseFirestore.getInstance(app);
+    newInstance.setFirestoreSettings(newTestSettings());
 
     // Verify new instance works.
     DocumentSnapshot doc = waitFor(newInstance.document("abc/123").get());
@@ -1055,6 +1057,7 @@ public class FirestoreTest {
   public void testAppDeleteLeadsToFirestoreTerminate() {
     FirebaseApp app = testFirebaseApp();
     FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
+    instance.setFirestoreSettings(newTestSettings());
     waitFor(instance.document("abc/123").set(Collections.singletonMap("Field", 100)));
 
     app.delete();
