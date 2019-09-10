@@ -16,6 +16,7 @@ package com.google.firebase.installations.remote;
 
 import android.util.JsonReader;
 import androidx.annotation.NonNull;
+import com.google.firebase.installations.InstallationTokenResult;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;

@@ -16,6 +16,7 @@ package com.google.firebase.installations.remote;
 
 import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
+import com.google.firebase.installations.InstallationTokenResult;
 
 @AutoValue
 public abstract class InstallationResponse {
