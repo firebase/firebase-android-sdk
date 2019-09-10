@@ -20,6 +20,7 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -56,8 +57,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Utils utils;
 
   private static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = 3600L; // 1 hour
-
-  private CountDownLatch latch = new CountDownLatch(1);
 
   /** package private constructor. */
   FirebaseInstallations(FirebaseApp firebaseApp) {
@@ -117,7 +116,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public Task<String> getId() {
     return Tasks.call(executor, this::getPersistedFid)
         .continueWith(orElse(this::createAndPersistNewFid))
-        .onSuccessTask(persistedFidEntry -> registerFidIfNecessary(persistedFidEntry));
+        .onSuccessTask(persistedFidEntry -> registerFidIfNecessary(persistedFidEntry, null));
+  }
+
+  private Task<String> getId(AwaitListener awaitListener) {
+    return Tasks.call(executor, this::getPersistedFid)
+        .continueWith(orElse(this::createAndPersistNewFid))
+        .onSuccessTask(
+            persistedFidEntry -> registerFidIfNecessary(persistedFidEntry, awaitListener));
   }
 
   /**
@@ -129,9 +135,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<InstallationTokenResult> getAuthToken(@AuthTokenOption int authTokenOption) {
-    return getId()
+    AwaitListener awaitListener = new AwaitListener();
+    return getId(awaitListener)
         .continueWith(
-            executor, awaitFidRegistration(() -> refreshAuthTokenIfNecessary(authTokenOption)));
+            executor,
+            awaitFidRegistration(
+                () -> refreshAuthTokenIfNecessary(authTokenOption), awaitListener));
   }
 
   /**
@@ -188,10 +197,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   @NonNull
-  private <F, T> Continuation<F, T> awaitFidRegistration(@NonNull Supplier<T> supplier) {
+  private <F, T> Continuation<F, T> awaitFidRegistration(
+      @NonNull Supplier<T> supplier, AwaitListener listener) {
     return t -> {
       // Waiting for Task that registers FID on the FIS Servers
-      latch.await(10, TimeUnit.SECONDS);
+      listener.await(10, TimeUnit.SECONDS);
       return supplier.get();
     };
   }
@@ -224,19 +234,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *
    * <p>Updates FID registration status to PENDING to avoid multiple network calls to FIS Servers.
    */
-  private Task<String> registerFidIfNecessary(PersistedFidEntry persistedFidEntry) {
+  private Task<String> registerFidIfNecessary(
+      PersistedFidEntry persistedFidEntry, AwaitListener listener) {
     String fid = persistedFidEntry.getFirebaseInstallationId();
 
     // Check if the fid is unregistered
     if (persistedFidEntry.getRegistrationStatus() == RegistrationStatus.UNREGISTERED) {
       updatePersistedFidWithPendingStatus(fid);
       Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry))
-          .addOnCompleteListener(
-              task -> {
-                if (task.isSuccessful()) {
-                  latch.countDown();
-                }
-              });
+          .addOnCompleteListener(listener);
     }
     return Tasks.forResult(fid);
   }
@@ -372,6 +378,25 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private long currentTimeInSecs() {
     return TimeUnit.MILLISECONDS.toSeconds(clock.currentTimeMillis());
+  }
+
+  interface CombinedListener extends OnCompleteListener<Void> {}
+
+  private static final class AwaitListener implements CombinedListener {
+    private final CountDownLatch mLatch = new CountDownLatch(1);
+
+    public void await() throws InterruptedException {
+      mLatch.await();
+    }
+
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
+      return mLatch.await(timeout, unit);
+    }
+
+    @Override
+    public void onComplete(@NonNull Task<Void> task) {
+      mLatch.countDown();
+    }
   }
 }
 
