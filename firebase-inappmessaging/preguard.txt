@@ -1,0 +1,20 @@
+-repackageclasses 'com.google.firebase.inappmessaging.obfuscated'
+-dontwarn okio.**
+-dontwarn com.google.j2objc.annotations.**
+-dontwarn java.lang.invoke.LambdaMetafactory
+-keepparameternames
+-renamesourcefileattribute SourceFile
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,
+                SourceFile,LineNumberTable,*Annotation*,EnclosingMethod
+
+# Auto generated classes cannot be annotated and need to be explicitly kept
+-keep public class com.google.firebase.inappmessaging.model.InAppMessage** {
+	public protected *; 
+}
+
+# Keep rules do not seem to work with enums. Hence the explicit rule
+-keep public enum com.google.firebase.inappmessaging.** {*;}
+
+# Using names starting with "zz"
+-classobfuscationdictionary ../obfuscate_dict.txt
+-obfuscationdictionary ../obfuscate_dict.txt

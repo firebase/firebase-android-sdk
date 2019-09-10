@@ -22,6 +22,30 @@ public class MeasureUtils {
 
   /** Call "measure" on a view with the AT_MOST measurespec for the given height/width. */
   public static void measureAtMost(View child, int width, int height) {
+    measure(child, width, height, View.MeasureSpec.AT_MOST, View.MeasureSpec.AT_MOST);
+  }
+
+  /** Call "measure" on a view with the EXACTLY measurespec for the given height and width. */
+  public static void measureExactly(View child, int width, int height) {
+    measure(child, width, height, View.MeasureSpec.EXACTLY, View.MeasureSpec.EXACTLY);
+  }
+
+  /** Call "measure" on a view with the EXACTLY measurespec for the given width. */
+  public static void measureFullWidth(View child, int width, int height) {
+    measure(child, width, height, View.MeasureSpec.EXACTLY, View.MeasureSpec.AT_MOST);
+  }
+
+  /** Call "measure" on a view with the EXACTLY measurespec for the given height. */
+  public static void measureFullHeight(View child, int width, int height) {
+    measure(child, width, height, View.MeasureSpec.AT_MOST, View.MeasureSpec.EXACTLY);
+  }
+
+  /**
+   * Call "measure" on a view the provided measure specifications. The "Exactly" measure spec will
+   * force a view to be exactly the specified size in the specified dimension while the "At most"
+   * spec will tell the view how large it can be at most in the given dimension.
+   */
+  private static void measure(View child, int width, int height, int widthSpec, int heightSpec) {
     Logging.logdPair("\tdesired (w,h)", child.getMeasuredWidth(), child.getMeasuredHeight());
     if (child.getVisibility() == View.GONE) {
       width = 0;
@@ -29,8 +53,8 @@ public class MeasureUtils {
     }
 
     child.measure(
-        View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.AT_MOST),
-        View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.AT_MOST));
+        View.MeasureSpec.makeMeasureSpec(width, widthSpec),
+        View.MeasureSpec.makeMeasureSpec(height, heightSpec));
     Logging.logdPair("\tactual (w,h)", child.getMeasuredWidth(), child.getMeasuredHeight());
   }
 }
