@@ -25,7 +25,6 @@ import com.google.firebase.storage.internal.RobolectricThreadFix;
 import com.google.firebase.storage.network.MockConnectionFactory;
 import com.google.firebase.storage.network.NetworkLayerMock;
 import com.google.firebase.testing.FirebaseAppRule;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -43,19 +42,11 @@ public class StorageReferenceTest {
   @Rule public RetryRule retryRule = new RetryRule(3);
   @Rule public FirebaseAppRule firebaseAppRule = new FirebaseAppRule();
 
-  private FirebaseApp app;
-
   @Before
   public void setUp() throws Exception {
     RobolectricThreadFix.install();
     MockClockHelper.install();
-    app = TestUtil.createApp();
-  }
-
-  @After
-  public void tearDown() {
-    FirebaseStorageComponent component = app.get(FirebaseStorageComponent.class);
-    component.clearInstancesForTesting();
+    TestUtil.createApp();
   }
 
   @Test
