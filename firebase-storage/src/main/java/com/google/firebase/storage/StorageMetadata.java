@@ -428,7 +428,7 @@ public class StorageMetadata {
     }
 
     /**
-     * Sets the Cache Control for the {@link StorageReference}
+     * Sets the Cache Control header for the {@link StorageReference}
      *
      * @param cacheControl the new Cache Control setting.
      */
@@ -438,7 +438,7 @@ public class StorageMetadata {
       return this;
     }
 
-    /** @return the Cache Control for the {@link StorageReference} */
+    /** @return the Cache Control header for the {@link StorageReference} */
     @Nullable
     public String getCacheControl() {
       return mMetadata.mCacheControl.getValue();
@@ -470,7 +470,7 @@ public class StorageMetadata {
       return this;
     }
 
-    /** @return the content Type of this associated {@link StorageReference} */
+    /** @return the Content Type of this associated {@link StorageReference} */
     @Nullable
     public String getContentType() {
       return mMetadata.mContentType.getValue();
