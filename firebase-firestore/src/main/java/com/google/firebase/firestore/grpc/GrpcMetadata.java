@@ -14,9 +14,10 @@
 
 package com.google.firebase.firestore.grpc;
 
+import androidx.annotation.NonNull;
 import io.grpc.Metadata;
 
 public interface GrpcMetadata {
 
-    void updateMetadata(Metadata metadata);
+  void updateMetadata(@NonNull Metadata metadata);
 }

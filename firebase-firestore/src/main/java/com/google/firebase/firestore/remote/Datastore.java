@@ -32,8 +32,6 @@ import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
 import com.google.firestore.v1.FirestoreGrpc;
-
-import io.grpc.Metadata;
 import io.grpc.Status;
 import java.net.ConnectException;
 import java.util.ArrayList;
@@ -96,7 +94,8 @@ public class Datastore {
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
 
-    channel = new FirestoreChannel(workerQueue, context, credentialsProvider, databaseInfo, grpcMetadata);
+    channel =
+        new FirestoreChannel(workerQueue, context, credentialsProvider, databaseInfo, grpcMetadata);
   }
 
   void shutdown() {

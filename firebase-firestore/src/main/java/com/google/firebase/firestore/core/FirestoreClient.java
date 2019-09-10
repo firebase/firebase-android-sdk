@@ -84,12 +84,12 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
 
   public FirestoreClient(
-          final Context context,
-          DatabaseInfo databaseInfo,
-          FirebaseFirestoreSettings settings,
-          CredentialsProvider credentialsProvider,
-          final AsyncQueue asyncQueue,
-          @Nullable GrpcMetadata metadata) {
+      final Context context,
+      DatabaseInfo databaseInfo,
+      FirebaseFirestoreSettings settings,
+      CredentialsProvider credentialsProvider,
+      final AsyncQueue asyncQueue,
+      @Nullable GrpcMetadata metadata) {
     this.databaseInfo = databaseInfo;
     this.credentialsProvider = credentialsProvider;
     this.asyncQueue = asyncQueue;
@@ -280,7 +280,8 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       lruScheduler.start();
     }
 
-    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, this.metadata);
+    Datastore datastore =
+        new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, metadata);
     ConnectivityMonitor connectivityMonitor = new AndroidConnectivityMonitor(context);
     remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue, connectivityMonitor);
 

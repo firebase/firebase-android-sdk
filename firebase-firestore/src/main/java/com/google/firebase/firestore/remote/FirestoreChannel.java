@@ -68,13 +68,13 @@ class FirestoreChannel {
   private final GrpcMetadata grpcMetadata;
 
   FirestoreChannel(
-          AsyncQueue asyncQueue,
-          Context context,
-          CredentialsProvider credentialsProvider,
-          DatabaseInfo databaseInfo,
-          GrpcMetadata metadata) {
+      AsyncQueue asyncQueue,
+      Context context,
+      CredentialsProvider credentialsProvider,
+      DatabaseInfo databaseInfo,
+      GrpcMetadata metadata) {
     this.asyncQueue = asyncQueue;
-    this.grpcMetadata = grpcMetadata;
+    this.grpcMetadata = metadata;
     this.credentialsProvider = credentialsProvider;
 
     FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(credentialsProvider);
@@ -288,7 +288,9 @@ class FirestoreChannel {
     headers.put(X_GOOG_API_CLIENT_HEADER, X_GOOG_API_CLIENT_VALUE);
     // This header is used to improve routing and project isolation by the backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
-    grpcMetadata.updateMetadata(headers);
+    if (grpcMetadata != null) {
+      grpcMetadata.updateMetadata(headers);
+    }
     return headers;
   }
 }

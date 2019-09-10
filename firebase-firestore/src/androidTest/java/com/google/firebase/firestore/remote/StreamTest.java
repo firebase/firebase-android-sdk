@@ -109,7 +109,8 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
-            ApplicationProvider.getApplicationContext());
+            ApplicationProvider.getApplicationContext(),
+            null);
     final WriteStream writeStream = datastore.createWriteStream(callback);
     waitForWriteStreamOpen(testQueue, writeStream, callback);
     return writeStream;
@@ -132,7 +133,8 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
-            ApplicationProvider.getApplicationContext());
+            ApplicationProvider.getApplicationContext(),
+            null);
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
     final WatchStream watchStream = datastore.createWatchStream(streamCallback);
 
@@ -152,7 +154,8 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
-            ApplicationProvider.getApplicationContext());
+            ApplicationProvider.getApplicationContext(),
+            null);
     final WriteStream[] writeStreamWrapper = new WriteStream[1];
     StreamStatusCallback streamCallback =
         new StreamStatusCallback() {
@@ -198,7 +201,8 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
-            ApplicationProvider.getApplicationContext());
+            ApplicationProvider.getApplicationContext(),
+            null);
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
     final WriteStream writeStream = datastore.createWriteStream(streamCallback);
 
@@ -277,7 +281,8 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             mockCredentialsProvider,
-            ApplicationProvider.getApplicationContext());
+            ApplicationProvider.getApplicationContext(),
+            null);
     StreamStatusCallback callback = new StreamStatusCallback();
     WriteStream writeStream = datastore.createWriteStream(callback);
     waitForWriteStreamOpen(testQueue, writeStream, callback);

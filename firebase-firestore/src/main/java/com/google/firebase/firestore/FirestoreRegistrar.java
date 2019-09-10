@@ -26,7 +26,6 @@ import com.google.firebase.firestore.grpc.DefaultGrpcMetadata;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.platforminfo.UserAgentPublisher;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -54,7 +53,8 @@ public class FirestoreRegistrar implements ComponentRegistrar {
                         c.get(Context.class),
                         c.get(FirebaseApp.class),
                         c.get(InternalAuthProvider.class),
-                        new DefaultGrpcMetadata(c.get(UserAgentPublisher.class) ,c.get(HeartBeatInfo.class))))
+                        new DefaultGrpcMetadata(
+                            c.get(UserAgentPublisher.class), c.get(HeartBeatInfo.class))))
             .build(),
         LibraryVersionComponent.create("fire-fst", BuildConfig.VERSION_NAME));
   }

@@ -14,35 +14,34 @@
 
 package com.google.firebase.firestore.grpc;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.platforminfo.UserAgentPublisher;
-
 import io.grpc.Metadata;
 
-public class DefaultGrpcMetadata implements GrpcMetadata{
+public class DefaultGrpcMetadata implements GrpcMetadata {
 
-    private final HeartBeatInfo heartBeatInfo;
-    private final UserAgentPublisher userAgentPublisher;
-    private final String firebaseFirestoreHeartBeatTag = "fire-fst";
+  private final HeartBeatInfo heartBeatInfo;
+  private final UserAgentPublisher userAgentPublisher;
+  private final String firebaseFirestoreHeartBeatTag = "fire-fst";
 
-    private static final Metadata.Key<String> HEART_BEAT_HEADER =
-            Metadata.Key.of("x-firebase-client-log-type", Metadata.ASCII_STRING_MARSHALLER);
+  private static final Metadata.Key<String> HEART_BEAT_HEADER =
+      Metadata.Key.of("x-firebase-client-log-type", Metadata.ASCII_STRING_MARSHALLER);
 
-    private static final Metadata.Key<String> USER_AGENT_HEADER =
-            Metadata.Key.of("x-firebase-client", Metadata.ASCII_STRING_MARSHALLER);
+  private static final Metadata.Key<String> USER_AGENT_HEADER =
+      Metadata.Key.of("x-firebase-client", Metadata.ASCII_STRING_MARSHALLER);
 
-    public DefaultGrpcMetadata(UserAgentPublisher userAgentPublisher, HeartBeatInfo heartBeatInfo) {
-        this.userAgentPublisher = userAgentPublisher;
-        this.heartBeatInfo = heartBeatInfo;
-    }
+  public DefaultGrpcMetadata(
+      @NonNull UserAgentPublisher userAgentPublisher, @NonNull HeartBeatInfo heartBeatInfo) {
+    this.userAgentPublisher = userAgentPublisher;
+    this.heartBeatInfo = heartBeatInfo;
+  }
 
-    @Override
-    public void updateMetadata(Metadata metadata) {
-        if(this.userAgentPublisher != null) {
-            metadata.put(USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
-        }
-        if(this.heartBeatInfo != null) {
-            metadata.put(HEART_BEAT_HEADER, Integer.toString(heartBeatInfo.getHeartBeatCode(firebaseFirestoreHeartBeatTag).getCode()));
-        }
-    }
+  @Override
+  public void updateMetadata(@NonNull Metadata metadata) {
+    metadata.put(USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
+    metadata.put(
+        HEART_BEAT_HEADER,
+        Integer.toString(heartBeatInfo.getHeartBeatCode(firebaseFirestoreHeartBeatTag).getCode()));
+  }
 }

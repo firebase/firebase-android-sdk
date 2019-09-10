@@ -102,12 +102,12 @@ public class FirebaseFirestore {
 
   @NonNull
   static FirebaseFirestore newInstance(
-          @NonNull Context context,
-          @NonNull FirebaseApp app,
-          @Nullable InternalAuthProvider authProvider,
-          @NonNull String database,
-          @NonNull InstanceRegistry instanceRegistry,
-          @Nullable GrpcMetadata metadata) {
+      @NonNull Context context,
+      @NonNull FirebaseApp app,
+      @Nullable InternalAuthProvider authProvider,
+      @NonNull String database,
+      @NonNull InstanceRegistry instanceRegistry,
+      @Nullable GrpcMetadata metadata) {
     String projectId = app.getOptions().getProjectId();
     if (projectId == null) {
       throw new IllegalArgumentException("FirebaseOptions.getProjectId() cannot be null");
@@ -198,7 +198,8 @@ public class FirebaseFirestore {
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
       client =
-          new FirestoreClient(context, databaseInfo, settings, credentialsProvider, asyncQueue, grpcMetadata);
+          new FirestoreClient(
+              context, databaseInfo, settings, credentialsProvider, asyncQueue, grpcMetadata);
     }
   }
 
