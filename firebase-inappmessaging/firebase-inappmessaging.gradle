@@ -13,7 +13,7 @@
 // limitations under the License.
 
 plugins {
-    id 'firebase-proprietary-library'
+    id 'firebase-library'
     id 'com.google.protobuf'
 }
 
