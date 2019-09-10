@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.AccessHelper;
 import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.CollectionReference;
@@ -110,6 +111,13 @@ public class IntegrationTestUtil {
   private static boolean strictModeEnabled = false;
   private static boolean backendPrimed = false;
 
+  // FirebaseOptions needed to create a test FirebaseApp.
+  private static final FirebaseOptions OPTIONS =
+      new FirebaseOptions.Builder()
+          .setApplicationId(":123:android:123ab")
+          .setProjectId(provider.projectId())
+          .build();
+
   public static FirestoreProvider provider() {
     return provider;
   }
@@ -153,7 +161,10 @@ public class IntegrationTestUtil {
   }
 
   public static FirebaseApp testFirebaseApp() {
-    return FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext());
+    if (FirebaseApp.getInstance(FirebaseApp.DEFAULT_APP_NAME) != null) {
+      return FirebaseApp.getInstance(FirebaseApp.DEFAULT_APP_NAME);
+    }
+    return FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), OPTIONS);
   }
 
   /** Initializes a new Firestore instance that uses the default project. */
