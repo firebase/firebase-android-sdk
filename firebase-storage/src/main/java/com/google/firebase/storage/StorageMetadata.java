@@ -387,6 +387,12 @@ public class StorageMetadata {
       return this;
     }
 
+    /** @return the content language for the {@link StorageReference} */
+    @Nullable
+    public String getContentLanguage() {
+      return mMetadata.mContentLanguage.getValue();
+    }
+
     /**
      * Changes the content encoding for the {@link StorageReference}
      *
@@ -398,8 +404,16 @@ public class StorageMetadata {
       return this;
     }
 
+    /** @return the content encoding for the {@link StorageReference} */
+    @Nullable
+    public String getContentEncoding() {
+      return mMetadata.mContentEncoding.getValue();
+    }
+
     /**
-     * @param contentDisposition changes the content disposition for the {@link StorageReference}
+     * Changes the content disposition for the {@link StorageReference}
+     *
+     * @param contentDisposition the new content disposition to use.
      */
     @NonNull
     public Builder setContentDisposition(@Nullable String contentDisposition) {
@@ -407,8 +421,14 @@ public class StorageMetadata {
       return this;
     }
 
+    /** @return the content disposition for the {@link StorageReference} */
+    @Nullable
+    public String getContentDisposition() {
+      return mMetadata.mContentDisposition.getValue();
+    }
+
     /**
-     * sets the Cache Control for the {@link StorageReference}
+     * Sets the Cache Control header for the {@link StorageReference}
      *
      * @param cacheControl the new Cache Control setting.
      */
@@ -416,6 +436,12 @@ public class StorageMetadata {
     public Builder setCacheControl(@Nullable String cacheControl) {
       mMetadata.mCacheControl = MetadataValue.withUserValue(cacheControl);
       return this;
+    }
+
+    /** @return the Cache Control header for the {@link StorageReference} */
+    @Nullable
+    public String getCacheControl() {
+      return mMetadata.mCacheControl.getValue();
     }
 
     /**
@@ -442,6 +468,12 @@ public class StorageMetadata {
     public Builder setContentType(@Nullable String contentType) {
       mMetadata.mContentType = MetadataValue.withUserValue(contentType);
       return this;
+    }
+
+    /** @return the Content Type of this associated {@link StorageReference} */
+    @Nullable
+    public String getContentType() {
+      return mMetadata.mContentType.getValue();
     }
   }
 }
