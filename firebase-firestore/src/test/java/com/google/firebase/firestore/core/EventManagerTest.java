@@ -118,7 +118,11 @@ public class EventManagerTest {
 
     QueryListener spy = mock(QueryListener.class);
     when(spy.getQuery()).thenReturn(query1);
-    doAnswer(invocation -> events.add(invocation.getArguments()[0]))
+    doAnswer(
+            invocation -> {
+              events.add(invocation.getArguments()[0]);
+              return false;
+            })
         .when(spy)
         .onOnlineStateChanged(any());
 

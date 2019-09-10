@@ -50,12 +50,14 @@ import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.Logger.Level;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -507,6 +509,50 @@ public class FirestoreTest {
     DocumentReference documentReference = waitFor(testCollection("rooms").add(data));
     DocumentSnapshot document = waitFor(documentReference.get());
     assertEquals(data, document.getData());
+  }
+
+  @Test
+  public void testSnapshotsInSyncListenerFiresAfterListenersInSync() {
+    Map<String, Object> data = map("foo", 1.0);
+    CollectionReference collection = testCollection();
+    DocumentReference documentReference = waitFor(collection.add(data));
+    List<String> events = new ArrayList<>();
+
+    Semaphore gotInitialSnapshot = new Semaphore(0);
+    Semaphore done = new Semaphore(0);
+
+    ListenerRegistration listenerRegistration = null;
+
+    documentReference.addSnapshotListener(
+        (value, error) -> {
+          events.add("doc");
+          gotInitialSnapshot.release();
+        });
+    waitFor(gotInitialSnapshot);
+    events.clear();
+
+    try {
+      listenerRegistration =
+          documentReference
+              .getFirestore()
+              .addSnapshotsInSyncListener(
+                  () -> {
+                    events.add("snapshots-in-sync");
+                    if (events.size() == 3) {
+                      // We should have an initial snapshots-in-sync event, then a snapshot event
+                      // for set(), then another event to indicate we're in sync again.
+                      assertEquals(
+                          Arrays.asList("snapshots-in-sync", "doc", "snapshots-in-sync"), events);
+                      done.release();
+                    }
+                  });
+      waitFor(documentReference.set(map("foo", 3.0)));
+      waitFor(done);
+    } finally {
+      if (listenerRegistration != null) {
+        listenerRegistration.remove();
+      }
+    }
   }
 
   @Test
