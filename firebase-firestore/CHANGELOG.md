@@ -1,14 +1,15 @@
 # Unreleased
-- [changed] Transactions now perform exponential backoff before retrying.
-  This means transactions on highly contended documents are more likely to
-  succeed.
+
+# 21.1.0
 - [feature] Added a `terminate()` method to `FirebaseFirestore` which
-  terminates the instance, releasing any held resources. Once it completes,
-  you can optionally call `clearPersistence()` to wipe persisted Firestore
-  data from disk.
+  terminates the instance, releasing any held resources. Once it completes, you
+  can optionally call `clearPersistence()` to wipe persisted Firestore data from
+  disk.
 - [feature] Added a `waitForPendingWrites()` method to `FirebaseFirestore`
-  class which allows users to wait on a promise that resolves when all
-  pending writes are acknowledged by the Firestore backend.
+  which allows users to wait on a promise that resolves when all pending writes
+  are acknowledged by the Firestore backend.
+- [changed] Transactions now perform exponential backoff before retrying. This
+  means transactions on highly contended documents are more likely to succeed.
 
 # 21.0.0
 - [changed] Transactions are now more flexible. Some sequences of operations
