@@ -387,7 +387,7 @@ public class StorageMetadata {
       return this;
     }
 
-    /** Returns the content language for the {@link StorageReference} */
+    /** @return the content language for the {@link StorageReference} */
     @Nullable
     public String getContentLanguage() {
       return mMetadata.mContentLanguage.getValue();
@@ -404,7 +404,7 @@ public class StorageMetadata {
       return this;
     }
 
-    /** Returns the content encoding for the {@link StorageReference} */
+    /** @return the content encoding for the {@link StorageReference} */
     @Nullable
     public String getContentEncoding() {
       return mMetadata.mContentEncoding.getValue();
@@ -421,7 +421,7 @@ public class StorageMetadata {
       return this;
     }
 
-    /** Returns the content disposition for the {@link StorageReference} */
+    /** @return the content disposition for the {@link StorageReference} */
     @Nullable
     public String getContentDisposition() {
       return mMetadata.mContentDisposition.getValue();
@@ -438,7 +438,7 @@ public class StorageMetadata {
       return this;
     }
 
-    /** Returns the Cache Control for the {@link StorageReference} */
+    /** @return the Cache Control for the {@link StorageReference} */
     @Nullable
     public String getCacheControl() {
       return mMetadata.mCacheControl.getValue();
@@ -470,7 +470,7 @@ public class StorageMetadata {
       return this;
     }
 
-    /** Returns the content Type of this associated {@link StorageReference} */
+    /** @return the content Type of this associated {@link StorageReference} */
     @Nullable
     public String getContentType() {
       return mMetadata.mContentType.getValue();
