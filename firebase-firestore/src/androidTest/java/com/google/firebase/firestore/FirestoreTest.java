@@ -540,8 +540,7 @@ public class FirestoreTest {
                     events.add("snapshots-in-sync");
                     if (events.size() == 3) {
                       // We should have an initial snapshots-in-sync event, then a snapshot event
-                      // for set(),
-                      // then another event to indicate we're in sync again.
+                      // for set(), then another event to indicate we're in sync again.
                       assertEquals(
                           Arrays.asList("snapshots-in-sync", "doc", "snapshots-in-sync"), events);
                       done.release();

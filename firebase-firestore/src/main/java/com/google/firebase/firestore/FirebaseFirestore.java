@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.app.Activity;
 import android.content.Context;
@@ -523,7 +524,7 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Internal helper method to create add a snapshotsInSync listener.
+   * Internal helper method to add a snapshotsInSync listener.
    *
    * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
    *
@@ -538,6 +539,7 @@ public class FirebaseFirestore {
     ensureClientConfigured();
     EventListener<Void> eventListener =
         (Void v, FirebaseFirestoreException error) -> {
+          hardAssert(error == null, "snapshots-in-sync listeners should never get errors.");
           runnable.run();
         };
     AsyncEventListener<Void> asyncListener =

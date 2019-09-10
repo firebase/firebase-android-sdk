@@ -59,7 +59,7 @@ public final class EventManager implements SyncEngineCallback {
 
   private final Map<Query, QueryListenersInfo> queries;
 
-  private final Set<EventListener<Void>> snapshotsInSyncListeners;
+  private final Set<EventListener<Void>> snapshotsInSyncListeners = new HashSet<>();
 
   private OnlineState onlineState = OnlineState.UNKNOWN;
 
@@ -67,7 +67,6 @@ public final class EventManager implements SyncEngineCallback {
     this.syncEngine = syncEngine;
     queries = new HashMap<>();
     syncEngine.setCallback(this);
-    snapshotsInSyncListeners = new HashSet<>();
   }
 
   /**
