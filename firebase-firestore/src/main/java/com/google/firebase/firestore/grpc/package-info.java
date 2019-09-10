@@ -12,18 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/** @hide */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 package com.google.firebase.firestore.grpc;
 
-import androidx.annotation.NonNull;
-import io.grpc.Metadata;
-
-/**
- * Class updates the headers for the request to the backend.
- *
- * <p>UpdateMetadata updates the metadata object with some custom headers which will be sent along
- * with the default headers to the backend.
- */
-public interface GrpcMetadata {
-
-  void updateMetadata(@NonNull Metadata metadata);
-}
+import androidx.annotation.RestrictTo;

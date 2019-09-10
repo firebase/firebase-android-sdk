@@ -19,6 +19,11 @@ import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import io.grpc.Metadata;
 
+/**
+ * Class provides an implementation of the GrpcMetadata interface.
+ *
+ * <p>This updates the metadata with platformInfo string and the heartBeatInfo code.
+ */
 public class DefaultGrpcMetadata implements GrpcMetadata {
 
   private final HeartBeatInfo heartBeatInfo;
