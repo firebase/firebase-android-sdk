@@ -170,7 +170,7 @@ public class FirebaseApp {
    */
   @NonNull
   public static FirebaseApp getInstance(@NonNull String name) {
-    ComponentRuntime instance = ContainerOwner.getInstance(DEFAULT_APP_NAME);
+    ComponentRuntime instance = ContainerOwner.getInstance(name);
 
     if (instance != null && instance.get(FirebaseApp.class) != null) {
       return instance.get(FirebaseApp.class);
