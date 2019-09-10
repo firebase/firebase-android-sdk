@@ -32,6 +32,7 @@ import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
+import com.google.firebase.firestore.grpc.GrpcMetadata;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -74,6 +75,7 @@ public class FirebaseFirestore {
   private final InstanceRegistry instanceRegistry;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
+  private final GrpcMetadata grpcMetadata;
 
   @NonNull
   public static FirebaseFirestore getInstance() {
@@ -100,11 +102,12 @@ public class FirebaseFirestore {
 
   @NonNull
   static FirebaseFirestore newInstance(
-      @NonNull Context context,
-      @NonNull FirebaseApp app,
-      @Nullable InternalAuthProvider authProvider,
-      @NonNull String database,
-      @NonNull InstanceRegistry instanceRegistry) {
+          @NonNull Context context,
+          @NonNull FirebaseApp app,
+          @Nullable InternalAuthProvider authProvider,
+          @NonNull String database,
+          @NonNull InstanceRegistry instanceRegistry,
+          @Nullable GrpcMetadata metadata) {
     String projectId = app.getOptions().getProjectId();
     if (projectId == null) {
       throw new IllegalArgumentException("FirebaseOptions.getProjectId() cannot be null");
@@ -129,7 +132,7 @@ public class FirebaseFirestore {
 
     FirebaseFirestore firestore =
         new FirebaseFirestore(
-            context, databaseId, persistenceKey, provider, queue, app, instanceRegistry);
+            context, databaseId, persistenceKey, provider, queue, app, instanceRegistry, metadata);
     return firestore;
   }
 
@@ -141,7 +144,8 @@ public class FirebaseFirestore {
       CredentialsProvider credentialsProvider,
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
-      InstanceRegistry instanceRegistry) {
+      InstanceRegistry instanceRegistry,
+      @Nullable GrpcMetadata grpcMetadata) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.dataConverter = new UserDataConverter(databaseId);
@@ -151,6 +155,7 @@ public class FirebaseFirestore {
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
+    this.grpcMetadata = grpcMetadata;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
   }
@@ -193,7 +198,7 @@ public class FirebaseFirestore {
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
       client =
-          new FirestoreClient(context, databaseInfo, settings, credentialsProvider, asyncQueue);
+          new FirestoreClient(context, databaseInfo, settings, credentialsProvider, asyncQueue, grpcMetadata);
     }
   }
 

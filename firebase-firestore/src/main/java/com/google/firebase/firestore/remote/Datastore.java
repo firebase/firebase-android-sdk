@@ -20,6 +20,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
+import com.google.firebase.firestore.grpc.GrpcMetadata;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -31,6 +32,8 @@ import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
 import com.google.firestore.v1.FirestoreGrpc;
+
+import io.grpc.Metadata;
 import io.grpc.Status;
 import java.net.ConnectException;
 import java.util.ArrayList;
@@ -87,12 +90,13 @@ public class Datastore {
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
       CredentialsProvider credentialsProvider,
-      Context context) {
+      Context context,
+      GrpcMetadata grpcMetadata) {
     this.databaseInfo = databaseInfo;
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
 
-    channel = new FirestoreChannel(workerQueue, context, credentialsProvider, databaseInfo);
+    channel = new FirestoreChannel(workerQueue, context, credentialsProvider, databaseInfo, grpcMetadata);
   }
 
   void shutdown() {

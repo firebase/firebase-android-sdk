@@ -31,6 +31,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
+import com.google.firebase.firestore.grpc.GrpcMetadata;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LruDelegate;
@@ -77,19 +78,22 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
+  private final GrpcMetadata metadata;
 
   // LRU-related
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
 
   public FirestoreClient(
-      final Context context,
-      DatabaseInfo databaseInfo,
-      FirebaseFirestoreSettings settings,
-      CredentialsProvider credentialsProvider,
-      final AsyncQueue asyncQueue) {
+          final Context context,
+          DatabaseInfo databaseInfo,
+          FirebaseFirestoreSettings settings,
+          CredentialsProvider credentialsProvider,
+          final AsyncQueue asyncQueue,
+          @Nullable GrpcMetadata metadata) {
     this.databaseInfo = databaseInfo;
     this.credentialsProvider = credentialsProvider;
     this.asyncQueue = asyncQueue;
+    this.metadata = metadata;
 
     TaskCompletionSource<User> firstUser = new TaskCompletionSource<>();
     final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -276,7 +280,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       lruScheduler.start();
     }
 
-    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context);
+    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, this.metadata);
     ConnectivityMonitor connectivityMonitor = new AndroidConnectivityMonitor(context);
     remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue, connectivityMonitor);
 

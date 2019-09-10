@@ -22,7 +22,11 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.firestore.grpc.DefaultGrpcMetadata;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
+import com.google.firebase.platforminfo.UserAgentPublisher;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -41,13 +45,16 @@ public class FirestoreRegistrar implements ComponentRegistrar {
         Component.builder(FirestoreMultiDbComponent.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(Context.class))
+            .add(Dependency.required(HeartBeatInfo.class))
+            .add(Dependency.required(UserAgentPublisher.class))
             .add(Dependency.optional(InternalAuthProvider.class))
             .factory(
                 c ->
                     new FirestoreMultiDbComponent(
                         c.get(Context.class),
                         c.get(FirebaseApp.class),
-                        c.get(InternalAuthProvider.class)))
+                        c.get(InternalAuthProvider.class),
+                        new DefaultGrpcMetadata(c.get(UserAgentPublisher.class) ,c.get(HeartBeatInfo.class))))
             .build(),
         LibraryVersionComponent.create("fire-fst", BuildConfig.VERSION_NAME));
   }

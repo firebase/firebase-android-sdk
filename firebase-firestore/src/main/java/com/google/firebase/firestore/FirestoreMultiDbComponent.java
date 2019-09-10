@@ -21,8 +21,12 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseAppLifecycleListener;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.firestore.grpc.GrpcMetadata;
+
 import java.util.HashMap;
 import java.util.Map;
+
+import io.grpc.Metadata;
 
 /** Multi-resource container for Cloud Firestore. */
 class FirestoreMultiDbComponent
@@ -37,14 +41,17 @@ class FirestoreMultiDbComponent
   private final FirebaseApp app;
   private final Context context;
   private final InternalAuthProvider authProvider;
+  private final GrpcMetadata metadata;
 
   FirestoreMultiDbComponent(
-      @NonNull Context context,
-      @NonNull FirebaseApp app,
-      @Nullable InternalAuthProvider authProvider) {
+          @NonNull Context context,
+          @NonNull FirebaseApp app,
+          @Nullable InternalAuthProvider authProvider,
+          @Nullable GrpcMetadata metadata) {
     this.context = context;
     this.app = app;
     this.authProvider = authProvider;
+    this.metadata = metadata;
     this.app.addLifecycleEventListener(this);
   }
 
@@ -53,7 +60,7 @@ class FirestoreMultiDbComponent
   synchronized FirebaseFirestore get(@NonNull String databaseId) {
     FirebaseFirestore firestore = instances.get(databaseId);
     if (firestore == null) {
-      firestore = FirebaseFirestore.newInstance(context, app, authProvider, databaseId, this);
+      firestore = FirebaseFirestore.newInstance(context, app, authProvider, databaseId, this, metadata);
       instances.put(databaseId, firestore);
     }
     return firestore;
