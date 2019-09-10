@@ -385,6 +385,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private static final class AwaitListener implements CombinedListener {
     private final CountDownLatch mLatch = new CountDownLatch(1);
 
+    public void onSuccess() {
+      mLatch.countDown();
+    }
+
     public void await() throws InterruptedException {
       mLatch.await();
     }
