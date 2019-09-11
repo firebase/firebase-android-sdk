@@ -29,8 +29,10 @@ android {
     }
 }
 dependencies {
-    inappmessagingdisplayImplementation project(":firebase-inappmessaging-display")
-    inappmessagingdisplayImplementation ("com.google.firebase:firebase-inappmessaging:17.0.3") {
+    inappmessagingdisplayImplementation ("com.google.firebase:firebase-inappmessaging-display:19.0.0") {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
+    inappmessagingdisplayImplementation ("com.google.firebase:firebase-inappmessaging:19.0.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 }
