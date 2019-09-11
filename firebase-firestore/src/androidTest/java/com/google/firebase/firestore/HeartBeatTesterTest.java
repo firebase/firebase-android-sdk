@@ -14,32 +14,27 @@
 
 package com.google.firebase.firestore;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-import androidx.test.core.app.ApplicationProvider;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class HeartBeatTesterTest {
 
-    @Test
-    public void testHeartBeatTime() {
-        HeartBeatInfo info = new DefaultHeartBeatInfo(ApplicationProvider.getApplicationContext());
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        long startTime = System.currentTimeMillis();
-        info.getHeartBeatCode("foo");
-        long endTime = System.currentTimeMillis();
-        Map<String, Long> data = new HashMap<>();
-        data.put("HeartBeatTime", endTime-startTime);
-        db.collection("HeartBeatTime").document("BJ")
-                .set(data, SetOptions.merge());
-
-    }
+  @Test
+  public void testHeartBeatTime() {
+    HeartBeatInfo info = new DefaultHeartBeatInfo(ApplicationProvider.getApplicationContext());
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
+    long startTime = System.currentTimeMillis();
+    info.getHeartBeatCode("foo");
+    long endTime = System.currentTimeMillis();
+    Map<String, Long> data = new HashMap<>();
+    data.put("HeartBeatTime", endTime - startTime);
+    db.collection("HeartBeatTime").document("BJ").set(data, SetOptions.merge());
+  }
 }
