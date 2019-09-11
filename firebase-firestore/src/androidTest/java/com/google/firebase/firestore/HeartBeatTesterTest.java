@@ -28,13 +28,14 @@ public class HeartBeatTesterTest {
 
   @Test
   public void testHeartBeatTime() {
-    HeartBeatInfo info = new DefaultHeartBeatInfo(ApplicationProvider.getApplicationContext());
     FirebaseFirestore db = FirebaseFirestore.getInstance();
+    String str = android.os.Build.MODEL;
     long startTime = System.currentTimeMillis();
+    HeartBeatInfo info = new DefaultHeartBeatInfo(ApplicationProvider.getApplicationContext());
     info.getHeartBeatCode("foo");
     long endTime = System.currentTimeMillis();
     Map<String, Long> data = new HashMap<>();
-    data.put("HeartBeatTime", endTime - startTime);
+    data.put("HeartBeatTime"+str, endTime - startTime);
     db.collection("HeartBeatTime").document("BJ").set(data, SetOptions.merge());
   }
 }
