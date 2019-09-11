@@ -114,9 +114,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<String> getId() {
-    return Tasks.call(executor, this::getPersistedFid)
-        .continueWith(orElse(this::createAndPersistNewFid))
-        .onSuccessTask(persistedFidEntry -> registerFidIfNecessary(persistedFidEntry, null));
+    return getId(null);
   }
 
   private Task<String> getId(AwaitListener awaitListener) {
@@ -131,6 +129,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * one doesn't exist, is expired or about to expire.
    *
    * <p>Should only be called if the Firebase Installation is registered.
+   *
+   * @param authTokenOption Options to get FIS Auth Token either by force refreshing or not. Accepts
+   *     {@link AuthTokenOption} values. Default value of AuthTokenOption = DO_NOT_FORCE_REFRESH.
    */
   @NonNull
   @Override
@@ -197,7 +198,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   @NonNull
-  private <F, T> Continuation<F, T> awaitFidRegistration(
+  private static <F, T> Continuation<F, T> awaitFidRegistration(
       @NonNull Supplier<T> supplier, AwaitListener listener) {
     return t -> {
       // Waiting for Task that registers FID on the FIS Servers
@@ -241,10 +242,31 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // Check if the fid is unregistered
     if (persistedFidEntry.getRegistrationStatus() == RegistrationStatus.UNREGISTERED) {
       updatePersistedFidWithPendingStatus(fid);
-      Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry))
-          .addOnCompleteListener(listener);
+      executeFidRegistration(persistedFidEntry, listener);
+    } else {
+      updateAwaitListenerIfRegisteredFid(persistedFidEntry, listener);
     }
+
     return Tasks.forResult(fid);
+  }
+
+  private void updateAwaitListenerIfRegisteredFid(
+      PersistedFidEntry persistedFidEntry, AwaitListener listener) {
+    if (listener != null
+        && persistedFidEntry.getRegistrationStatus() == RegistrationStatus.REGISTERED) {
+      listener.onSuccess();
+    }
+  }
+
+  /**
+   * Registers the FID with FIS servers in a background thread and updates the listener on
+   * completion.
+   */
+  private void executeFidRegistration(PersistedFidEntry persistedFidEntry, AwaitListener listener) {
+    Task<Void> task = Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry));
+    if (listener != null) {
+      task.addOnCompleteListener(listener);
+    }
   }
 
   private void updatePersistedFidWithPendingStatus(String fid) {
@@ -380,17 +402,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return TimeUnit.MILLISECONDS.toSeconds(clock.currentTimeMillis());
   }
 
-  interface CombinedListener extends OnCompleteListener<Void> {}
-
-  private static final class AwaitListener implements CombinedListener {
+  private static final class AwaitListener implements OnCompleteListener<Void> {
     private final CountDownLatch mLatch = new CountDownLatch(1);
 
     public void onSuccess() {
       mLatch.countDown();
-    }
-
-    public void await() throws InterruptedException {
-      mLatch.await();
     }
 
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
