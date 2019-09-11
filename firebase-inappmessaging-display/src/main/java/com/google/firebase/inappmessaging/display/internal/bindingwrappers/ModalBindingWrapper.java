@@ -15,7 +15,6 @@
 package com.google.firebase.inappmessaging.display.internal.bindingwrappers;
 
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,12 +27,15 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidx.core.graphics.drawable.DrawableCompat;
 import com.google.firebase.inappmessaging.display.R;
 import com.google.firebase.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
 import com.google.firebase.inappmessaging.display.internal.layout.FiamRelativeLayout;
+import com.google.firebase.inappmessaging.model.Action;
 import com.google.firebase.inappmessaging.model.InAppMessage;
+import com.google.firebase.inappmessaging.model.MessageType;
+import com.google.firebase.inappmessaging.model.ModalMessage;
+import java.util.Map;
 import javax.inject.Inject;
 
 /** @hide */
@@ -49,6 +51,7 @@ public class ModalBindingWrapper extends BindingWrapper {
   private ImageView imageView;
   private TextView messageBody;
   private TextView messageTitle;
+  private ModalMessage modalMessage;
 
   private ViewTreeObserver.OnGlobalLayoutListener layoutListener =
       new ScrollViewAdjustableListener();
@@ -63,7 +66,8 @@ public class ModalBindingWrapper extends BindingWrapper {
   @NonNull
   @Override
   public ViewTreeObserver.OnGlobalLayoutListener inflate(
-      View.OnClickListener actionListener, View.OnClickListener dismissOnClickListener) {
+      Map<Action, View.OnClickListener> actionListeners,
+      View.OnClickListener dismissOnClickListener) {
 
     View root = inflater.inflate(R.layout.modal, null);
     bodyScroll = root.findViewById(R.id.body_scroll);
@@ -76,14 +80,14 @@ public class ModalBindingWrapper extends BindingWrapper {
 
     modalContentRoot = root.findViewById(R.id.modal_content_root);
 
-    setMessage(message);
-    setLayoutConfig(config);
-    setDismissListener(dismissOnClickListener);
-    setActionListener(actionListener);
-
-    setModalColorOverrides();
-    setButtonColorOverrides();
-
+    if (message.getMessageType().equals(MessageType.MODAL)) {
+      modalMessage = (ModalMessage) message;
+      setMessage(modalMessage);
+      setButton(actionListeners);
+      setLayoutConfig(config);
+      setDismissListener(dismissOnClickListener);
+      setViewBgColorFromHex(modalContentRoot, modalMessage.getBackgroundHexColor());
+    }
     return layoutListener;
   }
 
@@ -106,6 +110,16 @@ public class ModalBindingWrapper extends BindingWrapper {
   }
 
   @NonNull
+  public View getScrollView() {
+    return bodyScroll;
+  }
+
+  @NonNull
+  public View getTitleView() {
+    return messageTitle;
+  }
+
+  @NonNull
   @Override
   public InAppMessageLayoutConfig getConfig() {
     return config;
@@ -121,8 +135,8 @@ public class ModalBindingWrapper extends BindingWrapper {
     return collapseImage;
   }
 
-  private void setMessage(InAppMessage message) {
-    if (TextUtils.isEmpty(message.getImageUrl())) {
+  private void setMessage(ModalMessage message) {
+    if (message.getImageData() == null || TextUtils.isEmpty(message.getImageData().getImageUrl())) {
       imageView.setVisibility(View.GONE);
     } else {
       imageView.setVisibility(View.VISIBLE);
@@ -141,23 +155,29 @@ public class ModalBindingWrapper extends BindingWrapper {
       }
     }
 
+    // eventually we should no longer need to check for the text of the body
     if (message.getBody() != null && !TextUtils.isEmpty(message.getBody().getText())) {
       bodyScroll.setVisibility(View.VISIBLE);
+      messageBody.setVisibility(View.VISIBLE);
+      messageBody.setTextColor(Color.parseColor(message.getBody().getHexColor()));
+      messageBody.setText(message.getBody().getText());
     } else {
       bodyScroll.setVisibility(View.GONE);
+      messageBody.setVisibility(View.GONE);
     }
+  }
 
-    if (message.getBody() != null) {
-      if (!TextUtils.isEmpty(message.getBody().getText())) {
-        messageBody.setVisibility(View.VISIBLE);
-        messageBody.setText(message.getBody().getText());
-      } else {
-        messageBody.setVisibility(View.GONE);
-      }
-
-      if (!TextUtils.isEmpty(message.getBody().getHexColor())) {
-        messageBody.setTextColor(Color.parseColor(message.getBody().getHexColor()));
-      }
+  private void setButton(Map<Action, View.OnClickListener> actionListeners) {
+    Action modalAction = modalMessage.getAction();
+    // Right now we have to check for text not being empty but this should be fixed in the future
+    if (modalAction != null
+        && modalAction.getButton() != null
+        && !TextUtils.isEmpty(modalAction.getButton().getText().getText())) {
+      setupViewButtonFromModel(button, modalAction.getButton());
+      setButtonActionListener(button, actionListeners.get(modalMessage.getAction()));
+      button.setVisibility(View.VISIBLE);
+    } else {
+      button.setVisibility(View.GONE);
     }
   }
 
@@ -169,53 +189,6 @@ public class ModalBindingWrapper extends BindingWrapper {
   private void setDismissListener(View.OnClickListener dismissListener) {
     collapseImage.setOnClickListener(dismissListener);
     modalRoot.setDismissListener(dismissListener);
-  }
-
-  private void setActionListener(View.OnClickListener actionListener) {
-    button.setOnClickListener(actionListener);
-  }
-
-  private void setButtonColorOverrides() {
-    // Set the background color of the getAction button to be the FIAM color. We do this explicitly
-    // to
-    // allow for a rounded modal (b/c overloaded background for shape and color)
-
-    if (button != null
-        && message.getActionButton() != null
-        && message.getActionButton().getButtonHexColor() != null) {
-      int buttonColor = Color.parseColor(message.getActionButton().getButtonHexColor());
-
-      // Tint the button based on the background color
-      Drawable drawable = button.getBackground();
-      Drawable compatDrawable = DrawableCompat.wrap(drawable);
-      DrawableCompat.setTint(compatDrawable, buttonColor);
-      button.setBackground(compatDrawable);
-
-      if (message.getActionButton() != null && message.getActionButton().getText() != null) {
-        if (!TextUtils.isEmpty(message.getActionButton().getText().getText())) {
-          button.setVisibility(View.VISIBLE);
-          button.setText(message.getActionButton().getText().getText());
-        } else {
-          button.setVisibility(View.GONE);
-        }
-        String buttonTextColorStr = message.getActionButton().getText().getHexColor();
-
-        if (!TextUtils.isEmpty(buttonTextColorStr)) {
-          button.setTextColor(Color.parseColor(buttonTextColorStr));
-        }
-      }
-    } else {
-      button.setVisibility(View.GONE);
-    }
-  }
-
-  private void setModalColorOverrides() {
-    // Set the background color of the Modal to be the FIAM color. We do this explicitly to
-    // allow for a rounded modal (b/c overloaded background for shape and color)
-
-    if (modalContentRoot != null) {
-      setGradientDrawableBgColor(modalContentRoot, message.getBackgroundHexColor());
-    }
   }
 
   @VisibleForTesting

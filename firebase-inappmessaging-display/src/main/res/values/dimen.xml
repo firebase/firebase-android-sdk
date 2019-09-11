@@ -5,8 +5,8 @@
 
   <dimen name="paddingSmall">16dp</dimen>
 
-  <item name="modalPortraitHeightPct" format="float" type="dimen">0.80</item>
-  <item name="modalPortraitWidthPct" format="float" type="dimen">0.85</item>
+  <item name="dialogHeightPct" format="float" type="dimen">0.80</item>
+  <item name="dialogWidthPct" format="float" type="dimen">0.85</item>
 
   <!-- In portrait, banner fills available. -->
   <item name="bannerWeightSum" format="float" type="dimen">1.0</item>

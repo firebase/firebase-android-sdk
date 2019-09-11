@@ -7,4 +7,3 @@ package com.google.firebase.inappmessaging.display {
   }
 
 }
-

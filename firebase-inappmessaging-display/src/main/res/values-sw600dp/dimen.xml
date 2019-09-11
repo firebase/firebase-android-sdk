@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="modalPortraitHeightPct" format="float" type="dimen">0.60</item>
-    <item name="modalPortraitWidthPct" format="float" type="dimen">0.50</item>
+    <item name="dialogHeightPct" format="float" type="dimen">0.80</item>
+    <item name="dialogWidthPct" format="float" type="dimen">0.75</item>
 </resources>
