@@ -14,8 +14,12 @@
 
 package com.google.firebase.firestore;
 
+import android.content.Context;
+
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import java.util.HashMap;
@@ -29,10 +33,12 @@ public class HeartBeatTesterTest {
 
   @Test
   public void testHeartBeatTime() {
+    Context context = ApplicationProvider.getApplicationContext();
+    FirebaseApp.initializeApp(context);
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     String str = android.os.Build.MODEL;
     long startTime = System.currentTimeMillis();
-    HeartBeatInfo info = new DefaultHeartBeatInfo(ApplicationProvider.getApplicationContext());
+    HeartBeatInfo info = new DefaultHeartBeatInfo(context);
     info.getHeartBeatCode("foo");
     long endTime = System.currentTimeMillis();
     Map<String, Long> data = new HashMap<>();
