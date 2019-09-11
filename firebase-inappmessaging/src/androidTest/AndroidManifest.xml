@@ -1,0 +1,21 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.google.firebase.inappmessaging">
+
+  <uses-sdk
+      android:minSdkVersion="16"
+      android:targetSdkVersion="23"/>
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <application>
+    <uses-library android:name="android.test.runner"/>
+    <service tools:node="replace" android:name="com.google.firebase.components.ComponentDiscoveryService">
+         <meta-data
+              android:name="com.google.firebase.components:com.google.firebase.iid.Registrar"
+              android:value="com.google.firebase.components.ComponentRegistrar" />
+    </service>
+  </application>
+
+  <instrumentation
+      android:name="androidx.test.runner.AndroidJUnitRunner"
+      android:targetPackage="com.google.firebase.inappmessaging"/>
+</manifest>

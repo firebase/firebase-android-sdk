@@ -29,7 +29,8 @@ import com.google.firebase.inappmessaging.display.internal.injection.components.
 import com.google.firebase.inappmessaging.display.internal.injection.components.UniversalComponent;
 import com.google.firebase.inappmessaging.display.internal.injection.modules.ApplicationModule;
 import com.google.firebase.inappmessaging.display.internal.injection.modules.HeadlessInAppMessagingModule;
-import java.util.Collections;
+import com.google.firebase.platforminfo.LibraryVersionComponent;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -42,14 +43,15 @@ public class FirebaseInAppMessagingDisplayRegistrar implements ComponentRegistra
   @Override
   @Keep
   public List<Component<?>> getComponents() {
-    return Collections.singletonList(
+    return Arrays.asList(
         Component.builder(FirebaseInAppMessagingDisplay.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(AnalyticsConnector.class))
             .add(Dependency.required(FirebaseInAppMessaging.class))
-            .factory(c -> buildFirebaseInAppMessagingUI(c))
+            .factory(this::buildFirebaseInAppMessagingUI)
             .eagerInDefaultApp()
-            .build());
+            .build(),
+        LibraryVersionComponent.create("fire-fiamd", BuildConfig.VERSION_NAME));
   }
 
   private FirebaseInAppMessagingDisplay buildFirebaseInAppMessagingUI(
