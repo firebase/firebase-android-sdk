@@ -20,6 +20,7 @@ import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -35,7 +36,8 @@ public class HeartBeatTesterTest {
     info.getHeartBeatCode("foo");
     long endTime = System.currentTimeMillis();
     Map<String, Long> data = new HashMap<>();
-    data.put("HeartBeatTime"+str, endTime - startTime);
+    String keyName = String.format("HeartBeatTime/%s/%s", str, UUID.randomUUID().toString());
+    data.put(keyName, endTime - startTime);
     db.collection("HeartBeatTime").document("BJ").set(data, SetOptions.merge());
   }
 }
