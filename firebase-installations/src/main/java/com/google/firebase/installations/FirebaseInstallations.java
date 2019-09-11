@@ -20,7 +20,6 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.tasks.Continuation;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -30,7 +29,6 @@ import com.google.firebase.installations.local.PersistedFidEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -117,6 +115,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return getId(null);
   }
 
+  /**
+   * Returns a globally unique identifier of this Firebase app installation.Also, updates the {@link
+   * AwaitListener} when the FID registration is complete.
+   */
   private Task<String> getId(AwaitListener awaitListener) {
     return Tasks.call(executor, this::getPersistedFid)
         .continueWith(orElse(this::createAndPersistNewFid))
@@ -400,23 +402,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private long currentTimeInSecs() {
     return TimeUnit.MILLISECONDS.toSeconds(clock.currentTimeMillis());
-  }
-
-  private static final class AwaitListener implements OnCompleteListener<Void> {
-    private final CountDownLatch mLatch = new CountDownLatch(1);
-
-    public void onSuccess() {
-      mLatch.countDown();
-    }
-
-    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-      return mLatch.await(timeout, unit);
-    }
-
-    @Override
-    public void onComplete(@NonNull Task<Void> task) {
-      mLatch.countDown();
-    }
   }
 }
 
