@@ -31,7 +31,6 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
-import com.google.firebase.firestore.grpc.GrpcMetadata;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LruDelegate;
@@ -50,6 +49,7 @@ import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
 import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.Datastore;
+import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
@@ -78,7 +78,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
-  private final GrpcMetadata metadata;
+  private final GrpcMetadataProvider metadata;
 
   // LRU-related
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
@@ -89,7 +89,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       FirebaseFirestoreSettings settings,
       CredentialsProvider credentialsProvider,
       final AsyncQueue asyncQueue,
-      @Nullable GrpcMetadata metadata) {
+      @Nullable GrpcMetadataProvider metadata) {
     this.databaseInfo = databaseInfo;
     this.credentialsProvider = credentialsProvider;
     this.asyncQueue = asyncQueue;

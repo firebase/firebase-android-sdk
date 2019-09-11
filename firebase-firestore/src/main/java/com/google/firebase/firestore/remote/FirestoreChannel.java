@@ -24,7 +24,6 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
-import com.google.firebase.firestore.grpc.GrpcMetadata;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Util;
@@ -65,16 +64,16 @@ class FirestoreChannel {
   /** The value to use as resource prefix header. */
   private final String resourcePrefixValue;
 
-  private final GrpcMetadata grpcMetadata;
+  private final GrpcMetadataProvider grpcMetadataProvider;
 
   FirestoreChannel(
       AsyncQueue asyncQueue,
       Context context,
       CredentialsProvider credentialsProvider,
       DatabaseInfo databaseInfo,
-      GrpcMetadata metadata) {
+      GrpcMetadataProvider metadata) {
     this.asyncQueue = asyncQueue;
-    this.grpcMetadata = metadata;
+    this.grpcMetadataProvider = metadata;
     this.credentialsProvider = credentialsProvider;
 
     FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(credentialsProvider);
@@ -288,8 +287,8 @@ class FirestoreChannel {
     headers.put(X_GOOG_API_CLIENT_HEADER, X_GOOG_API_CLIENT_VALUE);
     // This header is used to improve routing and project isolation by the backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
-    if (grpcMetadata != null) {
-      grpcMetadata.updateMetadata(headers);
+    if (grpcMetadataProvider != null) {
+      grpcMetadataProvider.updateMetadata(headers);
     }
     return headers;
   }

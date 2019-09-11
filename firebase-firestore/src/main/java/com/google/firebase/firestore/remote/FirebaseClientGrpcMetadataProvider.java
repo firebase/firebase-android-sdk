@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.grpc;
+package com.google.firebase.firestore.remote;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
@@ -20,11 +20,11 @@ import com.google.firebase.platforminfo.UserAgentPublisher;
 import io.grpc.Metadata;
 
 /**
- * Class provides an implementation of the GrpcMetadata interface.
+ * Class provides an implementation of the GrpcMetadataProvider interface.
  *
  * <p>This updates the metadata with platformInfo string and the heartBeatInfo code.
  */
-public class DefaultGrpcMetadata implements GrpcMetadata {
+public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider {
 
   private final HeartBeatInfo heartBeatInfo;
   private final UserAgentPublisher userAgentPublisher;
@@ -36,7 +36,7 @@ public class DefaultGrpcMetadata implements GrpcMetadata {
   private static final Metadata.Key<String> USER_AGENT_HEADER =
       Metadata.Key.of("x-firebase-client", Metadata.ASCII_STRING_MARSHALLER);
 
-  public DefaultGrpcMetadata(
+  public FirebaseClientGrpcMetadataProvider(
       @NonNull UserAgentPublisher userAgentPublisher, @NonNull HeartBeatInfo heartBeatInfo) {
     this.userAgentPublisher = userAgentPublisher;
     this.heartBeatInfo = heartBeatInfo;
@@ -45,8 +45,12 @@ public class DefaultGrpcMetadata implements GrpcMetadata {
   @Override
   public void updateMetadata(@NonNull Metadata metadata) {
     metadata.put(USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
-    metadata.put(
-        HEART_BEAT_HEADER,
-        Integer.toString(heartBeatInfo.getHeartBeatCode(firebaseFirestoreHeartBeatTag).getCode()));
+    int heartBeatCode = heartBeatInfo.getHeartBeatCode(firebaseFirestoreHeartBeatTag).getCode();
+    if (heartBeatCode != 0) {
+      metadata.put(
+          HEART_BEAT_HEADER,
+          Integer.toString(
+              heartBeatInfo.getHeartBeatCode(firebaseFirestoreHeartBeatTag).getCode()));
+    }
   }
 }
