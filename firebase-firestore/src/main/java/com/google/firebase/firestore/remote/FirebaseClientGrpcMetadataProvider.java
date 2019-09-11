@@ -16,6 +16,7 @@ package com.google.firebase.firestore.remote;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import io.grpc.Metadata;
 
@@ -26,8 +27,8 @@ import io.grpc.Metadata;
  */
 public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider {
 
-  private final HeartBeatInfo heartBeatInfo;
-  private final UserAgentPublisher userAgentPublisher;
+  private final Provider<HeartBeatInfo> heartBeatInfoProvider;
+  private final Provider<UserAgentPublisher> userAgentPublisherProvider;
   private final String firebaseFirestoreHeartBeatTag = "fire-fst";
 
   private static final Metadata.Key<String> HEART_BEAT_HEADER =
@@ -37,15 +38,17 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
       Metadata.Key.of("x-firebase-client", Metadata.ASCII_STRING_MARSHALLER);
 
   public FirebaseClientGrpcMetadataProvider(
-      @NonNull UserAgentPublisher userAgentPublisher, @NonNull HeartBeatInfo heartBeatInfo) {
-    this.userAgentPublisher = userAgentPublisher;
-    this.heartBeatInfo = heartBeatInfo;
+      @NonNull Provider<UserAgentPublisher> userAgentPublisherProvider,
+      @NonNull Provider<HeartBeatInfo> heartBeatInfoProvider) {
+    this.userAgentPublisherProvider = userAgentPublisherProvider;
+    this.heartBeatInfoProvider = heartBeatInfoProvider;
   }
 
   @Override
   public void updateMetadata(@NonNull Metadata metadata) {
-    metadata.put(USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
-    int heartBeatCode = heartBeatInfo.getHeartBeatCode(firebaseFirestoreHeartBeatTag).getCode();
+    metadata.put(USER_AGENT_HEADER, userAgentPublisherProvider.get().getUserAgent());
+    int heartBeatCode =
+        heartBeatInfoProvider.get().getHeartBeatCode(firebaseFirestoreHeartBeatTag).getCode();
     // Non-zero values indicate some kind of heartbeat should be sent
     if (heartBeatCode != 0) {
       metadata.put(HEART_BEAT_HEADER, Integer.toString(heartBeatCode));

@@ -54,7 +54,8 @@ public class FirestoreRegistrar implements ComponentRegistrar {
                         c.get(FirebaseApp.class),
                         c.get(InternalAuthProvider.class),
                         new FirebaseClientGrpcMetadataProvider(
-                            c.get(UserAgentPublisher.class), c.get(HeartBeatInfo.class))))
+                            c.getProvider(UserAgentPublisher.class),
+                            c.getProvider(HeartBeatInfo.class))))
             .build(),
         LibraryVersionComponent.create("fire-fst", BuildConfig.VERSION_NAME));
   }
