@@ -18,16 +18,18 @@
 
 ############################################################
 ## Note, running this will incur any FTL-related charges. ##
+## We do require manual setting of the script arguments   ##
+## to ensure you've read this notice.                     ##
 ############################################################
 
-PROJECT_NAME = {{ADD YOUR PROJECT NAME HERE}}
-BUCKET_NAME = {{ADD YOUR BUCKET NAME HERE}}
+PROJECT_NAME = {{add your project id here}}
+BUCKET_NAME = {{add your bucket name here}}
 
 # Assemble the app
 ./gradlew :fiamui-app:assembleDebug :fiamui-app:assembleDebugAndroidTest
 
 # Choose the project
-gcloud config set project $PROJECT_NAME
+gcloud config set project $PROJECT_ID
 
 # Show the storage bucket
 echo "Tests launching!"

@@ -16,13 +16,13 @@ apply plugin: "com.android.application"
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 android {
-  compileSdkVersion 28
+  compileSdkVersion project.targetSdkVersion
   testBuildType 'release'
 
   defaultConfig {
     applicationId "com.example.firebase.fiamui"
     minSdkVersion 16
-    targetSdkVersion 28
+    targetSdkVersion project.targetSdkVersion
     versionCode 1
     versionName "1.0"
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -56,6 +56,7 @@ android {
 dependencies {
   implementation project(path: ":firebase-inappmessaging-display")
   implementation project(path: ":firebase-inappmessaging")
+  implementation "com.google.firebase:firebase-measurement-connector:18.0.0"
 
   implementation('com.google.firebase:firebase-analytics:17.0.0') {
     exclude group: 'com.google.firebase', module: 'firebase-common'
