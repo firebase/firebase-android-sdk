@@ -23,6 +23,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.google.android.datatransport.cct.CctTransportBackend.getTzOffset;
 import static com.google.android.datatransport.cct.ProtoMatchers.protoMatcher;
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
@@ -30,6 +31,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.ProtoMatchers.PredicateMatcher;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
 import com.google.android.datatransport.cct.proto.LogEvent;
@@ -47,6 +49,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Config;
+import org.robolectric.annotation.Implementation;
+import org.robolectric.annotation.Implements;
 
 @RunWith(RobolectricTestRunner.class)
 public class CctTransportBackendTest {
@@ -68,6 +73,7 @@ public class CctTransportBackendTest {
       firstLogRequestMatcher.zoom(b -> b.getLogEvent(1));
 
   private static final String TEST_ENDPOINT = "http://localhost:8999/api";
+  private static final String API_KEY = "api_key";
   private TestClock wallClock = new TestClock(INITIAL_WALL_TIME);
   private TestClock uptimeClock = new TestClock(INITIAL_UPTIME);
   private CctTransportBackend BACKEND =
@@ -76,7 +82,7 @@ public class CctTransportBackendTest {
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(8999);
 
-  private BackendRequest getBackendRequest() {
+  private BackendRequest getCCTBackendRequest() {
     return BackendRequest.create(
         Arrays.asList(
             BACKEND.decorate(
@@ -96,8 +102,31 @@ public class CctTransportBackendTest {
                     .build())));
   }
 
+  private BackendRequest getLegacyFirelogBackendRequest() {
+    return BackendRequest.builder()
+        .setEvents(
+            Arrays.asList(
+                BACKEND.decorate(
+                    EventInternal.builder()
+                        .setEventMillis(INITIAL_WALL_TIME)
+                        .setUptimeMillis(INITIAL_UPTIME)
+                        .setTransportName("4")
+                        .setPayload(PAYLOAD.toByteArray())
+                        .build()),
+                BACKEND.decorate(
+                    EventInternal.builder()
+                        .setEventMillis(INITIAL_WALL_TIME)
+                        .setUptimeMillis(INITIAL_UPTIME)
+                        .setTransportName("4")
+                        .setPayload(PAYLOAD.toByteArray())
+                        .setCode(CODE)
+                        .build())))
+        .setExtras(LegacyFlgDestination.encodeString(API_KEY))
+        .build();
+  }
+
   @Test
-  public void testSuccessLoggingRequest() {
+  public void testCCTSuccessLoggingRequest() {
     stubFor(
         post(urlEqualTo("/api"))
             .willReturn(
@@ -109,7 +138,7 @@ public class CctTransportBackendTest {
                             .setNextRequestWaitMillis(3)
                             .build()
                             .toByteArray())));
-    BackendRequest backendRequest = getBackendRequest();
+    BackendRequest backendRequest = getCCTBackendRequest();
     wallClock.tick();
     uptimeClock.tick();
 
@@ -122,6 +151,9 @@ public class CctTransportBackendTest {
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
+            .withHeader(
+                "User-Agent",
+                equalTo(String.format("datatransport/%s android/", BuildConfig.VERSION_NAME)))
             .withHeader("Content-Type", equalTo("application/x-protobuf"))
             .andMatching(batchRequestMatcher.test(batch -> batch.getLogRequestCount() == 1))
             .andMatching(
@@ -146,27 +178,50 @@ public class CctTransportBackendTest {
             .andMatching(firstLogEventMatcher.test(e -> e.getEventCode() == 0))
             .andMatching(secondLogEventMatcher.test(e -> e.getEventCode() == 5)));
 
-    assertEquals(response, BackendResponse.ok(3));
+    assertEquals(BackendResponse.ok(3), response);
+  }
+
+  @Test
+  public void testLegacyFlgSuccessLoggingRequest_containsAPIKey() {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BACKEND.send(getLegacyFirelogBackendRequest());
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, equalTo(API_KEY)));
   }
 
   @Test
   public void testUnsuccessfulLoggingRequest() {
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(404)));
-    BackendResponse response = BACKEND.send(getBackendRequest());
+    BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response, BackendResponse.transientError());
+    assertEquals(BackendResponse.transientError(), response);
   }
 
   @Test
   public void testServerErrorLoggingRequest() {
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(500)));
-    BackendResponse response = BACKEND.send(getBackendRequest());
+    BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response, BackendResponse.transientError());
+    assertEquals(BackendResponse.transientError(), response);
   }
 
   @Test
@@ -178,21 +233,21 @@ public class CctTransportBackendTest {
                     .withStatus(200)
                     .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
                     .withBody("{\"status\":\"Error\",\"message\":\"Endpoint not found\"}")));
-    BackendResponse response = BACKEND.send(getBackendRequest());
+    BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response, BackendResponse.fatalError());
+    assertEquals(BackendResponse.transientError(), response);
   }
 
   @Test
   public void testNonHandledResponseCode() {
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(300)));
-    BackendResponse response = BACKEND.send(getBackendRequest());
+    BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
-    assertEquals(response, BackendResponse.fatalError());
+    assertEquals(BackendResponse.fatalError(), response);
   }
 
   @Test
@@ -201,8 +256,126 @@ public class CctTransportBackendTest {
         new CctTransportBackend(
             RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock, 300);
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withFixedDelay(500)));
-    BackendResponse response = backend.send(getBackendRequest());
+    BackendResponse response = backend.send(getCCTBackendRequest());
 
-    assertEquals(response, BackendResponse.transientError());
+    assertEquals(BackendResponse.transientError(), response);
+  }
+
+  @Test
+  public void decorate_whenOnline_shouldProperlyPopulateNetworkInfo() {
+    CctTransportBackend backend =
+        new CctTransportBackend(
+            RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock, 300);
+
+    EventInternal result =
+        backend.decorate(
+            EventInternal.builder()
+                .setEventMillis(INITIAL_WALL_TIME)
+                .setUptimeMillis(INITIAL_UPTIME)
+                .setTransportName("3")
+                .setPayload(PAYLOAD.toByteArray())
+                .build());
+
+    assertThat(result.get(CctTransportBackend.KEY_NETWORK_TYPE))
+        .isEqualTo(String.valueOf(NetworkConnectionInfo.NetworkType.MOBILE_VALUE));
+    assertThat(result.get(CctTransportBackend.KEY_MOBILE_SUBTYPE))
+        .isEqualTo(String.valueOf(NetworkConnectionInfo.MobileSubtype.EDGE_VALUE));
+  }
+
+  @Test
+  @Config(shadows = {OfflineConnectivityManagerShadow.class})
+  public void decorate_whenOffline_shouldProperlyPopulateNetworkInfo() {
+    CctTransportBackend backend =
+        new CctTransportBackend(
+            RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock, 300);
+
+    EventInternal result =
+        backend.decorate(
+            EventInternal.builder()
+                .setEventMillis(INITIAL_WALL_TIME)
+                .setUptimeMillis(INITIAL_UPTIME)
+                .setTransportName("3")
+                .setPayload(PAYLOAD.toByteArray())
+                .build());
+
+    assertThat(result.get(CctTransportBackend.KEY_NETWORK_TYPE))
+        .isEqualTo(String.valueOf(NetworkConnectionInfo.NetworkType.NONE_VALUE));
+    assertThat(result.get(CctTransportBackend.KEY_MOBILE_SUBTYPE))
+        .isEqualTo(
+            String.valueOf(NetworkConnectionInfo.MobileSubtype.UNKNOWN_MOBILE_SUBTYPE_VALUE));
+  }
+
+  @Test
+  public void send_whenBackendRedirects_shouldCorrectlyFollowTheRedirectViaPost() {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse().withStatus(302).withHeader("Location", TEST_ENDPOINT + "/hello")));
+    stubFor(
+        post(urlEqualTo("/api/hello"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    BackendRequest backendRequest = getCCTBackendRequest();
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+
+    verify(
+        postRequestedFor(urlEqualTo("/api/hello"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+
+    assertEquals(BackendResponse.ok(3), response);
+  }
+
+  @Test
+  public void send_whenBackendRedirectsMoreThan5Times_shouldOnlyRedirect4Times() {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse().withStatus(302).withHeader("Location", TEST_ENDPOINT + "/hello")));
+    stubFor(
+        post(urlEqualTo("/api/hello"))
+            .willReturn(
+                aResponse().withStatus(302).withHeader("Location", TEST_ENDPOINT + "/hello")));
+
+    BackendRequest backendRequest = getCCTBackendRequest();
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+
+    verify(
+        4,
+        postRequestedFor(urlEqualTo("/api/hello"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+
+    assertEquals(BackendResponse.fatalError(), response);
+  }
+
+  // When there is no active network, the ConnectivityManager returns null when
+  // getActiveNetworkInfo() is called.
+  @Implements(ConnectivityManager.class)
+  public static class OfflineConnectivityManagerShadow {
+
+    @Implementation
+    public NetworkInfo getActiveNetworkInfo() {
+      return null;
+    }
   }
 }

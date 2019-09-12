@@ -16,15 +16,13 @@ package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RestrictTo;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
 
-/** Immutable class representing an array of bytes in Firestore. */
-@PublicApi
+/** Immutable class representing an array of bytes in Cloud Firestore. */
 public class Blob implements Comparable<Blob> {
   private final ByteString bytes;
 
@@ -33,13 +31,13 @@ public class Blob implements Comparable<Blob> {
   }
 
   /**
-   * Creates a new Blob instance from the provided bytes. Will make a copy of the bytes passed in.
+   * Creates a new {@code Blob} instance from the provided bytes. Will make a copy of the bytes
+   * passed in.
    *
-   * @param bytes The bytes to use for this Blob instance.
-   * @return The new Blob instance
+   * @param bytes The bytes to use for this {@code Blob} instance.
+   * @return The new {@code Blob} instance
    */
   @NonNull
-  @PublicApi
   public static Blob fromBytes(@NonNull byte[] bytes) {
     checkNotNull(bytes, "Provided bytes array must not be null.");
     return new Blob(ByteString.copyFrom(bytes));
@@ -55,7 +53,6 @@ public class Blob implements Comparable<Blob> {
 
   /** @return The bytes of this blob as a new byte[] array. */
   @NonNull
-  @PublicApi
   public byte[] toBytes() {
     return bytes.toByteArray();
   }
@@ -84,7 +81,6 @@ public class Blob implements Comparable<Blob> {
   }
 
   @Override
-  @PublicApi
   public int compareTo(@NonNull Blob other) {
     int size = Math.min(bytes.size(), other.bytes.size());
     for (int i = 0; i < size; i++) {

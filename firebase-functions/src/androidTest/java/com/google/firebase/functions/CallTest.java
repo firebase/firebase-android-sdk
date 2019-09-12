@@ -20,8 +20,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -220,6 +220,7 @@ public class CallTest {
 
     HttpsCallableReference function =
         functions.getHttpsCallable("timeoutTest").withTimeout(10, TimeUnit.MILLISECONDS);
+    assertEquals(10, function.getTimeout());
     Task<HttpsCallableResult> result = function.call();
     ExecutionException exe = assertThrows(ExecutionException.class, () -> Tasks.await(result));
     Throwable cause = exe.getCause();

@@ -14,8 +14,8 @@
 
 package com.google.firebase.functions;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import java.util.concurrent.TimeUnit;
 
@@ -37,7 +37,6 @@ public class HttpsCallableReference {
     this.name = name;
   }
 
-  @NonNull
   /**
    * Executes this Callable HTTPS trigger asynchronously.
    *
@@ -77,11 +76,11 @@ public class HttpsCallableReference {
    * @see java.io.IOException
    * @see FirebaseFunctionsException
    */
+  @NonNull
   public Task<HttpsCallableResult> call(@Nullable Object data) {
     return functionsClient.call(name, data, options);
   }
 
-  @NonNull
   /**
    * Executes this HTTPS endpoint asynchronously without arguments.
    *
@@ -96,6 +95,7 @@ public class HttpsCallableReference {
    *
    * @return A Task that will be completed when the HTTPS request has completed.
    */
+  @NonNull
   public Task<HttpsCallableResult> call() {
     return functionsClient.call(name, null, options);
   }
@@ -110,13 +110,22 @@ public class HttpsCallableReference {
     options.setTimeout(timeout, units);
   }
 
-  @NonNull
+  /**
+   * Returns the timeout for calls from this instance of Functions.
+   *
+   * @return The timeout, in milliseconds.
+   */
+  public long getTimeout() {
+    return options.getTimeout();
+  }
+
   /**
    * Creates a new reference with the given timeout for calls. The default is 60 seconds.
    *
    * @param timeout The length of the timeout, in the given units.
    * @param units The units for the specified timeout.
    */
+  @NonNull
   public HttpsCallableReference withTimeout(long timeout, @NonNull TimeUnit units) {
     HttpsCallableReference other = new HttpsCallableReference(functionsClient, name);
     other.setTimeout(timeout, units);

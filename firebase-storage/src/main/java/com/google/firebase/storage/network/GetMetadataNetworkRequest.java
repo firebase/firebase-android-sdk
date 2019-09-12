@@ -15,7 +15,7 @@
 package com.google.firebase.storage.network;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 
 /** A network request that returns metadata on a gcs object. */

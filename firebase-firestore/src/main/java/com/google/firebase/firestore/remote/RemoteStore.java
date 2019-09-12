@@ -16,8 +16,8 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Transaction;
@@ -478,7 +478,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     }
   }
 
-  private boolean canUseNetwork() {
+  public boolean canUseNetwork() {
     // PORTING NOTE: This method exists mostly because web also has to take into account primary
     // vs. secondary state.
     return networkEnabled;
@@ -504,9 +504,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         // A watched target might have been removed already.
         if (queryData != null) {
           this.listenTargets.put(
-              targetId,
-              queryData.copy(
-                  snapshotVersion, targetChange.getResumeToken(), queryData.getSequenceNumber()));
+              targetId, queryData.withResumeToken(targetChange.getResumeToken(), snapshotVersion));
         }
       }
     }
@@ -519,9 +517,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       if (queryData != null) {
         // Clear the resume token for the query, since we're in a known mismatch state.
         this.listenTargets.put(
-            targetId,
-            queryData.copy(
-                queryData.getSnapshotVersion(), ByteString.EMPTY, queryData.getSequenceNumber()));
+            targetId, queryData.withResumeToken(ByteString.EMPTY, queryData.getSnapshotVersion()));
 
         // Cause a hard reset by unwatching and rewatching immediately, but deliberately don't send
         // a resume token so that we get a full update.

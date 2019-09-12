@@ -14,7 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import java.util.ArrayList;
@@ -100,6 +100,18 @@ public class InMemoryEventStore implements EventStore {
       events.add(PersistedEvent.create(entry.getKey(), transportContext, entry.getValue()));
     }
     return events;
+  }
+
+  @Override
+  public synchronized Iterable<TransportContext> loadActiveContexts() {
+    List<TransportContext> results = new ArrayList<>();
+    for (Map.Entry<TransportContext, Map<Long, EventInternal>> entry : store.entrySet()) {
+      if (entry.getValue().isEmpty()) {
+        continue;
+      }
+      results.add(entry.getKey());
+    }
+    return results;
   }
 
   @Override

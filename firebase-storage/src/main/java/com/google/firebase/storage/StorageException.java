@@ -14,52 +14,50 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.IntDef;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
+import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseException;
-import com.google.firebase.annotations.PublicApi;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /** Represents an Exception resulting from an operation on a {@link StorageReference}. */
-@PublicApi
 public class StorageException extends FirebaseException {
   private static final String TAG = "StorageException";
 
-  @PublicApi public static final int ERROR_UNKNOWN = -13000;
-  @PublicApi public static final int ERROR_OBJECT_NOT_FOUND = -13010;
-  @PublicApi public static final int ERROR_BUCKET_NOT_FOUND = -13011;
-  @PublicApi public static final int ERROR_PROJECT_NOT_FOUND = -13012;
-  @PublicApi public static final int ERROR_QUOTA_EXCEEDED = -13013;
-  @PublicApi public static final int ERROR_NOT_AUTHENTICATED = -13020;
-  @PublicApi public static final int ERROR_NOT_AUTHORIZED = -13021;
-  @PublicApi public static final int ERROR_RETRY_LIMIT_EXCEEDED = -13030;
-  @PublicApi public static final int ERROR_INVALID_CHECKSUM = -13031;
-  @PublicApi public static final int ERROR_CANCELED = -13040;
+  public static final int ERROR_UNKNOWN = -13000;
+  public static final int ERROR_OBJECT_NOT_FOUND = -13010;
+  public static final int ERROR_BUCKET_NOT_FOUND = -13011;
+  public static final int ERROR_PROJECT_NOT_FOUND = -13012;
+  public static final int ERROR_QUOTA_EXCEEDED = -13013;
+  public static final int ERROR_NOT_AUTHENTICATED = -13020;
+  public static final int ERROR_NOT_AUTHORIZED = -13021;
+  public static final int ERROR_RETRY_LIMIT_EXCEEDED = -13030;
+  public static final int ERROR_INVALID_CHECKSUM = -13031;
+  public static final int ERROR_CANCELED = -13040;
   private static final int NETWORK_UNAVAILABLE = -2;
 
   private final int errorCode;
   private final int httpResultCode;
-  private String detailMessage;
   private Throwable cause;
 
   StorageException(@ErrorCode int errorCode, Throwable inner, int httpResultCode) {
-    this.detailMessage = getErrorMessageForCode(errorCode);
+    super(getErrorMessageForCode(errorCode));
+
     this.cause = inner;
     this.errorCode = errorCode;
     this.httpResultCode = httpResultCode;
     Log.e(
         TAG,
         "StorageException has occurred.\n"
-            + detailMessage
+            + getErrorMessageForCode(errorCode)
             + "\n Code: "
-            + Integer.toString(this.errorCode)
+            + this.errorCode
             + " HttpResult: "
-            + Integer.toString(this.httpResultCode));
+            + this.httpResultCode);
     if (cause != null) {
       Log.e(TAG, cause.getMessage(), cause);
     }
@@ -96,7 +94,6 @@ public class StorageException extends FirebaseException {
   }
 
   @NonNull
-  @PublicApi
   public static StorageException fromErrorStatus(@NonNull Status status) {
     Preconditions.checkNotNull(status);
     Preconditions.checkArgument(!status.isSuccess());
@@ -104,7 +101,6 @@ public class StorageException extends FirebaseException {
   }
 
   @Nullable
-  @PublicApi
   public static StorageException fromExceptionAndHttpCode(
       @Nullable Throwable exception, int httpResultCode) {
     if (exception instanceof StorageException) {
@@ -118,7 +114,6 @@ public class StorageException extends FirebaseException {
   }
 
   @NonNull
-  @PublicApi
   public static StorageException fromException(@NonNull Throwable exception) {
     StorageException se = fromExceptionAndHttpCode(exception, 0);
     assert se != null;
@@ -160,19 +155,9 @@ public class StorageException extends FirebaseException {
     }
   }
 
-  /**
-   * Returns the detail message which was provided when this {@code Throwable} was created. Returns
-   * {@code null} if no message was provided at creation time.
-   */
-  @Override
-  @PublicApi
-  public String getMessage() {
-    return detailMessage;
-  }
-
   /** Returns the cause of this {@code Throwable}, or {@code null} if there is no cause. */
+  @Nullable
   @Override
-  @PublicApi
   public synchronized Throwable getCause() {
     if (cause == this) {
       return null;
@@ -181,14 +166,12 @@ public class StorageException extends FirebaseException {
   }
 
   @ErrorCode
-  @PublicApi
   public int getErrorCode() {
     return errorCode;
   }
 
   /** @return the Http result code (if one exists) from a network operation. */
   @SuppressWarnings("unused")
-  @PublicApi
   public int getHttpResultCode() {
     return httpResultCode;
   }
@@ -198,7 +181,6 @@ public class StorageException extends FirebaseException {
    *     attempt.
    */
   @SuppressWarnings("unused")
-  @PublicApi
   public boolean getIsRecoverableException() {
     return getErrorCode() == ERROR_RETRY_LIMIT_EXCEEDED;
   }
@@ -217,6 +199,5 @@ public class StorageException extends FirebaseException {
     ERROR_INVALID_CHECKSUM,
     ERROR_CANCELED
   })
-  @PublicApi
   public @interface ErrorCode {}
 }

@@ -14,15 +14,14 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
 import com.google.firebase.storage.network.GetNetworkRequest;
 import com.google.firebase.storage.network.NetworkRequest;
@@ -34,28 +33,27 @@ import java.util.concurrent.Callable;
 
 /** A task that downloads bytes of a GCS blob. */
 @SuppressWarnings("unused")
-@PublicApi
 public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnapshot> {
   static final long PREFERRED_CHUNK_SIZE = 256 * 1024;
   private static final String TAG = "StreamDownloadTask";
-  private StorageReference mStorageRef;
-  private ExponentialBackoffSender mSender;
-  private volatile Exception mException = null;
-  private volatile int mResultCode = 0;
-  private StreamProcessor mProcessor;
+  private StorageReference storageRef;
+  private ExponentialBackoffSender sender;
+  private volatile Exception exception = null;
+  private volatile int resultCode = 0;
+  private StreamProcessor processor;
 
-  private long mTotalBytes = -1;
-  private long mBytesDownloaded;
-  private long mBytesDownloadedSnapped;
-  private InputStream mInputStream;
-  private NetworkRequest mRequest;
-  private String mETagVerification;
+  private long totalBytes = -1;
+  private long bytesDownloaded;
+  private long bytesDownloadedSnapped;
+  private InputStream inputStream;
+  private NetworkRequest request;
+  private String eTagVerification;
 
   /*package*/ StreamDownloadTask(@NonNull StorageReference storageRef) {
-    mStorageRef = storageRef;
+    this.storageRef = storageRef;
 
-    FirebaseStorage storage = mStorageRef.getStorage();
-    mSender =
+    FirebaseStorage storage = this.storageRef.getStorage();
+    sender =
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
@@ -71,8 +69,8 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
    */
   /*package*/ StreamDownloadTask setStreamProcessor(@NonNull StreamProcessor processor) {
     Preconditions.checkNotNull(processor);
-    Preconditions.checkState(mProcessor == null);
-    this.mProcessor = processor;
+    Preconditions.checkState(this.processor == null);
+    this.processor = processor;
     return this;
   }
 
@@ -80,7 +78,7 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
   @Override
   @NonNull
   /*package*/ StorageReference getStorage() {
-    return mStorageRef;
+    return storageRef;
   }
 
   /**
@@ -89,16 +87,16 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
    */
   @SuppressWarnings("unused")
   /*package*/ long getTotalBytes() {
-    return mTotalBytes;
+    return totalBytes;
   }
 
   void recordDownloadedBytes(long bytesDownloaded) {
-    mBytesDownloaded += bytesDownloaded;
-    if (mBytesDownloadedSnapped + PREFERRED_CHUNK_SIZE <= mBytesDownloaded) {
+    this.bytesDownloaded += bytesDownloaded;
+    if (bytesDownloadedSnapped + PREFERRED_CHUNK_SIZE <= this.bytesDownloaded) {
       if (getInternalState() == INTERNAL_STATE_IN_PROGRESS) {
         tryChangeState(INTERNAL_STATE_IN_PROGRESS, false);
       } else {
-        mBytesDownloadedSnapped = mBytesDownloaded;
+        bytesDownloadedSnapped = this.bytesDownloaded;
       }
     }
   }
@@ -112,37 +110,37 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
 
   @SuppressWarnings({"JavaDoc", "ThrowableResultOfMethodCallIgnored"})
   private InputStream createDownloadStream() throws Exception {
-    mSender.reset();
+    sender.reset();
 
-    if (mRequest != null) {
-      mRequest.performRequestEnd();
+    if (request != null) {
+      request.performRequestEnd();
     }
 
-    mRequest =
-        new GetNetworkRequest(mStorageRef.getStorageUri(), mStorageRef.getApp(), mBytesDownloaded);
+    request =
+        new GetNetworkRequest(storageRef.getStorageUri(), storageRef.getApp(), bytesDownloaded);
 
-    mSender.sendWithExponentialBackoff(mRequest, false);
-    mResultCode = mRequest.getResultCode();
-    mException = mRequest.getException() != null ? mRequest.getException() : mException;
+    sender.sendWithExponentialBackoff(request, false);
+    resultCode = request.getResultCode();
+    exception = request.getException() != null ? request.getException() : exception;
     boolean success =
-        isValidHttpResponseCode(mResultCode)
-            && mException == null
+        isValidHttpResponseCode(resultCode)
+            && exception == null
             && getInternalState() == INTERNAL_STATE_IN_PROGRESS;
 
     if (success) {
-      String newEtag = mRequest.getResultString("ETag");
+      String newEtag = request.getResultString("ETag");
       if (!TextUtils.isEmpty(newEtag)
-          && mETagVerification != null
-          && !mETagVerification.equals(newEtag)) {
-        mResultCode = HttpURLConnection.HTTP_CONFLICT;
+          && eTagVerification != null
+          && !eTagVerification.equals(newEtag)) {
+        resultCode = HttpURLConnection.HTTP_CONFLICT;
         throw new IOException("The ETag on the server changed.");
       }
 
-      mETagVerification = newEtag;
-      if (mTotalBytes == -1) {
-        mTotalBytes = mRequest.getResultingContentLength();
+      eTagVerification = newEtag;
+      if (totalBytes == -1) {
+        totalBytes = request.getResultingContentLength();
       }
-      return mRequest.getStream();
+      return request.getStream();
     } else {
       throw new IOException("Could not open resulting stream.");
     }
@@ -152,7 +150,7 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
   @SuppressWarnings({"JavaDoc", "ThrowableResultOfMethodCallIgnored"})
   @Override
   /*package*/ void run() {
-    if (mException != null) {
+    if (exception != null) {
       tryChangeState(INTERNAL_STATE_FAILURE, false);
       return;
     }
@@ -170,31 +168,31 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
               }
             },
             StreamDownloadTask.this);
-    mInputStream = new BufferedInputStream(streamWrapper);
+    inputStream = new BufferedInputStream(streamWrapper);
 
     try {
       // Open stream to fetch initial state.
       streamWrapper.ensureStream();
 
-      if (mProcessor != null) {
+      if (processor != null) {
         try {
-          mProcessor.doInBackground(snapState(), mInputStream);
+          processor.doInBackground(snapState(), inputStream);
         } catch (Exception e) {
           Log.w(TAG, "Exception occurred calling doInBackground.", e);
-          mException = e;
+          exception = e;
         }
       }
     } catch (IOException e) {
       Log.d(TAG, "Initial opening of Stream failed", e);
-      mException = e;
+      exception = e;
     }
 
-    if (mInputStream == null) {
-      mRequest.performRequestEnd();
-      mRequest = null;
+    if (inputStream == null) {
+      request.performRequestEnd();
+      request = null;
     }
 
-    boolean success = mException == null && getInternalState() == INTERNAL_STATE_IN_PROGRESS;
+    boolean success = exception == null && getInternalState() == INTERNAL_STATE_IN_PROGRESS;
 
     if (success) {
       tryChangeState(INTERNAL_STATE_IN_PROGRESS, false);
@@ -228,19 +226,18 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
   @Override
   TaskSnapshot snapStateImpl() {
     return new TaskSnapshot(
-        StorageException.fromExceptionAndHttpCode(mException, mResultCode),
-        mBytesDownloadedSnapped);
+        StorageException.fromExceptionAndHttpCode(exception, resultCode), bytesDownloadedSnapped);
   }
 
   @Override
   protected void onCanceled() {
-    mSender.cancel();
-    mException = StorageException.fromErrorStatus(Status.RESULT_CANCELED);
+    sender.cancel();
+    exception = StorageException.fromErrorStatus(Status.RESULT_CANCELED);
   }
 
   @Override
   protected void onProgress() {
-    mBytesDownloadedSnapped = mBytesDownloaded;
+    bytesDownloadedSnapped = bytesDownloaded;
   }
 
   private boolean isValidHttpResponseCode(int code) {
@@ -248,7 +245,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
   }
 
   /** A callback that is used to handle the stream download */
-  @PublicApi
   public interface StreamProcessor {
     /**
      * doInBackground gets called on a background thread and should process the input stream to load
@@ -259,7 +255,8 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
      * @param stream the {@link InputStream} for the downloaded bytes.
      * @throws IOException may be thrown to cancel the operation.
      */
-    void doInBackground(TaskSnapshot state, InputStream stream) throws IOException;
+    void doInBackground(@NonNull TaskSnapshot state, @NonNull InputStream stream)
+        throws IOException;
   }
 
   static class StreamProgressWrapper extends InputStream {
@@ -339,7 +336,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     @Override
-    @PublicApi
     public int read() throws IOException {
       while (ensureStream()) {
         try {
@@ -357,7 +353,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     @Override
-    @PublicApi
     public int available() throws IOException {
       while (ensureStream()) {
         try {
@@ -371,32 +366,28 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     @Override
-    @PublicApi
     public void close() throws IOException {
       if (mWrappedStream != null) {
         mWrappedStream.close();
       }
       mStreamClosed = true;
-      if (mParentTask != null && mParentTask.mRequest != null) {
-        mParentTask.mRequest.performRequestEnd();
-        mParentTask.mRequest = null;
+      if (mParentTask != null && mParentTask.request != null) {
+        mParentTask.request.performRequestEnd();
+        mParentTask.request = null;
       }
 
       checkCancel();
     }
 
     @Override
-    @PublicApi
     public void mark(int readlimit) {}
 
     @Override
-    @PublicApi
     public boolean markSupported() {
       return false;
     }
 
     @Override
-    @PublicApi
     public int read(@NonNull byte[] buffer, int byteOffset, int byteCount) throws IOException {
       int bytesRead = 0;
       while (ensureStream()) {
@@ -435,7 +426,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     @Override
-    @PublicApi
     public long skip(long byteCount) throws IOException {
       long bytesSkipped = 0;
 
@@ -473,7 +463,6 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
   }
 
   /** Encapsulates state about the running {@link StreamDownloadTask} */
-  @PublicApi
   public class TaskSnapshot extends StorageTask<StreamDownloadTask.TaskSnapshot>.SnapshotBase {
     private final long mBytesDownloaded;
 
@@ -488,13 +477,11 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     /** @return the total bytes downloaded so far. */
-    @PublicApi
     public long getBytesTransferred() {
       return mBytesDownloaded;
     }
 
     /** @return the total bytes of the download. */
-    @PublicApi
     public long getTotalByteCount() {
       return StreamDownloadTask.this.getTotalBytes();
     }
@@ -504,9 +491,9 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
      *     closed either in {@link StreamProcessor#doInBackground(TaskSnapshot, InputStream)} or in
      *     {@link OnSuccessListener}, {@link OnFailureListener}
      */
-    @PublicApi
+    @NonNull
     public InputStream getStream() {
-      return StreamDownloadTask.this.mInputStream;
+      return StreamDownloadTask.this.inputStream;
     }
   }
 }

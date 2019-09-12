@@ -17,7 +17,8 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+import android.util.Base64;
+import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
 
@@ -28,15 +29,21 @@ public class JobInfoSchedulerService extends JobService {
   @Override
   public boolean onStartJob(JobParameters params) {
     String backendName = params.getExtras().getString(JobInfoScheduler.BACKEND_NAME);
+    String extras = params.getExtras().getString(JobInfoScheduler.EXTRAS);
+
     int priority = params.getExtras().getInt(JobInfoScheduler.EVENT_PRIORITY);
     int attemptNumber = params.getExtras().getInt(JobInfoScheduler.ATTEMPT_NUMBER);
     TransportRuntime.initialize(getApplicationContext());
+    TransportContext.Builder transportContext =
+        TransportContext.builder().setBackendName(backendName).setPriority(priority);
+
+    if (extras != null) {
+      transportContext.setExtras(Base64.decode(extras, Base64.DEFAULT));
+    }
+
     TransportRuntime.getInstance()
         .getUploader()
-        .upload(
-            TransportContext.builder().setBackendName(backendName).setPriority(priority).build(),
-            attemptNumber,
-            () -> this.jobFinished(params, false));
+        .upload(transportContext.build(), attemptNumber, () -> this.jobFinished(params, false));
     return true;
   }
 

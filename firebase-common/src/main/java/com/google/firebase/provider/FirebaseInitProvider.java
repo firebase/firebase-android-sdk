@@ -21,16 +21,14 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.PublicApi;
 
 /** Initializes Firebase APIs at app startup time. */
-@PublicApi
 public class FirebaseInitProvider extends ContentProvider {
 
   private static final String TAG = "FirebaseInitProvider";
@@ -41,7 +39,7 @@ public class FirebaseInitProvider extends ContentProvider {
       "com.google.firebase.firebaseinitprovider";
 
   @Override
-  public void attachInfo(Context context, ProviderInfo info) {
+  public void attachInfo(@NonNull Context context, @NonNull ProviderInfo info) {
     // super.attachInfo calls onCreate. Fail as early as possible.
     checkContentProviderAuthority(info);
     super.attachInfo(context, info);
@@ -74,29 +72,38 @@ public class FirebaseInitProvider extends ContentProvider {
   @Nullable
   @Override
   public Cursor query(
-      Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+      @NonNull Uri uri,
+      @Nullable String[] projection,
+      @Nullable String selection,
+      @Nullable String[] selectionArgs,
+      @Nullable String sortOrder) {
     return null;
   }
 
   @Nullable
   @Override
-  public String getType(Uri uri) {
+  public String getType(@NonNull Uri uri) {
     return null;
   }
 
   @Nullable
   @Override
-  public Uri insert(Uri uri, ContentValues values) {
+  public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
     return null;
   }
 
   @Override
-  public int delete(Uri uri, String selection, String[] selectionArgs) {
+  public int delete(
+      @NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
     return 0;
   }
 
   @Override
-  public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+  public int update(
+      @NonNull Uri uri,
+      @Nullable ContentValues values,
+      @Nullable String selection,
+      @Nullable String[] selectionArgs) {
     return 0;
   }
 }

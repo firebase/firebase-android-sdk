@@ -15,9 +15,6 @@
 package com.google.firebase.inappmessaging.display.internal.bindingwrappers;
 
 import android.graphics.Color;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RestrictTo;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,12 +22,19 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.firebase.inappmessaging.display.R;
 import com.google.firebase.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.google.firebase.inappmessaging.display.internal.ResizableImageView;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
 import com.google.firebase.inappmessaging.display.internal.layout.FiamFrameLayout;
+import com.google.firebase.inappmessaging.model.Action;
+import com.google.firebase.inappmessaging.model.BannerMessage;
 import com.google.firebase.inappmessaging.model.InAppMessage;
+import com.google.firebase.inappmessaging.model.MessageType;
+import java.util.Map;
 import javax.inject.Inject;
 
 /** @hide */
@@ -49,16 +53,16 @@ public class BannerBindingWrapper extends BindingWrapper {
 
   @Inject
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-  // TODO: Re-order this constructor
   public BannerBindingWrapper(
-      InAppMessage message, LayoutInflater inflater, InAppMessageLayoutConfig config) {
+      InAppMessageLayoutConfig config, LayoutInflater inflater, InAppMessage message) {
     super(config, inflater, message);
   }
 
   @Nullable
   @Override
   public ViewTreeObserver.OnGlobalLayoutListener inflate(
-      View.OnClickListener actionListener, View.OnClickListener dismissOnClickListener) {
+      Map<Action, View.OnClickListener> actionListeners,
+      View.OnClickListener dismissOnClickListener) {
 
     View root = inflater.inflate(R.layout.banner, null);
     bannerRoot = root.findViewById(R.id.banner_root);
@@ -67,20 +71,25 @@ public class BannerBindingWrapper extends BindingWrapper {
     bannerImage = root.findViewById(R.id.banner_image);
     bannerTitle = root.findViewById(R.id.banner_title);
 
-    setMessage(message);
-    setLayoutConfig(config);
-    setSwipeDismissListener(dismissOnClickListener);
-    setActionListener(actionListener);
-
+    if (message.getMessageType().equals(MessageType.BANNER)) {
+      BannerMessage bannerMessage = (BannerMessage) message;
+      setMessage(bannerMessage);
+      setLayoutConfig(config);
+      setSwipeDismissListener(dismissOnClickListener);
+      setActionListener(actionListeners.get(bannerMessage.getAction()));
+    }
     return null;
   }
 
-  private void setMessage(@NonNull InAppMessage message) {
+  private void setMessage(@NonNull BannerMessage message) {
     if (!TextUtils.isEmpty(message.getBackgroundHexColor())) {
-      setGradientDrawableBgColor(bannerContentRoot, message.getBackgroundHexColor());
+      setViewBgColorFromHex(bannerContentRoot, message.getBackgroundHexColor());
     }
 
-    bannerImage.setVisibility(TextUtils.isEmpty(message.getImageUrl()) ? View.GONE : View.VISIBLE);
+    bannerImage.setVisibility(
+        (message.getImageData() == null || TextUtils.isEmpty(message.getImageData().getImageUrl()))
+            ? View.GONE
+            : View.VISIBLE);
 
     if (message.getTitle() != null) {
       if (!TextUtils.isEmpty(message.getTitle().getText())) {

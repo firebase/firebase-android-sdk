@@ -15,9 +15,9 @@
 package com.google.firebase.storage.internal;
 
 import android.app.Activity;
-import android.support.annotation.MainThread;
-import android.support.annotation.NonNull;
 import android.util.Log;
+import androidx.annotation.MainThread;
+import androidx.annotation.NonNull;
 import com.google.android.gms.common.api.internal.LifecycleActivity;
 import com.google.android.gms.common.api.internal.LifecycleCallback;
 import com.google.android.gms.common.api.internal.LifecycleFragment;

@@ -17,8 +17,8 @@ package com.google.firebase.storage;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.support.annotation.Nullable;
 import android.util.Log;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.IOUtils;
 import com.google.android.gms.tasks.Task;
@@ -30,8 +30,8 @@ import java.util.concurrent.Semaphore;
 @SuppressWarnings("unused")
 public class TestDownloadHelper {
   private static final String TAG = "TestDownloadHelper";
-  private static Bitmap mIcon;
-  private static byte[] mBytes;
+  private static Bitmap icon;
+  private static byte[] bytes;
 
   public static class StreamDownloadResponse {
     public StringBuilder mainTask = new StringBuilder();
@@ -59,8 +59,8 @@ public class TestDownloadHelper {
                 response.backgroundTask.append(statusMessage);
 
                 try {
-                  mBytes = IOUtils.toByteArray(stream);
-                  mIcon = BitmapFactory.decodeByteArray(mBytes, 0, mBytes.length);
+                  bytes = IOUtils.toByteArray(stream);
+                  icon = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                 } catch (OutOfMemoryError e) {
                   Log.w(TAG, "Can't persist download due to low memory", e);
                 }
@@ -71,7 +71,7 @@ public class TestDownloadHelper {
 
                 if (state.getTotalByteCount() != -1) {
                   Preconditions.checkState(totalByteCountBeginning == state.getTotalByteCount());
-                  Preconditions.checkState(mBytes.length == state.getTotalByteCount());
+                  Preconditions.checkState(bytes.length == state.getTotalByteCount());
                 }
               } finally {
                 // Closing stream
@@ -106,10 +106,10 @@ public class TestDownloadHelper {
               Log.i(TAG, statusMessage);
               response.mainTask.append(statusMessage);
               if (imageCallback != null) {
-                imageCallback.run(mIcon);
+                imageCallback.run(icon);
               }
               if (byteCallback != null) {
-                byteCallback.run(mBytes);
+                byteCallback.run(bytes);
               }
             })
         .addOnFailureListener(
@@ -219,7 +219,7 @@ public class TestDownloadHelper {
         .addOnFailureListener(
             e -> {
               ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-              String statusMessage = "\nonFailure:\n" + e.toString();
+              String statusMessage = "\nonFailure:\n" + e;
               Log.i(TAG, statusMessage);
               builder.append(statusMessage);
             })
@@ -267,7 +267,8 @@ public class TestDownloadHelper {
     Preconditions.checkState(
         globalDownloadTasks.size() == expectedTasks,
         "Expected active download task to contain %s item(s), but contained %s item(s)",
-        globalDownloadTasks.size());
+        globalDownloadTasks.size(),
+        expectedTasks);
     List<FileDownloadTask> downloadTasksAtParent =
         StorageTaskManager.getInstance().getDownloadTasksUnder(reference.getParent());
     Preconditions.checkState(
@@ -275,7 +276,8 @@ public class TestDownloadHelper {
         "Expected active download task at location %s to contain %s item(s), "
             + "but contained %s item(s)",
         reference.getParent(),
-        downloadTasksAtParent.size());
+        downloadTasksAtParent.size(),
+        expectedTasks);
   }
 
   private static String fileTaskToString(FileDownloadTask.TaskSnapshot state) {

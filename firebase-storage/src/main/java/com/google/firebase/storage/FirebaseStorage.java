@@ -15,15 +15,14 @@
 package com.google.firebase.storage;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.storage.internal.Util;
@@ -40,7 +39,6 @@ import java.io.UnsupportedEncodingException;
  * {@link FirebaseApp#getInstance()}. The storage location in this case will come the JSON
  * configuration file downloaded from the web.
  */
-@PublicApi
 public class FirebaseStorage {
   private static final String TAG = "FirebaseStorage";
   private static final String STORAGE_URI_PARSE_EXCEPTION = "The storage Uri could not be parsed.";
@@ -81,7 +79,6 @@ public class FirebaseStorage {
    * @return a {@link FirebaseStorage} instance.
    */
   @NonNull
-  @PublicApi
   public static FirebaseStorage getInstance() {
     FirebaseApp app = FirebaseApp.getInstance();
     Preconditions.checkArgument(app != null, "You must call FirebaseApp.initialize() first.");
@@ -97,7 +94,6 @@ public class FirebaseStorage {
    * @return a {@link FirebaseStorage} instance.
    */
   @NonNull
-  @PublicApi
   public static FirebaseStorage getInstance(@NonNull String url) {
     FirebaseApp app = FirebaseApp.getInstance();
     Preconditions.checkArgument(app != null, "You must call FirebaseApp.initialize() first.");
@@ -112,7 +108,6 @@ public class FirebaseStorage {
    * @return a {@link FirebaseStorage} instance.
    */
   @NonNull
-  @PublicApi
   public static FirebaseStorage getInstance(@NonNull FirebaseApp app) {
     // noinspection ConstantConditions
     Preconditions.checkArgument(app != null, "Null is not a valid value for the FirebaseApp.");
@@ -140,7 +135,6 @@ public class FirebaseStorage {
    * @return a {@link FirebaseStorage} instance.
    */
   @NonNull
-  @PublicApi
   public static FirebaseStorage getInstance(@NonNull FirebaseApp app, @NonNull String url) {
     // noinspection ConstantConditions
     Preconditions.checkArgument(app != null, "Null is not a valid value for the FirebaseApp.");
@@ -165,7 +159,6 @@ public class FirebaseStorage {
    *
    * @return maximum time in milliseconds. Defaults to 10 minutes (600,000 milliseconds).
    */
-  @PublicApi
   public long getMaxDownloadRetryTimeMillis() {
     return sMaxDownloadRetry;
   }
@@ -176,7 +169,6 @@ public class FirebaseStorage {
    * @param maxTransferRetryMillis the maximum time in milliseconds. Defaults to 10 minutes (600,000
    *     milliseconds).
    */
-  @PublicApi
   public void setMaxDownloadRetryTimeMillis(long maxTransferRetryMillis) {
     sMaxDownloadRetry = maxTransferRetryMillis;
   }
@@ -186,7 +178,6 @@ public class FirebaseStorage {
    *
    * @return the maximum time in milliseconds. Defaults to 10 minutes (600,000 milliseconds).
    */
-  @PublicApi
   public long getMaxUploadRetryTimeMillis() {
     return sMaxUploadRetry;
   }
@@ -197,7 +188,6 @@ public class FirebaseStorage {
    * @param maxTransferRetryMillis the maximum time in milliseconds. Defaults to 10 minutes (600,000
    *     milliseconds).
    */
-  @PublicApi
   public void setMaxUploadRetryTimeMillis(long maxTransferRetryMillis) {
     sMaxUploadRetry = maxTransferRetryMillis;
   }
@@ -208,7 +198,6 @@ public class FirebaseStorage {
    *
    * @return the maximum time in milliseconds. Defaults to 2 minutes (120,000 milliseconds).
    */
-  @PublicApi
   public long getMaxOperationRetryTimeMillis() {
     return sMaxQueryRetry;
   }
@@ -220,7 +209,6 @@ public class FirebaseStorage {
    *     milliseconds).
    */
   @SuppressWarnings("unused")
-  @PublicApi
   public void setMaxOperationRetryTimeMillis(long maxTransferRetryMillis) {
     sMaxQueryRetry = maxTransferRetryMillis;
   }
@@ -235,7 +223,6 @@ public class FirebaseStorage {
    *
    * @return An instance of {@link StorageReference}.
    */
-  @PublicApi
   @NonNull
   public StorageReference getReference() {
     String bucketName = getBucketName();
@@ -257,7 +244,6 @@ public class FirebaseStorage {
    *     associated with the {@link FirebaseApp} used to initialize this {@link FirebaseStorage}.
    */
   @NonNull
-  @PublicApi
   public StorageReference getReferenceFromUrl(@NonNull String fullUrl) {
     Preconditions.checkArgument(!TextUtils.isEmpty(fullUrl), "location must not be null or empty");
     String lowerCaseLocation = fullUrl.toLowerCase();
@@ -288,7 +274,6 @@ public class FirebaseStorage {
    * @return An instance of {@link StorageReference} at the given child path.
    */
   @NonNull
-  @PublicApi
   public StorageReference getReference(@NonNull String location) {
     Preconditions.checkArgument(!TextUtils.isEmpty(location), "location must not be null or empty");
     String lowerCaseLocation = location.toLowerCase();
@@ -314,7 +299,6 @@ public class FirebaseStorage {
 
   /** The {@link FirebaseApp} associated with this {@link FirebaseStorage} instance. */
   @NonNull
-  @PublicApi
   public FirebaseApp getApp() {
     return mApp;
   }

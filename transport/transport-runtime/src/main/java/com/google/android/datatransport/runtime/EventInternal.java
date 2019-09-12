@@ -14,7 +14,7 @@
 
 package com.google.android.datatransport.runtime;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.util.Collections;
 import java.util.HashMap;

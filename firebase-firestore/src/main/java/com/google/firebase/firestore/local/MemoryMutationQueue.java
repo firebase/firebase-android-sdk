@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static java.util.Collections.emptyList;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -32,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import javax.annotation.Nullable;
 
 final class MemoryMutationQueue implements MutationQueue {
 
@@ -69,9 +69,11 @@ final class MemoryMutationQueue implements MutationQueue {
   private ByteString lastStreamToken;
 
   private final MemoryPersistence persistence;
+  private final StatsCollector statsCollector;
 
-  MemoryMutationQueue(MemoryPersistence persistence) {
+  MemoryMutationQueue(MemoryPersistence persistence, StatsCollector statsCollector) {
     this.persistence = persistence;
+    this.statsCollector = statsCollector;
     queue = new ArrayList<>();
 
     batchesByDocumentKey = new ImmutableSortedSet<>(emptyList(), DocumentReference.BY_KEY);
@@ -154,12 +156,16 @@ final class MemoryMutationQueue implements MutationQueue {
           .addToCollectionParentIndex(mutation.getKey().getPath().popLast());
     }
 
+    statsCollector.recordRowsWritten(STATS_TAG, 1);
+
     return batch;
   }
 
   @Nullable
   @Override
   public MutationBatch lookupMutationBatch(int batchId) {
+    statsCollector.recordRowsRead(STATS_TAG, 1);
+
     int index = indexOfBatchId(batchId);
     if (index < 0 || index >= queue.size()) {
       return null;
@@ -179,6 +185,11 @@ final class MemoryMutationQueue implements MutationQueue {
     int rawIndex = indexOfBatchId(nextBatchId);
     int index = rawIndex < 0 ? 0 : rawIndex;
     return queue.size() > index ? queue.get(index) : null;
+  }
+
+  @Override
+  public int getHighestUnacknowledgedBatchId() {
+    return queue.isEmpty() ? MutationBatch.UNKNOWN : nextBatchId - 1;
   }
 
   @Override
@@ -202,6 +213,8 @@ final class MemoryMutationQueue implements MutationQueue {
       hardAssert(batch != null, "Batches in the index must exist in the main table");
       result.add(batch);
     }
+
+    statsCollector.recordRowsRead(STATS_TAG, result.size());
 
     return result;
   }

@@ -15,12 +15,11 @@
 package com.google.firebase.storage;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
 import com.google.firebase.storage.network.GetMetadataNetworkRequest;
 import com.google.firebase.storage.network.NetworkRequest;
@@ -60,15 +59,16 @@ class GetDownloadUrlTask implements Runnable {
 
     if (!TextUtils.isEmpty(downloadTokens)) {
       String downloadToken = downloadTokens.split(",", -1)[0];
-      String baseURL = NetworkRequest.getdefaultURL(storageRef.getStorageUri());
-      return Uri.parse(baseURL + "?alt=media&token=" + downloadToken);
+      Uri.Builder uriBuilder = NetworkRequest.getDefaultURL(storageRef.getStorageUri()).buildUpon();
+      uriBuilder.appendQueryParameter("alt", "media");
+      uriBuilder.appendQueryParameter("token", downloadToken);
+      return uriBuilder.build();
     }
 
     return null;
   }
 
   @Override
-  @PublicApi
   public void run() {
     final NetworkRequest request =
         new GetMetadataNetworkRequest(storageRef.getStorageUri(), storageRef.getApp());

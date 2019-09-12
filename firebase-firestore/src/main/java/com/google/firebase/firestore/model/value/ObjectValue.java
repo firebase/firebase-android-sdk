@@ -16,14 +16,17 @@ package com.google.firebase.firestore.model.value;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.util.Util;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.annotation.Nullable;
+import java.util.Set;
 
 /** A structured object value stored in Firestore. */
 public class ObjectValue extends FieldValue {
@@ -57,21 +60,37 @@ public class ObjectValue extends FieldValue {
     return TYPE_ORDER_OBJECT;
   }
 
+  /** Recursively extracts the FieldPaths that are set in this ObjectValue. */
+  public FieldMask getFieldMask() {
+    Set<FieldPath> fields = new HashSet<>();
+    for (Map.Entry<String, FieldValue> entry : internalValue) {
+      FieldPath currentPath = FieldPath.fromSingleSegment(entry.getKey());
+      FieldValue value = entry.getValue();
+      if (value instanceof ObjectValue) {
+        FieldMask nestedMask = ((ObjectValue) value).getFieldMask();
+        Set<FieldPath> nestedFields = nestedMask.getMask();
+        if (nestedFields.isEmpty()) {
+          // Preserve the empty map by adding it to the FieldMask.
+          fields.add(currentPath);
+        } else {
+          // For nested and non-empty ObjectValues, add the FieldPath of the leaf nodes.
+          for (FieldPath nestedPath : nestedFields) {
+            fields.add(currentPath.append(nestedPath));
+          }
+        }
+      } else {
+        fields.add(currentPath);
+      }
+    }
+    return FieldMask.fromSet(fields);
+  }
+
   /** Recursively converts the Map into the value that users will see in document snapshots. */
   @Override
   public Map<String, Object> value() {
     Map<String, Object> res = new HashMap<>();
     for (Map.Entry<String, FieldValue> entry : internalValue) {
       res.put(entry.getKey(), entry.getValue().value());
-    }
-    return res;
-  }
-
-  @Override
-  public Map<String, Object> value(FieldValueOptions options) {
-    Map<String, Object> res = new HashMap<>();
-    for (Map.Entry<String, FieldValue> entry : internalValue) {
-      res.put(entry.getKey(), entry.getValue().value(options));
     }
     return res;
   }

@@ -16,6 +16,7 @@ package com.google.firebase.gradle.plugins;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,6 +38,9 @@ public class FirebaseLibraryExtension {
 
   /** Indicates whether sources are published alongside the library. */
   public boolean publishSources;
+
+  /** Static analysis configuration. */
+  public final FirebaseStaticAnalysis staticAnalysis;
 
   /** Firebase Test Lab configuration/ */
   public final FirebaseTestLabExtension testLab;
@@ -75,6 +79,20 @@ public class FirebaseLibraryExtension {
       artifactId.set(new DefaultProvider<>(project::getName));
       groupId.set(new DefaultProvider<>(() -> project.getGroup().toString()));
     }
+    this.staticAnalysis = initializeStaticAnalysis(project);
+  }
+
+  private FirebaseStaticAnalysis initializeStaticAnalysis(Project project) {
+    return new FirebaseStaticAnalysis(
+        projectsFromProperty(project, "firebase.checks.errorproneProjects"),
+        projectsFromProperty(project, "firebase.checks.lintProjects"));
+  }
+
+  private Set<String> projectsFromProperty(Project project, String propertyName) {
+    if (!project.hasProperty(propertyName)) {
+      return Collections.emptySet();
+    }
+    return ImmutableSet.copyOf(project.property(propertyName).toString().split(",", -1));
   }
 
   /** Configure Firebase Test Lab. */
@@ -125,5 +143,9 @@ public class FirebaseLibraryExtension {
     if (customizePomAction != null) {
       customizePomAction.execute(pom);
     }
+  }
+
+  public void staticAnalysis(Action<FirebaseStaticAnalysis> action) {
+    action.execute(staticAnalysis);
   }
 }

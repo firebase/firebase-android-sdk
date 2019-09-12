@@ -26,7 +26,7 @@
             android:exported="false">
             <meta-data
                 android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
-                android:value="cct" />
+                android:value="cct,lflg" />
         </service>
     </application>
 </manifest>

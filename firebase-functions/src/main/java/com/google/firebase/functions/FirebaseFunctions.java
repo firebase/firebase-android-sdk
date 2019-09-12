@@ -16,10 +16,10 @@ package com.google.firebase.functions;
 
 import android.content.Context;
 import android.os.Handler;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.security.ProviderInstaller;
 import com.google.android.gms.security.ProviderInstaller.ProviderInstallListener;
@@ -122,13 +122,13 @@ public class FirebaseFunctions {
     handler.post(runnable);
   }
 
-  @NonNull
   /**
    * Creates a Cloud Functions client with the given app and region.
    *
    * @param app The app for the Firebase project.
    * @param region The region for the HTTPS trigger, such as "us-central1".
    */
+  @NonNull
   public static FirebaseFunctions getInstance(@NonNull FirebaseApp app, @NonNull String region) {
     Preconditions.checkNotNull(app, "You must call FirebaseApp.initializeApp first.");
     Preconditions.checkNotNull(region);
@@ -139,34 +139,34 @@ public class FirebaseFunctions {
     return component.get(region);
   }
 
-  @NonNull
   /**
    * Creates a Cloud Functions client with the given app.
    *
    * @param app The app for the Firebase project.
    */
+  @NonNull
   public static FirebaseFunctions getInstance(@NonNull FirebaseApp app) {
     return getInstance(app, "us-central1");
   }
 
-  @NonNull
   /**
    * Creates a Cloud Functions client with the default app and given region.
    *
    * @param region The region for the HTTPS trigger, such as "us-central1".
    */
+  @NonNull
   public static FirebaseFunctions getInstance(@NonNull String region) {
     return getInstance(FirebaseApp.getInstance(), region);
   }
 
-  @NonNull
   /** Creates a Cloud Functions client with the default app. */
+  @NonNull
   public static FirebaseFunctions getInstance() {
     return getInstance(FirebaseApp.getInstance(), "us-central1");
   }
 
-  @NonNull
   /** Returns a reference to the Callable HTTPS trigger with the given name. */
+  @NonNull
   public HttpsCallableReference getHttpsCallable(@NonNull String name) {
     return new HttpsCallableReference(this, name);
   }

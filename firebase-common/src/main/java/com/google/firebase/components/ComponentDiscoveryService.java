@@ -17,7 +17,7 @@ package com.google.firebase.components;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.annotation.KeepForSdk;
 
 /** Container for component definition in <meta-data/>. */

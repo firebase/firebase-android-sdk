@@ -14,42 +14,34 @@
 
 package com.google.android.datatransport.cct;
 
-import android.support.annotation.Keep;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.Keep;
 import com.google.android.datatransport.runtime.backends.BackendFactory;
 import com.google.android.datatransport.runtime.backends.CreationContext;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 
 @Keep
 public class CctBackendFactory implements BackendFactory {
-  private static final String URL =
-      mergeStrings("hts/frbslgiggolai.o/0clgbth", "tp:/ieaeogn.ogepscmvc/o/ac");
+  static final String CCT_URL =
+      StringMerger.mergeStrings("hts/frbslgiggolai.o/0clgbth", "tp:/ieaeogn.ogepscmvc/o/ac");
+
+  static final String LFLG_URL =
+      StringMerger.mergeStrings(
+          "hts/frbslgigp.ogepscmv/ieo/eaylg", "tp:/ieaeogn-agolai.o/1frlglgc/o");
 
   @Override
   public TransportBackend create(CreationContext creationContext) {
+    final String url;
+    // Since legacy flg and clearcut APIs are identical, they share the same backend.
+    if (creationContext.getBackendName().equals(LegacyFlgDestination.DESTINATION_NAME)) {
+      url = LFLG_URL;
+    } else {
+      url = CCT_URL;
+    }
+
     return new CctTransportBackend(
         creationContext.getApplicationContext(),
-        URL,
+        url,
         creationContext.getWallClock(),
         creationContext.getMonotonicClock());
-  }
-
-  @VisibleForTesting
-  static String mergeStrings(String part1, String part2) {
-    int sizeDiff = part1.length() - part2.length();
-    if (sizeDiff < 0 || sizeDiff > 1) {
-      throw new IllegalArgumentException("Invalid input received");
-    }
-
-    StringBuilder url = new StringBuilder(part1.length() + part2.length());
-
-    for (int i = 0; i < part1.length(); i++) {
-      url.append(part1.charAt(i));
-      if (part2.length() > i) {
-        url.append(part2.charAt(i));
-      }
-    }
-
-    return url.toString();
   }
 }

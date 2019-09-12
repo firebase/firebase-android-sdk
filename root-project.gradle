@@ -15,7 +15,7 @@
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 
 buildscript {
-    ext.kotlinVersion = '1.3.20'
+    ext.kotlinVersion = '1.3.50'
     repositories {
         google()
         jcenter()
@@ -26,12 +26,12 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.1'
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.6'
-        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6'
+        classpath 'com.android.tools.build:gradle:3.4.2'
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.8'
+        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.7.1'
         classpath 'org.jsoup:jsoup:1.11.2'
-        classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.6'
-        classpath 'com.google.gms:google-services:4.1.0'
+        classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.8'
+        classpath 'com.google.gms:google-services:4.3.0'
         classpath 'me.tatarka:gradle-retrolambda:3.7.1'
         classpath 'digital.wup:android-maven-publish:3.6.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
@@ -46,12 +46,13 @@ ext {
     supportAnnotationsVersion = '28.0.0'
     errorproneVersion = '2.3.2'
     errorproneJavacVersion = '9+181-r4173-1'
-    googleTruthVersion = '0.40'
+    googleTruthVersion = '0.45'
     robolectricVersion = '4.1'
 }
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
+apply plugin: com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.metrics.MetricsPlugin
 
 firebaseContinuousIntegration {
@@ -78,7 +79,7 @@ configure(subprojects) {
     }
     apply plugin: 'com.github.sherter.google-java-format'
     googleJavaFormat {
-        toolVersion = '1.6'
+        toolVersion = '1.7'
     }
     tasks.googleJavaFormat {
         source '.'
@@ -102,10 +103,12 @@ configure(subprojects) {
     }
     task(['type': JacocoReport, 'dependsOn': 'check', 'group': 'Coverage',
           'description': 'Generates JaCoCo unit test coverage reports.'], checkCoverage) {
-        def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**Manifest*.*']
+        def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/proto/**', '**Manifest*.*']
         classDirectories = files([
-            fileTree(dir: "$buildDir/intermediates/javac", excludes: excludes),
-            fileTree(dir: "$buildDir/tmp/kotlin-classes", excludes: excludes)
+            fileTree(dir: "$buildDir/intermediates/javac/release", excludes: excludes),
+            fileTree(dir: "$buildDir/intermediates/javac/releaseUnitTest", excludes: excludes),
+            fileTree(dir: "$buildDir/tmp/kotlin-classes/release", excludes: excludes),
+            fileTree(dir: "$buildDir/tmp/kotlin-classes/releaseUnitTest", excludes: excludes),
         ])
         sourceDirectories = files(['src/main/java', 'src/main/kotlin'])
         executionData = fileTree(dir: "$buildDir", includes: ['jacoco/*.exec'])
@@ -124,53 +127,8 @@ configure(subprojects) {
     }
 
     apply plugin: "org.jlleitschuh.gradle.ktlint"
-
-    // Adds firebase custom errorprone checks to the annotation processor classpath.
-    configurations.whenObjectAdded {
-        if (it.name == 'annotationProcessor' && project != project(':tools:errorprone')) {
-            dependencies {
-                annotationProcessor project(':tools:errorprone')
-            }
-        } else if (it.name == 'lintChecks' && project != project(':tools:lint')) {
-            dependencies {
-                lintChecks project(':tools:lint')
-            }
-        }
-    }
 }
 
-/**
- * Disable "debug" build type for all subprojects.
- *
- * They are identical to "release" and are not used in either release or smoke tests. Disabling them
- * to reduce the number of tests we run on pre/post-submit.
- */
-configure(subprojects) {
-    afterEvaluate { Project sub ->
-        if (!sub.plugins.hasPlugin('com.android.library') && !sub.plugins.hasPlugin('com.android.application')) {
-            return
-        }
-
-        // skip debug unit tests in CI
-        // TODO(vkryachko): provide ability for teams to control this if needed
-        if (System.getenv().containsKey("FIREBASE_CI")) {
-            sub.tasks.all {Task task ->
-                if (task.name == 'testDebugUnitTest') {
-                    task.enabled = false
-                }
-            }
-        }
-        sub.android {
-            testBuildType "release"
-
-            buildTypes {
-                // In the case of and android library signing config only affects instrumentation test APK.
-                // We need it signed with default debug credentials in order for FTL to accept the APK.
-                release.signingConfig = debug.signingConfig
-            }
-        }
-    }
-}
 
 /**
  * Configure "Preguarding" and Desugaring for the subprojects.

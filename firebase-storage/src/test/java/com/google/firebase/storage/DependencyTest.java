@@ -73,11 +73,9 @@ public class DependencyTest {
    * If this test fails, its because you added a new method/overload to Task and you need to let
    * someone in Firebase Storage know. Otherwise users will see NotImplementedException on these new
    * methods for Storage Tasks. Please contact benwu@ for more info.
-   *
-   * @throws Exception
    */
   @Test
-  public void catchNewTaskMethods() throws Exception {
+  public void catchNewTaskMethods() {
     StringBuilder builder = new StringBuilder();
 
     try {
@@ -96,7 +94,7 @@ public class DependencyTest {
     }
     String newValue = builder.toString();
     if (!expected.equals(newValue)) {
-      System.err.println("Exepected:\n" + expected + "\nBut got:\n" + newValue);
+      System.err.println("Expected:\n" + expected + "\nBut got:\n" + newValue);
     }
     Assert.assertEquals(expected, newValue);
   }

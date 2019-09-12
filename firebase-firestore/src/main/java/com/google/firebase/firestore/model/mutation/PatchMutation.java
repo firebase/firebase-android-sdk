@@ -16,6 +16,7 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -25,7 +26,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
-import javax.annotation.Nullable;
 
 /**
  * A mutation that modifies fields of the document at the given key with the given values. The
@@ -112,7 +112,7 @@ public final class PatchMutation extends Mutation {
 
     SnapshotVersion version = mutationResult.getVersion();
     ObjectValue newData = patchDocument(maybeDoc);
-    return new Document(getKey(), version, newData, Document.DocumentState.COMMITTED_MUTATIONS);
+    return new Document(getKey(), version, Document.DocumentState.COMMITTED_MUTATIONS, newData);
   }
 
   @Nullable
@@ -127,13 +127,13 @@ public final class PatchMutation extends Mutation {
 
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
     ObjectValue newData = patchDocument(maybeDoc);
-    return new Document(getKey(), version, newData, Document.DocumentState.LOCAL_MUTATIONS);
+    return new Document(getKey(), version, Document.DocumentState.LOCAL_MUTATIONS, newData);
   }
 
   @Nullable
   @Override
-  public FieldMask getFieldMask() {
-    return mask;
+  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
+    return null;
   }
 
   /**
@@ -162,10 +162,5 @@ public final class PatchMutation extends Mutation {
       }
     }
     return obj;
-  }
-
-  @Override
-  public boolean isIdempotent() {
-    return true;
   }
 }

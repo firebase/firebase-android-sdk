@@ -14,7 +14,7 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +32,7 @@ import java.util.Map;
 /*package*/ class StorageTaskManager {
   private static final StorageTaskManager _instance = new StorageTaskManager();
 
-  private final Map<String, WeakReference<StorageTask>> inProgressTasks = new HashMap<>();
+  private final Map<String, WeakReference<StorageTask<?>>> inProgressTasks = new HashMap<>();
 
   private final Object syncObject = new Object();
 
@@ -44,9 +44,9 @@ import java.util.Map;
     synchronized (syncObject) {
       ArrayList<UploadTask> inProgressList = new ArrayList<>();
       String parentPath = parent.toString();
-      for (Map.Entry<String, WeakReference<StorageTask>> entry : inProgressTasks.entrySet()) {
+      for (Map.Entry<String, WeakReference<StorageTask<?>>> entry : inProgressTasks.entrySet()) {
         if (entry.getKey().startsWith(parentPath)) {
-          StorageTask task = entry.getValue().get();
+          StorageTask<?> task = entry.getValue().get();
           if (task instanceof UploadTask) {
             inProgressList.add((UploadTask) task);
           }
@@ -60,9 +60,9 @@ import java.util.Map;
     synchronized (syncObject) {
       ArrayList<FileDownloadTask> inProgressList = new ArrayList<>();
       String parentPath = parent.toString();
-      for (Map.Entry<String, WeakReference<StorageTask>> entry : inProgressTasks.entrySet()) {
+      for (Map.Entry<String, WeakReference<StorageTask<?>>> entry : inProgressTasks.entrySet()) {
         if (entry.getKey().startsWith(parentPath)) {
-          StorageTask task = entry.getValue().get();
+          StorageTask<?> task = entry.getValue().get();
           if (task instanceof FileDownloadTask) {
             inProgressList.add((FileDownloadTask) task);
           }
@@ -72,19 +72,19 @@ import java.util.Map;
     }
   }
 
-  public void ensureRegistered(StorageTask targetTask) {
+  public void ensureRegistered(StorageTask<?> targetTask) {
     synchronized (syncObject) {
       // ensure *this* is added to the in progress list
       inProgressTasks.put(targetTask.getStorage().toString(), new WeakReference<>(targetTask));
     }
   }
 
-  public void unRegister(StorageTask targetTask) {
+  public void unRegister(StorageTask<?> targetTask) {
     synchronized (syncObject) {
       // ensure *this* is added to the in progress list
       String key = targetTask.getStorage().toString();
-      WeakReference<StorageTask> weakReference = inProgressTasks.get(key);
-      StorageTask task = weakReference != null ? weakReference.get() : null;
+      WeakReference<StorageTask<?>> weakReference = inProgressTasks.get(key);
+      StorageTask<?> task = weakReference != null ? weakReference.get() : null;
       if (task == null || task == targetTask) {
         inProgressTasks.remove(key);
       }

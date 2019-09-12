@@ -16,13 +16,13 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.value.ObjectValue;
-import javax.annotation.Nullable;
 
 /**
  * A mutation that creates or replaces the document at the given key with the object value contents.
@@ -72,7 +72,7 @@ public final class SetMutation extends Mutation {
     // accepted the mutation so the precondition must have held.
 
     SnapshotVersion version = mutationResult.getVersion();
-    return new Document(getKey(), version, value, Document.DocumentState.COMMITTED_MUTATIONS);
+    return new Document(getKey(), version, Document.DocumentState.COMMITTED_MUTATIONS, value);
   }
 
   @Nullable
@@ -86,13 +86,7 @@ public final class SetMutation extends Mutation {
     }
 
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
-    return new Document(getKey(), version, value, Document.DocumentState.LOCAL_MUTATIONS);
-  }
-
-  @Nullable
-  @Override
-  public FieldMask getFieldMask() {
-    return null;
+    return new Document(getKey(), version, Document.DocumentState.LOCAL_MUTATIONS, value);
   }
 
   /** Returns the object value to use when setting the document. */
@@ -100,8 +94,9 @@ public final class SetMutation extends Mutation {
     return value;
   }
 
+  @Nullable
   @Override
-  public boolean isIdempotent() {
-    return true;
+  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
+    return null;
   }
 }

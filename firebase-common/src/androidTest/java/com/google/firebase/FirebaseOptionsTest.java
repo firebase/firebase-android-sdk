@@ -16,7 +16,7 @@ package com.google.firebase;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -79,7 +79,7 @@ public class FirebaseOptionsTest {
   @Test
   public void checkToBuilderCreatesNewEquivalentInstance() {
     FirebaseOptions allValuesOptionsCopy = new FirebaseOptions.Builder(ALL_VALUES_OPTIONS).build();
-    assertThat(allValuesOptionsCopy).isNotSameAs(ALL_VALUES_OPTIONS);
+    assertThat(allValuesOptionsCopy).isNotSameInstanceAs(ALL_VALUES_OPTIONS);
     assertThat(allValuesOptionsCopy).isEqualTo(ALL_VALUES_OPTIONS);
   }
 }

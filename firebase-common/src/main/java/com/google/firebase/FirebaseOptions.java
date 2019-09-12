@@ -18,17 +18,15 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotEmpty
 import static com.google.android.gms.common.util.Strings.isEmptyOrWhitespace;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.internal.StringResourceValueReader;
-import com.google.firebase.annotations.PublicApi;
 
 /** Configurable Firebase options. */
-@PublicApi
 public final class FirebaseOptions {
 
   // TODO: deprecate and remove it once we can fetch these from Remote Config.
@@ -50,7 +48,6 @@ public final class FirebaseOptions {
   private final String projectId;
 
   /** Builder for constructing FirebaseOptions. */
-  @PublicApi
   public static final class Builder {
     private String apiKey;
     private String applicationId;
@@ -61,7 +58,6 @@ public final class FirebaseOptions {
     private String projectId;
 
     /** Constructs an empty builder. */
-    @PublicApi
     public Builder() {}
 
     /**
@@ -70,8 +66,7 @@ public final class FirebaseOptions {
      * <p>The new builder is not backed by this objects values, that is changes made to the new
      * builder don't change the values of the origin object.
      */
-    @PublicApi
-    public Builder(FirebaseOptions options) {
+    public Builder(@NonNull FirebaseOptions options) {
       applicationId = options.applicationId;
       apiKey = options.apiKey;
       databaseUrl = options.databaseUrl;
@@ -81,19 +76,19 @@ public final class FirebaseOptions {
       projectId = options.projectId;
     }
 
-    @PublicApi
+    @NonNull
     public Builder setApiKey(@NonNull String apiKey) {
       this.apiKey = checkNotEmpty(apiKey, "ApiKey must be set.");
       return this;
     }
 
-    @PublicApi
+    @NonNull
     public Builder setApplicationId(@NonNull String applicationId) {
       this.applicationId = checkNotEmpty(applicationId, "ApplicationId must be set.");
       return this;
     }
 
-    @PublicApi
+    @NonNull
     public Builder setDatabaseUrl(@Nullable String databaseUrl) {
       this.databaseUrl = databaseUrl;
       return this;
@@ -101,31 +96,32 @@ public final class FirebaseOptions {
 
     /** @hide */
     // TODO: unhide once an API (AppInvite) starts reading it.
+    @NonNull
     @KeepForSdk
     public Builder setGaTrackingId(@Nullable String gaTrackingId) {
       this.gaTrackingId = gaTrackingId;
       return this;
     }
 
-    @PublicApi
+    @NonNull
     public Builder setGcmSenderId(@Nullable String gcmSenderId) {
       this.gcmSenderId = gcmSenderId;
       return this;
     }
 
-    @PublicApi
+    @NonNull
     public Builder setStorageBucket(@Nullable String storageBucket) {
       this.storageBucket = storageBucket;
       return this;
     }
 
-    @PublicApi
+    @NonNull
     public Builder setProjectId(@Nullable String projectId) {
       this.projectId = projectId;
       return this;
     }
 
-    @PublicApi
+    @NonNull
     public FirebaseOptions build() {
       return new FirebaseOptions(
           applicationId, apiKey, databaseUrl, gaTrackingId, gcmSenderId, storageBucket, projectId);
@@ -155,8 +151,8 @@ public final class FirebaseOptions {
    *
    * @return The populated options or null if applicationId is missing from resources.
    */
-  @PublicApi
-  public static FirebaseOptions fromResource(Context context) {
+  @Nullable
+  public static FirebaseOptions fromResource(@NonNull Context context) {
     StringResourceValueReader reader = new StringResourceValueReader(context);
     String applicationId = reader.getString(APP_ID_RESOURCE_NAME);
     if (TextUtils.isEmpty(applicationId)) {
@@ -176,19 +172,19 @@ public final class FirebaseOptions {
    * API key used for authenticating requests from your app, e.g.
    * AIzaSyDdVgKwhZl0sTTTLZ7iTmt1r3N2cJLnaDk, used to identify your app to Google servers.
    */
-  @PublicApi
+  @NonNull
   public String getApiKey() {
     return apiKey;
   }
 
   /** The Google App ID that is used to uniquely identify an instance of an app. */
-  @PublicApi
+  @NonNull
   public String getApplicationId() {
     return applicationId;
   }
 
   /** The database root URL, e.g. http://abc-xyz-123.firebaseio.com. */
-  @PublicApi
+  @Nullable
   public String getDatabaseUrl() {
     return databaseUrl;
   }
@@ -199,6 +195,7 @@ public final class FirebaseOptions {
    * @hide
    */
   // TODO: unhide once an API (AppInvite) starts reading it.
+  @Nullable
   @KeepForSdk
   public String getGaTrackingId() {
     return gaTrackingId;
@@ -208,19 +205,19 @@ public final class FirebaseOptions {
    * The Project Number from the Google Developer's console, for example 012345678901, used to
    * configure Google Cloud Messaging.
    */
-  @PublicApi
+  @Nullable
   public String getGcmSenderId() {
     return gcmSenderId;
   }
 
   /** The Google Cloud Storage bucket name, e.g. abc-xyz-123.storage.firebase.com. */
-  @PublicApi
+  @Nullable
   public String getStorageBucket() {
     return storageBucket;
   }
 
   /** The Google Cloud project ID, e.g. my-project-1234 */
-  @PublicApi
+  @Nullable
   public String getProjectId() {
     return projectId;
   }

@@ -16,12 +16,12 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /**
  * QueryListener takes a series of internal view snapshots and determines when to raise events.
@@ -59,11 +59,17 @@ public class QueryListener {
     return query;
   }
 
-  public void onViewSnapshot(ViewSnapshot newSnapshot) {
+  /**
+   * Applies the new ViewSnapshot to this listener, raising a user-facing event if applicable
+   * (depending on what changed, whether the user has opted into metadata-only changes, etc.).
+   * Returns true if a user-facing event was indeed raised.
+   */
+  public boolean onViewSnapshot(ViewSnapshot newSnapshot) {
     hardAssert(
         !newSnapshot.getChanges().isEmpty() || newSnapshot.didSyncStateChange(),
         "We got a new snapshot with no changes?");
 
+    boolean raisedEvent = false;
     if (!options.includeDocumentMetadataChanges) {
       // Remove the metadata only changes
       List<DocumentViewChange> documentChanges = new ArrayList<>();
@@ -87,23 +93,30 @@ public class QueryListener {
     if (!raisedInitialEvent) {
       if (shouldRaiseInitialEvent(newSnapshot, onlineState)) {
         raiseInitialEvent(newSnapshot);
+        raisedEvent = true;
       }
     } else if (shouldRaiseEvent(newSnapshot)) {
       listener.onEvent(newSnapshot, null);
+      raisedEvent = true;
     }
 
     this.snapshot = newSnapshot;
+    return raisedEvent;
   }
 
   public void onError(FirebaseFirestoreException error) {
     listener.onEvent(null, error);
   }
 
-  public void onOnlineStateChanged(OnlineState onlineState) {
+  /** Returns whether a snapshot was raised. */
+  public boolean onOnlineStateChanged(OnlineState onlineState) {
     this.onlineState = onlineState;
+    boolean raisedEvent = false;
     if (snapshot != null && !raisedInitialEvent && shouldRaiseInitialEvent(snapshot, onlineState)) {
       raiseInitialEvent(snapshot);
+      raisedEvent = true;
     }
+    return raisedEvent;
   }
 
   private boolean shouldRaiseInitialEvent(ViewSnapshot snapshot, OnlineState onlineState) {

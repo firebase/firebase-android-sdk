@@ -15,6 +15,8 @@
 import click
 import os
 
+from github import Github
+
 from . import gradle
 from . import ci_command
 from . import stats
@@ -61,3 +63,39 @@ def smoke_tests(app_build_variant, test_apps_dir):
             os.path.join(cwd, 'build', 'm2repository')),
         workdir=location,
     )
+
+
+@click.option('--issue_number', 'issue_number', required=True)
+@click.option('--repo_name', 'repo_name', required=True)
+@click.option('--auth_token', 'auth_token', required=True)
+@ci_command()
+def api_information(auth_token, repo_name, issue_number):
+  """Comments the api information on the pr"""
+
+  gradle.run('apiInformation')
+  dir_suffix = 'build/apiinfo'
+  comment_string = ""
+  for filename in os.listdir(dir_suffix):
+    subproject = filename
+    formatted_output_lines = []
+    with open(os.path.join(dir_suffix, filename), 'r') as f:
+      outputlines = f.readlines()
+      for line in outputlines:
+        if 'error' in line:
+          formatted_output_lines.append(line[line.find('error:'):])
+        elif 'warning' in line:
+          formatted_output_lines.append(line[line.find('warning:'):])
+          
+    if formatted_output_lines:
+      comment_string += 'The public api surface has changed for the subproject {}:\n'.format(subproject)
+      comment_string += ''.join(formatted_output_lines)
+      comment_string += '\n\n'
+  if comment_string:
+    comment_string += ('Please update the api.txt files for the subprojects being affected by this change '
+      'by running ./gradlew ${subproject}:generateApiTxtFile. Also perform a major/minor bump accordingly.\n')
+    # Comment to github.
+    github_client = Github(auth_token)
+    repo = github_client.get_repo(repo_name)
+    pr = repo.get_pull(int(issue_number))
+    pr.create_issue_comment(comment_string)
+    exit(1)

@@ -16,24 +16,22 @@ package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import android.support.annotation.NonNull;
 import android.util.SparseArray;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseException;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.util.Assert;
 
-/** A class of exceptions thrown by Firestore */
-@PublicApi
+/** A class of exceptions thrown by Cloud Firestore. */
 public class FirebaseFirestoreException extends FirebaseException {
   /**
-   * The set of Firestore status codes. The codes are the same at the ones exposed by gRPC here:
-   * https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
+   * The set of Cloud Firestore status codes. The codes are the same at the ones exposed by gRPC
+   * here: https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
    */
-  @PublicApi
   public enum Code {
     /**
-     * The operation completed successfully. FirebaseFirestoreException will never have a status of
-     * OK.
+     * The operation completed successfully. {@code FirebaseFirestoreException} will never have a
+     * status of {@code OK}.
      */
     OK(0),
 
@@ -44,9 +42,9 @@ public class FirebaseFirestoreException extends FirebaseException {
     UNKNOWN(2),
 
     /**
-     * Client specified an invalid argument. Note that this differs from FAILED_PRECONDITION.
-     * INVALID_ARGUMENT indicates arguments that are problematic regardless of the state of the
-     * system (e.g., an invalid field name).
+     * Client specified an invalid argument. Note that this differs from {@link
+     * #FAILED_PRECONDITION}. {@code INVALID_ARGUMENT} indicates arguments that are problematic
+     * regardless of the state of the system (e.g., an invalid field name).
      */
     INVALID_ARGUMENT(3),
 
@@ -115,7 +113,6 @@ public class FirebaseFirestoreException extends FirebaseException {
     }
 
     /** The numerical value of the code. */
-    @PublicApi
     public int value() {
       return value;
     }
@@ -137,7 +134,6 @@ public class FirebaseFirestoreException extends FirebaseException {
     }
 
     @NonNull
-    @PublicApi
     public static Code fromValue(int value) {
       return STATUS_LIST.get(value, Code.UNKNOWN);
     }
@@ -145,7 +141,6 @@ public class FirebaseFirestoreException extends FirebaseException {
 
   @NonNull private final Code code;
 
-  @PublicApi
   public FirebaseFirestoreException(@NonNull String detailMessage, @NonNull Code code) {
     super(detailMessage);
     checkNotNull(detailMessage, "Provided message must not be null.");
@@ -154,9 +149,8 @@ public class FirebaseFirestoreException extends FirebaseException {
     this.code = checkNotNull(code, "Provided code must not be null.");
   }
 
-  @PublicApi
   public FirebaseFirestoreException(
-      @NonNull String detailMessage, @NonNull Code code, Throwable cause) {
+      @NonNull String detailMessage, @NonNull Code code, @Nullable Throwable cause) {
     super(detailMessage, cause);
     checkNotNull(detailMessage, "Provided message must not be null.");
     Assert.hardAssert(
@@ -165,12 +159,11 @@ public class FirebaseFirestoreException extends FirebaseException {
   }
 
   /**
-   * Gets the error code for the Firestore operation that failed.
+   * Gets the error code for the Cloud Firestore operation that failed.
    *
-   * @return the code for the FirebaseFirestoreException
+   * @return the code for the {@code FirebaseFirestoreException}.
    */
   @NonNull
-  @PublicApi
   public Code getCode() {
     return code;
   }

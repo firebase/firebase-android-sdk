@@ -16,14 +16,14 @@ package com.google.firebase.inappmessaging.display.internal.layout;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.support.annotation.IdRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.FrameLayout;
+import androidx.annotation.IdRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.inappmessaging.display.R;
 import com.google.firebase.inappmessaging.display.internal.Logging;
 import java.util.ArrayList;

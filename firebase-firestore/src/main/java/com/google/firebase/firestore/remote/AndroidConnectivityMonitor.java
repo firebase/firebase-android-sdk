@@ -25,10 +25,10 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
 import android.os.Build;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.util.Consumer;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /**
  * Android implementation of ConnectivityMonitor. Parallel implementations exist for N+ and pre-N.
@@ -84,6 +84,7 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
           };
     } else {
       NetworkReceiver networkReceiver = new NetworkReceiver();
+      @SuppressWarnings("deprecation")
       IntentFilter networkIntentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
       context.registerReceiver(networkReceiver, networkIntentFilter);
       unregisterRunnable =

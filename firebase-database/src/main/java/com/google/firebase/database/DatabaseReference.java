@@ -14,10 +14,9 @@
 
 package com.google.firebase.database;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.database.core.CompoundWrite;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
@@ -45,7 +44,6 @@ import java.util.Map;
  * <p>This class is the starting point for all Database operations. After you've initialized it with
  * a URL, you can use it to read data, write data, and to create new DatabaseReferences.
  */
-@PublicApi
 public class DatabaseReference extends Query {
 
   private static DatabaseConfig defaultConfig;
@@ -56,7 +54,6 @@ public class DatabaseReference extends Query {
    *
    * @since 1.1
    */
-  @PublicApi
   public interface CompletionListener {
 
     /**
@@ -66,7 +63,6 @@ public class DatabaseReference extends Query {
      * @param error A description of any errors that occurred or null on success
      * @param ref A reference to the specified Firebase Database location
      */
-    @PublicApi
     public void onComplete(
         @Nullable final DatabaseError error, @NonNull final DatabaseReference ref);
   }
@@ -95,7 +91,6 @@ public class DatabaseReference extends Query {
    * @return A new DatabaseReference to the given path
    */
   @NonNull
-  @PublicApi
   public DatabaseReference child(@NonNull String pathString) {
     if (pathString == null) {
       throw new NullPointerException("Can't pass null for argument 'pathString' in child()");
@@ -119,7 +114,6 @@ public class DatabaseReference extends Query {
    * @return A DatabaseReference pointing to the new location
    */
   @NonNull
-  @PublicApi
   public DatabaseReference push() {
     String childNameStr = PushIdGenerator.generatePushChildName(repo.getServerTime());
     ChildKey childKey = ChildKey.fromString(childNameStr);
@@ -161,7 +155,6 @@ public class DatabaseReference extends Query {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> setValue(@Nullable Object value) {
     return setValueInternal(value, PriorityUtilities.parsePriority(this.path, null), null);
   }
@@ -202,7 +195,6 @@ public class DatabaseReference extends Query {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> setValue(@Nullable Object value, @Nullable Object priority) {
     return setValueInternal(value, PriorityUtilities.parsePriority(this.path, priority), null);
   }
@@ -241,7 +233,6 @@ public class DatabaseReference extends Query {
    * @param value The value to set at this location or null to delete the existing data
    * @param listener A listener that will be triggered with the results of the operation
    */
-  @PublicApi
   public void setValue(@Nullable Object value, @Nullable CompletionListener listener) {
     setValueInternal(value, PriorityUtilities.parsePriority(this.path, null), listener);
   }
@@ -280,7 +271,6 @@ public class DatabaseReference extends Query {
    * @param priority The priority to set at this location or null to clear the existing priority
    * @param listener A listener that will be triggered with the results of the operation
    */
-  @PublicApi
   public void setValue(
       @Nullable Object value, @Nullable Object priority, @Nullable CompletionListener listener) {
     setValueInternal(value, PriorityUtilities.parsePriority(this.path, priority), listener);
@@ -335,7 +325,6 @@ public class DatabaseReference extends Query {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> setPriority(@Nullable Object priority) {
     return setPriorityInternal(PriorityUtilities.parsePriority(this.path, priority), null);
   }
@@ -370,7 +359,6 @@ public class DatabaseReference extends Query {
    *     priority
    * @param listener A listener that will be triggered with results of the operation
    */
-  @PublicApi
   public void setPriority(@Nullable Object priority, @Nullable CompletionListener listener) {
     setPriorityInternal(PriorityUtilities.parsePriority(this.path, priority), listener);
   }
@@ -400,7 +388,6 @@ public class DatabaseReference extends Query {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> updateChildren(@NonNull Map<String, Object> update) {
     return updateChildrenInternal(update, null);
   }
@@ -412,7 +399,6 @@ public class DatabaseReference extends Query {
    * @param update The paths to update and their new values
    * @param listener A listener that will be triggered with results of the operation
    */
-  @PublicApi
   public void updateChildren(
       @NonNull final Map<String, Object> update, @Nullable final CompletionListener listener) {
     updateChildrenInternal(update, listener);
@@ -447,7 +433,6 @@ public class DatabaseReference extends Query {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> removeValue() {
     return setValue(null);
   }
@@ -457,7 +442,6 @@ public class DatabaseReference extends Query {
    *
    * @param listener A listener that will be triggered when the operation is complete
    */
-  @PublicApi
   public void removeValue(@Nullable CompletionListener listener) {
     setValue(null, listener);
   }
@@ -469,7 +453,6 @@ public class DatabaseReference extends Query {
    *
    * @return An object for managing disconnect operations at this location
    */
-  @PublicApi
   @NonNull
   public OnDisconnect onDisconnect() {
     Validation.validateWritablePath(getPath());
@@ -484,7 +467,6 @@ public class DatabaseReference extends Query {
    *
    * @param handler An object to handle running the transaction
    */
-  @PublicApi
   public void runTransaction(@NonNull Transaction.Handler handler) {
     runTransaction(handler, true);
   }
@@ -497,7 +479,6 @@ public class DatabaseReference extends Query {
    * @param fireLocalEvents Defaults to true. If set to false, events will only be fired for the
    *     final result state of the transaction, and not for any intermediate states
    */
-  @PublicApi
   public void runTransaction(
       @NonNull final Transaction.Handler handler, final boolean fireLocalEvents) {
     if (handler == null) {
@@ -538,7 +519,6 @@ public class DatabaseReference extends Query {
    *
    * <p>Note: Invoking this method will impact all Firebase Database connections.
    */
-  @PublicApi
   public static void goOffline() {
     goOffline(getDefaultConfig());
   }
@@ -553,7 +533,6 @@ public class DatabaseReference extends Query {
    *
    * <p>Note: Invoking this method will impact all Firebase Database connections.
    */
-  @PublicApi
   public static void goOnline() {
     goOnline(getDefaultConfig());
   }
@@ -570,7 +549,6 @@ public class DatabaseReference extends Query {
    * @return The Database object for this reference.
    */
   @NonNull
-  @PublicApi
   public FirebaseDatabase getDatabase() {
     return this.repo.getDatabase();
   }
@@ -595,7 +573,6 @@ public class DatabaseReference extends Query {
    *     root location
    */
   @Nullable
-  @PublicApi
   public DatabaseReference getParent() {
     Path parentPath = getPath().getParent();
     if (parentPath != null) {
@@ -607,7 +584,6 @@ public class DatabaseReference extends Query {
 
   /** @return A reference to the root location of this Firebase Database */
   @NonNull
-  @PublicApi
   public DatabaseReference getRoot() {
     return new DatabaseReference(repo, new Path(""));
   }
@@ -617,7 +593,6 @@ public class DatabaseReference extends Query {
    *     points to the database root
    */
   @Nullable
-  @PublicApi
   public String getKey() {
     if (getPath().isEmpty()) {
       return null;

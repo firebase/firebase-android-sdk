@@ -71,7 +71,7 @@ public class MockInputStreamHelper extends InputStream {
     }
 
     int bytesRead = inputStream.read(b, off, len);
-    currentOffset += bytesRead > 0 ? bytesRead : 0;
+    currentOffset += Math.max(bytesRead, 0);
     return bytesRead;
   }
 

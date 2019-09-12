@@ -19,8 +19,10 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.support.annotation.VisibleForTesting;
+import android.util.Base64;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 
 /**
@@ -28,9 +30,11 @@ import com.google.android.datatransport.runtime.scheduling.persistence.EventStor
  * Used for Apis 20 and below.
  */
 public class AlarmManagerScheduler implements WorkScheduler {
+  private static final String LOG_TAG = "AlarmManagerScheduler";
   static final String ATTEMPT_NUMBER = "attemptNumber";
   static final String BACKEND_NAME = "backendName";
   static final String EVENT_PRIORITY = "priority";
+  static final String EXTRAS = "extras";
 
   private final Context context;
 
@@ -78,18 +82,34 @@ public class AlarmManagerScheduler implements WorkScheduler {
     intentDataBuilder.appendQueryParameter(BACKEND_NAME, transportContext.getBackendName());
     intentDataBuilder.appendQueryParameter(
         EVENT_PRIORITY, String.valueOf(transportContext.getPriority().ordinal()));
+    if (transportContext.getExtras() != null) {
+      intentDataBuilder.appendQueryParameter(
+          EXTRAS, Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
+    }
     Intent intent = new Intent(context, AlarmManagerSchedulerBroadcastReceiver.class);
     intent.setData(intentDataBuilder.build());
     intent.putExtra(ATTEMPT_NUMBER, attemptNumber);
 
-    if (isJobServiceOn(intent)) return;
+    if (isJobServiceOn(intent)) {
+      Logging.d(
+          LOG_TAG, "Upload for context %s is already scheduled. Returning...", transportContext);
+      return;
+    }
 
     long backendTime = eventStore.getNextCallTime(transportContext);
 
+    long scheduleDelay =
+        config.getScheduleDelay(transportContext.getPriority(), backendTime, attemptNumber);
+
+    Logging.d(
+        LOG_TAG,
+        "Scheduling upload for context %s in %dms(Backend next call timestamp %d). Attempt %d",
+        transportContext,
+        scheduleDelay,
+        backendTime,
+        attemptNumber);
+
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-    this.alarmManager.set(
-        AlarmManager.ELAPSED_REALTIME,
-        config.getScheduleDelay(transportContext.getPriority(), backendTime, attemptNumber),
-        pendingIntent);
+    this.alarmManager.set(AlarmManager.ELAPSED_REALTIME, scheduleDelay, pendingIntent);
   }
 }

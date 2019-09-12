@@ -20,8 +20,8 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.core.DatabaseConfig;
@@ -170,7 +170,7 @@ public class FirebaseDatabaseTest {
     config.setPersistenceCacheSizeBytes(1 * 1024 * 1024);
 
     try {
-      FirebaseDatabase db = new DatabaseReference("", config).getDatabase();
+      FirebaseDatabase db = new DatabaseReference("http://localhost", config).getDatabase();
       db.setPersistenceCacheSizeBytes(1 * 1024 * 1024);
       fail("should throw - can't modify after init");
     } catch (DatabaseException e) {

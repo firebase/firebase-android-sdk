@@ -25,10 +25,6 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.StrictMode;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -36,10 +32,15 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.TestCommandHelper;
@@ -104,7 +105,9 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
+    FirebaseApp.initializeApp(getApplicationContext());
     FirebaseAuth.getInstance().signInAnonymously();
+    FirebaseStorage storage = FirebaseStorage.getInstance();
 
     Button clickButton = findViewById(R.id.streamDownload);
     clickButton.setOnClickListener(
@@ -156,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
                 "uploadWithSpace",
                 () -> {
                   try {
-                    return TestUploadHelper.uploadWithSpace();
+                    return TestUploadHelper.byteUpload(storage.getReference("hello world.txt"));
                   } catch (Exception e) {
                     e.printStackTrace();
                   }

@@ -123,4 +123,20 @@ public class AsyncQueueTest {
     queue.runDelayedTasksUntil(TIMER_ID_3);
     assertEquals(Arrays.asList(1, 2, 3, 4), completedSteps);
   }
+
+  @Test
+  public void tasksAreScheduledWithRespectToShutdown() {
+    expectedSteps = Arrays.asList(1, 2, 4);
+    queue.enqueueAndForget(runnableForStep(1));
+
+    // From this point on, `normal` tasks are not scheduled. Only those who explicitly request to
+    // run after shutdown initiated will run.
+    queue.enqueueAndInitiateShutdown(runnableForStep(2));
+
+    queue.enqueueAndForget(runnableForStep(3));
+    queue.enqueueAndForgetEvenAfterShutdown(runnableForStep(4));
+
+    queue.getExecutor().execute(runnableForStep(5));
+    waitForExpectedSteps();
+  }
 }

@@ -14,7 +14,6 @@
 
 package com.google.firebase.database;
 
-import com.google.firebase.annotations.PublicApi;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -23,8 +22,7 @@ import java.lang.annotation.Target;
 /** Marks a field to be renamed when serialized. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
-@PublicApi
 public @interface PropertyName {
-  @PublicApi
+
   String value();
 }

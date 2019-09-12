@@ -14,7 +14,9 @@
 
 package com.google.firebase.firestore.util;
 
-import android.support.annotation.Nullable;
+import android.os.Handler;
+import android.os.Looper;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Continuation;
 import com.google.cloud.datastore.core.number.NumberComparisonHelper;
 import com.google.firebase.firestore.FieldPath;
@@ -210,5 +212,14 @@ public class Util {
   /** Describes the type of an object, handling null objects gracefully. */
   public static String typeName(@Nullable Object obj) {
     return obj == null ? "null" : obj.getClass().getName();
+  }
+
+  /** Raises an exception on Android's UI Thread and crashes the end user's app. */
+  public static void crashMainThread(RuntimeException exception) {
+    new Handler(Looper.getMainLooper())
+        .post(
+            () -> {
+              throw exception;
+            });
   }
 }

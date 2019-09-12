@@ -14,15 +14,13 @@
 
 package com.google.firebase.database;
 
-import android.support.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
 
 /**
  * Classes implementing this interface can be used to receive events about data changes at a
  * location. Attach the listener to a location user {@link
  * DatabaseReference#addValueEventListener(ValueEventListener)}.
  */
-@PublicApi
 public interface ValueEventListener {
 
   /**
@@ -31,7 +29,6 @@ public interface ValueEventListener {
    *
    * @param snapshot The current data at the location
    */
-  @PublicApi
   public void onDataChange(@NonNull DataSnapshot snapshot);
 
   /**
@@ -43,6 +40,5 @@ public interface ValueEventListener {
    *
    * @param error A description of the error that occurred
    */
-  @PublicApi
   public void onCancelled(@NonNull DatabaseError error);
 }

@@ -70,16 +70,6 @@ public class ArrayValue extends FieldValue {
     return res;
   }
 
-  @Override
-  public List<Object> value(FieldValueOptions options) {
-    // Recursively convert the array into the value that users will see in document snapshots.
-    List<Object> res = new ArrayList<>(internalValue.size());
-    for (FieldValue v : internalValue) {
-      res.add(v.value(options));
-    }
-    return res;
-  }
-
   public List<FieldValue> getInternalValue() {
     return internalValue;
   }

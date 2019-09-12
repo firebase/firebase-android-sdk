@@ -16,9 +16,9 @@ package com.google.firebase;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import java.util.function.Consumer;
-import org.robolectric.RuntimeEnvironment;
 
 final class DataCollectionTestUtil {
   private static final String APP_NAME = "someApp";
@@ -37,8 +37,7 @@ final class DataCollectionTestUtil {
 
   static void withApp(String name, Consumer<FirebaseApp> callable) {
     FirebaseApp app =
-        FirebaseApp.initializeApp(
-            RuntimeEnvironment.application.getApplicationContext(), OPTIONS, name);
+        FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), OPTIONS, name);
     try {
       callable.accept(app);
     } finally {
@@ -47,9 +46,10 @@ final class DataCollectionTestUtil {
   }
 
   static SharedPreferences getSharedPreferences() {
-    return RuntimeEnvironment.application.getSharedPreferences(
-        FIREBASE_APP_PREFS + FirebaseApp.getPersistenceKey(APP_NAME, OPTIONS),
-        Context.MODE_PRIVATE);
+    return ApplicationProvider.getApplicationContext()
+        .getSharedPreferences(
+            FIREBASE_APP_PREFS + FirebaseApp.getPersistenceKey(APP_NAME, OPTIONS),
+            Context.MODE_PRIVATE);
   }
 
   static void setSharedPreferencesTo(boolean enabled) {

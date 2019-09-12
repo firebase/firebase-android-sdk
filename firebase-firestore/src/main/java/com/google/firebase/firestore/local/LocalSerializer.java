@@ -112,15 +112,15 @@ public final class LocalSerializer {
   private Document decodeDocument(
       com.google.firestore.v1.Document document, boolean hasCommittedMutations) {
     DocumentKey key = rpcSerializer.decodeKey(document.getName());
-    ObjectValue value = rpcSerializer.decodeFields(document.getFieldsMap());
     SnapshotVersion version = rpcSerializer.decodeVersion(document.getUpdateTime());
     return new Document(
         key,
         version,
-        value,
         hasCommittedMutations
             ? Document.DocumentState.COMMITTED_MUTATIONS
-            : Document.DocumentState.SYNCED);
+            : Document.DocumentState.SYNCED,
+        document,
+        rpcSerializer::decodeValue);
   }
 
   /** Encodes a NoDocument value to the equivalent proto. */
@@ -205,6 +205,8 @@ public final class LocalSerializer {
     result
         .setTargetId(queryData.getTargetId())
         .setLastListenSequenceNumber(queryData.getSequenceNumber())
+        .setLastLimboFreeSnapshotVersion(
+            rpcSerializer.encodeVersion(queryData.getLastLimboFreeSnapshotVersion()))
         .setSnapshotVersion(rpcSerializer.encodeVersion(queryData.getSnapshotVersion()))
         .setResumeToken(queryData.getResumeToken());
 
@@ -221,6 +223,8 @@ public final class LocalSerializer {
   QueryData decodeQueryData(com.google.firebase.firestore.proto.Target target) {
     int targetId = target.getTargetId();
     SnapshotVersion version = rpcSerializer.decodeVersion(target.getSnapshotVersion());
+    SnapshotVersion lastLimboFreeSnapshotVersion =
+        rpcSerializer.decodeVersion(target.getLastLimboFreeSnapshotVersion());
     ByteString resumeToken = target.getResumeToken();
     long sequenceNumber = target.getLastListenSequenceNumber();
 
@@ -239,6 +243,12 @@ public final class LocalSerializer {
     }
 
     return new QueryData(
-        query, targetId, sequenceNumber, QueryPurpose.LISTEN, version, resumeToken);
+        query,
+        targetId,
+        sequenceNumber,
+        QueryPurpose.LISTEN,
+        version,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
   }
 }

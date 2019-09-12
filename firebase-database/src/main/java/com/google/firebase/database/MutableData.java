@@ -14,9 +14,8 @@
 
 package com.google.firebase.database;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.SnapshotHolder;
 import com.google.firebase.database.core.ValidationPath;
@@ -39,7 +38,6 @@ import java.util.NoSuchElementException;
  * Note that changes made to a child MutableData instance will be visible to the parent and vice
  * versa.
  */
-@PublicApi
 public class MutableData {
 
   private final SnapshotHolder holder;
@@ -61,7 +59,6 @@ public class MutableData {
   }
 
   /** @return True if the data at this location has children, false otherwise */
-  @PublicApi
   public boolean hasChildren() {
     Node node = getNode();
     return !node.isLeafNode() && !node.isEmpty();
@@ -71,8 +68,7 @@ public class MutableData {
    * @param path A relative path
    * @return True if data exists at the given path, otherwise false
    */
-  @PublicApi
-  public boolean hasChild(String path) {
+  public boolean hasChild(@NonNull String path) {
     return !getNode().getChild(new Path(path)).isEmpty();
   }
 
@@ -84,14 +80,12 @@ public class MutableData {
    * @return An instance encapsulating the data and priority at the given path
    */
   @NonNull
-  @PublicApi
   public MutableData child(@NonNull String path) {
     Validation.validatePathString(path);
     return new MutableData(holder, prefixPath.child(new Path(path)));
   }
 
   /** @return The number of immediate children at this location */
-  @PublicApi
   public long getChildrenCount() {
     return getNode().getChildCount();
   }
@@ -106,7 +100,6 @@ public class MutableData {
    * @return The immediate children at this location
    */
   @NonNull
-  @PublicApi
   public Iterable<MutableData> getChildren() {
     Node node = getNode();
     if (node.isEmpty() || node.isLeafNode()) {
@@ -162,7 +155,6 @@ public class MutableData {
 
   /** @return The key name of this location, or null if it is the top-most location */
   @Nullable
-  @PublicApi
   public String getKey() {
     return prefixPath.getBack() != null ? prefixPath.getBack().asString() : null;
   }
@@ -187,7 +179,6 @@ public class MutableData {
    *     this location.
    */
   @Nullable
-  @PublicApi
   public Object getValue() {
     return getNode().getValue();
   }
@@ -237,7 +228,6 @@ public class MutableData {
    *     if there is no data at this location.
    */
   @Nullable
-  @PublicApi
   public <T> T getValue(@NonNull Class<T> valueType) {
     Object value = getNode().getValue();
     return CustomClassMapper.convertToCustomClass(value, valueType);
@@ -265,7 +255,6 @@ public class MutableData {
    *     there is no data at this location.
    */
   @Nullable
-  @PublicApi
   public <T> T getValue(@NonNull GenericTypeIndicator<T> t) {
     Object value = getNode().getValue();
     return CustomClassMapper.convertToCustomClass(value, t);
@@ -304,7 +293,6 @@ public class MutableData {
    *
    * @param value The value to set at this location or null to delete the existing data
    */
-  @PublicApi
   public void setValue(@Nullable Object value) throws DatabaseException {
     ValidationPath.validateWithObject(prefixPath, value);
     Object bouncedValue = CustomClassMapper.convertToPlainJavaTypes(value);
@@ -317,7 +305,6 @@ public class MutableData {
    *
    * @param priority The desired priority or null to clear the existing priority
    */
-  @PublicApi
   public void setPriority(@Nullable Object priority) {
     holder.update(
         prefixPath,
@@ -336,7 +323,6 @@ public class MutableData {
    *
    * @return The priority at this location as a native type or null if no priority was set
    */
-  @PublicApi
   @Nullable
   public Object getPriority() {
     return getNode().getPriority().getValue();

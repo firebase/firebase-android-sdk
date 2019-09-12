@@ -28,6 +28,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Base64;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
@@ -64,6 +65,12 @@ public class AlarmManagerSchedulerTest {
     intentDataBuilder.appendQueryParameter(
         AlarmManagerScheduler.EVENT_PRIORITY,
         String.valueOf(transportContext.getPriority().ordinal()));
+
+    if (transportContext.getExtras() != null) {
+      intentDataBuilder.appendQueryParameter(
+          AlarmManagerScheduler.EXTRAS,
+          Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
+    }
 
     Intent intent = new Intent(context, AlarmManagerSchedulerBroadcastReceiver.class);
     intent.setData(intentDataBuilder.build());
@@ -122,6 +129,16 @@ public class AlarmManagerSchedulerTest {
     assertThat(scheduler.isJobServiceOn(intent)).isTrue();
     scheduler.schedule(TRANSPORT_CONTEXT, 11);
     verify(alarmManager, times(1)).set(eq(AlarmManager.ELAPSED_REALTIME), gt(1000000L), any());
+  }
+
+  @Test
+  public void schedule_whenExtrasEvailable_transmitsExtras() {
+    TransportContext transportContext =
+        TransportContext.builder().setBackendName("backend1").setExtras("e1".getBytes()).build();
+    Intent intent = getIntent(transportContext);
+    assertThat(scheduler.isJobServiceOn(intent)).isFalse();
+    scheduler.schedule(transportContext, 1);
+    assertThat(scheduler.isJobServiceOn(intent)).isTrue();
   }
 
   @Test

@@ -20,9 +20,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.android.gms.common.internal.Preconditions;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -33,6 +34,7 @@ import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.TestAccessHelper;
 import com.google.firebase.firestore.UserDataConverter;
+import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
@@ -64,6 +66,7 @@ import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
+import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
 import com.google.protobuf.ByteString;
@@ -175,21 +178,21 @@ public class TestUtil {
 
   public static Document doc(String key, long version, Map<String, Object> data) {
     return new Document(
-        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
+        key(key), version(version), Document.DocumentState.SYNCED, wrapObject(data));
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key, version(version), wrapObject(data), Document.DocumentState.SYNCED);
+    return new Document(key, version(version), Document.DocumentState.SYNCED, wrapObject(data));
   }
 
   public static Document doc(
       String key, long version, ObjectValue data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), data, documentState);
+    return new Document(key(key), version(version), documentState, data);
   }
 
   public static Document doc(
       String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), wrapObject(data), documentState);
+    return new Document(key(key), version(version), documentState, wrapObject(data));
   }
 
   public static NoDocument deletedDoc(String key, long version) {
@@ -220,8 +223,13 @@ public class TestUtil {
     return keySet;
   }
 
-  public static Filter filter(String key, String operator, Object value) {
-    return Filter.create(field(key), operatorFromString(operator), wrap(value));
+  public static FieldFilter filter(String key, String operator, Object value) {
+    Filter filter = FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
+    if (filter instanceof FieldFilter) {
+      return (FieldFilter) filter;
+    } else {
+      throw new IllegalArgumentException("Unrecognized filter: " + filter.toString());
+    }
   }
 
   public static Operator operatorFromString(String s) {
@@ -237,6 +245,10 @@ public class TestUtil {
       return Operator.GREATER_THAN_OR_EQUAL;
     } else if (s.equals("array-contains")) {
       return Operator.ARRAY_CONTAINS;
+    } else if (s.equals("in")) {
+      return Operator.IN;
+    } else if (s.equals("array-contains-any")) {
+      return Operator.ARRAY_CONTAINS_ANY;
     } else {
       throw new IllegalStateException("Unknown operator: " + s);
     }
@@ -364,10 +376,33 @@ public class TestUtil {
     return activeLimboQueries(docKey, asList(targets));
   }
 
+  public static RemoteEvent noChangeEvent(int targetId, int version) {
+    return noChangeEvent(targetId, version, resumeToken(version));
+  }
+
+  public static RemoteEvent noChangeEvent(int targetId, int version, ByteString resumeToken) {
+    QueryData queryData = TestUtil.queryData(targetId, QueryPurpose.LISTEN, "foo/bar");
+    TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
+    testTargetMetadataProvider.setSyncedKeys(queryData, DocumentKey.emptyKeySet());
+
+    WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
+
+    WatchChange.WatchTargetChange watchChange =
+        new WatchChange.WatchTargetChange(
+            WatchChange.WatchTargetChangeType.NoChange, asList(targetId), resumeToken);
+    aggregator.handleTargetChange(watchChange);
+    return aggregator.createRemoteEvent(version(version));
+  }
+
   public static RemoteEvent addedRemoteEvent(
       MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
-    DocumentChange change =
-        new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
+    return addedRemoteEvent(Collections.singletonList(doc), updatedInTargets, removedFromTargets);
+  }
+
+  public static RemoteEvent addedRemoteEvent(
+      List<MaybeDocument> docs, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+    Preconditions.checkArgument(!docs.isEmpty(), "Cannot pass empty docs array");
+
     WatchChangeAggregator aggregator =
         new WatchChangeAggregator(
             new WatchChangeAggregator.TargetMetadataProvider() {
@@ -378,23 +413,36 @@ public class TestUtil {
 
               @Override
               public QueryData getQueryDataForTarget(int targetId) {
-                return queryData(targetId, QueryPurpose.LISTEN, doc.getKey().toString());
+                ResourcePath collectionPath = docs.get(0).getKey().getPath().popLast();
+                return queryData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
               }
             });
-    aggregator.handleDocumentChange(change);
-    return aggregator.createRemoteEvent(doc.getVersion());
+
+    SnapshotVersion version = SnapshotVersion.NONE;
+
+    for (MaybeDocument doc : docs) {
+      DocumentChange change =
+          new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
+      aggregator.handleDocumentChange(change);
+      version = doc.getVersion().compareTo(version) > 0 ? doc.getVersion() : version;
+    }
+
+    return aggregator.createRemoteEvent(version);
   }
 
   public static RemoteEvent updateRemoteEvent(
       MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
-    return updateRemoteEvent(doc, updatedInTargets, removedFromTargets, Collections.emptyList());
+    List<Integer> activeTargets = new ArrayList<>();
+    activeTargets.addAll(updatedInTargets);
+    activeTargets.addAll(removedFromTargets);
+    return updateRemoteEvent(doc, updatedInTargets, removedFromTargets, activeTargets);
   }
 
   public static RemoteEvent updateRemoteEvent(
       MaybeDocument doc,
       List<Integer> updatedInTargets,
       List<Integer> removedFromTargets,
-      List<Integer> limboTargets) {
+      List<Integer> activeTargets) {
     DocumentChange change =
         new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
     WatchChangeAggregator aggregator =
@@ -407,11 +455,9 @@ public class TestUtil {
 
               @Override
               public QueryData getQueryDataForTarget(int targetId) {
-                boolean isLimbo =
-                    !(updatedInTargets.contains(targetId) || removedFromTargets.contains(targetId));
-                QueryPurpose purpose =
-                    isLimbo ? QueryPurpose.LIMBO_RESOLUTION : QueryPurpose.LISTEN;
-                return queryData(targetId, purpose, doc.getKey().toString());
+                return activeTargets.contains(targetId)
+                    ? queryData(targetId, QueryPurpose.LISTEN, doc.getKey().toString())
+                    : null;
               }
             });
     aggregator.handleDocumentChange(change);
@@ -480,7 +526,7 @@ public class TestUtil {
   }
 
   public static LocalViewChanges viewChanges(
-      int targetId, List<String> addedKeys, List<String> removedKeys) {
+      int targetId, boolean fromCache, List<String> addedKeys, List<String> removedKeys) {
     ImmutableSortedSet<DocumentKey> added = DocumentKey.emptyKeySet();
     for (String keyPath : addedKeys) {
       added = added.insert(key(keyPath));
@@ -489,7 +535,7 @@ public class TestUtil {
     for (String keyPath : removedKeys) {
       removed = removed.insert(key(keyPath));
     }
-    return new LocalViewChanges(targetId, added, removed);
+    return new LocalViewChanges(targetId, fromCache, added, removed);
   }
 
   /** Creates a resume token to match the given snapshot version. */

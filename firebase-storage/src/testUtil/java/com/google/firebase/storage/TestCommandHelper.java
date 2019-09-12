@@ -16,8 +16,8 @@ package com.google.firebase.storage;
 
 import android.annotation.TargetApi;
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -48,7 +48,7 @@ public class TestCommandHelper {
         executor,
         task -> {
           builder.append("Received Download Url.\n");
-          builder.append("getDownloadUrl:").append(task.getResult().toString());
+          builder.append("getDownloadUrl:").append(task.getResult());
           builder.append("\nonComplete:Success=\n").append(task.isSuccessful());
           result.setResult(builder);
         });
@@ -180,7 +180,7 @@ public class TestCommandHelper {
     builder.append("getMD5Hash:").append(metadata.getMd5Hash()).append("\n");
     builder.append("getGeneration:").append(metadata.getGeneration()).append("\n");
     builder.append("getMetadataGeneration:").append(metadata.getMetadataGeneration()).append("\n");
-    builder.append("getSizeBytes:").append(Long.toString(metadata.getSizeBytes())).append("\n");
+    builder.append("getSizeBytes:").append(metadata.getSizeBytes()).append("\n");
     builder.append("getReference:").append(metadata.getReference().getName()).append("\n");
     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
     sdf.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
@@ -242,12 +242,12 @@ public class TestCommandHelper {
           public void onComplete(@NonNull Task<ListResult> task) {
             ++pagesReceived[0];
 
-            ListResult listResult = task.getResult();
-
             builder.append("\nlist:");
             builder.append("\n  onComplete:Success=").append(task.isSuccessful());
 
             if (task.isSuccessful()) {
+              ListResult listResult = task.getResult();
+
               builder.append("\n  Received Prefixes:");
               for (StorageReference prefix : listResult.getPrefixes()) {
                 builder.append("\n    ").append(prefix.getPath());
@@ -257,12 +257,14 @@ public class TestCommandHelper {
                 builder.append("\n    ").append(item.getPath());
               }
               builder.append("\n  Page Token:").append(listResult.getPageToken());
-            }
 
-            if (pagesReceived[0] == pageCount) {
-              result.setResult(builder);
+              if (pagesReceived[0] == pageCount) {
+                result.setResult(builder);
+              } else {
+                reference.list(pageSize, listResult.getPageToken()).addOnCompleteListener(this);
+              }
             } else {
-              reference.list(pageSize, listResult.getPageToken()).addOnCompleteListener(this);
+              result.setResult(builder);
             }
           }
         });
@@ -280,12 +282,11 @@ public class TestCommandHelper {
     listFiles.addOnCompleteListener(
         executor,
         task -> {
-          ListResult listResult = task.getResult();
-
           builder.append("\nlistAll:");
           builder.append("\n  onComplete:Success=").append(task.isSuccessful());
 
           if (task.isSuccessful()) {
+            ListResult listResult = task.getResult();
             builder.append("\n  Received Prefixes:");
             for (StorageReference prefix : listResult.getPrefixes()) {
               builder.append("\n    ").append(prefix.getPath());

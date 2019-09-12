@@ -15,9 +15,9 @@
 package com.google.firebase.inappmessaging.display.internal.layout;
 
 import android.content.Context;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
+import androidx.annotation.Nullable;
 import com.google.firebase.inappmessaging.display.R;
 import com.google.firebase.inappmessaging.display.internal.Logging;
 import com.google.firebase.inappmessaging.display.internal.layout.util.MeasureUtils;

@@ -17,6 +17,8 @@ package com.google.firebase.testing.combined;
 import com.google.firebase.testing.database.DatabaseTest;
 import com.google.firebase.testing.firestore.FirestoreTest;
 import com.google.firebase.testing.functions.FunctionsTest;
+import com.google.firebase.testing.inappmessaging.InappMessagingTest;
+import com.google.firebase.testing.remoteconfig.RemoteConfigTest;
 import com.google.firebase.testing.storage.StorageTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -25,5 +27,12 @@ import org.junit.runners.Suite;
  * A test suite combining the individual product flavors.
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses({DatabaseTest.class, FirestoreTest.class, FunctionsTest.class, StorageTest.class})
+@Suite.SuiteClasses({
+  DatabaseTest.class,
+  FirestoreTest.class,
+  FunctionsTest.class,
+  InappMessagingTest.class,
+  RemoteConfigTest.class,
+  StorageTest.class,
+})
 public final class AllTests {}

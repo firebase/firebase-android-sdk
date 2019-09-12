@@ -25,28 +25,29 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
-import android.support.v4.os.UserManagerCompat;
-import android.support.v4.util.ArrayMap;
 import android.text.TextUtils;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import androidx.collection.ArrayMap;
+import androidx.core.os.UserManagerCompat;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.PlatformVersion;
 import com.google.android.gms.common.util.ProcessUtils;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentDiscovery;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
+import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
+import com.google.firebase.platforminfo.KotlinDetector;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -85,12 +86,11 @@ import javax.annotation.concurrent.GuardedBy;
  * Use of Firebase in processes other than the main process is not supported and will likely cause
  * problems related to resource contention.
  */
-@PublicApi
 public class FirebaseApp {
 
   private static final String LOG_TAG = "FirebaseApp";
 
-  public static final String DEFAULT_APP_NAME = "[DEFAULT]";
+  public static final @NonNull String DEFAULT_APP_NAME = "[DEFAULT]";
 
   private static final Object LOCK = new Object();
 
@@ -102,6 +102,7 @@ public class FirebaseApp {
 
   private static final String FIREBASE_ANDROID = "fire-android";
   private static final String FIREBASE_COMMON = "fire-core";
+  private static final String KOTLIN = "kotlin";
 
   private final Context applicationContext;
   private final String name;
@@ -121,7 +122,6 @@ public class FirebaseApp {
 
   /** Returns the application {@link Context}. */
   @NonNull
-  @PublicApi
   public Context getApplicationContext() {
     checkNotDeleted();
     return applicationContext;
@@ -129,7 +129,6 @@ public class FirebaseApp {
 
   /** Returns the unique name of this app. */
   @NonNull
-  @PublicApi
   public String getName() {
     checkNotDeleted();
     return name;
@@ -137,7 +136,6 @@ public class FirebaseApp {
 
   /** Returns the specified {@link FirebaseOptions}. */
   @NonNull
-  @PublicApi
   public FirebaseOptions getOptions() {
     checkNotDeleted();
     return options;
@@ -162,8 +160,8 @@ public class FirebaseApp {
   }
 
   /** Returns a mutable list of all FirebaseApps. */
-  @PublicApi
-  public static List<FirebaseApp> getApps(Context context) {
+  @NonNull
+  public static List<FirebaseApp> getApps(@NonNull Context context) {
     synchronized (LOCK) {
       return new ArrayList<>(INSTANCES.values());
     }
@@ -175,7 +173,6 @@ public class FirebaseApp {
    * @throws IllegalStateException if the default app was not initialized.
    */
   @NonNull
-  @PublicApi
   public static FirebaseApp getInstance() {
     synchronized (LOCK) {
       FirebaseApp defaultApp = INSTANCES.get(DEFAULT_APP_NAME);
@@ -199,7 +196,6 @@ public class FirebaseApp {
    *     #initializeApp(Context, FirebaseOptions, String)}.
    */
   @NonNull
-  @PublicApi
   public static FirebaseApp getInstance(@NonNull String name) {
     synchronized (LOCK) {
       FirebaseApp firebaseApp = INSTANCES.get(normalize(name));
@@ -239,7 +235,6 @@ public class FirebaseApp {
    *     keys are present in string resources. Returns null otherwise.
    */
   @Nullable
-  @PublicApi
   public static FirebaseApp initializeApp(@NonNull Context context) {
     synchronized (LOCK) {
       if (INSTANCES.containsKey(DEFAULT_APP_NAME)) {
@@ -267,7 +262,6 @@ public class FirebaseApp {
    * initialization that way is the expected situation.
    */
   @NonNull
-  @PublicApi
   public static FirebaseApp initializeApp(
       @NonNull Context context, @NonNull FirebaseOptions options) {
     return initializeApp(context, options, DEFAULT_APP_NAME);
@@ -284,7 +278,6 @@ public class FirebaseApp {
    * @return an instance of {@link FirebaseApp}
    */
   @NonNull
-  @PublicApi
   public static FirebaseApp initializeApp(
       @NonNull Context context, @NonNull FirebaseOptions options, @NonNull String name) {
     GlobalBackgroundStateListener.ensureBackgroundStateListenerRegistered(context);
@@ -319,7 +312,6 @@ public class FirebaseApp {
    *
    * @hide
    */
-  @PublicApi
   public void delete() {
     boolean valueChanged = deleted.compareAndSet(false /* expected */, true);
     if (!valueChanged) {
@@ -348,7 +340,6 @@ public class FirebaseApp {
    * If set to true it indicates that Firebase should close database connections automatically when
    * the app is in the background. Disabled by default.
    */
-  @PublicApi
   public void setAutomaticResourceManagementEnabled(boolean enabled) {
     checkNotDeleted();
     boolean updated =
@@ -409,6 +400,8 @@ public class FirebaseApp {
 
     List<ComponentRegistrar> registrars =
         ComponentDiscovery.forContext(applicationContext).discover();
+
+    String kotlinVersion = KotlinDetector.detectVersion();
     componentRuntime =
         new ComponentRuntime(
             UI_EXECUTOR,
@@ -418,7 +411,10 @@ public class FirebaseApp {
             Component.of(options, FirebaseOptions.class),
             LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
             LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
-            DefaultUserAgentPublisher.component());
+            kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null,
+            DefaultUserAgentPublisher.component(),
+            DefaultHeartBeatInfo.component());
+
     dataCollectionConfigStorage =
         new Lazy<>(
             () ->

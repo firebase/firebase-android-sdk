@@ -16,28 +16,27 @@ package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import android.support.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.Assert;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
- * A QueryDocumentSnapshot contains data read from a document in your Firestore database as part of
- * a query. The document is guaranteed to exist and its data can be extracted using the getData() or
- * get() methods.
+ * A {@code QueryDocumentSnapshot} contains data read from a document in your Cloud Firestore
+ * database as part of a query. The document is guaranteed to exist and its data can be extracted
+ * using the {@link #getData()} or the various {@code get()} methods in {@link DocumentSnapshot}
+ * (such as {@link DocumentSnapshot#get(String)}).
  *
- * <p>QueryDocumentSnapshot offers the same API surface as {@link DocumentSnapshot}. Since query
- * results contain only existing documents, the exists() method will always return true and
- * getData() will never be null.
+ * <p>{@code QueryDocumentSnapshot} offers the same API surface as {@code DocumentSnapshot}. Since
+ * query results contain only existing documents, the {@link #exists()} method will always return
+ * true and {@link #getData()} will never be {@code null}.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
-@PublicApi
 public class QueryDocumentSnapshot extends DocumentSnapshot {
 
   private QueryDocumentSnapshot(
@@ -62,7 +61,6 @@ public class QueryDocumentSnapshot extends DocumentSnapshot {
    */
   @NonNull
   @Override
-  @PublicApi
   public Map<String, Object> getData() {
     Map<String, Object> result = super.getData();
     Assert.hardAssert(result != null, "Data in a QueryDocumentSnapshot should be non-null");
@@ -75,11 +73,10 @@ public class QueryDocumentSnapshot extends DocumentSnapshot {
    *
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
-   * @return The fields of the document as a Map or null if the document doesn't exist.
+   * @return The fields of the document as a Map or {@code null} if the document doesn't exist.
    */
   @NonNull
   @Override
-  @PublicApi
   public Map<String, Object> getData(@NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
@@ -96,7 +93,6 @@ public class QueryDocumentSnapshot extends DocumentSnapshot {
    */
   @NonNull
   @Override
-  @PublicApi
   public <T> T toObject(@NonNull Class<T> valueType) {
     T result = super.toObject(valueType);
     Assert.hardAssert(result != null, "Object in a QueryDocumentSnapshot should be non-null");
@@ -113,7 +109,6 @@ public class QueryDocumentSnapshot extends DocumentSnapshot {
    */
   @NonNull
   @Override
-  @PublicApi
   public <T> T toObject(
       @NonNull Class<T> valueType, @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(

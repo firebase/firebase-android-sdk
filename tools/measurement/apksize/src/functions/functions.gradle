@@ -31,5 +31,6 @@ android {
 dependencies {
     functionsImplementation project(":firebase-functions")
     functionsImplementation "com.google.android.gms:play-services-auth:16.0.1"
-    functionsImplementation "com.android.support:support-v4:27.1.0"
+    functionsImplementation "com.google.android.gms:play-services-base:16.1.0"
+    functionsImplementation 'androidx.legacy:legacy-support-v4:1.0.0'
 }
