@@ -25,7 +25,7 @@ apply from: "src/config/config.gradle"
 apply from: "src/database/database.gradle"
 apply from: "src/firestore/firestore.gradle"
 apply from: "src/functions/functions.gradle"
-apply from: "src/inappmessagingdisplay/inappmessaging-display.gradle"
+// apply from: "src/inappmessagingdisplay/inappmessaging-display.gradle"
 apply from: "src/storage/storage.gradle"
 
 /**
@@ -40,6 +40,15 @@ task generateApkSizeMeasurements(type: GenerateMeasurementsTask) {
 
     sdkMapFile = file("sdks.csv")
     reportFile = file("$buildDir/size-report.json")
+}
+
+task generateAarSizeMeasurements(type: com.google.firebase.gradle.plugins.measurement.aarsize.GenerateMeasurementsTask) {
+    description 'Builds release aar artifacts and calculates AAR sizes.'
+    group 'Measurements'
+
+    dependsOn (":publishAllToBuildDir")
+
+    sdkIgnoreFile = file("sdks_ignore.csv")
 }
 
 /**
