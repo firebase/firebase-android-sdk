@@ -26,6 +26,7 @@ in your app:
   * [`firebase-common`](ktx/common.md)
   * [`firebase-firestore`](ktx/firestore.md)
   * [`firebase-functions`](ktx/functions.md)
+  * [`firebase-remote-config`](ktx/remoteconfig.md)
 
 [android-setup]: https://firebase.google.com/docs/android/setup
 [main-readme]: https://github.com/firebase/firebase-android-sdk/blob/master/README.md
