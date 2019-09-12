@@ -187,8 +187,14 @@ public class CustomClassMapper {
       // that this array always has at least one element, since the unbounded wildcard <?> always
       // has at least an upper bound of Object.
       Type[] upperBounds = ((WildcardType) type).getUpperBounds();
-      hardAssert(upperBounds.length > 0, "Unexpected type bounds on wildcard " + type);
+      hardAssert(upperBounds.length > 0, "Wildcard type " + type + " is not upper bounded.");
       return deserializeToType(o, upperBounds[0]);
+    } else if (type instanceof TypeVariable) {
+      // As above, TypeVariables always have at least one upper bound of Object.
+      Type[] upperBounds = ((TypeVariable<?>) type).getBounds();
+      hardAssert(upperBounds.length > 0, "Wildcard type " + type + " is not upper bounded.");
+      return deserializeToType(o, upperBounds[0]);
+
     } else if (type instanceof GenericArrayType) {
       throw new DatabaseException(
           "Generic Arrays are not supported, please use Lists " + "instead");
