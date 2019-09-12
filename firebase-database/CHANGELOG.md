@@ -1,4 +1,5 @@
 # 19.1.1
+- [changed] Added support for type wildcards in GenericTypeIndicator (#792)
 - [fixed] Fixed a crash that occurred when we attempted to start a network
   connection during app shutdown (#672).
 
@@ -26,6 +27,6 @@
 - [internal] Removed ``@PublicApi` annotations as they are no longer enforced
   and have no semantic meaning.
 
-# 16.0.6  
+# 16.0.6
 - [fixed] Fixed an issue that could cause a NullPointerException during the
   initial handshake with the Firebase backend (#119).
