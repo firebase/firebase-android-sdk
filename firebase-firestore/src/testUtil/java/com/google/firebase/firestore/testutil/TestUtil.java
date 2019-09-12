@@ -418,13 +418,15 @@ public class TestUtil {
               }
             });
 
+    SnapshotVersion version = SnapshotVersion.NONE;
+
     for (MaybeDocument doc : docs) {
       DocumentChange change =
           new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
       aggregator.handleDocumentChange(change);
+      version = doc.getVersion().compareTo(version) > 0 ? doc.getVersion() : version;
     }
 
-    SnapshotVersion version = docs.get(0).getVersion();
     return aggregator.createRemoteEvent(version);
   }
 
