@@ -1763,6 +1763,15 @@ public class MapperTest {
     assertEquals("foo", bean.value);
   }
 
+  @Test
+  public void usingWildcardInGenericTypeIndicatorIsAllowed() {
+    Map<String, String> fooMap = Collections.singletonMap("foo", "bar");
+    assertEquals(
+        fooMap,
+        CustomClassMapper.convertToCustomClass(
+            fooMap, new GenericTypeIndicator<Map<String, ? extends String>>() {}));
+  }
+
   @Test(expected = DatabaseException.class)
   public void unknownTypeParametersNotSupported() {
     deserialize("{'value': 'foo'}", new GenericTypeIndicatorSubclass<GenericBean<?>>() {});

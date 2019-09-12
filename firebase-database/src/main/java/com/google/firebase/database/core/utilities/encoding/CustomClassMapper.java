@@ -177,7 +177,18 @@ public class CustomClassMapper {
     } else if (type instanceof Class) {
       return deserializeToClass(o, (Class<T>) type);
     } else if (type instanceof WildcardType) {
-      throw new DatabaseException("Generic wildcard types are not supported");
+      Type[] lowerBounds = ((WildcardType) type).getLowerBounds();
+      if (lowerBounds.length > 0) {
+        throw new DatabaseException("Generic lower-bounded wildcard types are not supported");
+      }
+
+      // Upper bounded wildcards are of the form <? extends Foo>. Multiple upper bounds are allowed
+      // but if any of the bounds are of class type, that bound must come first in this array. Note
+      // that this array always has at least one element, since the unbounded wildcard <?> always
+      // has at least an upper bound of Object.
+      Type[] upperBounds = ((WildcardType) type).getUpperBounds();
+      hardAssert(upperBounds.length > 0, "Unexpected type bounds on wildcard " + type);
+      return deserializeToType(o, upperBounds[0]);
     } else if (type instanceof GenericArrayType) {
       throw new DatabaseException(
           "Generic Arrays are not supported, please use Lists " + "instead");
