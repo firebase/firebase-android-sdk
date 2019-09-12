@@ -1073,15 +1073,13 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testLastLimboFreeSnapshotIsAdvancedDuringViewProcessing() {
-    assumeFalse(garbageCollectorIsEager());
-
     // This test verifies that the `lastLimboFreeSnapshot` version for QueryData is advanced when
     // we compute a limbo-free free view and that the mapping is persisted when we release a query.
 
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
 
-    // Mark the query as current.
+    // Advance the query snapshot.
     applyRemoteEvent(noChangeEvent(targetId, 10));
 
     // At this point, we have not yet confirmed that the query is limbo free.
@@ -1096,8 +1094,10 @@ public abstract class LocalStoreTestCase {
     // The last limbo free snapshot version is persisted even if we release the query.
     releaseQuery(query);
 
-    cachedQueryData = localStore.getQueryData(query);
-    Assert.assertEquals(version(10), cachedQueryData.getLastLimboFreeSnapshotVersion());
+    if (!garbageCollectorIsEager()) {
+      cachedQueryData = localStore.getQueryData(query);
+      Assert.assertEquals(version(10), cachedQueryData.getLastLimboFreeSnapshotVersion());
+    }
   }
 
   @Test
