@@ -161,10 +161,11 @@ public class IntegrationTestUtil {
   }
 
   public static FirebaseApp testFirebaseApp() {
-    if (FirebaseApp.getInstance(FirebaseApp.DEFAULT_APP_NAME) != null) {
+    try {
       return FirebaseApp.getInstance(FirebaseApp.DEFAULT_APP_NAME);
+    } catch (IllegalStateException e) {
+      return FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), OPTIONS);
     }
-    return FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), OPTIONS);
   }
 
   /** Initializes a new Firestore instance that uses the default project. */
