@@ -129,7 +129,6 @@ public class TestUtil {
             documentChanges,
             isFromCache,
             mutatedKeys,
-            /* synced= */ false,
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ false);
     return new QuerySnapshot(query(path), viewSnapshot, FIRESTORE);

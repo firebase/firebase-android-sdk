@@ -18,6 +18,7 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import java.util.Collections;
+import java.util.Map;
 
 /** A network request that returns bytes of a gcs object. */
 public class GetNetworkRequest extends NetworkRequest {
@@ -39,8 +40,7 @@ public class GetNetworkRequest extends NetworkRequest {
 
   @Override
   @NonNull
-  protected String getQueryParameters() {
-    return getPostDataString(
-        Collections.singletonList("alt"), Collections.singletonList("media"), true);
+  protected Map<String, String> getQueryParameters() {
+    return Collections.singletonMap("alt", "media");
   }
 }

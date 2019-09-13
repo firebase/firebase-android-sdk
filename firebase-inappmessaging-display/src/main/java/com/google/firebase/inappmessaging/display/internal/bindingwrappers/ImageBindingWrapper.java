@@ -28,7 +28,11 @@ import com.google.firebase.inappmessaging.display.R;
 import com.google.firebase.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
 import com.google.firebase.inappmessaging.display.internal.layout.FiamFrameLayout;
+import com.google.firebase.inappmessaging.model.Action;
+import com.google.firebase.inappmessaging.model.ImageOnlyMessage;
 import com.google.firebase.inappmessaging.model.InAppMessage;
+import com.google.firebase.inappmessaging.model.MessageType;
+import java.util.Map;
 import javax.inject.Inject;
 
 /**
@@ -56,7 +60,8 @@ public class ImageBindingWrapper extends BindingWrapper {
   @Nullable
   @Override
   public ViewTreeObserver.OnGlobalLayoutListener inflate(
-      View.OnClickListener actionListener, View.OnClickListener dismissOnClickListener) {
+      Map<Action, View.OnClickListener> actionListeners,
+      View.OnClickListener dismissOnClickListener) {
     View v = inflater.inflate(R.layout.image, null);
     imageRoot = v.findViewById(R.id.image_root);
     imageContentRoot = v.findViewById(R.id.image_content_root);
@@ -66,8 +71,14 @@ public class ImageBindingWrapper extends BindingWrapper {
     // Setup ImageView.
     imageView.setMaxHeight(config.getMaxImageHeight());
     imageView.setMaxWidth(config.getMaxImageWidth());
-    imageView.setVisibility(TextUtils.isEmpty(message.getImageUrl()) ? View.GONE : View.VISIBLE);
-    imageView.setOnClickListener(actionListener);
+    if (message.getMessageType().equals(MessageType.IMAGE_ONLY)) {
+      ImageOnlyMessage msg = (ImageOnlyMessage) message;
+      imageView.setVisibility(
+          (msg.getImageData() == null || TextUtils.isEmpty(msg.getImageData().getImageUrl()))
+              ? View.GONE
+              : View.VISIBLE);
+      imageView.setOnClickListener(actionListeners.get(msg.getAction()));
+    }
 
     // Setup dismiss button.
     imageRoot.setDismissListener(dismissOnClickListener);

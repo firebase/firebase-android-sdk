@@ -54,18 +54,6 @@ public class Slashes {
     return s.replace("%2F", "/");
   }
 
-  /**
-   * URL Encodes slashes (only) within a string.
-   *
-   * @param s The String to change
-   * @return A modified string that replaces slashes with their escape codes.
-   */
-  @NonNull
-  public static String unSlashize(@NonNull String s) {
-    Preconditions.checkNotNull(s);
-    return s.replace("/", "%2F");
-  }
-
   @NonNull
   @SuppressWarnings("StringSplitter")
   public static String normalizeSlashes(@NonNull String uriSegment) {

@@ -48,9 +48,11 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public void add(MaybeDocument document, SnapshotVersion readTime) {
-    hardAssert(
-        !readTime.equals(SnapshotVersion.NONE),
-        "Cannot add document to the RemoteDocumentCache with a read time of zero");
+    // TODO(index-free): This assert causes a crash for one of our customers. Re-add the assert once
+    // we have fixed the root cause and cleaned up the underlying data.
+    //    hardAssert(
+    //        !readTime.equals(SnapshotVersion.NONE),
+    //        "Cannot add document to the RemoteDocumentCache with a read time of zero");
     docs = docs.insert(document.getKey(), new Pair<>(document, readTime));
 
     persistence.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());

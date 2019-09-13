@@ -268,7 +268,9 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     }
 
     persistence.start();
-    // TODO(index-free): Use IndexFreeQueryEngine/IndexedQueryEngine as appropriate.
+    // TODO(index-free): Use IndexFreeQueryEngine/IndexedQueryEngine as appropriate. When we enable
+    // IndexFreeQueryEngine, we have to reset the "lastLimboFreeSnapshotVersion" for all persisted
+    // QueryData as we had to revert the part of the change that ensured that the data is reliable.
     QueryEngine queryEngine = new SimpleQueryEngine();
     localStore = new LocalStore(persistence, queryEngine, user);
     if (gc != null) {
@@ -287,6 +289,18 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     // queue, etc.) so must be started after LocalStore.
     localStore.start();
     remoteStore.start();
+  }
+
+  public void addSnapshotsInSyncListener(EventListener<Void> listener) {
+    verifyNotTerminated();
+    asyncQueue.enqueueAndForget(() -> eventManager.addSnapshotsInSyncListener(listener));
+  }
+
+  public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
+    if (isTerminated()) {
+      return;
+    }
+    eventManager.removeSnapshotsInSyncListener(listener);
   }
 
   private void verifyNotTerminated() {
