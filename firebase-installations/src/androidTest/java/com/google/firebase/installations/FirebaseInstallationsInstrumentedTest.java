@@ -18,6 +18,8 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN_2;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN_3;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN_4;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_CREATION_TIMESTAMP_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_CREATION_TIMESTAMP_2;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_FID_1;
@@ -28,11 +30,16 @@ import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOK
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.util.Log;
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.common.util.Clock;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -103,11 +110,21 @@ public class FirebaseInstallationsInstrumentedTest {
           .setRegistrationStatus(PersistedFid.RegistrationStatus.UNREGISTERED)
           .build();
 
+  private static final PersistedFidEntry UPDATED_AUTH_TOKEN_FID_ENTRY =
+      PersistedFidEntry.builder()
+          .setFirebaseInstallationId(TEST_FID_1)
+          .setAuthToken(TEST_AUTH_TOKEN_2)
+          .setRefreshToken(TEST_REFRESH_TOKEN)
+          .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_2)
+          .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+          .setRegistrationStatus(PersistedFid.RegistrationStatus.REGISTERED)
+          .build();
+
   @Before
   public void setUp() throws FirebaseInstallationServiceException {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
-    executor = new ThreadPoolExecutor(0, 2, 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
+    executor = new ThreadPoolExecutor(0, 4, 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
     firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
@@ -378,6 +395,97 @@ public class FirebaseInstallationsInstrumentedTest {
       assertWithMessage("Exception status doesn't match")
           .that(((FirebaseInstallationsException) cause).getStatus())
           .isEqualTo(FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+    }
+  }
+
+  @Test
+  public void testGetAuthToken_multipleCalls_fetchedNewTokenOnce() throws Exception {
+    when(mockPersistedFid.readPersistedFidEntryValue())
+        .thenReturn(
+            EXPIRED_AUTH_TOKEN_ENTRY,
+            EXPIRED_AUTH_TOKEN_ENTRY,
+            EXPIRED_AUTH_TOKEN_ENTRY,
+            UPDATED_AUTH_TOKEN_FID_ENTRY);
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            mockClock, executor, firebaseApp, backendClientReturnsOk, mockPersistedFid, mockUtils);
+
+    // Call getAuthToken multiple times with DO_NOT_FORCE_REFRESH option
+    Task<InstallationTokenResult> task1 =
+        firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+    Task<InstallationTokenResult> task2 =
+        firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+
+    Tasks.await(Tasks.whenAllComplete(task1, task2));
+
+    assertWithMessage("Persisted Auth Token doesn't match")
+        .that(task1.getResult().getToken())
+        .isEqualTo(TEST_AUTH_TOKEN_2);
+    assertWithMessage("Persisted Auth Token doesn't match")
+        .that(task2.getResult().getToken())
+        .isEqualTo(TEST_AUTH_TOKEN_2);
+    verify(backendClientReturnsOk, times(1))
+        .generateAuthToken(anyString(), anyString(), anyString(), anyString());
+  }
+
+  @Test
+  public void testGetAuthToken_multipleCallsForceRefresh_fetchedNewTokenTwice() throws Exception {
+    when(mockPersistedFid.readPersistedFidEntryValue()).thenReturn(REGISTERED_FID_ENTRY);
+    // Use a custom ServiceClient to mock the network calls ensuring task1 is not completed
+    // before task2. Hence, we can test multiple calls to getAUthToken() and verify task2 waits for
+    // task1 to complete.
+    ServiceClient serviceClient = new ServiceClient();
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            mockClock, executor, firebaseApp, serviceClient, mockPersistedFid, mockUtils);
+
+    // Call getAuthToken multiple times with FORCE_REFRESH option. Also, sleep for 500ms in between
+    // the calls to ensure tasks are called in order.
+    Task<InstallationTokenResult> task1 =
+        firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH);
+    Thread.sleep(500);
+    Task<InstallationTokenResult> task2 =
+        firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH);
+    Tasks.await(Tasks.whenAllComplete(task1, task2));
+
+    assertWithMessage("Persisted Auth Token doesn't match")
+        .that(task1.getResult().getToken())
+        .isEqualTo(TEST_AUTH_TOKEN_3);
+    assertWithMessage("Persisted Auth Token doesn't match")
+        .that(task2.getResult().getToken())
+        .isEqualTo(TEST_AUTH_TOKEN_4);
+  }
+
+  class ServiceClient extends FirebaseInstallationServiceClient {
+
+    private boolean secondCall;
+
+    @Override
+    @NonNull
+    public InstallationTokenResult generateAuthToken(
+        @NonNull String apiKey,
+        @NonNull String fid,
+        @NonNull String projectID,
+        @NonNull String refreshToken)
+        throws FirebaseInstallationServiceException {
+      try {
+        Thread.sleep(2000);
+      } catch (InterruptedException e) {
+        Log.e("InterruptedException", e.getMessage());
+      }
+
+      if (!secondCall) {
+        secondCall = true;
+        return InstallationTokenResult.builder()
+            .setToken(TEST_AUTH_TOKEN_3)
+            .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+            .build();
+      }
+
+      return InstallationTokenResult.builder()
+          .setToken(TEST_AUTH_TOKEN_4)
+          .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+          .build();
     }
   }
 }

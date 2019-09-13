@@ -137,7 +137,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   @NonNull
   @Override
-  public Task<InstallationTokenResult> getAuthToken(@AuthTokenOption int authTokenOption) {
+  public synchronized Task<InstallationTokenResult> getAuthToken(
+      @AuthTokenOption int authTokenOption) {
     AwaitListener awaitListener = new AwaitListener();
     return getId(awaitListener)
         .continueWith(
@@ -318,9 +319,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-    if (persistedFidEntry == null) {
+    if (!isPersistedFidRegistered(persistedFidEntry)) {
       throw new FirebaseInstallationsException(
-          "Failed to create Firebase Installation.",
+          "Firebase Installation is not registered.",
           FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
 
@@ -328,7 +329,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       case FORCE_REFRESH:
         return fetchAuthTokenFromServer(persistedFidEntry);
       case DO_NOT_FORCE_REFRESH:
-        return getPersistedAuthToken(persistedFidEntry);
+        return getValidAuthToken(persistedFidEntry);
       default:
         throw new FirebaseInstallationsException(
             "Incorrect refreshAuthTokenOption.",
@@ -340,13 +341,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * Returns a {@link InstallationTokenResult} created from the {@link PersistedFidEntry} if the
    * auth token is valid else generates a new auth token by calling the FIS servers.
    */
-  private InstallationTokenResult getPersistedAuthToken(PersistedFidEntry persistedFidEntry)
+  private InstallationTokenResult getValidAuthToken(PersistedFidEntry persistedFidEntry)
       throws FirebaseInstallationsException {
-    if (!isPersistedFidRegistered(persistedFidEntry)) {
-      throw new FirebaseInstallationsException(
-          "Firebase Installation is not registered.",
-          FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
-    }
 
     return isAuthTokenExpired(persistedFidEntry)
         ? fetchAuthTokenFromServer(persistedFidEntry)
