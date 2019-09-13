@@ -1,5 +1,9 @@
 # Unreleased
 
+# 21.1.1
+- [fixed] Addressed a regression in 21.1.0 that caused the crash: "Cannot add
+  document to the RemoteDocumentCache with a read time of zero".
+
 # 21.1.0
 - [feature] Added a `terminate()` method to `FirebaseFirestore` which
   terminates the instance, releasing any held resources. Once it completes, you
