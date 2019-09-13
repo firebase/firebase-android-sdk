@@ -24,7 +24,6 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.util.Logger;
 import java.util.Collections;
 import java.util.Map;
 
@@ -52,8 +51,6 @@ import java.util.Map;
  * </ol>
  */
 public class IndexFreeQueryEngine implements QueryEngine {
-  private static final String LOG_TAG = "IndexFreeQueryEngine";
-
   private LocalDocumentsView localDocumentsView;
 
   @Override
@@ -84,14 +81,6 @@ public class IndexFreeQueryEngine implements QueryEngine {
     if (query.hasLimit()
         && needsRefill(previousResults, remoteKeys, queryData.getLastLimboFreeSnapshotVersion())) {
       return executeFullCollectionScan(query);
-    }
-
-    if (Logger.isDebugEnabled()) {
-      Logger.debug(
-          LOG_TAG,
-          "Re-using previous result from %s to execute query: %s",
-          queryData.getLastLimboFreeSnapshotVersion().toString(),
-          query.toString());
     }
 
     // Retrieve all results for documents that were updated since the last limbo-document free
@@ -172,9 +161,6 @@ public class IndexFreeQueryEngine implements QueryEngine {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(Query query) {
-    if (Logger.isDebugEnabled()) {
-      Logger.debug(LOG_TAG, "Using full collection scan to execute query: %s", query.toString());
-    }
     return localDocumentsView.getDocumentsMatchingQuery(query, SnapshotVersion.NONE);
   }
 }
