@@ -3,4 +3,8 @@
     <!-- In landscape, banner only fills a fraction (bannerContentWeight/bannerWeightSum) -->
     <item name="bannerWeightSum" format="integer" type="dimen">5</item>
     <item name="bannerContentWeight" format="integer" type="dimen">3</item>
+
+    <item name="dialogHeightPct" format="float" type="dimen">0.80</item>
+    <item name="dialogWidthPct" format="float" type="dimen">0.85</item>
+
 </resources>

@@ -108,6 +108,11 @@ package com.google.firebase.storage {
     ctor public StorageMetadata.Builder();
     ctor public StorageMetadata.Builder(@NonNull com.google.firebase.storage.StorageMetadata);
     method @NonNull public com.google.firebase.storage.StorageMetadata build();
+    method @Nullable public String getCacheControl();
+    method @Nullable public String getContentDisposition();
+    method @Nullable public String getContentEncoding();
+    method @Nullable public String getContentLanguage();
+    method @Nullable public String getContentType();
     method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setCacheControl(@Nullable String);
     method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setContentDisposition(@Nullable String);
     method @NonNull public com.google.firebase.storage.StorageMetadata.Builder setContentEncoding(@Nullable String);

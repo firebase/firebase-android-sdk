@@ -19,4 +19,8 @@
         <item name="android:elevation">4dp</item>
     </style>
 
+    <style name="FiamUI.Card" parent="@style/FiamUI">
+        <item name="android:elevation">4dp</item>
+    </style>
+
 </resources>

@@ -1,0 +1,56 @@
+
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://fooey.appspot.com/%5C%25%3A%F0%9F%98%8A
+  bytesUploaded:0
+  currentState:4
+  uploadUri:<none>
+  total bytes:17
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://fooey.appspot.com/%5C%25%3A%F0%9F%98%8A
+  bytesUploaded:0
+  currentState:4
+  uploadUri:<none>
+  total bytes:17
+onProgress:
+  exceptionMessage:<none>
+  targetStorageString:gs://fooey.appspot.com/%5C%25%3A%F0%9F%98%8A
+  bytesUploaded:17
+  currentState:128
+  uploadUri:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=%5C%25%3A%F0%9F%98%8A&uploadType=resumable&upload_id=AEnB2Up6a4kp5P8Xuhz1mofQpbwHFKEuLxt0X_KpCwzCwZ1N_LGtzBFm9vPpqt3eI2BDD2EDffjtzTovN6W-Cf6UHVYg9vrtGpzuU2xIV6aEtHrvBwQj8g8&upload_protocol=resumable
+  total bytes:17
+onSuccess:
+  exceptionMessage:<none>
+  targetStorageString:gs://fooey.appspot.com/%5C%25%3A%F0%9F%98%8A
+  bytesUploaded:17
+  currentState:128
+  uploadUri:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=%5C%25%3A%F0%9F%98%8A&uploadType=resumable&upload_id=AEnB2Up6a4kp5P8Xuhz1mofQpbwHFKEuLxt0X_KpCwzCwZ1N_LGtzBFm9vPpqt3eI2BDD2EDffjtzTovN6W-Cf6UHVYg9vrtGpzuU2xIV6aEtHrvBwQj8g8&upload_protocol=resumable
+  total bytes:17
+getBucket:fooey.appspot.com
+getCacheControl:
+getContentDisposition:inline; filename*=utf-8''%5C%25%3A%F0%9F%98%8A
+getContentEncoding:identity
+getContentLanguage:
+getContentType:text/plain
+getName:\%:😊
+getPath:\%:😊
+getMD5Hash:sCIP6j8equNgXkfW4ZTEQw==
+getGeneration:1488582045700000
+getMetadataGeneration:1
+getSizeBytes:17
+getReference:\%:😊
+getCreationTimeMillis:03/03/2017
+getUpdatedTimeMillis:03/03/2017
+Type:FILE
+
+onSuccessTask:
+  exceptionMessage:<none>
+  targetStorageString:gs://fooey.appspot.com/%5C%25%3A%F0%9F%98%8A
+  bytesUploaded:17
+  currentState:128
+  uploadUri:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=%5C%25%3A%F0%9F%98%8A&uploadType=resumable&upload_id=AEnB2Up6a4kp5P8Xuhz1mofQpbwHFKEuLxt0X_KpCwzCwZ1N_LGtzBFm9vPpqt3eI2BDD2EDffjtzTovN6W-Cf6UHVYg9vrtGpzuU2xIV6aEtHrvBwQj8g8&upload_protocol=resumable
+  total bytes:17
+onComplete:Success=
+true
+done.

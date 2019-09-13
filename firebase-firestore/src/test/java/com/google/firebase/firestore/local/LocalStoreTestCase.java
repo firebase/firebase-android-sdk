@@ -146,8 +146,8 @@ public abstract class LocalStoreTestCase {
     localStore.notifyLocalViewChanges(asList(changes));
   }
 
-  private void udpateViews(int targetId, boolean synced) {
-    notifyLocalViewChanges(viewChanges(targetId, synced, asList(), asList()));
+  private void udpateViews(int targetId, boolean fromCache) {
+    notifyLocalViewChanges(viewChanges(targetId, fromCache, asList(), asList()));
   }
 
   private void acknowledgeMutation(long documentVersion, @Nullable Object transformResult) {
@@ -311,7 +311,7 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    notifyLocalViewChanges(viewChanges(2, /* synced= */ false, asList("foo/bar"), emptyList()));
+    notifyLocalViewChanges(viewChanges(2, /* fromCache= */ false, asList("foo/bar"), emptyList()));
 
     assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
@@ -832,7 +832,7 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/baz", 0, map("foo", "baz"), Document.DocumentState.LOCAL_MUTATIONS));
 
     notifyLocalViewChanges(
-        viewChanges(2, /* synced= */ false, asList("foo/bar", "foo/baz"), emptyList()));
+        viewChanges(2, /* fromCache= */ false, asList("foo/bar", "foo/baz"), emptyList()));
     applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 1, map("foo", "bar")), none, two));
     applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 2, map("foo", "baz")), two, none));
     acknowledgeMutation(2);
@@ -840,7 +840,7 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/baz", 2, map("foo", "baz")));
 
     notifyLocalViewChanges(
-        viewChanges(2, /* synced= */ false, emptyList(), asList("foo/bar", "foo/baz")));
+        viewChanges(2, /* fromCache= */ false, emptyList(), asList("foo/bar", "foo/baz")));
     releaseQuery(query);
 
     assertNotContains("foo/bar");
@@ -1062,7 +1062,7 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId, /* synced= */ true);
+    udpateViews(targetId, /* fromCache= */ false);
 
     // Execute the query again, this time verifying that we only read the two documents that match
     // the query.
@@ -1073,49 +1073,31 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testLastLimboFreeSnapshotIsAdvancedDuringViewProcessing() {
-    assumeFalse(garbageCollectorIsEager());
-    assumeTrue(queryEngine instanceof IndexFreeQueryEngine);
-
     // This test verifies that the `lastLimboFreeSnapshot` version for QueryData is advanced when
     // we compute a limbo-free free view and that the mapping is persisted when we release a query.
 
-    writeMutation(setMutation("foo/ignored", map("matches", false)));
-    acknowledgeMutation(10);
-
-    Query query =
-        Query.atPath(ResourcePath.fromString("foo")).filter(filter("matches", "==", true));
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
 
-    // Mark the query as current.
-    applyRemoteEvent(
-        addedRemoteEvent(
-            asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 10, map("matches", true))),
-            asList(targetId),
-            emptyList()));
+    // Advance the query snapshot.
     applyRemoteEvent(noChangeEvent(targetId, 10));
 
     // At this point, we have not yet confirmed that the query is limbo free.
-    Assert.assertEquals(
-        SnapshotVersion.NONE, localStore.getQueryData(query).getLastLimboFreeSnapshotVersion());
+    QueryData cachedQueryData = localStore.getQueryData(query);
+    Assert.assertEquals(SnapshotVersion.NONE, cachedQueryData.getLastLimboFreeSnapshotVersion());
 
-    // Update the view, but don't mark the view synced.
-    Assert.assertEquals(
-        SnapshotVersion.NONE, localStore.getQueryData(query).getLastLimboFreeSnapshotVersion());
-    udpateViews(targetId, /* synced=*/ true);
-
-    // The query is marked limbo-free only when we mark the view synced.
-    udpateViews(targetId, /* synced=*/ true);
-    Assert.assertNotEquals(
-        SnapshotVersion.NONE, localStore.getQueryData(query).getLastLimboFreeSnapshotVersion());
+    // Mark the view synced, which updates the last limbo free snapshot version.
+    udpateViews(targetId, /* fromCache=*/ false);
+    cachedQueryData = localStore.getQueryData(query);
+    Assert.assertEquals(version(10), cachedQueryData.getLastLimboFreeSnapshotVersion());
 
     // The last limbo free snapshot version is persisted even if we release the query.
     releaseQuery(query);
-    allocateQuery(query);
 
-    // Verify that we only read the two documents that match the query.
-    executeQuery(query);
-    assertRemoteDocumentsRead(2);
-    assertQueryReturned("foo/a", "foo/b");
+    if (!garbageCollectorIsEager()) {
+      cachedQueryData = localStore.getQueryData(query);
+      Assert.assertEquals(version(10), cachedQueryData.getLastLimboFreeSnapshotVersion());
+    }
   }
 
   @Test
@@ -1130,28 +1112,26 @@ public abstract class LocalStoreTestCase {
 
     applyRemoteEvent(
         addedRemoteEvent(
-            asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 10, map("matches", true))),
-            asList(targetId),
-            emptyList()));
+            asList(doc("foo/a", 10, map("matches", true))), asList(targetId), emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId, /* synced= */ true);
+    udpateViews(targetId, /* fromCache= */ false);
 
     // Execute the query based on the RemoteEvent.
     executeQuery(query);
-    assertQueryReturned("foo/a", "foo/b");
+    assertQueryReturned("foo/a");
 
     // Write a document.
-    writeMutation(setMutation("foo/c", map("matches", true)));
+    writeMutation(setMutation("foo/b", map("matches", true)));
 
     // Execute the query and make sure that the pending mutation is included in the result.
     executeQuery(query);
-    assertQueryReturned("foo/a", "foo/b", "foo/c");
+    assertQueryReturned("foo/a", "foo/b");
 
     acknowledgeMutation(11);
 
     // Execute the query and make sure that the acknowledged mutation is included in the result.
     executeQuery(query);
-    assertQueryReturned("foo/a", "foo/b", "foo/c");
+    assertQueryReturned("foo/a", "foo/b");
   }
 
   @Test
@@ -1167,23 +1147,17 @@ public abstract class LocalStoreTestCase {
 
     applyRemoteEvent(
         addedRemoteEvent(
-            asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 10, map("matches", true))),
-            asList(targetId),
-            emptyList()));
+            asList(doc("foo/a", 10, map("matches", true))), asList(targetId), emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId, /* synced=*/ true);
+    udpateViews(targetId, /* fromCache=*/ false);
     releaseQuery(filteredQuery);
 
     // Start another query and add more matching documents to the collection.
-    Query fullQuery =
-        Query.atPath(ResourcePath.fromString("foo")).filter(filter("matches", "==", true));
-    targetId = allocateQuery(filteredQuery);
+    Query fullQuery = Query.atPath(ResourcePath.fromString("foo"));
+    targetId = allocateQuery(fullQuery);
     applyRemoteEvent(
         addedRemoteEvent(
-            asList(
-                doc("foo/a", 10, map("matches", true)),
-                doc("foo/b", 10, map("matches", true)),
-                doc("foo/c", 20, map("matches", true))),
+            asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 20, map("matches", true))),
             asList(targetId),
             emptyList()));
     releaseQuery(fullQuery);
@@ -1192,7 +1166,7 @@ public abstract class LocalStoreTestCase {
     // matches are included in the result set.
     allocateQuery(filteredQuery);
     executeQuery(filteredQuery);
-    assertQueryReturned("foo/a", "foo/b", "foo/c");
+    assertQueryReturned("foo/a", "foo/b");
   }
 
   @Test
@@ -1213,13 +1187,12 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId, /* synced=*/ true);
+    udpateViews(targetId, /* fromCache=*/ false);
     releaseQuery(filteredQuery);
 
     // Modify one of the documents to no longer match while the filtered query is inactive.
-    Query fullQuery =
-        Query.atPath(ResourcePath.fromString("foo")).filter(filter("matches", "==", true));
-    targetId = allocateQuery(filteredQuery);
+    Query fullQuery = Query.atPath(ResourcePath.fromString("foo"));
+    targetId = allocateQuery(fullQuery);
     applyRemoteEvent(
         addedRemoteEvent(
             asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 20, map("matches", false))),

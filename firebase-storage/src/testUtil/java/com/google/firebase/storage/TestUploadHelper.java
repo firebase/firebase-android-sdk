@@ -134,10 +134,8 @@ public class TestUploadHelper {
         });
   }
 
-  public static Task<StringBuilder> uploadWithSpace() {
+  public static Task<StringBuilder> byteUpload(StorageReference storage) {
     final StringBuilder builder = new StringBuilder();
-    StorageReference storage =
-        FirebaseStorage.getInstance().getReference().child("hello world.txt");
     String foo = "This is a test!!!";
     byte[] bytes = foo.getBytes(Charset.forName("UTF-8"));
     StorageMetadata metadata = new StorageMetadata.Builder().setContentType("text/plain").build();

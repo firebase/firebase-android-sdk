@@ -52,9 +52,11 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public void add(MaybeDocument maybeDocument, SnapshotVersion readTime) {
-    hardAssert(
-        !readTime.equals(SnapshotVersion.NONE),
-        "Cannot add document to the RemoteDocumentCache with a read time of zero");
+    // TODO(index-free): This assert causes a crash for one of our customers. Re-add the assert once
+    // we have fixed the root cause and cleaned up the underlying data.
+    //    hardAssert(
+    //        !readTime.equals(SnapshotVersion.NONE),
+    //        "Cannot add document to the RemoteDocumentCache with a read time of zero");
 
     String path = pathForKey(maybeDocument.getKey());
     Timestamp timestamp = readTime.getTimestamp();

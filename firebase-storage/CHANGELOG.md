@@ -1,3 +1,7 @@
+# 19.0.2
+- [fixed] Fixed an encoding issue in `list()/listAll()` that caused us to miss
+  entries for folders that contained special characters.
+
 # 19.0.1
 - [fixed] `listAll()` now propagates the error messages if the List operation
   was denied by a Security Rule.

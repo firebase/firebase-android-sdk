@@ -107,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
 
     FirebaseApp.initializeApp(getApplicationContext());
     FirebaseAuth.getInstance().signInAnonymously();
+    FirebaseStorage storage = FirebaseStorage.getInstance();
 
     Button clickButton = findViewById(R.id.streamDownload);
     clickButton.setOnClickListener(
@@ -158,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
                 "uploadWithSpace",
                 () -> {
                   try {
-                    return TestUploadHelper.uploadWithSpace();
+                    return TestUploadHelper.byteUpload(storage.getReference("hello world.txt"));
                   } catch (Exception e) {
                     e.printStackTrace();
                   }

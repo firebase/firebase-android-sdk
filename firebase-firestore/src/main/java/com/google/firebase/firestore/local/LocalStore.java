@@ -380,17 +380,22 @@ public final class LocalStore {
             MaybeDocument doc = entry.getValue();
             MaybeDocument existingDoc = existingDocs.get(key);
 
-            if (existingDoc == null
+            // Note: The order of the steps below is important, since we want to ensure that
+            // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
+            // never add documents to cache.
+            if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
+              // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
+              // these documents from cache since we lost access.
+              remoteDocuments.remove(doc.getKey());
+              changedDocs.put(key, doc);
+            } else if (existingDoc == null
                 || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
                 || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
                     && existingDoc.hasPendingWrites())) {
+              // TODO(index-free): Comment in this assert when we enable Index-Free queries
+              // hardAssert(!SnapshotVersion.NONE.equals(remoteEvent.getSnapshotVersion()), "Cannot
+              // add a document when the remote version is zero");
               remoteDocuments.add(doc, remoteEvent.getSnapshotVersion());
-              changedDocs.put(key, doc);
-            } else if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
-              // NoDocuments with SnapshotVersion.MIN are used in manufactured events (e.g. in the
-              // case of a limbo document resolution failing). We remove these documents from cache
-              // since we lost access.
-              remoteDocuments.remove(doc.getKey());
               changedDocs.put(key, doc);
             } else {
               Logger.debug(
@@ -478,7 +483,7 @@ public final class LocalStore {
             }
             localViewReferences.removeReferences(removed, targetId);
 
-            if (viewChange.isSynced()) {
+            if (!viewChange.isFromCache()) {
               QueryData queryData = targetIds.get(targetId);
               hardAssert(
                   queryData != null,
@@ -574,28 +579,8 @@ public final class LocalStore {
     persistence.runTransaction(
         "Release query",
         () -> {
-          QueryData queryData = queryCache.getQueryData(query);
+          QueryData queryData = getQueryData(query);
           hardAssert(queryData != null, "Tried to release nonexistent query: %s", query);
-
-          int targetId = queryData.getTargetId();
-          QueryData cachedQueryData = targetIds.get(targetId);
-
-          boolean needsUpdate = false;
-          if (cachedQueryData.getSnapshotVersion().compareTo(queryData.getSnapshotVersion()) > 0) {
-            // If we've been avoiding persisting the resumeToken (see shouldPersistQueryData for
-            // conditions and rationale) we need to persist the token now because there will no
-            // longer be an in-memory version to fall back on.
-            needsUpdate = true;
-          } else if (!cachedQueryData
-              .getLastLimboFreeSnapshotVersion()
-              .equals(queryData.getLastLimboFreeSnapshotVersion())) {
-            needsUpdate = true;
-          }
-
-          if (needsUpdate) {
-            queryData = cachedQueryData;
-            queryCache.updateQueryData(queryData);
-          }
 
           // References for documents sent via Watch are automatically removed when we delete a
           // query's target data from the reference delegate. Since this does not remove references
@@ -606,6 +591,8 @@ public final class LocalStore {
           for (DocumentKey key : removedReferences) {
             persistence.getReferenceDelegate().removeReference(key);
           }
+
+          // Note: This also updates the query cache
           persistence.getReferenceDelegate().removeTarget(queryData);
           targetIds.remove(queryData.getTargetId());
         });

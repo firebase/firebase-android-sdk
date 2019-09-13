@@ -15,6 +15,7 @@
 package com.google.firebase.testing.combined;
 
 import com.google.firebase.testing.database.DatabaseTest;
+import com.google.firebase.testing.dynamiclinks.DynamicLinksTest;
 import com.google.firebase.testing.firestore.FirestoreTest;
 import com.google.firebase.testing.functions.FunctionsTest;
 import com.google.firebase.testing.inappmessaging.InappMessagingTest;
@@ -29,6 +30,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
   DatabaseTest.class,
+  DynamicLinksTest.class,
   FirestoreTest.class,
   FunctionsTest.class,
   InappMessagingTest.class,

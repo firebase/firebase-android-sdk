@@ -345,7 +345,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   private boolean recoverStatus(boolean withRetry) {
     NetworkRequest queryRequest =
         new ResumableUploadQueryRequest(
-            mStorageRef.getStorageUri(), mStorageRef.getApp(), mUploadUri.toString());
+            mStorageRef.getStorageUri(), mStorageRef.getApp(), mUploadUri);
 
     if (RESUMABLE_FINAL_STATUS.equals(mServerStatus)) {
       return false;
@@ -411,7 +411,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
           new ResumableUploadByteRequest(
               mStorageRef.getStorageUri(),
               mStorageRef.getApp(),
-              mUploadUri.toString(),
+              mUploadUri,
               mStreamBuffer.get(),
               mBytesUploaded.get(),
               bytesToUpload,
@@ -484,7 +484,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     if (mUploadUri != null) {
       cancelRequest =
           new ResumableUploadCancelRequest(
-              mStorageRef.getStorageUri(), mStorageRef.getApp(), mUploadUri.toString());
+              mStorageRef.getStorageUri(), mStorageRef.getApp(), mUploadUri);
     }
 
     if (cancelRequest != null) {
