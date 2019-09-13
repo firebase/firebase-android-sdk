@@ -574,8 +574,28 @@ public final class LocalStore {
     persistence.runTransaction(
         "Release query",
         () -> {
-          QueryData queryData = getQueryData(query);
+          QueryData queryData = queryCache.getQueryData(query);
           hardAssert(queryData != null, "Tried to release nonexistent query: %s", query);
+
+          int targetId = queryData.getTargetId();
+          QueryData cachedQueryData = targetIds.get(targetId);
+
+          boolean needsUpdate = false;
+          if (cachedQueryData.getSnapshotVersion().compareTo(queryData.getSnapshotVersion()) > 0) {
+            // If we've been avoiding persisting the resumeToken (see shouldPersistQueryData for
+            // conditions and rationale) we need to persist the token now because there will no
+            // longer be an in-memory version to fall back on.
+            needsUpdate = true;
+          } else if (!cachedQueryData
+              .getLastLimboFreeSnapshotVersion()
+              .equals(queryData.getLastLimboFreeSnapshotVersion())) {
+            needsUpdate = true;
+          }
+
+          if (needsUpdate) {
+            queryData = cachedQueryData;
+            queryCache.updateQueryData(queryData);
+          }
 
           // References for documents sent via Watch are automatically removed when we delete a
           // query's target data from the reference delegate. Since this does not remove references
@@ -586,8 +606,6 @@ public final class LocalStore {
           for (DocumentKey key : removedReferences) {
             persistence.getReferenceDelegate().removeReference(key);
           }
-
-          // Note: This also updates the query cache
           persistence.getReferenceDelegate().removeTarget(queryData);
           targetIds.remove(queryData.getTargetId());
         });
