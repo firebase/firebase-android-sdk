@@ -79,6 +79,7 @@ dependencies {
   combinedImplementation "com.google.firebase:firebase-analytics"
   combinedImplementation "com.google.firebase:firebase-auth"
   combinedImplementation "com.google.firebase:firebase-database"
+  combinedImplementation "com.google.firebase:firebase-dynamic-links"
   combinedImplementation "com.google.firebase:firebase-firestore"
   combinedImplementation "com.google.firebase:firebase-functions"
   combinedImplementation "com.google.firebase:firebase-inappmessaging"
