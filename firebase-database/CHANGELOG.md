@@ -1,5 +1,9 @@
+# 19.2.0
+- [changed] Added support for type wildcards in GenericTypeIndicator, expanding
+  our custom class serialization to include classes with wildcard generics
+  (#792).
+
 # 19.1.1
-- [changed] Added support for type wildcards in GenericTypeIndicator (#792)
 - [fixed] Fixed a crash that occurred when we attempted to start a network
   connection during app shutdown (#672).
 
