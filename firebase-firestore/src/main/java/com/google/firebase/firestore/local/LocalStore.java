@@ -384,7 +384,7 @@ public final class LocalStore {
             // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
             // never add documents to cache.
             if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
-              // NoDocuments with SnapshotVersion.MIN are used in manufactured events. We remove
+              // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
               // these documents from cache since we lost access.
               remoteDocuments.remove(doc.getKey());
               changedDocs.put(key, doc);
