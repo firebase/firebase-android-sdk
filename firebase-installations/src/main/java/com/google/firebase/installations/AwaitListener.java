@@ -21,18 +21,18 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 final class AwaitListener implements OnCompleteListener<Void> {
-  private final CountDownLatch mLatch = new CountDownLatch(1);
+  private final CountDownLatch latch = new CountDownLatch(1);
 
   public void onSuccess() {
-    mLatch.countDown();
+    latch.countDown();
   }
 
   public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-    return mLatch.await(timeout, unit);
+    return latch.await(timeout, unit);
   }
 
   @Override
   public void onComplete(@NonNull Task<Void> task) {
-    mLatch.countDown();
+    latch.countDown();
   }
 }

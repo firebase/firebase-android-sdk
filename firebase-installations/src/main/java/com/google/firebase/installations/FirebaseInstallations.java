@@ -55,6 +55,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Utils utils;
 
   private static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = 3600L; // 1 hour
+  private static final long AWAIT_TIMEOUT_IN_SECS = 10L;
 
   /** package private constructor. */
   FirebaseInstallations(FirebaseApp firebaseApp) {
@@ -205,7 +206,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       @NonNull Supplier<T> supplier, AwaitListener listener) {
     return t -> {
       // Waiting for Task that registers FID on the FIS Servers
-      listener.await(10, TimeUnit.SECONDS);
+      listener.await(AWAIT_TIMEOUT_IN_SECS, TimeUnit.SECONDS);
       return supplier.get();
     };
   }

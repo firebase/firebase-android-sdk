@@ -15,6 +15,7 @@
 package com.google.firebase.installations;
 
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_API_KEY;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN_2;
@@ -30,12 +31,11 @@ import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOK
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import android.util.Log;
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.common.util.Clock;
@@ -61,6 +61,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.internal.stubbing.answers.AnswersWithDelay;
+import org.mockito.internal.stubbing.answers.Returns;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -131,7 +133,7 @@ public class FirebaseInstallationsInstrumentedTest {
             new FirebaseOptions.Builder()
                 .setApplicationId(TEST_APP_ID_1)
                 .setProjectId(TEST_PROJECT_ID)
-                .setApiKey("api_key")
+                .setApiKey(TEST_API_KEY)
                 .build());
     persistedFid = new PersistedFid(firebaseApp);
     when(backendClientReturnsOk.createFirebaseInstallation(
@@ -264,11 +266,12 @@ public class FirebaseInstallationsInstrumentedTest {
     // Expect exception
     try {
       Tasks.await(firebaseInstallations.getId());
-      fail();
+      fail("Could not update local storage.");
     } catch (ExecutionException expected) {
       Throwable cause = expected.getCause();
       assertWithMessage("Exception class doesn't match")
-          .that(cause)
+          .that(expected)
+          .hasCauseThat()
           .isInstanceOf(FirebaseInstallationsException.class);
       assertWithMessage("Exception status doesn't match")
           .that(((FirebaseInstallationsException) cause).getStatus())
@@ -305,11 +308,12 @@ public class FirebaseInstallationsInstrumentedTest {
     try {
       Tasks.await(
           firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
-      fail();
+      fail("Could not update local storage.");
     } catch (ExecutionException expected) {
       Throwable cause = expected.getCause();
       assertWithMessage("Exception class doesn't match")
-          .that(cause)
+          .that(expected)
+          .hasCauseThat()
           .isInstanceOf(FirebaseInstallationsException.class);
       assertWithMessage("Exception status doesn't match")
           .that(((FirebaseInstallationsException) cause).getStatus())
@@ -351,6 +355,9 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetAuthToken_unregisteredFid_fetchedNewTokenFromFIS() throws Exception {
+    // Using mockPersistedFid to ensure the order of returning persistedFidEntry. This test
+    // validates that getAuthToken calls getId to ensure FID registration and returns a valid auth
+    // token.
     when(mockPersistedFid.readPersistedFidEntryValue())
         .thenReturn(UNREGISTERED_FID_ENTRY, REGISTERED_FID_ENTRY);
     FirebaseInstallations firebaseInstallations =
@@ -386,11 +393,12 @@ public class FirebaseInstallationsInstrumentedTest {
     // Expect exception
     try {
       Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH));
-      fail();
+      fail("getAuthToken() failed due to Server Error.");
     } catch (ExecutionException expected) {
       Throwable cause = expected.getCause();
       assertWithMessage("Exception class doesn't match")
-          .that(cause)
+          .that(expected)
+          .hasCauseThat()
           .isInstanceOf(FirebaseInstallationsException.class);
       assertWithMessage("Exception status doesn't match")
           .that(((FirebaseInstallationsException) cause).getStatus())
@@ -399,7 +407,11 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   @Test
-  public void testGetAuthToken_multipleCalls_fetchedNewTokenOnce() throws Exception {
+  public void testGetAuthToken_multipleCallsDoNotForceRefresh_fetchedNewTokenOnce()
+      throws Exception {
+    // Using mockPersistedFid to ensure the order of returning persistedFidEntry  to 2 tasks
+    // triggered simultaneously. Task2 waits for Task1 to complete.On Task1 completion, task2 reads
+    // the UPDATED_AUTH_TOKEN_FID_ENTRY by Task1 on execution.
     when(mockPersistedFid.readPersistedFidEntryValue())
         .thenReturn(
             EXPIRED_AUTH_TOKEN_ENTRY,
@@ -425,67 +437,53 @@ public class FirebaseInstallationsInstrumentedTest {
         .that(task2.getResult().getToken())
         .isEqualTo(TEST_AUTH_TOKEN_2);
     verify(backendClientReturnsOk, times(1))
-        .generateAuthToken(anyString(), anyString(), anyString(), anyString());
+        .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
-
   @Test
   public void testGetAuthToken_multipleCallsForceRefresh_fetchedNewTokenTwice() throws Exception {
     when(mockPersistedFid.readPersistedFidEntryValue()).thenReturn(REGISTERED_FID_ENTRY);
-    // Use a custom ServiceClient to mock the network calls ensuring task1 is not completed
-    // before task2. Hence, we can test multiple calls to getAUthToken() and verify task2 waits for
-    // task1 to complete.
-    ServiceClient serviceClient = new ServiceClient();
+    // Use a mock ServiceClient for network calls with delay(1000ms) to ensure first task is not
+    // completed before the second task starts. Hence, we can test multiple calls to getAUthToken()
+    // and verify one task waits for another task to complete.
+
+    doAnswer(
+            new AnswersWithDelay(
+                1000,
+                new Returns(
+                    InstallationTokenResult.builder()
+                        .setToken(TEST_AUTH_TOKEN_3)
+                        .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                        .build())))
+        .doAnswer(
+            new AnswersWithDelay(
+                1000,
+                new Returns(
+                    InstallationTokenResult.builder()
+                        .setToken(TEST_AUTH_TOKEN_4)
+                        .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                        .build())))
+        .when(backendClientReturnsOk)
+        .generateAuthToken(anyString(), anyString(), anyString(), anyString());
+
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
-            mockClock, executor, firebaseApp, serviceClient, mockPersistedFid, mockUtils);
+            mockClock, executor, firebaseApp, backendClientReturnsOk, mockPersistedFid, mockUtils);
 
-    // Call getAuthToken multiple times with FORCE_REFRESH option. Also, sleep for 500ms in between
-    // the calls to ensure tasks are called in order.
+    // Call getAuthToken multiple times with FORCE_REFRESH option.
     Task<InstallationTokenResult> task1 =
         firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH);
-    Thread.sleep(500);
     Task<InstallationTokenResult> task2 =
         firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH);
     Tasks.await(Tasks.whenAllComplete(task1, task2));
 
+    // As we cannot ensure which task got executed first, verifying with both expected values
     assertWithMessage("Persisted Auth Token doesn't match")
         .that(task1.getResult().getToken())
-        .isEqualTo(TEST_AUTH_TOKEN_3);
+        .isAnyOf(TEST_AUTH_TOKEN_3, TEST_AUTH_TOKEN_4);
     assertWithMessage("Persisted Auth Token doesn't match")
         .that(task2.getResult().getToken())
-        .isEqualTo(TEST_AUTH_TOKEN_4);
-  }
-
-  class ServiceClient extends FirebaseInstallationServiceClient {
-
-    private boolean secondCall;
-
-    @Override
-    @NonNull
-    public InstallationTokenResult generateAuthToken(
-        @NonNull String apiKey,
-        @NonNull String fid,
-        @NonNull String projectID,
-        @NonNull String refreshToken)
-        throws FirebaseInstallationServiceException {
-      try {
-        Thread.sleep(2000);
-      } catch (InterruptedException e) {
-        Log.e("InterruptedException", e.getMessage());
-      }
-
-      if (!secondCall) {
-        secondCall = true;
-        return InstallationTokenResult.builder()
-            .setToken(TEST_AUTH_TOKEN_3)
-            .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-            .build();
-      }
-
-      return InstallationTokenResult.builder()
-          .setToken(TEST_AUTH_TOKEN_4)
-          .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-          .build();
-    }
+        .isAnyOf(TEST_AUTH_TOKEN_4, TEST_AUTH_TOKEN_3);
+    verify(backendClientReturnsOk, times(2))
+        .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
 }
