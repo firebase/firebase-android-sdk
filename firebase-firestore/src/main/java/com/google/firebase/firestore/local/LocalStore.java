@@ -380,17 +380,22 @@ public final class LocalStore {
             MaybeDocument doc = entry.getValue();
             MaybeDocument existingDoc = existingDocs.get(key);
 
-            if (existingDoc == null
+            // Note: The order of the steps below is important, since we want to ensure that
+            // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
+            // never add documents to cache.
+            if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
+              // NoDocuments with SnapshotVersion.MIN are used in manufactured events. We remove
+              // these documents from cache since we lost access.
+              remoteDocuments.remove(doc.getKey());
+              changedDocs.put(key, doc);
+            } else if (existingDoc == null
                 || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
                 || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
                     && existingDoc.hasPendingWrites())) {
+              // TODO(index-free): Comment in this assert when we enable Index-Free queries
+              // hardAssert(!SnapshotVersion.NONE.equals(remoteEvent.getSnapshotVersion()), "Cannot
+              // add a document when the remote version is zero");
               remoteDocuments.add(doc, remoteEvent.getSnapshotVersion());
-              changedDocs.put(key, doc);
-            } else if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
-              // NoDocuments with SnapshotVersion.MIN are used in manufactured events (e.g. in the
-              // case of a limbo document resolution failing). We remove these documents from cache
-              // since we lost access.
-              remoteDocuments.remove(doc.getKey());
               changedDocs.put(key, doc);
             } else {
               Logger.debug(
