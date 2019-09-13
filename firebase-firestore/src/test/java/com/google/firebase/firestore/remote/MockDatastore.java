@@ -90,7 +90,8 @@ public class MockDatastore extends Datastore {
               + ")");
       // Snapshot version is ignored on the wire
       QueryData sentQueryData =
-          queryData.withResumeToken(queryData.getResumeToken(), SnapshotVersion.NONE);
+          queryData.copy(
+              SnapshotVersion.NONE, queryData.getResumeToken(), queryData.getSequenceNumber());
       watchStreamRequestCount += 1;
       this.activeTargets.put(queryData.getTargetId(), sentQueryData);
     }

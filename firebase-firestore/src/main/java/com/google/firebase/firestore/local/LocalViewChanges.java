@@ -49,32 +49,25 @@ public final class LocalViewChanges {
       }
     }
 
-    return new LocalViewChanges(targetId, snapshot.isSynced(), addedKeys, removedKeys);
+    return new LocalViewChanges(targetId, addedKeys, removedKeys);
   }
 
   private final int targetId;
-  private final boolean synced;
 
   private final ImmutableSortedSet<DocumentKey> added;
   private final ImmutableSortedSet<DocumentKey> removed;
 
   public LocalViewChanges(
       int targetId,
-      boolean synced,
       ImmutableSortedSet<DocumentKey> added,
       ImmutableSortedSet<DocumentKey> removed) {
     this.targetId = targetId;
-    this.synced = synced;
     this.added = added;
     this.removed = removed;
   }
 
   public int getTargetId() {
     return targetId;
-  }
-
-  public boolean isSynced() {
-    return synced;
   }
 
   public ImmutableSortedSet<DocumentKey> getAdded() {

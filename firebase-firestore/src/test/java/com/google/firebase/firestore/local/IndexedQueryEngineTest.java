@@ -69,12 +69,11 @@ public class IndexedQueryEngineTest {
     remoteDocuments = persistence.getRemoteDocumentCache();
     LocalDocumentsView localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-    queryEngine = new IndexedQueryEngine(index);
+    queryEngine = new IndexedQueryEngine(localDocuments, index);
   }
 
   private void addDocument(Document newDoc) {
-    // Use document version as read time as the IndexedQueryEngine does not rely on read time.
-    remoteDocuments.add(newDoc, newDoc.getVersion());
+    remoteDocuments.add(newDoc);
     queryEngine.handleDocumentChange(
         deletedDoc(newDoc.getKey().toString(), ORIGINAL_VERSION), newDoc);
   }
@@ -86,7 +85,7 @@ public class IndexedQueryEngineTest {
   }
 
   private void updateDocument(Document oldDoc, Document newDoc) {
-    remoteDocuments.add(newDoc, newDoc.getVersion());
+    remoteDocuments.add(newDoc);
     queryEngine.handleDocumentChange(oldDoc, newDoc);
   }
 
@@ -214,8 +213,7 @@ public class IndexedQueryEngineTest {
     Query query = query("coll").filter(filter("a", "==", "a"));
 
     ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(
-            query, /* queryData= */ null, DocumentKey.emptyKeySet());
+        queryEngine.getDocumentsMatchingQuery(query);
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).contains(MATCHING_DOC.getKey());
@@ -230,8 +228,7 @@ public class IndexedQueryEngineTest {
     Query query = query("coll").filter(filter("a", "==", "a"));
 
     ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(
-            query, /* queryData= */ null, DocumentKey.emptyKeySet());
+        queryEngine.getDocumentsMatchingQuery(query);
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).contains(MATCHING_DOC.getKey());
@@ -246,8 +243,7 @@ public class IndexedQueryEngineTest {
     Query query = query("coll").filter(filter("a", "==", "a"));
 
     ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(
-            query, /* queryData= */ null, DocumentKey.emptyKeySet());
+        queryEngine.getDocumentsMatchingQuery(query);
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).doesNotContain(MATCHING_DOC.getKey());
@@ -265,8 +261,7 @@ public class IndexedQueryEngineTest {
     Query query = query("coll").filter(filter("a.a", "==", "a"));
 
     ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(
-            query, /* queryData= */ null, DocumentKey.emptyKeySet());
+        queryEngine.getDocumentsMatchingQuery(query);
 
     assertThat(results).doesNotContain(ignoredDoc.getKey());
     assertThat(results).contains(matchingDoc.getKey());
@@ -280,8 +275,7 @@ public class IndexedQueryEngineTest {
     Query query = query("coll").orderBy(TestUtil.orderBy("a"));
 
     ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(
-            query, /* queryData= */ null, DocumentKey.emptyKeySet());
+        queryEngine.getDocumentsMatchingQuery(query);
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).contains(MATCHING_DOC.getKey());

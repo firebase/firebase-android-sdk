@@ -504,7 +504,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         // A watched target might have been removed already.
         if (queryData != null) {
           this.listenTargets.put(
-              targetId, queryData.withResumeToken(targetChange.getResumeToken(), snapshotVersion));
+              targetId,
+              queryData.copy(
+                  snapshotVersion, targetChange.getResumeToken(), queryData.getSequenceNumber()));
         }
       }
     }
@@ -517,7 +519,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       if (queryData != null) {
         // Clear the resume token for the query, since we're in a known mismatch state.
         this.listenTargets.put(
-            targetId, queryData.withResumeToken(ByteString.EMPTY, queryData.getSnapshotVersion()));
+            targetId,
+            queryData.copy(
+                queryData.getSnapshotVersion(), ByteString.EMPTY, queryData.getSequenceNumber()));
 
         // Cause a hard reset by unwatching and rewatching immediately, but deliberately don't send
         // a resume token so that we get a full update.

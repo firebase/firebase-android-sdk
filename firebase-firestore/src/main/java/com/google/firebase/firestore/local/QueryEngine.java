@@ -14,26 +14,17 @@
 
 package com.google.firebase.firestore.local;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 
-/**
- * Represents a query engine capable of performing queries over the local document cache. You must
- * call setLocalDocumentsView() before using.
- */
-public interface QueryEngine {
-
-  /** Sets the document view to query against. */
-  void setLocalDocumentsView(LocalDocumentsView localDocuments);
+/** Represents a query engine capable of performing queries over the local document cache. */
+interface QueryEngine {
 
   /** Returns all local documents matching the specified query. */
-  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys);
+  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(Query query);
 
   /**
    * Notifies the query engine of a document change in case it would like to update indexes and the

@@ -302,32 +302,6 @@ public class ViewTest {
   }
 
   @Test
-  public void testViewsWithLimboDocumentsAreNotMarkedSynced() {
-    Query query = messageQuery();
-    View view = new View(query, DocumentKey.emptyKeySet());
-    Document doc1 = doc("rooms/eros/messages/0", 0, map());
-    Document doc2 = doc("rooms/eros/messages/1", 0, map());
-
-    // Doc1 is contained in the local view, but we are not yet CURRENT so it is expected that the
-    // backend hasn't told us about all documents yet.
-    ViewChange change = applyChanges(view, doc1);
-    assertFalse(change.getSnapshot().isSynced());
-
-    // Add doc2 to generate a snapshot. Doc1 is still missing.
-    View.DocumentChanges viewDocChanges = view.computeDocChanges(docUpdates(doc2));
-    change =
-        view.applyChanges(
-            viewDocChanges, targetChange(ByteString.EMPTY, true, asList(doc2), null, null));
-    assertFalse(change.getSnapshot().isSynced()); // We are CURRENT but doc1 is in limbo.
-
-    // Add doc1 to the backend's result set.
-    change =
-        view.applyChanges(
-            viewDocChanges, targetChange(ByteString.EMPTY, true, asList(doc1), null, null));
-    assertTrue(change.getSnapshot().isSynced());
-  }
-
-  @Test
   public void testResumingQueryCreatesNoLimbos() {
     Query query = messageQuery();
     Document doc1 = doc("rooms/eros/messages/0", 0, map());

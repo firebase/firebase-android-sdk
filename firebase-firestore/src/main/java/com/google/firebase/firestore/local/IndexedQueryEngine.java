@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
@@ -30,7 +29,6 @@ import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.BooleanValue;
 import com.google.firebase.firestore.model.value.DoubleValue;
@@ -89,25 +87,19 @@ public class IndexedQueryEngine implements QueryEngine {
   private static final List<Class> lowCardinalityTypes =
       Arrays.asList(BooleanValue.class, ArrayValue.class, ObjectValue.class);
 
+  private final LocalDocumentsView localDocuments;
   private final SQLiteCollectionIndex collectionIndex;
-  private LocalDocumentsView localDocuments;
 
-  public IndexedQueryEngine(SQLiteCollectionIndex collectionIndex) {
+  public IndexedQueryEngine(
+      LocalDocumentsView localDocuments, SQLiteCollectionIndex collectionIndex) {
+    this.localDocuments = localDocuments;
     this.collectionIndex = collectionIndex;
   }
 
   @Override
-  public void setLocalDocumentsView(LocalDocumentsView localDocuments) {
-    this.localDocuments = localDocuments;
-  }
-
-  @Override
-  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
-    hardAssert(localDocuments != null, "setLocalDocumentsView() not called");
-
+  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(Query query) {
     return query.isDocumentQuery()
-        ? localDocuments.getDocumentsMatchingQuery(query, SnapshotVersion.NONE)
+        ? localDocuments.getDocumentsMatchingQuery(query)
         : performCollectionQuery(query);
   }
 
@@ -126,7 +118,7 @@ public class IndexedQueryEngine implements QueryEngine {
           "If there are any filters, we should be able to use an index.");
       // TODO: Call overlay.getCollectionDocuments(query.getPath()) and filter the
       // results (there may still be startAt/endAt bounds that apply).
-      filteredResults = localDocuments.getDocumentsMatchingQuery(query, SnapshotVersion.NONE);
+      filteredResults = localDocuments.getDocumentsMatchingQuery(query);
     }
 
     return filteredResults;

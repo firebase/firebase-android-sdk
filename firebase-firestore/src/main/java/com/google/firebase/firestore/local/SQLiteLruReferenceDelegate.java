@@ -167,7 +167,9 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
   @Override
   public void removeTarget(QueryData queryData) {
-    QueryData updated = queryData.withSequenceNumber(getCurrentSequenceNumber());
+    QueryData updated =
+        queryData.copy(
+            queryData.getSnapshotVersion(), queryData.getResumeToken(), getCurrentSequenceNumber());
     persistence.getQueryCache().updateQueryData(updated);
   }
 

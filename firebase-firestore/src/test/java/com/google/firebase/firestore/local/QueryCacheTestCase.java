@@ -329,7 +329,6 @@ public abstract class QueryCacheTestCase {
         sequenceNumber,
         QueryPurpose.LISTEN,
         version(version),
-        version(version),
         resumeToken(version));
   }
 

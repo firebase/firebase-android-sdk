@@ -311,7 +311,6 @@ public class View {
               viewChanges,
               fromCache,
               docChanges.mutatedKeys,
-              synced,
               syncStatedChanged,
               /* excludesMetadataChanges= */ false);
     }

@@ -19,7 +19,6 @@ import static java.util.Arrays.asList;
 
 import android.util.SparseArray;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
@@ -126,7 +125,7 @@ public final class LocalStore {
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
 
-  public LocalStore(Persistence persistence, QueryEngine queryEngine, User initialUser) {
+  public LocalStore(Persistence persistence, User initialUser) {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
@@ -136,9 +135,8 @@ public final class LocalStore {
     remoteDocuments = persistence.getRemoteDocumentCache();
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-
-    this.queryEngine = queryEngine;
-    queryEngine.setLocalDocumentsView(localDocuments);
+    // TODO: Use IndexedQueryEngine as appropriate.
+    queryEngine = new SimpleQueryEngine(localDocuments);
 
     localViewReferences = new ReferenceSet();
     persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
@@ -172,7 +170,8 @@ public final class LocalStore {
     // Recreate our LocalDocumentsView using the new MutationQueue.
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-    queryEngine.setLocalDocumentsView(localDocuments);
+    // TODO: Use IndexedQueryEngine as appropriate.
+    queryEngine = new SimpleQueryEngine(localDocuments);
 
     // Union the old/new changed keys.
     ImmutableSortedSet<DocumentKey> changedKeys = DocumentKey.emptyKeySet();
@@ -354,9 +353,7 @@ public final class LocalStore {
             // Update the resume token if the change includes one.
             if (!resumeToken.isEmpty()) {
               QueryData newQueryData =
-                  oldQueryData
-                      .withResumeToken(resumeToken, remoteEvent.getSnapshotVersion())
-                      .withSequenceNumber(sequenceNumber);
+                  oldQueryData.copy(remoteVersion, resumeToken, sequenceNumber);
               targetIds.put(boxedTargetId, newQueryData);
 
               // Update the query data if there are target changes (or if sufficient time has
@@ -384,7 +381,7 @@ public final class LocalStore {
                 || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
                 || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
                     && existingDoc.hasPendingWrites())) {
-              remoteDocuments.add(doc, remoteEvent.getSnapshotVersion());
+              remoteDocuments.add(doc);
               changedDocs.put(key, doc);
             } else if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
               // NoDocuments with SnapshotVersion.MIN are used in manufactured events (e.g. in the
@@ -469,28 +466,12 @@ public final class LocalStore {
         "notifyLocalViewChanges",
         () -> {
           for (LocalViewChanges viewChange : viewChanges) {
-            int targetId = viewChange.getTargetId();
-
-            localViewReferences.addReferences(viewChange.getAdded(), targetId);
+            localViewReferences.addReferences(viewChange.getAdded(), viewChange.getTargetId());
             ImmutableSortedSet<DocumentKey> removed = viewChange.getRemoved();
             for (DocumentKey key : removed) {
               persistence.getReferenceDelegate().removeReference(key);
             }
-            localViewReferences.removeReferences(removed, targetId);
-
-            if (viewChange.isSynced()) {
-              QueryData queryData = targetIds.get(targetId);
-              hardAssert(
-                  queryData != null,
-                  "Can't set limbo-free snapshot version for unknown target: %s",
-                  targetId);
-
-              // Advance the last limbo free snapshot version
-              SnapshotVersion lastLimboFreeSnapshotVersion = queryData.getSnapshotVersion();
-              QueryData updatedQueryData =
-                  queryData.withLastLimboFreeSnapshotVersion(lastLimboFreeSnapshotVersion);
-              targetIds.put(targetId, updatedQueryData);
-            }
+            localViewReferences.removeReferences(removed, viewChange.getTargetId());
           }
         });
   }
@@ -548,21 +529,6 @@ public final class LocalStore {
     return cached;
   }
 
-  /**
-   * Returns the QueryData as seen by the LocalStore, including updates that may have not yet been
-   * persisted to the QueryCache.
-   */
-  @VisibleForTesting
-  @Nullable
-  QueryData getQueryData(Query query) {
-    QueryData queryData = queryCache.getQueryData(query);
-    if (queryData == null) {
-      return null;
-    }
-    QueryData updatedQueryData = targetIds.get(queryData.getTargetId());
-    return updatedQueryData != null ? updatedQueryData : queryData;
-  }
-
   /** Mutable state for the transaction in allocateQuery. */
   private static class AllocateQueryHolder {
     QueryData cached;
@@ -579,20 +545,10 @@ public final class LocalStore {
 
           int targetId = queryData.getTargetId();
           QueryData cachedQueryData = targetIds.get(targetId);
-
-          boolean needsUpdate = false;
           if (cachedQueryData.getSnapshotVersion().compareTo(queryData.getSnapshotVersion()) > 0) {
             // If we've been avoiding persisting the resumeToken (see shouldPersistQueryData for
             // conditions and rationale) we need to persist the token now because there will no
             // longer be an in-memory version to fall back on.
-            needsUpdate = true;
-          } else if (!cachedQueryData
-              .getLastLimboFreeSnapshotVersion()
-              .equals(queryData.getLastLimboFreeSnapshotVersion())) {
-            needsUpdate = true;
-          }
-
-          if (needsUpdate) {
             queryData = cachedQueryData;
             queryCache.updateQueryData(queryData);
           }
@@ -613,23 +569,7 @@ public final class LocalStore {
 
   /** Runs the given query against all the documents in the local store and returns the results. */
   public ImmutableSortedMap<DocumentKey, Document> executeQuery(Query query) {
-    QueryData queryData = getQueryData(query);
-    if (queryData != null) {
-      ImmutableSortedSet<DocumentKey> remoteKeys =
-          this.queryCache.getMatchingKeysForTargetId(queryData.getTargetId());
-      return executeQuery(query, queryData, remoteKeys);
-    } else {
-      return executeQuery(query, null, DocumentKey.emptyKeySet());
-    }
-  }
-
-  /**
-   * Runs the given query against the local store and returns the results, potentially taking
-   * advantage of the provided query data and the set of remote document keys.
-   */
-  public ImmutableSortedMap<DocumentKey, Document> executeQuery(
-      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
-    return queryEngine.getDocumentsMatchingQuery(query, queryData, remoteKeys);
+    return queryEngine.getDocumentsMatchingQuery(query);
   }
 
   /**
@@ -658,7 +598,7 @@ public final class LocalStore {
               batch,
               remoteDoc);
         } else {
-          remoteDocuments.add(doc, batchResult.getCommitVersion());
+          remoteDocuments.add(doc);
         }
       }
     }
