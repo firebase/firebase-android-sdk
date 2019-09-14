@@ -402,6 +402,30 @@ public abstract class LruGarbageCollectorTestCase {
   }
 
   @Test
+  public void testRemoveOrphanedDocumentsExistsEarlyWithNoDocuments() {
+    int removed = garbageCollector.removeOrphanedDocuments(1000);
+    assertEquals(0, removed);
+  }
+
+  @Test
+  public void testRemoveOrphanedDocumentsWithLargeNumberOfDocuments() {
+    int orphanedDocumentCount =
+        SQLiteLruReferenceDelegate.REMOVE_ORPHANED_DOCUMENTS_BATCH_SIZE * 2 + 1;
+
+    persistence.runTransaction(
+        "add orphaned docs",
+        () -> {
+          for (int i = 0; i < orphanedDocumentCount; i++) {
+            Document doc = cacheADocumentInTransaction();
+            markDocumentEligibleForGcInTransaction(doc.getKey());
+          }
+        });
+
+    int removed = garbageCollector.removeOrphanedDocuments(1000);
+    assertEquals(orphanedDocumentCount, removed);
+  }
+
+  @Test
   public void testRemoveTargetsThenGC() {
     // Create 3 targets, add docs to all of them
     // Leave oldest target alone, it is still live
