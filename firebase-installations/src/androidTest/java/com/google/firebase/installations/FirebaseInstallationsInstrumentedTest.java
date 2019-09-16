@@ -50,7 +50,8 @@ import com.google.firebase.installations.remote.FirebaseInstallationServiceExcep
 import com.google.firebase.installations.remote.InstallationResponse;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
@@ -61,7 +62,6 @@ import org.junit.runners.MethodSorters;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.internal.stubbing.answers.Returns;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -125,7 +125,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void setUp() throws FirebaseInstallationServiceException {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
-    executor = Executors.newSingleThreadExecutor();
+    executor = new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
@@ -446,19 +446,19 @@ public class FirebaseInstallationsInstrumentedTest {
     doAnswer(
             AdditionalAnswers.answersWithDelay(
                 1000,
-                new Returns(
+                (unused) ->
                     InstallationTokenResult.builder()
                         .setToken(TEST_AUTH_TOKEN_3)
                         .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                        .build())))
+                        .build()))
         .doAnswer(
             AdditionalAnswers.answersWithDelay(
                 1000,
-                new Returns(
+                (unused) ->
                     InstallationTokenResult.builder()
                         .setToken(TEST_AUTH_TOKEN_4)
                         .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                        .build())))
+                        .build()))
         .when(backendClientReturnsOk)
         .generateAuthToken(anyString(), anyString(), anyString(), anyString());
 
