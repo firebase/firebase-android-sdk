@@ -47,8 +47,6 @@ task generateAarSizeMeasurements(type: com.google.firebase.gradle.plugins.measur
     group 'Measurements'
 
     dependsOn (":publishAllToBuildDir")
-
-    sdkIgnoreFile = file("sdks_ignore.csv")
 }
 
 /**

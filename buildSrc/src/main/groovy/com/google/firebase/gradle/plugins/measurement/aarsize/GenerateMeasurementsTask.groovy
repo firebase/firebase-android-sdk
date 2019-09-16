@@ -40,21 +40,6 @@ import org.gradle.api.tasks.TaskAction
 public class GenerateMeasurementsTask extends DefaultTask {
 
     /**
-     * The file storing the SDKs to ignore.
-     *
-     * <p>This may be any type recognized by Gradle as a file. The format of the file's contents is
-     * a list of SDK subproject names, one per line.
-     *
-     * <p>For example:
-     * <pre>{@code
-     * firebase-database-collection
-     * protolite-well-known-types
-     *}</pre>
-     */
-    @InputFile
-    File sdkIgnoreFile
-
-    /**
      * The file for storing the report.
      *
      * <p>This may be any type recognized by Gradle as a file. The contents, if any, will be
@@ -74,11 +59,7 @@ public class GenerateMeasurementsTask extends DefaultTask {
     @TaskAction
     def generate() {
         def subprojects = [:]
-        def ignore_subprojects = sdkIgnoreFile.readLines()
          project.rootProject.subprojects.collect { Project it ->
-            if (ignore_subprojects.contains(it.name)) {
-                return
-            }
             def aars = it.fileTree('build') {
                 include '**/*release.aar'
             }
@@ -86,8 +67,12 @@ public class GenerateMeasurementsTask extends DefaultTask {
                 def msg = "${it.name} produced more than one AAR"
                 throw new IllegalStateException(msg)
             }
+            def name = it.name
+            if (it.parent != project.rootProject) {
+                name = "${it.parent.name}:${it.name}"
+            }
             aars.each { File f ->
-                subprojects[it.name] = f.length()
+                subprojects[name] = f.length()
             }
         }
         if (project.hasProperty("pull_request")) {
