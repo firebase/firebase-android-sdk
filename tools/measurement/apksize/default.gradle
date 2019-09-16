@@ -30,7 +30,7 @@ android {
     defaultConfig {
         applicationId 'com.google.apksize'
         minSdkVersion project.targetSdkVersion
-            multiDexEnabled true
+        multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionCode 1
         versionName '1.0'
