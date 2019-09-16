@@ -13,7 +13,7 @@ package com.google.firebase.installations {
     ctor public InstallationTokenResult.Builder();
     method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult build();
     method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setToken(@NonNull String);
-    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setTokenExpirationInSecs(@NonNull long);
+    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setTokenExpirationInSecs(long);
   }
 
 }

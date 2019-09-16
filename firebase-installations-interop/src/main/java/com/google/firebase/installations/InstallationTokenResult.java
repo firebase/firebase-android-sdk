@@ -45,7 +45,7 @@ public abstract class InstallationTokenResult {
     public abstract Builder setToken(@NonNull String value);
 
     @NonNull
-    public abstract Builder setTokenExpirationInSecs(@NonNull long value);
+    public abstract Builder setTokenExpirationInSecs(long value);
 
     @NonNull
     public abstract InstallationTokenResult build();

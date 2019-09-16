@@ -50,8 +50,7 @@ import com.google.firebase.installations.remote.FirebaseInstallationServiceExcep
 import com.google.firebase.installations.remote.InstallationResponse;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
@@ -59,9 +58,9 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
+import org.mockito.AdditionalAnswers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.internal.stubbing.answers.AnswersWithDelay;
 import org.mockito.internal.stubbing.answers.Returns;
 
 /**
@@ -126,7 +125,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void setUp() throws FirebaseInstallationServiceException {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
-    executor = new ThreadPoolExecutor(0, 4, 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
+    executor = Executors.newSingleThreadExecutor();
     firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
@@ -268,13 +267,12 @@ public class FirebaseInstallationsInstrumentedTest {
       Tasks.await(firebaseInstallations.getId());
       fail("Could not update local storage.");
     } catch (ExecutionException expected) {
-      Throwable cause = expected.getCause();
       assertWithMessage("Exception class doesn't match")
           .that(expected)
           .hasCauseThat()
           .isInstanceOf(FirebaseInstallationsException.class);
       assertWithMessage("Exception status doesn't match")
-          .that(((FirebaseInstallationsException) cause).getStatus())
+          .that(((FirebaseInstallationsException) expected.getCause()).getStatus())
           .isEqualTo(FirebaseInstallationsException.Status.CLIENT_ERROR);
     }
   }
@@ -310,13 +308,12 @@ public class FirebaseInstallationsInstrumentedTest {
           firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
       fail("Could not update local storage.");
     } catch (ExecutionException expected) {
-      Throwable cause = expected.getCause();
       assertWithMessage("Exception class doesn't match")
           .that(expected)
           .hasCauseThat()
           .isInstanceOf(FirebaseInstallationsException.class);
       assertWithMessage("Exception status doesn't match")
-          .that(((FirebaseInstallationsException) cause).getStatus())
+          .that(((FirebaseInstallationsException) expected.getCause()).getStatus())
           .isEqualTo(FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
   }
@@ -395,13 +392,12 @@ public class FirebaseInstallationsInstrumentedTest {
       Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH));
       fail("getAuthToken() failed due to Server Error.");
     } catch (ExecutionException expected) {
-      Throwable cause = expected.getCause();
       assertWithMessage("Exception class doesn't match")
           .that(expected)
           .hasCauseThat()
           .isInstanceOf(FirebaseInstallationsException.class);
       assertWithMessage("Exception status doesn't match")
-          .that(((FirebaseInstallationsException) cause).getStatus())
+          .that(((FirebaseInstallationsException) expected.getCause()).getStatus())
           .isEqualTo(FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
   }
@@ -409,8 +405,8 @@ public class FirebaseInstallationsInstrumentedTest {
   @Test
   public void testGetAuthToken_multipleCallsDoNotForceRefresh_fetchedNewTokenOnce()
       throws Exception {
-    // Using mockPersistedFid to ensure the order of returning persistedFidEntry  to 2 tasks
-    // triggered simultaneously. Task2 waits for Task1 to complete.On Task1 completion, task2 reads
+    // Using mockPersistedFid to ensure the order of returning persistedFidEntry to 2 tasks
+    // triggered simultaneously. Task2 waits for Task1 to complete. On Task1 completion, task2 reads
     // the UPDATED_AUTH_TOKEN_FID_ENTRY by Task1 on execution.
     when(mockPersistedFid.readPersistedFidEntryValue())
         .thenReturn(
@@ -444,11 +440,11 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetAuthToken_multipleCallsForceRefresh_fetchedNewTokenTwice() throws Exception {
     when(mockPersistedFid.readPersistedFidEntryValue()).thenReturn(REGISTERED_FID_ENTRY);
     // Use a mock ServiceClient for network calls with delay(1000ms) to ensure first task is not
-    // completed before the second task starts. Hence, we can test multiple calls to getAUthToken()
+    // completed before the second task starts. Hence, we can test multiple calls to getAuthToken()
     // and verify one task waits for another task to complete.
 
     doAnswer(
-            new AnswersWithDelay(
+            AdditionalAnswers.answersWithDelay(
                 1000,
                 new Returns(
                     InstallationTokenResult.builder()
@@ -456,7 +452,7 @@ public class FirebaseInstallationsInstrumentedTest {
                         .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
                         .build())))
         .doAnswer(
-            new AnswersWithDelay(
+            AdditionalAnswers.answersWithDelay(
                 1000,
                 new Returns(
                     InstallationTokenResult.builder()
@@ -480,10 +476,10 @@ public class FirebaseInstallationsInstrumentedTest {
     // As we cannot ensure which task got executed first, verifying with both expected values
     assertWithMessage("Persisted Auth Token doesn't match")
         .that(task1.getResult().getToken())
-        .isAnyOf(TEST_AUTH_TOKEN_3, TEST_AUTH_TOKEN_4);
+        .isEqualTo(TEST_AUTH_TOKEN_3);
     assertWithMessage("Persisted Auth Token doesn't match")
         .that(task2.getResult().getToken())
-        .isAnyOf(TEST_AUTH_TOKEN_4, TEST_AUTH_TOKEN_3);
+        .isEqualTo(TEST_AUTH_TOKEN_4);
     verify(backendClientReturnsOk, times(2))
         .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }

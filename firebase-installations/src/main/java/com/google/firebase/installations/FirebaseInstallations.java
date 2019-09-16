@@ -30,8 +30,7 @@ import com.google.firebase.installations.remote.FirebaseInstallationServiceClien
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -61,7 +60,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   FirebaseInstallations(FirebaseApp firebaseApp) {
     this(
         DefaultClock.getInstance(),
-        new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new SynchronousQueue<>()),
+        Executors.newSingleThreadExecutor(),
         firebaseApp,
         new FirebaseInstallationServiceClient(),
         new PersistedFid(firebaseApp),
