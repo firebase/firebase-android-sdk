@@ -26,7 +26,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
   private HeartBeatInfoStorage storage;
 
-  private DefaultHeartBeatInfo(Context context) {
+  DefaultHeartBeatInfo(Context context) {
     storage = HeartBeatInfoStorage.getInstance(context);
   }
 
