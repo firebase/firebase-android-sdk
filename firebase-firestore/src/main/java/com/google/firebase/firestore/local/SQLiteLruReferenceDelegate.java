@@ -24,6 +24,14 @@ import com.google.firebase.firestore.util.Consumer;
 
 /** Provides LRU functionality for SQLite persistence. */
 class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
+  /**
+   * The batch size for orphaned document GC in `removeOrphanedDocuments()`.
+   *
+   * <p>This addresses https://github.com/firebase/firebase-android-sdk/issues/706, where a customer
+   * reported that LRU GC hit a CursorWindow size limit during orphaned document removal.
+   */
+  static final int REMOVE_ORPHANED_DOCUMENTS_BATCH_SIZE = 100;
+
   private final SQLitePersistence persistence;
   private ListenSequence listenSequence;
   private long currentSequenceNumber;
@@ -148,20 +156,29 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   @Override
   public int removeOrphanedDocuments(long upperBound) {
     int[] count = new int[1];
-    persistence
-        .query(
-            "select path from target_documents group by path having COUNT(*) = 1 AND target_id = 0 AND sequence_number <= ?")
-        .binding(upperBound)
-        .forEach(
-            row -> {
-              ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
-              DocumentKey key = DocumentKey.fromPath(path);
-              if (!isPinned(key)) {
-                count[0]++;
-                persistence.getRemoteDocumentCache().remove(key);
-                removeSentinel(key);
-              }
-            });
+
+    boolean resultsRemaining = true;
+
+    while (resultsRemaining) {
+      int rowsProccessed =
+          persistence
+              .query(
+                  "select path from target_documents group by path having COUNT(*) = 1 AND target_id = 0 AND sequence_number <= ? LIMIT ?")
+              .binding(upperBound, REMOVE_ORPHANED_DOCUMENTS_BATCH_SIZE)
+              .forEach(
+                  row -> {
+                    ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+                    DocumentKey key = DocumentKey.fromPath(path);
+                    if (!isPinned(key)) {
+                      count[0]++;
+                      persistence.getRemoteDocumentCache().remove(key);
+                      removeSentinel(key);
+                    }
+                  });
+
+      resultsRemaining = (rowsProccessed == REMOVE_ORPHANED_DOCUMENTS_BATCH_SIZE);
+    }
+
     return count[0];
   }
 
