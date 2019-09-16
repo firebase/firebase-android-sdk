@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
@@ -243,7 +244,8 @@ public class FirebaseInstallationServiceClient {
           if (key.equals("token")) {
             installationTokenResult.setToken(reader.nextString());
           } else if (key.equals("expiresIn")) {
-            installationTokenResult.setTokenExpirationTimestampMillis(reader.nextLong());
+            installationTokenResult.setTokenExpirationInSecs(
+                TimeUnit.MILLISECONDS.toSeconds(reader.nextLong()));
           } else {
             reader.skipValue();
           }
@@ -271,7 +273,7 @@ public class FirebaseInstallationServiceClient {
       if (name.equals("token")) {
         builder.setToken(reader.nextString());
       } else if (name.equals("expiresIn")) {
-        builder.setTokenExpirationTimestampMillis(reader.nextLong());
+        builder.setTokenExpirationInSecs(TimeUnit.MILLISECONDS.toSeconds(reader.nextLong()));
       } else {
         reader.skipValue();
       }

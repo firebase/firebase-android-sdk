@@ -20,6 +20,11 @@ public final class FisAndroidTestConstants {
   public static final String TEST_PROJECT_ID = "777777777777";
 
   public static final String TEST_AUTH_TOKEN = "fis.auth.token";
+  public static final String TEST_AUTH_TOKEN_2 = "fis.auth.token2";
+  public static final String TEST_AUTH_TOKEN_3 = "fis.auth.token3";
+  public static final String TEST_AUTH_TOKEN_4 = "fis.auth.token4";
+
+  public static final String TEST_API_KEY = "apiKey";
 
   public static final String TEST_REFRESH_TOKEN = "1:test-refresh-token";
 
@@ -27,6 +32,7 @@ public final class FisAndroidTestConstants {
   public static final String TEST_APP_ID_2 = "1:987654321:android:abcdef";
 
   public static final long TEST_TOKEN_EXPIRATION_TIMESTAMP = 1000L;
+  public static final long TEST_TOKEN_EXPIRATION_TIMESTAMP_2 = 2000L;
 
   public static final long TEST_CREATION_TIMESTAMP_1 = 2000L;
   public static final long TEST_CREATION_TIMESTAMP_2 = 2000L;

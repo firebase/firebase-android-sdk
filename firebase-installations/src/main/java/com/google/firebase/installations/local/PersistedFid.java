@@ -73,7 +73,7 @@ public class PersistedFid {
   }
 
   @Nullable
-  public synchronized PersistedFidEntry readPersistedFidEntryValue() {
+  public PersistedFidEntry readPersistedFidEntryValue() {
     String fid = prefs.getString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
     int status = prefs.getInt(getSharedPreferencesKey(PERSISTED_STATUS_KEY), -1);
     String authToken = prefs.getString(getSharedPreferencesKey(AUTH_TOKEN_KEY), null);
@@ -99,32 +99,36 @@ public class PersistedFid {
   }
 
   @NonNull
-  public synchronized boolean insertOrUpdatePersistedFidEntry(
-      @NonNull PersistedFidEntry entryValue) {
-    SharedPreferences.Editor editor = prefs.edit();
-    editor.putString(
-        getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY),
-        entryValue.getFirebaseInstallationId());
-    editor.putInt(
-        getSharedPreferencesKey(PERSISTED_STATUS_KEY),
-        entryValue.getRegistrationStatus().ordinal());
-    editor.putString(getSharedPreferencesKey(AUTH_TOKEN_KEY), entryValue.getAuthToken());
-    editor.putString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), entryValue.getRefreshToken());
-    editor.putLong(
-        getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY),
-        entryValue.getTokenCreationEpochInSecs());
-    editor.putLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), entryValue.getExpiresInSecs());
-    return editor.commit();
+  public boolean insertOrUpdatePersistedFidEntry(@NonNull PersistedFidEntry entryValue) {
+    synchronized (prefs) {
+      SharedPreferences.Editor editor = prefs.edit();
+      editor.putString(
+          getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY),
+          entryValue.getFirebaseInstallationId());
+      editor.putInt(
+          getSharedPreferencesKey(PERSISTED_STATUS_KEY),
+          entryValue.getRegistrationStatus().ordinal());
+      editor.putString(getSharedPreferencesKey(AUTH_TOKEN_KEY), entryValue.getAuthToken());
+      editor.putString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), entryValue.getRefreshToken());
+      editor.putLong(
+          getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY),
+          entryValue.getTokenCreationEpochInSecs());
+      editor.putLong(
+          getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), entryValue.getExpiresInSecs());
+      return editor.commit();
+    }
   }
 
   @NonNull
-  public synchronized boolean clear() {
-    SharedPreferences.Editor editor = prefs.edit();
-    for (String k : FID_PREF_KEYS) {
-      editor.remove(getSharedPreferencesKey(k));
+  public boolean clear() {
+    synchronized (prefs) {
+      SharedPreferences.Editor editor = prefs.edit();
+      for (String k : FID_PREF_KEYS) {
+        editor.remove(getSharedPreferencesKey(k));
+      }
+      editor.commit();
+      return editor.commit();
     }
-    editor.commit();
-    return editor.commit();
   }
 
   private String getSharedPreferencesKey(String key) {
