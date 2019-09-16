@@ -402,7 +402,7 @@ public abstract class LruGarbageCollectorTestCase {
   }
 
   @Test
-  public void testRemoveOrphanedDocumentsExistsEarlyWithNoDocuments() {
+  public void testRemoveOrphanedDocumentsWithNoDocuments() {
     int removed = garbageCollector.removeOrphanedDocuments(1000);
     assertEquals(0, removed);
   }
