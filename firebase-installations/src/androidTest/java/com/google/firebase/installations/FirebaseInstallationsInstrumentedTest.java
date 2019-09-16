@@ -439,6 +439,7 @@ public class FirebaseInstallationsInstrumentedTest {
     verify(backendClientReturnsOk, times(1))
         .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
+
   @Test
   public void testGetAuthToken_multipleCallsForceRefresh_fetchedNewTokenTwice() throws Exception {
     when(mockPersistedFid.readPersistedFidEntryValue()).thenReturn(REGISTERED_FID_ENTRY);
