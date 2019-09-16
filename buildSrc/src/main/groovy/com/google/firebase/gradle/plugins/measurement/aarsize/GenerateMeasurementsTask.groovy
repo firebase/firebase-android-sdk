@@ -27,7 +27,7 @@ import org.gradle.api.tasks.TaskAction
  * Generates size measurements after building the release aar's.
  *
  * <p>This task can run in two modes. The first mode, enabled when running the task with the
- * {@code pull_request} flag set, is a dependency of {@linkUploadMeasurementsTask} and generates
+ * {@code pull_request} flag set, is a dependency of {@link UploadMeasurementsTask} and generates
  * a JSON file with measurement information. The second mode, enabled when running the task without
  * flags, outputs a table to standard out with more human-readable information. See the README for
  * more details.

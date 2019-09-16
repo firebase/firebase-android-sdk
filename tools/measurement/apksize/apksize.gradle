@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import com.google.firebase.gradle.plugins.measurement.apksize.GenerateMeasurementsTask
+import com.google.firebase.gradle.plugins.measurement.aarsize.GenerateMeasurementsTask as GenerateAarMeasurementTask
 import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
 
 apply plugin: "com.android.application"
@@ -25,7 +26,7 @@ apply from: "src/config/config.gradle"
 apply from: "src/database/database.gradle"
 apply from: "src/firestore/firestore.gradle"
 apply from: "src/functions/functions.gradle"
-// apply from: "src/inappmessagingdisplay/inappmessaging-display.gradle"
+apply from: "src/inappmessagingdisplay/inappmessaging-display.gradle"
 apply from: "src/storage/storage.gradle"
 
 /**
@@ -42,7 +43,7 @@ task generateApkSizeMeasurements(type: GenerateMeasurementsTask) {
     reportFile = file("$buildDir/size-report.json")
 }
 
-task generateAarSizeMeasurements(type: com.google.firebase.gradle.plugins.measurement.aarsize.GenerateMeasurementsTask) {
+task generateAarSizeMeasurements(type: GenerateAarMeasurementTask) {
     description 'Builds release aar artifacts and calculates AAR sizes.'
     group 'Measurements'
 
