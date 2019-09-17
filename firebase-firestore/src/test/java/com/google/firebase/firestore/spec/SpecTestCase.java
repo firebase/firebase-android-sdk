@@ -1028,7 +1028,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         waitFor(drainBackgroundQueue.getTask());
 
         if (expectedSnapshotEvents != null) {
-          log("      Validating step expectations " + expectedSnapshotEvents);
+          log("      Validating expected snapshot events " + expectedSnapshotEvents);
         }
         validateStepExpectations(expectedSnapshotEvents);
         if (expectedState != null) {
