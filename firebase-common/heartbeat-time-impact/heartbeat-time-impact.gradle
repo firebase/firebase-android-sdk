@@ -14,7 +14,7 @@
 
 
 plugins {
-    id 'com.android.application'
+    id 'com.android.library'
 }
 
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
@@ -147,6 +147,7 @@ android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
+    testBuildType 'release'
 
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
@@ -165,6 +166,11 @@ android {
             includeAndroidResources = true
         }
     }
+    buildTypes {
+        release {
+            signingConfig debug.signingConfig
+        }
+    }
 }
 
 dependencies {
@@ -173,11 +179,8 @@ dependencies {
     implementation 'com.google.android.gms:play-services-basement:17.1.0'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
     implementation 'com.google.android.gms:play-services-base:17.1.0'
-    testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation 'androidx.test.ext:junit:1.1.1'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'com.google.auto.value:auto-value-annotations:1.6.5'
-    testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
 }
