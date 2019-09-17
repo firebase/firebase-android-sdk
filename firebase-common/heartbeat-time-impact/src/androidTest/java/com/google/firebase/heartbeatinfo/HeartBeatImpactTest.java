@@ -16,17 +16,14 @@ package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
 import android.os.Build;
-import android.util.Log;
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -34,7 +31,7 @@ import org.junit.runner.RunWith;
 public class HeartBeatImpactTest {
 
   @Test
-  public void testHeartBeatTime() {
+  public void testHeartBeatTime() throws ExecutionException, InterruptedException {
     Context context = ApplicationProvider.getApplicationContext();
     FirebaseApp.initializeApp(context);
     FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -46,21 +43,6 @@ public class HeartBeatImpactTest {
     data.put("deviceModel", Build.MODEL);
     data.put("timestamp", Long.toString(System.currentTimeMillis()));
     data.put("measurementMs", Long.toString(endTime - startTime));
-    db.collection("HeartBeat")
-        .add(data)
-        .addOnSuccessListener(
-            new OnSuccessListener<DocumentReference>() {
-              @Override
-              public void onSuccess(DocumentReference documentReference) {
-                Log.d("HeartBeat", "HeartBeatInfo written with ID: " + documentReference.getId());
-              }
-            })
-        .addOnFailureListener(
-            new OnFailureListener() {
-              @Override
-              public void onFailure(@NonNull Exception e) {
-                Log.w("HeartBeat", "Error adding HeartBeatInfo", e);
-              }
-            });
+    Tasks.await(db.collection("HeartBeat").add(data));
   }
 }
