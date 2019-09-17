@@ -244,18 +244,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       PersistedFidEntry persistedFidEntry, AwaitListener listener) {
     String fid = persistedFidEntry.getFirebaseInstallationId();
 
-    if (!isFidUnregisteredOrAuthTokenExpired(persistedFidEntry)) {
+    if (persistedFidEntry.getRegistrationStatus() != RegistrationStatus.UNREGISTERED
+        && !isAuthTokenExpired(persistedFidEntry)) {
       return updateAwaitListenerIfRegisteredFid(persistedFidEntry, listener);
     }
 
     updatePersistedFidWithPendingStatus(persistedFidEntry);
     executeFISCalls(persistedFidEntry, listener);
     return Tasks.forResult(fid);
-  }
-
-  private boolean isFidUnregisteredOrAuthTokenExpired(PersistedFidEntry persistedFidEntry) {
-    return persistedFidEntry.getRegistrationStatus() == RegistrationStatus.UNREGISTERED
-        || isAuthTokenExpired(persistedFidEntry);
   }
 
   private void executeFISCalls(PersistedFidEntry persistedFidEntry, AwaitListener listener) {
