@@ -1013,10 +1013,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       specSetUp(config);
       for (int i = 0; i < steps.length(); ++i) {
         JSONObject step = steps.getJSONObject(i);
-        @Nullable JSONArray expect = step.optJSONArray("expect");
-        step.remove("expect");
-        @Nullable JSONObject stateExpect = step.optJSONObject("stateExpect");
-        step.remove("stateExpect");
+        @Nullable JSONArray expectedSnapshotEvents = step.optJSONArray("expectedSnapshotEvents");
+        step.remove("expectedSnapshotEvents");
+        @Nullable JSONObject expectedState = step.optJSONObject("expectedState");
+        step.remove("expectedState");
         int expectedSnapshotsInSyncEvents = step.optInt("expectedSnapshotsInSyncEvents");
         step.remove("expectedSnapshotsInSyncEvents");
 
@@ -1027,14 +1027,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         backgroundExecutor.execute(() -> drainBackgroundQueue.setResult(null));
         waitFor(drainBackgroundQueue.getTask());
 
-        if (expect != null) {
-          log("      Validating step expectations " + expect);
+        if (expectedSnapshotEvents != null) {
+          log("      Validating step expectations " + expectedSnapshotEvents);
         }
-        validateStepExpectations(expect);
-        if (stateExpect != null) {
-          log("      Validating state expectations " + stateExpect);
+        validateStepExpectations(expectedSnapshotEvents);
+        if (expectedState != null) {
+          log("      Validating state expectations " + expectedState);
         }
-        validateStateExpectations(stateExpect);
+        validateStateExpectations(expectedState);
         validateSnapshotsInSyncEvents(expectedSnapshotsInSyncEvents);
         events.clear();
         acknowledgedDocs.clear();
