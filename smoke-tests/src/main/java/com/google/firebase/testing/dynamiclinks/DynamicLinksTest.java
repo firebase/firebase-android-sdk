@@ -51,7 +51,7 @@ public final class DynamicLinksTest {
     assertThat(actual.getHost()).isEqualTo("example.page.link");
     assertThat(query)
         .asList()
-        .containsAtLeast("apn=com.google.firebase.testing.combined", "link=http://www.example.com");
+        .containsAtLeast("apn=com.google.firebase.testing", "link=http://www.example.com");
   }
 
   @Test
