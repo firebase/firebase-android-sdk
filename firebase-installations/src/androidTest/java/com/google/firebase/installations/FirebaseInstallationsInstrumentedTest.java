@@ -23,6 +23,7 @@ import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUT
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN_4;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_CREATION_TIMESTAMP_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_CREATION_TIMESTAMP_2;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_CREATION_TIMESTAMP_3;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_FID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_PROJECT_ID;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_REFRESH_TOKEN;
@@ -32,6 +33,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -116,7 +118,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .setFirebaseInstallationId(TEST_FID_1)
           .setAuthToken(TEST_AUTH_TOKEN_2)
           .setRefreshToken(TEST_REFRESH_TOKEN)
-          .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_2)
+          .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_3)
           .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
           .setRegistrationStatus(PersistedFid.RegistrationStatus.REGISTERED)
           .build();
@@ -278,6 +280,36 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   @Test
+  public void testGetId_expiredAuthToken_refreshesAuthToken() throws Exception {
+    // Update local storage with fid entry that has auth token expired.
+    persistedFid.insertOrUpdatePersistedFidEntry(EXPIRED_AUTH_TOKEN_ENTRY);
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            mockClock, executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
+
+    assertWithMessage("getId Task fails.")
+        .that(Tasks.await(firebaseInstallations.getId()))
+        .isNotEmpty();
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(entryValue.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+
+    // Waiting for Task that generates auth token with the FIS Servers
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+
+    // Validate that registration is complete with updated auth token
+    PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(updatedFidEntry)
+        .isEqualTo(UPDATED_AUTH_TOKEN_FID_ENTRY);
+    verify(backendClientReturnsOk, never())
+        .createFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_APP_ID_1);
+    verify(backendClientReturnsOk, times(1))
+        .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
+  }
+
+  @Test
   public void testGetAuthToken_fidDoesNotExist_successful() throws Exception {
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
@@ -409,11 +441,7 @@ public class FirebaseInstallationsInstrumentedTest {
     // triggered simultaneously. Task2 waits for Task1 to complete. On Task1 completion, task2 reads
     // the UPDATED_AUTH_TOKEN_FID_ENTRY by Task1 on execution.
     when(mockPersistedFid.readPersistedFidEntryValue())
-        .thenReturn(
-            EXPIRED_AUTH_TOKEN_ENTRY,
-            EXPIRED_AUTH_TOKEN_ENTRY,
-            EXPIRED_AUTH_TOKEN_ENTRY,
-            UPDATED_AUTH_TOKEN_FID_ENTRY);
+        .thenReturn(EXPIRED_AUTH_TOKEN_ENTRY, UPDATED_AUTH_TOKEN_FID_ENTRY);
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             mockClock, executor, firebaseApp, backendClientReturnsOk, mockPersistedFid, mockUtils);
