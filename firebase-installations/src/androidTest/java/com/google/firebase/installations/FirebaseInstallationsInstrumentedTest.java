@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -165,9 +166,11 @@ public class FirebaseInstallationsInstrumentedTest {
     when(persistedFidReturnsError.readPersistedFidEntryValue()).thenReturn(null);
     when(mockUtils.createRandomFid()).thenReturn(TEST_FID_1);
     when(mockClock.currentTimeMillis()).thenReturn(TEST_CREATION_TIMESTAMP_1);
+    // Mocks success on FIS deletion
     doNothing()
         .when(backendClientReturnsOk)
         .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
+    // Mocks server error on FIS deletion
     doThrow(
             new FirebaseInstallationServiceException(
                 "Server Error", FirebaseInstallationServiceException.Status.SERVER_ERROR))
@@ -522,7 +525,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
     assertWithMessage("Persisted Fid Entry is not null.").that(entryValue).isNull();
-    verify(backendClientReturnsOk, times(0))
+    verify(backendClientReturnsOk, never())
         .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
 
@@ -536,7 +539,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
     assertWithMessage("Persisted Fid Entry is not null.").that(entryValue).isNull();
-    verify(backendClientReturnsOk, times(0))
+    verify(backendClientReturnsOk, never())
         .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
 

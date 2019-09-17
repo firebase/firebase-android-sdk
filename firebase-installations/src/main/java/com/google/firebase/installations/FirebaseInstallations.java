@@ -156,7 +156,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<Void> delete() {
-    return Tasks.call(executor, () -> deleteFirebaseInstallationId());
+    return Tasks.call(executor, this::deleteFirebaseInstallationId);
   }
 
   /** Returns the application id of the {@link FirebaseApp} of this {@link FirebaseInstallations} */
