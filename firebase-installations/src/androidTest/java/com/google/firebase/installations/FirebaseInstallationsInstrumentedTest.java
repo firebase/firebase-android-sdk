@@ -15,6 +15,7 @@
 package com.google.firebase.installations;
 
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.firebase.installations.FisAndroidTestConstants.DEFAULT_PERSISTED_FID_ENTRY;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_API_KEY;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
@@ -163,7 +164,8 @@ public class FirebaseInstallationsInstrumentedTest {
             new FirebaseInstallationServiceException(
                 "SDK Error", FirebaseInstallationServiceException.Status.SERVER_ERROR));
     when(persistedFidReturnsError.insertOrUpdatePersistedFidEntry(any())).thenReturn(false);
-    when(persistedFidReturnsError.readPersistedFidEntryValue()).thenReturn(null);
+    when(persistedFidReturnsError.readPersistedFidEntryValue())
+        .thenReturn(DEFAULT_PERSISTED_FID_ENTRY);
     when(mockUtils.createRandomFid()).thenReturn(TEST_FID_1);
     when(mockClock.currentTimeMillis()).thenReturn(TEST_CREATION_TIMESTAMP_1);
     // Mocks success on FIS deletion
@@ -533,7 +535,9 @@ public class FirebaseInstallationsInstrumentedTest {
     Tasks.await(firebaseInstallations.delete());
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid Entry is not null.").that(entryValue).isNull();
+    assertWithMessage("Persisted Fid Entry is not null.")
+        .that(entryValue)
+        .isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
     verify(backendClientReturnsOk, times(1))
         .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
@@ -549,7 +553,9 @@ public class FirebaseInstallationsInstrumentedTest {
     Tasks.await(firebaseInstallations.delete());
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid Entry is not null.").that(entryValue).isNull();
+    assertWithMessage("Persisted Fid Entry is not null.")
+        .that(entryValue)
+        .isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
     verify(backendClientReturnsOk, never())
         .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
@@ -563,7 +569,9 @@ public class FirebaseInstallationsInstrumentedTest {
     Tasks.await(firebaseInstallations.delete());
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid Entry is not null.").that(entryValue).isNull();
+    assertWithMessage("Persisted Fid Entry is not null.")
+        .that(entryValue)
+        .isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
     verify(backendClientReturnsOk, never())
         .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }

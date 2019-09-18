@@ -14,6 +14,8 @@
 
 package com.google.firebase.installations;
 
+import com.google.firebase.installations.local.PersistedFidEntry;
+
 public final class FisAndroidTestConstants {
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
 
@@ -36,4 +38,7 @@ public final class FisAndroidTestConstants {
 
   public static final long TEST_CREATION_TIMESTAMP_1 = 2000L;
   public static final long TEST_CREATION_TIMESTAMP_2 = 2L;
+
+  public static final PersistedFidEntry DEFAULT_PERSISTED_FID_ENTRY =
+      PersistedFidEntry.builder().build();
 }

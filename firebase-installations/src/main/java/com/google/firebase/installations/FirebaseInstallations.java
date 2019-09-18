@@ -178,8 +178,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   private PersistedFidEntry getPersistedFid() throws FirebaseInstallationsException {
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
-    if (persistedFidEntry == null
-        || persistedFidEntry.getRegistrationStatus() == RegistrationStatus.REGISTER_ERROR) {
+
+    if (persistedFidEntry.isNotGenerated() || persistedFidEntry.isErrored()) {
       throw new FirebaseInstallationsException(
           "Failed to get existing fid.", FirebaseInstallationsException.Status.CLIENT_ERROR);
     }
@@ -242,7 +242,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     synchronized (persistedFid) {
       PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-      if (persistedFidEntry == null) {
+      if (persistedFidEntry.isNotGenerated()) {
         throw new FirebaseInstallationsException(
             "Local storage has no persisted Fid entry.",
             FirebaseInstallationsException.Status.CLIENT_ERROR);
@@ -265,7 +265,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     PersistedFidEntry updatedPersistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-    if (updatedPersistedFidEntry == null) {
+    if (updatedPersistedFidEntry.isNotGenerated()) {
       throw new FirebaseInstallationsException(
           "Local storage has no persisted Fid entry.",
           FirebaseInstallationsException.Status.CLIENT_ERROR);
@@ -346,7 +346,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-    if (persistedFidEntry == null
+    if (persistedFidEntry.isNotGenerated()
         || persistedFidEntry.isUnregistered()
         || persistedFidEntry.isErrored()) {
       throw new FirebaseInstallationsException(
@@ -438,7 +438,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-    if (persistedFidEntry != null && persistedFidEntry.isRegistered()) {
+    if (persistedFidEntry.isRegistered()) {
       // Call the FIS servers to delete this firebase installation id.
       try {
         serviceClient.deleteFirebaseInstallation(

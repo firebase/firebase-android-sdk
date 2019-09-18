@@ -14,6 +14,7 @@
 
 package com.google.firebase.installations.local;
 
+import static com.google.firebase.installations.FisAndroidTestConstants.DEFAULT_PERSISTED_FID_ENTRY;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_2;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
@@ -23,7 +24,6 @@ import static com.google.firebase.installations.FisAndroidTestConstants.TEST_FID
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_REFRESH_TOKEN;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP;
 import static com.google.firebase.installations.local.PersistedFidEntrySubject.assertThat;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import androidx.test.core.app.ApplicationProvider;
@@ -68,9 +68,9 @@ public class PersistedFidTest {
   }
 
   @Test
-  public void testReadPersistedFidEntry_Null() {
-    assertNull(persistedFid0.readPersistedFidEntryValue());
-    assertNull(persistedFid1.readPersistedFidEntryValue());
+  public void testReadPersistedFidEntry_returnsDefault() {
+    assertThat(persistedFid0.readPersistedFidEntryValue()).isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
+    assertThat(persistedFid1.readPersistedFidEntryValue()).isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
   }
 
   @Test
