@@ -10,7 +10,7 @@
         "docs/ktx/common.md": "Common KTX",
         "docs/ktx/firestore.md": "Firestore KTX",
         "docs/ktx/functions.md": "Functions KTX",
-        "docs/ktx/remoteconfig.md": "Remote Config KTX"
+        "docs/ktx/remote-config.md": "Remote Config KTX"
     },
     "related": [
         "firebase/quickstart-android"
