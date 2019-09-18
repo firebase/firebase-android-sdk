@@ -67,7 +67,7 @@ package com.google.firebase.installations.local {
 package com.google.firebase.installations.remote {
 
   public class FirebaseInstallationServiceClient {
-    ctor public FirebaseInstallationServiceClient();
+    ctor public FirebaseInstallationServiceClient(@NonNull Context);
     method @NonNull public com.google.firebase.installations.remote.InstallationResponse createFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws com.google.firebase.installations.remote.FirebaseInstallationServiceException;
     method @NonNull public void deleteFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws com.google.firebase.installations.remote.FirebaseInstallationServiceException;
     method @NonNull public InstallationTokenResult generateAuthToken(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws com.google.firebase.installations.remote.FirebaseInstallationServiceException;

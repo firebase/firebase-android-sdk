@@ -14,8 +14,15 @@
 
 package com.google.firebase.installations.remote;
 
+import static android.content.ContentValues.TAG;
+
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.util.JsonReader;
+import android.util.Log;
 import androidx.annotation.NonNull;
+import com.google.android.gms.common.util.AndroidUtilsLight;
+import com.google.android.gms.common.util.Hex;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -49,6 +56,15 @@ public class FirebaseInstallationServiceClient {
   private static final String INTERNAL_SERVER_ERROR_MESSAGE = "There was an internal server error.";
   private static final String NETWORK_ERROR_MESSAGE = "The server returned an unexpected error:";
 
+  private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
+  private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
+
+  private final Context context;
+
+  public FirebaseInstallationServiceClient(@NonNull Context context) {
+    this.context = context;
+  }
+
   /**
    * Creates a FID on the FIS Servers by calling FirebaseInstallations API create method.
    *
@@ -79,6 +95,10 @@ public class FirebaseInstallationServiceClient {
       httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
       httpsURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
       httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+      httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+      httpsURLConnection.addRequestProperty(
+          X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
+
       GZIPOutputStream gzipOutputStream =
           new GZIPOutputStream(httpsURLConnection.getOutputStream());
       try {
@@ -281,5 +301,24 @@ public class FirebaseInstallationServiceClient {
     reader.endObject();
 
     return builder.build();
+  }
+
+  /** Gets the Android package's SHA-1 fingerprint. */
+  private String getFingerprintHashForPackage() {
+    byte[] hash;
+
+    try {
+      hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
+
+      if (hash == null) {
+        Log.e(TAG, "Could not get fingerprint hash for package: " + context.getPackageName());
+        return null;
+      } else {
+        return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.e(TAG, "No such package: " + context.getPackageName(), e);
+      return null;
+    }
   }
 }
