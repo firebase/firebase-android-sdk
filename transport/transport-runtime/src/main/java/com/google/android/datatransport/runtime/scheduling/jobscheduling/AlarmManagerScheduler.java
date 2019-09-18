@@ -25,7 +25,6 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.time.Clock;
-import com.google.android.datatransport.runtime.time.WallTimeClock;
 
 /**
  * Schedules the service {@link AlarmManagerSchedulerBroadcastReceiver} based on the backendname.
@@ -49,12 +48,12 @@ public class AlarmManagerScheduler implements WorkScheduler {
   private final Clock clock;
 
   public AlarmManagerScheduler(
-      Context applicationContext, EventStore eventStore, SchedulerConfig config) {
+      Context applicationContext, EventStore eventStore, Clock clock, SchedulerConfig config) {
     this(
         applicationContext,
         eventStore,
         (AlarmManager) applicationContext.getSystemService(Context.ALARM_SERVICE),
-        new WallTimeClock(),
+        clock,
         config);
   }
 
