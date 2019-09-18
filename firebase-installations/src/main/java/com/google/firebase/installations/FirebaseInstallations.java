@@ -409,31 +409,24 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-    if (!isPersistedFidRegistered(persistedFidEntry)) {
-      persistedFid.clear();
-      return null;
+    if (isPersistedFidRegistered(persistedFidEntry)) {
+      // Call the FIS servers to delete this firebase installation id.
+      try {
+        serviceClient.deleteFirebaseInstallation(
+            firebaseApp.getOptions().getApiKey(),
+            persistedFidEntry.getFirebaseInstallationId(),
+            firebaseApp.getOptions().getProjectId(),
+            persistedFidEntry.getRefreshToken());
+
+      } catch (FirebaseInstallationServiceException exception) {
+        throw new FirebaseInstallationsException(
+            "Failed to delete a Firebase Installation.",
+            FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+      }
     }
 
-    deleteFID(persistedFidEntry);
+    persistedFid.clear();
     return null;
-  }
-
-  /** Calls the FIS servers to delete this firebase installation id. */
-  private void deleteFID(PersistedFidEntry persistedFidEntry)
-      throws FirebaseInstallationsException {
-    try {
-      serviceClient.deleteFirebaseInstallation(
-          firebaseApp.getOptions().getApiKey(),
-          persistedFidEntry.getFirebaseInstallationId(),
-          firebaseApp.getOptions().getProjectId(),
-          persistedFidEntry.getRefreshToken());
-
-      persistedFid.clear();
-    } catch (FirebaseInstallationServiceException exception) {
-      throw new FirebaseInstallationsException(
-          "Failed to delete a Firebase Installation.",
-          FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
-    }
   }
 }
 
