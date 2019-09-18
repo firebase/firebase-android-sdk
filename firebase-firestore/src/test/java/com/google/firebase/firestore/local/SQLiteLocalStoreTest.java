@@ -43,7 +43,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
   @Override
   Persistence getPersistence() {
-    return PersistenceTestHelpers.createSQLitePersistence(statsCollector);
+    return PersistenceTestHelpers.createSQLitePersistence();
   }
 
   @Override

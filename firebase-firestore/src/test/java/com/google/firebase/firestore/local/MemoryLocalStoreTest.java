@@ -38,7 +38,7 @@ public class MemoryLocalStoreTest extends LocalStoreTestCase {
 
   @Override
   Persistence getPersistence() {
-    return PersistenceTestHelpers.createEagerGCMemoryPersistence(statsCollector);
+    return PersistenceTestHelpers.createEagerGCMemoryPersistence();
   }
 
   @Override
