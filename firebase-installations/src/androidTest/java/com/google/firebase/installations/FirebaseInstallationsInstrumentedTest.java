@@ -32,6 +32,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -164,6 +166,16 @@ public class FirebaseInstallationsInstrumentedTest {
     when(persistedFidReturnsError.readPersistedFidEntryValue()).thenReturn(null);
     when(mockUtils.createRandomFid()).thenReturn(TEST_FID_1);
     when(mockClock.currentTimeMillis()).thenReturn(TEST_CREATION_TIMESTAMP_1);
+    // Mocks success on FIS deletion
+    doNothing()
+        .when(backendClientReturnsOk)
+        .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
+    // Mocks server error on FIS deletion
+    doThrow(
+            new FirebaseInstallationServiceException(
+                "Server Error", FirebaseInstallationServiceException.Status.SERVER_ERROR))
+        .when(backendClientReturnsError)
+        .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
   }
 
   @After
@@ -508,5 +520,78 @@ public class FirebaseInstallationsInstrumentedTest {
         .isEqualTo(TEST_AUTH_TOKEN_4);
     verify(backendClientReturnsOk, times(2))
         .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
+  }
+
+  @Test
+  public void testDelete_registeredFID_successful() throws Exception {
+    // Update local storage with a registered fid entry
+    persistedFid.insertOrUpdatePersistedFidEntry(REGISTERED_FID_ENTRY);
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            mockClock, executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
+
+    Tasks.await(firebaseInstallations.delete());
+
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid Entry is not null.").that(entryValue).isNull();
+    verify(backendClientReturnsOk, times(1))
+        .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
+  }
+
+  @Test
+  public void testDelete_unregisteredFID_successful() throws Exception {
+    // Update local storage with a unregistered fid entry
+    persistedFid.insertOrUpdatePersistedFidEntry(UNREGISTERED_FID_ENTRY);
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            mockClock, executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
+
+    Tasks.await(firebaseInstallations.delete());
+
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid Entry is not null.").that(entryValue).isNull();
+    verify(backendClientReturnsOk, never())
+        .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
+  }
+
+  @Test
+  public void testDelete_emptyPersistedFidEntry_successful() throws Exception {
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            mockClock, executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
+
+    Tasks.await(firebaseInstallations.delete());
+
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid Entry is not null.").that(entryValue).isNull();
+    verify(backendClientReturnsOk, never())
+        .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
+  }
+
+  @Test
+  public void testDelete_serverError_failure() throws Exception {
+    // Update local storage with a registered fid entry
+    persistedFid.insertOrUpdatePersistedFidEntry(REGISTERED_FID_ENTRY);
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            mockClock, executor, firebaseApp, backendClientReturnsError, persistedFid, mockUtils);
+
+    // Expect exception
+    try {
+      Tasks.await(firebaseInstallations.delete());
+      fail("delete() failed due to Server Error.");
+    } catch (ExecutionException expected) {
+      assertWithMessage("Exception class doesn't match")
+          .that(expected)
+          .hasCauseThat()
+          .isInstanceOf(FirebaseInstallationsException.class);
+      assertWithMessage("Exception status doesn't match")
+          .that(((FirebaseInstallationsException) expected.getCause()).getStatus())
+          .isEqualTo(FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+      PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
+      assertWithMessage("Persisted Fid Entry doesn't match")
+          .that(entryValue)
+          .isEqualTo(REGISTERED_FID_ENTRY);
+    }
   }
 }

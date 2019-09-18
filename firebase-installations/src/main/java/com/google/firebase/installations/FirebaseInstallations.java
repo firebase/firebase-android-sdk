@@ -155,7 +155,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<Void> delete() {
-    return Tasks.forResult(null);
+    return Tasks.call(executor, this::deleteFirebaseInstallationId);
   }
 
   /** Returns the application id of the {@link FirebaseApp} of this {@link FirebaseInstallations} */
@@ -405,6 +405,34 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private long currentTimeInSecs() {
     return TimeUnit.MILLISECONDS.toSeconds(clock.currentTimeMillis());
+  }
+
+  /**
+   * Deletes the firebase installation id of the {@link FirebaseApp} from FIS servers and local
+   * storage.
+   */
+  private Void deleteFirebaseInstallationId() throws FirebaseInstallationsException {
+
+    PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+
+    if (isPersistedFidRegistered(persistedFidEntry)) {
+      // Call the FIS servers to delete this firebase installation id.
+      try {
+        serviceClient.deleteFirebaseInstallation(
+            firebaseApp.getOptions().getApiKey(),
+            persistedFidEntry.getFirebaseInstallationId(),
+            firebaseApp.getOptions().getProjectId(),
+            persistedFidEntry.getRefreshToken());
+
+      } catch (FirebaseInstallationServiceException exception) {
+        throw new FirebaseInstallationsException(
+            "Failed to delete a Firebase Installation.",
+            FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+      }
+    }
+
+    persistedFid.clear();
+    return null;
   }
 }
 
