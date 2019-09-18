@@ -236,56 +236,61 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * <p>Updates FID registration status to PENDING to avoid multiple network calls to FIS Servers.
    */
   private Task<String> registerFidIfNecessary(AwaitListener listener) {
+    Boolean isNetworkCallRequired = false;
+
     synchronized (persistedFid) {
       PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
-      String fid = persistedFidEntry.getFirebaseInstallationId();
 
-      // If FID registration status is PENDING, return the persisted fid. This avoids multiple
-      // network calls to FIS Servers.
-      if (persistedFidEntry.getRegistrationStatus() == RegistrationStatus.PENDING) {
-        return Tasks.forResult(fid);
+      // If FID registration status is REGISTERED and auth token is expired, or registration status
+      // is UNREGISTERED network call iks required.
+      if ((persistedFid.isFidRegistered(persistedFidEntry) && isAuthTokenExpired(persistedFidEntry))
+          || persistedFidEntry.getRegistrationStatus() == RegistrationStatus.UNREGISTERED) {
+        isNetworkCallRequired = true;
+
+        // Update FID registration status to PENDING to avoid multiple network calls to FIS Servers.
+        persistedFid.insertOrUpdatePersistedFidEntry(
+            persistedFidEntry
+                .toBuilder()
+                .setRegistrationStatus(RegistrationStatus.PENDING)
+                .build());
       }
+    }
 
-      // If FID registration status is REGISTERED and auth token is valid, return the
-      // persisted fid.
-      if (persistedFid.isFidRegistered(persistedFidEntry)
-          && !isAuthTokenExpired(persistedFidEntry)) {
+    PersistedFidEntry updatedPersistedFidEntry = persistedFid.readPersistedFidEntryValue();
+    String fid = updatedPersistedFidEntry.getFirebaseInstallationId();
 
-        // Update the listener if awaiting
-        if (listener != null) {
-          listener.onSuccess();
-        }
-        return Tasks.forResult(fid);
-      }
+    if (!isNetworkCallRequired) {
 
-      // Update FID registration status to PENDING to avoid multiple network calls to FIS Servers.
-      persistedFid.insertOrUpdatePersistedFidEntry(
-          persistedFidEntry.toBuilder().setRegistrationStatus(RegistrationStatus.PENDING).build());
-
-      // If fid registration for this firebase installation is incomplete without an expired auth
-      // token, execute Fid registration.
-      if (!isAuthTokenExpired(persistedFidEntry)) {
-        Task<Void> fidRegistrationTask =
-            Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry));
-
-        // Update the listener if awaiting
-        if (listener != null) {
-          fidRegistrationTask.addOnCompleteListener(listener);
-        }
-        return Tasks.forResult(fid);
-      }
-
-      // If auth token is expired, refresh FID auth token with FIS servers in a background thread
-      // and updates the listener on completion
-      Task<InstallationTokenResult> refreshAuthTokenTask =
-          Tasks.call(executor, () -> refreshAuthTokenIfNecessary(FORCE_REFRESH));
-
-      // Update the listener if awaiting
-      if (listener != null) {
-        refreshAuthTokenTask.addOnCompleteListener((unused) -> listener.onSuccess());
+      // If the Fid is registered, update the listener if awaiting
+      if (listener != null && persistedFid.isFidRegistered(updatedPersistedFidEntry)) {
+        listener.onSuccess();
       }
       return Tasks.forResult(fid);
     }
+
+    // If fid registration for this firebase installation is incomplete without an expired auth
+    // token, execute Fid registration.
+    if (!isAuthTokenExpired(updatedPersistedFidEntry)) {
+      Task<Void> fidRegistrationTask =
+          Tasks.call(executor, () -> registerAndSaveFid(updatedPersistedFidEntry));
+
+      // Update the listener if awaiting
+      if (listener != null) {
+        fidRegistrationTask.addOnCompleteListener(listener);
+      }
+      return Tasks.forResult(fid);
+    }
+
+    // If auth token is expired, refresh FID auth token with FIS servers in a background thread
+    // and updates the listener on completion
+    Task<InstallationTokenResult> refreshAuthTokenTask =
+        Tasks.call(executor, () -> refreshAuthTokenIfNecessary(FORCE_REFRESH));
+
+    // Update the listener if awaiting
+    if (listener != null) {
+      refreshAuthTokenTask.addOnCompleteListener((unused) -> listener.onSuccess());
+    }
+    return Tasks.forResult(fid);
   }
 
   /** Registers the created Fid with FIS servers and update the shared prefs. */
