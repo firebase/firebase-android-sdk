@@ -41,8 +41,16 @@ public abstract class PersistedFidEntry {
 
   public abstract long getTokenCreationEpochInSecs();
 
-  public boolean isFidRegistered() {
+  public boolean isRegistered() {
     return getRegistrationStatus() == PersistedFid.RegistrationStatus.REGISTERED;
+  }
+
+  public boolean isErrored() {
+    return getRegistrationStatus() == PersistedFid.RegistrationStatus.REGISTER_ERROR;
+  }
+
+  public boolean isUnregistered() {
+    return getRegistrationStatus() == PersistedFid.RegistrationStatus.UNREGISTERED;
   }
 
   @NonNull

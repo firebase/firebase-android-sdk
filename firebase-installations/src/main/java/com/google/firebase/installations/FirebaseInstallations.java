@@ -250,8 +250,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
       // If FID registration status is REGISTERED and auth token is expired, or registration status
       // is UNREGISTERED network call iks required.
-      if ((persistedFidEntry.isFidRegistered() && isAuthTokenExpired(persistedFidEntry))
-          || persistedFidEntry.getRegistrationStatus() == RegistrationStatus.UNREGISTERED) {
+      if ((persistedFidEntry.isRegistered() && isAuthTokenExpired(persistedFidEntry))
+          || persistedFidEntry.isUnregistered()) {
         isNetworkCallRequired = true;
 
         // Update FID registration status to PENDING to avoid multiple network calls to FIS Servers.
@@ -276,7 +276,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     if (!isNetworkCallRequired) {
 
       // If the Fid is registered, update the listener if awaiting
-      if (listener != null && updatedPersistedFidEntry.isFidRegistered()) {
+      if (listener != null && updatedPersistedFidEntry.isRegistered()) {
         listener.onSuccess();
       }
       return Tasks.forResult(fid);
@@ -347,8 +347,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
     if (persistedFidEntry == null
-        || (persistedFidEntry.getRegistrationStatus() != RegistrationStatus.REGISTERED
-            && persistedFidEntry.getRegistrationStatus() != RegistrationStatus.PENDING)) {
+        || persistedFidEntry.isUnregistered()
+        || persistedFidEntry.isErrored()) {
       throw new FirebaseInstallationsException(
           "Firebase Installation is not registered.",
           FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
@@ -438,7 +438,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-    if (persistedFidEntry != null && persistedFidEntry.isFidRegistered()) {
+    if (persistedFidEntry != null && persistedFidEntry.isRegistered()) {
       // Call the FIS servers to delete this firebase installation id.
       try {
         serviceClient.deleteFirebaseInstallation(

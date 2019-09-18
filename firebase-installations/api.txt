@@ -48,7 +48,9 @@ package com.google.firebase.installations.local {
     method @Nullable public abstract String getRefreshToken();
     method @NonNull public abstract com.google.firebase.installations.local.PersistedFid.RegistrationStatus getRegistrationStatus();
     method public abstract long getTokenCreationEpochInSecs();
-    method public boolean isFidRegistered();
+    method public boolean isErrored();
+    method public boolean isRegistered();
+    method public boolean isUnregistered();
     method @NonNull public abstract com.google.firebase.installations.local.PersistedFidEntry.Builder toBuilder();
   }
 
