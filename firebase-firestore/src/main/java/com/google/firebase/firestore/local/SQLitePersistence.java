@@ -79,7 +79,6 @@ public final class SQLitePersistence extends Persistence {
 
   private final SQLiteOpenHelper opener;
   private final LocalSerializer serializer;
-  private final StatsCollector statsCollector;
   private final SQLiteQueryCache queryCache;
   private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
@@ -109,40 +108,16 @@ public final class SQLitePersistence extends Persistence {
       DatabaseId databaseId,
       LocalSerializer serializer,
       LruGarbageCollector.Params params) {
-    this(
-        context,
-        persistenceKey,
-        databaseId,
-        serializer,
-        StatsCollector.NO_OP_STATS_COLLECTOR,
-        params);
+    this(serializer, params, new OpenHelper(context, databaseName(persistenceKey, databaseId)));
   }
 
   public SQLitePersistence(
-      Context context,
-      String persistenceKey,
-      DatabaseId databaseId,
-      LocalSerializer serializer,
-      StatsCollector statsCollector,
-      LruGarbageCollector.Params params) {
-    this(
-        serializer,
-        statsCollector,
-        params,
-        new OpenHelper(context, databaseName(persistenceKey, databaseId)));
-  }
-
-  public SQLitePersistence(
-      LocalSerializer serializer,
-      StatsCollector statsCollector,
-      LruGarbageCollector.Params params,
-      SQLiteOpenHelper openHelper) {
+      LocalSerializer serializer, LruGarbageCollector.Params params, SQLiteOpenHelper openHelper) {
     this.opener = openHelper;
     this.serializer = serializer;
-    this.statsCollector = statsCollector;
     this.queryCache = new SQLiteQueryCache(this, this.serializer);
     this.indexManager = new SQLiteIndexManager(this);
-    this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer, statsCollector);
+    this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
   }
 
@@ -188,7 +163,7 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   MutationQueue getMutationQueue(User user) {
-    return new SQLiteMutationQueue(this, serializer, statsCollector, user);
+    return new SQLiteMutationQueue(this, serializer, user);
   }
 
   @Override

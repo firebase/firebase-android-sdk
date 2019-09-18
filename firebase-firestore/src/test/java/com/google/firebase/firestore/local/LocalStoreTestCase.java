@@ -90,7 +90,7 @@ import org.junit.Test;
  * </ol>
  */
 public abstract class LocalStoreTestCase {
-  private QueryEngine queryEngine;
+  private CountingQueryEngine queryEngine;
   private Persistence localStorePersistence;
   private LocalStore localStore;
 
@@ -98,8 +98,6 @@ public abstract class LocalStoreTestCase {
   private @Nullable ImmutableSortedMap<DocumentKey, MaybeDocument> lastChanges;
   private ImmutableSortedMap<DocumentKey, Document> lastQueryResult;
   private int lastTargetId;
-
-  AccumulatingStatsCollector statsCollector;
 
   abstract QueryEngine getQueryEngine();
 
@@ -109,14 +107,13 @@ public abstract class LocalStoreTestCase {
 
   @Before
   public void setUp() {
-    statsCollector = new AccumulatingStatsCollector();
     batches = new ArrayList<>();
     lastChanges = null;
     lastQueryResult = null;
     lastTargetId = 0;
 
     localStorePersistence = getPersistence();
-    queryEngine = getQueryEngine();
+    queryEngine = new CountingQueryEngine(getQueryEngine());
     localStore = new LocalStore(localStorePersistence, queryEngine, User.UNAUTHENTICATED);
     localStore.start();
   }
@@ -240,24 +237,27 @@ public abstract class LocalStoreTestCase {
   }
 
   /**
-   * Asserts the expected numbers of mutation rows read by the MutationQueue since the last call to
+   * Asserts the expected numbers of mutations read by the MutationQueue since the last call to
    * `resetPersistenceStats()`.
    */
-  private void assertMutationsRead(int expected) {
-    assertEquals(expected, statsCollector.getRowsRead(MutationQueue.STATS_TAG));
+  private void assertMutationsRead(int byKey, int byQuery) {
+    assertEquals("Mutations read (by query)", byQuery, queryEngine.getMutationsReadByQuery());
+    assertEquals("Mutations read (by key)", byKey, queryEngine.getMutationsReadByKey());
   }
 
   /**
-   * Asserts the expected numbers of document rows read by the RemoteDocumentCache since the last
-   * call to `resetPersistenceStats()`.
+   * Asserts the expected numbers of documents read by the RemoteDocumentCache since the last call
+   * to `resetPersistenceStats()`.
    */
-  private void assertRemoteDocumentsRead(int expected) {
-    assertEquals(expected, statsCollector.getRowsRead(RemoteDocumentCache.STATS_TAG));
+  private void assertRemoteDocumentsRead(int byKey, int byQuery) {
+    assertEquals(
+        "Remote documents read (by query)", byQuery, queryEngine.getDocumentsReadByQuery());
+    assertEquals("Remote documents read (by key)", byKey, queryEngine.getDcoumentsReadByKey());
   }
 
-  /** Resets the count of rows read by MutationQueue and the RemoteDocumentCache. */
+  /** Resets the count of entities read by MutationQueue and the RemoteDocumentCache. */
   private void resetPersistenceStats() {
-    statsCollector.reset();
+    queryEngine.resetCounts();
   }
 
   @Test
@@ -651,9 +651,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesSetMutationThenPatchMutationThenReject() {
-    if (!garbageCollectorIsEager()) {
-      return;
-    }
+    assumeTrue(garbageCollectorIsEager());
 
     writeMutation(setMutation("foo/bar", map("foo", "old")));
     assertContains(doc("foo/bar", 0, map("foo", "old"), Document.DocumentState.LOCAL_MUTATIONS));
@@ -710,9 +708,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testCollectsGarbageAfterChangeBatchWithNoTargetIDs() {
-    if (!garbageCollectorIsEager()) {
-      return;
-    }
+    assumeTrue(garbageCollectorIsEager());
 
     int targetId = 1;
     applyRemoteEvent(
@@ -727,9 +723,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testCollectsGarbageAfterChangeBatch() {
-    if (!garbageCollectorIsEager()) {
-      return;
-    }
+    assumeTrue(garbageCollectorIsEager());
 
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     allocateQuery(query);
@@ -747,9 +741,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testCollectsGarbageAfterAcknowledgedMutation() {
-    if (!garbageCollectorIsEager()) {
-      return;
-    }
+    assumeTrue(garbageCollectorIsEager());
 
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
@@ -781,9 +773,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testCollectsGarbageAfterRejectedMutation() {
-    if (!garbageCollectorIsEager()) {
-      return;
-    }
+    assumeTrue(garbageCollectorIsEager());
 
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     int targetId = allocateQuery(query);
@@ -816,9 +806,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testPinsDocumentsInTheLocalView() {
-    if (!garbageCollectorIsEager()) {
-      return;
-    }
+    assumeTrue(garbageCollectorIsEager());
 
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     allocateQuery(query);
@@ -849,9 +837,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testThrowsAwayDocumentsWithUnknownTargetIDsImmediately() {
-    if (!garbageCollectorIsEager()) {
-      return;
-    }
+    assumeTrue(garbageCollectorIsEager());
 
     int unknownTargetID = 321;
     applyRemoteEvent(
@@ -915,7 +901,7 @@ public abstract class LocalStoreTestCase {
   }
 
   @Test
-  public void testReadsAllDocumentsForCollectionQueries() {
+  public void testReadsAllDocumentsForInitialCollectionQueries() {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     allocateQuery(query);
 
@@ -927,8 +913,8 @@ public abstract class LocalStoreTestCase {
 
     localStore.executeQuery(query);
 
-    assertRemoteDocumentsRead(2);
-    assertMutationsRead(1);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
+    assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 1);
   }
 
   @Test
@@ -1034,7 +1020,7 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testUsesTargetMappingToExecuteQueries() {
     assumeFalse(garbageCollectorIsEager());
-    assumeTrue(queryEngine instanceof IndexFreeQueryEngine);
+    assumeTrue(queryEngine.getSubject() instanceof IndexFreeQueryEngine);
 
     // This test verifies that once a target mapping has been written, only documents that match
     // the query are read from the RemoteDocumentCache.
@@ -1053,7 +1039,7 @@ public abstract class LocalStoreTestCase {
     // Execute the query, but note that we read all existing documents from the RemoteDocumentCache
     // since we do not yet have target mapping.
     executeQuery(query);
-    assertRemoteDocumentsRead(3);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
 
     // Issue a RemoteEvent to persist the target mapping.
     applyRemoteEvent(
@@ -1067,7 +1053,7 @@ public abstract class LocalStoreTestCase {
     // Execute the query again, this time verifying that we only read the two documents that match
     // the query.
     executeQuery(query);
-    assertRemoteDocumentsRead(2);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byQuery= */ 0);
     assertQueryReturned("foo/a", "foo/b");
   }
 
