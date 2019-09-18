@@ -19,11 +19,14 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.SystemClock;
 import android.util.Base64;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.time.Clock;
+import com.google.android.datatransport.runtime.time.WallTimeClock;
 
 /**
  * Schedules the service {@link AlarmManagerSchedulerBroadcastReceiver} based on the backendname.
@@ -44,12 +47,15 @@ public class AlarmManagerScheduler implements WorkScheduler {
 
   private final SchedulerConfig config;
 
+  private final Clock clock;
+
   public AlarmManagerScheduler(
       Context applicationContext, EventStore eventStore, SchedulerConfig config) {
     this(
         applicationContext,
         eventStore,
         (AlarmManager) applicationContext.getSystemService(Context.ALARM_SERVICE),
+        new WallTimeClock(),
         config);
   }
 
@@ -58,10 +64,12 @@ public class AlarmManagerScheduler implements WorkScheduler {
       Context applicationContext,
       EventStore eventStore,
       AlarmManager alarmManager,
+      Clock clock,
       SchedulerConfig config) {
     this.context = applicationContext;
     this.eventStore = eventStore;
     this.alarmManager = alarmManager;
+    this.clock = clock;
     this.config = config;
   }
 
@@ -98,7 +106,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
 
     long backendTime = eventStore.getNextCallTime(transportContext);
 
-    long scheduleDelay =
+    long scheduleDelay = clock.getTime() +
         config.getScheduleDelay(transportContext.getPriority(), backendTime, attemptNumber);
 
     Logging.d(
