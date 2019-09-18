@@ -134,4 +134,10 @@ public class PersistedFid {
   private String getSharedPreferencesKey(String key) {
     return String.format("%s|%s", persistenceKey, key);
   }
+
+  @NonNull
+  public boolean isFidRegistered(@Nullable PersistedFidEntry persistedFidEntry) {
+    return persistedFidEntry != null
+        && persistedFidEntry.getRegistrationStatus() == RegistrationStatus.REGISTERED;
+  }
 }

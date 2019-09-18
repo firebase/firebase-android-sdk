@@ -248,7 +248,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
       // If FID registration status is REGISTERED and auth token is valid, return the
       // persisted fid.
-      if (persistedFidEntry.getRegistrationStatus() == RegistrationStatus.REGISTERED
+      if (persistedFid.isFidRegistered(persistedFidEntry)
           && !isAuthTokenExpired(persistedFidEntry)) {
 
         // Update the listener if awaiting
@@ -267,6 +267,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       if (!isAuthTokenExpired(persistedFidEntry)) {
         Task<Void> fidRegistrationTask =
             Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry));
+
+        // Update the listener if awaiting
         if (listener != null) {
           fidRegistrationTask.addOnCompleteListener(listener);
         }
@@ -277,6 +279,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       // and updates the listener on completion
       Task<InstallationTokenResult> refreshAuthTokenTask =
           Tasks.call(executor, () -> refreshAuthTokenIfNecessary(FORCE_REFRESH));
+
+      // Update the listener if awaiting
       if (listener != null) {
         refreshAuthTokenTask.addOnCompleteListener((unused) -> listener.onSuccess());
       }
@@ -415,7 +419,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-    if (isPersistedFidRegistered(persistedFidEntry)) {
+    if (persistedFid.isFidRegistered(persistedFidEntry)) {
       // Call the FIS servers to delete this firebase installation id.
       try {
         serviceClient.deleteFirebaseInstallation(
