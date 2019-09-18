@@ -43,7 +43,9 @@ import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.protobuf.ByteString;
+import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
+import java.util.zip.GZIPOutputStream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -366,6 +368,37 @@ public class CctTransportBackendTest {
             .withHeader("Content-Type", equalTo("application/x-protobuf")));
 
     assertEquals(BackendResponse.fatalError(), response);
+  }
+
+  @Test
+  public void send_CompressedResponseIsUncompressed() throws Exception {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output);
+    gzipOutputStream.write(
+        LogResponse.newBuilder().setNextRequestWaitMillis(3).build().toByteArray());
+    gzipOutputStream.close();
+
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withHeader("Content-Encoding", "gzip")
+                    .withBody(output.toByteArray())));
+
+    BackendRequest backendRequest = getCCTBackendRequest();
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf"))
+            .withHeader("Content-Encoding", equalTo("gzip")));
+
+    assertEquals(BackendResponse.ok(3), response);
   }
 
   // When there is no active network, the ConnectivityManager returns null when
