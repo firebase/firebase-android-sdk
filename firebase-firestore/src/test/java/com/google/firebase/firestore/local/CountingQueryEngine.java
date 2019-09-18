@@ -90,7 +90,7 @@ class CountingQueryEngine implements QueryEngine {
    * Returns the number of documents returned by the RemoteDocumentCache's `getEntry()` and
    * `getEntries()` APIs (since the last call to `resetCounts()`)
    */
-  int getDcoumentsReadByKey() {
+  int getDocumentsReadByKey() {
     return documentsReadByKey[0];
   }
 

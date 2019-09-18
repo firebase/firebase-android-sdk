@@ -252,7 +252,7 @@ public abstract class LocalStoreTestCase {
   private void assertRemoteDocumentsRead(int byKey, int byQuery) {
     assertEquals(
         "Remote documents read (by query)", byQuery, queryEngine.getDocumentsReadByQuery());
-    assertEquals("Remote documents read (by key)", byKey, queryEngine.getDcoumentsReadByKey());
+    assertEquals("Remote documents read (by key)", byKey, queryEngine.getDocumentsReadByKey());
   }
 
   /** Resets the count of entities read by MutationQueue and the RemoteDocumentCache. */
