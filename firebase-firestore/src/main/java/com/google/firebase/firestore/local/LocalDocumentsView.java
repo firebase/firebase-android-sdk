@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.model.DocumentCollections.emptyMaybe
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -53,6 +54,21 @@ class LocalDocumentsView {
     this.remoteDocumentCache = remoteDocumentCache;
     this.mutationQueue = mutationQueue;
     this.indexManager = indexManager;
+  }
+
+  @VisibleForTesting
+  RemoteDocumentCache getRemoteDocumentCache() {
+    return remoteDocumentCache;
+  }
+
+  @VisibleForTesting
+  MutationQueue getMutationQueue() {
+    return mutationQueue;
+  }
+
+  @VisibleForTesting
+  IndexManager getIndexManager() {
+    return indexManager;
   }
 
   /**

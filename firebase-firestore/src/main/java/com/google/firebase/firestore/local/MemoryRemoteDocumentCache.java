@@ -38,11 +38,9 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   private ImmutableSortedMap<DocumentKey, Pair<MaybeDocument, SnapshotVersion>> docs;
 
   private final MemoryPersistence persistence;
-  private StatsCollector statsCollector;
 
-  MemoryRemoteDocumentCache(MemoryPersistence persistence, StatsCollector statsCollector) {
+  MemoryRemoteDocumentCache(MemoryPersistence persistence) {
     docs = ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
-    this.statsCollector = statsCollector;
     this.persistence = persistence;
   }
 
@@ -60,14 +58,12 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public void remove(DocumentKey key) {
-    statsCollector.recordRowsDeleted(STATS_TAG, 1);
     docs = docs.remove(key);
   }
 
   @Nullable
   @Override
   public MaybeDocument get(DocumentKey key) {
-    statsCollector.recordRowsRead(STATS_TAG, 1);
     Pair<MaybeDocument, SnapshotVersion> entry = docs.get(key);
     return entry != null ? entry.first : null;
   }
@@ -82,7 +78,6 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
       result.put(key, get(key));
     }
 
-    statsCollector.recordRowsRead(STATS_TAG, result.size());
     return result;
   }
 
@@ -101,12 +96,8 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     Iterator<Map.Entry<DocumentKey, Pair<MaybeDocument, SnapshotVersion>>> iterator =
         docs.iteratorFrom(prefix);
 
-    int rowsRead = 0;
-
     while (iterator.hasNext()) {
       Map.Entry<DocumentKey, Pair<MaybeDocument, SnapshotVersion>> entry = iterator.next();
-
-      ++rowsRead;
 
       DocumentKey key = entry.getKey();
       if (!queryPath.isPrefixOf(key.getPath())) {
@@ -128,8 +119,6 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         result = result.insert(doc.getKey(), doc);
       }
     }
-
-    statsCollector.recordRowsRead(STATS_TAG, rowsRead);
 
     return result;
   }
