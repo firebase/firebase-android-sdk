@@ -41,10 +41,9 @@ import java.util.Map;
  *
  * <ol>
  *   <il>Limit queries where a document that matched the query previously no longer matches the
- *   query.
- *   <il> Limit queries where a document edit may cause the document to sort below another document
- *   that is in the local cache.
- *   <il>Queries that have never been CURRENT or free of Limbo documents.
+ *   query. <il> Limit queries where a document edit may cause the document to sort below another
+ *   document that is in the local cache. <il>Queries that have never been CURRENT or free of Limbo
+ *   documents.
  * </ol>
  */
 public class IndexFreeQueryEngine implements QueryEngine {
