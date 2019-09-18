@@ -123,8 +123,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private Task<String> getId(AwaitListener awaitListener) {
     return Tasks.call(executor, this::getPersistedFid)
         .continueWith(orElse(this::createAndPersistNewFid))
-        .onSuccessTask(
-            persistedFidEntry -> registerFidIfNecessary(persistedFidEntry, awaitListener));
+        .onSuccessTask(unused -> registerFidIfNecessary(awaitListener));
   }
 
   /**
@@ -236,55 +235,52 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *
    * <p>Updates FID registration status to PENDING to avoid multiple network calls to FIS Servers.
    */
-  private Task<String> registerFidIfNecessary(
-      PersistedFidEntry persistedFidEntry, AwaitListener listener) {
-    String fid = persistedFidEntry.getFirebaseInstallationId();
+  private Task<String> registerFidIfNecessary(AwaitListener listener) {
+    synchronized (persistedFid) {
+      PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+      String fid = persistedFidEntry.getFirebaseInstallationId();
 
-    // If FID registration is in complete/pending state or FID auth token is valid, update the
-    // listener if awaiting and return the persisted fid.
-    if (persistedFidEntry.getRegistrationStatus() != RegistrationStatus.UNREGISTERED
-        && !isAuthTokenExpired(persistedFidEntry)) {
-      return updateAwaitListenerIfRegisteredFid(persistedFidEntry, listener);
-    }
+      // If FID registration status is PENDING, return the persisted fid. This avoids multiple
+      // network calls to FIS Servers.
+      if (persistedFidEntry.getRegistrationStatus() == RegistrationStatus.PENDING) {
+        return Tasks.forResult(fid);
+      }
 
-    // Update FID registration status to PENDING to avoid multiple network calls to FIS Servers.
-    persistedFid.insertOrUpdatePersistedFidEntry(
-        persistedFidEntry.toBuilder().setRegistrationStatus(RegistrationStatus.PENDING).build());
+      // If FID registration status is REGISTERED and auth token is valid, return the
+      // persisted fid.
+      if (persistedFidEntry.getRegistrationStatus() == RegistrationStatus.REGISTERED
+          && !isAuthTokenExpired(persistedFidEntry)) {
 
-    // If fid registration for this firebase installation is incomplete without an expired auth
-    // token, execute Fid registration.
-    if (!isAuthTokenExpired(persistedFidEntry)) {
-      executeFidRegistration(persistedFidEntry, listener);
+        // Update the listener if awaiting
+        if (listener != null) {
+          listener.onSuccess();
+        }
+        return Tasks.forResult(fid);
+      }
+
+      // Update FID registration status to PENDING to avoid multiple network calls to FIS Servers.
+      persistedFid.insertOrUpdatePersistedFidEntry(
+          persistedFidEntry.toBuilder().setRegistrationStatus(RegistrationStatus.PENDING).build());
+
+      // If fid registration for this firebase installation is incomplete without an expired auth
+      // token, execute Fid registration.
+      if (!isAuthTokenExpired(persistedFidEntry)) {
+        Task<Void> fidRegistrationTask =
+            Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry));
+        if (listener != null) {
+          fidRegistrationTask.addOnCompleteListener(listener);
+        }
+        return Tasks.forResult(fid);
+      }
+
+      // If auth token is expired, refresh FID auth token with FIS servers in a background thread
+      // and updates the listener on completion
+      Task<InstallationTokenResult> refreshAuthTokenTask =
+          Tasks.call(executor, () -> refreshAuthTokenIfNecessary(FORCE_REFRESH));
+      if (listener != null) {
+        refreshAuthTokenTask.addOnCompleteListener((unused) -> listener.onSuccess());
+      }
       return Tasks.forResult(fid);
-    }
-
-    // If auth token is expired, refresh FID auth token with FIS servers in a background thread and
-    // updates the listener on
-    // completion
-    Task<InstallationTokenResult> task = Tasks.call(executor, () -> refreshAuthTokenIfNecessary(1));
-    if (listener != null) {
-      task.addOnCompleteListener((unused) -> listener.onSuccess());
-    }
-    return Tasks.forResult(fid);
-  }
-
-  private Task<String> updateAwaitListenerIfRegisteredFid(
-      PersistedFidEntry persistedFidEntry, AwaitListener listener) {
-    if (listener != null
-        && persistedFidEntry.getRegistrationStatus() == RegistrationStatus.REGISTERED) {
-      listener.onSuccess();
-    }
-    return Tasks.forResult(persistedFidEntry.getFirebaseInstallationId());
-  }
-
-  /**
-   * Registers the FID with FIS servers in a background thread and updates the listener on
-   * completion.
-   */
-  private void executeFidRegistration(PersistedFidEntry persistedFidEntry, AwaitListener listener) {
-    Task<Void> task = Tasks.call(executor, () -> registerAndSaveFid(persistedFidEntry));
-    if (listener != null) {
-      task.addOnCompleteListener(listener);
     }
   }
 
@@ -327,7 +323,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-    if (!isPersistedFidRegistered(persistedFidEntry)) {
+    if (persistedFidEntry == null
+        || (persistedFidEntry.getRegistrationStatus() != RegistrationStatus.REGISTERED
+            && persistedFidEntry.getRegistrationStatus() != RegistrationStatus.PENDING)) {
       throw new FirebaseInstallationsException(
           "Firebase Installation is not registered.",
           FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
@@ -358,12 +356,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             .setToken(persistedFidEntry.getAuthToken())
             .setTokenExpirationInSecs(persistedFidEntry.getExpiresInSecs())
             .build();
-  }
-
-  private boolean isPersistedFidRegistered(PersistedFidEntry persistedFidEntry) {
-    return persistedFidEntry != null
-        && (persistedFidEntry.getRegistrationStatus() == RegistrationStatus.REGISTERED
-            || persistedFidEntry.getRegistrationStatus() == RegistrationStatus.PENDING);
   }
 
   /** Calls the FIS servers to generate an auth token for this Firebase installation. */

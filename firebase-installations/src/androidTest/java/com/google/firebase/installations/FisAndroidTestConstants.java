@@ -35,6 +35,5 @@ public final class FisAndroidTestConstants {
   public static final long TEST_TOKEN_EXPIRATION_TIMESTAMP_2 = 2000L;
 
   public static final long TEST_CREATION_TIMESTAMP_1 = 2000L;
-  public static final long TEST_CREATION_TIMESTAMP_2 = 2000L;
-  public static final long TEST_CREATION_TIMESTAMP_3 = 2L;
+  public static final long TEST_CREATION_TIMESTAMP_2 = 2L;
 }
