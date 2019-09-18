@@ -19,7 +19,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.SystemClock;
 import android.util.Base64;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
@@ -106,7 +105,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
 
     long backendTime = eventStore.getNextCallTime(transportContext);
 
-    long scheduleDelay = clock.getTime() +
+    long scheduleDelay =
         config.getScheduleDelay(transportContext.getPriority(), backendTime, attemptNumber);
 
     Logging.d(
@@ -118,6 +117,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
         attemptNumber);
 
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-    this.alarmManager.set(AlarmManager.ELAPSED_REALTIME, scheduleDelay, pendingIntent);
+    this.alarmManager.set(
+        AlarmManager.ELAPSED_REALTIME, clock.getTime() + scheduleDelay, pendingIntent);
   }
 }

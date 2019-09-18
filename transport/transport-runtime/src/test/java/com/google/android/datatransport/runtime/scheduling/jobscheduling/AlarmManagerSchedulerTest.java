@@ -35,7 +35,6 @@ import com.google.android.datatransport.runtime.scheduling.persistence.EventStor
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -90,7 +89,8 @@ public class AlarmManagerSchedulerTest {
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
     assertThat(scheduler.isJobServiceOn(intent)).isTrue();
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-    verify(alarmManager, times(1)).set(eq(AlarmManager.ELAPSED_REALTIME), eq(INITIAL_TIMESTAMP + 999999L), any());
+    verify(alarmManager, times(1))
+        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(INITIAL_TIMESTAMP + 999999L), any());
   }
 
   @Test
@@ -101,7 +101,10 @@ public class AlarmManagerSchedulerTest {
     assertThat(scheduler.isJobServiceOn(intent)).isTrue();
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
     verify(alarmManager, times(1))
-        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(INITIAL_TIMESTAMP + THIRTY_SECONDS), any()); // 2^0*DELTA
+        .set(
+            eq(AlarmManager.ELAPSED_REALTIME),
+            eq(INITIAL_TIMESTAMP + THIRTY_SECONDS),
+            any()); // 2^0*DELTA
   }
 
   @Test
@@ -112,7 +115,10 @@ public class AlarmManagerSchedulerTest {
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
     assertThat(scheduler.isJobServiceOn(intent)).isTrue();
     verify(alarmManager, times(1))
-        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(INITIAL_TIMESTAMP + THIRTY_SECONDS), any()); // 2^0*DELTA
+        .set(
+            eq(AlarmManager.ELAPSED_REALTIME),
+            eq(INITIAL_TIMESTAMP + THIRTY_SECONDS),
+            any()); // 2^0*DELTA
   }
 
   @Test
@@ -157,10 +163,16 @@ public class AlarmManagerSchedulerTest {
 
     assertThat(scheduler.isJobServiceOn(intent1)).isTrue();
     verify(alarmManager, times(1))
-        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(INITIAL_TIMESTAMP + THIRTY_SECONDS), any()); // 2^0*DELTA
+        .set(
+            eq(AlarmManager.ELAPSED_REALTIME),
+            eq(INITIAL_TIMESTAMP + THIRTY_SECONDS),
+            any()); // 2^0*DELTA
 
     assertThat(scheduler.isJobServiceOn(intent2)).isTrue();
     verify(alarmManager, times(1))
-        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(INITIAL_TIMESTAMP + TWENTY_FOUR_HOURS), any()); // 2^0*DELTA
+        .set(
+            eq(AlarmManager.ELAPSED_REALTIME),
+            eq(INITIAL_TIMESTAMP + TWENTY_FOUR_HOURS),
+            any()); // 2^0*DELTA
   }
 }
