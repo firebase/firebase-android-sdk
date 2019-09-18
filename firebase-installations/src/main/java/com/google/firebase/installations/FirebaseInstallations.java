@@ -63,7 +63,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         DefaultClock.getInstance(),
         new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>()),
         firebaseApp,
-        new FirebaseInstallationServiceClient(),
+        new FirebaseInstallationServiceClient(firebaseApp.getApplicationContext()),
         new PersistedFid(firebaseApp),
         new Utils());
   }
