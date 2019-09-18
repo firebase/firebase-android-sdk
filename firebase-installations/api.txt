@@ -29,6 +29,7 @@ package com.google.firebase.installations.local {
     ctor public PersistedFid(@NonNull FirebaseApp);
     method @NonNull public boolean clear();
     method @NonNull public boolean insertOrUpdatePersistedFidEntry(@NonNull com.google.firebase.installations.local.PersistedFidEntry);
+    method @NonNull public boolean isFidRegistered(@Nullable com.google.firebase.installations.local.PersistedFidEntry);
     method @Nullable public com.google.firebase.installations.local.PersistedFidEntry readPersistedFidEntryValue();
   }
 
