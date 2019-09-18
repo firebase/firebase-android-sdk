@@ -235,15 +235,22 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *
    * <p>Updates FID registration status to PENDING to avoid multiple network calls to FIS Servers.
    */
-  private Task<String> registerFidIfNecessary(AwaitListener listener) {
+  private Task<String> registerFidIfNecessary(AwaitListener listener)
+      throws FirebaseInstallationsException {
     Boolean isNetworkCallRequired = false;
 
     synchronized (persistedFid) {
       PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
+      if (persistedFidEntry == null) {
+        throw new FirebaseInstallationsException(
+            "Local storage has no persisted Fid entry.",
+            FirebaseInstallationsException.Status.CLIENT_ERROR);
+      }
+
       // If FID registration status is REGISTERED and auth token is expired, or registration status
       // is UNREGISTERED network call iks required.
-      if ((persistedFid.isFidRegistered(persistedFidEntry) && isAuthTokenExpired(persistedFidEntry))
+      if ((persistedFidEntry.isFidRegistered() && isAuthTokenExpired(persistedFidEntry))
           || persistedFidEntry.getRegistrationStatus() == RegistrationStatus.UNREGISTERED) {
         isNetworkCallRequired = true;
 
@@ -257,12 +264,19 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
 
     PersistedFidEntry updatedPersistedFidEntry = persistedFid.readPersistedFidEntryValue();
+
+    if (updatedPersistedFidEntry == null) {
+      throw new FirebaseInstallationsException(
+          "Local storage has no persisted Fid entry.",
+          FirebaseInstallationsException.Status.CLIENT_ERROR);
+    }
+
     String fid = updatedPersistedFidEntry.getFirebaseInstallationId();
 
     if (!isNetworkCallRequired) {
 
       // If the Fid is registered, update the listener if awaiting
-      if (listener != null && persistedFid.isFidRegistered(updatedPersistedFidEntry)) {
+      if (listener != null && updatedPersistedFidEntry.isFidRegistered()) {
         listener.onSuccess();
       }
       return Tasks.forResult(fid);
@@ -424,7 +438,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-    if (persistedFid.isFidRegistered(persistedFidEntry)) {
+    if (persistedFidEntry != null && persistedFidEntry.isFidRegistered()) {
       // Call the FIS servers to delete this firebase installation id.
       try {
         serviceClient.deleteFirebaseInstallation(
