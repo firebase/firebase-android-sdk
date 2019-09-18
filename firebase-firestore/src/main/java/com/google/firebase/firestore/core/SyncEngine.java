@@ -32,8 +32,8 @@ import com.google.firebase.firestore.local.LocalViewChanges;
 import com.google.firebase.firestore.local.LocalWriteResult;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.ReferenceSet;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
@@ -191,13 +191,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   private ViewSnapshot initializeViewAndComputeSnapshot(QueryData queryData) {
     Query query = queryData.getQuery();
 
-    ImmutableSortedSet<DocumentKey> remoteKeys =
-        localStore.getRemoteDocumentKeys(queryData.getTargetId());
-    ImmutableSortedMap<DocumentKey, Document> docs =
-        localStore.executeQuery(query, queryData, remoteKeys);
+    QueryResult queryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
 
-    View view = new View(query, remoteKeys);
-    View.DocumentChanges viewDocChanges = view.computeDocChanges(docs);
+    View view = new View(query, queryResult.getRemoteKeys());
+    View.DocumentChanges viewDocChanges = view.computeDocChanges(queryResult.getDocuments());
     ViewChange viewChange = view.applyChanges(viewDocChanges);
     hardAssert(
         view.getLimboDocuments().size() == 0,
@@ -530,10 +527,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
         // The query has a limit and some docs were removed/updated, so we need to re-run the query
         // against the local store to make sure we didn't lose any good docs that had been past the
         // limit.
-        ImmutableSortedMap<DocumentKey, Document> docs =
-            localStore.executeQuery(
-                queryView.getQuery(), /* queryData= */ null, DocumentKey.emptyKeySet());
-        viewDocChanges = view.computeDocChanges(docs, viewDocChanges);
+        QueryResult queryResult =
+            localStore.executeQuery(queryView.getQuery(), /* usePreviousResults= */ false);
+        viewDocChanges = view.computeDocChanges(queryResult.getDocuments(), viewDocChanges);
       }
       TargetChange targetChange =
           remoteEvent == null ? null : remoteEvent.getTargetChanges().get(queryView.getTargetId());
