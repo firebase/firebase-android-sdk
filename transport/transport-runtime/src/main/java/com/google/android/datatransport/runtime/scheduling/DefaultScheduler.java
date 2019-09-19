@@ -22,6 +22,8 @@ import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -60,8 +62,9 @@ public class DefaultScheduler implements Scheduler {
    * @param event The event itself which needs to be logged with additional information.
    */
   @Override
-  public void schedule(TransportContext transportContext, EventInternal event) {
-    executor.execute(
+  public Task<Void> schedule(TransportContext transportContext, EventInternal event) {
+    return Tasks.call(
+        executor,
         () -> {
           TransportBackend transportBackend =
               backendRegistry.get(transportContext.getBackendName());
@@ -69,7 +72,7 @@ public class DefaultScheduler implements Scheduler {
             LOGGER.warning(
                 String.format(
                     "Transport backend '%s' is not registered", transportContext.getBackendName()));
-            return;
+            return null;
           }
           EventInternal decoratedEvent = transportBackend.decorate(event);
           guard.runCriticalSection(
@@ -78,6 +81,7 @@ public class DefaultScheduler implements Scheduler {
                 workScheduler.schedule(transportContext, 1);
                 return null;
               });
+          return null;
         });
   }
 }

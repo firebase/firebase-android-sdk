@@ -20,6 +20,8 @@ import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
@@ -43,7 +45,7 @@ public class ImmediateScheduler implements Scheduler {
   }
 
   @Override
-  public void schedule(TransportContext transportContext, EventInternal event) {
+  public Task<Void> schedule(TransportContext transportContext, EventInternal event) {
     executor.execute(
         () -> {
           TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
@@ -55,5 +57,6 @@ public class ImmediateScheduler implements Scheduler {
           }
           backend.send(BackendRequest.create(Collections.singleton(backend.decorate(event))));
         });
+    return Tasks.forResult((Void) null);
   }
 }

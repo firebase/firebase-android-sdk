@@ -59,6 +59,7 @@ dependencies {
     implementation project(':transport:transport-api')
     implementation 'com.google.dagger:dagger:2.22'
     implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
 
