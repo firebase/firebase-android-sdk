@@ -123,7 +123,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private Task<String> getId(AwaitListener awaitListener) {
     return Tasks.call(executor, this::getPersistedFid)
         .continueWith(orElse(this::createAndPersistNewFid))
-        .onSuccessTask(unused -> registerFidIfNecessary(awaitListener));
+        .onSuccessTask(unused -> registerFidIfNecessary(awaitListener))
+        .addOnCompleteListener(
+            executor,
+            unused -> updatePendingFidRegistration());
   }
 
   /**
@@ -298,6 +301,33 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       refreshAuthTokenTask.addOnSuccessListener((unused) -> listener.onSuccess());
     }
     return Tasks.forResult(fid);
+  }
+
+  private void updatePendingFidRegistration() {
+    PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+
+    // Nothing to update if there is no PENDING Fid registration
+    if (!persistedFidEntry.isPending()) {
+      return;
+    }
+
+    // Await for 10 seconds before updating PENDING registration to UNREGISTERED
+    try {
+      new AwaitListener().await(AWAIT_TIMEOUT_IN_SECS, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+
+    }
+    PersistedFidEntry updatedPersistedFidEntry = persistedFid.readPersistedFidEntryValue();
+
+    if (updatedPersistedFidEntry.isPending()) {
+
+      // Update FID registration status to UNREGISTERED.
+      persistedFid.insertOrUpdatePersistedFidEntry(
+          persistedFidEntry
+              .toBuilder()
+              .setRegistrationStatus(RegistrationStatus.UNREGISTERED)
+              .build());
+    }
   }
 
   /** Registers the created Fid with FIS servers and update the shared prefs. */
