@@ -361,7 +361,7 @@ public final class LocalStore {
                   oldQueryData
                       .withResumeToken(resumeToken, remoteEvent.getSnapshotVersion())
                       .withSequenceNumber(sequenceNumber);
-              queryDataByTarget.put(boxedTargetId, newQueryData);
+              queryDataByTarget.put(targetId, newQueryData);
 
               // Update the query data if there are target changes (or if sufficient time has
               // passed since the last update).
