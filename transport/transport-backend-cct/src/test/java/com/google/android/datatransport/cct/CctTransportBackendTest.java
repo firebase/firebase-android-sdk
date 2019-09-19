@@ -60,7 +60,7 @@ public class CctTransportBackendTest {
 
   private static final long INITIAL_WALL_TIME = 200L;
   private static final long INITIAL_UPTIME = 10L;
-  private static final ByteString PAYLOAD = ByteString.copyFrom("TelemetryData".getBytes());
+  private static final ByteString PAYLOAD = ByteString.copyFrom("TelemetryData".getBytes("UTF-8"));
   private static final int CODE = 5;
 
   private static final PredicateMatcher<Request, BatchedLogRequest> batchRequestMatcher =

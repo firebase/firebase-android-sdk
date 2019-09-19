@@ -31,6 +31,7 @@ import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkInitializer;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -101,7 +102,7 @@ public class TransportRuntimeTest {
             .setEventMillis(eventMillis)
             .setUptimeMillis(uptimeMillis)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .setCode(12)
             .build();
     transport.send(stringEvent);

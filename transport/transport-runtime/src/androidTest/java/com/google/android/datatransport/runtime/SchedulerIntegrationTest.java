@@ -142,7 +142,7 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data".getBytes())
+            .setPayload("Data".getBytes("UTF-8"))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
@@ -165,7 +165,7 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data".getBytes())
+            .setPayload("Data".getBytes("UTF-8"))
             .build();
     Event<String> stringEvent2 = Event.ofData("Data2");
     EventInternal expectedEvent2 =
@@ -173,7 +173,7 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data2".getBytes())
+            .setPayload("Data2".getBytes("UTF-8"))
             .build();
     transport.send(stringEvent);
     transport.send(stringEvent2);
@@ -203,7 +203,7 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data".getBytes())
+            .setPayload("Data".getBytes("UTF-8"))
             .build();
     transport.send(stringEvent);
     TransportFactory factory2 = runtime.newFactory(secondBackendName);
