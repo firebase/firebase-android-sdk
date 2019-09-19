@@ -55,6 +55,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 final class CctTransportBackend implements TransportBackend {
@@ -63,6 +64,7 @@ final class CctTransportBackend implements TransportBackend {
 
   private static final int CONNECTION_TIME_OUT = 30000;
   private static final int READ_TIME_OUT = 40000;
+  private static final String ACCEPT_ENCODING_HEADER_KEY = "Accept-Encoding";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
@@ -226,6 +228,7 @@ final class CctTransportBackend implements TransportBackend {
         "User-Agent", String.format("datatransport/%s android/", BuildConfig.VERSION_NAME));
     connection.setRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
     connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, PROTOBUF_CONTENT_TYPE);
+    connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
 
     if (request.apiKey != null) {
       connection.setRequestProperty(API_KEY_HEADER_KEY, request.apiKey);
@@ -244,7 +247,8 @@ final class CctTransportBackend implements TransportBackend {
       channel.write(ByteBuffer.wrap(output.toByteArray()));
       int responseCode = connection.getResponseCode();
       Logging.i(LOG_TAG, "Status Code: " + responseCode);
-      Logging.i(LOG_TAG, "Content-Type:" + connection.getHeaderField("Content-Type"));
+      Logging.i(LOG_TAG, "Content-Type: " + connection.getHeaderField("Content-Type"));
+      Logging.i(LOG_TAG, "Content-Encoding: " + connection.getHeaderField("Content-Encoding"));
 
       if (responseCode == 302 || responseCode == 301) {
         String redirect = connection.getHeaderField("Location");
@@ -254,7 +258,13 @@ final class CctTransportBackend implements TransportBackend {
         return new HttpResponse(responseCode, null, 0);
       }
 
-      InputStream inputStream = connection.getInputStream();
+      InputStream inputStream;
+      String contentEncoding = connection.getHeaderField(CONTENT_ENCODING_HEADER_KEY);
+      if (contentEncoding != null && contentEncoding.equals(GZIP_CONTENT_ENCODING)) {
+        inputStream = new GZIPInputStream(connection.getInputStream());
+      } else {
+        inputStream = connection.getInputStream();
+      }
       try {
         long nextRequestMillis = LogResponse.parseFrom(inputStream).getNextRequestWaitMillis();
         return new HttpResponse(responseCode, null, nextRequestMillis);

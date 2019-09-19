@@ -30,7 +30,7 @@ android {
 }
 dependencies {
     inappmessagingdisplayImplementation project(":firebase-inappmessaging-display")
-    inappmessagingdisplayImplementation ("com.google.firebase:firebase-inappmessaging:17.0.3") {
-        exclude group: "com.google.firebase", module: "firebase-common"
-    }
+    inappmessagingdisplayImplementation project(":firebase-inappmessaging")
+
+    inappmessagingdisplayImplementation "com.google.android.gms:play-services-base:17.0.0"
 }

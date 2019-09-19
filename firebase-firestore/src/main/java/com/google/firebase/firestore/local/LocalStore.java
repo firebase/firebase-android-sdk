@@ -380,17 +380,22 @@ public final class LocalStore {
             MaybeDocument doc = entry.getValue();
             MaybeDocument existingDoc = existingDocs.get(key);
 
-            if (existingDoc == null
+            // Note: The order of the steps below is important, since we want to ensure that
+            // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
+            // never add documents to cache.
+            if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
+              // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
+              // these documents from cache since we lost access.
+              remoteDocuments.remove(doc.getKey());
+              changedDocs.put(key, doc);
+            } else if (existingDoc == null
                 || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
                 || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
                     && existingDoc.hasPendingWrites())) {
+              // TODO(index-free): Comment in this assert when we enable Index-Free queries
+              // hardAssert(!SnapshotVersion.NONE.equals(remoteEvent.getSnapshotVersion()), "Cannot
+              // add a document when the remote version is zero");
               remoteDocuments.add(doc, remoteEvent.getSnapshotVersion());
-              changedDocs.put(key, doc);
-            } else if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
-              // NoDocuments with SnapshotVersion.MIN are used in manufactured events (e.g. in the
-              // case of a limbo document resolution failing). We remove these documents from cache
-              // since we lost access.
-              remoteDocuments.remove(doc.getKey());
               changedDocs.put(key, doc);
             } else {
               Logger.debug(
@@ -593,25 +598,29 @@ public final class LocalStore {
         });
   }
 
-  /** Runs the given query against all the documents in the local store and returns the results. */
-  public ImmutableSortedMap<DocumentKey, Document> executeQuery(Query query) {
-    QueryData queryData = getQueryData(query);
-    if (queryData != null) {
-      ImmutableSortedSet<DocumentKey> remoteKeys =
-          this.queryCache.getMatchingKeysForTargetId(queryData.getTargetId());
-      return executeQuery(query, queryData, remoteKeys);
-    } else {
-      return executeQuery(query, null, DocumentKey.emptyKeySet());
-    }
-  }
-
   /**
-   * Runs the given query against the local store and returns the results, potentially taking
-   * advantage of the provided query data and the set of remote document keys.
+   * Runs the specified query against the local store and returns the results, potentially taking
+   * advantage of query data from previous executions (such as the set of remote keys).
+   *
+   * @param usePreviousResults Whether results from previous executions can be used to optimize this
+   *     query execution.
    */
-  public ImmutableSortedMap<DocumentKey, Document> executeQuery(
-      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
-    return queryEngine.getDocumentsMatchingQuery(query, queryData, remoteKeys);
+  public QueryResult executeQuery(Query query, boolean usePreviousResults) {
+    QueryData queryData = getQueryData(query);
+    SnapshotVersion lastLimboFreeSnapshotVersion = SnapshotVersion.NONE;
+    ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
+
+    if (queryData != null) {
+      lastLimboFreeSnapshotVersion = queryData.getLastLimboFreeSnapshotVersion();
+      remoteKeys = this.queryCache.getMatchingKeysForTargetId(queryData.getTargetId());
+    }
+
+    ImmutableSortedMap<DocumentKey, Document> documents =
+        queryEngine.getDocumentsMatchingQuery(
+            query,
+            usePreviousResults ? lastLimboFreeSnapshotVersion : SnapshotVersion.NONE,
+            usePreviousResults ? remoteKeys : DocumentKey.emptyKeySet());
+    return new QueryResult(documents, remoteKeys);
   }
 
   /**

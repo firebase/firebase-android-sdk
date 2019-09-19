@@ -31,9 +31,6 @@ import java.util.Map;
  * instances (indicating that the document is known to not exist).
  */
 interface RemoteDocumentCache {
-  /** The tag used by the StatsCollector. */
-  String STATS_TAG = "remote_documents";
-
   /**
    * Adds or replaces an entry in the cache.
    *

@@ -15,18 +15,23 @@
 package com.google.firebase.inappmessaging.display.internal.bindingwrappers;
 
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.Drawable;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
+import android.widget.Button;
 import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.drawable.DrawableCompat;
 import com.google.firebase.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.google.firebase.inappmessaging.display.internal.Logging;
+import com.google.firebase.inappmessaging.model.Action;
 import com.google.firebase.inappmessaging.model.InAppMessage;
+import java.util.Map;
 
 /**
  * View container for all in app message layouts This container serves as an abstraction around
@@ -57,7 +62,7 @@ public abstract class BindingWrapper {
 
   @Nullable
   public abstract OnGlobalLayoutListener inflate(
-      OnClickListener actionListener, OnClickListener dismissOnClickListener);
+      Map<Action, OnClickListener> actionListeners, OnClickListener dismissOnClickListener);
 
   public boolean canSwipeToDismiss() {
     return false;
@@ -66,22 +71,48 @@ public abstract class BindingWrapper {
   @Nullable
   public OnClickListener getDismissListener() {
     return null;
-  };
+  }
 
   @NonNull
   public InAppMessageLayoutConfig getConfig() {
     return config;
   }
 
-  protected void setGradientDrawableBgColor(View view, String hexColor) {
-    if (view != null && hexColor != null) {
-      GradientDrawable layoutBg = (GradientDrawable) view.getBackground();
-      try {
-        layoutBg.setColor(Color.parseColor(hexColor));
-      } catch (IllegalArgumentException e) {
-        // If the color didnt parse correctly, fail 'open', with default background color
-        Logging.loge("Error parsing background color: " + e.toString());
-      }
+  protected void setViewBgColorFromHex(@Nullable View view, @Nullable String hexColor) {
+    if (view == null || TextUtils.isEmpty(hexColor)) return;
+    try {
+      view.setBackgroundColor(Color.parseColor(hexColor));
+    } catch (IllegalArgumentException e) {
+      // If the color didnt parse correctly, fail 'open', with default background color
+      Logging.loge("Error parsing background color: " + e.toString() + " color: " + hexColor);
+    }
+  }
+
+  public static void setButtonBgColorFromHex(Button button, String hexColor) {
+    try {
+      Drawable drawable = button.getBackground();
+      Drawable compatDrawable = DrawableCompat.wrap(drawable);
+      DrawableCompat.setTint(compatDrawable, Color.parseColor(hexColor));
+      button.setBackground(compatDrawable);
+    } catch (IllegalArgumentException e) {
+      // If the color didnt parse correctly, fail 'open', with default background color
+      Logging.loge("Error parsing background color: " + e.toString());
+    }
+  }
+
+  // Worth changing the API allow for building a UI model from a data model. Future change.
+  public static void setupViewButtonFromModel(
+      Button viewButton, com.google.firebase.inappmessaging.model.Button modelButton) {
+    String buttonTextHexColor = modelButton.getText().getHexColor();
+    setButtonBgColorFromHex(viewButton, modelButton.getButtonHexColor());
+    viewButton.setText(modelButton.getText().getText());
+    viewButton.setTextColor(Color.parseColor(buttonTextHexColor));
+  }
+
+  protected void setButtonActionListener(
+      @Nullable Button button, View.OnClickListener actionListener) {
+    if (button != null) {
+      button.setOnClickListener(actionListener);
     }
   }
 }

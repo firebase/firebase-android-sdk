@@ -1,0 +1,24 @@
+// Signature format: 2.0
+package com.google.firebase.inappmessaging {
+
+  public class FirebaseInAppMessaging {
+    method public void addClickListener(FirebaseInAppMessagingClickListener);
+    method public void addClickListener(FirebaseInAppMessagingClickListener, Executor);
+    method public void addDisplayErrorListener(FirebaseInAppMessagingDisplayErrorListener);
+    method public void addDisplayErrorListener(FirebaseInAppMessagingDisplayErrorListener, Executor);
+    method public void addImpressionListener(FirebaseInAppMessagingImpressionListener);
+    method public void addImpressionListener(FirebaseInAppMessagingImpressionListener, Executor);
+    method public boolean areMessagesSuppressed();
+    method public void displayMessage(InAppMessage, FirebaseInAppMessagingDisplayCallbacks);
+    method public boolean isAutomaticDataCollectionEnabled();
+    method public static com.google.firebase.inappmessaging.FirebaseInAppMessaging getInstance();
+    method public void removeClickListener(FirebaseInAppMessagingClickListener);
+    method public void removeDisplayErrorListener(FirebaseInAppMessagingDisplayErrorListener);
+    method public void removeImpressionListener(FirebaseInAppMessagingImpressionListener);
+    method public void setAutomaticDataCollectionEnabled(boolean);
+    method public void setMessageDisplayComponent(com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay) 
+    method public void setMessagesSuppressed(Boolean);
+    method public void triggerEvent(String);
+  }
+
+}
