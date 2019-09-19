@@ -59,6 +59,8 @@ public class FirebaseInstallationServiceClient {
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
 
+  private static final int TIMEOUT_IN_MILLI_SECS = 10000;
+
   private final Context context;
 
   public FirebaseInstallationServiceClient(@NonNull Context context) {
@@ -90,6 +92,8 @@ public class FirebaseInstallationServiceClient {
                   apiKey));
 
       HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+      httpsURLConnection.setConnectTimeout(TIMEOUT_IN_MILLI_SECS);
+      httpsURLConnection.setReadTimeout(TIMEOUT_IN_MILLI_SECS);
       httpsURLConnection.setDoOutput(true);
       httpsURLConnection.setRequestMethod("POST");
       httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
