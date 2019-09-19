@@ -59,7 +59,7 @@ public class FirebaseInstallationServiceClient {
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
 
-  private static final int TIMEOUT_IN_MILLI_SECS = 10000;
+  private static final int NETWORK_TIMEOUT_MILLIS = 10000;
 
   private final Context context;
 
@@ -92,8 +92,8 @@ public class FirebaseInstallationServiceClient {
                   apiKey));
 
       HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
-      httpsURLConnection.setConnectTimeout(TIMEOUT_IN_MILLI_SECS);
-      httpsURLConnection.setReadTimeout(TIMEOUT_IN_MILLI_SECS);
+      httpsURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
+      httpsURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
       httpsURLConnection.setDoOutput(true);
       httpsURLConnection.setRequestMethod("POST");
       httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
@@ -169,6 +169,8 @@ public class FirebaseInstallationServiceClient {
                   apiKey));
 
       HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+      httpsURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
+      httpsURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
       httpsURLConnection.setDoOutput(true);
       httpsURLConnection.setRequestMethod("DELETE");
       httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
@@ -223,6 +225,8 @@ public class FirebaseInstallationServiceClient {
                   apiKey));
 
       HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+      httpsURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
+      httpsURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
       httpsURLConnection.setDoOutput(true);
       httpsURLConnection.setRequestMethod("POST");
       httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
