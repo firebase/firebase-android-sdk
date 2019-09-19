@@ -29,6 +29,7 @@ import static com.google.firebase.installations.FisAndroidTestConstants.TEST_PRO
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_REFRESH_TOKEN;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP_2;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -84,6 +85,7 @@ public class FirebaseInstallationsInstrumentedTest {
   @Mock private Utils mockUtils;
   @Mock private Clock mockClock;
   @Mock private PersistedFid mockPersistedFid;
+  @Mock private FirebaseInstallationServiceClient mockClient;
 
   private static final PersistedFidEntry REGISTERED_FID_ENTRY =
       PersistedFidEntry.builder()
@@ -264,6 +266,73 @@ public class FirebaseInstallationsInstrumentedTest {
     assertWithMessage("Registration Fid doesn't match")
         .that(updatedFidEntry.getRegistrationStatus())
         .isEqualTo(PersistedFid.RegistrationStatus.REGISTER_ERROR);
+  }
+
+  @Test
+  public void testGetId_fidRegistrationUncheckedException_statusUpdated() throws Exception {
+    // Mocking unchecked exception on FIS createFirebaseInstallation
+    when(mockClient.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
+        .thenAnswer(
+            invocation -> {
+              throw new InterruptedException();
+            });
+
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            mockClock, executor, firebaseApp, mockClient, persistedFid, mockUtils);
+
+    Tasks.await(firebaseInstallations.getId());
+
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(entryValue.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+    assertTrue(" Fid Registration Status doesn't match", entryValue.isPending());
+
+    // Waiting for Task that registers FID on the FIS Servers
+    executor.awaitTermination(1000, TimeUnit.MILLISECONDS);
+
+    // Validate that registration status is REGISTER_ERROR
+    PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(updatedFidEntry.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+    assertTrue(" Fid Registration Status doesn't match", updatedFidEntry.isErrored());
+  }
+
+  @Test
+  public void testGetId_expiredAuthTokenUncheckedException_statusUpdated() throws Exception {
+    // Update local storage with fid entry that has auth token expired.
+    persistedFid.insertOrUpdatePersistedFidEntry(EXPIRED_AUTH_TOKEN_ENTRY);
+    // Mocking unchecked exception on FIS generateAuthToken
+    when(mockClient.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenAnswer(
+            invocation -> {
+              throw new InterruptedException();
+            });
+
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            mockClock, executor, firebaseApp, mockClient, persistedFid, mockUtils);
+
+    assertWithMessage("getId Task failed")
+        .that(Tasks.await(firebaseInstallations.getId()))
+        .isNotEmpty();
+    PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(entryValue.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+    assertTrue(" Fid Registration Status doesn't match", entryValue.isPending());
+
+    // Waiting for Task that generates auth token with the FIS Servers
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+
+    // Validate that registration status is REGISTER_ERROR
+    PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
+    assertWithMessage("Persisted Fid doesn't match")
+        .that(updatedFidEntry.getFirebaseInstallationId())
+        .isEqualTo(TEST_FID_1);
+    assertTrue(" Fid Registration Status doesn't match", updatedFidEntry.isErrored());
   }
 
   @Test
