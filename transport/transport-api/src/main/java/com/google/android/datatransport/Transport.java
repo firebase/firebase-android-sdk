@@ -14,6 +14,8 @@
 
 package com.google.android.datatransport;
 
+import com.google.android.gms.tasks.Task;
+
 /**
  * Provides means of recording events of interest.
  *
@@ -25,5 +27,5 @@ public interface Transport<T> {
    *
    * @param event The event with the payload that needs to be sent.
    */
-  void send(Event<T> event);
+  Task<Void> send(Event<T> event);
 }

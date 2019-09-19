@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
+import com.google.android.gms.tasks.Task;
 
 final class TransportImpl<T> implements Transport<T> {
   private final TransportContext transportContext;
@@ -36,8 +37,8 @@ final class TransportImpl<T> implements Transport<T> {
   }
 
   @Override
-  public void send(Event<T> event) {
-    transportInternal.send(
+  public Task<Void> send(Event<T> event) {
+    return transportInternal.send(
         SendRequest.builder()
             .setTransportContext(transportContext)
             .setEvent(event)

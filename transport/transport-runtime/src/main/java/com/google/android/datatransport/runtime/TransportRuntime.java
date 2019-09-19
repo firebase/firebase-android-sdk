@@ -24,6 +24,7 @@ import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkIni
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
+import com.google.android.gms.tasks.Task;
 import java.util.concurrent.Callable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -132,8 +133,8 @@ public class TransportRuntime implements TransportInternal {
   }
 
   @Override
-  public void send(SendRequest request) {
-    scheduler.schedule(
+  public Task<Void> send(SendRequest request) {
+    return scheduler.schedule(
         request.getTransportContext().withPriority(request.getEvent().getPriority()),
         convert(request));
   }
