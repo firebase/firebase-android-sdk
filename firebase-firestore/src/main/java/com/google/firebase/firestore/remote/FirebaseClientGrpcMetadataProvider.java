@@ -46,12 +46,12 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
 
   @Override
   public void updateMetadata(@NonNull Metadata metadata) {
-    metadata.put(USER_AGENT_HEADER, userAgentPublisherProvider.get().getUserAgent());
     int heartBeatCode =
         heartBeatInfoProvider.get().getHeartBeatCode(firebaseFirestoreHeartBeatTag).getCode();
     // Non-zero values indicate some kind of heartbeat should be sent
     if (heartBeatCode != 0) {
       metadata.put(HEART_BEAT_HEADER, Integer.toString(heartBeatCode));
+      metadata.put(USER_AGENT_HEADER, userAgentPublisherProvider.get().getUserAgent());
     }
   }
 }
