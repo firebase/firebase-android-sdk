@@ -21,6 +21,10 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -128,13 +132,14 @@ public class StreamTest {
   @Test
   public void testWatchStreamStopBeforeHandshake() throws Exception {
     AsyncQueue testQueue = new AsyncQueue();
+    GrpcMetadataProvider mockGrpcProvider = mock(GrpcMetadataProvider.class);
     Datastore datastore =
         new Datastore(
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
             ApplicationProvider.getApplicationContext(),
-            null);
+            mockGrpcProvider);
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
     final WatchStream watchStream = datastore.createWatchStream(streamCallback);
 
@@ -144,6 +149,7 @@ public class StreamTest {
     // Stop should call watchStreamStreamDidClose.
     testQueue.runSync(watchStream::stop);
     assertThat(streamCallback.closeSemaphore.availablePermits()).isEqualTo(1);
+    verify(mockGrpcProvider, times(1)).updateMetadata(any());
   }
 
   @Test
