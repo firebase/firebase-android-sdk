@@ -84,9 +84,7 @@ public class PersistedFid {
         prefs.getLong(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY), 0);
     long expiresIn = prefs.getLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), 0);
 
-    if (fid == null
-        || status == -1
-        || !(status >= 0 && status < RegistrationStatus.values().length)) {
+    if (fid == null || !(status >= 0 && status < RegistrationStatus.values().length)) {
       return PersistedFidEntry.builder().build();
     }
 
