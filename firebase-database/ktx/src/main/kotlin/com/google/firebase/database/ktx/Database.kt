@@ -46,7 +46,7 @@ FirebaseDatabase.getInstance(app, url)
  * use the type `T`, and not `? extends T`.
  */
 inline fun <reified T> DataSnapshot.getValue(): T? {
-    var genericTypeIndicator = object : GenericTypeIndicator<T>() {}
+    val genericTypeIndicator = object : GenericTypeIndicator<T>() {}
     return getValue(genericTypeIndicator)
 }
 
