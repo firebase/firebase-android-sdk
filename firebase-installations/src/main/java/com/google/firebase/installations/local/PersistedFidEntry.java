@@ -25,7 +25,7 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class PersistedFidEntry {
 
-  @NonNull
+  @Nullable
   public abstract String getFirebaseInstallationId();
 
   @NonNull
@@ -41,6 +41,22 @@ public abstract class PersistedFidEntry {
 
   public abstract long getTokenCreationEpochInSecs();
 
+  public boolean isRegistered() {
+    return getRegistrationStatus() == PersistedFid.RegistrationStatus.REGISTERED;
+  }
+
+  public boolean isErrored() {
+    return getRegistrationStatus() == PersistedFid.RegistrationStatus.REGISTER_ERROR;
+  }
+
+  public boolean isUnregistered() {
+    return getRegistrationStatus() == PersistedFid.RegistrationStatus.UNREGISTERED;
+  }
+
+  public boolean isNotGenerated() {
+    return getRegistrationStatus() == PersistedFid.RegistrationStatus.NOT_GENERATED;
+  }
+
   @NonNull
   public abstract Builder toBuilder();
 
@@ -49,6 +65,7 @@ public abstract class PersistedFidEntry {
   public static PersistedFidEntry.Builder builder() {
     return new AutoValue_PersistedFidEntry.Builder()
         .setTokenCreationEpochInSecs(0)
+        .setRegistrationStatus(PersistedFid.RegistrationStatus.NOT_GENERATED)
         .setExpiresInSecs(0);
   }
 

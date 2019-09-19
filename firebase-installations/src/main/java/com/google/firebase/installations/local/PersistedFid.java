@@ -31,6 +31,8 @@ public class PersistedFid {
   // NOTE: never change the ordinal of the enum values because the enum values are stored in shared
   // prefs as their ordinal numbers.
   public enum RegistrationStatus {
+    /** {@link PersistedFidEntry} default registration status */
+    NOT_GENERATED,
     /** {@link PersistedFidEntry} is synced to FIS servers */
     REGISTERED,
     /** {@link PersistedFidEntry} is not synced with FIS server */
@@ -75,17 +77,15 @@ public class PersistedFid {
   @Nullable
   public PersistedFidEntry readPersistedFidEntryValue() {
     String fid = prefs.getString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
-    int status = prefs.getInt(getSharedPreferencesKey(PERSISTED_STATUS_KEY), -1);
+    int status = prefs.getInt(getSharedPreferencesKey(PERSISTED_STATUS_KEY), 0);
     String authToken = prefs.getString(getSharedPreferencesKey(AUTH_TOKEN_KEY), null);
     String refreshToken = prefs.getString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), null);
     long tokenCreationTime =
         prefs.getLong(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY), 0);
     long expiresIn = prefs.getLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), 0);
 
-    if (fid == null
-        || status == -1
-        || !(status >= 0 && status < RegistrationStatus.values().length)) {
-      return null;
+    if (fid == null || !(status >= 0 && status < RegistrationStatus.values().length)) {
+      return PersistedFidEntry.builder().build();
     }
 
     return PersistedFidEntry.builder()
