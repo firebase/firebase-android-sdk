@@ -103,7 +103,9 @@ public class IndexedQueryEngine implements QueryEngine {
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
+      Query query,
+      SnapshotVersion lastLimboFreeSnapshotVersion,
+      ImmutableSortedSet<DocumentKey> remoteKeys) {
     hardAssert(localDocuments != null, "setLocalDocumentsView() not called");
 
     return query.isDocumentQuery()

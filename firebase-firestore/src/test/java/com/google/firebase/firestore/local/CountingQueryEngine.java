@@ -64,8 +64,10 @@ class CountingQueryEngine implements QueryEngine {
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
-    return queryEngine.getDocumentsMatchingQuery(query, queryData, remoteKeys);
+      Query query,
+      SnapshotVersion lastLimboFreeSnapshotVersion,
+      ImmutableSortedSet<DocumentKey> remoteKeys) {
+    return queryEngine.getDocumentsMatchingQuery(query, lastLimboFreeSnapshotVersion, remoteKeys);
   }
 
   @Override

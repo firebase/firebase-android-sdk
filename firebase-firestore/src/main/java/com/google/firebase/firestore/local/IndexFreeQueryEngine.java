@@ -16,7 +16,6 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -58,7 +57,9 @@ public class IndexFreeQueryEngine implements QueryEngine {
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
+      Query query,
+      SnapshotVersion lastLimboFreeSnapshotVersion,
+      ImmutableSortedSet<DocumentKey> remoteKeys) {
     hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
 
     // Queries that match all document don't benefit from using IndexFreeQueries. It is more
@@ -69,8 +70,7 @@ public class IndexFreeQueryEngine implements QueryEngine {
 
     // Queries that have never seen a snapshot without limbo free documents should also be run as a
     // full collection scan.
-    if (queryData == null
-        || queryData.getLastLimboFreeSnapshotVersion().equals(SnapshotVersion.NONE)) {
+    if (lastLimboFreeSnapshotVersion.equals(SnapshotVersion.NONE)) {
       return executeFullCollectionScan(query);
     }
 
@@ -79,7 +79,7 @@ public class IndexFreeQueryEngine implements QueryEngine {
     ImmutableSortedSet<Document> previousResults = applyQuery(query, documents);
 
     if (query.hasLimit()
-        && needsRefill(previousResults, remoteKeys, queryData.getLastLimboFreeSnapshotVersion())) {
+        && needsRefill(previousResults, remoteKeys, lastLimboFreeSnapshotVersion)) {
       return executeFullCollectionScan(query);
     }
 
@@ -87,15 +87,14 @@ public class IndexFreeQueryEngine implements QueryEngine {
       Logger.debug(
           LOG_TAG,
           "Re-using previous result from %s to execute query: %s",
-          queryData.getLastLimboFreeSnapshotVersion().toString(),
+          lastLimboFreeSnapshotVersion.toString(),
           query.toString());
     }
 
     // Retrieve all results for documents that were updated since the last limbo-document free
     // remote snapshot.
     ImmutableSortedMap<DocumentKey, Document> updatedResults =
-        localDocumentsView.getDocumentsMatchingQuery(
-            query, queryData.getLastLimboFreeSnapshotVersion());
+        localDocumentsView.getDocumentsMatchingQuery(query, lastLimboFreeSnapshotVersion);
 
     // We merge `previousResults` into `updateResults`, since `updateResults` is already a
     // ImmutableSortedMap. If a document is contained in both lists, then its contents are the same.

@@ -96,7 +96,7 @@ public abstract class LocalStoreTestCase {
 
   private List<MutationBatch> batches;
   private @Nullable ImmutableSortedMap<DocumentKey, MaybeDocument> lastChanges;
-  private ImmutableSortedMap<DocumentKey, Document> lastQueryResult;
+  private @Nullable QueryResult lastQueryResult;
   private int lastTargetId;
 
   abstract QueryEngine getQueryEngine();
@@ -178,7 +178,7 @@ public abstract class LocalStoreTestCase {
 
   private void executeQuery(Query query) {
     resetPersistenceStats();
-    lastQueryResult = localStore.executeQuery(query);
+    lastQueryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
   }
 
   private void releaseQuery(Query query) {
@@ -230,10 +230,11 @@ public abstract class LocalStoreTestCase {
 
   private void assertQueryReturned(String... keys) {
     assertNotNull(lastQueryResult);
+    ImmutableSortedMap<DocumentKey, Document> documents = lastQueryResult.getDocuments();
     for (String key : keys) {
-      assertTrue("Expected query to return: " + key, lastQueryResult.containsKey(key(key)));
+      assertTrue("Expected query to return: " + key, documents.containsKey(key(key)));
     }
-    assertEquals(lastQueryResult.size(), keys.length);
+    assertEquals(documents.size(), keys.length);
   }
 
   /**
@@ -857,10 +858,10 @@ public abstract class LocalStoreTestCase {
             setMutation("foo/baz", map("foo", "baz")),
             setMutation("foo/bar/Foo/Bar", map("Foo", "Bar"))));
     Query query = Query.atPath(ResourcePath.fromSegments(asList("foo", "bar")));
-    ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
+    QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
     assertEquals(
         asList(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS)),
-        values(docs));
+        values(result.getDocuments()));
   }
 
   @Test
@@ -873,12 +874,12 @@ public abstract class LocalStoreTestCase {
             setMutation("foo/bar/Foo/Bar", map("Foo", "Bar")),
             setMutation("fooo/blah", map("fooo", "blah"))));
     Query query = Query.atPath(ResourcePath.fromString("foo"));
-    ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
+    QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
     assertEquals(
         asList(
             doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS),
             doc("foo/baz", 0, map("foo", "baz"), Document.DocumentState.LOCAL_MUTATIONS)),
-        values(docs));
+        values(result.getDocuments()));
   }
 
   @Test
@@ -891,13 +892,13 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map("a", "b")), asList(2), emptyList()));
     writeMutation(setMutation("foo/bonk", map("a", "b")));
 
-    ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
+    QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
     assertEquals(
         asList(
             doc("foo/bar", 20, map("a", "b")),
             doc("foo/baz", 10, map("a", "b")),
             doc("foo/bonk", 0, map("a", "b"), Document.DocumentState.LOCAL_MUTATIONS)),
-        values(docs));
+        values(result.getDocuments()));
   }
 
   @Test
@@ -911,7 +912,7 @@ public abstract class LocalStoreTestCase {
 
     resetPersistenceStats();
 
-    localStore.executeQuery(query);
+    localStore.executeQuery(query, /* usePreviousResults= */ true);
 
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
     assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 1);
