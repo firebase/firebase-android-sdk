@@ -24,6 +24,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.time.Clock;
 
 /**
  * Schedules the service {@link AlarmManagerSchedulerBroadcastReceiver} based on the backendname.
@@ -44,12 +45,15 @@ public class AlarmManagerScheduler implements WorkScheduler {
 
   private final SchedulerConfig config;
 
+  private final Clock clock;
+
   public AlarmManagerScheduler(
-      Context applicationContext, EventStore eventStore, SchedulerConfig config) {
+      Context applicationContext, EventStore eventStore, Clock clock, SchedulerConfig config) {
     this(
         applicationContext,
         eventStore,
         (AlarmManager) applicationContext.getSystemService(Context.ALARM_SERVICE),
+        clock,
         config);
   }
 
@@ -58,10 +62,12 @@ public class AlarmManagerScheduler implements WorkScheduler {
       Context applicationContext,
       EventStore eventStore,
       AlarmManager alarmManager,
+      Clock clock,
       SchedulerConfig config) {
     this.context = applicationContext;
     this.eventStore = eventStore;
     this.alarmManager = alarmManager;
+    this.clock = clock;
     this.config = config;
   }
 
@@ -110,6 +116,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
         attemptNumber);
 
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-    this.alarmManager.set(AlarmManager.ELAPSED_REALTIME, scheduleDelay, pendingIntent);
+    this.alarmManager.set(
+        AlarmManager.ELAPSED_REALTIME, clock.getTime() + scheduleDelay, pendingIntent);
   }
 }
