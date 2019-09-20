@@ -57,12 +57,12 @@ public class TransportRuntimeTest {
   private final WorkScheduler mockWorkScheduler = mock(WorkScheduler.class);
   private final EventStore mockEventStore = mock(EventStore.class);
   private static final SynchronizationGuard guard =
-          new SynchronizationGuard() {
-            @Override
-            public <T> T runCriticalSection(CriticalSection<T> criticalSection) {
-              return criticalSection.execute();
-            }
-          };
+      new SynchronizationGuard() {
+        @Override
+        public <T> T runCriticalSection(CriticalSection<T> criticalSection) {
+          return criticalSection.execute();
+        }
+      };
 
   @Test
   public void testTransportInternalSend() {
@@ -169,40 +169,40 @@ public class TransportRuntimeTest {
     String testTransport = "testTransport";
 
     TransportRuntime runtime =
-            new TransportRuntime(
-                    () -> eventMillis,
-                    () -> uptimeMillis,
-                    new DefaultScheduler(Runnable::run, mockRegistry, mockWorkScheduler, mockEventStore, guard),
-                    new Uploader(null, null, null, null, null, null, () -> 2),
-                    mockInitializer);
+        new TransportRuntime(
+            () -> eventMillis,
+            () -> uptimeMillis,
+            new DefaultScheduler(
+                Runnable::run, mockRegistry, mockWorkScheduler, mockEventStore, guard),
+            new Uploader(null, null, null, null, null, null, () -> 2),
+            mockInitializer);
     verify(mockInitializer, times(1)).ensureContextsScheduled();
 
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     when(mockBackend.decorate(any()))
-            .thenAnswer(
-                    (Answer<EventInternal>)
-                            invocation ->
-                                    invocation
-                                            .<EventInternal>getArgument(0)
-                                            .toBuilder()
-                                            .addMetadata(TEST_KEY, TEST_VALUE)
-                                            .build());
+        .thenAnswer(
+            (Answer<EventInternal>)
+                invocation ->
+                    invocation
+                        .<EventInternal>getArgument(0)
+                        .toBuilder()
+                        .addMetadata(TEST_KEY, TEST_VALUE)
+                        .build());
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
-            factory.getTransport(testTransport, String.class, String::getBytes);
+        factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
     EventInternal expectedEvent =
-            EventInternal.builder()
-                    .setEventMillis(eventMillis)
-                    .setUptimeMillis(uptimeMillis)
-                    .setTransportName(testTransport)
-                    .setPayload("TelemetryData".getBytes())
-                    .setCode(12)
-                    .build();
+        EventInternal.builder()
+            .setEventMillis(eventMillis)
+            .setUptimeMillis(uptimeMillis)
+            .setTransportName(testTransport)
+            .setPayload("TelemetryData".getBytes())
+            .setCode(12)
+            .build();
     Task<Void> task = transport.send(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
-    verify(mockEventStore, times(1)).persist(
-            any(TransportContext.class), any(EventInternal.class));
+    verify(mockEventStore, times(1)).persist(any(TransportContext.class), any(EventInternal.class));
     verify(mockBackend, never()).send(any(BackendRequest.class));
     assertThat(task.isSuccessful()).isTrue();
   }
@@ -215,12 +215,13 @@ public class TransportRuntimeTest {
     String testTransport = "testTransport";
 
     TransportRuntime runtime =
-            new TransportRuntime(
-                    () -> eventMillis,
-                    () -> uptimeMillis,
-                    new DefaultScheduler(Runnable::run, mockRegistry, mockWorkScheduler, mockEventStore, guard),
-                    new Uploader(null, null, null, null, null, null, () -> 2),
-                    mockInitializer);
+        new TransportRuntime(
+            () -> eventMillis,
+            () -> uptimeMillis,
+            new DefaultScheduler(
+                Runnable::run, mockRegistry, mockWorkScheduler, mockEventStore, guard),
+            new Uploader(null, null, null, null, null, null, () -> 2),
+            mockInitializer);
     verify(mockInitializer, times(1)).ensureContextsScheduled();
 
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
@@ -228,7 +229,7 @@ public class TransportRuntimeTest {
 
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
-            factory.getTransport(testTransport, String.class, String::getBytes);
+        factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
 
     Task<Void> task = transport.send(stringEvent);
