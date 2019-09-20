@@ -38,6 +38,7 @@ import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkSch
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.gms.tasks.Task;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -117,7 +118,7 @@ public class TransportRuntimeTest {
             .setEventMillis(eventMillis)
             .setUptimeMillis(uptimeMillis)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .setCode(12)
             .build();
     Task<Void> task = transport.send(stringEvent);
