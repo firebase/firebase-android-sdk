@@ -35,6 +35,7 @@ import com.google.android.datatransport.runtime.scheduling.persistence.EventStor
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
+import java.nio.charset.Charset;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -145,7 +146,10 @@ public class AlarmManagerSchedulerTest {
   @Test
   public void schedule_whenExtrasEvailable_transmitsExtras() {
     TransportContext transportContext =
-        TransportContext.builder().setBackendName("backend1").setExtras("e1".getBytes()).build();
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
     Intent intent = getIntent(transportContext);
     assertThat(scheduler.isJobServiceOn(intent)).isFalse();
     scheduler.schedule(transportContext, 1);
