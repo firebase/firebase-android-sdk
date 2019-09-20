@@ -42,7 +42,7 @@ public class DefaultScheduler implements Scheduler {
   private final SynchronizationGuard guard;
 
   @Inject
-  DefaultScheduler(
+  public DefaultScheduler(
       Executor executor,
       BackendRegistry backendRegistry,
       WorkScheduler workScheduler,

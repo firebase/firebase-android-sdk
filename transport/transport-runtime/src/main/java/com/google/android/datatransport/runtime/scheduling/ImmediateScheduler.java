@@ -46,17 +46,18 @@ public class ImmediateScheduler implements Scheduler {
 
   @Override
   public Task<Void> schedule(TransportContext transportContext, EventInternal event) {
-    executor.execute(
+    return Tasks.call(
+        executor,
         () -> {
           TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
           if (backend == null) {
             LOGGER.warning(
                 String.format(
                     "Transport backend '%s' is not registered", transportContext.getBackendName()));
-            return;
+            return null;
           }
           backend.send(BackendRequest.create(Collections.singleton(backend.decorate(event))));
+          return null;
         });
-    return Tasks.forResult((Void) null);
   }
 }
