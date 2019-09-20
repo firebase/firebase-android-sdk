@@ -137,7 +137,7 @@ public class FirebaseFirestore {
 
     FirebaseFirestore firestore =
         new FirebaseFirestore(
-            context, databaseId, persistenceKey, provider, queue, app, instanceRegistry, metadata);
+            context, databaseId, persistenceKey, provider, queue, app, instanceRegistry, metadataProvider);
     return firestore;
   }
 
