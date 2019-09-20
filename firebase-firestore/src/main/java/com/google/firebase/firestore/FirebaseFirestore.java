@@ -137,7 +137,14 @@ public class FirebaseFirestore {
 
     FirebaseFirestore firestore =
         new FirebaseFirestore(
-            context, databaseId, persistenceKey, provider, queue, app, instanceRegistry, metadataProvider);
+            context,
+            databaseId,
+            persistenceKey,
+            provider,
+            queue,
+            app,
+            instanceRegistry,
+            metadataProvider);
     return firestore;
   }
 
@@ -204,12 +211,7 @@ public class FirebaseFirestore {
 
       client =
           new FirestoreClient(
-              context,
-              databaseInfo,
-              settings,
-              credentialsProvider,
-              asyncQueue,
-              metadataProvider);
+              context, databaseInfo, settings, credentialsProvider, asyncQueue, metadataProvider);
     }
   }
 
