@@ -57,6 +57,10 @@ public abstract class PersistedFidEntry {
     return getRegistrationStatus() == PersistedFid.RegistrationStatus.NOT_GENERATED;
   }
 
+  public boolean isPending() {
+    return getRegistrationStatus() == PersistedFid.RegistrationStatus.PENDING;
+  }
+
   @NonNull
   public abstract Builder toBuilder();
 

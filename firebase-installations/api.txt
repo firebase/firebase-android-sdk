@@ -51,6 +51,7 @@ package com.google.firebase.installations.local {
     method public abstract long getTokenCreationEpochInSecs();
     method public boolean isErrored();
     method public boolean isNotGenerated();
+    method public boolean isPending();
     method public boolean isRegistered();
     method public boolean isUnregistered();
     method @NonNull public abstract com.google.firebase.installations.local.PersistedFidEntry.Builder toBuilder();

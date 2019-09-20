@@ -281,6 +281,25 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       Task<Void> fidRegistrationTask =
           Tasks.call(executor, () -> registerAndSaveFid(updatedPersistedFidEntry));
 
+      // If fid registration task fails for any reason: thread failure, network error etc., PENDING
+      // registration status will be updated to REGISTER_ERROR. This will unblock succeeding Fid
+      // registration.
+      fidRegistrationTask.addOnFailureListener(
+          executor,
+          (exception) -> {
+            PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+
+            if (persistedFidEntry.isPending()) {
+
+              // Update FID registration status to REGISTER_ERROR.
+              persistedFid.insertOrUpdatePersistedFidEntry(
+                  persistedFidEntry
+                      .toBuilder()
+                      .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
+                      .build());
+            }
+          });
+
       // Update the listener if awaiting
       if (listener != null) {
         fidRegistrationTask.addOnCompleteListener(listener);
@@ -292,6 +311,25 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // and updates the listener on completion
     Task<InstallationTokenResult> refreshAuthTokenTask =
         Tasks.call(executor, () -> refreshAuthTokenIfNecessary(FORCE_REFRESH));
+
+    // If refresh auth token task fails for any reason: thread failure, network error etc.,
+    // PENDING registration status will be updated to REGISTER_ERROR. This will unblock succeeding
+    // auth token refresh.
+    refreshAuthTokenTask.addOnFailureListener(
+        executor,
+        (exception) -> {
+          PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+
+          if (persistedFidEntry.isPending()) {
+
+            // Update FID registration status to REGISTER_ERROR.
+            persistedFid.insertOrUpdatePersistedFidEntry(
+                persistedFidEntry
+                    .toBuilder()
+                    .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
+                    .build());
+          }
+        });
 
     // Update the listener if awaiting
     if (listener != null) {
@@ -323,11 +361,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .build());
 
     } catch (FirebaseInstallationServiceException exception) {
-      persistedFid.insertOrUpdatePersistedFidEntry(
-          PersistedFidEntry.builder()
-              .setFirebaseInstallationId(persistedFidEntry.getFirebaseInstallationId())
-              .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
-              .build());
       throw new FirebaseInstallationsException(
           exception.getMessage(), FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
