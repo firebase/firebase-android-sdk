@@ -112,7 +112,7 @@ public class FirebaseFirestore {
       @Nullable InternalAuthProvider authProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
-      @Nullable GrpcMetadataProvider metadata) {
+      @Nullable GrpcMetadataProvider metadataProvider) {
     String projectId = app.getOptions().getProjectId();
     if (projectId == null) {
       throw new IllegalArgumentException("FirebaseOptions.getProjectId() cannot be null");
