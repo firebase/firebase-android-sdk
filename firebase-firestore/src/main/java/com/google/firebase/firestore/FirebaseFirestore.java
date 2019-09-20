@@ -80,7 +80,7 @@ public class FirebaseFirestore {
   private final InstanceRegistry instanceRegistry;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
-  private final GrpcMetadataProvider grpcMetadataProvider;
+  private final GrpcMetadataProvider metadataProvider;
 
   @NonNull
   public static FirebaseFirestore getInstance() {
@@ -150,7 +150,7 @@ public class FirebaseFirestore {
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
-      @Nullable GrpcMetadataProvider grpcMetadataProvider) {
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.dataConverter = new UserDataConverter(databaseId);
@@ -160,7 +160,7 @@ public class FirebaseFirestore {
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
-    this.grpcMetadataProvider = grpcMetadataProvider;
+    this.metadataProvider = metadataProvider;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
   }
@@ -209,7 +209,7 @@ public class FirebaseFirestore {
               settings,
               credentialsProvider,
               asyncQueue,
-              grpcMetadataProvider);
+              metadataProvider);
     }
   }
 
