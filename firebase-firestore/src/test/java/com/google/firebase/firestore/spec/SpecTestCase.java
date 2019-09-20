@@ -837,7 +837,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
-  private void validateExpectedSnapshotEvents(@Nullable JSONArray expectedEventsJson) throws JSONException {
+  private void validateExpectedSnapshotEvents(@Nullable JSONArray expectedEventsJson)
+      throws JSONException {
     if (expectedEventsJson == null) {
       for (QueryEvent event : events) {
         fail("Unexpected event: " + event);
@@ -882,11 +883,13 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       }
       if (expectedState.has("writeStreamRequestCount")) {
         assertEquals(
-            expectedState.getInt("writeStreamRequestCount"), datastore.getWriteStreamRequestCount());
+            expectedState.getInt("writeStreamRequestCount"),
+            datastore.getWriteStreamRequestCount());
       }
       if (expectedState.has("watchStreamRequestCount")) {
         assertEquals(
-            expectedState.getInt("watchStreamRequestCount"), datastore.getWatchStreamRequestCount());
+            expectedState.getInt("watchStreamRequestCount"),
+            datastore.getWatchStreamRequestCount());
       }
       if (expectedState.has("limboDocs")) {
         expectedLimboDocs = new HashSet<>();
