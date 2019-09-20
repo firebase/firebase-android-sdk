@@ -220,7 +220,8 @@ public class MockDatastore extends Datastore {
             DatabaseId.forDatabase("project", "database"), "persistenceKey", "host", false),
         workerQueue,
         new EmptyCredentialsProvider(),
-        context);
+        context,
+        null);
     this.serializer = new RemoteSerializer(getDatabaseInfo().getDatabaseId());
   }
 

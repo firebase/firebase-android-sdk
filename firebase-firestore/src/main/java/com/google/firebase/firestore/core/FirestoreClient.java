@@ -49,6 +49,7 @@ import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
 import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.Datastore;
+import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
@@ -76,6 +77,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
+  private final GrpcMetadataProvider metadataProvider;
 
   // LRU-related
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
@@ -85,10 +87,12 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       DatabaseInfo databaseInfo,
       FirebaseFirestoreSettings settings,
       CredentialsProvider credentialsProvider,
-      final AsyncQueue asyncQueue) {
+      final AsyncQueue asyncQueue,
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.credentialsProvider = credentialsProvider;
     this.asyncQueue = asyncQueue;
+    this.metadataProvider = metadataProvider;
 
     TaskCompletionSource<User> firstUser = new TaskCompletionSource<>();
     final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -272,7 +276,8 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       lruScheduler.start();
     }
 
-    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context);
+    Datastore datastore =
+        new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, metadataProvider);
     ConnectivityMonitor connectivityMonitor = new AndroidConnectivityMonitor(context);
     remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue, connectivityMonitor);
 

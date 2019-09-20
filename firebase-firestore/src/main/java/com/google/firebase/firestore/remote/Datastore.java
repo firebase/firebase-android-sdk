@@ -16,6 +16,7 @@ package com.google.firebase.firestore.remote;
 
 import android.content.Context;
 import android.os.Build;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -87,12 +88,15 @@ public class Datastore {
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
       CredentialsProvider credentialsProvider,
-      Context context) {
+      Context context,
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
 
-    channel = new FirestoreChannel(workerQueue, context, credentialsProvider, databaseInfo);
+    channel =
+        new FirestoreChannel(
+            workerQueue, context, credentialsProvider, databaseInfo, metadataProvider);
   }
 
   void shutdown() {

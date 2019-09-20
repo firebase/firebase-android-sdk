@@ -45,7 +45,8 @@ public class RemoteStoreTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             null,
-            ApplicationProvider.getApplicationContext());
+            ApplicationProvider.getApplicationContext(),
+            null);
     Semaphore networkChangeSemaphore = new Semaphore(0);
     RemoteStore.RemoteStoreCallback callback =
         new RemoteStore.RemoteStoreCallback() {

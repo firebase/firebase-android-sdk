@@ -39,6 +39,7 @@ import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
@@ -79,6 +80,7 @@ public class FirebaseFirestore {
   private final InstanceRegistry instanceRegistry;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
+  private final GrpcMetadataProvider metadataProvider;
 
   @NonNull
   public static FirebaseFirestore getInstance() {
@@ -109,7 +111,8 @@ public class FirebaseFirestore {
       @NonNull FirebaseApp app,
       @Nullable InternalAuthProvider authProvider,
       @NonNull String database,
-      @NonNull InstanceRegistry instanceRegistry) {
+      @NonNull InstanceRegistry instanceRegistry,
+      @Nullable GrpcMetadataProvider metadataProvider) {
     String projectId = app.getOptions().getProjectId();
     if (projectId == null) {
       throw new IllegalArgumentException("FirebaseOptions.getProjectId() cannot be null");
@@ -134,7 +137,14 @@ public class FirebaseFirestore {
 
     FirebaseFirestore firestore =
         new FirebaseFirestore(
-            context, databaseId, persistenceKey, provider, queue, app, instanceRegistry);
+            context,
+            databaseId,
+            persistenceKey,
+            provider,
+            queue,
+            app,
+            instanceRegistry,
+            metadataProvider);
     return firestore;
   }
 
@@ -146,7 +156,8 @@ public class FirebaseFirestore {
       CredentialsProvider credentialsProvider,
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
-      InstanceRegistry instanceRegistry) {
+      InstanceRegistry instanceRegistry,
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.dataConverter = new UserDataConverter(databaseId);
@@ -156,6 +167,7 @@ public class FirebaseFirestore {
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
+    this.metadataProvider = metadataProvider;
 
     settings = new FirebaseFirestoreSettings.Builder().build();
   }
@@ -198,7 +210,8 @@ public class FirebaseFirestore {
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
       client =
-          new FirestoreClient(context, databaseInfo, settings, credentialsProvider, asyncQueue);
+          new FirestoreClient(
+              context, databaseInfo, settings, credentialsProvider, asyncQueue, metadataProvider);
     }
   }
 
