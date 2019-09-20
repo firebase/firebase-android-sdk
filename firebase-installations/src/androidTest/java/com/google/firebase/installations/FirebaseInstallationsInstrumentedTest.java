@@ -29,7 +29,7 @@ import static com.google.firebase.installations.FisAndroidTestConstants.TEST_PRO
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_REFRESH_TOKEN;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP_2;
-import static org.junit.Assert.assertTrue;
+import static com.google.firebase.installations.local.PersistedFidEntrySubject.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -49,6 +49,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.local.PersistedFid;
+import com.google.firebase.installations.local.PersistedFid.RegistrationStatus;
 import com.google.firebase.installations.local.PersistedFidEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
@@ -94,7 +95,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .setRefreshToken(TEST_REFRESH_TOKEN)
           .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_1)
           .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-          .setRegistrationStatus(PersistedFid.RegistrationStatus.REGISTERED)
+          .setRegistrationStatus(RegistrationStatus.REGISTERED)
           .build();
 
   private static final PersistedFidEntry EXPIRED_AUTH_TOKEN_ENTRY =
@@ -104,7 +105,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .setRefreshToken(TEST_REFRESH_TOKEN)
           .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_1)
           .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP_2)
-          .setRegistrationStatus(PersistedFid.RegistrationStatus.REGISTERED)
+          .setRegistrationStatus(RegistrationStatus.REGISTERED)
           .build();
 
   private static final PersistedFidEntry UNREGISTERED_FID_ENTRY =
@@ -114,7 +115,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .setRefreshToken("")
           .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_1)
           .setExpiresInSecs(0)
-          .setRegistrationStatus(PersistedFid.RegistrationStatus.UNREGISTERED)
+          .setRegistrationStatus(RegistrationStatus.UNREGISTERED)
           .build();
 
   private static final PersistedFidEntry UPDATED_AUTH_TOKEN_FID_ENTRY =
@@ -124,7 +125,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .setRefreshToken(TEST_REFRESH_TOKEN)
           .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_2)
           .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-          .setRegistrationStatus(PersistedFid.RegistrationStatus.REGISTERED)
+          .setRegistrationStatus(RegistrationStatus.REGISTERED)
           .build();
 
   @Before
@@ -198,20 +199,14 @@ public class FirebaseInstallationsInstrumentedTest {
         .that(Tasks.await(firebaseInstallations.getId()))
         .isNotEmpty();
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(entryValue.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
+    assertThat(entryValue).hasFid(TEST_FID_1);
 
     // Waiting for Task that registers FID on the FIS Servers
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(updatedFidEntry.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
-    assertWithMessage("Registration status doesn't match")
-        .that(updatedFidEntry.getRegistrationStatus())
-        .isEqualTo(PersistedFid.RegistrationStatus.REGISTERED);
+    assertThat(updatedFidEntry).hasFid(TEST_FID_1);
+    assertThat(updatedFidEntry).hasRegistrationStatus(RegistrationStatus.REGISTERED);
   }
 
   @Test
@@ -225,9 +220,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .that(Tasks.await(firebaseInstallations.getId()))
         .isNotEmpty();
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(entryValue.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
+    assertThat(entryValue).hasFid(TEST_FID_1);
 
     Tasks.await(firebaseInstallations.getId());
 
@@ -235,12 +228,8 @@ public class FirebaseInstallationsInstrumentedTest {
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(updatedFidEntry.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
-    assertWithMessage("Registration status doesn't match")
-        .that(updatedFidEntry.getRegistrationStatus())
-        .isEqualTo(PersistedFid.RegistrationStatus.REGISTERED);
+    assertThat(updatedFidEntry).hasFid(TEST_FID_1);
+    assertThat(updatedFidEntry).hasRegistrationStatus(RegistrationStatus.REGISTERED);
   }
 
   @Test
@@ -252,20 +241,14 @@ public class FirebaseInstallationsInstrumentedTest {
     Tasks.await(firebaseInstallations.getId());
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(entryValue.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
+    assertThat(entryValue).hasFid(TEST_FID_1);
 
     // Waiting for Task that registers FID on the FIS Servers
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(updatedFidEntry.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
-    assertWithMessage("Registration Fid doesn't match")
-        .that(updatedFidEntry.getRegistrationStatus())
-        .isEqualTo(PersistedFid.RegistrationStatus.REGISTER_ERROR);
+    assertThat(updatedFidEntry).hasFid(TEST_FID_1);
+    assertThat(updatedFidEntry).hasRegistrationStatus(RegistrationStatus.REGISTER_ERROR);
   }
 
   @Test
@@ -284,20 +267,16 @@ public class FirebaseInstallationsInstrumentedTest {
     Tasks.await(firebaseInstallations.getId());
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(entryValue.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
-    assertTrue(" Fid Registration Status doesn't match", entryValue.isPending());
+    assertThat(entryValue).hasFid(TEST_FID_1);
+    assertThat(entryValue).hasRegistrationStatus(RegistrationStatus.PENDING);
 
     // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(1000, TimeUnit.MILLISECONDS);
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // Validate that registration status is REGISTER_ERROR
     PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(updatedFidEntry.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
-    assertTrue(" Fid Registration Status doesn't match", updatedFidEntry.isErrored());
+    assertThat(updatedFidEntry).hasFid(TEST_FID_1);
+    assertThat(updatedFidEntry).hasRegistrationStatus(RegistrationStatus.REGISTER_ERROR);
   }
 
   @Test
@@ -319,20 +298,16 @@ public class FirebaseInstallationsInstrumentedTest {
         .that(Tasks.await(firebaseInstallations.getId()))
         .isNotEmpty();
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(entryValue.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
-    assertTrue(" Fid Registration Status doesn't match", entryValue.isPending());
+    assertThat(entryValue).hasFid(TEST_FID_1);
+    assertThat(entryValue).hasRegistrationStatus(RegistrationStatus.PENDING);
 
     // Waiting for Task that generates auth token with the FIS Servers
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // Validate that registration status is REGISTER_ERROR
     PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(updatedFidEntry.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
-    assertTrue(" Fid Registration Status doesn't match", updatedFidEntry.isErrored());
+    assertThat(updatedFidEntry).hasFid(TEST_FID_1);
+    assertThat(updatedFidEntry).hasRegistrationStatus(RegistrationStatus.REGISTER_ERROR);
   }
 
   @Test
@@ -373,9 +348,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .that(Tasks.await(firebaseInstallations.getId()))
         .isNotEmpty();
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid doesn't match")
-        .that(entryValue.getFirebaseInstallationId())
-        .isEqualTo(TEST_FID_1);
+    assertThat(entryValue).hasFid(TEST_FID_1);
 
     // Waiting for Task that generates auth token with the FIS Servers
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
@@ -400,9 +373,7 @@ public class FirebaseInstallationsInstrumentedTest {
     Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Auth Token doesn't match")
-        .that(entryValue.getAuthToken())
-        .isEqualTo(TEST_AUTH_TOKEN);
+    assertThat(entryValue).hasAuthToken(TEST_AUTH_TOKEN);
   }
 
   @Test
@@ -604,9 +575,7 @@ public class FirebaseInstallationsInstrumentedTest {
     Tasks.await(firebaseInstallations.delete());
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid Entry is not null.")
-        .that(entryValue)
-        .isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
+    assertThat(entryValue).isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
     verify(backendClientReturnsOk, times(1))
         .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
@@ -622,9 +591,7 @@ public class FirebaseInstallationsInstrumentedTest {
     Tasks.await(firebaseInstallations.delete());
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid Entry is not null.")
-        .that(entryValue)
-        .isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
+    assertThat(entryValue).isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
     verify(backendClientReturnsOk, never())
         .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
@@ -638,9 +605,7 @@ public class FirebaseInstallationsInstrumentedTest {
     Tasks.await(firebaseInstallations.delete());
 
     PersistedFidEntry entryValue = persistedFid.readPersistedFidEntryValue();
-    assertWithMessage("Persisted Fid Entry is not null.")
-        .that(entryValue)
-        .isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
+    assertThat(entryValue).isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
     verify(backendClientReturnsOk, never())
         .deleteFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
