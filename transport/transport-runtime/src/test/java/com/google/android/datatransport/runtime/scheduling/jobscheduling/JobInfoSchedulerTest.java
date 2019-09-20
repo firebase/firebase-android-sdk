@@ -26,6 +26,7 @@ import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
+import java.nio.charset.Charset;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -140,13 +141,17 @@ public class JobInfoSchedulerTest {
   public void schedule_whenExtrasEvailable_transmitsExtras() {
     String extras = "e1";
     TransportContext transportContext =
-        TransportContext.builder().setBackendName("backend1").setExtras(extras.getBytes()).build();
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras(extras.getBytes(Charset.defaultCharset()))
+            .build();
     store.recordNextCallTime(transportContext, 1000000);
     scheduler.schedule(transportContext, 1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
     PersistableBundle bundle = jobInfo.getExtras();
     assertThat(bundle.get(JobInfoScheduler.EXTRAS))
-        .isEqualTo(Base64.encodeToString(extras.getBytes(), Base64.DEFAULT));
+        .isEqualTo(
+            Base64.encodeToString(extras.getBytes(Charset.defaultCharset()), Base64.DEFAULT));
   }
 
   @Test
@@ -154,9 +159,15 @@ public class JobInfoSchedulerTest {
     String extras1 = "e1";
     String extras2 = "e2";
     TransportContext ctx1 =
-        TransportContext.builder().setBackendName("backend1").setExtras(extras1.getBytes()).build();
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras(extras1.getBytes(Charset.defaultCharset()))
+            .build();
     TransportContext ctx2 =
-        TransportContext.builder().setBackendName("backend1").setExtras(extras2.getBytes()).build();
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras(extras2.getBytes(Charset.defaultCharset()))
+            .build();
 
     store.recordNextCallTime(ctx1, 1000000);
     store.recordNextCallTime(ctx2, 1000000);
@@ -166,12 +177,14 @@ public class JobInfoSchedulerTest {
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
     PersistableBundle bundle = jobInfo.getExtras();
     assertThat(bundle.get(JobInfoScheduler.EXTRAS))
-        .isEqualTo(Base64.encodeToString(extras1.getBytes(), Base64.DEFAULT));
+        .isEqualTo(
+            Base64.encodeToString(extras1.getBytes(Charset.defaultCharset()), Base64.DEFAULT));
 
     jobInfo = jobScheduler.getAllPendingJobs().get(1);
     bundle = jobInfo.getExtras();
     assertThat(bundle.get(JobInfoScheduler.EXTRAS))
-        .isEqualTo(Base64.encodeToString(extras2.getBytes(), Base64.DEFAULT));
+        .isEqualTo(
+            Base64.encodeToString(extras2.getBytes(Charset.defaultCharset()), Base64.DEFAULT));
   }
 
   @Test

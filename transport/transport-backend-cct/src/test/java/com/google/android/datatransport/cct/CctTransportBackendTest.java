@@ -44,6 +44,7 @@ import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.protobuf.ByteString;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.zip.GZIPOutputStream;
 import org.junit.Rule;
@@ -60,7 +61,8 @@ public class CctTransportBackendTest {
 
   private static final long INITIAL_WALL_TIME = 200L;
   private static final long INITIAL_UPTIME = 10L;
-  private static final ByteString PAYLOAD = ByteString.copyFrom("TelemetryData".getBytes());
+  private static final ByteString PAYLOAD =
+      ByteString.copyFrom("TelemetryData".getBytes(Charset.defaultCharset()));
   private static final int CODE = 5;
 
   private static final PredicateMatcher<Request, BatchedLogRequest> batchRequestMatcher =
