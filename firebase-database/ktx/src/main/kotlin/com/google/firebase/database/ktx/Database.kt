@@ -46,8 +46,7 @@ FirebaseDatabase.getInstance(app, url)
  * use the type `T`, and not `? extends T`.
  */
 inline fun <reified T> DataSnapshot.getValue(): T? {
-    val genericTypeIndicator = object : GenericTypeIndicator<T>() {}
-    return getValue(genericTypeIndicator)
+    return getValue(object : GenericTypeIndicator<T>() {})
 }
 
 internal const val LIBRARY_NAME: String = "fire-db-ktx"
