@@ -21,7 +21,7 @@ import com.google.firebase.platforminfo.UserAgentPublisher;
 import io.grpc.Metadata;
 
 /**
- * Class provides an implementation of the GrpcMetadataProvider interface.
+ * Provides an implementation of the GrpcMetadataProvider interface.
  *
  * <p>This updates the metadata with platformInfo string and the heartBeatInfo code.
  */
