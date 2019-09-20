@@ -38,6 +38,7 @@ import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkSch
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.UUID;
 import org.junit.Before;
@@ -98,7 +99,7 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes("UTF-8"))
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(2))
