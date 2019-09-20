@@ -38,17 +38,17 @@ class FirestoreMultiDbComponent
   private final FirebaseApp app;
   private final Context context;
   private final InternalAuthProvider authProvider;
-  private final GrpcMetadataProvider metadata;
+  private final GrpcMetadataProvider metadataProvider;
 
   FirestoreMultiDbComponent(
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @Nullable InternalAuthProvider authProvider,
-      @Nullable GrpcMetadataProvider metadata) {
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = context;
     this.app = app;
     this.authProvider = authProvider;
-    this.metadata = metadata;
+    this.metadataProvider = metadataProvider;
     this.app.addLifecycleEventListener(this);
   }
 
@@ -58,7 +58,8 @@ class FirestoreMultiDbComponent
     FirebaseFirestore firestore = instances.get(databaseId);
     if (firestore == null) {
       firestore =
-          FirebaseFirestore.newInstance(context, app, authProvider, databaseId, this, metadata);
+          FirebaseFirestore.newInstance(
+              context, app, authProvider, databaseId, this, metadataProvider);
       instances.put(databaseId, firestore);
     }
     return firestore;

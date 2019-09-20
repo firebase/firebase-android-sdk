@@ -89,14 +89,14 @@ public class Datastore {
       AsyncQueue workerQueue,
       CredentialsProvider credentialsProvider,
       Context context,
-      @Nullable GrpcMetadataProvider grpcMetadataProvider) {
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
 
     channel =
         new FirestoreChannel(
-            workerQueue, context, credentialsProvider, databaseInfo, grpcMetadataProvider);
+            workerQueue, context, credentialsProvider, databaseInfo, metadataProvider);
   }
 
   void shutdown() {

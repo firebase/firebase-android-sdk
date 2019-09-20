@@ -77,7 +77,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
-  private final GrpcMetadataProvider metadata;
+  private final GrpcMetadataProvider metadataProvider;
 
   // LRU-related
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
@@ -88,11 +88,11 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       FirebaseFirestoreSettings settings,
       CredentialsProvider credentialsProvider,
       final AsyncQueue asyncQueue,
-      @Nullable GrpcMetadataProvider metadata) {
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.credentialsProvider = credentialsProvider;
     this.asyncQueue = asyncQueue;
-    this.metadata = metadata;
+    this.metadataProvider = metadataProvider;
 
     TaskCompletionSource<User> firstUser = new TaskCompletionSource<>();
     final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -277,7 +277,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     }
 
     Datastore datastore =
-        new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, metadata);
+        new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, metadataProvider);
     ConnectivityMonitor connectivityMonitor = new AndroidConnectivityMonitor(context);
     remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue, connectivityMonitor);
 

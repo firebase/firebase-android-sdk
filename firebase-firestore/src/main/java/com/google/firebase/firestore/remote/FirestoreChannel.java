@@ -64,16 +64,16 @@ class FirestoreChannel {
   /** The value to use as resource prefix header. */
   private final String resourcePrefixValue;
 
-  private final GrpcMetadataProvider grpcMetadataProvider;
+  private final GrpcMetadataProvider metadataProvider;
 
   FirestoreChannel(
       AsyncQueue asyncQueue,
       Context context,
       CredentialsProvider credentialsProvider,
       DatabaseInfo databaseInfo,
-      GrpcMetadataProvider metadata) {
+      GrpcMetadataProvider metadataProvider) {
     this.asyncQueue = asyncQueue;
-    this.grpcMetadataProvider = metadata;
+    this.metadataProvider = metadataProvider;
     this.credentialsProvider = credentialsProvider;
 
     FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(credentialsProvider);
@@ -287,8 +287,8 @@ class FirestoreChannel {
     headers.put(X_GOOG_API_CLIENT_HEADER, X_GOOG_API_CLIENT_VALUE);
     // This header is used to improve routing and project isolation by the backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
-    if (grpcMetadataProvider != null) {
-      grpcMetadataProvider.updateMetadata(headers);
+    if (metadataProvider != null) {
+      metadataProvider.updateMetadata(headers);
     }
     return headers;
   }
