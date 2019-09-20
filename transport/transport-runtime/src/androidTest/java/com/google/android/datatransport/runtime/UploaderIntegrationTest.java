@@ -136,7 +136,7 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes("UTF-8"))
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1))
@@ -168,7 +168,7 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes("UTF-8"))
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1))
@@ -200,7 +200,7 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes("UTF-8"))
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     verify(spyScheduler, times(1)).schedule(any(), eq(2));
