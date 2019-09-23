@@ -28,5 +28,13 @@ public interface Transport<T> {
    * @param event The event with the payload that needs to be sent.
    * @return {@link Task} representing the event persistence.
    */
-  Task<Void> send(Event<T> event);
+  void send(Event<T> event);
+
+  /**
+   * Sends the event of type T.
+   *
+   * @param event The event with the payload that needs to be sent.
+   * @return {@link Task} representing the event persistence.
+   */
+  Task<Void> schedule(Event<T> event);
 }

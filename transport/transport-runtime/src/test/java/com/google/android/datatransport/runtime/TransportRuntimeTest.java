@@ -73,7 +73,7 @@ public class TransportRuntimeTest {
     Event<String> event = Event.ofTelemetry("TelemetryData");
     Transformer<String, byte[]> transformer = String::getBytes;
     Transport<String> transport = factory.getTransport(testTransport, String.class, transformer);
-    transport.send(event);
+    transport.schedule(event);
     SendRequest request =
         SendRequest.builder()
             .setTransportContext(transportContext)
@@ -121,7 +121,7 @@ public class TransportRuntimeTest {
             .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .setCode(12)
             .build();
-    Task<Void> task = transport.send(stringEvent);
+    Task<Void> task = transport.schedule(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
     verify(mockBackend, times(1))
         .send(
@@ -156,7 +156,7 @@ public class TransportRuntimeTest {
         factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
 
-    Task<Void> task = transport.send(stringEvent);
+    Task<Void> task = transport.schedule(stringEvent);
     assertThat(task.isSuccessful()).isFalse();
     assertThat(task.getException()).isInstanceOf(IllegalArgumentException.class);
   }
@@ -200,7 +200,7 @@ public class TransportRuntimeTest {
             .setPayload("TelemetryData".getBytes())
             .setCode(12)
             .build();
-    Task<Void> task = transport.send(stringEvent);
+    Task<Void> task = transport.schedule(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
     verify(mockEventStore, times(1)).persist(any(TransportContext.class), any(EventInternal.class));
     verify(mockBackend, never()).send(any(BackendRequest.class));
@@ -232,7 +232,7 @@ public class TransportRuntimeTest {
         factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
 
-    Task<Void> task = transport.send(stringEvent);
+    Task<Void> task = transport.schedule(stringEvent);
     assertThat(task.isSuccessful()).isFalse();
     assertThat(task.getException()).isInstanceOf(IllegalArgumentException.class);
   }

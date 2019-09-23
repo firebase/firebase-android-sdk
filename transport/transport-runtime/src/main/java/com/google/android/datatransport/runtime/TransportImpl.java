@@ -37,7 +37,12 @@ final class TransportImpl<T> implements Transport<T> {
   }
 
   @Override
-  public Task<Void> send(Event<T> event) {
+  public void send(Event<T> event) {
+    schedule(event);
+  }
+
+  @Override
+  public Task<Void> schedule(Event<T> event) {
     return transportInternal.send(
         SendRequest.builder()
             .setTransportContext(transportContext)
