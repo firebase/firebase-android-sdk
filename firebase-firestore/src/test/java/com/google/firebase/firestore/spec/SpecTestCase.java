@@ -837,8 +837,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
-  private void validateStepExpectations(@Nullable JSONArray stepExpectations) throws JSONException {
-    if (stepExpectations == null) {
+  private void validateExpectedSnapshotEvents(@Nullable JSONArray expectedEventsJson)
+      throws JSONException {
+    if (expectedEventsJson == null) {
       for (QueryEvent event : events) {
         fail("Unexpected event: " + event);
       }
@@ -849,8 +850,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     events.sort((q1, q2) -> q1.query.getCanonicalId().compareTo(q2.query.getCanonicalId()));
 
     List<JSONObject> expectedEvents = new ArrayList<>();
-    for (int i = 0; i < stepExpectations.length(); ++i) {
-      expectedEvents.add(stepExpectations.getJSONObject(i));
+    for (int i = 0; i < expectedEventsJson.length(); ++i) {
+      expectedEvents.add(expectedEventsJson.getJSONObject(i));
     }
     expectedEvents.sort(
         (left, right) -> {
@@ -867,37 +868,39 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     for (; i < expectedEvents.size() && i < events.size(); ++i) {
       assertEventMatches(expectedEvents.get(i), events.get(i));
     }
-    for (; i < stepExpectations.length(); ++i) {
-      fail("Missing event: " + stepExpectations.get(i));
+    for (; i < expectedEventsJson.length(); ++i) {
+      fail("Missing event: " + expectedEventsJson.get(i));
     }
     for (; i < events.size(); ++i) {
       fail("Unexpected event: " + events.get(i));
     }
   }
 
-  private void validateStateExpectations(@Nullable JSONObject expected) throws JSONException {
-    if (expected != null) {
-      if (expected.has("numOutstandingWrites")) {
-        assertEquals(expected.getInt("numOutstandingWrites"), writesSent());
+  private void validateExpectedState(@Nullable JSONObject expectedState) throws JSONException {
+    if (expectedState != null) {
+      if (expectedState.has("numOutstandingWrites")) {
+        assertEquals(expectedState.getInt("numOutstandingWrites"), writesSent());
       }
-      if (expected.has("writeStreamRequestCount")) {
+      if (expectedState.has("writeStreamRequestCount")) {
         assertEquals(
-            expected.getInt("writeStreamRequestCount"), datastore.getWriteStreamRequestCount());
+            expectedState.getInt("writeStreamRequestCount"),
+            datastore.getWriteStreamRequestCount());
       }
-      if (expected.has("watchStreamRequestCount")) {
+      if (expectedState.has("watchStreamRequestCount")) {
         assertEquals(
-            expected.getInt("watchStreamRequestCount"), datastore.getWatchStreamRequestCount());
+            expectedState.getInt("watchStreamRequestCount"),
+            datastore.getWatchStreamRequestCount());
       }
-      if (expected.has("limboDocs")) {
+      if (expectedState.has("limboDocs")) {
         expectedLimboDocs = new HashSet<>();
-        JSONArray limboDocs = expected.getJSONArray("limboDocs");
+        JSONArray limboDocs = expectedState.getJSONArray("limboDocs");
         for (int i = 0; i < limboDocs.length(); i++) {
           expectedLimboDocs.add(key((String) limboDocs.get(i)));
         }
       }
-      if (expected.has("activeTargets")) {
+      if (expectedState.has("activeTargets")) {
         expectedActiveTargets = new HashMap<>();
-        JSONObject activeTargets = expected.getJSONObject("activeTargets");
+        JSONObject activeTargets = expectedState.getJSONObject("activeTargets");
         Iterator<String> keys = activeTargets.keys();
         while (keys.hasNext()) {
           String targetIdString = keys.next();
@@ -918,7 +921,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
 
     // Always validate the we received the expected number of events.
-    validateUserCallbacks(expected);
+    validateUserCallbacks(expectedState);
     // Always validate that the expected limbo docs match the actual limbo docs.
     validateLimboDocs();
     // Always validate that the expected active targets match the actual active targets.
@@ -1030,11 +1033,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         if (expectedSnapshotEvents != null) {
           log("      Validating expected snapshot events " + expectedSnapshotEvents);
         }
-        validateStepExpectations(expectedSnapshotEvents);
+        validateExpectedSnapshotEvents(expectedSnapshotEvents);
         if (expectedState != null) {
           log("      Validating state expectations " + expectedState);
         }
-        validateStateExpectations(expectedState);
+        validateExpectedState(expectedState);
         validateSnapshotsInSyncEvents(expectedSnapshotsInSyncEvents);
         events.clear();
         acknowledgedDocs.clear();
