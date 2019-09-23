@@ -25,16 +25,22 @@ public interface Transport<T> {
   /**
    * Sends the event of type T.
    *
+   * <p>The event may not be send immediately. It's up to the implementation to define the time
+   * when events are actually send.
+   *
    * @param event The event with the payload that needs to be sent.
-   * @return {@link Task} representing the event persistence.
    */
   void send(Event<T> event);
 
   /**
-   * Sends the event of type T.
+   * Schedules sending the event of type T.
+   *
+   * <p>The returned {@code Task} tracks the process of persisting the event to permanent storage
+   * to ensure it will be scheduled to be send at a later time. It's up to the implementation to
+   * define the time when scheduled events are actually send.
    *
    * @param event The event with the payload that needs to be sent.
-   * @return {@link Task} representing the event persistence.
+   * @return {@link Task} representing the event scheduling.
    */
   Task<Void> schedule(Event<T> event);
 }
