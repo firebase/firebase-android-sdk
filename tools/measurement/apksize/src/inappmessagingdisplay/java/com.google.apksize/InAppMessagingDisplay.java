@@ -16,16 +16,22 @@ package com.google.apksize;
 
 import android.app.Activity;
 import android.content.Context;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
 import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay;
+import com.google.firebase.inappmessaging.model.Action;
+import com.google.firebase.inappmessaging.model.CampaignMetadata;
 import com.google.firebase.inappmessaging.model.InAppMessage;
+import com.google.firebase.inappmessaging.model.ModalMessage;
+import com.google.firebase.inappmessaging.model.Text;
 
 public class InAppMessagingDisplay implements SampleCode {
   private static final String SAMPLE_TEXT = "My sample text";
   private static final String ACTION_URL = "https://www.example.com";
   private static final String CAMPAIGN_ID = "my_campaign";
+  private static final String CAMPAIGN_NAME = "my_campaign_name";
   private static final String TITLE = "Title";
 
   public static class DisplayCallback implements FirebaseInAppMessagingDisplayCallbacks {
@@ -40,25 +46,25 @@ public class InAppMessagingDisplay implements SampleCode {
     }
 
     @Override
-    public Task<Void> messageClicked() {
+    public Task<Void> displayErrorEncountered(InAppMessagingErrorReason inAppMessagingErrorReason) {
       return new TaskCompletionSource<Void>().getTask();
     }
 
     @Override
-    public Task<Void> displayErrorEncountered(InAppMessagingErrorReason InAppMessagingErrorReason) {
+    public Task<Void> messageClicked(@NonNull Action action) {
       return new TaskCompletionSource<Void>().getTask();
     }
   }
 
   @Override
   public void runSample(Context context) {
+    CampaignMetadata metadata = new CampaignMetadata(CAMPAIGN_ID, CAMPAIGN_NAME, true);
     InAppMessage message =
-        InAppMessage.builder()
-            .setBody(InAppMessage.Text.builder().setText(SAMPLE_TEXT).build())
-            .setAction(InAppMessage.Action.builder().setActionUrl(ACTION_URL).build())
-            .setCampaignId(CAMPAIGN_ID)
-            .setTitle(InAppMessage.Text.builder().setText(TITLE).build())
-            .build();
+        ModalMessage.builder()
+            .setBody(Text.builder().setText(SAMPLE_TEXT).build())
+            .setAction(Action.builder().setActionUrl(ACTION_URL).build())
+            .setTitle(Text.builder().setText(TITLE).build())
+            .build(metadata);
 
     // NOTE: Context is *not guaranteed* to be an Activity. This is **fine** in this case because we
     // only want to compile the APK to measure it size, and it will not be run.

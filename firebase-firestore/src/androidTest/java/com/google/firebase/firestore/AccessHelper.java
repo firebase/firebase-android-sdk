@@ -40,7 +40,8 @@ public final class AccessHelper {
         credentialsProvider,
         asyncQueue,
         firebaseApp,
-        instanceRegistry);
+        instanceRegistry,
+        null);
   }
 
   public static AsyncQueue getAsyncQueue(FirebaseFirestore firestore) {

@@ -41,26 +41,23 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
-  private final StatsCollector statsCollector;
 
-  SQLiteRemoteDocumentCache(
-      SQLitePersistence persistence, LocalSerializer serializer, StatsCollector statsCollector) {
+  SQLiteRemoteDocumentCache(SQLitePersistence persistence, LocalSerializer serializer) {
     this.db = persistence;
     this.serializer = serializer;
-    this.statsCollector = statsCollector;
   }
 
   @Override
   public void add(MaybeDocument maybeDocument, SnapshotVersion readTime) {
-    hardAssert(
-        !readTime.equals(SnapshotVersion.NONE),
-        "Cannot add document to the RemoteDocumentCache with a read time of zero");
+    // TODO(index-free): This assert causes a crash for one of our customers. Re-add the assert once
+    // we have fixed the root cause and cleaned up the underlying data.
+    //    hardAssert(
+    //        !readTime.equals(SnapshotVersion.NONE),
+    //        "Cannot add document to the RemoteDocumentCache with a read time of zero");
 
     String path = pathForKey(maybeDocument.getKey());
     Timestamp timestamp = readTime.getTimestamp();
     MessageLite message = serializer.encodeMaybeDocument(maybeDocument);
-
-    statsCollector.recordRowsWritten(STATS_TAG, 1);
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents "
@@ -78,8 +75,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   public void remove(DocumentKey documentKey) {
     String path = pathForKey(documentKey);
 
-    statsCollector.recordRowsDeleted(STATS_TAG, 1);
-
     db.execute("DELETE FROM remote_documents WHERE path = ?", path);
   }
 
@@ -87,8 +82,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public MaybeDocument get(DocumentKey documentKey) {
     String path = pathForKey(documentKey);
-
-    statsCollector.recordRowsRead(STATS_TAG, 1);
 
     return db.query("SELECT contents FROM remote_documents WHERE path = ?")
         .binding(path)
@@ -116,20 +109,15 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             args,
             ") ORDER BY path");
 
-    int rowsProcessed = 0;
-
     while (longQuery.hasMoreSubqueries()) {
-      rowsProcessed +=
-          longQuery
-              .performNextSubquery()
-              .forEach(
-                  row -> {
-                    MaybeDocument decoded = decodeMaybeDocument(row.getBlob(0));
-                    results.put(decoded.getKey(), decoded);
-                  });
+      longQuery
+          .performNextSubquery()
+          .forEach(
+              row -> {
+                MaybeDocument decoded = decodeMaybeDocument(row.getBlob(0));
+                results.put(decoded.getKey(), decoded);
+              });
     }
-
-    statsCollector.recordRowsRead(STATS_TAG, rowsProcessed);
 
     return results;
   }
@@ -175,41 +163,37 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
                   readTime.getSeconds(),
                   readTime.getNanoseconds());
     }
+    sqlQuery.forEach(
+        row -> {
+          // TODO: Actually implement a single-collection query
+          //
+          // The query is actually returning any path that starts with the query path prefix
+          // which may include documents in subcollections. For example, a query on 'rooms'
+          // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
+          // discarding rows with document keys more than one segment longer than the query
+          // path.
+          ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+          if (path.length() != immediateChildrenPathLength) {
+            return;
+          }
 
-    int rowsProcessed =
-        sqlQuery.forEach(
-            row -> {
-              // TODO: Actually implement a single-collection query
-              //
-              // The query is actually returning any path that starts with the query path prefix
-              // which may include documents in subcollections. For example, a query on 'rooms'
-              // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
-              // discarding rows with document keys more than one segment longer than the query
-              // path.
-              ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
-              if (path.length() != immediateChildrenPathLength) {
-                return;
-              }
+          byte[] rawDocument = row.getBlob(1);
 
-              byte[] rawDocument = row.getBlob(1);
+          // Since scheduling background tasks incurs overhead, we only dispatch to a
+          // background thread if there are still some documents remaining.
+          Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
+          executor.execute(
+              () -> {
+                MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
 
-              // Since scheduling background tasks incurs overhead, we only dispatch to a
-              // background thread if there are still some documents remaining.
-              Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
-              executor.execute(
-                  () -> {
-                    MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
-
-                    if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
-                      synchronized (SQLiteRemoteDocumentCache.this) {
-                        matchingDocuments[0] =
-                            matchingDocuments[0].insert(maybeDoc.getKey(), (Document) maybeDoc);
-                      }
-                    }
-                  });
-            });
-
-    statsCollector.recordRowsRead(STATS_TAG, rowsProcessed);
+                if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
+                  synchronized (SQLiteRemoteDocumentCache.this) {
+                    matchingDocuments[0] =
+                        matchingDocuments[0].insert(maybeDoc.getKey(), (Document) maybeDoc);
+                  }
+                }
+              });
+        });
 
     try {
       backgroundQueue.drain();

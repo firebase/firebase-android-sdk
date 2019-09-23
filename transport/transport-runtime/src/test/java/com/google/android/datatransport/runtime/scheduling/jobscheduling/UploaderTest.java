@@ -31,6 +31,7 @@ import com.google.android.datatransport.runtime.scheduling.persistence.EventStor
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
+import java.nio.charset.Charset;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,7 +58,7 @@ public class UploaderTest {
           .setTransportName("42")
           .setEventMillis(1)
           .setUptimeMillis(2)
-          .setPayload("Hello".getBytes())
+          .setPayload("Hello".getBytes(Charset.defaultCharset()))
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();

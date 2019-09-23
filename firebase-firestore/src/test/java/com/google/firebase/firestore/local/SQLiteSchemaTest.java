@@ -506,14 +506,9 @@ public class SQLiteSchemaTest {
     DatabaseId databaseId = DatabaseId.forProject("foo");
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     SQLitePersistence persistence =
-        new SQLitePersistence(
-            serializer,
-            StatsCollector.NO_OP_STATS_COLLECTOR,
-            LruGarbageCollector.Params.Default(),
-            opener);
+        new SQLitePersistence(serializer, LruGarbageCollector.Params.Default(), opener);
     persistence.start();
-    return new SQLiteRemoteDocumentCache(
-        persistence, serializer, StatsCollector.NO_OP_STATS_COLLECTOR);
+    return new SQLiteRemoteDocumentCache(persistence, serializer);
   }
 
   private byte[] createDummyDocument(String name) {
