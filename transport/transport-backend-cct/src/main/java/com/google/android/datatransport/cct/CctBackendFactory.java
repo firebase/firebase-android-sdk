@@ -26,7 +26,7 @@ public class CctBackendFactory implements BackendFactory {
 
   static final String LFLG_URL =
       StringMerger.mergeStrings(
-          "hts/frbslgigp.ogepscmv/ieo/eaylg", "tp:/ieaeogn-agolai.o/1frlglgc/o");
+          "hts/frbslgigp.ogepscmv/ieo/eaybtho", "tp:/ieaeogn-agolai.o/1frlglgc/aclg");
 
   @Override
   public TransportBackend create(CreationContext creationContext) {
