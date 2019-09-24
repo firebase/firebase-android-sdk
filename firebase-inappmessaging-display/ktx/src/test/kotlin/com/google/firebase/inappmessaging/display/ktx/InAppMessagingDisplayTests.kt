@@ -70,30 +70,7 @@ class InAppMessagingDisplayTests : BaseTestCase() {
     fun `inAppMessagingDisplay should delegate to FirebaseInAppMessagingDisplay#getInstance()`() {
         assertThat(Firebase.inAppMessagingDisplay).isSameInstanceAs(FirebaseInAppMessagingDisplay.getInstance())
     }
-//
-//    @Test
-//    fun `FirebaseApp#functions should delegate to FirebaseFunctions#getInstance(FirebaseApp)`() {
-//        Firebase.inAppMessagingDisplay addClickListener(object : FirebaseInAppMessagingClickListener() {
-//            override fun messageClicked(inAppMessage: InAppMessage, action: Action) {
-//                println(action.actionUrl)
-//            }
-//        })
-//
-//        assertThat(Firebase.inAppMessagingDisplay).isSameInstanceAs(FirebaseInAppMessagingDisplay.getInstance())
-//    }
 
-    // @Test
-    // fun `Firebase#functions should delegate to FirebaseFunctions#getInstance(region)`() {
-    //     val region = "valid_region"
-    //     assertThat(Firebase.functions(region)).isSameInstanceAs(FirebaseFunctions.getInstance(region))
-    // }
-
-    // @Test
-    // fun `Firebase#functions should delegate to FirebaseFunctions#getInstance(FirebaseApp, region)`() {
-    //     val app = Firebase.app(EXISTING_APP)
-    //     val region = "valid_region"
-    //     assertThat(Firebase.functions(app, region)).isSameInstanceAs(FirebaseFunctions.getInstance(app, region))
-    // }
 }
 
 @RunWith(RobolectricTestRunner::class)
