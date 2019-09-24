@@ -14,6 +14,8 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.*;
+import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.android.datatransport.Priority;
@@ -22,6 +24,7 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Test;
@@ -40,7 +43,7 @@ public class SQLiteEventStoreTest {
           .setTransportName("42")
           .setEventMillis(1)
           .setUptimeMillis(2)
-          .setPayload("Hello".getBytes())
+          .setPayload("Hello".getBytes(Charset.defaultCharset()))
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();
@@ -53,7 +56,11 @@ public class SQLiteEventStoreTest {
   private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG);
 
   private static SQLiteEventStore newStoreWithConfig(Clock clock, EventStoreConfig config) {
-    return new SQLiteEventStore(RuntimeEnvironment.application, clock, new UptimeClock(), config);
+    return new SQLiteEventStore(
+        clock,
+        new UptimeClock(),
+        config,
+        new SchemaManager(RuntimeEnvironment.application, SCHEMA_VERSION));
   }
 
   @Test
@@ -67,14 +74,84 @@ public class SQLiteEventStoreTest {
 
   @Test
   public void persist_withEventsOfDifferentPriority_shouldEndBeStoredUnderDifferentContexts() {
-    TransportContext ctx1 = TRANSPORT_CONTEXT;
-    TransportContext ctx2 = TRANSPORT_CONTEXT.withPriority(Priority.VERY_LOW);
+    TransportContext ctx1 =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
+    TransportContext ctx2 =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .setPriority(Priority.VERY_LOW)
+            .build();
 
     EventInternal event1 = EVENT;
-    EventInternal event2 = EVENT.toBuilder().setPayload("World".getBytes()).build();
+    EventInternal event2 =
+        EVENT.toBuilder().setPayload("World".getBytes(Charset.defaultCharset())).build();
 
     PersistedEvent newEvent1 = store.persist(ctx1, event1);
     PersistedEvent newEvent2 = store.persist(ctx2, event2);
+
+    assertThat(store.loadBatch(ctx1)).containsExactly(newEvent1);
+    assertThat(store.loadBatch(ctx2)).containsExactly(newEvent2);
+  }
+
+  @Test
+  public void persist_withEventsOfDifferentExtras_shouldEndBeStoredUnderDifferentContexts() {
+    TransportContext ctx1 =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
+    TransportContext ctx2 =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e2".getBytes(Charset.defaultCharset()))
+            .build();
+
+    EventInternal event1 = EVENT;
+    EventInternal event2 =
+        EVENT.toBuilder().setPayload("World".getBytes(Charset.defaultCharset())).build();
+
+    PersistedEvent newEvent1 = store.persist(ctx1, event1);
+    PersistedEvent newEvent2 = store.persist(ctx2, event2);
+
+    assertThat(store.loadBatch(ctx1)).containsExactly(newEvent1);
+    assertThat(store.loadBatch(ctx2)).containsExactly(newEvent2);
+  }
+
+  @Test
+  public void persist_withEventsOfSameExtras_shouldEndBeStoredUnderSameContexts() {
+    TransportContext ctx1 =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
+    TransportContext ctx2 =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
+
+    PersistedEvent newEvent1 = store.persist(ctx1, EVENT);
+    PersistedEvent newEvent2 = store.persist(ctx2, EVENT);
+
+    assertThat(store.loadBatch(ctx2)).containsExactly(newEvent1, newEvent2);
+  }
+
+  @Test
+  public void persist_sameBackendswithDifferentExtras_shouldEndBeStoredUnderDifferentContexts() {
+    TransportContext ctx1 =
+        TransportContext.builder().setBackendName("backend1").setExtras(null).build();
+    TransportContext ctx2 =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
+
+    PersistedEvent newEvent1 = store.persist(ctx1, EVENT);
+    PersistedEvent newEvent2 = store.persist(ctx2, EVENT);
 
     assertThat(store.loadBatch(ctx1)).containsExactly(newEvent1);
     assertThat(store.loadBatch(ctx2)).containsExactly(newEvent2);
@@ -211,5 +288,43 @@ public class SQLiteEventStoreTest {
     clock.advance(HOUR + 1);
     assertThat(store.cleanUp()).isEqualTo(1);
     assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
+  }
+
+  @Test
+  public void loadActiveContexts_whenNoContextsAvailable_shouldReturnEmptyList() {
+    assertThat(store.loadActiveContexts()).isEmpty();
+  }
+
+  @Test
+  public void loadActiveContexts_whenTwoContextsAvailable_shouldReturnThem() {
+    TransportContext ctx1 =
+        TransportContext.builder().setBackendName("backend1").setExtras(null).build();
+    TransportContext ctx2 =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
+
+    store.persist(ctx1, EVENT);
+    store.persist(ctx2, EVENT);
+
+    assertThat(store.loadActiveContexts()).containsExactly(ctx1, ctx2);
+  }
+
+  @Test
+  public void loadActiveContexts_whenTwoContextsWithOneAvailable_shouldReturnIt() {
+    TransportContext ctx1 =
+        TransportContext.builder().setBackendName("backend1").setExtras(null).build();
+    TransportContext ctx2 =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
+
+    store.persist(ctx1, EVENT);
+    PersistedEvent persistedEvent2 = store.persist(ctx2, EVENT);
+    store.recordSuccess(Collections.singleton(persistedEvent2));
+
+    assertThat(store.loadActiveContexts()).containsExactly(ctx1);
   }
 }

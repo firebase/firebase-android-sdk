@@ -40,6 +40,7 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.TestCommandHelper;
@@ -104,7 +105,9 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
+    FirebaseApp.initializeApp(getApplicationContext());
     FirebaseAuth.getInstance().signInAnonymously();
+    FirebaseStorage storage = FirebaseStorage.getInstance();
 
     Button clickButton = findViewById(R.id.streamDownload);
     clickButton.setOnClickListener(
@@ -156,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
                 "uploadWithSpace",
                 () -> {
                   try {
-                    return TestUploadHelper.uploadWithSpace();
+                    return TestUploadHelper.byteUpload(storage.getReference("hello world.txt"));
                   } catch (Exception e) {
                     e.printStackTrace();
                   }

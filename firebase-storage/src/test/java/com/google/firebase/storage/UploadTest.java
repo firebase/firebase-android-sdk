@@ -274,7 +274,9 @@ public class UploadTest {
     System.out.println("Starting test uploadWithSpace.");
 
     MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("uploadWithSpace", true);
-    Task<StringBuilder> task = TestUploadHelper.uploadWithSpace();
+    StorageReference storage =
+        FirebaseStorage.getInstance().getReference().child("hello world.txt");
+    Task<StringBuilder> task = TestUploadHelper.byteUpload(storage);
 
     TestUtil.await(task);
 
@@ -340,6 +342,20 @@ public class UploadTest {
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("emptyUpload", task.getResult().toString());
+  }
+
+  @Test
+  public void unicodeUpload() throws Exception {
+    System.out.println("Starting test unicodeUpload.");
+
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("uploadWithUnicode", true);
+    StorageReference storage = FirebaseStorage.getInstance().getReference().child("\\%:😊");
+    Task<StringBuilder> task = TestUploadHelper.byteUpload(storage);
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("uploadWithUnicode", task.getResult().toString());
   }
 
   @Test

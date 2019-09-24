@@ -30,6 +30,8 @@ import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.ImmediateScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkInitializer;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,9 +42,11 @@ import org.robolectric.RobolectricTestRunner;
 public class TransportRuntimeTest {
   private static final String TEST_KEY = "test";
   private static final String TEST_VALUE = "test-value";
-  private TransportInternal transportInternalMock = mock(TransportInternal.class);
-  private TransportBackend mockBackend = mock(TransportBackend.class);
-  private BackendRegistry mockRegistry = mock(BackendRegistry.class);
+
+  private final TransportInternal transportInternalMock = mock(TransportInternal.class);
+  private final TransportBackend mockBackend = mock(TransportBackend.class);
+  private final BackendRegistry mockRegistry = mock(BackendRegistry.class);
+  private final WorkInitializer mockInitializer = mock(WorkInitializer.class);
 
   @Test
   public void testTransportInternalSend() {
@@ -75,7 +79,10 @@ public class TransportRuntimeTest {
             () -> eventMillis,
             () -> uptimeMillis,
             new ImmediateScheduler(Runnable::run, mockRegistry),
-            new Uploader(null, null, null, null, null, null, () -> 2));
+            new Uploader(null, null, null, null, null, null, () -> 2),
+            mockInitializer);
+    verify(mockInitializer, times(1)).ensureContextsScheduled();
+
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
     when(mockBackend.decorate(any()))
         .thenAnswer(
@@ -95,7 +102,7 @@ public class TransportRuntimeTest {
             .setEventMillis(eventMillis)
             .setUptimeMillis(uptimeMillis)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .setCode(12)
             .build();
     transport.send(stringEvent);

@@ -17,6 +17,7 @@ package com.example.firebase.fiamui;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
+import com.google.firebase.inappmessaging.model.Action;
 
 public class NoOpDisplayCallbacks implements FirebaseInAppMessagingDisplayCallbacks {
   @Override
@@ -29,13 +30,18 @@ public class NoOpDisplayCallbacks implements FirebaseInAppMessagingDisplayCallba
     return new TaskCompletionSource<Void>().getTask();
   }
 
-  @Override
+  @Deprecated
   public Task<Void> messageClicked() {
     return new TaskCompletionSource<Void>().getTask();
   }
 
   @Override
-  public Task<Void> displayErrorEncountered(InAppMessagingErrorReason InAppMessagingErrorReason) {
+  public Task<Void> messageClicked(Action action) {
+    return new TaskCompletionSource<Void>().getTask();
+  }
+
+  @Override
+  public Task<Void> displayErrorEncountered(InAppMessagingErrorReason inAppMessagingErrorReason) {
     return new TaskCompletionSource<Void>().getTask();
   }
 }

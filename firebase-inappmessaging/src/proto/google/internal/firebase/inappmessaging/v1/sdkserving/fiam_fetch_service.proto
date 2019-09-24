@@ -1,0 +1,101 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.internal.firebase.inappmessaging.v1.sdkserving;
+
+option java_package = "com.google.internal.firebase.inappmessaging.v1.sdkserving";
+option java_multiple_files = true;
+
+import "google/api/annotations.proto";
+import "developers/mobile/targeting/proto/client_signals.proto";
+import "google/internal/firebase/inappmessaging/v1/campaign.proto";
+
+// In App Messaging SDK serving
+service InAppMessagingSdkServing {
+  // Retrieve fiam messages that are suitable for the current client app
+  // instance. A suitable campaign message needs to satisfy 3 conditions
+  // 1 Active campaign
+  // 2 The requesting client app instance meets the targeting requirement
+  //   for the campaign
+  // 3 The message is still yet to be rendered by the requesting client app
+  //   instance based on the display policy for the campaign. Parameter
+  //   already_seen_campaign in the request object is used to help serve
+  //   this purpose.
+  //
+  // Due to potential risk of a long list of already_seen_campaigns causing
+  // the url to reach the length limit, it's modeled as a POST request (so we
+  // can use body to carry the request data) with custom method even though
+  // it's essentially a read operation.
+  //
+  // The returned list of campaign messages are sorted from high priority to
+  // low priority so that the client can display them in the order as seen
+  // in the response.
+  rpc FetchEligibleCampaigns(FetchEligibleCampaignsRequest)
+      returns (FetchEligibleCampaignsResponse) {
+    option (google.api.http) = {
+      post: "/v1/sdkServing/projects/{project_number}/eligibleCampaigns:fetch"
+      body: "*"
+    };
+  }
+}
+
+message FetchEligibleCampaignsRequest {
+  // [required] the unique numeric string identifying the firebase project that
+  // the client app belongs
+  string project_number = 1;
+
+  ClientAppInfo requesting_client_app = 2;
+
+  // a list of campaigns that have already been rendered by the client so that
+  // service can filter them out while doing search of applicable messages
+  repeated CampaignImpression already_seen_campaigns = 3;
+
+  // [required] A common set of targeting signals - ex: user properties, lang
+  developers.mobile.targeting.proto.ClientSignals client_signals = 4;
+}
+
+// it has the info in identifying the clietn app making the request
+message ClientAppInfo {
+  // [required] the unique app id for the client app
+  string gmp_app_id = 1;
+  // [required] app instance id
+  string app_instance_id = 2;
+  // [required] app instance id token
+  string app_instance_id_token = 3;
+}
+
+// A campaign id and timestamp noting when the device displayed this campaign
+message CampaignImpression {
+  // [required] campaign_id
+  string campaign_id = 1;
+  // [required] when instance last displayed the content for this campaign
+  int64 impression_timestamp_millis = 2;
+}
+
+message FetchEligibleCampaignsResponse {
+  // list of eligible messages sorted in high-to-low priority order
+  repeated ThickContent messages = 1;
+
+  // epoch time at which time clients must invalidates their cache
+  int64 expiration_epoch_timestamp_millis = 2;
+}
+
+// Proto definition to facilitate storing impressions on the client
+message CampaignImpressionList {
+  // a list of campaigns that have already been rendered by the client so that
+  // service can filter them out while doing search of applicable messages
+  repeated CampaignImpression already_seen_campaigns = 1;
+}

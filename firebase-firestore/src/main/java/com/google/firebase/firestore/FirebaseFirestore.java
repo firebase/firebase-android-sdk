@@ -15,7 +15,9 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.app.Activity;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,12 +32,15 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
+import com.google.firebase.firestore.core.ActivityScope;
+import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import java.util.concurrent.Executor;
@@ -49,7 +54,11 @@ import java.util.concurrent.Executor;
  */
 public class FirebaseFirestore {
 
-  /** Provides a registry management interface for {@code FirebaseFirestore} instances. */
+  /**
+   * Provides a registry management interface for {@code FirebaseFirestore} instances.
+   *
+   * @hide
+   */
   public interface InstanceRegistry {
     /** Removes the Cloud Firestore instance with given name from registry. */
     void remove(@NonNull String databaseId);
@@ -65,7 +74,7 @@ public class FirebaseFirestore {
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataConverter dataConverter;
-  // When user requests to shutdown, use this to notify `FirestoreMultiDbComponent` to deregister
+  // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
   // this instance.
   private final InstanceRegistry instanceRegistry;
   private FirebaseFirestoreSettings settings;
@@ -255,9 +264,9 @@ public class FirebaseFirestore {
    * be retried. If it fails to commit after 5 attempts, the transaction will fail.
    *
    * <p>The maximum number of writes allowed in a single transaction is 500, but note that each
-   * usage of {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion()}, {@link
-   * FieldValue#arrayRemove()}, or {@link FieldValue#increment()} inside a transaction counts as an
-   * additional write.
+   * usage of {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion(Object...)}, {@link
+   * FieldValue#arrayRemove(Object...)}, or {@link FieldValue#increment(long)} inside a transaction
+   * counts as an additional write.
    *
    * @param updateFunction The function to execute within the transaction context.
    * @param executor The executor to run the transaction callback on.
@@ -302,9 +311,9 @@ public class FirebaseFirestore {
    * Creates a write batch, used for performing multiple writes as a single atomic operation.
    *
    * <p>The maximum number of writes allowed in a single batch is 500, but note that each usage of
-   * {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion()}, {@link
-   * FieldValue#arrayRemove()}, or {@link FieldValue#increment()} inside a transaction counts as an
-   * additional write.
+   * {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion(Object...)}, {@link
+   * FieldValue#arrayRemove(Object...)}, or {@link FieldValue#increment(long)} inside a transaction
+   * counts as an additional write.
    *
    * @return The created WriteBatch object.
    */
@@ -329,37 +338,55 @@ public class FirebaseFirestore {
     return batch.commit();
   }
 
-  Task<Void> shutdownInternal() {
+  Task<Void> terminateInternal() {
     // The client must be initialized to ensure that all subsequent API usage throws an exception.
     this.ensureClientConfigured();
-    return client.shutdown();
+    return client.terminate();
   }
 
   /**
-   * Shuts down this {@code FirebaseFirestore} instance.
+   * Terminates this {@code FirebaseFirestore} instance.
    *
-   * <p>After shutdown only the {@link #clearPersistence()} method may be used. Any other method
-   * will throw an {@link IllegalStateException}.
+   * <p>After calling {@code terminate()} only the {@link #clearPersistence()} method may be used.
+   * Any other method will throw an {@link IllegalStateException}.
    *
-   * <p>To restart after shutdown, simply create a new instance of {@code FirebaseFirestore} with
+   * <p>To restart after termination, simply create a new instance of {@code FirebaseFirestore} with
    * {@link #getInstance()} or {@link #getInstance(FirebaseApp)}.
    *
-   * <p>Shutdown does not cancel any pending writes and any tasks that are awaiting a response from
-   * the server will not be resolved. The next time you start this instance, it will resume
-   * attempting to send these writes to the server.
+   * <p>{@code terminate()} does not cancel any pending writes and any tasks that are awaiting a
+   * response from the server will not be resolved. The next time you start this instance, it will
+   * resume attempting to send these writes to the server.
    *
-   * <p>Note: Under normal circumstances, calling {@code shutdown()} is not required. This method is
-   * useful only when you want to force this instance to release all of its resources or in
+   * <p>Note: Under normal circumstances, calling {@code terminate()} is not required. This method
+   * is useful only when you want to force this instance to release all of its resources or in
    * combination with {@link #clearPersistence} to ensure that all local state is destroyed between
    * test runs.
    *
-   * @return A {@code Task} that is resolved when the instance has been successfully shut down.
+   * @return A {@code Task} that is resolved when the instance has been successfully terminated.
    */
-  @VisibleForTesting
-  // TODO(b/135755126): Make this public and remove @VisibleForTesting
-  Task<Void> shutdown() {
+  @NonNull
+  public Task<Void> terminate() {
     instanceRegistry.remove(this.getDatabaseId().getDatabaseId());
-    return shutdownInternal();
+    return terminateInternal();
+  }
+
+  /**
+   * Waits until all currently pending writes for the active user have been acknowledged by the
+   * backend.
+   *
+   * <p>The returned Task completes immediately if there are no outstanding writes. Otherwise, the
+   * Task waits for all previously issued writes (including those written in a previous app
+   * session), but it does not wait for writes that were added after the method is called. If you
+   * wish to wait for additional writes, you have to call {@code waitForPendingWrites()} again.
+   *
+   * <p>Any outstanding {@code waitForPendingWrites()} Tasks are cancelled during user changes.
+   *
+   * @return A {@code Task} which resolves when all currently pending writes have been acknowledged
+   *     by the backend.
+   */
+  @NonNull
+  public Task<Void> waitForPendingWrites() {
+    return client.waitForPendingWrites();
   }
 
   @VisibleForTesting
@@ -405,9 +432,9 @@ public class FirebaseFirestore {
    *
    * <p>Must be called while the {@code FirebaseFirestore} instance is not started (after the app is
    * shutdown or when the app is first initialized). On startup, this method must be called before
-   * other methods (other than {@link #setFirestoreSettings()}). If the {@code FirebaseFirestore}
-   * instance is still running, the {@code Task} will fail with an error code of {@code
-   * FAILED_PRECONDITION}.
+   * other methods (other than {@link #setFirestoreSettings(FirebaseFirestoreSettings)}). If the
+   * {@code FirebaseFirestore} instance is still running, the {@code Task} will fail with an error
+   * code of {@code FAILED_PRECONDITION}.
    *
    * <p>Note: {@code clearPersistence()} is primarily intended to help write reliable tests that use
    * Cloud Firestore. It uses an efficient mechanism for dropping existing data but does not attempt
@@ -424,7 +451,7 @@ public class FirebaseFirestore {
     asyncQueue.enqueueAndForgetEvenAfterShutdown(
         () -> {
           try {
-            if (client != null && !client.isShutdown()) {
+            if (client != null && !client.isTerminated()) {
               throw new FirebaseFirestoreException(
                   "Persistence cannot be cleared while the firestore instance is running.",
                   Code.FAILED_PRECONDITION);
@@ -436,6 +463,94 @@ public class FirebaseFirestore {
           }
         });
     return source.getTask();
+  }
+
+  /**
+   * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that
+   * all listeners affected by a given change have fired, even if a single server-generated change
+   * affects multiple listeners.
+   *
+   * <p>NOTE: The snapshots-in-sync event only indicates that listeners are in sync with each other,
+   * but does not relate to whether those snapshots are in sync with the server. Use
+   * SnapshotMetadata in the individual listeners to determine if a snapshot is from the cache or
+   * the server.
+   *
+   * @param runnable A callback to be called every time all snapshot listeners are in sync with each
+   *     other.
+   * @return A registration object that can be used to remove the listener.
+   */
+  ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable runnable) {
+    return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, runnable);
+  }
+
+  /**
+   * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that
+   * all listeners affected by a given change have fired, even if a single server-generated change
+   * affects multiple listeners.
+   *
+   * <p>NOTE: The snapshots-in-sync event only indicates that listeners are in sync with each other,
+   * but does not relate to whether those snapshots are in sync with the server. Use
+   * SnapshotMetadata in the individual listeners to determine if a snapshot is from the cache or
+   * the server.
+   *
+   * @param activity The activity to scope the listener to.
+   * @param runnable A callback to be called every time all snapshot listeners are in sync with each
+   *     other.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  ListenerRegistration addSnapshotsInSyncListener(Activity activity, @NonNull Runnable runnable) {
+    return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, activity, runnable);
+  }
+
+  /**
+   * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that
+   * all listeners affected by a given change have fired, even if a single server-generated change
+   * affects multiple listeners.
+   *
+   * <p>NOTE: The snapshots-in-sync event only indicates that listeners are in sync with each other,
+   * but does not relate to whether those snapshots are in sync with the server. Use
+   * SnapshotMetadata in the individual listeners to determine if a snapshot is from the cache or
+   * the server.
+   *
+   * @param executor The executor to use to call the listener.
+   * @param runnable A callback to be called every time all snapshot listeners are in sync with each
+   *     other.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  ListenerRegistration addSnapshotsInSyncListener(Executor executor, @NonNull Runnable runnable) {
+    return addSnapshotsInSyncListener(executor, null, runnable);
+  }
+
+  /**
+   * Internal helper method to add a snapshotsInSync listener.
+   *
+   * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
+   *
+   * @param userExecutor The executor to use to call the listener.
+   * @param activity Optional activity this listener is scoped to.
+   * @param runnable A callback to be called every time all snapshot listeners are in sync with each
+   *     other.
+   * @return A registration object that can be used to remove the listener.
+   */
+  private ListenerRegistration addSnapshotsInSyncListener(
+      Executor userExecutor, @Nullable Activity activity, @NonNull Runnable runnable) {
+    ensureClientConfigured();
+    EventListener<Void> eventListener =
+        (Void v, FirebaseFirestoreException error) -> {
+          hardAssert(error == null, "snapshots-in-sync listeners should never get errors.");
+          runnable.run();
+        };
+    AsyncEventListener<Void> asyncListener =
+        new AsyncEventListener<Void>(userExecutor, eventListener);
+    client.addSnapshotsInSyncListener(asyncListener);
+    return ActivityScope.bind(
+        activity,
+        () -> {
+          asyncListener.mute();
+          client.removeSnapshotsInSyncListener(asyncListener);
+        });
   }
 
   FirestoreClient getClient() {

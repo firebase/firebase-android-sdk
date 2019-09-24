@@ -15,10 +15,12 @@
 package com.google.android.datatransport.runtime.backends;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
+import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.runtime.time.TestClock;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -26,16 +28,25 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class BackendRegistryTest {
 
-  private final CreationContext creationContext =
-      CreationContext.create(
+  private final CreationContextFactory creationContextFactory =
+      new CreationContextFactory(
           ApplicationProvider.getApplicationContext(), new TestClock(1), new TestClock(2));
-  private BackendRegistry registry;
+  private final BackendRegistry registry =
+      new MetadataBackendRegistry(
+          ApplicationProvider.getApplicationContext(), creationContextFactory);
 
-  @Before
-  public void setup() {
-    registry =
-        new MetadataBackendRegistry(ApplicationProvider.getApplicationContext(), creationContext);
-  }
+  private final BackendFactory mockBackendFactory = mock(BackendFactory.class);
+  private final BackendRegistry fakeRegistry =
+      new MetadataBackendRegistry(
+          new MetadataBackendRegistry.BackendFactoryProvider(
+              ApplicationProvider.getApplicationContext()) {
+            @Nullable
+            @Override
+            BackendFactory get(String name) {
+              return mockBackendFactory;
+            }
+          },
+          creationContextFactory);
 
   @Test
   public void get_withRegisteredBackendName_shouldReturnCorrectBackend() {
@@ -45,5 +56,15 @@ public class BackendRegistryTest {
   @Test
   public void get_withUnknownBackend_name_shouldReturnNull() {
     assertThat(registry.get("unknown")).isNull();
+  }
+
+  @Test
+  public void get_calls_transportFactory_withCorrectCreationContext() {
+    fakeRegistry.get("testBackend");
+
+    verify(mockBackendFactory).create(creationContextFactory.create("testBackend"));
+
+    fakeRegistry.get("unknown");
+    verify(mockBackendFactory).create(creationContextFactory.create("unknown"));
   }
 }

@@ -644,7 +644,9 @@ public class FirebaseRemoteConfig {
    *
    * @param resourceId Id for the XML resource, which should be in your application's {@code
    *     res/xml} folder.
+   * @deprecated Use {@link #setDefaultsAsync} instead.
    */
+  @Deprecated
   public void setDefaults(@XmlRes int resourceId) {
     Map<String, String> xmlDefaults = DefaultsXmlParser.getDefaultsFromXml(context, resourceId);
     setDefaultsWithStringsMap(xmlDefaults);

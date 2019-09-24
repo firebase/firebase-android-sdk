@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,6 +38,7 @@ import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkSch
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.UUID;
 import org.junit.Before;
@@ -53,16 +53,16 @@ public class UploaderIntegrationTest {
   private final TransportBackend mockBackend = mock(TransportBackend.class);
   private final BackendRegistry mockRegistry = mock(BackendRegistry.class);
   private final Context context = InstrumentationRegistry.getInstrumentation().getContext();
-  private final WorkScheduler spyScheduler = spy(new TestWorkScheduler(context));
 
-  private final TransportRuntimeComponent component =
+  private final UploaderTestRuntimeComponent component =
       DaggerUploaderTestRuntimeComponent.builder()
           .setApplicationContext(context)
           .setBackendRegistry(mockRegistry)
-          .setWorkScheduler(spyScheduler)
           .setEventClock(() -> 3)
           .setUptimeClock(() -> 1)
           .build();
+
+  private final WorkScheduler spyScheduler = component.getWorkScheduler();
 
   @Rule public final TransportRuntimeRule runtimeRule = new TransportRuntimeRule(component);
 
@@ -99,7 +99,7 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(2))
@@ -136,7 +136,7 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1))
@@ -168,7 +168,7 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1))
@@ -200,7 +200,7 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     verify(spyScheduler, times(1)).schedule(any(), eq(2));

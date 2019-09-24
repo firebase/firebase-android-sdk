@@ -109,8 +109,9 @@ public abstract class LruGarbageCollectorTestCase {
     SnapshotVersion version = version(2);
     ByteString resumeToken = resumeToken(2);
     QueryData updated =
-        queryData.copy(
-            version, resumeToken, persistence.getReferenceDelegate().getCurrentSequenceNumber());
+        queryData
+            .withResumeToken(resumeToken, version)
+            .withSequenceNumber(persistence.getReferenceDelegate().getCurrentSequenceNumber());
     queryCache.updateQueryData(updated);
   }
 
@@ -139,7 +140,7 @@ public abstract class LruGarbageCollectorTestCase {
 
   private Document cacheADocumentInTransaction() {
     Document doc = nextTestDocument();
-    documentCache.add(doc);
+    documentCache.add(doc, doc.getVersion());
     return doc;
   }
 
@@ -401,6 +402,30 @@ public abstract class LruGarbageCollectorTestCase {
   }
 
   @Test
+  public void testRemoveOrphanedDocumentsWithNoDocuments() {
+    int removed = garbageCollector.removeOrphanedDocuments(1000);
+    assertEquals(0, removed);
+  }
+
+  @Test
+  public void testRemoveOrphanedDocumentsWithLargeNumberOfDocuments() {
+    int orphanedDocumentCount =
+        SQLiteLruReferenceDelegate.REMOVE_ORPHANED_DOCUMENTS_BATCH_SIZE * 2 + 1;
+
+    persistence.runTransaction(
+        "add orphaned docs",
+        () -> {
+          for (int i = 0; i < orphanedDocumentCount; i++) {
+            Document doc = cacheADocumentInTransaction();
+            markDocumentEligibleForGcInTransaction(doc.getKey());
+          }
+        });
+
+    int removed = garbageCollector.removeOrphanedDocuments(1000);
+    assertEquals(orphanedDocumentCount, removed);
+  }
+
+  @Test
   public void testRemoveTargetsThenGC() {
     // Create 3 targets, add docs to all of them
     // Leave oldest target alone, it is still live
@@ -554,7 +579,7 @@ public abstract class LruGarbageCollectorTestCase {
           SnapshotVersion newVersion = version(3);
           Document doc =
               new Document(middleDocToUpdate, newVersion, Document.DocumentState.SYNCED, testValue);
-          documentCache.add(doc);
+          documentCache.add(doc, newVersion);
           updateTargetInTransaction(middleTarget);
         });
 

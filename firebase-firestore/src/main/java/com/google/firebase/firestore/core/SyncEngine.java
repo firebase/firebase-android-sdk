@@ -21,8 +21,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -32,15 +32,15 @@ import com.google.firebase.firestore.local.LocalViewChanges;
 import com.google.firebase.firestore.local.LocalWriteResult;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.ReferenceSet;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
-import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.TargetChange;
@@ -133,6 +133,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   /** Stores user completion blocks, indexed by user and batch ID. */
   private final Map<User, Map<Integer, TaskCompletionSource<Void>>> mutationUserCallbacks;
 
+  /** Stores user callbacks waiting for all pending writes to be acknowledged. */
+  private final Map<Integer, List<TaskCompletionSource<Void>>> pendingWritesCallbacks;
+
   /** Used for creating the target IDs for the listens used to resolve limbo documents. */
   private final TargetIdGenerator targetIdGenerator;
 
@@ -154,6 +157,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     mutationUserCallbacks = new HashMap<>();
     targetIdGenerator = TargetIdGenerator.forSyncEngine();
     currentUser = initialUser;
+
+    pendingWritesCallbacks = new HashMap<>();
   }
 
   public void setCallback(SyncEngineCallback callback) {
@@ -186,12 +191,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   private ViewSnapshot initializeViewAndComputeSnapshot(QueryData queryData) {
     Query query = queryData.getQuery();
 
-    ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
-    ImmutableSortedSet<DocumentKey> remoteKeys =
-        localStore.getRemoteDocumentKeys(queryData.getTargetId());
+    QueryResult queryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
 
-    View view = new View(query, remoteKeys);
-    View.DocumentChanges viewDocChanges = view.computeDocChanges(docs);
+    View view = new View(query, queryResult.getRemoteKeys());
+    View.DocumentChanges viewDocChanges = view.computeDocChanges(queryResult.getDocuments());
     ViewChange viewChange = view.applyChanges(viewDocChanges);
     hardAssert(
         view.getLimboDocuments().size() == 0,
@@ -243,9 +246,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   /**
    * Takes an updateFunction in which a set of reads and writes can be performed atomically. In the
    * updateFunction, the client can read and write values using the supplied transaction object.
-   * After the updateFunction, all changes will be committed. If some other client has changed any
-   * of the data referenced, then the updateFunction will be called again. If the updateFunction
-   * still fails after the given number of retries, then the transaction will be rejected.
+   * After the updateFunction, all changes will be committed. If a retryable error occurs (ex: some
+   * other client has changed any of the data referenced), then the updateFunction will be called
+   * again after a backoff. If the updateFunction still fails after all retries, then the
+   * transaction will be rejected.
    *
    * <p>The transaction object passed to the updateFunction contains methods for accessing documents
    * and collections. Unlike other datastore access, data accessed with the transaction will not
@@ -255,35 +259,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * <p>The Task returned is resolved when the transaction is fully committed.
    */
   public <TResult> Task<TResult> transaction(
-      AsyncQueue asyncQueue, Function<Transaction, Task<TResult>> updateFunction, int retries) {
-    hardAssert(retries >= 0, "Got negative number of retries for transaction.");
-    final Transaction transaction = remoteStore.createTransaction();
-    return updateFunction
-        .apply(transaction)
-        .continueWithTask(
-            asyncQueue.getExecutor(),
-            userTask -> {
-              if (!userTask.isSuccessful()) {
-                if (retries > 0 && isRetryableTransactionError(userTask.getException())) {
-                  return transaction(asyncQueue, updateFunction, retries - 1);
-                }
-                return userTask;
-              }
-              return transaction
-                  .commit()
-                  .continueWithTask(
-                      asyncQueue.getExecutor(),
-                      commitTask -> {
-                        if (commitTask.isSuccessful()) {
-                          return Tasks.forResult(userTask.getResult());
-                        }
-                        Exception e = commitTask.getException();
-                        if (retries > 0 && isRetryableTransactionError(e)) {
-                          return transaction(asyncQueue, updateFunction, retries - 1);
-                        }
-                        return Tasks.forException(e);
-                      });
-            });
+      AsyncQueue asyncQueue, Function<Transaction, Task<TResult>> updateFunction) {
+    return new TransactionRunner<TResult>(asyncQueue, remoteStore, updateFunction).run();
   }
 
   /** Called by FirestoreClient to notify us of a new remote event. */
@@ -329,6 +306,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   /** Applies an OnlineState change to the sync engine and notifies any views of the change. */
   @Override
   public void handleOnlineStateChange(OnlineState onlineState) {
+    assertCallback("handleOnlineStateChange");
     ArrayList<ViewSnapshot> newViewSnapshots = new ArrayList<>();
     for (Map.Entry<Query, QueryView> entry : queryViewsByQuery.entrySet()) {
       View view = entry.getValue().getView();
@@ -407,6 +385,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     // they consistently happen before listen events.
     notifyUser(mutationBatchResult.getBatch().getBatchId(), /*status=*/ null);
 
+    resolvePendingWriteTasks(mutationBatchResult.getBatch().getBatchId());
+
     ImmutableSortedMap<DocumentKey, MaybeDocument> changes =
         localStore.acknowledgeBatch(mutationBatchResult);
 
@@ -427,7 +407,61 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     // they consistently happen before listen events.
     notifyUser(batchId, status);
 
+    resolvePendingWriteTasks(batchId);
+
     emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
+  }
+
+  /**
+   * Takes a snapshot of current mutation queue, and register a user task which will resolve when
+   * all those mutations are either accepted or rejected by the server.
+   */
+  public void registerPendingWritesTask(TaskCompletionSource<Void> userTask) {
+    if (!remoteStore.canUseNetwork()) {
+      Logger.debug(
+          TAG,
+          "The network is disabled. The task returned by 'awaitPendingWrites()' will not "
+              + "complete until the network is enabled.");
+    }
+
+    int largestPendingBatchId = localStore.getHighestUnacknowledgedBatchId();
+
+    if (largestPendingBatchId == MutationBatch.UNKNOWN) {
+      // Complete the task right away if there is no pending writes at the moment.
+      userTask.setResult(null);
+      return;
+    }
+
+    if (pendingWritesCallbacks.containsKey(largestPendingBatchId)) {
+      pendingWritesCallbacks.get(largestPendingBatchId).add(userTask);
+    } else {
+      pendingWritesCallbacks.put(largestPendingBatchId, Lists.newArrayList(userTask));
+    }
+  }
+
+  /** Resolves tasks waiting for this batch id to get acknowledged by server, if there are any. */
+  private void resolvePendingWriteTasks(int batchId) {
+    if (pendingWritesCallbacks.containsKey(batchId)) {
+      for (TaskCompletionSource<Void> task : pendingWritesCallbacks.get(batchId)) {
+        task.setResult(null);
+      }
+
+      pendingWritesCallbacks.remove(batchId);
+    }
+  }
+
+  private void failOutstandingPendingWritesAwaitingTasks() {
+    for (Map.Entry<Integer, List<TaskCompletionSource<Void>>> entry :
+        pendingWritesCallbacks.entrySet()) {
+      for (TaskCompletionSource<Void> task : entry.getValue()) {
+        task.setException(
+            new FirebaseFirestoreException(
+                "'waitForPendingWrites' task is cancelled due to User change.",
+                FirebaseFirestoreException.Code.CANCELLED));
+      }
+    }
+
+    pendingWritesCallbacks.clear();
   }
 
   /** Resolves the task corresponding to this write result. */
@@ -493,9 +527,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
         // The query has a limit and some docs were removed/updated, so we need to re-run the query
         // against the local store to make sure we didn't lose any good docs that had been past the
         // limit.
-        ImmutableSortedMap<DocumentKey, Document> docs =
-            localStore.executeQuery(queryView.getQuery());
-        viewDocChanges = view.computeDocChanges(docs, viewDocChanges);
+        QueryResult queryResult =
+            localStore.executeQuery(queryView.getQuery(), /* usePreviousResults= */ false);
+        viewDocChanges = view.computeDocChanges(queryResult.getDocuments(), viewDocChanges);
       }
       TargetChange targetChange =
           remoteEvent == null ? null : remoteEvent.getTargetChanges().get(queryView.getTargetId());
@@ -562,6 +596,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     currentUser = user;
 
     if (userChanged) {
+      // Fails tasks waiting for pending writes requested by previous user.
+      failOutstandingPendingWritesAwaitingTasks();
       // Notify local store and emit any resulting events from swapping out the mutation queue.
       ImmutableSortedMap<DocumentKey, MaybeDocument> changes = localStore.handleUserChange(user);
       emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
@@ -592,18 +628,6 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       return true;
     }
 
-    return false;
-  }
-
-  private boolean isRetryableTransactionError(Exception e) {
-    if (e instanceof FirebaseFirestoreException) {
-      // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION and
-      // non-matching document versions with ABORTED. These errors should be retried.
-      FirebaseFirestoreException.Code code = ((FirebaseFirestoreException) e).getCode();
-      return code == FirebaseFirestoreException.Code.ABORTED
-          || code == FirebaseFirestoreException.Code.FAILED_PRECONDITION
-          || !Datastore.isPermanentError(((FirebaseFirestoreException) e).getCode());
-    }
     return false;
   }
 }

@@ -33,7 +33,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,18 +84,8 @@ public class StorageReference implements Comparable<StorageReference> {
         !TextUtils.isEmpty(pathString), "childName cannot be null or empty");
 
     pathString = Slashes.normalizeSlashes(pathString);
-    Uri child;
-    try {
-      child =
-          mStorageUri
-              .buildUpon()
-              .appendEncodedPath(Slashes.preserveSlashEncode(pathString))
-              .build();
-    } catch (UnsupportedEncodingException e) {
-      Log.e(TAG, "Unable to create a valid default Uri. " + pathString, e);
-
-      throw new IllegalArgumentException("childName");
-    }
+    Uri child =
+        mStorageUri.buildUpon().appendEncodedPath(Slashes.preserveSlashEncode(pathString)).build();
     return new StorageReference(child, mFirebaseStorage);
   }
 
@@ -626,15 +615,20 @@ public class StorageReference implements Comparable<StorageReference> {
         new Continuation<ListResult, Task<Void>>() {
           @Override
           public Task<Void> then(@NonNull Task<ListResult> currentPage) {
-            ListResult result = currentPage.getResult();
-            prefixes.addAll(result.getPrefixes());
-            items.addAll(result.getItems());
+            if (currentPage.isSuccessful()) {
+              ListResult result = currentPage.getResult();
+              prefixes.addAll(result.getPrefixes());
+              items.addAll(result.getItems());
 
-            if (result.getPageToken() != null) {
-              Task<ListResult> nextPage = listHelper(/* maxResults= */ null, result.getPageToken());
-              nextPage.continueWithTask(executor, this);
+              if (result.getPageToken() != null) {
+                Task<ListResult> nextPage =
+                    listHelper(/* maxResults= */ null, result.getPageToken());
+                nextPage.continueWithTask(executor, this);
+              } else {
+                pendingResult.setResult(new ListResult(prefixes, items, /* pageToken= */ null));
+              }
             } else {
-              pendingResult.setResult(new ListResult(prefixes, items, /* pageToken= */ null));
+              pendingResult.setException(currentPage.getException());
             }
 
             return Tasks.forResult(null);
