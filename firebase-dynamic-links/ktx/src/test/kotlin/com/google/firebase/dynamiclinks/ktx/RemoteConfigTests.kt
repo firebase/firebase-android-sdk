@@ -14,9 +14,11 @@
 
 package com.google.firebase.dynamiclinks.ktx
 
+import android.net.Uri
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.dynamiclinks.DynamicLink
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.ktx.app
@@ -77,6 +79,20 @@ class DynamicLinksTests : BaseTestCase() {
                 .isSameInstanceAs(FirebaseDynamicLinks.getInstance(app))
     }
 
-    // TODO: Add Tests for builder extensions
+    @Test
+    fun `androidParameters type-safe builder extension works`() {
+        val fallbackUri = Uri.parse("https://example.com")
 
+        val parametersKTX = androidParameters {
+            setMinimumVersion(16)
+            setFallbackUrl(fallbackUri)
+        }
+
+        val parameters = DynamicLink.AndroidParameters.Builder()
+                .setMinimumVersion(16)
+                .setFallbackUrl(Uri.parse("https://example.com"))
+                .build()
+
+        assert(parameters.equals(parametersKTX))
+    }
 }

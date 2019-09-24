@@ -308,6 +308,19 @@ public final class DynamicLink {
       this.parameters = parameters;
     }
 
+    public boolean equals(AndroidParameters androidParameters) {
+      int expectedMinimumVersion =
+              androidParameters.parameters.getInt(KEY_ANDROID_MIN_VERSION_CODE);
+      int actualMinimumVersion = parameters.getInt(KEY_ANDROID_MIN_VERSION_CODE);
+
+      Uri expectedFallbackUrl =
+              androidParameters.parameters.getParcelable(KEY_ANDROID_FALLBACK_LINK);
+      Uri actualFallbackUrl = parameters.getParcelable(KEY_ANDROID_FALLBACK_LINK);
+
+      return  actualMinimumVersion == expectedMinimumVersion &&
+              expectedFallbackUrl.equals(actualFallbackUrl);
+    }
+
     /** Builder for Android parameters. */
     public static final class Builder {
 
