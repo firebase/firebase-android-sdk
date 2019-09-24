@@ -9,9 +9,11 @@ This repository includes the following Firebase SDKs for Android:
 
   * `firebase-common`
   * `firebase-database`
+  * `firebase-dynamic-links`
   * `firebase-firestore`
   * `firebase-functions`
   * `firebase-inappmessaging-display`
+  * `firebase-remote-config`
   * `firebase-storage`
 
 For more information on building the SDKs from source or contributing,
