@@ -107,6 +107,16 @@ public class CctTransportBackendTest {
   }
 
   private BackendRequest getLegacyFirelogBackendRequest() {
+    LegacyFlgDestination destination = new LegacyFlgDestination(API_KEY);
+    return legacyBackendRequestFromDestination(destination);
+  }
+
+  private BackendRequest getLegacyFirelogWithUrlBackendRequest(String url) {
+    LegacyFlgDestination destination = new LegacyFlgDestination(API_KEY, url);
+    return legacyBackendRequestFromDestination(destination);
+  }
+
+  private BackendRequest legacyBackendRequestFromDestination(LegacyFlgDestination destination) {
     return BackendRequest.builder()
         .setEvents(
             Arrays.asList(
@@ -125,7 +135,7 @@ public class CctTransportBackendTest {
                         .setPayload(PAYLOAD.toByteArray())
                         .setCode(CODE)
                         .build())))
-        .setExtras(LegacyFlgDestination.encodeString(API_KEY))
+        .setExtras(destination.getExtras())
         .build();
   }
 
@@ -205,6 +215,29 @@ public class CctTransportBackendTest {
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
+            .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, equalTo(API_KEY)));
+  }
+
+  @Test
+  public void testLegacyFlgSuccessLoggingRequest_containsAPIKeyAndUlr() {
+    stubFor(
+        post(urlEqualTo("/custom_api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BACKEND.send(getLegacyFirelogWithUrlBackendRequest("http://localhost:8999/custom_api"));
+
+    verify(
+        postRequestedFor(urlEqualTo("/custom_api"))
             .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, equalTo(API_KEY)));
   }
 

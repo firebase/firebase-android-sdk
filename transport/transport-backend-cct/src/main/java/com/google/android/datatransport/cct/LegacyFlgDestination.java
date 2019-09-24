@@ -15,6 +15,7 @@
 package com.google.android.datatransport.cct;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.Destination;
 import java.io.UnsupportedEncodingException;
 
@@ -22,19 +23,33 @@ public class LegacyFlgDestination implements Destination {
   static final String DESTINATION_NAME = "lflg";
   private static final String DEFAULT_API_KEY =
       StringMerger.mergeStrings("AzSCki82AwsLzKd5O8zo", "IayckHiZRO1EFl1aGoK");
+  private static final String EXTRAS_VERSION_MARKER = "lfdv1$";
+  private static final String EXTRAS_DELIMITER = "@";
 
   public static final LegacyFlgDestination DEFAULT_INSTANCE =
       new LegacyFlgDestination(DEFAULT_API_KEY);
 
-  private final String apiKey;
+  @Nullable private final String endPoint;
 
-  private LegacyFlgDestination(String apiKey) {
+  @NonNull private final String apiKey;
+
+  public LegacyFlgDestination(@NonNull String apiKey) {
+    this(apiKey, null);
+  }
+
+  public LegacyFlgDestination(@NonNull String apiKey, @Nullable String endPoint) {
     this.apiKey = apiKey;
+    this.endPoint = endPoint;
   }
 
   @NonNull
   String getAPIKey() {
     return apiKey;
+  }
+
+  @Nullable
+  String getEndPoint() {
+    return endPoint;
   }
 
   @NonNull
@@ -46,22 +61,43 @@ public class LegacyFlgDestination implements Destination {
   @NonNull
   @Override
   public byte[] getExtras() {
-    return encodeString(apiKey);
+    return encodeAsExtras();
   }
 
   @NonNull
-  static byte[] encodeString(@NonNull String s) {
+  public static LegacyFlgDestination parseFromExtras(@Nullable byte[] a) {
+    if (a == null) {
+      return LegacyFlgDestination.DEFAULT_INSTANCE;
+    }
     try {
-      return s.getBytes("UTF-8");
+      String encodedExtra = new String(a, "UTF-8");
+      if (!encodedExtra.startsWith(EXTRAS_VERSION_MARKER)) {
+        throw new IllegalStateException("Version marker missing from extras");
+      }
+      encodedExtra = encodedExtra.substring(EXTRAS_VERSION_MARKER.length());
+      @SuppressWarnings("StringSplitter")
+      String[] fields = encodedExtra.split(EXTRAS_DELIMITER);
+      if (fields.length != 2) {
+        throw new IllegalStateException("Extra is not a valid encoded LegacyFlgDestination");
+      }
+      String endPoint = fields[0];
+      String apiKey = fields[1];
+      return new LegacyFlgDestination(apiKey, endPoint);
     } catch (UnsupportedEncodingException e) {
       throw new IllegalStateException("UTF-8 encoding not found.");
     }
   }
 
-  @NonNull
-  static String decodeExtras(@NonNull byte[] a) {
+  private byte[] encodeAsExtras() {
+    String buffer =
+        String.format(
+            "%s%s%s%s",
+            EXTRAS_VERSION_MARKER,
+            endPoint == null ? "" : endPoint,
+            EXTRAS_DELIMITER,
+            apiKey == null ? "" : apiKey);
     try {
-      return new String(a, "UTF-8");
+      return buffer.getBytes("UTF-8");
     } catch (UnsupportedEncodingException e) {
       throw new IllegalStateException("UTF-8 encoding not found.");
     }
