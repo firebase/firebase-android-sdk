@@ -16,16 +16,16 @@ package com.google.apksize;
 
 import android.app.Activity;
 import android.content.Context;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
+import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay;
 import com.google.firebase.inappmessaging.model.Action;
 import com.google.firebase.inappmessaging.model.CampaignMetadata;
+import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.ModalMessage;
 import com.google.firebase.inappmessaging.model.Text;
-import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay;
-import androidx.annotation.NonNull;
-import com.google.firebase.inappmessaging.model.InAppMessage;
 
 public class InAppMessagingDisplay implements SampleCode {
   private static final String SAMPLE_TEXT = "My sample text";

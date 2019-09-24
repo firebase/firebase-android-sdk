@@ -109,7 +109,8 @@ public final class FirebaseRemoteConfigTest {
   private static final String ETAG = "ETag";
 
   // We use a HashMap so that Mocking is easier.
-  private static final HashMap<String, String> DEFAULTS_MAP = new HashMap<>();
+  private static final HashMap<String, Object> DEFAULTS_MAP = new HashMap<>();
+  private static final HashMap<String, String> DEFAULTS_STRING_MAP = new HashMap<>();
 
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
@@ -141,6 +142,12 @@ public final class FirebaseRemoteConfigTest {
     DEFAULTS_MAP.put("first_default_key", "first_default_value");
     DEFAULTS_MAP.put("second_default_key", "second_default_value");
     DEFAULTS_MAP.put("third_default_key", "third_default_value");
+    DEFAULTS_MAP.put("byte_array_default_key", "fourth_default_value".getBytes());
+
+    DEFAULTS_STRING_MAP.put("first_default_key", "first_default_value");
+    DEFAULTS_STRING_MAP.put("second_default_key", "second_default_value");
+    DEFAULTS_STRING_MAP.put("third_default_key", "third_default_value");
+    DEFAULTS_STRING_MAP.put("byte_array_default_key", "fourth_default_value");
 
     MockitoAnnotations.initMocks(this);
 
@@ -1249,7 +1256,7 @@ public final class FirebaseRemoteConfigTest {
   public void setDefaults_withMap_setsDefaults() throws Exception {
     frc.setDefaults(ImmutableMap.copyOf(DEFAULTS_MAP));
 
-    ConfigContainer defaultsContainer = newDefaultsContainer(DEFAULTS_MAP);
+    ConfigContainer defaultsContainer = newDefaultsContainer(DEFAULTS_STRING_MAP);
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
 
     verify(mockDefaultsCache).putWithoutWaitingForDiskWrite(captor.capture());
@@ -1258,7 +1265,7 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void setDefaultsAsync_withMap_setsDefaults() throws Exception {
-    ConfigContainer defaultsContainer = newDefaultsContainer(DEFAULTS_MAP);
+    ConfigContainer defaultsContainer = newDefaultsContainer(DEFAULTS_STRING_MAP);
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
     cachePutReturnsConfig(mockDefaultsCache, defaultsContainer);
 
