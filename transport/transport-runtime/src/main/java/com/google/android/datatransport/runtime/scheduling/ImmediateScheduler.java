@@ -14,14 +14,13 @@
 
 package com.google.android.datatransport.runtime.scheduling;
 
+import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
@@ -45,19 +44,26 @@ public class ImmediateScheduler implements Scheduler {
   }
 
   @Override
-  public Task<Void> schedule(TransportContext transportContext, EventInternal event) {
-    return Tasks.call(
-        executor,
+  public void schedule(
+      TransportContext transportContext, EventInternal event, TransportScheduleCallback callback) {
+    executor.execute(
         () -> {
-          TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
-          if (backend == null) {
-            LOGGER.warning(
-                String.format(
-                    "Transport backend '%s' is not registered", transportContext.getBackendName()));
-            return null;
+          try {
+            TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
+            if (backend == null) {
+              String errorMsg =
+                  String.format(
+                      "Transport backend '%s' is not registered",
+                      transportContext.getBackendName());
+              LOGGER.warning(errorMsg);
+              callback.onSchedule(new IllegalArgumentException(errorMsg));
+              return;
+            }
+            backend.send(BackendRequest.create(Collections.singleton(backend.decorate(event))));
+            callback.onSchedule(null);
+          } catch (Exception e) {
+            callback.onSchedule(e);
           }
-          backend.send(BackendRequest.create(Collections.singleton(backend.decorate(event))));
-          return null;
         });
   }
 }

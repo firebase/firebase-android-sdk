@@ -14,8 +14,8 @@
 
 package com.google.android.datatransport.runtime;
 
-import com.google.android.gms.tasks.Task;
+import com.google.android.datatransport.TransportScheduleCallback;
 
 interface TransportInternal {
-  Task<Void> send(SendRequest request);
+  void send(SendRequest request, TransportScheduleCallback callback);
 }

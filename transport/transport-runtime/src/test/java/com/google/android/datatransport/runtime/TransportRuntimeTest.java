@@ -23,10 +23,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import androidx.annotation.Nullable;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
+import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
@@ -37,7 +39,6 @@ import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkIni
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
-import com.google.android.gms.tasks.Task;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import org.junit.Test;
@@ -64,6 +65,17 @@ public class TransportRuntimeTest {
         }
       };
 
+  private class StatefulTransportScheduleCallback implements TransportScheduleCallback {
+    public boolean called = false;
+    public Exception exception = null;
+
+    @Override
+    public void onSchedule(@Nullable Exception error) {
+      called = true;
+      exception = error;
+    }
+  }
+
   @Test
   public void testTransportInternalSend() {
     TransportContext transportContext =
@@ -73,14 +85,16 @@ public class TransportRuntimeTest {
     Event<String> event = Event.ofTelemetry("TelemetryData");
     Transformer<String, byte[]> transformer = String::getBytes;
     Transport<String> transport = factory.getTransport(testTransport, String.class, transformer);
-    transport.schedule(event);
+
+    StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
+    transport.schedule(event, callback);
     SendRequest request =
         SendRequest.builder()
             .setTransportContext(transportContext)
             .setEvent(event, transformer)
             .setTransportName(testTransport)
             .build();
-    verify(transportInternalMock, times(1)).send(request);
+    verify(transportInternalMock, times(1)).send(request, callback);
   }
 
   @Test
@@ -121,7 +135,9 @@ public class TransportRuntimeTest {
             .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .setCode(12)
             .build();
-    Task<Void> task = transport.schedule(stringEvent);
+
+    StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
+    transport.schedule(stringEvent, callback);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
     verify(mockBackend, times(1))
         .send(
@@ -129,7 +145,8 @@ public class TransportRuntimeTest {
                 BackendRequest.create(
                     Collections.singleton(
                         expectedEvent.toBuilder().addMetadata(TEST_KEY, TEST_VALUE).build()))));
-    assertThat(task.isSuccessful()).isTrue();
+    assertThat(callback.called).isTrue();
+    assertThat(callback.exception).isNull();
   }
 
   @Test
@@ -156,9 +173,10 @@ public class TransportRuntimeTest {
         factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
 
-    Task<Void> task = transport.schedule(stringEvent);
-    assertThat(task.isSuccessful()).isFalse();
-    assertThat(task.getException()).isInstanceOf(IllegalArgumentException.class);
+    StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
+    transport.schedule(stringEvent, callback);
+    assertThat(callback.called).isTrue();
+    assertThat(callback.exception).isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -200,11 +218,14 @@ public class TransportRuntimeTest {
             .setPayload("TelemetryData".getBytes())
             .setCode(12)
             .build();
-    Task<Void> task = transport.schedule(stringEvent);
+
+    StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
+    transport.schedule(stringEvent, callback);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
     verify(mockEventStore, times(1)).persist(any(TransportContext.class), any(EventInternal.class));
     verify(mockBackend, never()).send(any(BackendRequest.class));
-    assertThat(task.isSuccessful()).isTrue();
+    assertThat(callback.called).isTrue();
+    assertThat(callback.exception).isNull();
   }
 
   @Test
@@ -232,8 +253,9 @@ public class TransportRuntimeTest {
         factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
 
-    Task<Void> task = transport.schedule(stringEvent);
-    assertThat(task.isSuccessful()).isFalse();
-    assertThat(task.getException()).isInstanceOf(IllegalArgumentException.class);
+    StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
+    transport.schedule(stringEvent, callback);
+    assertThat(callback.called).isTrue();
+    assertThat(callback.exception).isInstanceOf(IllegalArgumentException.class);
   }
 }

@@ -42,5 +42,5 @@ public interface Transport<T> {
    * @param event The event with the payload that needs to be sent.
    * @return {@link Task} representing the event scheduling.
    */
-  Task<Void> schedule(Event<T> event);
+  void schedule(Event<T> event, TransportScheduleCallback callback);
 }
