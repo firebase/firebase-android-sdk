@@ -121,7 +121,10 @@ public final class LocalStore {
   private final QueryCache queryCache;
 
   /** Maps a targetId to data about its query. */
-  private final SparseArray<QueryData> targetIds;
+  private final SparseArray<QueryData> queryDataByTarget;
+
+  /** Maps a query to its targetID. */
+  private final Map<Query, Integer> targetIdByQuery;
 
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
@@ -143,7 +146,8 @@ public final class LocalStore {
     localViewReferences = new ReferenceSet();
     persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
 
-    targetIds = new SparseArray<>();
+    queryDataByTarget = new SparseArray<>();
+    targetIdByQuery = new HashMap<>();
   }
 
   public void start() {
@@ -340,7 +344,7 @@ public final class LocalStore {
             int targetId = boxedTargetId;
             TargetChange change = entry.getValue();
 
-            QueryData oldQueryData = targetIds.get(targetId);
+            QueryData oldQueryData = queryDataByTarget.get(targetId);
             if (oldQueryData == null) {
               // We don't update the remote keys if the query is not active. This ensures that
               // we persist the updated query data along with the updated assignment.
@@ -357,7 +361,7 @@ public final class LocalStore {
                   oldQueryData
                       .withResumeToken(resumeToken, remoteEvent.getSnapshotVersion())
                       .withSequenceNumber(sequenceNumber);
-              targetIds.put(boxedTargetId, newQueryData);
+              queryDataByTarget.put(targetId, newQueryData);
 
               // Update the query data if there are target changes (or if sufficient time has
               // passed since the last update).
@@ -484,7 +488,7 @@ public final class LocalStore {
             localViewReferences.removeReferences(removed, targetId);
 
             if (!viewChange.isFromCache()) {
-              QueryData queryData = targetIds.get(targetId);
+              QueryData queryData = queryDataByTarget.get(targetId);
               hardAssert(
                   queryData != null,
                   "Can't set limbo-free snapshot version for unknown target: %s",
@@ -494,7 +498,7 @@ public final class LocalStore {
               SnapshotVersion lastLimboFreeSnapshotVersion = queryData.getSnapshotVersion();
               QueryData updatedQueryData =
                   queryData.withLastLimboFreeSnapshotVersion(lastLimboFreeSnapshotVersion);
-              targetIds.put(targetId, updatedQueryData);
+              queryDataByTarget.put(targetId, updatedQueryData);
             }
           }
         });
@@ -548,8 +552,11 @@ public final class LocalStore {
 
     // Sanity check to ensure that even when resuming a query it's not currently active.
     hardAssert(
-        targetIds.get(targetId) == null, "Tried to allocate an already allocated query: %s", query);
-    targetIds.put(targetId, cached);
+        queryDataByTarget.get(targetId) == null,
+        "Tried to allocate an already allocated query: %s",
+        query);
+    queryDataByTarget.put(targetId, cached);
+    targetIdByQuery.put(query, targetId);
     return cached;
   }
 
@@ -560,12 +567,11 @@ public final class LocalStore {
   @VisibleForTesting
   @Nullable
   QueryData getQueryData(Query query) {
-    QueryData queryData = queryCache.getQueryData(query);
-    if (queryData == null) {
-      return null;
+    Integer targetId = targetIdByQuery.get(query);
+    if (targetId != null) {
+      return queryDataByTarget.get(targetId);
     }
-    QueryData updatedQueryData = targetIds.get(queryData.getTargetId());
-    return updatedQueryData != null ? updatedQueryData : queryData;
+    return queryCache.getQueryData(query);
   }
 
   /** Mutable state for the transaction in allocateQuery. */
@@ -579,44 +585,50 @@ public final class LocalStore {
     persistence.runTransaction(
         "Release query",
         () -> {
-          QueryData queryData = getQueryData(query);
-          hardAssert(queryData != null, "Tried to release nonexistent query: %s", query);
+          Integer targetId = targetIdByQuery.get(query);
+          hardAssert(targetId != null, "Tried to release nonexistent query: %s", query);
+          QueryData queryData = queryDataByTarget.get(targetId);
 
           // References for documents sent via Watch are automatically removed when we delete a
           // query's target data from the reference delegate. Since this does not remove references
           // for locally mutated documents, we have to remove the target associations for these
           // documents manually.
           ImmutableSortedSet<DocumentKey> removedReferences =
-              localViewReferences.removeReferencesForId(queryData.getTargetId());
+              localViewReferences.removeReferencesForId(targetId);
           for (DocumentKey key : removedReferences) {
             persistence.getReferenceDelegate().removeReference(key);
           }
 
           // Note: This also updates the query cache
           persistence.getReferenceDelegate().removeTarget(queryData);
-          targetIds.remove(queryData.getTargetId());
+          queryDataByTarget.remove(targetId);
+          targetIdByQuery.remove(query);
         });
   }
 
-  /** Runs the given query against all the documents in the local store and returns the results. */
-  public ImmutableSortedMap<DocumentKey, Document> executeQuery(Query query) {
-    QueryData queryData = getQueryData(query);
-    if (queryData != null) {
-      ImmutableSortedSet<DocumentKey> remoteKeys =
-          this.queryCache.getMatchingKeysForTargetId(queryData.getTargetId());
-      return executeQuery(query, queryData, remoteKeys);
-    } else {
-      return executeQuery(query, null, DocumentKey.emptyKeySet());
-    }
-  }
-
   /**
-   * Runs the given query against the local store and returns the results, potentially taking
-   * advantage of the provided query data and the set of remote document keys.
+   * Runs the specified query against the local store and returns the results, potentially taking
+   * advantage of query data from previous executions (such as the set of remote keys).
+   *
+   * @param usePreviousResults Whether results from previous executions can be used to optimize this
+   *     query execution.
    */
-  public ImmutableSortedMap<DocumentKey, Document> executeQuery(
-      Query query, @Nullable QueryData queryData, ImmutableSortedSet<DocumentKey> remoteKeys) {
-    return queryEngine.getDocumentsMatchingQuery(query, queryData, remoteKeys);
+  public QueryResult executeQuery(Query query, boolean usePreviousResults) {
+    QueryData queryData = getQueryData(query);
+    SnapshotVersion lastLimboFreeSnapshotVersion = SnapshotVersion.NONE;
+    ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
+
+    if (queryData != null) {
+      lastLimboFreeSnapshotVersion = queryData.getLastLimboFreeSnapshotVersion();
+      remoteKeys = this.queryCache.getMatchingKeysForTargetId(queryData.getTargetId());
+    }
+
+    ImmutableSortedMap<DocumentKey, Document> documents =
+        queryEngine.getDocumentsMatchingQuery(
+            query,
+            usePreviousResults ? lastLimboFreeSnapshotVersion : SnapshotVersion.NONE,
+            usePreviousResults ? remoteKeys : DocumentKey.emptyKeySet());
+    return new QueryResult(documents, remoteKeys);
   }
 
   /**
@@ -654,6 +666,7 @@ public final class LocalStore {
   }
 
   public LruGarbageCollector.Results collectGarbage(LruGarbageCollector garbageCollector) {
-    return persistence.runTransaction("Collect garbage", () -> garbageCollector.collect(targetIds));
+    return persistence.runTransaction(
+        "Collect garbage", () -> garbageCollector.collect(queryDataByTarget));
   }
 }

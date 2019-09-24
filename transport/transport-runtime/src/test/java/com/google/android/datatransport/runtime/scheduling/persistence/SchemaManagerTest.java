@@ -23,6 +23,7 @@ import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
+import java.nio.charset.Charset;
 import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,7 +39,7 @@ public class SchemaManagerTest {
   private static final TransportContext CONTEXT2 =
       TransportContext.builder()
           .setBackendName("b2")
-          .setExtras("e2".getBytes())
+          .setExtras("e2".getBytes(Charset.defaultCharset()))
           .build()
           .withPriority(Priority.VERY_LOW);
 
@@ -47,13 +48,13 @@ public class SchemaManagerTest {
           .setTransportName("42")
           .setEventMillis(1)
           .setUptimeMillis(2)
-          .setPayload("Hello".getBytes())
+          .setPayload("Hello".getBytes(Charset.defaultCharset()))
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();
 
   private static final EventInternal EVENT2 =
-      EVENT1.toBuilder().setPayload("World".getBytes()).build();
+      EVENT1.toBuilder().setPayload("World".getBytes(Charset.defaultCharset())).build();
 
   private static final long HOUR = 60 * 60 * 1000;
   private static final EventStoreConfig CONFIG =

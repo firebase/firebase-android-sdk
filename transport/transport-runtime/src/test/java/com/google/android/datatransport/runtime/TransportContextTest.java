@@ -24,7 +24,7 @@ import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
 public class TransportContextTest {
-  private static final byte[] EXTRAS = "hello".getBytes(Charset.forName("UTF-8"));
+  private static final byte[] EXTRAS = "hello".getBytes(Charset.defaultCharset());
   private static final String BACKEND_NAME = "bknd";
 
   private static final TransportContext CTX =

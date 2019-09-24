@@ -22,7 +22,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -38,6 +37,7 @@ import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryEngine;
+import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.local.SimpleQueryEngine;
 import com.google.firebase.firestore.model.Document;
@@ -49,13 +49,13 @@ import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
 import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.Datastore;
+import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import io.grpc.Status;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -77,6 +77,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
+  private final GrpcMetadataProvider metadataProvider;
 
   // LRU-related
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
@@ -86,10 +87,12 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       DatabaseInfo databaseInfo,
       FirebaseFirestoreSettings settings,
       CredentialsProvider credentialsProvider,
-      final AsyncQueue asyncQueue) {
+      final AsyncQueue asyncQueue,
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.credentialsProvider = credentialsProvider;
     this.asyncQueue = asyncQueue;
+    this.metadataProvider = metadataProvider;
 
     TaskCompletionSource<User> firstUser = new TaskCompletionSource<>();
     final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -201,14 +204,9 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     this.verifyNotTerminated();
     return asyncQueue.enqueue(
         () -> {
-          ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
-
-          View view =
-              new View(
-                  query,
-                  new ImmutableSortedSet<DocumentKey>(
-                      Collections.emptyList(), DocumentKey::compareTo));
-          View.DocumentChanges viewDocChanges = view.computeDocChanges(docs);
+          QueryResult queryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
+          View view = new View(query, queryResult.getRemoteKeys());
+          View.DocumentChanges viewDocChanges = view.computeDocChanges(queryResult.getDocuments());
           return view.applyChanges(viewDocChanges).getSnapshot();
         });
   }
@@ -278,7 +276,8 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       lruScheduler.start();
     }
 
-    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context);
+    Datastore datastore =
+        new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, metadataProvider);
     ConnectivityMonitor connectivityMonitor = new AndroidConnectivityMonitor(context);
     remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue, connectivityMonitor);
 
