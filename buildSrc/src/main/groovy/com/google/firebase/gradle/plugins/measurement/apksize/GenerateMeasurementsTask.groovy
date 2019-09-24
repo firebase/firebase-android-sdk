@@ -67,12 +67,6 @@ public class GenerateMeasurementsTask extends DefaultTask {
 
     @Override
     Task configure(Closure closure) {
-        project.android.variantFilter {
-            if (it.buildType.name != "aggressive") {
-                it.ignore = true;
-            }
-        }
-
         outputs.upToDateWhen { false }
         dependsOn "assemble"
         return super.configure(closure)
