@@ -9,7 +9,8 @@
         "README.md": "Development Guide",
         "docs/ktx/common.md": "Common KTX",
         "docs/ktx/firestore.md": "Firestore KTX",
-        "docs/ktx/functions.md": "Functions KTX"
+        "docs/ktx/functions.md": "Functions KTX",
+        "docs/ktx/database.md": "Realtime Database KTX"
     },
     "related": [
         "firebase/quickstart-android"

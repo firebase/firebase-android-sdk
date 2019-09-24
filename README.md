@@ -8,6 +8,7 @@ dependencies:
   * `firebase-common`
   * `firebase-common-ktx`
   * `firebase-database`
+  * `firebase-database-ktx`
   * `firebase-database-collection`
   * `firebase-datatransport`
   * `firebase-firestore`
