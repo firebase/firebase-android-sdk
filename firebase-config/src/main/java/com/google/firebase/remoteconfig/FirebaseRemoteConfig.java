@@ -860,9 +860,11 @@ public class FirebaseRemoteConfig {
       JSONObject rolloutJson = rolloutsJson.getJSONObject(index);
       if (rolloutJson.optBoolean("featureEnabled")) {
         try {
+          String rolloutResourceName = rolloutJson.getString("rollout");
+          String rolloutId = rolloutResourceName.split("/rollouts/")[1];
           String base64RolloutId =
-              Base64.encodeToString(
-                  rolloutJson.getString("rollout").getBytes("UTF-8"), Base64.DEFAULT);
+              Base64.encodeToString(rolloutId.getBytes("UTF-8")
+                  , Base64.DEFAULT);
           rolloutsThatEnabledFeatures.add(base64RolloutId);
         } catch (UnsupportedEncodingException e) {
           Log.e(TAG, "Could not update GA with Feature Rollouts.", e);

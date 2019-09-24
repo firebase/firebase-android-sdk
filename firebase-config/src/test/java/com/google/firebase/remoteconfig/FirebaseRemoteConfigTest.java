@@ -1376,12 +1376,12 @@ public final class FirebaseRemoteConfigTest {
     JSONArray rollouts = new JSONArray();
 
     JSONObject rolloutThatEnablesFeature = new JSONObject();
-    rolloutThatEnablesFeature.put(ROLLOUT, 1);
+    rolloutThatEnablesFeature.put(ROLLOUT, "projects/14368190084/rollouts/1");
     rolloutThatEnablesFeature.put(FEATURE_KEY, "feature_key_1");
     rolloutThatEnablesFeature.put(FEATURE_ENABLED, true);
 
     JSONObject rolloutThatDoesNotEnableFeature = new JSONObject();
-    rolloutThatDoesNotEnableFeature.put(ROLLOUT, 1);
+    rolloutThatDoesNotEnableFeature.put(ROLLOUT, "projects/14368190084/rollouts/2");
     rolloutThatDoesNotEnableFeature.put(FEATURE_KEY, "feature_key_-1");
 
     return rollouts.put(rolloutThatEnablesFeature).put(rolloutThatDoesNotEnableFeature);
