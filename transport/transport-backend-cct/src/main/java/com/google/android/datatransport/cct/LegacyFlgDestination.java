@@ -65,10 +65,7 @@ public class LegacyFlgDestination implements Destination {
   }
 
   @NonNull
-  public static LegacyFlgDestination parseFromExtras(@Nullable byte[] a) {
-    if (a == null) {
-      return LegacyFlgDestination.DEFAULT_INSTANCE;
-    }
+  public static LegacyFlgDestination parseFromExtras(@NonNull byte[] a) {
     try {
       String encodedExtra = new String(a, "UTF-8");
       if (!encodedExtra.startsWith(EXTRAS_VERSION_MARKER)) {
