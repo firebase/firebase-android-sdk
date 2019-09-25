@@ -12,6 +12,7 @@ package com.google.firebase.remoteconfig {
     method public boolean getBoolean(@NonNull String);
     method @NonNull public byte[] getByteArray(@NonNull String);
     method public double getDouble(@NonNull String);
+    method public Set<String> getEnabledFeatureKeys();
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo getInfo();
     method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig getInstance();
     method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig getInstance(@NonNull FirebaseApp);
@@ -19,6 +20,7 @@ package com.google.firebase.remoteconfig {
     method public long getLong(@NonNull String);
     method @NonNull public String getString(@NonNull String);
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigValue getValue(@NonNull String);
+    method public boolean isFeatureEnabled(String);
     method @NonNull public Task<Void> reset();
     method @Deprecated public void setConfigSettings(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings);
     method @NonNull public Task<Void> setConfigSettingsAsync(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings);
