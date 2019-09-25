@@ -32,7 +32,7 @@ public class CctBackendFactory implements BackendFactory {
   public TransportBackend create(CreationContext creationContext) {
     final String url;
     // Since legacy flg and clearcut APIs are identical, they share the same backend.
-    if (creationContext.getBackendName().equals(LegacyFlgDestination.DESTINATION_NAME)) {
+    if (creationContext.getBackendName().equals(CCTDestination.LEGACY_DESTINATION_NAME)) {
       url = LFLG_URL;
     } else {
       url = CCT_URL;
