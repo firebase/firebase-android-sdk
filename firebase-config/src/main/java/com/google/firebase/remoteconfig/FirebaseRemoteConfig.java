@@ -138,7 +138,12 @@ public class FirebaseRemoteConfig {
    */
   public static final String TAG = "FirebaseRemoteConfig";
 
-  public static final String FRC_ANALYTICS_ORIGIN_NAME = "frc";
+  /**
+   * The origin name for all Firebase Remote Config Analytics.
+   *
+   * @hide
+   */
+  static final String FRC_ANALYTICS_ORIGIN_NAME = "frc";
 
   private final Context context;
   private final FirebaseApp firebaseApp;
