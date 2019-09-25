@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
@@ -273,7 +272,7 @@ public class FirebaseInstallationServiceClient {
             installationTokenResult.setToken(reader.nextString());
           } else if (key.equals("expiresIn")) {
             installationTokenResult.setTokenExpirationInSecs(
-                TimeUnit.MILLISECONDS.toSeconds(reader.nextLong()));
+                parseTokenExpirationTimestamp(reader.nextString()));
           } else {
             reader.skipValue();
           }
@@ -301,7 +300,7 @@ public class FirebaseInstallationServiceClient {
       if (name.equals("token")) {
         builder.setToken(reader.nextString());
       } else if (name.equals("expiresIn")) {
-        builder.setTokenExpirationInSecs(TimeUnit.MILLISECONDS.toSeconds(reader.nextLong()));
+        builder.setTokenExpirationInSecs(parseTokenExpirationTimestamp(reader.nextString()));
       } else {
         reader.skipValue();
       }
@@ -328,5 +327,16 @@ public class FirebaseInstallationServiceClient {
       Log.e(TAG, "No such package: " + context.getPackageName(), e);
       return null;
     }
+  }
+
+  /**
+   * Returns parsed token expiration timestamp in seconds.
+   *
+   * @param expiresIn is expiration timestamp in String format: 604800s
+   */
+  private static long parseTokenExpirationTimestamp(String expiresIn) {
+    return (expiresIn == null || expiresIn.length() == 0)
+        ? 0L
+        : Long.parseLong(expiresIn.substring(0, expiresIn.length() - 1));
   }
 }
