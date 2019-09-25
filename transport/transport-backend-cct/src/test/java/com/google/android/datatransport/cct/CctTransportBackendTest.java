@@ -125,7 +125,7 @@ public class CctTransportBackendTest {
                         .setPayload(PAYLOAD.toByteArray())
                         .setCode(CODE)
                         .build())))
-        .setExtras(LegacyFlgDestination.encodeString(API_KEY))
+        .setExtras(CCTDestination.encodeString(API_KEY))
         .build();
   }
 

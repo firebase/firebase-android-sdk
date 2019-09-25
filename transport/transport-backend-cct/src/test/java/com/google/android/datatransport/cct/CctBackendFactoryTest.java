@@ -66,7 +66,7 @@ public class CctBackendFactoryTest {
             RuntimeEnvironment.application,
             wallClock,
             uptimeClock,
-            LegacyFlgDestination.DESTINATION_NAME);
+            CCTDestination.LEGACY_DESTINATION_NAME);
 
     CctTransportBackend backend = (CctTransportBackend) cctBackendFactory.create(creationContext);
     assertThat(backend.endPoint).isEqualTo(new URL(LFLG_URL));
