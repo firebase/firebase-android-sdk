@@ -26,7 +26,7 @@ public interface Transport<T> {
    * Sends the event of type T.
    *
    * <p>The event may not be send immediately. It's up to the implementation to define the time when
-   * events are actually send.
+   * events are actually sent.
    *
    * @param event The event with the payload that needs to be sent.
    */
