@@ -70,7 +70,6 @@ class InAppMessagingDisplayTests : BaseTestCase() {
     fun `inAppMessagingDisplay should delegate to FirebaseInAppMessagingDisplay#getInstance()`() {
         assertThat(Firebase.inAppMessagingDisplay).isSameInstanceAs(FirebaseInAppMessagingDisplay.getInstance())
     }
-
 }
 
 @RunWith(RobolectricTestRunner::class)
