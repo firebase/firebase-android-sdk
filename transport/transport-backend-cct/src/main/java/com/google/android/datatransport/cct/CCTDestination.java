@@ -17,37 +17,48 @@ package com.google.android.datatransport.cct;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.Destination;
+import java.io.UnsupportedEncodingException;
 
 public final class CCTDestination implements Destination {
   static final String DESTINATION_NAME = "cct";
+  static final String LEGACY_DESTINATION_NAME = "lflg";
+
   private static final String DEFAULT_API_KEY =
       StringMerger.mergeStrings("AzSCki82AwsLzKd5O8zo", "IayckHiZRO1EFl1aGoK");
 
-  public static final CCTDestination DEFAULT_INSTANCE = new CCTDestination();
+  public static final CCTDestination DEFAULT_INSTANCE =
+      new CCTDestination(DESTINATION_NAME, null, null);
   public static final CCTDestination DEFAULT_LEGACY_INSTANCE =
-      new CCTDestination(DEFAULT_API_KEY, null);
+      new CCTDestination(LEGACY_DESTINATION_NAME, DEFAULT_API_KEY, null);
 
+  private final String destinationName;
   private final String apiKey;
   private final String endPoint;
 
-  private CCTDestination() {
-    this(null, null);
-  }
-
-  public CCTDestination(@Nullable String apiKey, @Nullable String endPoint) {
+  private CCTDestination(
+      @NonNull String destinationName, @Nullable String apiKey, @Nullable String endPoint) {
+    this.destinationName = destinationName;
     this.apiKey = apiKey;
     this.endPoint = endPoint;
+  }
+
+  public CCTDestination customLegacyDestination(
+      @Nullable String apiKey, @Nullable String endPoint) {
+    return new CCTDestination(LEGACY_DESTINATION_NAME, apiKey, endPoint);
   }
 
   @NonNull
   @Override
   public String getName() {
-    return DESTINATION_NAME;
+    return destinationName;
   }
 
   @Nullable
   @Override
   public byte[] getExtras() {
+    if (apiKey != null) {
+      return encodeString(apiKey);
+    }
     return null;
   }
 
@@ -59,5 +70,23 @@ public final class CCTDestination implements Destination {
   @Nullable
   public String getEndPoint() {
     return endPoint;
+  }
+
+  @NonNull
+  static byte[] encodeString(@NonNull String s) {
+    try {
+      return s.getBytes("UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new IllegalStateException("UTF-8 encoding not found.");
+    }
+  }
+
+  @NonNull
+  static String decodeExtras(@NonNull byte[] a) {
+    try {
+      return new String(a, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new IllegalStateException("UTF-8 encoding not found.");
+    }
   }
 }
