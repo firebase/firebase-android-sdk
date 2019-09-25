@@ -836,19 +836,17 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Notifies the Google Analytics for SDK about active Rollouts that enabled Features on this
-   * device.
+   * Notifies the Google Analytics for Firebase SDK about active Rollouts that enabled Features on
+   * this device.
    *
    * @hide
    */
-  // TODO(issues/255): Find a cleaner way to test ABT component dependency without
-  // having to make this method visible.
   @VisibleForTesting
   void updateGaWithEnabledRollouts(@NonNull JSONArray rollouts) {
     if (analyticsConnector == null) {
       // If there is no analyticsConnector instance, then this FRC is either in a non-3P namespace
-      // or
-      // in a non-main FirebaseApp, so there is no reason to call GA to report Rollouts information.
+      // or in a non-main FirebaseApp, so there is no reason to call GA to report Rollouts
+      // information.
       return;
     }
 
@@ -875,8 +873,7 @@ public class FirebaseRemoteConfig {
           String rolloutResourceName = rolloutJson.getString("rollout");
           String rolloutId = rolloutResourceName.split("/rollouts/")[1];
           String base64RolloutId =
-              Base64.encodeToString(rolloutId.getBytes("UTF-8")
-                  , Base64.DEFAULT);
+              Base64.encodeToString(rolloutId.getBytes("UTF-8"), Base64.DEFAULT);
           rolloutsThatEnabledFeatures.add(base64RolloutId);
         } catch (UnsupportedEncodingException e) {
           Log.e(TAG, "Could not update GA with Feature Rollouts.", e);
