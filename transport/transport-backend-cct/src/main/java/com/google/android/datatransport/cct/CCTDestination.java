@@ -20,9 +20,24 @@ import com.google.android.datatransport.runtime.Destination;
 
 public final class CCTDestination implements Destination {
   static final String DESTINATION_NAME = "cct";
-  public static final CCTDestination INSTANCE = new CCTDestination();
+  private static final String DEFAULT_API_KEY =
+      StringMerger.mergeStrings("AzSCki82AwsLzKd5O8zo", "IayckHiZRO1EFl1aGoK");
 
-  private CCTDestination() {}
+  public static final CCTDestination DEFAULT_INSTANCE = new CCTDestination();
+  public static final CCTDestination DEFAULT_LEGACY_INSTANCE =
+      new CCTDestination(DEFAULT_API_KEY, null);
+
+  private final String apiKey;
+  private final String endPoint;
+
+  private CCTDestination() {
+    this(null, null);
+  }
+
+  public CCTDestination(@Nullable String apiKey, @Nullable String endPoint) {
+    this.apiKey = apiKey;
+    this.endPoint = endPoint;
+  }
 
   @NonNull
   @Override
@@ -34,5 +49,15 @@ public final class CCTDestination implements Destination {
   @Override
   public byte[] getExtras() {
     return null;
+  }
+
+  @Nullable
+  public String getAPIKey() {
+    return apiKey;
+  }
+
+  @Nullable
+  public String getEndPoint() {
+    return endPoint;
   }
 }
