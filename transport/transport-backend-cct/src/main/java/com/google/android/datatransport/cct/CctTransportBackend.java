@@ -286,7 +286,6 @@ final class CctTransportBackend implements TransportBackend {
     String apiKey = null;
     if (request.getExtras() != null) {
       try {
-
         LegacyFlgDestination destination =
             LegacyFlgDestination.parseFromExtras(request.getExtras());
         apiKey = destination.getAPIKey();
@@ -294,9 +293,9 @@ final class CctTransportBackend implements TransportBackend {
         if (destinationEndPoint != null && !destinationEndPoint.isEmpty()) {
           actualEndPoint = parseUrlOrThrow(destination.getEndPoint());
         }
-      } catch (IllegalStateException e) {
+      } catch (IllegalStateException | IllegalArgumentException e) {
         Logging.e(LOG_TAG, "Couldn't parse extras", e);
-        return null;
+        return BackendResponse.fatalError();
       }
     }
 

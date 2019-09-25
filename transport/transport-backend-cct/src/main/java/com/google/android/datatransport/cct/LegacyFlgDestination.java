@@ -18,13 +18,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.Destination;
 import java.io.UnsupportedEncodingException;
+import java.util.regex.Pattern;
 
 public class LegacyFlgDestination implements Destination {
   static final String DESTINATION_NAME = "lflg";
   private static final String DEFAULT_API_KEY =
       StringMerger.mergeStrings("AzSCki82AwsLzKd5O8zo", "IayckHiZRO1EFl1aGoK");
-  private static final String EXTRAS_VERSION_MARKER = "lfdv1$";
-  private static final String EXTRAS_DELIMITER = "@";
+  private static final String EXTRAS_VERSION_MARKER = "1$";
+  private static final String EXTRAS_DELIMITER = "\\";
 
   public static final LegacyFlgDestination DEFAULT_INSTANCE =
       new LegacyFlgDestination(DEFAULT_API_KEY);
@@ -69,13 +70,12 @@ public class LegacyFlgDestination implements Destination {
     try {
       String encodedExtra = new String(a, "UTF-8");
       if (!encodedExtra.startsWith(EXTRAS_VERSION_MARKER)) {
-        throw new IllegalStateException("Version marker missing from extras");
+        throw new IllegalArgumentException("Version marker missing from extras");
       }
       encodedExtra = encodedExtra.substring(EXTRAS_VERSION_MARKER.length());
-      @SuppressWarnings("StringSplitter")
-      String[] fields = encodedExtra.split(EXTRAS_DELIMITER);
+      String[] fields = encodedExtra.split(Pattern.quote(EXTRAS_DELIMITER), 2);
       if (fields.length != 2) {
-        throw new IllegalStateException("Extra is not a valid encoded LegacyFlgDestination");
+        throw new IllegalArgumentException("Extra is not a valid encoded LegacyFlgDestination");
       }
       String endPoint = fields[0];
       String apiKey = fields[1];
