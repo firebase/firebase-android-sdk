@@ -29,11 +29,11 @@ package com.google.firebase.installations.local {
     ctor public PersistedFid(@NonNull FirebaseApp);
     method @NonNull public boolean clear();
     method @NonNull public boolean insertOrUpdatePersistedFidEntry(@NonNull com.google.firebase.installations.local.PersistedFidEntry);
-    method @Nullable public com.google.firebase.installations.local.PersistedFidEntry readPersistedFidEntryValue();
+    method @NonNull public com.google.firebase.installations.local.PersistedFidEntry readPersistedFidEntryValue();
   }
 
   public enum PersistedFid.RegistrationStatus {
-    enum_constant public static final com.google.firebase.installations.local.PersistedFid.RegistrationStatus PENDING;
+    enum_constant public static final com.google.firebase.installations.local.PersistedFid.RegistrationStatus NOT_GENERATED;
     enum_constant public static final com.google.firebase.installations.local.PersistedFid.RegistrationStatus REGISTERED;
     enum_constant public static final com.google.firebase.installations.local.PersistedFid.RegistrationStatus REGISTER_ERROR;
     enum_constant public static final com.google.firebase.installations.local.PersistedFid.RegistrationStatus UNREGISTERED;
@@ -44,10 +44,14 @@ package com.google.firebase.installations.local {
     method @NonNull public static com.google.firebase.installations.local.PersistedFidEntry.Builder builder();
     method @Nullable public abstract String getAuthToken();
     method public abstract long getExpiresInSecs();
-    method @NonNull public abstract String getFirebaseInstallationId();
+    method @Nullable public abstract String getFirebaseInstallationId();
     method @Nullable public abstract String getRefreshToken();
     method @NonNull public abstract com.google.firebase.installations.local.PersistedFid.RegistrationStatus getRegistrationStatus();
     method public abstract long getTokenCreationEpochInSecs();
+    method public boolean isErrored();
+    method public boolean isNotGenerated();
+    method public boolean isRegistered();
+    method public boolean isUnregistered();
     method @NonNull public abstract com.google.firebase.installations.local.PersistedFidEntry.Builder toBuilder();
   }
 

@@ -16,8 +16,8 @@ package com.google.firebase.installations.local;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import java.util.Arrays;
 import java.util.List;
@@ -31,14 +31,28 @@ public class PersistedFid {
   // NOTE: never change the ordinal of the enum values because the enum values are stored in shared
   // prefs as their ordinal numbers.
   public enum RegistrationStatus {
-    /** {@link PersistedFidEntry} is synced to FIS servers */
-    REGISTERED,
-    /** {@link PersistedFidEntry} is not synced with FIS server */
+    /**
+     * {@link PersistedFidEntry} default registration status. Next state: UNREGISTERED - A new FID
+     * is created and persisted locally before registering with FIS servers.
+     */
+    NOT_GENERATED,
+    /**
+     * {@link PersistedFidEntry} is not synced with FIS servers. Next state: REGISTERED - If FID
+     * registration is successful. REGISTER_ERROR - If FID registration or refresh auth token
+     * failed.
+     */
     UNREGISTERED,
-    /** {@link PersistedFidEntry} is in error state when syncing with FIS server */
+    /**
+     * {@link PersistedFidEntry} is synced to FIS servers. Next state: REGISTER_ERROR - If FID
+     * registration or refresh auth token failed.
+     */
+    REGISTERED,
+    /**
+     * {@link PersistedFidEntry} is in error state when an exception is thrown while syncing with
+     * FIS server. Next state: UNREGISTERED - A new FID is created and persisted locally before
+     * registering with FIS servers.
+     */
     REGISTER_ERROR,
-    /** {@link PersistedFidEntry} is in pending state when waiting for FIS server response */
-    PENDING
   }
 
   private static final String SHARED_PREFS_NAME = "PersistedFid";
@@ -59,7 +73,9 @@ public class PersistedFid {
           EXPIRES_IN_SECONDS_KEY,
           PERSISTED_STATUS_KEY);
 
+  @GuardedBy("prefs")
   private final SharedPreferences prefs;
+
   private final String persistenceKey;
 
   public PersistedFid(@NonNull FirebaseApp firebaseApp) {
@@ -72,30 +88,29 @@ public class PersistedFid {
     persistenceKey = firebaseApp.getPersistenceKey();
   }
 
-  @Nullable
+  @NonNull
   public PersistedFidEntry readPersistedFidEntryValue() {
-    String fid = prefs.getString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
-    int status = prefs.getInt(getSharedPreferencesKey(PERSISTED_STATUS_KEY), -1);
-    String authToken = prefs.getString(getSharedPreferencesKey(AUTH_TOKEN_KEY), null);
-    String refreshToken = prefs.getString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), null);
-    long tokenCreationTime =
-        prefs.getLong(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY), 0);
-    long expiresIn = prefs.getLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), 0);
+    synchronized (prefs) {
+      String fid = prefs.getString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
+      int status = prefs.getInt(getSharedPreferencesKey(PERSISTED_STATUS_KEY), -1);
+      String authToken = prefs.getString(getSharedPreferencesKey(AUTH_TOKEN_KEY), null);
+      String refreshToken = prefs.getString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), null);
+      long tokenCreationTime =
+          prefs.getLong(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY), 0);
+      long expiresIn = prefs.getLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), 0);
 
-    if (fid == null
-        || status == -1
-        || !(status >= 0 && status < RegistrationStatus.values().length)) {
-      return null;
+      if (fid == null || !(status >= 0 && status < RegistrationStatus.values().length)) {
+        return PersistedFidEntry.builder().build();
+      }
+      return PersistedFidEntry.builder()
+          .setFirebaseInstallationId(fid)
+          .setRegistrationStatus(RegistrationStatus.values()[status])
+          .setAuthToken(authToken)
+          .setRefreshToken(refreshToken)
+          .setTokenCreationEpochInSecs(tokenCreationTime)
+          .setExpiresInSecs(expiresIn)
+          .build();
     }
-
-    return PersistedFidEntry.builder()
-        .setFirebaseInstallationId(fid)
-        .setRegistrationStatus(RegistrationStatus.values()[status])
-        .setAuthToken(authToken)
-        .setRefreshToken(refreshToken)
-        .setTokenCreationEpochInSecs(tokenCreationTime)
-        .setExpiresInSecs(expiresIn)
-        .build();
   }
 
   @NonNull
