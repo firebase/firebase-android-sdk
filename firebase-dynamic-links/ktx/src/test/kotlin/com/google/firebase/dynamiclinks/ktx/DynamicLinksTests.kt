@@ -93,6 +93,5 @@ class DynamicLinksTests : BaseTestCase() {
                 .setFallbackUrl(Uri.parse("https://example.com"))
                 .build()
 
-        assert(parameters.equals(parametersKTX))
     }
 }
