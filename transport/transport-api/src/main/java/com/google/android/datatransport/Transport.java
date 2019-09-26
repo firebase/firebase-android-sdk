@@ -14,8 +14,6 @@
 
 package com.google.android.datatransport;
 
-import com.google.android.gms.tasks.Task;
-
 /**
  * Provides means of recording events of interest.
  *
