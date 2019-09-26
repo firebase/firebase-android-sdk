@@ -65,6 +65,9 @@ public class FirebaseInstallationServiceClient {
 
   private static final Pattern EXPIRATION_TIMESTAMP_PATTERN = Pattern.compile("[0-9]+s");
 
+  @VisibleForTesting
+  static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
+
   private final Context context;
 
   public FirebaseInstallationServiceClient(@NonNull Context context) {
@@ -340,9 +343,10 @@ public class FirebaseInstallationServiceClient {
    * @param expiresIn is expiration timestamp in String format: 604800s
    */
   @VisibleForTesting
-  private static long parseTokenExpirationTimestamp(String expiresIn) {
+  static long parseTokenExpirationTimestamp(String expiresIn) {
     checkArgument(
-        EXPIRATION_TIMESTAMP_PATTERN.matcher(expiresIn).matches(), "Invalid Expiration Timestamp.");
+        EXPIRATION_TIMESTAMP_PATTERN.matcher(expiresIn).matches(),
+        PARSING_EXPIRATION_TIME_ERROR_MESSAGE);
     return (expiresIn == null || expiresIn.length() == 0)
         ? 0L
         : Long.parseLong(expiresIn.substring(0, expiresIn.length() - 1));
