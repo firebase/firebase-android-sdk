@@ -99,22 +99,17 @@ final class CctTransportBackend implements TransportBackend {
   }
 
   CctTransportBackend(
-      Context applicationContext,
-      String url,
-      Clock wallTimeClock,
-      Clock uptimeClock,
-      int readTimeout) {
+      Context applicationContext, Clock wallTimeClock, Clock uptimeClock, int readTimeout) {
     this.connectivityManager =
         (ConnectivityManager) applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-    this.endPoint = parseUrlOrThrow(url);
+    this.endPoint = parseUrlOrThrow(CCTDestination.DEFAULT_END_POINT);
     this.uptimeClock = uptimeClock;
     this.wallTimeClock = wallTimeClock;
     this.readTimeout = readTimeout;
   }
 
-  CctTransportBackend(
-      Context applicationContext, String url, Clock wallTimeClock, Clock uptimeClock) {
-    this(applicationContext, url, wallTimeClock, uptimeClock, READ_TIME_OUT);
+  CctTransportBackend(Context applicationContext, Clock wallTimeClock, Clock uptimeClock) {
+    this(applicationContext, wallTimeClock, uptimeClock, READ_TIME_OUT);
   }
 
   @Override
@@ -293,7 +288,7 @@ final class CctTransportBackend implements TransportBackend {
         if (destination.getEndPoint() != null) {
           actualEndPoint = parseUrlOrThrow(destination.getEndPoint());
         }
-      } catch (IllegalArgumentException | IllegalStateException e) {
+      } catch (IllegalArgumentException e) {
         return BackendResponse.fatalError();
       }
     }

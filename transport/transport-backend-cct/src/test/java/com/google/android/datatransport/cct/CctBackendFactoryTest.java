@@ -14,8 +14,6 @@
 
 package com.google.android.datatransport.cct;
 
-import static com.google.android.datatransport.cct.CctBackendFactory.CCT_URL;
-import static com.google.android.datatransport.cct.CctBackendFactory.LFLG_URL;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.android.datatransport.runtime.backends.CreationContext;
@@ -45,30 +43,6 @@ public class CctBackendFactoryTest {
             CCTDestination.DESTINATION_NAME);
 
     CctTransportBackend backend = (CctTransportBackend) cctBackendFactory.create(creationContext);
-    assertThat(backend.endPoint).isEqualTo(new URL(CCT_URL));
-  }
-
-  @Test
-  public void create_returnCCTBackend_WhenNoBackendIsSpecified() throws MalformedURLException {
-    CctBackendFactory cctBackendFactory = new CctBackendFactory();
-    CreationContext creationContext =
-        CreationContext.create(RuntimeEnvironment.application, wallClock, uptimeClock);
-
-    CctTransportBackend backend = (CctTransportBackend) cctBackendFactory.create(creationContext);
-    assertThat(backend.endPoint).isEqualTo(new URL(CCT_URL));
-  }
-
-  @Test
-  public void create_returnCCTBackend_WhenBackendNameIslflg() throws MalformedURLException {
-    CctBackendFactory cctBackendFactory = new CctBackendFactory();
-    CreationContext creationContext =
-        CreationContext.create(
-            RuntimeEnvironment.application,
-            wallClock,
-            uptimeClock,
-            CCTDestination.LEGACY_DESTINATION_NAME);
-
-    CctTransportBackend backend = (CctTransportBackend) cctBackendFactory.create(creationContext);
-    assertThat(backend.endPoint).isEqualTo(new URL(LFLG_URL));
+    assertThat(backend.endPoint).isEqualTo(new URL(CCTDestination.DEFAULT_END_POINT));
   }
 }

@@ -17,44 +17,39 @@ package com.google.android.datatransport.cct;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.datatransport.runtime.Destination;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 
 public final class CCTDestination implements Destination {
   static final String DESTINATION_NAME = "cct";
-  static final String LEGACY_DESTINATION_NAME = "lflg";
+
+  static final String DEFAULT_END_POINT =
+      StringMerger.mergeStrings("hts/frbslgiggolai.o/0clgbth", "tp:/ieaeogn.ogepscmvc/o/ac");
+  static final String LEGACY_END_POINT =
+      StringMerger.mergeStrings(
+          "hts/frbslgigp.ogepscmv/ieo/eaybtho", "tp:/ieaeogn-agolai.o/1frlglgc/aclg");
 
   private static final String DEFAULT_API_KEY =
       StringMerger.mergeStrings("AzSCki82AwsLzKd5O8zo", "IayckHiZRO1EFl1aGoK");
   private static final String EXTRAS_VERSION_MARKER = "1$";
   private static final String EXTRAS_DELIMITER = "\\";
 
-  public static final CCTDestination DEFAULT_INSTANCE =
-      new CCTDestination(DESTINATION_NAME, null, null);
-  public static final CCTDestination DEFAULT_LEGACY_INSTANCE =
-      new CCTDestination(LEGACY_DESTINATION_NAME, DEFAULT_API_KEY, null);
+  public static final CCTDestination INSTANCE = new CCTDestination(DEFAULT_END_POINT, null);
+  public static final CCTDestination LEGACY_INSTANCE =
+      new CCTDestination(LEGACY_END_POINT, DEFAULT_API_KEY);
 
-  private final String destinationName;
-  private final String apiKey;
-  private final String endPoint;
+  @NonNull private final String endPoint;
+  @Nullable private final String apiKey;
 
-  private CCTDestination(
-      @NonNull String destinationName, @Nullable String apiKey, @Nullable String endPoint) {
-    this.destinationName = destinationName;
-    this.apiKey = apiKey;
+  public CCTDestination(@NonNull String endPoint, @Nullable String apiKey) {
     this.endPoint = endPoint;
-  }
-
-  @NonNull
-  public static CCTDestination customLegacyDestination(
-      @Nullable String apiKey, @Nullable String endPoint) {
-    return new CCTDestination(LEGACY_DESTINATION_NAME, apiKey, endPoint);
+    this.apiKey = apiKey;
   }
 
   @NonNull
   @Override
   public String getName() {
-    return destinationName;
+    return DESTINATION_NAME;
   }
 
   @Nullable
@@ -68,7 +63,7 @@ public final class CCTDestination implements Destination {
     return apiKey;
   }
 
-  @Nullable
+  @NonNull
   public String getEndPoint() {
     return endPoint;
   }
@@ -86,18 +81,9 @@ public final class CCTDestination implements Destination {
     }
     String buffer =
         String.format(
-            "%s%s%s%s%s%s",
-            EXTRAS_VERSION_MARKER,
-            destinationName,
-            EXTRAS_DELIMITER,
-            endPoint == null ? "" : endPoint,
-            EXTRAS_DELIMITER,
-            apiKey == null ? "" : apiKey);
-    try {
-      return buffer.getBytes("UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new IllegalStateException("UTF-8 encoding not found.");
-    }
+            "%s%s%s%s",
+            EXTRAS_VERSION_MARKER, endPoint, EXTRAS_DELIMITER, apiKey == null ? "" : apiKey);
+    return buffer.getBytes(Charset.forName("UTF-8"));
   }
 
   /**
@@ -108,46 +94,30 @@ public final class CCTDestination implements Destination {
    */
   @NonNull
   public static CCTDestination fromByteArray(@NonNull byte[] a) {
-    String buffer;
-    try {
-      buffer = new String(a, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new IllegalStateException("UTF-8 encoding not found.");
-    }
-
+    String buffer = new String(a, Charset.forName("UTF-8"));
     if (!buffer.startsWith(EXTRAS_VERSION_MARKER)) {
       throw new IllegalArgumentException("Version marker missing from extras");
     }
     buffer = buffer.substring(EXTRAS_VERSION_MARKER.length());
-    String[] fields = buffer.split(Pattern.quote(EXTRAS_DELIMITER), 3);
-    if (fields.length != 3) {
+    String[] fields = buffer.split(Pattern.quote(EXTRAS_DELIMITER), 2);
+    if (fields.length != 2) {
       throw new IllegalArgumentException("Extra is not a valid encoded LegacyFlgDestination");
     }
-    String destinationName = fields[0];
-    String endPoint = fields[1];
-    String apiKey = fields[2];
-    if (destinationName.isEmpty()) {
-      throw new IllegalArgumentException("Missing destination name in extras");
+    String endPoint = fields[0];
+    if (endPoint.isEmpty()) {
+      throw new IllegalArgumentException("Missing endpoint in CCTDestination extras");
     }
-    return new CCTDestination(
-        destinationName, apiKey.isEmpty() ? null : apiKey, endPoint.isEmpty() ? null : endPoint);
+    String apiKey = fields[1];
+    return new CCTDestination(endPoint, apiKey.isEmpty() ? null : apiKey);
   }
 
   @NonNull
   static byte[] encodeString(@NonNull String s) {
-    try {
-      return s.getBytes("UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new IllegalStateException("UTF-8 encoding not found.");
-    }
+    return s.getBytes(Charset.forName("UTF-8"));
   }
 
   @NonNull
   static String decodeExtras(@NonNull byte[] a) {
-    try {
-      return new String(a, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new IllegalStateException("UTF-8 encoding not found.");
-    }
+    return new String(a, Charset.forName("UTF-8"));
   }
 }
