@@ -45,6 +45,7 @@ import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.protobuf.ByteString;
 import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.zip.GZIPOutputStream;
@@ -260,6 +261,49 @@ public class CctTransportBackendTest {
     verify(
         postRequestedFor(urlEqualTo("/custom_api"))
             .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, equalTo(API_KEY)));
+  }
+
+  @Test
+  public void testLegacyFlgSuccessLoggingRequest_corruptedExtras()
+      throws UnsupportedEncodingException {
+    BackendRequest request =
+        BackendRequest.builder()
+            .setEvents(
+                Arrays.asList(
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("4")
+                            .setPayload(PAYLOAD.toByteArray())
+                            .build()),
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("4")
+                            .setPayload(PAYLOAD.toByteArray())
+                            .setCode(CODE)
+                            .build())))
+            .setExtras("not a valid extras".getBytes("UTF-8"))
+            .build();
+
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(request);
+    assertThat(response.getStatus()).isEqualTo(BackendResponse.Status.FATAL_ERROR);
   }
 
   @Test

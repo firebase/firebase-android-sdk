@@ -285,12 +285,16 @@ final class CctTransportBackend implements TransportBackend {
     String apiKey = null;
     URL actualEndPoint = endPoint;
     if (request.getExtras() != null) {
-      CCTDestination destination = CCTDestination.fromByteArray(request.getExtras());
-      if (destination.getAPIKey() != null) {
-        apiKey = destination.getAPIKey();
-      }
-      if (destination.getEndPoint() != null) {
-        actualEndPoint = parseUrlOrThrow(destination.getEndPoint());
+      try {
+        CCTDestination destination = CCTDestination.fromByteArray(request.getExtras());
+        if (destination.getAPIKey() != null) {
+          apiKey = destination.getAPIKey();
+        }
+        if (destination.getEndPoint() != null) {
+          actualEndPoint = parseUrlOrThrow(destination.getEndPoint());
+        }
+      } catch (IllegalArgumentException | IllegalStateException e) {
+        return BackendResponse.fatalError();
       }
     }
 
