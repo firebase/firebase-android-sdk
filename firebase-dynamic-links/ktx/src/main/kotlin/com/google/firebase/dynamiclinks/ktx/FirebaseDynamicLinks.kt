@@ -35,109 +35,84 @@ fun Firebase.dynamicLinks(app: FirebaseApp): FirebaseDynamicLinks {
     return FirebaseDynamicLinks.getInstance(app)
 }
 
-/** Returns a [DynamicLink.AndroidParameters] object initialized using the [init] function. */
-fun androidParameters(
-        init: DynamicLink.AndroidParameters.Builder.() -> Unit
-) : DynamicLink.AndroidParameters {
+/** Creates a [DynamicLink.AndroidParameters] object initialized using the [init] function and sets it to the [DynamicLink.Builder] */
+fun DynamicLink.Builder.androidParameters(init: DynamicLink.AndroidParameters.Builder.() -> Unit) {
     val builder = DynamicLink.AndroidParameters.Builder()
     builder.init()
-    return builder.build()
+    setAndroidParameters(builder.build())
 }
 
-/** Returns a [DynamicLink.AndroidParameters] object initialized with the specified [packageName]
- * and using the [init] function. */
-fun androidParameters(
-        packageName: String,
-        init: DynamicLink.AndroidParameters.Builder.() -> Unit
-) : DynamicLink.AndroidParameters {
+/** Creates a [DynamicLink.AndroidParameters] object initialized with the specified [packageName] and using the [init] function and sets it to the [DynamicLink.Builder] */
+fun DynamicLink.Builder.androidParameters(packageName: String, init: DynamicLink.AndroidParameters.Builder.() -> Unit) {
     val builder = DynamicLink.AndroidParameters.Builder(packageName)
     builder.init()
-    return builder.build()
+    setAndroidParameters(builder.build())
 }
 
-/** Returns a [DynamicLink.IosParameters] object initialized with the specified [bundleId]
- * and using the [init] function. */
-fun iosParameters(
-        bundleId: String,
-        init: DynamicLink.IosParameters.Builder.() -> Unit
-) : DynamicLink.IosParameters {
+/** Creates a [DynamicLink.IosParameters] object initialized with the specified [bundleId] and using the [init] function and sets it to the [DynamicLink.Builder] */
+fun DynamicLink.Builder.iosParameters(bundleId: String, init: DynamicLink.IosParameters.Builder.() -> Unit) {
     val builder = DynamicLink.IosParameters.Builder(bundleId)
     builder.init()
-    return builder.build()
+    setIosParameters(builder.build())
 }
 
-/** Returns a [DynamicLink.GoogleAnalyticsParameters] object initialized using the
- *  [init] function. */
-fun googleAnalyticsParameters(
-        init: DynamicLink.GoogleAnalyticsParameters.Builder.() -> Unit
-) : DynamicLink.GoogleAnalyticsParameters {
+/** Creates a [DynamicLink.GoogleAnalyticsParameters] object initialized using the [init] function and sets it to the [DynamicLink.Builder] */
+fun DynamicLink.Builder.googleAnalyticsParameters(init: DynamicLink.GoogleAnalyticsParameters.Builder.() -> Unit) {
     val builder = DynamicLink.GoogleAnalyticsParameters.Builder()
     builder.init()
-    return builder.build()
+    setGoogleAnalyticsParameters(builder.build())
 }
 
-/** Returns a [DynamicLink.GoogleAnalyticsParameters] object initialized with the specified
- * [source], [medium], [campaign] and using the [init] function. */
-fun googleAnalyticsParameters(
+/** Creates a [DynamicLink.GoogleAnalyticsParameters] object initialized with the specified
+ * [source], [medium], [campaign] and using the [init] function and sets it to the [DynamicLink.Builder]. */
+fun DynamicLink.Builder.googleAnalyticsParameters(
         source: String,
         medium: String,
         campaign: String,
         init: DynamicLink.GoogleAnalyticsParameters.Builder.() -> Unit
-) : DynamicLink.GoogleAnalyticsParameters {
+) {
     val builder = DynamicLink.GoogleAnalyticsParameters.Builder(source, medium, campaign)
     builder.init()
-    return builder.build()
+    setGoogleAnalyticsParameters(builder.build())
 }
 
-/** Returns a [DynamicLink.ItunesConnectAnalyticsParameters] object initialized using
- *  the [init] function. */
-fun itunesConnectAnalyticsParameters(
-        init: DynamicLink.ItunesConnectAnalyticsParameters.Builder.() -> Unit
-) : DynamicLink.ItunesConnectAnalyticsParameters {
+/** Creates a [DynamicLink.ItunesConnectAnalyticsParameters] object initialized using the [init] function and sets it to the [DynamicLink.Builder] */
+fun DynamicLink.Builder.itunesConnectAnalyticsParameters(init: DynamicLink.ItunesConnectAnalyticsParameters.Builder.() -> Unit) {
     val builder = DynamicLink.ItunesConnectAnalyticsParameters.Builder()
     builder.init()
-    return builder.build()
+    setItunesConnectAnalyticsParameters(builder.build())
 }
 
-/** Returns a [DynamicLink.SocialMetaTagParameters] object initialized using
- *  the [init] function. */
-fun socialMetaTagParameters(
-        init: DynamicLink.SocialMetaTagParameters.Builder.() -> Unit
-) : DynamicLink.SocialMetaTagParameters {
+/** Creates a [DynamicLink.SocialMetaTagParameters] object initialized using the [init] function and sets it to the [DynamicLink.Builder] */
+fun DynamicLink.Builder.socialMetaTagParameters(init: DynamicLink.SocialMetaTagParameters.Builder.() -> Unit) {
     val builder = DynamicLink.SocialMetaTagParameters.Builder()
     builder.init()
-    return builder.build()
+    setSocialMetaTagParameters(builder.build())
 }
 
-/** Returns a [DynamicLink.NavigationInfoParameters] object initialized using
- *  the [init] function. */
-fun navigationInfoParameters(
-        init: DynamicLink.NavigationInfoParameters.Builder.() -> Unit
-) : DynamicLink.NavigationInfoParameters {
+/** Creates a [DynamicLink.NavigationInfoParameters] object initialized using the [init] function and sets it to the [DynamicLink.Builder] */
+fun DynamicLink.Builder.navigationInfoParameters(init: DynamicLink.NavigationInfoParameters.Builder.() -> Unit) {
     val builder = DynamicLink.NavigationInfoParameters.Builder()
     builder.init()
-    return builder.build()
+    setNavigationInfoParameters(builder.build())
 }
 
 /** Creates a [DynamicLink] object initialized using the [init] function. */
-fun createDynamicLink(init: DynamicLink.Builder.() -> Unit) : DynamicLink {
+fun FirebaseDynamicLinks.createDynamicLink(init: DynamicLink.Builder.() -> Unit) : DynamicLink {
     val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
     builder.init()
     return builder.buildDynamicLink()
 }
 
 /** Creates a [ShortDynamicLink] object initialized using the [init] function. */
-fun createShortDynamicLink(init: DynamicLink.Builder.() -> Unit) : Task<ShortDynamicLink> {
+fun FirebaseDynamicLinks.createShortDynamicLink(init: DynamicLink.Builder.() -> Unit) : Task<ShortDynamicLink> {
     val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
     builder.init()
     return builder.buildShortDynamicLink()
 }
 
 /** Creates a [ShortDynamicLink] object initialized using the [init] function. */
-fun createShortDynamicLink(
-        suffix: Int,
-        init: DynamicLink.Builder.() -> Unit
-) : Task<ShortDynamicLink> {
+fun FirebaseDynamicLinks.createShortDynamicLink(suffix: Int, init: DynamicLink.Builder.() -> Unit) : Task<ShortDynamicLink> {
     val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
     builder.init()
     return builder.buildShortDynamicLink(suffix)
