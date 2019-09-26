@@ -83,6 +83,67 @@ class FirestoreTests : BaseTestCase() {
         val app = Firebase.app(EXISTING_APP)
         assertThat(Firebase.firestore(app)).isSameInstanceAs(FirebaseFirestore.getInstance(app))
     }
+
+    @Test
+    fun `initialize FirebaseFirestore instance with provided FirebaseFirestoreSettings`() {
+        val firestore = Firebase.firestore {
+            setHost("http://10.0.0.2:8080")
+            setSslEnabled(false)
+            setPersistenceEnabled(false)
+        }
+
+        val settings = FirebaseFirestoreSettings.Builder()
+                .setHost("http://10.0.0.2:8080")
+                .setSslEnabled(false)
+                .setPersistenceEnabled(false)
+                .build()
+
+        assertThat(firestore).isSameInstanceAs(Firebase.firestore)
+        assertThat(firestore.firestoreSettings.host).isEqualTo(settings.host)
+        assertThat(firestore.firestoreSettings.isSslEnabled).isEqualTo(settings.isSslEnabled)
+        assertThat(firestore.firestoreSettings.isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
+    }
+
+    @Test
+    fun `initialize FirebaseFirestore instance with provided FirebaseFirestoreSettings and FirebaseApp`() {
+        val app = Firebase.app(EXISTING_APP)
+
+        val firestore = Firebase.firestore(app) {
+            setHost("http://10.0.0.2:8080")
+            setSslEnabled(false)
+            setPersistenceEnabled(false)
+        }
+
+        val settings = FirebaseFirestoreSettings.Builder()
+                .setHost("http://10.0.0.2:8080")
+                .setSslEnabled(false)
+                .setPersistenceEnabled(false)
+                .build()
+
+        assertThat(firestore).isSameInstanceAs(Firebase.app(EXISTING_APP))
+        assertThat(firestore.firestoreSettings.host).isEqualTo(settings.host)
+        assertThat(firestore.firestoreSettings.isSslEnabled).isEqualTo(settings.isSslEnabled)
+        assertThat(firestore.firestoreSettings.isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
+    }
+
+    @Test
+    fun `set FirebaseFirestoreSettings to an instance of FirebaseFirestore`() {
+        Firebase.firestore.setSettings {
+            setHost("http://10.0.0.2:8080")
+            setSslEnabled(false)
+            setPersistenceEnabled(false)
+        }
+
+        val settings = FirebaseFirestoreSettings.Builder()
+                .setHost("http://10.0.0.2:8080")
+                .setSslEnabled(false)
+                .setPersistenceEnabled(false)
+                .build()
+
+        assertThat(Firebase.firestore.firestoreSettings.host).isEqualTo(settings.host)
+        assertThat(Firebase.firestore.firestoreSettings.isSslEnabled).isEqualTo(settings.isSslEnabled)
+        assertThat(Firebase.firestore.firestoreSettings.isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)

@@ -79,16 +79,31 @@ val settings = FirebaseFirestoreSettings.Builder()
                    .setPersistenceEnabled(false)
                    .build()
 
-FirebaseFirestore.getInstance().setFirestoreSettings(settings)
+val firestore = FirebaseFirestore.getInstance()
+firestore.setFirestoreSettings(settings)
+
+val anotherFirestore = FirebaseFirestore.getInstance(app)
+anotherFirestore.setFirestoreSettings(settings)
 ```
 
 **Kotlin + KTX**
 ```kotlin
-val settings = firestoreSettings {
+val firestore = Firebase.firestore {
     setHost("10.0.2.2:8080")
     setSslEnabled(false)
     setPersistenceEnabled(false)
 }
 
-Firebase.firestore.setFirestoreSettings(settings)
+val anotherFirestore = Firebase.firestore(app) {
+    setHost("10.0.2.2:8080")
+    setSslEnabled(false)
+    setPersistenceEnabled(false)
+}
+
+// Alternatively
+Firebase.firestore.setSettings {
+    setHost("10.0.2.2:8080")
+    setSslEnabled(false)
+    setPersistenceEnabled(false)
+}
 ```
