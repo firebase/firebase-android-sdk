@@ -24,6 +24,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
+import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -338,9 +339,10 @@ public class FirebaseInstallationServiceClient {
    *
    * @param expiresIn is expiration timestamp in String format: 604800s
    */
+  @VisibleForTesting
   private static long parseTokenExpirationTimestamp(String expiresIn) {
     checkArgument(
-        EXPIRATION_TIMESTAMP_PATTERN.matcher(expiresIn).find(), "Invalid Expiration Timestamp.");
+        EXPIRATION_TIMESTAMP_PATTERN.matcher(expiresIn).matches(), "Invalid Expiration Timestamp.");
     return (expiresIn == null || expiresIn.length() == 0)
         ? 0L
         : Long.parseLong(expiresIn.substring(0, expiresIn.length() - 1));
