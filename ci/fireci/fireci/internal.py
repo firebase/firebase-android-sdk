@@ -45,6 +45,7 @@ def _artifact_handler(target_directory, artifact_patterns):
                               for x in artifact_patterns))
     for path in paths:
       target_name = os.path.join(target_directory, "_".join(path.split('/')))
+      _logger.debug('Copying artifact {} to {}'.format(path, target_name))
       if os.path.isdir(path):
         shutil.copytree(path, target_name)
       else:
