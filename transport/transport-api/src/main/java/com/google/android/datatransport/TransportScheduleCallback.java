@@ -20,9 +20,9 @@ import androidx.annotation.Nullable;
 public interface TransportScheduleCallback<T> {
 
   /**
-   * Called when the process of scheduling an event has finished. If the
-   * process was finished succesfully, the error parameter will be null, otherwise it will include
-   * the {@code Exception} that caused the failure.
+   * Called when the process of scheduling an event has finished. If the process was finished
+   * succesfully, the error parameter will be null, otherwise it will include the {@code Exception}
+   * that caused the failure.
    *
    * @param error The error if there was error. {@code null} otherwise.
    */
