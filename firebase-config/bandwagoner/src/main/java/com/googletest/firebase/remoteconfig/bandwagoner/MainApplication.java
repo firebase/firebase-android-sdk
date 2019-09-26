@@ -17,6 +17,7 @@
 package com.googletest.firebase.remoteconfig.bandwagoner;
 
 import android.app.Application;
+import android.os.StrictMode;
 import com.google.firebase.FirebaseApp;
 
 /**
@@ -27,7 +28,25 @@ import com.google.firebase.FirebaseApp;
 public class MainApplication extends Application {
   @Override
   public void onCreate() {
+    enableStrictMode();
     super.onCreate();
     FirebaseApp.initializeApp(this);
+  }
+
+  private static void enableStrictMode() {
+    StrictMode.setThreadPolicy(
+        new StrictMode.ThreadPolicy.Builder()
+            .detectDiskReads()
+            .detectDiskWrites()
+            .detectNetwork()
+            .penaltyLog()
+            .build());
+    StrictMode.setVmPolicy(
+        new StrictMode.VmPolicy.Builder()
+            .detectLeakedSqlLiteObjects()
+            .detectLeakedClosableObjects()
+            .penaltyLog()
+            .penaltyDeath()
+            .build());
   }
 }

@@ -68,8 +68,8 @@ public class GenerateMeasurementsTask extends DefaultTask {
     @Override
     Task configure(Closure closure) {
         project.android.variantFilter {
-            if (it.buildType.name != "aggressive") {
-                it.ignore = true;
+            if (it.buildType.name == "debug") {
+                it.ignore = true
             }
         }
 
