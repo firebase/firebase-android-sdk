@@ -37,7 +37,7 @@ public interface Transport<T> {
    *
    * <p>The {@code callback} tracks the process of persisting the event to permanent storage to
    * ensure it will be scheduled to be send at a later time. It's up to the implementation to define
-   * the time when scheduled events are actually send.
+   * the time when scheduled events are actually sent.
    *
    * @param event The event with the payload that needs to be sent.
    * @param callback The callback to notify during the scheduling process.

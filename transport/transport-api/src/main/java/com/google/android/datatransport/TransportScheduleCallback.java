@@ -20,7 +20,7 @@ import androidx.annotation.Nullable;
 public interface TransportScheduleCallback<T> {
 
   /**
-   * {@code onSchedule} will be called when the process of scheduling an event has finished. If the
+   * Called when the process of scheduling an event has finished. If the
    * process was finished succesfully, the error parameter will be null, otherwise it will include
    * the {@code Exception} that caused the failure.
    *
