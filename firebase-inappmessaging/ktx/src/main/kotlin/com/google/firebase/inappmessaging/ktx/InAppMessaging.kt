@@ -23,7 +23,7 @@ import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
-/** Returns the [FirebaseFunctions] instance of the default [FirebaseApp]. */
+/** Returns the [FirebaseInAppMessaging] instance of the default [FirebaseApp]. */
 val Firebase.inAppMessaging: FirebaseInAppMessaging
     get() = FirebaseInAppMessaging.getInstance()
 

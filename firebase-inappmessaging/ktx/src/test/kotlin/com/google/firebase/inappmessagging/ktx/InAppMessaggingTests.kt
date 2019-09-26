@@ -65,7 +65,7 @@ abstract class BaseTestCase {
 }
 
 @RunWith(RobolectricTestRunner::class)
-class FunctionsTests : BaseTestCase() {
+class FirebaseInAppMessagingTests : BaseTestCase() {
 
     @Test
     fun `inappmessaging should delegate to FirebaseInAppMessaging#getInstance()`() {
