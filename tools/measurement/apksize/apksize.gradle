@@ -20,14 +20,21 @@ apply plugin: "com.android.application"
 apply from: "default.gradle"
 android {
     flavorDimensions "apkSize"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
+apply from: "src/common/common.gradle"
 apply from: "src/config/config.gradle"
 apply from: "src/database/database.gradle"
 apply from: "src/firestore/firestore.gradle"
 apply from: "src/functions/functions.gradle"
 apply from: "src/inappmessagingdisplay/inappmessaging-display.gradle"
 apply from: "src/storage/storage.gradle"
+apply from: "src/transport/transport.gradle"
 
 /**
  * This task builds all supported variants (only aggressive as of writing) and writes the

@@ -306,6 +306,8 @@ public class SQLiteEventStoreTest {
             .build();
 
     store.persist(ctx1, EVENT);
+    store.persist(ctx1, EVENT);
+    store.persist(ctx2, EVENT);
     store.persist(ctx2, EVENT);
 
     assertThat(store.loadActiveContexts()).containsExactly(ctx1, ctx2);
