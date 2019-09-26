@@ -4,7 +4,8 @@
           android:versionCode="1"
           android:versionName="1">
 
-    <uses-sdk android:minSdkVersion="16"/>
+    <!--<uses-sdk android:minSdkVersion="16"/>-->
+
 
     <application>
         <service android:name="com.google.firebase.components.ComponentDiscoveryService">
