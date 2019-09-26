@@ -15,6 +15,7 @@
 package com.google.firebase.installations.remote;
 
 import static android.content.ContentValues.TAG;
+import static com.google.android.gms.common.internal.Preconditions.checkArgument;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
@@ -59,6 +61,8 @@ public class FirebaseInstallationServiceClient {
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
 
   private static final int NETWORK_TIMEOUT_MILLIS = 10000;
+
+  private static final Pattern EXPIRATION_TIMESTAMP_PATTERN = Pattern.compile("[0-9]+s");
 
   private final Context context;
 
@@ -335,6 +339,8 @@ public class FirebaseInstallationServiceClient {
    * @param expiresIn is expiration timestamp in String format: 604800s
    */
   private static long parseTokenExpirationTimestamp(String expiresIn) {
+    checkArgument(
+        EXPIRATION_TIMESTAMP_PATTERN.matcher(expiresIn).find(), "Invalid Expiration Timestamp.");
     return (expiresIn == null || expiresIn.length() == 0)
         ? 0L
         : Long.parseLong(expiresIn.substring(0, expiresIn.length() - 1));
