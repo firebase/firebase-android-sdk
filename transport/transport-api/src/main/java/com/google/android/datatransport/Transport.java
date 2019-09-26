@@ -35,12 +35,12 @@ public interface Transport<T> {
   /**
    * Schedules sending the event of type T.
    *
-   * <p>The returned {@code Task} tracks the process of persisting the event to permanent storage to
+   * <p>The {@code callback} tracks the process of persisting the event to permanent storage to
    * ensure it will be scheduled to be send at a later time. It's up to the implementation to define
    * the time when scheduled events are actually send.
    *
    * @param event The event with the payload that needs to be sent.
-   * @return {@link Task} representing the event scheduling.
+   * @param callback The callback to notify during the scheduling process.
    */
   void schedule(Event<T> event, TransportScheduleCallback callback);
 }
