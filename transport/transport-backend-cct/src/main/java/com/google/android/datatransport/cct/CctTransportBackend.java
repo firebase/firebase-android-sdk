@@ -283,15 +283,22 @@ final class CctTransportBackend implements TransportBackend {
     // We route to CCT backend if extras are null and to LegacyFlg otherwise.
     // This (anti-) pattern should not be required for other backends
     String apiKey = null;
+    URL actualEndPoint = endPoint;
     if (request.getExtras() != null) {
-      apiKey = CCTDestination.decodeExtras(request.getExtras());
+      CCTDestination destination = CCTDestination.fromByteArray(request.getExtras());
+      if (destination.getAPIKey() != null) {
+        apiKey = destination.getAPIKey();
+      }
+      if (destination.getEndPoint() != null) {
+        actualEndPoint = parseUrlOrThrow(destination.getEndPoint());
+      }
     }
 
     try {
       HttpResponse response =
           retry(
               5,
-              new HttpRequest(endPoint, requestBody, apiKey),
+              new HttpRequest(actualEndPoint, requestBody, apiKey),
               this::doSend,
               (req, resp) -> {
                 if (resp.redirectUrl != null) {

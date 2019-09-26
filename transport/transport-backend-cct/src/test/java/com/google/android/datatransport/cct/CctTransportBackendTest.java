@@ -106,7 +106,7 @@ public class CctTransportBackendTest {
                     .build())));
   }
 
-  private BackendRequest getLegacyFirelogBackendRequest() {
+  private BackendRequest getLegacyFirelogBackendRequest(CCTDestination destination) {
     return BackendRequest.builder()
         .setEvents(
             Arrays.asList(
@@ -125,7 +125,7 @@ public class CctTransportBackendTest {
                         .setPayload(PAYLOAD.toByteArray())
                         .setCode(CODE)
                         .build())))
-        .setExtras(CCTDestination.encodeString(API_KEY))
+        .setExtras(destination.getExtras())
         .build();
   }
 
@@ -201,7 +201,8 @@ public class CctTransportBackendTest {
     wallClock.tick();
     uptimeClock.tick();
 
-    BACKEND.send(getLegacyFirelogBackendRequest());
+    BACKEND.send(
+        getLegacyFirelogBackendRequest(CCTDestination.customLegacyDestination(API_KEY, null)));
 
     verify(
         postRequestedFor(urlEqualTo("/api"))

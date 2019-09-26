@@ -45,7 +45,7 @@ public final class CCTDestination implements Destination {
     this.endPoint = endPoint;
   }
 
-  public CCTDestination customLegacyDestination(
+  public static CCTDestination customLegacyDestination(
       @Nullable String apiKey, @Nullable String endPoint) {
     return new CCTDestination(LEGACY_DESTINATION_NAME, apiKey, endPoint);
   }
@@ -125,7 +125,11 @@ public final class CCTDestination implements Destination {
     String destinationName = fields[0];
     String endPoint = fields[1];
     String apiKey = fields[2];
-    return new CCTDestination(destinationName, apiKey, endPoint);
+    if (destinationName.isEmpty()) {
+      throw new IllegalArgumentException("Missing destination name in extras");
+    }
+    return new CCTDestination(
+        destinationName, apiKey.isEmpty() ? null : apiKey, endPoint.isEmpty() ? null : endPoint);
   }
 
   @NonNull
