@@ -149,15 +149,15 @@ public class FirebaseInstallationsInstrumentedTest {
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_TOKEN_RESULT);
 
+    when(persistedFidReturnsError.insertOrUpdatePersistedFidEntry(any())).thenReturn(false);
+    when(persistedFidReturnsError.readPersistedFidEntryValue())
+        .thenReturn(DEFAULT_PERSISTED_FID_ENTRY);
+
     when(backendClientReturnsError.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
         .thenThrow(
             new FirebaseInstallationServiceException(
                 "SDK Error", FirebaseInstallationServiceException.Status.SERVER_ERROR));
-
-    when(persistedFidReturnsError.insertOrUpdatePersistedFidEntry(any())).thenReturn(false);
-    when(persistedFidReturnsError.readPersistedFidEntryValue())
-        .thenReturn(DEFAULT_PERSISTED_FID_ENTRY);
 
     when(mockUtils.createRandomFid()).thenReturn(TEST_FID_1);
     when(mockUtils.currentTimeInSecs()).thenReturn(TEST_CREATION_TIMESTAMP_2);
@@ -541,9 +541,11 @@ public class FirebaseInstallationsInstrumentedTest {
         .isEqualTo(TEST_AUTH_TOKEN_3);
     assertWithMessage("Persisted Auth Token doesn't match")
         .that(task2.getResult().getToken())
-        .isEqualTo(TEST_AUTH_TOKEN_4);
-    verify(backendClientReturnsOk, times(2))
+        .isEqualTo(TEST_AUTH_TOKEN_3);
+    verify(backendClientReturnsOk, times(1))
         .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
+    PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
+    assertThat(updatedFidEntry).hasAuthToken(TEST_AUTH_TOKEN_3);
   }
 
   @Test
