@@ -289,16 +289,17 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         db ->
             tryWithCursor(
                 db.rawQuery(
-                    "SELECT t.backend_name, t.priority, t.extras FROM transport_contexts AS t, events AS e WHERE e.context_id = t._id",
+                    "SELECT distinct t._id, t.backend_name, t.priority, t.extras "
+                        + "FROM transport_contexts AS t, events AS e WHERE e.context_id = t._id",
                     new String[] {}),
                 cursor -> {
                   List<TransportContext> results = new ArrayList<>();
                   while (cursor.moveToNext()) {
                     results.add(
                         TransportContext.builder()
-                            .setBackendName(cursor.getString(0))
-                            .setPriority(cursor.getInt(1))
-                            .setExtras(maybeBase64Decode(cursor.getString(2)))
+                            .setBackendName(cursor.getString(1))
+                            .setPriority(cursor.getInt(2))
+                            .setExtras(maybeBase64Decode(cursor.getString(3)))
                             .build());
                   }
                   return results;
