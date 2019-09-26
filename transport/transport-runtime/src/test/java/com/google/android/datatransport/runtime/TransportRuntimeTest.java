@@ -65,7 +65,7 @@ public class TransportRuntimeTest {
         }
       };
 
-  private class StatefulTransportScheduleCallback implements TransportScheduleCallback {
+  private static class StatefulTransportScheduleCallback implements TransportScheduleCallback {
     public boolean called = false;
     public Exception exception = null;
 
