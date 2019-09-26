@@ -18,6 +18,7 @@ dependencies:
   * `firebase-remote-config`
   * `firebase-remote-config-ktx`
   * `firebase-storage`
+  * `firebase-storage-ktx`
   
 
 Firebase is an app development platform with tools to help you build, grow and
