@@ -68,3 +68,27 @@ val objectList = snapshot.toObjects(MyClass::class.java)
 val snapshot: QuerySnapshot = ...
 val objectList = snapshot.toObjects<MyClass>()
 ```
+
+### Setup Firestore with a local emulator
+
+**Kotlin**
+```kotlin
+val settings = FirebaseFirestoreSettings.Builder()
+                   .setHost("10.0.2.2:8080")
+                   .setSslEnabled(false)
+                   .setPersistenceEnabled(false)
+                   .build()
+
+FirebaseFirestore.getInstance().setFirestoreSettings(settings)
+```
+
+**Kotlin + KTX**
+```kotlin
+val settings = firestoreSettings {
+    setHost("10.0.2.2:8080")
+    setSslEnabled(false)
+    setPersistenceEnabled(false)
+}
+
+Firebase.firestore.setFirestoreSettings(settings)
+```

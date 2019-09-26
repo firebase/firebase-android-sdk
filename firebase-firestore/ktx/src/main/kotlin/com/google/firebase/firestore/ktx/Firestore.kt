@@ -147,6 +147,13 @@ inline fun <reified T : Any> QuerySnapshot.toObjects(): List<T> = toObjects(T::c
 inline fun <reified T : Any> QuerySnapshot.toObjects(serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior): List<T> =
         toObjects(T::class.java, serverTimestampBehavior)
 
+/** Returns a [FirebaseFirestoreSettings] object initialized using the [init] function. */
+fun firestoreSettings(init: FirebaseFirestoreSettings.Builder.() -> Unit) : FirebaseFirestoreSettings {
+    val builder = FirebaseFirestoreSettings.Builder()
+    builder.init()
+    return builder.build()
+}
+
 internal const val LIBRARY_NAME: String = "fire-fst-ktx"
 
 /** @suppress */
