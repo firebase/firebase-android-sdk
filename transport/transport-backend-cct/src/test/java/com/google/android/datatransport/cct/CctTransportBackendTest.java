@@ -15,6 +15,7 @@
 package com.google.android.datatransport.cct;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -206,6 +207,58 @@ public class CctTransportBackendTest {
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
+            .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, equalTo(API_KEY)));
+  }
+
+  @Test
+  public void testLegacyFlgSuccessLoggingRequest_containUrl() {
+    final String customHostname = "http://localhost:8999";
+    stubFor(
+        post(urlEqualTo("/custom_api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BACKEND.send(
+        getLegacyFirelogBackendRequest(
+            CCTDestination.customLegacyDestination(null, customHostname + "/custom_api")));
+
+    verify(
+        postRequestedFor(urlEqualTo("/custom_api"))
+            .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, absent()));
+  }
+
+  @Test
+  public void testLegacyFlgSuccessLoggingRequest_containsAPIKeyAndUrl() {
+    final String customHostname = "http://localhost:8999";
+    stubFor(
+        post(urlEqualTo("/custom_api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BACKEND.send(
+        getLegacyFirelogBackendRequest(
+            CCTDestination.customLegacyDestination(API_KEY, customHostname + "/custom_api")));
+
+    verify(
+        postRequestedFor(urlEqualTo("/custom_api"))
             .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, equalTo(API_KEY)));
   }
 
