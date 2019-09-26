@@ -10,9 +10,6 @@
     <application>
         <service android:name="com.google.firebase.components.ComponentDiscoveryService">
             <meta-data
-               android:name="com.google.firebase.components:com.google.firebase.analytics.connector.FakeConnectorComponent"
-               android:value="com.google.firebase.components.ComponentRegistrar" />
-            <meta-data
                android:name="com.google.firebase.components:com.google.firebase.dynamiclinks.internal.FirebaseDynamicLinkRegistrar"
                android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
