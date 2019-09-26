@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime.scheduling;
+package com.google.android.datatransport.runtime;
 
 import com.google.android.datatransport.TransportScheduleCallback;
-import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportContext;
-import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
