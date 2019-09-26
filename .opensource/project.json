@@ -10,6 +10,7 @@
         "docs/ktx/common.md": "Common KTX",
         "docs/ktx/firestore.md": "Firestore KTX",
         "docs/ktx/functions.md": "Functions KTX",
+        "docs/ktx/remote-config.md": "Remote Config KTX",
         "docs/ktx/storage.md": "Storage KTX"
     },
     "related": [

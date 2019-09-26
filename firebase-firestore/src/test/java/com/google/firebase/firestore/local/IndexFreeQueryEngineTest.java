@@ -34,7 +34,6 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
@@ -64,6 +63,9 @@ public class IndexFreeQueryEngineTest {
       doc("coll/b", 1, map("matches", true, "order", 2), Document.DocumentState.SYNCED);
   private static final Document UPDATED_MATCHING_DOC_B =
       doc("coll/b", 11, map("matches", true, "order", 2), Document.DocumentState.SYNCED);
+
+  private SnapshotVersion LAST_LIMBO_FREE_SNAPSHOT = version(10);
+  private SnapshotVersion MISSING_LAST_LIMBO_FREE_SNAPSHOT = SnapshotVersion.NONE;
 
   private MemoryPersistence persistence;
   private MemoryRemoteDocumentCache remoteDocumentCache;
@@ -142,13 +144,15 @@ public class IndexFreeQueryEngineTest {
     }
   }
 
-  private DocumentSet runQuery(Query query, QueryData queryData) {
+  private DocumentSet runQuery(Query query, SnapshotVersion lastLimboFreeSnapshotVersion) {
     Preconditions.checkNotNull(
         expectIndexFreeExecution,
         "Encountered runQuery() call not wrapped in expectIndexFreeQuery()/expectFullCollectionQuery()");
     ImmutableSortedMap<DocumentKey, Document> docs =
         queryEngine.getDocumentsMatchingQuery(
-            query, queryData, queryCache.getMatchingKeysForTargetId(TEST_TARGET_ID));
+            query,
+            lastLimboFreeSnapshotVersion,
+            queryCache.getMatchingKeysForTargetId(TEST_TARGET_ID));
     View view =
         new View(query, new ImmutableSortedSet<>(Collections.emptyList(), DocumentKey::compareTo));
     View.DocumentChanges viewDocChanges = view.computeDocChanges(docs);
@@ -158,19 +162,17 @@ public class IndexFreeQueryEngineTest {
   @Test
   public void usesTargetMappingForInitialView() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true));
-    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
     addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
-    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, queryData));
+    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, MATCHING_DOC_B), docs);
   }
 
   @Test
   public void filtersNonMatchingInitialResults() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true));
-    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
     addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
@@ -178,42 +180,38 @@ public class IndexFreeQueryEngineTest {
     // Add a mutated document that is not yet part of query's set of remote keys.
     addDocument(PENDING_NON_MATCHING_DOC_A);
 
-    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, queryData));
+    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
   @Test
   public void includesChangesSinceInitialResults() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true));
-    QueryData originalQueryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
     addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
-    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, originalQueryData));
+    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, MATCHING_DOC_B), docs);
 
     addDocument(UPDATED_MATCHING_DOC_B);
 
-    docs = expectIndexFreeQuery(() -> runQuery(query, originalQueryData));
+    docs = expectIndexFreeQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, UPDATED_MATCHING_DOC_B), docs);
   }
 
   @Test
   public void doesNotUseInitialResultsWithoutLimboFreeSnapshotVersion() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true));
-    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ false);
-
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
+    DocumentSet docs =
+        expectFullCollectionQuery(() -> runQuery(query, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator()), docs);
   }
 
   @Test
   public void doesNotUseInitialResultsForUnfilteredCollectionQuery() throws Exception {
     Query query = query("coll");
-    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
-
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator()), docs);
   }
 
@@ -228,8 +226,7 @@ public class IndexFreeQueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -247,11 +244,9 @@ public class IndexFreeQueryEngineTest {
     addDocument(PENDING_MATCHING_DOC_A);
     persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
 
-    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
-
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -269,11 +264,9 @@ public class IndexFreeQueryEngineTest {
     addDocument(UDPATED_DOC_A);
     persistQueryMapping(UDPATED_DOC_A.getKey());
 
-    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
-
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, queryData));
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -284,7 +277,6 @@ public class IndexFreeQueryEngineTest {
     addDocument(doc("coll/a", 1, map("order", 1)));
     addDocument(doc("coll/b", 1, map("order", 3)));
     persistQueryMapping(key("coll/a"), key("coll/b"));
-    QueryData queryData = queryData(query, /* hasLimboFreeSnapshot= */ true);
 
     // Update "coll/a" but make sure it still sorts before "coll/b"
     addDocument(doc("coll/a", 1, map("order", 2), Document.DocumentState.LOCAL_MUTATIONS));
@@ -292,23 +284,12 @@ public class IndexFreeQueryEngineTest {
     // Since the last document in the limit didn't change (and hence we know that all documents
     // written prior to query execution still sort after "coll/b"), we should use an Index-Free
     // query.
-    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, queryData));
+    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(
         docSet(
             query.comparator(),
             doc("coll/a", 1, map("order", 2), Document.DocumentState.LOCAL_MUTATIONS),
             doc("coll/b", 1, map("order", 3))),
         docs);
-  }
-
-  private QueryData queryData(Query query, boolean hasLimboFreeSnapshot) {
-    return new QueryData(
-        query,
-        TEST_TARGET_ID,
-        1,
-        QueryPurpose.LISTEN,
-        version(10),
-        hasLimboFreeSnapshot ? version(10) : SnapshotVersion.NONE,
-        ByteString.EMPTY);
   }
 }
