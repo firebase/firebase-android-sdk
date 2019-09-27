@@ -15,37 +15,22 @@
 package com.google.firebase.installations;
 
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.installations.FirebaseInstallationsApi.AuthTokenOption;
 import com.google.firebase.installations.local.PersistedFidEntry;
 
 class GetAuthTokenListener implements StateListener {
   private final Utils utils;
   private final TaskCompletionSource<InstallationTokenResult> resultTaskCompletionSource;
-  private final String oldAuthToken;
-  @AuthTokenOption private final int authTokenOption;
 
   public GetAuthTokenListener(
-      Utils utils,
-      TaskCompletionSource<InstallationTokenResult> resultTaskCompletionSource,
-      String oldAuthToken,
-      @AuthTokenOption int authTokenOption) {
+      Utils utils, TaskCompletionSource<InstallationTokenResult> resultTaskCompletionSource) {
     this.utils = utils;
     this.resultTaskCompletionSource = resultTaskCompletionSource;
-    this.oldAuthToken = oldAuthToken;
-    this.authTokenOption = authTokenOption;
   }
 
   @Override
   public boolean onStateReached(PersistedFidEntry persistedFidEntry) {
-    // AuthTokenListener state is reached when:
-    // 1. If AuthTokenOption is DO_NOT_FORCE_REFRESH : FID is registered and has a valid auth token
-    // 2. If AuthTokenOption is FORCE_REFRESH : FID is registered, has a valid new auth token which
-    // is not same as the old auth token
-
-    if (persistedFidEntry.isRegistered()
-        && !utils.isAuthTokenExpired(persistedFidEntry)
-        && (authTokenOption == FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH
-            || !oldAuthToken.equals(persistedFidEntry.getAuthToken()))) {
+    // AuthTokenListener state is reached when FID is registered and has a valid auth token
+    if (persistedFidEntry.isRegistered() && !utils.isAuthTokenExpired(persistedFidEntry)) {
       resultTaskCompletionSource.setResult(
           InstallationTokenResult.builder()
               .setToken(persistedFidEntry.getAuthToken())
