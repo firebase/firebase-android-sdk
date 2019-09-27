@@ -66,10 +66,10 @@ fun DynamicLink.Builder.googleAnalyticsParameters(init: DynamicLink.GoogleAnalyt
 /** Creates a [DynamicLink.GoogleAnalyticsParameters] object initialized with the specified
  * [source], [medium], [campaign] and using the [init] function and sets it to the [DynamicLink.Builder]. */
 fun DynamicLink.Builder.googleAnalyticsParameters(
-        source: String,
-        medium: String,
-        campaign: String,
-        init: DynamicLink.GoogleAnalyticsParameters.Builder.() -> Unit
+    source: String,
+    medium: String,
+    campaign: String,
+    init: DynamicLink.GoogleAnalyticsParameters.Builder.() -> Unit
 ) {
     val builder = DynamicLink.GoogleAnalyticsParameters.Builder(source, medium, campaign)
     builder.init()
@@ -98,21 +98,21 @@ fun DynamicLink.Builder.navigationInfoParameters(init: DynamicLink.NavigationInf
 }
 
 /** Creates a [DynamicLink] object initialized using the [init] function. */
-fun FirebaseDynamicLinks.createDynamicLink(init: DynamicLink.Builder.() -> Unit) : DynamicLink {
+fun FirebaseDynamicLinks.createDynamicLink(init: DynamicLink.Builder.() -> Unit): DynamicLink {
     val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
     builder.init()
     return builder.buildDynamicLink()
 }
 
 /** Creates a [ShortDynamicLink] object initialized using the [init] function. */
-fun FirebaseDynamicLinks.createShortDynamicLink(init: DynamicLink.Builder.() -> Unit) : Task<ShortDynamicLink> {
+fun FirebaseDynamicLinks.createShortDynamicLink(init: DynamicLink.Builder.() -> Unit): Task<ShortDynamicLink> {
     val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
     builder.init()
     return builder.buildShortDynamicLink()
 }
 
 /** Creates a [ShortDynamicLink] object initialized using the [init] function. */
-fun FirebaseDynamicLinks.createShortDynamicLink(suffix: Int, init: DynamicLink.Builder.() -> Unit) : Task<ShortDynamicLink> {
+fun FirebaseDynamicLinks.createShortDynamicLink(suffix: Int, init: DynamicLink.Builder.() -> Unit): Task<ShortDynamicLink> {
     val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
     builder.init()
     return builder.buildShortDynamicLink(suffix)
