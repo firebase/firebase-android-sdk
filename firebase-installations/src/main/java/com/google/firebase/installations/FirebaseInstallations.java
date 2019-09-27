@@ -196,6 +196,19 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
   }
 
+  private void triggerOnException(PersistedFidEntry persistedFidEntry, Exception exception) {
+    synchronized (lock) {
+      Iterator<StateListener> it = listeners.iterator();
+      while (it.hasNext()) {
+        StateListener l = it.next();
+        boolean doneListening = l.onException(persistedFidEntry, exception);
+        if (doneListening) {
+          it.remove();
+        }
+      }
+    }
+  }
+
   private final Runnable doRegistration(int authTokenOption) {
     return () -> {
       try {
@@ -239,7 +252,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
                 .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
                 .build();
         persistedFid.insertOrUpdatePersistedFidEntry(errorFidEntry);
-        triggerOnStateReached(errorFidEntry);
+        triggerOnException(errorFidEntry, e);
       }
     };
   }

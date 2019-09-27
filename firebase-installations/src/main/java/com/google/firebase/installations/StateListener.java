@@ -18,4 +18,6 @@ import com.google.firebase.installations.local.PersistedFidEntry;
 
 interface StateListener {
   boolean onStateReached(PersistedFidEntry persistedFidEntry);
+
+  boolean onException(PersistedFidEntry persistedFidEntry, Exception exception);
 }
