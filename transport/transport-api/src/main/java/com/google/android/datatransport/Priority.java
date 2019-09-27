@@ -14,10 +14,41 @@
 
 package com.google.android.datatransport;
 
+import java.util.Arrays;
+
 public enum Priority {
   /** Quality of the service is within an hour. */
-  DEFAULT,
+  DEFAULT(0),
 
-  /** Events delivered at most daily, on unmetered network */
-  VERY_LOW,
+  /** Events delivered at most daily, on unmetered network. */
+  VERY_LOW(1),
+
+  /** Events delivered as soon as possible. */
+  HIGHEST(2),
+  ;
+
+  private static final Priority[] PRIORITY_MAP;
+
+  static {
+    // the order of this array must match the values of the enums.
+    PRIORITY_MAP = Priority.values();
+    Arrays.sort(PRIORITY_MAP, (p1, p2) -> p1.value - p2.value);
+  }
+
+  private final int value;
+
+  Priority(int value) {
+    this.value = value;
+  }
+
+  public int getValue() {
+    return value;
+  }
+
+  public static Priority forValue(int value) {
+    if (value < 0 || value >= PRIORITY_MAP.length) {
+      throw new IllegalArgumentException("Unknown Priority for value " + value);
+    }
+    return PRIORITY_MAP[value];
+  }
 }
