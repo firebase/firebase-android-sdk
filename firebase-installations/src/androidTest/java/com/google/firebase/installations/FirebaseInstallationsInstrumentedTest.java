@@ -341,9 +341,9 @@ public class FirebaseInstallationsInstrumentedTest {
     // Waiting for Task that registers FID on the FIS Servers
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
-    // Validate that registration is complete with updated auth token
+    // Validate that registration is complete with a refreshed auth token
     PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
-    assertThat(updatedFidEntry).isEqualTo(UPDATED_AUTH_TOKEN_FID_ENTRY);
+    assertThat(updatedFidEntry).hasAuthToken(TEST_AUTH_TOKEN_2);
     verify(backendClientReturnsOk, never())
         .createFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_APP_ID_1);
     verify(backendClientReturnsOk, times(1))
