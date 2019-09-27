@@ -143,12 +143,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   @NonNull
   @Override
-  public synchronized Task<InstallationTokenResult> getAuthToken(
-      @AuthTokenOption int authTokenOption) {
-    if (authTokenOption == FORCE_REFRESH) {
-      shouldRefreshAuthToken = true;
-    }
-    Task<InstallationTokenResult> task = addGetAuthTokenListener();
+  public Task<InstallationTokenResult> getAuthToken(@AuthTokenOption int authTokenOption) {
+    Task<InstallationTokenResult> task = addGetAuthTokenListener(authTokenOption);
     executor.execute(doRegistration());
     return task;
   }
@@ -173,12 +169,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return taskCompletionSource.getTask();
   }
 
-  private Task<InstallationTokenResult> addGetAuthTokenListener() {
-    TaskCompletionSource<InstallationTokenResult> taskCompletionSource =
-        new TaskCompletionSource<>();
-    StateListener l = new GetAuthTokenListener(utils, taskCompletionSource);
+  private Task<InstallationTokenResult> addGetAuthTokenListener(@AuthTokenOption int authTokenOption) {
+    TaskCompletionSource<InstallationTokenResult> taskCompletionSource = new TaskCompletionSource<>();
     synchronized (lock) {
-      listeners.add(l);
+      if (authTokenOption == FORCE_REFRESH) {
+        desiredRevisionId = currentRevisionId + 1;
+      }
+      listeners.add(new GetAuthTokenListener(utils, taskCompletionSource, desiredRevisionId););
     }
     return taskCompletionSource.getTask();
   }
@@ -188,7 +185,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       Iterator<StateListener> it = listeners.iterator();
       while (it.hasNext()) {
         StateListener l = it.next();
-        boolean doneListening = l.onStateReached(persistedFidEntry);
+        // TODO(ankitaj224): add this param to the `onStateReached` interface method
+        boolean doneListening = l.onStateReached(currentRevisionId, persistedFidEntry);
         if (doneListening) {
           it.remove();
         }
@@ -208,25 +206,36 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           persistedFidEntry = persistedFid.readPersistedFidEntryValue();
         }
 
-        // If Auth Token needs refresh, notify the listeners only after force refresh
-        if (!shouldRefreshAuthToken) {
-          triggerOnStateReached(persistedFidEntry);
-        }
+        triggerOnStateReached(persistedFidEntry);
 
         // FID needs to be registered
         if (persistedFidEntry.isUnregistered()) {
           registerAndSaveFid(persistedFidEntry);
           persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+          // we just registered, so any requests that were waiting on a fresher token will be satisfied, no refresh required
+          synchronized (lock) {
+            currentRevisionId = desiredRevisionId; 
+          }
         }
 
         // Don't notify the listeners at this point; we might as well make ure the auth token is up
         // to date before letting them know.
 
+        boolean needRefresh = utils.isAuthTokenExpired(persistedFidEntry);
+        if (!needRefresh) {
+          synchronized (lock) {
+            needRefresh = desiredRevisionId > currentRevisionId;
+          }
+        }
+
         // Refresh Auth token if needed
-        if (shouldRefreshAuthToken || utils.isAuthTokenExpired(persistedFidEntry)) {
-          shouldRefreshAuthToken = false;
+        if (needRefresh) {
           fetchAuthTokenFromServer(persistedFidEntry);
           persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+          
+          synchronized (lock) {
+            currentRevisionId = desiredRevisionId; 
+          }
         }
 
         triggerOnStateReached(persistedFidEntry);
