@@ -104,7 +104,7 @@ class ApkSizeTestProject extends ExternalResource {
         task upload(type: UploadMeasurementsTask) {
             dependsOn generate
 
-            reportFile = file("test-report-file.json")
+            reportFiles = files("test-report-file.json")
             uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
         }
     """
