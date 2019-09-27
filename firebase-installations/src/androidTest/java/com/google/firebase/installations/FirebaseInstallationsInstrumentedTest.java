@@ -117,16 +117,6 @@ public class FirebaseInstallationsInstrumentedTest {
           .setRegistrationStatus(PersistedFid.RegistrationStatus.UNREGISTERED)
           .build();
 
-  private static final PersistedFidEntry UPDATED_AUTH_TOKEN_FID_ENTRY =
-      PersistedFidEntry.builder()
-          .setFirebaseInstallationId(TEST_FID_1)
-          .setAuthToken(TEST_AUTH_TOKEN_2)
-          .setRefreshToken(TEST_REFRESH_TOKEN)
-          .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_2)
-          .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-          .setRegistrationStatus(PersistedFid.RegistrationStatus.REGISTERED)
-          .build();
-
   @Before
   public void setUp() throws FirebaseInstallationServiceException {
     MockitoAnnotations.initMocks(this);
@@ -145,6 +135,7 @@ public class FirebaseInstallationsInstrumentedTest {
     when(backendClientReturnsOk.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
+    // Mocks successful auth token generation
     when(backendClientReturnsOk.generateAuthToken(
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_TOKEN_RESULT);
@@ -341,7 +332,7 @@ public class FirebaseInstallationsInstrumentedTest {
     // Waiting for Task that registers FID on the FIS Servers
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
-    // Validate that registration is complete with a refreshed auth token
+    // Validate that Persisted FID has a refreshed auth token now
     PersistedFidEntry updatedFidEntry = persistedFid.readPersistedFidEntryValue();
     assertThat(updatedFidEntry).hasAuthToken(TEST_AUTH_TOKEN_2);
     verify(backendClientReturnsOk, never())
