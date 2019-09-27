@@ -120,10 +120,10 @@ class DynamicLinksTests : BaseTestCase() {
             }
         }
 
-        assertThat(Integer.parseInt(dynamicLink.uri.getQueryParameter("amv"))).isEqualTo(minimumVersion)
+        assertThat(dynamicLink.uri.getQueryParameter("amv")?.toInt()).isEqualTo(minimumVersion)
         assertThat(dynamicLink.uri.getQueryParameter("afl")).isEqualTo(fallbackUrl)
 
-        assertThat(Integer.parseInt(anotherDynamicLink.uri.getQueryParameter("amv"))).isEqualTo(minimumVersion)
+        assertThat(anotherDynamicLink.uri.getQueryParameter("amv")?.toInt()).isEqualTo(minimumVersion)
         assertThat(anotherDynamicLink.uri.getQueryParameter("afl")).isEqualTo(fallbackUrl)
         assertThat(anotherDynamicLink.uri.getQueryParameter("apn")).isEqualTo(packageName)
     }
