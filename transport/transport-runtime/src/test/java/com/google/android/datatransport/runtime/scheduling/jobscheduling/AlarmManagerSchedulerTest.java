@@ -69,7 +69,7 @@ public class AlarmManagerSchedulerTest {
         AlarmManagerScheduler.BACKEND_NAME, transportContext.getBackendName());
     intentDataBuilder.appendQueryParameter(
         AlarmManagerScheduler.EVENT_PRIORITY,
-        String.valueOf(transportContext.getPriority().ordinal()));
+        String.valueOf(transportContext.getPriority().getValue()));
 
     if (transportContext.getExtras() != null) {
       intentDataBuilder.appendQueryParameter(

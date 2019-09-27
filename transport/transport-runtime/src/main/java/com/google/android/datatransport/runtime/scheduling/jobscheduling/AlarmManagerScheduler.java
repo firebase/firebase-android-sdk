@@ -87,7 +87,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
     Uri.Builder intentDataBuilder = new Uri.Builder();
     intentDataBuilder.appendQueryParameter(BACKEND_NAME, transportContext.getBackendName());
     intentDataBuilder.appendQueryParameter(
-        EVENT_PRIORITY, String.valueOf(transportContext.getPriority().ordinal()));
+        EVENT_PRIORITY, String.valueOf(transportContext.getPriority().getValue()));
     if (transportContext.getExtras() != null) {
       intentDataBuilder.appendQueryParameter(
           EXTRAS, Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));

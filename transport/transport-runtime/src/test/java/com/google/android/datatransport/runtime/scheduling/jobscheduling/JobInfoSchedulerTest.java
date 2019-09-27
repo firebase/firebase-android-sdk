@@ -204,7 +204,7 @@ public class JobInfoSchedulerTest {
     PersistableBundle bundle1 = jobInfo1.getExtras();
     assertThat(bundle1.get(JobInfoScheduler.BACKEND_NAME))
         .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
-    assertThat(bundle1.get(JobInfoScheduler.EVENT_PRIORITY)).isEqualTo(Priority.DEFAULT.ordinal());
+    assertThat(bundle1.get(JobInfoScheduler.EVENT_PRIORITY)).isEqualTo(Priority.DEFAULT.getValue());
     assertThat(bundle1.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
 
     JobInfo jobInfo2 = jobScheduler.getAllPendingJobs().get(1);
@@ -214,7 +214,8 @@ public class JobInfoSchedulerTest {
     PersistableBundle bundle2 = jobInfo2.getExtras();
     assertThat(bundle2.get(JobInfoScheduler.BACKEND_NAME))
         .isEqualTo(UNMETERED_TRANSPORT_CONTEXT.getBackendName());
-    assertThat(bundle2.get(JobInfoScheduler.EVENT_PRIORITY)).isEqualTo(Priority.VERY_LOW.ordinal());
+    assertThat(bundle2.get(JobInfoScheduler.EVENT_PRIORITY))
+        .isEqualTo(Priority.VERY_LOW.getValue());
     assertThat(bundle2.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
   }
 }

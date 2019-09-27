@@ -19,6 +19,7 @@ import android.app.job.JobService;
 import android.os.Build;
 import android.util.Base64;
 import androidx.annotation.RequiresApi;
+import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
 
@@ -35,7 +36,9 @@ public class JobInfoSchedulerService extends JobService {
     int attemptNumber = params.getExtras().getInt(JobInfoScheduler.ATTEMPT_NUMBER);
     TransportRuntime.initialize(getApplicationContext());
     TransportContext.Builder transportContext =
-        TransportContext.builder().setBackendName(backendName).setPriority(priority);
+        TransportContext.builder()
+            .setBackendName(backendName)
+            .setPriority(Priority.forValue(priority));
 
     if (extras != null) {
       transportContext.setExtras(Base64.decode(extras, Base64.DEFAULT));

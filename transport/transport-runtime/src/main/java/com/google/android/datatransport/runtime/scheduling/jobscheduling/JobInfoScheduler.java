@@ -62,7 +62,7 @@ public class JobInfoScheduler implements WorkScheduler {
     checksum.update(context.getPackageName().getBytes());
     checksum.update(transportContext.getBackendName().getBytes());
     checksum.update(
-        ByteBuffer.allocate(4).putInt(transportContext.getPriority().ordinal()).array());
+        ByteBuffer.allocate(4).putInt(transportContext.getPriority().getValue()).array());
     if (transportContext.getExtras() != null) {
       checksum.update(transportContext.getExtras());
     }
@@ -111,7 +111,7 @@ public class JobInfoScheduler implements WorkScheduler {
     PersistableBundle bundle = new PersistableBundle();
     bundle.putInt(ATTEMPT_NUMBER, attemptNumber);
     bundle.putString(BACKEND_NAME, transportContext.getBackendName());
-    bundle.putInt(EVENT_PRIORITY, transportContext.getPriority().ordinal());
+    bundle.putInt(EVENT_PRIORITY, transportContext.getPriority().getValue());
     if (transportContext.getExtras() != null) {
       bundle.putString(EXTRAS, encodeToString(transportContext.getExtras(), DEFAULT));
     }

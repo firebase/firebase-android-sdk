@@ -19,6 +19,7 @@ import static android.util.Base64.*;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
 
@@ -35,7 +36,9 @@ public class AlarmManagerSchedulerBroadcastReceiver extends BroadcastReceiver {
     TransportRuntime.initialize(context);
 
     TransportContext.Builder transportContext =
-        TransportContext.builder().setBackendName(backendName).setPriority(priority);
+        TransportContext.builder()
+            .setBackendName(backendName)
+            .setPriority(Priority.forValue(priority));
 
     if (extras != null) {
       transportContext.setExtras(decode(extras, DEFAULT));

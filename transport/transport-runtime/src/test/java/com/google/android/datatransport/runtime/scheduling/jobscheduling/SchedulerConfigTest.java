@@ -77,6 +77,9 @@ public class SchedulerConfigTest {
         .addConfig(
             Priority.VERY_LOW,
             SchedulerConfig.ConfigValue.builder().setDelta(0).setMaxAllowedDelay(0).build())
+        .addConfig(
+            Priority.HIGHEST,
+            SchedulerConfig.ConfigValue.builder().setDelta(0).setMaxAllowedDelay(0).build())
         .build();
   }
 

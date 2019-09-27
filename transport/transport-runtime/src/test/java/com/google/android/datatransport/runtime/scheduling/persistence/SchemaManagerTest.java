@@ -152,7 +152,7 @@ public class SchemaManagerTest {
 
     ContentValues record = new ContentValues();
     record.put("backend_name", transportContext.getBackendName());
-    record.put("priority", transportContext.getPriority().ordinal());
+    record.put("priority", transportContext.getPriority().getValue());
     record.put("next_request_ms", 0);
     long contextId = db.insert("transport_contexts", null, record);
 
