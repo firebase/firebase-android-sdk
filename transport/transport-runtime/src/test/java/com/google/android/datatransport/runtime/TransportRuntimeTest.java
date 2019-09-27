@@ -215,7 +215,7 @@ public class TransportRuntimeTest {
             .setEventMillis(eventMillis)
             .setUptimeMillis(uptimeMillis)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes())
+            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
             .setCode(12)
             .build();
 

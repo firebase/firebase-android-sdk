@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.runtime;
+package com.google.android.datatransport.runtime.scheduling;
 
 import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
-import com.google.android.datatransport.runtime.scheduling.Scheduler;
+import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.runtime.EventInternal;
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
