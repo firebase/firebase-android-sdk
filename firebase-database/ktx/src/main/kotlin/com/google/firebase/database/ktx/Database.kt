@@ -16,14 +16,19 @@ package com.google.firebase.database.ktx
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.GenericTypeIndicator
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.GenericTypeIndicator
+import com.google.firebase.database.Query
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /** Returns the [FirebaseDatabase] instance of the default [FirebaseApp]. */
 val Firebase.database: FirebaseDatabase
@@ -37,7 +42,7 @@ fun Firebase.database(app: FirebaseApp): FirebaseDatabase = FirebaseDatabase.get
 
 /** Returns the [FirebaseDatabase] instance of the given [FirebaseApp] and [url]. */
 fun Firebase.database(app: FirebaseApp, url: String): FirebaseDatabase =
-FirebaseDatabase.getInstance(app, url)
+    FirebaseDatabase.getInstance(app, url)
 
 /**
  * Returns the content of the DataSnapshot converted to a POJO.
@@ -49,11 +54,32 @@ inline fun <reified T> DataSnapshot.getValue(): T? {
     return getValue(object : GenericTypeIndicator<T>() {})
 }
 
+/**
+ * Awaits for data from Query converted to a POJO without blocking a thread.
+ */
+suspend fun <T> Query.getValue(type: Class<T>): T? {
+    return suspendCancellableCoroutine { continuation ->
+        val eventListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                continuation.resume(snapshot.getValue(type))
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                continuation.resumeWithException(error.toException())
+            }
+        }
+        continuation.invokeOnCancellation {
+            removeEventListener(eventListener)
+        }
+        addListenerForSingleValueEvent(eventListener)
+    }
+}
+
 internal const val LIBRARY_NAME: String = "fire-db-ktx"
 
 /** @suppress */
 @Keep
 class FirebaseDatabaseKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> =
-            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+        listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }
