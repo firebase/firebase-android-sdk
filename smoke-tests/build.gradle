@@ -59,14 +59,17 @@ apply from: "configure.gradle"
 dependencies {
   // Firebase
   implementation "com.google.firebase:firebase-analytics"
+  implementation "com.google.firebase:firebase-appindexing"
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
+  implementation "com.google.firebase:firebase-config"
   implementation "com.google.firebase:firebase-database"
   implementation "com.google.firebase:firebase-dynamic-links"
   implementation "com.google.firebase:firebase-firestore"
   implementation "com.google.firebase:firebase-functions"
   implementation "com.google.firebase:firebase-inappmessaging"
-  implementation "com.google.firebase:firebase-config"
+  implementation "com.google.firebase:firebase-messaging"
+  implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
 
   // Common utilities (application side)
