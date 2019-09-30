@@ -14,7 +14,7 @@
 
 package com.google.android.datatransport;
 
-import java.util.Arrays;
+import android.util.SparseArray;
 
 public enum Priority {
   /** Quality of the service is within an hour. */
@@ -27,12 +27,12 @@ public enum Priority {
   HIGHEST(2),
   ;
 
-  private static final Priority[] PRIORITY_MAP;
+  private static final SparseArray<Priority> PRIORITY_MAP = new SparseArray<>();
 
   static {
-    // the order of this array must match the values of the enums.
-    PRIORITY_MAP = Priority.values();
-    Arrays.sort(PRIORITY_MAP, (p1, p2) -> p1.value - p2.value);
+    for (Priority p : Priority.values()) {
+      PRIORITY_MAP.append(p.getValue(), p);
+    }
   }
 
   private final int value;
@@ -46,9 +46,10 @@ public enum Priority {
   }
 
   public static Priority forValue(int value) {
-    if (value < 0 || value >= PRIORITY_MAP.length) {
+    Priority priority = PRIORITY_MAP.get(value);
+    if (priority == null) {
       throw new IllegalArgumentException("Unknown Priority for value " + value);
     }
-    return PRIORITY_MAP[value];
+    return priority;
   }
 }
