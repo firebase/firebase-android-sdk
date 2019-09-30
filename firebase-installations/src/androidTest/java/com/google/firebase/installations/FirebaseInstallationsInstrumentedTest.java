@@ -92,7 +92,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .setFirebaseInstallationId(TEST_FID_1)
           .setAuthToken(TEST_AUTH_TOKEN)
           .setRefreshToken(TEST_REFRESH_TOKEN)
-          .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_1)
+          .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_2)
           .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
           .setRegistrationStatus(PersistedFid.RegistrationStatus.REGISTERED)
           .build();
@@ -115,6 +115,16 @@ public class FirebaseInstallationsInstrumentedTest {
           .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_1)
           .setExpiresInSecs(0)
           .setRegistrationStatus(PersistedFid.RegistrationStatus.UNREGISTERED)
+          .build();
+
+  private static final PersistedFidEntry UPDATED_AUTH_TOKEN_ENTRY =
+      PersistedFidEntry.builder()
+          .setFirebaseInstallationId(TEST_FID_1)
+          .setAuthToken(TEST_AUTH_TOKEN_2)
+          .setRefreshToken(TEST_REFRESH_TOKEN)
+          .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_2)
+          .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+          .setRegistrationStatus(PersistedFid.RegistrationStatus.REGISTERED)
           .build();
 
   @Before
@@ -152,7 +162,6 @@ public class FirebaseInstallationsInstrumentedTest {
 
     when(mockUtils.createRandomFid()).thenReturn(TEST_FID_1);
     when(mockUtils.currentTimeInSecs()).thenReturn(TEST_CREATION_TIMESTAMP_2);
-    when(mockUtils.isAuthTokenExpired(any())).thenReturn(false);
 
     // Mocks success on FIS deletion
     doNothing()
@@ -173,6 +182,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetId_PersistedFidOk_BackendOk() throws Exception {
+    when(mockUtils.isAuthTokenExpired(REGISTERED_FID_ENTRY)).thenReturn(false);
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
@@ -194,6 +204,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetId_multipleCalls_sameFIDReturned() throws Exception {
+    when(mockUtils.isAuthTokenExpired(REGISTERED_FID_ENTRY)).thenReturn(false);
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
@@ -266,6 +277,7 @@ public class FirebaseInstallationsInstrumentedTest {
             invocation -> {
               throw new InterruptedException();
             });
+    when(mockUtils.isAuthTokenExpired(REGISTERED_FID_ENTRY)).thenReturn(false);
 
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(executor, firebaseApp, mockClient, persistedFid, mockUtils);
@@ -294,7 +306,7 @@ public class FirebaseInstallationsInstrumentedTest {
             invocation -> {
               throw new InterruptedException();
             });
-    when(mockUtils.isAuthTokenExpired(any())).thenReturn(true);
+    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
 
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(executor, firebaseApp, mockClient, persistedFid, mockUtils);
@@ -316,9 +328,10 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetId_expiredAuthToken_refreshesAuthToken() throws Exception {
-    when(mockUtils.isAuthTokenExpired(any())).thenReturn(true);
     // Update local storage with fid entry that has auth token expired.
     persistedFid.insertOrUpdatePersistedFidEntry(EXPIRED_AUTH_TOKEN_ENTRY);
+    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
+
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
@@ -343,6 +356,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetAuthToken_fidDoesNotExist_successful() throws Exception {
+    when(mockUtils.isAuthTokenExpired(REGISTERED_FID_ENTRY)).thenReturn(false);
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
@@ -355,6 +369,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetAuthToken_PersistedFidError_failure() throws Exception {
+    when(mockUtils.isAuthTokenExpired(REGISTERED_FID_ENTRY)).thenReturn(false);
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor, firebaseApp, backendClientReturnsOk, persistedFidReturnsError, mockUtils);
@@ -378,6 +393,8 @@ public class FirebaseInstallationsInstrumentedTest {
   @Test
   public void testGetAuthToken_fidExists_successful() throws Exception {
     when(mockPersistedFid.readPersistedFidEntryValue()).thenReturn(REGISTERED_FID_ENTRY);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_FID_ENTRY)).thenReturn(false);
+
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor, firebaseApp, backendClientReturnsOk, mockPersistedFid, mockUtils);
@@ -395,8 +412,10 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetAuthToken_expiredAuthToken_fetchedNewTokenFromFIS() throws Exception {
-    when(mockUtils.isAuthTokenExpired(any())).thenReturn(true, true, false);
     persistedFid.insertOrUpdatePersistedFidEntry(EXPIRED_AUTH_TOKEN_ENTRY);
+    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
+    when(mockUtils.isAuthTokenExpired(UPDATED_AUTH_TOKEN_ENTRY)).thenReturn(false);
+
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
@@ -417,6 +436,8 @@ public class FirebaseInstallationsInstrumentedTest {
     // Update local storage with a unregistered fid entry to validate that getAuthToken calls getId
     // to ensure FID registration and returns a valid auth token.
     persistedFid.insertOrUpdatePersistedFidEntry(UNREGISTERED_FID_ENTRY);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_FID_ENTRY)).thenReturn(false);
+
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
@@ -440,6 +461,8 @@ public class FirebaseInstallationsInstrumentedTest {
         .thenThrow(
             new FirebaseInstallationServiceException(
                 "Server Error", FirebaseInstallationServiceException.Status.SERVER_ERROR));
+    when(mockUtils.isAuthTokenExpired(REGISTERED_FID_ENTRY)).thenReturn(false);
+
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor, firebaseApp, backendClientReturnsError, mockPersistedFid, mockUtils);
@@ -466,7 +489,9 @@ public class FirebaseInstallationsInstrumentedTest {
     // triggered simultaneously. Task2 waits for Task1 to complete. On task1 completion, task2 reads
     // the UPDATED_AUTH_TOKEN_FID_ENTRY generated by Task1.
     persistedFid.insertOrUpdatePersistedFidEntry(EXPIRED_AUTH_TOKEN_ENTRY);
-    when(mockUtils.isAuthTokenExpired(any())).thenReturn(true, true, true, false);
+    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
+    when(mockUtils.isAuthTokenExpired(UPDATED_AUTH_TOKEN_ENTRY)).thenReturn(false);
+
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor, firebaseApp, backendClientReturnsOk, persistedFid, mockUtils);
@@ -514,6 +539,7 @@ public class FirebaseInstallationsInstrumentedTest {
                         .build()))
         .when(backendClientReturnsOk)
         .generateAuthToken(anyString(), anyString(), anyString(), anyString());
+    when(mockUtils.isAuthTokenExpired(any())).thenReturn(false);
 
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
