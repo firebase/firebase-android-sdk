@@ -86,6 +86,7 @@ public class DefaultScheduler implements Scheduler {
                 });
             callback.onSchedule(null);
           } catch (Exception e) {
+            LOGGER.warning("Error scheduling event " + e.getMessage());
             callback.onSchedule(e);
           }
         });
