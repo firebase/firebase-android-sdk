@@ -202,7 +202,11 @@ message LogRequest {
     // The ClientInfo at log time.
     ClientInfo client_info = 1;
 
-    int32 log_source = 2;
+    oneof source {
+        int32 log_source = 2;
+        string log_source_name = 6;
+    }
+
 
     repeated LogEvent log_event = 3;
 

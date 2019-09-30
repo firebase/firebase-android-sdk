@@ -170,7 +170,6 @@ final class CctTransportBackend implements TransportBackend {
       EventInternal firstEvent = entry.getValue().get(0);
       LogRequest.Builder requestBuilder =
           LogRequest.newBuilder()
-              .setLogSource(Integer.valueOf(entry.getKey()))
               .setQosTier(QosTierConfiguration.QosTier.DEFAULT)
               .setRequestTimeMs(wallTimeClock.getTime())
               .setRequestUptimeMs(uptimeClock.getTime())
@@ -189,6 +188,14 @@ final class CctTransportBackend implements TransportBackend {
                               .setFingerprint(firstEvent.get(KEY_FINGERPRINT))
                               .build())
                       .build());
+
+      // set log source to either its numeric value or its name.
+      try {
+        requestBuilder.setLogSource(Integer.valueOf(entry.getKey()));
+      } catch (NumberFormatException ex) {
+        requestBuilder.setLogSourceName(entry.getKey());
+      }
+
       for (EventInternal eventInternal : entry.getValue()) {
         LogEvent.Builder event =
             LogEvent.newBuilder()
