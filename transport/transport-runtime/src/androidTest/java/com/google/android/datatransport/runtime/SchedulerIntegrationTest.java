@@ -78,6 +78,12 @@ public class SchedulerIntegrationTest {
                               .setDelta(500)
                               .setMaxAllowedDelay(100000)
                               .build())
+                      .addConfig(
+                          Priority.HIGHEST,
+                          SchedulerConfig.ConfigValue.builder()
+                              .setDelta(500)
+                              .setMaxAllowedDelay(100000)
+                              .build())
                       .build())
               .setEventClock(() -> 3)
               .setUptimeClock(() -> 1)

@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport;
-
-public enum Priority {
-  /** Quality of the service is within an hour. */
-  DEFAULT,
-
-  /** Events delivered at most daily, on unmetered network. */
-  VERY_LOW,
-
-  /** Events delivered as soon as possible. */
-  HIGHEST,
-  ;
-}
+/** @hide */
+package com.google.android.datatransport.runtime.util;

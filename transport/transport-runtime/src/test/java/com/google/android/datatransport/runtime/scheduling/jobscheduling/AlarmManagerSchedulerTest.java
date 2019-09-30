@@ -35,6 +35,7 @@ import com.google.android.datatransport.runtime.scheduling.persistence.EventStor
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
 import java.nio.charset.Charset;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,7 +70,7 @@ public class AlarmManagerSchedulerTest {
         AlarmManagerScheduler.BACKEND_NAME, transportContext.getBackendName());
     intentDataBuilder.appendQueryParameter(
         AlarmManagerScheduler.EVENT_PRIORITY,
-        String.valueOf(transportContext.getPriority().ordinal()));
+        String.valueOf(PriorityMapping.toInt(transportContext.getPriority())));
 
     if (transportContext.getExtras() != null) {
       intentDataBuilder.appendQueryParameter(

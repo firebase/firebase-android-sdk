@@ -32,6 +32,7 @@ import com.google.android.datatransport.runtime.synchronization.SynchronizationG
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -135,7 +136,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
     ContentValues record = new ContentValues();
     record.put("backend_name", transportContext.getBackendName());
-    record.put("priority", transportContext.getPriority().ordinal());
+    record.put("priority", PriorityMapping.toInt(transportContext.getPriority()));
     record.put("next_request_ms", 0);
     if (transportContext.getExtras() != null) {
       record.put("extras", Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
@@ -151,7 +152,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         new ArrayList<>(
             Arrays.asList(
                 transportContext.getBackendName(),
-                String.valueOf(transportContext.getPriority().ordinal())));
+                String.valueOf(PriorityMapping.toInt(transportContext.getPriority()))));
 
     if (transportContext.getExtras() != null) {
       selection.append(" and extras = ?");
@@ -222,7 +223,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
                 "SELECT next_request_ms FROM transport_contexts WHERE backend_name = ? and priority = ?",
                 new String[] {
                   transportContext.getBackendName(),
-                  String.valueOf(transportContext.getPriority().ordinal())
+                  String.valueOf(PriorityMapping.toInt(transportContext.getPriority()))
                 }),
         cursor -> {
           if (cursor.moveToNext()) {
@@ -262,12 +263,12 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
                   "backend_name = ? and priority = ?",
                   new String[] {
                     transportContext.getBackendName(),
-                    String.valueOf(transportContext.getPriority().ordinal())
+                    String.valueOf(PriorityMapping.toInt(transportContext.getPriority()))
                   });
 
           if (rowsUpdated < 1) {
             values.put("backend_name", transportContext.getBackendName());
-            values.put("priority", transportContext.getPriority().ordinal());
+            values.put("priority", PriorityMapping.toInt(transportContext.getPriority()));
             db.insert("transport_contexts", null, values);
           }
           return null;
@@ -298,7 +299,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
                     results.add(
                         TransportContext.builder()
                             .setBackendName(cursor.getString(1))
-                            .setPriority(cursor.getInt(2))
+                            .setPriority(PriorityMapping.valueOf(cursor.getInt(2)))
                             .setExtras(maybeBase64Decode(cursor.getString(3)))
                             .build());
                   }
