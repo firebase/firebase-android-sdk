@@ -18,6 +18,7 @@ import android.content.Context;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
+import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkInitializer;
@@ -132,10 +133,11 @@ public class TransportRuntime implements TransportInternal {
   }
 
   @Override
-  public void send(SendRequest request) {
+  public void send(SendRequest request, TransportScheduleCallback callback) {
     scheduler.schedule(
         request.getTransportContext().withPriority(request.getEvent().getPriority()),
-        convert(request));
+        convert(request),
+        callback);
   }
 
   private EventInternal convert(SendRequest request) {

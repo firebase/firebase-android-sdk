@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling;
 
+import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
@@ -43,17 +44,26 @@ public class ImmediateScheduler implements Scheduler {
   }
 
   @Override
-  public void schedule(TransportContext transportContext, EventInternal event) {
+  public void schedule(
+      TransportContext transportContext, EventInternal event, TransportScheduleCallback callback) {
     executor.execute(
         () -> {
-          TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
-          if (backend == null) {
-            LOGGER.warning(
-                String.format(
-                    "Transport backend '%s' is not registered", transportContext.getBackendName()));
-            return;
+          try {
+            TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
+            if (backend == null) {
+              String errorMsg =
+                  String.format(
+                      "Transport backend '%s' is not registered",
+                      transportContext.getBackendName());
+              LOGGER.warning(errorMsg);
+              callback.onSchedule(new IllegalArgumentException(errorMsg));
+              return;
+            }
+            backend.send(BackendRequest.create(Collections.singleton(backend.decorate(event))));
+            callback.onSchedule(null);
+          } catch (Exception e) {
+            callback.onSchedule(e);
           }
-          backend.send(BackendRequest.create(Collections.singleton(backend.decorate(event))));
         });
   }
 }

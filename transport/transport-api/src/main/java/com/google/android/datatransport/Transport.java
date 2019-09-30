@@ -23,7 +23,22 @@ public interface Transport<T> {
   /**
    * Sends the event of type T.
    *
+   * <p>The event may not be send immediately. It's up to the implementation to define the time when
+   * events are actually sent.
+   *
    * @param event The event with the payload that needs to be sent.
    */
   void send(Event<T> event);
+
+  /**
+   * Schedules sending the event of type T.
+   *
+   * <p>The {@code callback} tracks the process of persisting the event to permanent storage to
+   * ensure it will be scheduled to be send at a later time. It's up to the implementation to define
+   * the time when scheduled events are actually sent.
+   *
+   * @param event The event with the payload that needs to be sent.
+   * @param callback The callback to notify during the scheduling process.
+   */
+  void schedule(Event<T> event, TransportScheduleCallback callback);
 }
