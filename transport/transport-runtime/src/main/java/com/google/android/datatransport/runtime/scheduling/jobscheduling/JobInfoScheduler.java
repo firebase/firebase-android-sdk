@@ -27,6 +27,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
 import java.nio.ByteBuffer;
 import java.util.zip.Adler32;
 
@@ -62,7 +63,9 @@ public class JobInfoScheduler implements WorkScheduler {
     checksum.update(context.getPackageName().getBytes());
     checksum.update(transportContext.getBackendName().getBytes());
     checksum.update(
-        ByteBuffer.allocate(4).putInt(transportContext.getPriority().getValue()).array());
+        ByteBuffer.allocate(4)
+            .putInt(PriorityMapping.toInt(transportContext.getPriority()))
+            .array());
     if (transportContext.getExtras() != null) {
       checksum.update(transportContext.getExtras());
     }
@@ -111,7 +114,7 @@ public class JobInfoScheduler implements WorkScheduler {
     PersistableBundle bundle = new PersistableBundle();
     bundle.putInt(ATTEMPT_NUMBER, attemptNumber);
     bundle.putString(BACKEND_NAME, transportContext.getBackendName());
-    bundle.putInt(EVENT_PRIORITY, transportContext.getPriority().getValue());
+    bundle.putInt(EVENT_PRIORITY, PriorityMapping.toInt(transportContext.getPriority()));
     if (transportContext.getExtras() != null) {
       bundle.putString(EXTRAS, encodeToString(transportContext.getExtras(), DEFAULT));
     }

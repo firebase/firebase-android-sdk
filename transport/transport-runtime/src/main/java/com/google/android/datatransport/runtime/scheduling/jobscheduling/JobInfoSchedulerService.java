@@ -19,9 +19,9 @@ import android.app.job.JobService;
 import android.os.Build;
 import android.util.Base64;
 import androidx.annotation.RequiresApi;
-import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
 
 /** The service responsible for uploading information to the backend. */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -38,7 +38,7 @@ public class JobInfoSchedulerService extends JobService {
     TransportContext.Builder transportContext =
         TransportContext.builder()
             .setBackendName(backendName)
-            .setPriority(Priority.forValue(priority));
+            .setPriority(PriorityMapping.valueOf(priority));
 
     if (extras != null) {
       transportContext.setExtras(Base64.decode(extras, Base64.DEFAULT));
