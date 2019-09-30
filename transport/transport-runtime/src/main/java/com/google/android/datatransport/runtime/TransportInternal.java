@@ -14,6 +14,8 @@
 
 package com.google.android.datatransport.runtime;
 
+import com.google.android.datatransport.TransportScheduleCallback;
+
 interface TransportInternal {
-  void send(SendRequest request);
+  void send(SendRequest request, TransportScheduleCallback callback);
 }
