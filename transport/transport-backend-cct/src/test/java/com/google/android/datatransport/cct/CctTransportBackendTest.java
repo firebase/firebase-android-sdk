@@ -15,6 +15,7 @@
 package com.google.android.datatransport.cct;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -45,6 +46,7 @@ import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.protobuf.ByteString;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.zip.GZIPOutputStream;
@@ -82,35 +84,20 @@ public class CctTransportBackendTest {
 
   private static final String TEST_ENDPOINT = "http://localhost:8999/api";
   private static final String API_KEY = "api_key";
+  private static final String CCT_TRANSPORT_NAME = "3";
+  private static final String LEGACY_TRANSPORT_NAME = "3";
   private TestClock wallClock = new TestClock(INITIAL_WALL_TIME);
   private TestClock uptimeClock = new TestClock(INITIAL_UPTIME);
   private CctTransportBackend BACKEND =
-      new CctTransportBackend(
-          RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock);
+      new CctTransportBackend(RuntimeEnvironment.application, wallClock, uptimeClock);
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(8999);
 
   private BackendRequest getCCTBackendRequest() {
-    return BackendRequest.create(
-        Arrays.asList(
-            BACKEND.decorate(
-                EventInternal.builder()
-                    .setEventMillis(INITIAL_WALL_TIME)
-                    .setUptimeMillis(INITIAL_UPTIME)
-                    .setTransportName("3")
-                    .setPayload(PAYLOAD.toByteArray())
-                    .build()),
-            BACKEND.decorate(
-                EventInternal.builder()
-                    .setEventMillis(INITIAL_WALL_TIME)
-                    .setUptimeMillis(INITIAL_UPTIME)
-                    .setTransportName("3")
-                    .setPayload(PAYLOAD.toByteArray())
-                    .setCode(CODE)
-                    .build())));
+    return getCCTBackendRequest(CCT_TRANSPORT_NAME, new CCTDestination(TEST_ENDPOINT, null));
   }
 
-  private BackendRequest getLegacyFirelogBackendRequest() {
+  private BackendRequest getCCTBackendRequest(String transportName, CCTDestination destination) {
     return BackendRequest.builder()
         .setEvents(
             Arrays.asList(
@@ -118,18 +105,18 @@ public class CctTransportBackendTest {
                     EventInternal.builder()
                         .setEventMillis(INITIAL_WALL_TIME)
                         .setUptimeMillis(INITIAL_UPTIME)
-                        .setTransportName("4")
+                        .setTransportName(transportName)
                         .setPayload(PAYLOAD.toByteArray())
                         .build()),
                 BACKEND.decorate(
                     EventInternal.builder()
                         .setEventMillis(INITIAL_WALL_TIME)
                         .setUptimeMillis(INITIAL_UPTIME)
-                        .setTransportName("4")
+                        .setTransportName(transportName)
                         .setPayload(PAYLOAD.toByteArray())
                         .setCode(CODE)
                         .build())))
-        .setExtras(LegacyFlgDestination.encodeString(API_KEY))
+        .setExtras(destination.getExtras())
         .build();
   }
 
@@ -205,11 +192,107 @@ public class CctTransportBackendTest {
     wallClock.tick();
     uptimeClock.tick();
 
-    BACKEND.send(getLegacyFirelogBackendRequest());
+    BACKEND.send(
+        getCCTBackendRequest(LEGACY_TRANSPORT_NAME, new CCTDestination(TEST_ENDPOINT, API_KEY)));
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, equalTo(API_KEY)));
+  }
+
+  @Test
+  public void testLegacyFlgSuccessLoggingRequest_containUrl() {
+    final String customHostname = "http://localhost:8999";
+    stubFor(
+        post(urlEqualTo("/custom_api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BACKEND.send(
+        getCCTBackendRequest(
+            LEGACY_TRANSPORT_NAME, new CCTDestination(customHostname + "/custom_api", null)));
+
+    verify(
+        postRequestedFor(urlEqualTo("/custom_api"))
+            .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, absent()));
+  }
+
+  @Test
+  public void testLegacyFlgSuccessLoggingRequest_containsAPIKeyAndUrl() {
+    final String customHostname = "http://localhost:8999";
+    stubFor(
+        post(urlEqualTo("/custom_api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BACKEND.send(
+        getCCTBackendRequest(
+            LEGACY_TRANSPORT_NAME, new CCTDestination(customHostname + "/custom_api", API_KEY)));
+
+    verify(
+        postRequestedFor(urlEqualTo("/custom_api"))
+            .withHeader(CctTransportBackend.API_KEY_HEADER_KEY, equalTo(API_KEY)));
+  }
+
+  @Test
+  public void testLegacyFlgSuccessLoggingRequest_corruptedExtras()
+      throws UnsupportedEncodingException {
+    BackendRequest request =
+        BackendRequest.builder()
+            .setEvents(
+                Arrays.asList(
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("4")
+                            .setPayload(PAYLOAD.toByteArray())
+                            .build()),
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("4")
+                            .setPayload(PAYLOAD.toByteArray())
+                            .setCode(CODE)
+                            .build())))
+            .setExtras("not a valid extras".getBytes("UTF-8"))
+            .build();
+
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(request);
+    assertThat(response.getStatus()).isEqualTo(BackendResponse.Status.FATAL_ERROR);
   }
 
   @Test
@@ -261,8 +344,7 @@ public class CctTransportBackendTest {
   @Test
   public void send_whenBackendResponseTimesOut_shouldReturnTransientError() {
     CctTransportBackend backend =
-        new CctTransportBackend(
-            RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock, 300);
+        new CctTransportBackend(RuntimeEnvironment.application, wallClock, uptimeClock, 300);
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withFixedDelay(500)));
     BackendResponse response = backend.send(getCCTBackendRequest());
 
@@ -272,8 +354,7 @@ public class CctTransportBackendTest {
   @Test
   public void decorate_whenOnline_shouldProperlyPopulateNetworkInfo() {
     CctTransportBackend backend =
-        new CctTransportBackend(
-            RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock, 300);
+        new CctTransportBackend(RuntimeEnvironment.application, wallClock, uptimeClock, 300);
 
     EventInternal result =
         backend.decorate(
@@ -294,8 +375,7 @@ public class CctTransportBackendTest {
   @Config(shadows = {OfflineConnectivityManagerShadow.class})
   public void decorate_whenOffline_shouldProperlyPopulateNetworkInfo() {
     CctTransportBackend backend =
-        new CctTransportBackend(
-            RuntimeEnvironment.application, TEST_ENDPOINT, wallClock, uptimeClock, 300);
+        new CctTransportBackend(RuntimeEnvironment.application, wallClock, uptimeClock, 300);
 
     EventInternal result =
         backend.decorate(
@@ -425,23 +505,26 @@ public class CctTransportBackendTest {
                     .withBody(output.toByteArray())));
 
     BackendRequest backendRequest =
-        BackendRequest.create(
-            Arrays.asList(
-                BACKEND.decorate(
-                    EventInternal.builder()
-                        .setEventMillis(INITIAL_WALL_TIME)
-                        .setUptimeMillis(INITIAL_UPTIME)
-                        .setTransportName("3")
-                        .setPayload(PAYLOAD.toByteArray())
-                        .build()),
-                BACKEND.decorate(
-                    EventInternal.builder()
-                        .setEventMillis(INITIAL_WALL_TIME)
-                        .setUptimeMillis(INITIAL_UPTIME)
-                        .setTransportName(TEST_NAME)
-                        .setPayload(PAYLOAD.toByteArray())
-                        .setCode(CODE)
-                        .build())));
+        BackendRequest.builder()
+            .setEvents(
+                Arrays.asList(
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("3")
+                            .setPayload(PAYLOAD.toByteArray())
+                            .build()),
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName(TEST_NAME)
+                            .setPayload(PAYLOAD.toByteArray())
+                            .setCode(CODE)
+                            .build())))
+            .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
+            .build();
     wallClock.tick();
     uptimeClock.tick();
 
