@@ -146,8 +146,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   @NonNull
   @Override
-  public Task<InstallationTokenResult> getAuthToken(
-      @AuthTokenOption int authTokenOption) {
+  public Task<InstallationTokenResult> getAuthToken(@AuthTokenOption int authTokenOption) {
     Task<InstallationTokenResult> task = addGetAuthTokenListener(authTokenOption);
     executor.execute(runnable);
     return task;
