@@ -45,6 +45,7 @@ import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.protobuf.ByteString;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -66,11 +67,14 @@ public class CctTransportBackendTest {
   private static final ByteString PAYLOAD =
       ByteString.copyFrom("TelemetryData".getBytes(Charset.defaultCharset()));
   private static final int CODE = 5;
+  private static final String TEST_NAME = "hello";
 
   private static final PredicateMatcher<Request, BatchedLogRequest> batchRequestMatcher =
       protoMatcher(BatchedLogRequest.class);
   private static final PredicateMatcher<Request, LogRequest> firstLogRequestMatcher =
       batchRequestMatcher.zoom(b -> b.getLogRequest(0));
+  private static final PredicateMatcher<Request, LogRequest> secondLogRequestMatcher =
+      batchRequestMatcher.zoom(b -> b.getLogRequest(1));
 
   private static final PredicateMatcher<Request, LogEvent> firstLogEventMatcher =
       firstLogRequestMatcher.zoom(b -> b.getLogEvent(0));
@@ -453,7 +457,7 @@ public class CctTransportBackendTest {
   }
 
   @Test
-  public void send_CompressedResponseIsUncompressed() throws Exception {
+  public void send_CompressedResponseIsUncompressed() throws IOException {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output);
     gzipOutputStream.write(
@@ -479,6 +483,61 @@ public class CctTransportBackendTest {
         postRequestedFor(urlEqualTo("/api"))
             .withHeader("Content-Type", equalTo("application/x-protobuf"))
             .withHeader("Content-Encoding", equalTo("gzip")));
+
+    assertEquals(BackendResponse.ok(3), response);
+  }
+
+  @Test
+  public void send_whenLogSourceIsSetByName_shouldSetItToProperField() throws IOException {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output);
+    gzipOutputStream.write(
+        LogResponse.newBuilder().setNextRequestWaitMillis(3).build().toByteArray());
+    gzipOutputStream.close();
+
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withHeader("Content-Encoding", "gzip")
+                    .withBody(output.toByteArray())));
+
+    BackendRequest backendRequest =
+        BackendRequest.builder()
+            .setEvents(
+                Arrays.asList(
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("3")
+                            .setPayload(PAYLOAD.toByteArray())
+                            .build()),
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName(TEST_NAME)
+                            .setPayload(PAYLOAD.toByteArray())
+                            .setCode(CODE)
+                            .build())))
+            .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
+            .build();
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf"))
+            .withHeader("Content-Encoding", equalTo("gzip"))
+            .andMatching(batchRequestMatcher.test(batch -> batch.getLogRequestCount() == 2))
+            .andMatching(firstLogRequestMatcher.test(r -> r.getLogSource() == 3))
+            .andMatching(
+                secondLogRequestMatcher.test(r -> TEST_NAME.equals(r.getLogSourceName()))));
 
     assertEquals(BackendResponse.ok(3), response);
   }
