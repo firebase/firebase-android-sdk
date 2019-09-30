@@ -55,6 +55,7 @@ task generateAarSizeMeasurements(type: GenerateAarMeasurementTask) {
     group 'Measurements'
 
     dependsOn (":publishAllToBuildDir")
+    reportFile = file("$buildDir/aar-size-report.json")
 }
 
 /**
@@ -68,8 +69,9 @@ task uploadApkSizeMeasurements(type: UploadMeasurementsTask) {
     group 'Measurements'
 
     dependsOn generateApkSizeMeasurements
+    dependsOn generateAarSizeMeasurements
 
-    reportFile = file("$buildDir/size-report.json")
+    reportFiles = files("$buildDir/size-report.json", "$buildDir/aar-size-report.json")
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }
 

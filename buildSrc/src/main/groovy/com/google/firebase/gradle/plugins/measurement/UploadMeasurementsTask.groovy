@@ -20,8 +20,9 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import org.gradle.api.DefaultTask
 import org.gradle.api.Task
+import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.TaskAction
 
 /**
@@ -49,8 +50,8 @@ public class UploadMeasurementsTask extends DefaultTask {
      * <p>This file must exist prior to executing this task, but it may be created by other tasks
      * provided they run first.
      */
-    @InputFile
-    File reportFile
+    @InputFiles
+    FileCollection reportFiles
 
     @TaskAction
     def upload() {
@@ -65,18 +66,20 @@ public class UploadMeasurementsTask extends DefaultTask {
                 Files.copy(it, jar, StandardCopyOption.REPLACE_EXISTING)
             }
 
-            project.logger.info("Running uploader with flags: --config_path=${configuration} --json_path=${reportFile}")
+            reportFiles.forEach { File reportFile ->
+                project.logger.info("Running uploader with flags: --config_path=${configuration} --json_path=${reportFile}")
 
-            project.exec {
-                executable("java")
+                project.exec {
+                    executable("java")
 
-                args(
-                    "-jar",
-                    jar,
-                    "--config_path=${configuration}",
-                    "--json_path=${reportFile}",
-                )
-            }.rethrowFailure()
+                    args(
+                        "-jar",
+                        jar,
+                        "--config_path=${configuration}",
+                        "--json_path=${reportFile}",
+                    )
+                }.rethrowFailure()
+            }
         }
     }
 

@@ -15,12 +15,11 @@
 package com.google.apksize;
 
 import android.content.Context;
-import android.util.Log;
-import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.cct.LegacyFlgDestination;
+import com.google.android.datatransport.runtime.TransportRuntime;
 
 public class TransportSample implements SampleCode {
 
@@ -29,7 +28,8 @@ public class TransportSample implements SampleCode {
 
     TransportRuntime.initialize(context);
 
-    TransportFactory f = TransportRuntime.getInstance().newFactory(LegacyFlgDestination.DEFAULT_INSTANCE);
+    TransportFactory f =
+        TransportRuntime.getInstance().newFactory(LegacyFlgDestination.DEFAULT_INSTANCE);
     Transport<String> t = f.getTransport("123", String.class, String::getBytes);
     t.send(Event.ofData("Hello"));
     t.send(Event.ofTelemetry(1, "World"));
