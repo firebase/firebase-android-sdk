@@ -514,7 +514,7 @@ public class FirebaseFirestore {
    */
   @NonNull
   public ListenerRegistration addSnapshotsInSyncListener(
-      Activity activity, @NonNull Runnable runnable) {
+      @NonNull Activity activity, @NonNull Runnable runnable) {
     return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, activity, runnable);
   }
 
@@ -535,7 +535,7 @@ public class FirebaseFirestore {
    */
   @NonNull
   public ListenerRegistration addSnapshotsInSyncListener(
-      Executor executor, @NonNull Runnable runnable) {
+      @NonNull Executor executor, @NonNull Runnable runnable) {
     return addSnapshotsInSyncListener(executor, null, runnable);
   }
 
