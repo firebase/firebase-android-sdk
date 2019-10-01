@@ -37,6 +37,7 @@ android {
     minSdkVersion 16
     multiDexEnabled true
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    versionName "1.0.0"
   }
 
   buildTypes {
