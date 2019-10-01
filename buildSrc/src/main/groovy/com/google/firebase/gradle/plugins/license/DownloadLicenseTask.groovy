@@ -40,8 +40,10 @@ class DownloadLicenseTask extends DefaultTask {
 
       //We use the URI string's hashcode as the filename to store the download
       //This is safe since java String 's hashcode generation algorithm is part of the api spec
-      File licenseFile = new File(outputDir, "${parser.getRemoteUrls()[0].toString().hashCode()}")
-      licenseFile.write licenseContent
+      parser.getRemoteUrls().each { url ->
+        File licenseFile = new File(outputDir, "${url.toString().hashCode()}")
+        licenseFile.write licenseContent
+      }
     }
   }
 }
