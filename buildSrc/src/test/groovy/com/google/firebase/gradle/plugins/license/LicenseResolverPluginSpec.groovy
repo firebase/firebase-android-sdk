@@ -134,8 +134,7 @@ class LicenseResolverPluginSpec extends Specification {
         def result = idempotentBuild("generateLicenses")
 
         then: "Count the number of times the license was downloaded"
-        result.output.count(
-                'Downloading license from http://www.apache.org/licenses/LICENSE-2.0.txt') == 1
+        result.output.count('Downloading Apache 2.0 license') == 1
 
     }
 
