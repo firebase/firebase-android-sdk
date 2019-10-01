@@ -15,6 +15,7 @@
 package com.google.firebase.remoteconfig.ktx
 
 import androidx.annotation.Keep
+import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
@@ -41,6 +42,12 @@ fun remoteConfigSettings(init: FirebaseRemoteConfigSettings.Builder.() -> Unit) 
     val builder = FirebaseRemoteConfigSettings.Builder()
     builder.init()
     return builder.build()
+}
+
+fun FirebaseRemoteConfig.setConfigSettingsAsync(init: FirebaseRemoteConfigSettings.Builder.() -> Unit) : Task<Void> {
+    val builder = FirebaseRemoteConfigSettings.Builder()
+    builder.init()
+    return setConfigSettingsAsync(builder.build())
 }
 
 internal const val LIBRARY_NAME: String = "fire-cfg-ktx"

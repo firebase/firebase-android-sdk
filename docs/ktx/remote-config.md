@@ -83,4 +83,10 @@ val configSettings = remoteConfigSettings {
     setFetchTimeoutInSeconds(60)
 }
 remoteConfig.setConfigSettingsAsync(configSettings)
+
+// Or alternatively
+remoteConfig.setConfigSettingsAsync {
+    setMinimumFetchIntervalInSeconds(3600)
+    setFetchTimeoutInSeconds(60)
+}
 ```
