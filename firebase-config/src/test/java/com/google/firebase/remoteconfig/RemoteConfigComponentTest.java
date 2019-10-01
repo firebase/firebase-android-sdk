@@ -20,7 +20,7 @@ import static com.google.firebase.remoteconfig.AbtExperimentHelper.createAbtExpe
 import static com.google.firebase.remoteconfig.AbtExperimentHelper.createAbtExperiments;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.DEFAULT_NAMESPACE;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.NETWORK_CONNECTION_TIMEOUT_IN_SECONDS;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

@@ -15,7 +15,7 @@
 package com.google.firebase.inappmessaging.internal;
 
 import static com.google.firebase.inappmessaging.testutil.TestData.BANNER_MESSAGE_MODEL;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

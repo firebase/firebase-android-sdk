@@ -25,8 +25,8 @@ import static com.google.firebase.inappmessaging.testutil.TestData.ON_FOREGROUND
 import static com.google.firebase.inappmessaging.testutil.TestProtos.BANNER_MESSAGE_PROTO;
 import static io.reactivex.BackpressureStrategy.BUFFER;
 import static io.reactivex.schedulers.Schedulers.trampoline;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
