@@ -60,3 +60,46 @@ val metadata = storageMetadata {
     setCustomMetadata("location", "Maputo, MOZ")
 }
 ```
+
+### Upload files with metadata
+
+**Kotlin**
+```kotlin
+var metadata = StorageMetadata.Builder()
+        .setContentType("image/jpg")
+        .setContentDisposition("attachment")
+        .build()
+
+// Works with putFile(), putStream() or putBytes()
+storageRef.child("images/mountains.jpg").putFile(file, metadata)
+```
+
+**Kotlin + KTX**
+```kotlin
+// Works with putFile(), putStream() or putBytes()
+storageRef.child("images/mountains.jpg").putFile(file) {
+    contentType = "image/jpg"
+    contentDisposition = "attachment"
+}
+```
+
+### Update file metadata
+
+**Kotlin**
+```kotlin
+var metadata = StorageMetadata.Builder()
+        .setContentType("image/jpg")
+        .setCustomMetadata("location", "Harare, ZIM")
+        .build()
+
+storageRef.child("images/mountains.jpg").updateMetadata(metadata)
+```
+
+**Kotlin + KTX**
+```kotlin
+storageRef.child("images/mountains.jpg").updateMetadata {
+    contentType = "image/jpg"
+    contentDisposition = "attachment"
+    setCustomMetadata("location", "Harare, ZIM")
+}
+```

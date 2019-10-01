@@ -14,7 +14,9 @@
 
 package com.google.firebase.storage.ktx
 
+import android.net.Uri
 import androidx.annotation.Keep
+import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
@@ -23,6 +25,9 @@ import com.google.firebase.components.ComponentRegistrar
 
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.UploadTask
+import java.io.InputStream
 
 /** Returns the [FirebaseStorage] instance of the default [FirebaseApp]. */
 val Firebase.storage: FirebaseStorage
@@ -43,6 +48,38 @@ fun storageMetadata(init: StorageMetadata.Builder.() -> Unit): StorageMetadata {
     val builder = StorageMetadata.Builder()
     builder.init()
     return builder.build()
+}
+
+/** Asynchronously uploads from the specified [uri] with the [StorageMetadata] initialized using the [init] function */
+fun StorageReference.putFile(uri: Uri, init: StorageMetadata.Builder.() -> Unit): UploadTask {
+    val builder = StorageMetadata.Builder()
+    builder.init()
+    val metadata = builder.build()
+    return putFile(uri, metadata)
+}
+
+/** Asynchronously uploads specified [bytes] with the [StorageMetadata] initialized using the [init] function */
+fun StorageReference.putBytes(bytes: ByteArray, init: StorageMetadata.Builder.() -> Unit): UploadTask {
+    val builder = StorageMetadata.Builder()
+    builder.init()
+    val metadata = builder.build()
+    return putBytes(bytes, metadata)
+}
+
+/** Asynchronously uploads from the specified [stream] with the [StorageMetadata] initialized using the [init] function */
+fun StorageReference.putStream(stream: InputStream, init: StorageMetadata.Builder.() -> Unit): UploadTask {
+    val builder = StorageMetadata.Builder()
+    builder.init()
+    val metadata = builder.build()
+    return putStream(stream, metadata)
+}
+
+/** Updates the current [StorageMetadata] to use the metadata initialized using the [init] function */
+fun StorageReference.updateMetadata(init: StorageMetadata.Builder.() -> Unit): Task<StorageMetadata> {
+    val builder = StorageMetadata.Builder()
+    builder.init()
+    val metadata = builder.build()
+    return updateMetadata(metadata)
 }
 
 internal const val LIBRARY_NAME: String = "fire-stg-ktx"
