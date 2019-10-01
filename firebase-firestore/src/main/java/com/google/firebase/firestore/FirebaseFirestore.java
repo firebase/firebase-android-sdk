@@ -492,7 +492,8 @@ public class FirebaseFirestore {
    *     other.
    * @return A registration object that can be used to remove the listener.
    */
-  ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable runnable) {
+  @NonNull
+  public ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable runnable) {
     return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, runnable);
   }
 
@@ -512,7 +513,8 @@ public class FirebaseFirestore {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  ListenerRegistration addSnapshotsInSyncListener(Activity activity, @NonNull Runnable runnable) {
+  public ListenerRegistration addSnapshotsInSyncListener(
+      @NonNull Activity activity, @NonNull Runnable runnable) {
     return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, activity, runnable);
   }
 
@@ -532,7 +534,8 @@ public class FirebaseFirestore {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  ListenerRegistration addSnapshotsInSyncListener(Executor executor, @NonNull Runnable runnable) {
+  public ListenerRegistration addSnapshotsInSyncListener(
+      @NonNull Executor executor, @NonNull Runnable runnable) {
     return addSnapshotsInSyncListener(executor, null, runnable);
   }
 

@@ -415,7 +415,7 @@ public class SQLiteSchemaTest {
         new Object[] {encode(path("coll/existing")), createDummyDocument("coll/existing")});
 
     // Run the index-free migration.
-    schema.runMigrations(8, 9);
+    schema.runMigrations(8, 10);
     db.execSQL(
         "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
         new Object[] {encode(path("coll/old")), 0, 1000, createDummyDocument("coll/old")});
@@ -455,7 +455,7 @@ public class SQLiteSchemaTest {
         new Object[] {3, "baz", createDummyQueryTargetWithLimboFreeVersion(3).toByteArray()});
 
     schema.runMigrations(0, 8);
-    schema.runMigrations(8, 9);
+    schema.runMigrations(8, 10);
 
     int rowCount =
         new SQLitePersistence.Query(db, "SELECT target_id, target_proto FROM targets")
@@ -474,6 +474,30 @@ public class SQLiteSchemaTest {
                 });
 
     assertEquals(3, rowCount);
+  }
+
+  @Test
+  public void dropsLastLimboFreeSnapshotIfValuesCannotBeReliedUpon() {
+    schema.runMigrations(0, 9);
+
+    db.execSQL(
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        new Object[] {1, "foo", createDummyQueryTargetWithLimboFreeVersion(1).toByteArray()});
+
+    schema.runMigrations(9, 10);
+
+    new SQLitePersistence.Query(db, "SELECT target_proto FROM targets WHERE target_id = 1")
+        .first(
+            cursor -> {
+              byte[] targetProtoBytes = cursor.getBlob(0);
+
+              try {
+                Target targetProto = Target.parseFrom(targetProtoBytes);
+                assertFalse(targetProto.hasLastLimboFreeSnapshotVersion());
+              } catch (InvalidProtocolBufferException e) {
+                fail("Failed to decode Query data");
+              }
+            });
   }
 
   @Test

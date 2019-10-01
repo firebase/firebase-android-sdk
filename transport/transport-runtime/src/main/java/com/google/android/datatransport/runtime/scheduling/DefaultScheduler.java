@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling;
 
+import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
@@ -40,7 +41,7 @@ public class DefaultScheduler implements Scheduler {
   private final SynchronizationGuard guard;
 
   @Inject
-  DefaultScheduler(
+  public DefaultScheduler(
       Executor executor,
       BackendRegistry backendRegistry,
       WorkScheduler workScheduler,
@@ -60,24 +61,34 @@ public class DefaultScheduler implements Scheduler {
    * @param event The event itself which needs to be logged with additional information.
    */
   @Override
-  public void schedule(TransportContext transportContext, EventInternal event) {
+  public void schedule(
+      TransportContext transportContext, EventInternal event, TransportScheduleCallback callback) {
     executor.execute(
         () -> {
-          TransportBackend transportBackend =
-              backendRegistry.get(transportContext.getBackendName());
-          if (transportBackend == null) {
-            LOGGER.warning(
-                String.format(
-                    "Transport backend '%s' is not registered", transportContext.getBackendName()));
-            return;
+          try {
+            TransportBackend transportBackend =
+                backendRegistry.get(transportContext.getBackendName());
+            if (transportBackend == null) {
+              String errorMsg =
+                  String.format(
+                      "Transport backend '%s' is not registered",
+                      transportContext.getBackendName());
+              LOGGER.warning(errorMsg);
+              callback.onSchedule(new IllegalArgumentException(errorMsg));
+              return;
+            }
+            EventInternal decoratedEvent = transportBackend.decorate(event);
+            guard.runCriticalSection(
+                () -> {
+                  eventStore.persist(transportContext, decoratedEvent);
+                  workScheduler.schedule(transportContext, 1);
+                  return null;
+                });
+            callback.onSchedule(null);
+          } catch (Exception e) {
+            LOGGER.warning("Error scheduling event " + e.getMessage());
+            callback.onSchedule(e);
           }
-          EventInternal decoratedEvent = transportBackend.decorate(event);
-          guard.runCriticalSection(
-              () -> {
-                eventStore.persist(transportContext, decoratedEvent);
-                workScheduler.schedule(transportContext, 1);
-                return null;
-              });
         });
   }
 }

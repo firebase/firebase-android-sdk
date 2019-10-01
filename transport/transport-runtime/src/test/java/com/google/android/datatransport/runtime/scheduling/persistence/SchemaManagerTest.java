@@ -23,6 +23,7 @@ import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
 import java.nio.charset.Charset;
 import java.util.Map;
 import org.junit.Assert;
@@ -152,7 +153,7 @@ public class SchemaManagerTest {
 
     ContentValues record = new ContentValues();
     record.put("backend_name", transportContext.getBackendName());
-    record.put("priority", transportContext.getPriority().ordinal());
+    record.put("priority", PriorityMapping.toInt(transportContext.getPriority()));
     record.put("next_request_ms", 0);
     long contextId = db.insert("transport_contexts", null, record);
 

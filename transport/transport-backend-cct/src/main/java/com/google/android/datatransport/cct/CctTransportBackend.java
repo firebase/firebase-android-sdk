@@ -99,22 +99,17 @@ final class CctTransportBackend implements TransportBackend {
   }
 
   CctTransportBackend(
-      Context applicationContext,
-      String url,
-      Clock wallTimeClock,
-      Clock uptimeClock,
-      int readTimeout) {
+      Context applicationContext, Clock wallTimeClock, Clock uptimeClock, int readTimeout) {
     this.connectivityManager =
         (ConnectivityManager) applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-    this.endPoint = parseUrlOrThrow(url);
+    this.endPoint = parseUrlOrThrow(CCTDestination.DEFAULT_END_POINT);
     this.uptimeClock = uptimeClock;
     this.wallTimeClock = wallTimeClock;
     this.readTimeout = readTimeout;
   }
 
-  CctTransportBackend(
-      Context applicationContext, String url, Clock wallTimeClock, Clock uptimeClock) {
-    this(applicationContext, url, wallTimeClock, uptimeClock, READ_TIME_OUT);
+  CctTransportBackend(Context applicationContext, Clock wallTimeClock, Clock uptimeClock) {
+    this(applicationContext, wallTimeClock, uptimeClock, READ_TIME_OUT);
   }
 
   @Override
@@ -175,7 +170,6 @@ final class CctTransportBackend implements TransportBackend {
       EventInternal firstEvent = entry.getValue().get(0);
       LogRequest.Builder requestBuilder =
           LogRequest.newBuilder()
-              .setLogSource(Integer.valueOf(entry.getKey()))
               .setQosTier(QosTierConfiguration.QosTier.DEFAULT)
               .setRequestTimeMs(wallTimeClock.getTime())
               .setRequestUptimeMs(uptimeClock.getTime())
@@ -194,6 +188,14 @@ final class CctTransportBackend implements TransportBackend {
                               .setFingerprint(firstEvent.get(KEY_FINGERPRINT))
                               .build())
                       .build());
+
+      // set log source to either its numeric value or its name.
+      try {
+        requestBuilder.setLogSource(Integer.valueOf(entry.getKey()));
+      } catch (NumberFormatException ex) {
+        requestBuilder.setLogSourceName(entry.getKey());
+      }
+
       for (EventInternal eventInternal : entry.getValue()) {
         LogEvent.Builder event =
             LogEvent.newBuilder()
@@ -282,14 +284,27 @@ final class CctTransportBackend implements TransportBackend {
     // CCT backend supports 2 different endpoints
     // We route to CCT backend if extras are null and to LegacyFlg otherwise.
     // This (anti-) pattern should not be required for other backends
-    final String apiKey =
-        request.getExtras() == null ? null : LegacyFlgDestination.decodeExtras(request.getExtras());
+    String apiKey = null;
+    URL actualEndPoint = endPoint;
+    if (request.getExtras() != null) {
+      try {
+        CCTDestination destination = CCTDestination.fromByteArray(request.getExtras());
+        if (destination.getAPIKey() != null) {
+          apiKey = destination.getAPIKey();
+        }
+        if (destination.getEndPoint() != null) {
+          actualEndPoint = parseUrlOrThrow(destination.getEndPoint());
+        }
+      } catch (IllegalArgumentException e) {
+        return BackendResponse.fatalError();
+      }
+    }
 
     try {
       HttpResponse response =
           retry(
               5,
-              new HttpRequest(endPoint, requestBody, apiKey),
+              new HttpRequest(actualEndPoint, requestBody, apiKey),
               this::doSend,
               (req, resp) -> {
                 if (resp.redirectUrl != null) {
