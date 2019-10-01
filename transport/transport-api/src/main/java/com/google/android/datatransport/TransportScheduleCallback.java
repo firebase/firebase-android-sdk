@@ -17,7 +17,7 @@ package com.google.android.datatransport;
 import androidx.annotation.Nullable;
 
 /** An callback interface for the scheduling an Event. */
-public interface TransportScheduleCallback<T> {
+public interface TransportScheduleCallback {
 
   /**
    * Called when the process of scheduling an event has finished. If the process was finished
