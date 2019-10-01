@@ -108,6 +108,18 @@ class ConfigTests : BaseTestCase() {
     }
 
     @Test
+    fun `FirebaseRemoteConfigSettings builder works`() {
+        val minFetchInterval = 3600L
+        val fetchTimeout = 60L
+        val configSettings = remoteConfigSettings {
+            setMinimumFetchIntervalInSeconds(minFetchInterval)
+            setFetchTimeoutInSeconds(fetchTimeout)
+        }
+        assertThat(configSettings.minimumFetchIntervalInSeconds).isEqualTo(minFetchInterval)
+        assertThat(configSettings.fetchTimeoutInSeconds).isEqualTo(fetchTimeout)
+    }
+
+    @Test
     fun `Overloaded get() operator returns value when key exists`() {
         val mockGetHandler = mock(ConfigGetParameterHandler::class.java)
         val directExecutor = MoreExecutors.directExecutor()
