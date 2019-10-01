@@ -131,20 +131,24 @@ class SQLiteSchema {
       createV8CollectionParentsIndex();
     }
 
-    if ((fromVersion < 9 && toVersion >= 9) || (fromVersion < 10 && toVersion >= 10)) {
-      // Firestore v21.10 introduced an issue that led us to disable an assert that is required
-      // to ensure data integrity. While the schema did not change between version 9 and 10, we use
-      // the schema bump to version 10 to clear any affected data.
+    if (fromVersion < 9 && toVersion >= 9) {
       if (!hasReadTime()) {
         addReadTime();
       } else {
         // Index-free queries rely on the fact that documents updated after a query's last limbo
         // free snapshot version are persisted with their read-time. If a customer upgrades to
-        // schema version 10, downgrades and then upgrades again, some queries may have a last limbo
+        // schema version 9, downgrades and then upgrades again, some queries may have a last limbo
         // free snapshot version despite the fact that not all updated document have an associated
         // read time.
         dropLastLimboFreeSnapshotVersion();
       }
+    }
+
+    if (fromVersion == 9 && toVersion >= 10) {
+      // Firestore v21.10 contained a regeression that led us to disable an assert that is required
+      // to ensure data integrity. While the schema did not change between version 9 and 10, we use
+      // the schema bump to version 10 to clear any affected data.
+      dropLastLimboFreeSnapshotVersion();
     }
 
     /*
