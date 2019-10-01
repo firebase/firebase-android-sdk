@@ -23,7 +23,6 @@ import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.BSDLicens
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.CreativeCommonsLicenseFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.GnuClasspathLicenseFetcher
 import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.MITLicenseFetcher
-import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.YetAnotherApache2LicenseFetcher
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -52,7 +51,6 @@ class LicenseResolverPlugin implements Plugin<Project> {
             [new AndroidSdkTermsFetcher(),
              new Apache2LicenseFetcher(),
              new AnotherApache2LicenseFetcher(),
-             new YetAnotherApache2LicenseFetcher(),
              new BSDLicenseFetcher(),
              new CreativeCommonsLicenseFetcher(), new MITLicenseFetcher(), new AnotherMITLicenseFetcher(), new GnuClasspathLicenseFetcher()]
     final static ANDROID_PLUGINS = ["com.android.application", "com.android.library",
