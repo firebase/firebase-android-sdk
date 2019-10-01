@@ -49,7 +49,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 9;
+  static final int VERSION = 10;
 
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
@@ -142,6 +142,13 @@ class SQLiteSchema {
         // read time.
         dropLastLimboFreeSnapshotVersion();
       }
+    }
+
+    if (fromVersion == 9 && toVersion >= 10) {
+      // Firestore v21.10 contained a regeression that led us to disable an assert that is required
+      // to ensure data integrity. While the schema did not change between version 9 and 10, we use
+      // the schema bump to version 10 to clear any affected data.
+      dropLastLimboFreeSnapshotVersion();
     }
 
     /*
