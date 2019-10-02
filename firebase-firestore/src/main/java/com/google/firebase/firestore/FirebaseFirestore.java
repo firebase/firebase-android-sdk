@@ -301,7 +301,7 @@ public class FirebaseFirestore {
                     updateFunction.apply(
                         new Transaction(internalTransaction, FirebaseFirestore.this)));
 
-    return client.transaction(wrappedUpdateFunction, 5);
+    return client.transaction(wrappedUpdateFunction);
   }
 
   /**
