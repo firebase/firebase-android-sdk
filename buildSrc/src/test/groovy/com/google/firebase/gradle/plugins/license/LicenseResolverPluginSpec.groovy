@@ -135,7 +135,6 @@ class LicenseResolverPluginSpec extends Specification {
 
         then: "Count the number of times the license was downloaded"
         result.output.count('Downloading Apache 2.0 license ...') == 1
-
     }
 
     def "License tasks throw a useful exception when license is not parsable"() {
