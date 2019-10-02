@@ -14,11 +14,11 @@
 
 package com.google.firebase.testing.combined;
 
+import com.google.firebase.testing.buildonly.BuildOnlyTest;
 import com.google.firebase.testing.database.DatabaseTest;
 import com.google.firebase.testing.dynamiclinks.DynamicLinksTest;
 import com.google.firebase.testing.firestore.FirestoreTest;
 import com.google.firebase.testing.functions.FunctionsTest;
-import com.google.firebase.testing.inappmessaging.InappMessagingTest;
 import com.google.firebase.testing.remoteconfig.RemoteConfigTest;
 import com.google.firebase.testing.storage.StorageTest;
 import org.junit.runner.RunWith;
@@ -29,11 +29,11 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+  BuildOnlyTest.class,
   DatabaseTest.class,
   DynamicLinksTest.class,
   FirestoreTest.class,
   FunctionsTest.class,
-  InappMessagingTest.class,
   RemoteConfigTest.class,
   StorageTest.class,
 })
