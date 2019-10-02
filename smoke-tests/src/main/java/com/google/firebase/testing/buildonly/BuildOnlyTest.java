@@ -17,6 +17,7 @@ package com.google.firebase.testing.buildonly;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.appindexing.FirebaseAppIndex;
+import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage;
 // import com.google.firebase.perf.FirebasePerformance;
@@ -35,10 +36,16 @@ public final class BuildOnlyTest {
   }
 
   @Test
+  public void inappmessaging_IsNotNull() {
+    assertThat(FirebaseInAppMessaging.getInstance()).isNotNull();
+  }
+
+  @Test
   public void messaging_IsNotNull() {
     assertThat(FirebaseMessaging.getInstance()).isNotNull();
   }
 
+//  TODO(allisonbm92): Find out why perf isn't playing nicely with the rest of the suite.
 //  @Test
 //  public void performance_IsNotNull() {
 //    assertThat(FirebasePerformance.getInstance()).isNotNull();
