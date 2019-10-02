@@ -41,7 +41,7 @@ class LicenseResolverPluginSpec extends Specification {
             id 'com.android.library'
             id 'LicenseResolverPlugin'
         }
-        
+
         android.compileSdkVersion = 26
 
         repositories {
@@ -134,7 +134,7 @@ class LicenseResolverPluginSpec extends Specification {
         def result = idempotentBuild("generateLicenses")
 
         then: "Count the number of times the license was downloaded"
-        result.output.count('Downloading Apache 2.0 license') == 1
+        result.output.count('Downloading Apache 2.0 license ...') == 1
 
     }
 
