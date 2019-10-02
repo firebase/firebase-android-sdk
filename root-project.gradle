@@ -48,6 +48,7 @@ ext {
     errorproneJavacVersion = '9+181-r4173-1'
     googleTruthVersion = '0.45'
     robolectricVersion = '4.1'
+    mockitoVersion = '2.25.0'
 }
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin

@@ -66,7 +66,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'com.android.support.test:runner:1.0.1'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'

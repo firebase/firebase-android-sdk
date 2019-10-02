@@ -69,13 +69,13 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'org.robolectric:robolectric:4.2'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
-    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation "org.mockito:mockito-core:$mockitoVersion"
     androidTestImplementation 'org.mockito:mockito-android:2.25.0'
 
     androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.22'

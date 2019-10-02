@@ -139,7 +139,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'androidx.test:core:1.2.0'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
@@ -147,7 +147,7 @@ dependencies {
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation "org.mockito:mockito-core:$mockitoVersion"
     androidTestImplementation 'org.mockito:mockito-android:2.25.0'
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     androidTestImplementation "androidx.annotation:annotation:1.1.0"

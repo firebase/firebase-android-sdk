@@ -48,5 +48,5 @@ dependencies {
     testImplementation 'com.google.auto.value:auto-value-annotations:1.6.5'
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
 }
