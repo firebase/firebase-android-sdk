@@ -12,20 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.testing.combined;
+package com.google.firebase.testing;
 
-import com.google.firebase.testing.buildonly.BuildOnlyTest;
-import com.google.firebase.testing.database.DatabaseTest;
-import com.google.firebase.testing.dynamiclinks.DynamicLinksTest;
-import com.google.firebase.testing.firestore.FirestoreTest;
-import com.google.firebase.testing.functions.FunctionsTest;
-import com.google.firebase.testing.remoteconfig.RemoteConfigTest;
-import com.google.firebase.testing.storage.StorageTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 /**
- * A test suite combining the individual product flavors.
+ * A test suite combining the individual tests.
+ *
+ * <p>Note, tests *must* be added to this suite in order to run.
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
@@ -37,4 +32,4 @@ import org.junit.runners.Suite;
   RemoteConfigTest.class,
   StorageTest.class,
 })
-public final class AllTests {}
+public final class TestSuite {}
