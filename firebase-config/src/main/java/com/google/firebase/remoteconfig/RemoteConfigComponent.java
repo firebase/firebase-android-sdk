@@ -19,6 +19,7 @@ import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
@@ -78,6 +79,7 @@ public class RemoteConfigComponent {
   private final FirebaseApp firebaseApp;
   private final FirebaseInstanceId firebaseInstanceId;
   private final FirebaseABTesting firebaseAbt;
+  private final TransportFactory transportFactory;
   @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final String appId;
@@ -91,6 +93,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstanceId firebaseInstanceId,
       FirebaseABTesting firebaseAbt,
+      TransportFactory transportFactory,
       @Nullable AnalyticsConnector analyticsConnector) {
     this(
         context,
@@ -98,6 +101,7 @@ public class RemoteConfigComponent {
         firebaseApp,
         firebaseInstanceId,
         firebaseAbt,
+        transportFactory,
         analyticsConnector,
         new LegacyConfigsHandler(context, firebaseApp.getOptions().getApplicationId()),
         /* loadGetDefault= */ true);
@@ -111,6 +115,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstanceId firebaseInstanceId,
       FirebaseABTesting firebaseAbt,
+      TransportFactory transportFactory,
       @Nullable AnalyticsConnector analyticsConnector,
       LegacyConfigsHandler legacyConfigsHandler,
       boolean loadGetDefault) {
@@ -119,6 +124,7 @@ public class RemoteConfigComponent {
     this.firebaseApp = firebaseApp;
     this.firebaseInstanceId = firebaseInstanceId;
     this.firebaseAbt = firebaseAbt;
+    this.transportFactory = transportFactory;
     this.analyticsConnector = analyticsConnector;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
@@ -230,7 +236,8 @@ public class RemoteConfigComponent {
         apiKey,
         namespace,
         metadataClient.getFetchTimeoutInSeconds(),
-        NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+        NETWORK_CONNECTION_TIMEOUT_IN_SECONDS,
+        transportFactory);
   }
 
   @VisibleForTesting

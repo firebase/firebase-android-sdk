@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
@@ -73,6 +74,7 @@ public class RemoteConfigComponentTest {
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetParameterHandler;
   @Mock private ConfigMetadataClient mockMetadataClient;
+  @Mock private TransportFactory mockTransportFactory;
 
   private Context context;
   private ExecutorService directExecutor;
@@ -180,6 +182,7 @@ public class RemoteConfigComponentTest {
         mockFirebaseApp,
         mockFirebaseIid,
         mockFirebaseAbt,
+        mockTransportFactory,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
         /* loadGetDefault= */ true);
@@ -192,6 +195,7 @@ public class RemoteConfigComponentTest {
         mockFirebaseApp,
         mockFirebaseIid,
         mockFirebaseAbt,
+        mockTransportFactory,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
         /* loadGetDefault= */ false);
