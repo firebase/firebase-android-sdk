@@ -1,5 +1,4 @@
 // Proto for Firebase Remote Config Clientside Metrics
-// go/rc-metrics-dd
 package com.google.firebase.remoteconfig.proto;
 
 option java_package = "com.google.firebase.remoteconfig.proto";

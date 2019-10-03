@@ -39,6 +39,9 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.util.Log;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.datatransport.Event;
+import com.google.android.datatransport.Transport;
+import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.firebase.remoteconfig.BuildConfig;
@@ -46,6 +49,9 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
+import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent;
+import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent.EventType;
+import com.google.firebase.remoteconfig.proto.ClientMetrics.FetchEvent;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -71,9 +77,11 @@ import org.json.JSONObject;
  * @author Lucas Png
  */
 public class ConfigFetchHttpClient {
+
   private static final String API_KEY_HEADER = "X-Goog-Api-Key";
   private static final String ETAG_HEADER = "ETag";
   private static final String IF_NONE_MATCH_HEADER = "If-None-Match";
+  private static final String TRANSPORT_FINAL = "-1"; //(TODO) Replace with actual logSource int
   private static final String X_ANDROID_PACKAGE_HEADER = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER = "X-Android-Cert";
   private static final String X_GOOGLE_GFE_CAN_RETRY = "X-Google-GFE-Can-Retry";
@@ -86,14 +94,19 @@ public class ConfigFetchHttpClient {
   private final long connectTimeoutInSeconds;
   private final long readTimeoutInSeconds;
 
-  /** Creates a client for {@link #fetch}ing data from the Firebase Remote Config server. */
+  private Transport<ClientLogEvent> transport;
+
+  /**
+   * Creates a client for {@link #fetch}ing data from the Firebase Remote Config server.
+   */
   public ConfigFetchHttpClient(
       Context context,
       String appId,
       String apiKey,
       String namespace,
       long connectTimeoutInSeconds,
-      long readTimeoutInSeconds) {
+      long readTimeoutInSeconds,
+      TransportFactory transportFactory) {
     this.context = context;
     this.appId = appId;
     this.apiKey = apiKey;
@@ -101,15 +114,22 @@ public class ConfigFetchHttpClient {
     this.namespace = namespace;
     this.connectTimeoutInSeconds = connectTimeoutInSeconds;
     this.readTimeoutInSeconds = readTimeoutInSeconds;
+    this.transport =
+        transportFactory.getTransport(
+            TRANSPORT_FINAL, ClientLogEvent.class, ClientLogEvent::toByteArray);
   }
 
-  /** Used to verify that the timeout is being set correctly. */
+  /**
+   * Used to verify that the timeout is being set correctly.
+   */
   @VisibleForTesting
   public long getConnectTimeoutInSeconds() {
     return connectTimeoutInSeconds;
   }
 
-  /** Used to verify that the timeout is being set correctly. */
+  /**
+   * Used to verify that the timeout is being set correctly.
+   */
   @VisibleForTesting
   public long getReadTimeoutInSeconds() {
     return readTimeoutInSeconds;
@@ -147,15 +167,15 @@ public class ConfigFetchHttpClient {
    * contains an "entries" field with parameters fetched from the FRC server.
    *
    * @param urlConnection a {@link HttpURLConnection} created by a call to {@link
-   *     #createHttpURLConnection}.
+   * #createHttpURLConnection}.
    * @param instanceId the Firebase Instance ID that identifies a Firebase App Instance.
    * @param instanceIdToken a valid Firebase Instance ID Token that authenticates a Firebase App
-   *     Instance.
+   * Instance.
    * @param analyticsUserProperties a map of Google Analytics User Properties and the device's
-   *     corresponding values.
+   * corresponding values.
    * @param lastFetchETag the ETag returned by the last successful fetch call to the FRC server. The
-   *     server uses this ETag to determine if there has been a change in the response body since
-   *     the last fetch.
+   * server uses this ETag to determine if there has been a change in the response body since the
+   * last fetch.
    * @param customHeaders custom HTTP headers that will be sent to the FRC server.
    * @param currentTime the current time on the device that is performing the fetch.
    */
@@ -170,6 +190,9 @@ public class ConfigFetchHttpClient {
       Map<String, String> customHeaders,
       Date currentTime)
       throws FirebaseRemoteConfigException {
+
+    long startTime = System.currentTimeMillis();
+
     setUpUrlConnection(urlConnection, lastFetchETag, customHeaders);
 
     String fetchResponseETag;
@@ -207,7 +230,28 @@ public class ConfigFetchHttpClient {
     }
 
     ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
+
+    long endTime = System.currentTimeMillis();
+    ClientLogEvent clientLogEvent = generateClientLogEvent(instanceId, startTime, endTime);
+    transport.send(Event.ofTelemetry(clientLogEvent));
+
     return FetchResponse.forBackendUpdatesFetched(fetchedConfigs, fetchResponseETag);
+  }
+
+  @VisibleForTesting
+  public ClientLogEvent generateClientLogEvent(String instanceId, long startTime, long endTime) {
+    return ClientLogEvent.newBuilder()
+        .setAppId(appId)
+        .setNamespace(namespace)
+        .setFid(instanceId) // (TODO) Replace with FID?
+        .setTimestamp(System.currentTimeMillis())
+        .setEventType(EventType.FETCH)
+        .setSdkVersion(BuildConfig.VERSION_NAME)
+        .setFetchEvent(
+          FetchEvent.newBuilder()
+              .setNetworkLatency(endTime - startTime)
+              .build())
+        .build();
   }
 
   private void setUpUrlConnection(
@@ -243,7 +287,9 @@ public class ConfigFetchHttpClient {
     urlConnection.setRequestProperty("Accept", "application/json");
   }
 
-  /** Sends developer specified custom headers to the Remote Config server. */
+  /**
+   * Sends developer specified custom headers to the Remote Config server.
+   */
   private void setCustomRequestHeaders(
       HttpURLConnection urlConnection, Map<String, String> customHeaders) {
     for (Map.Entry<String, String> customHeaderEntry : customHeaders.entrySet()) {
@@ -251,7 +297,9 @@ public class ConfigFetchHttpClient {
     }
   }
 
-  /** Gets the Android package's SHA-1 fingerprint. */
+  /**
+   * Gets the Android package's SHA-1 fingerprint.
+   */
   private String getFingerprintHashForPackage() {
     byte[] hash;
 
@@ -337,7 +385,9 @@ public class ConfigFetchHttpClient {
     return new JSONObject(responseStringBuilder.toString());
   }
 
-  /** Returns true if the backend has updated fetch values. */
+  /**
+   * Returns true if the backend has updated fetch values.
+   */
   private boolean backendHasUpdates(JSONObject response) {
     try {
       return !response.get(STATE).equals("NO_CHANGE");
