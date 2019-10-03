@@ -73,7 +73,6 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class ConfigFetchHttpClientTest {
-
   private static final String API_KEY = "fake_api_key";
   private static final String FAKE_APP_ID = "1:14368190084:android:09cb977358c6f241";
   private static final String PROJECT_NUMBER = "14368190084";
