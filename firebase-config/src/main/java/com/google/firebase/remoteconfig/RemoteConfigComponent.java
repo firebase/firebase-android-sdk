@@ -129,7 +129,6 @@ public class RemoteConfigComponent {
     this.firebaseApp = firebaseApp;
     this.firebaseInstanceId = firebaseInstanceId;
     this.firebaseAbt = firebaseAbt;
-
     this.analyticsConnector = analyticsConnector;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
