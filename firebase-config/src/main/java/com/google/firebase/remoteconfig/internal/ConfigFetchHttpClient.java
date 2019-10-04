@@ -244,12 +244,12 @@ public class ConfigFetchHttpClient {
         .setAppId(appId)
         .setNamespace(namespace)
         .setFid(instanceId) // (TODO) Replace with FID?
-        .setTimestamp(System.currentTimeMillis())
+        .setTimestampMillis(System.currentTimeMillis())
         .setEventType(EventType.FETCH)
         .setSdkVersion(BuildConfig.VERSION_NAME)
         .setFetchEvent(
           FetchEvent.newBuilder()
-              .setNetworkLatency(endTime - startTime)
+              .setNetworkLatencyMillis(endTime - startTime)
               .build())
         .build();
   }

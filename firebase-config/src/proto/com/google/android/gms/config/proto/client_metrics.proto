@@ -29,7 +29,7 @@ message ClientLogEvent {
 
   // The timestamp in milliseconds since epoch when the log was
   // recorded.
-  required int64 timestamp = 4;
+  required int64 timestamp_millis = 4;
 
   // The Remote Config client-side event that the metrics are being logged for.
   required EventType event_type = 5;
@@ -44,5 +44,5 @@ message ClientLogEvent {
 message FetchEvent {
   // This is the duration of time in milliseconds that it takes within the Fetch
   // event to send an HTTP request to the backend and receive a response
-  optional int64 network_latency = 1;
+  optional int64 network_latency_millis = 1;
 }

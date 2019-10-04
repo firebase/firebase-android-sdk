@@ -240,7 +240,7 @@ public class ConfigFetchHttpClientTest {
     verify(mockTransport).send(logEventCaptor.capture());
 
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    assertThat(clientLogEvent.getTimestamp()).isEqualTo(100);
+    assertThat(clientLogEvent.getTimestampMillis()).isEqualTo(100);
 
   }
 
@@ -282,7 +282,7 @@ public class ConfigFetchHttpClientTest {
 
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
     FetchEvent fetchEvent = clientLogEvent.getFetchEvent();
-    assertThat(fetchEvent.getNetworkLatency()).isEqualTo(10);
+    assertThat(fetchEvent.getNetworkLatencyMillis()).isEqualTo(10);
   }
 
   private static ClientLogEvent generateFakeClientLogEvent() {
@@ -290,13 +290,13 @@ public class ConfigFetchHttpClientTest {
         .setAppId(FAKE_APP_ID)
         .setNamespace(DEFAULT_NAMESPACE)
         .setFid(INSTANCE_ID_STRING)
-        .setTimestamp(100)
+        .setTimestampMillis(100)
         .setEventType(EventType.FETCH)
         .setSdkVersion(BuildConfig.VERSION_NAME)
         .setFetchEvent(
             (FetchEvent) FetchEvent
                 .newBuilder()
-                .setNetworkLatency(10)
+                .setNetworkLatencyMillis(10)
                 .build())
         .build();
   }
