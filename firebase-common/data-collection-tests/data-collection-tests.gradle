@@ -21,6 +21,8 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    testBuildType 'release'
+
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
