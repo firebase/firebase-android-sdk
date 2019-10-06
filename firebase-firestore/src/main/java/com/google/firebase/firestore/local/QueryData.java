@@ -28,6 +28,7 @@ public final class QueryData {
   private final long sequenceNumber;
   private final QueryPurpose purpose;
   private final SnapshotVersion snapshotVersion;
+  private final SnapshotVersion lastLimboFreeSnapshotVersion;
   private final ByteString resumeToken;
 
   /**
@@ -36,23 +37,27 @@ public final class QueryData {
    * @param query The query being listened to.
    * @param targetId The target to which the query corresponds, assigned by the LocalStore for user
    *     queries or the SyncEngine for limbo queries.
+   * @param sequenceNumber The sequence number, denoting the last time this query was used.
    * @param purpose The purpose of the query.
    * @param snapshotVersion The latest snapshot version seen for this target.
+   * @param lastLimboFreeSnapshotVersion The maximum snapshot version at which the associated query
+   *     view contained no limbo documents.
    * @param resumeToken An opaque, server-assigned token that allows watching a query to be resumed
    *     after disconnecting without retransmitting all the data that matches the query. The resume
    *     token essentially identifies a point in time from which the server should resume sending
-   *     results.
    */
-  public QueryData(
+  QueryData(
       Query query,
       int targetId,
       long sequenceNumber,
       QueryPurpose purpose,
       SnapshotVersion snapshotVersion,
+      SnapshotVersion lastLimboFreeSnapshotVersion,
       ByteString resumeToken) {
     this.query = checkNotNull(query);
     this.targetId = targetId;
     this.sequenceNumber = sequenceNumber;
+    this.lastLimboFreeSnapshotVersion = lastLimboFreeSnapshotVersion;
     this.purpose = purpose;
     this.snapshotVersion = checkNotNull(snapshotVersion);
     this.resumeToken = checkNotNull(resumeToken);
@@ -66,7 +71,44 @@ public final class QueryData {
         sequenceNumber,
         purpose,
         SnapshotVersion.NONE,
+        SnapshotVersion.NONE,
         WatchStream.EMPTY_RESUME_TOKEN);
+  }
+
+  /** Creates a new query data instance with an updated sequence number. */
+  public QueryData withSequenceNumber(long sequenceNumber) {
+    return new QueryData(
+        query,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
+  }
+
+  /** Creates a new query data instance with an updated resume token and snapshot version. */
+  public QueryData withResumeToken(ByteString resumeToken, SnapshotVersion snapshotVersion) {
+    return new QueryData(
+        query,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
+  }
+
+  /** Creates a new query data instance with an updated last limbo free snapshot version number. */
+  public QueryData withLastLimboFreeSnapshotVersion(SnapshotVersion lastLimboFreeSnapshotVersion) {
+    return new QueryData(
+        query,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
   }
 
   public Query getQuery() {
@@ -93,6 +135,13 @@ public final class QueryData {
     return resumeToken;
   }
 
+  /**
+   * Returns the last snapshot version for which the associated view contained no limbo documents.
+   */
+  public SnapshotVersion getLastLimboFreeSnapshotVersion() {
+    return lastLimboFreeSnapshotVersion;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -108,6 +157,7 @@ public final class QueryData {
         && sequenceNumber == queryData.sequenceNumber
         && purpose.equals(queryData.purpose)
         && snapshotVersion.equals(queryData.snapshotVersion)
+        && lastLimboFreeSnapshotVersion.equals(queryData.lastLimboFreeSnapshotVersion)
         && resumeToken.equals(queryData.resumeToken);
   }
 
@@ -118,6 +168,7 @@ public final class QueryData {
     result = 31 * result + (int) sequenceNumber;
     result = 31 * result + purpose.hashCode();
     result = 31 * result + snapshotVersion.hashCode();
+    result = 31 * result + lastLimboFreeSnapshotVersion.hashCode();
     result = 31 * result + resumeToken.hashCode();
     return result;
   }
@@ -135,14 +186,10 @@ public final class QueryData {
         + purpose
         + ", snapshotVersion="
         + snapshotVersion
+        + ", lastLimboFreeSnapshotVersion="
+        + lastLimboFreeSnapshotVersion
         + ", resumeToken="
         + resumeToken
         + '}';
-  }
-
-  /** Creates a new query data instance with an updated snapshot version and resume token. */
-  public QueryData copy(
-      SnapshotVersion snapshotVersion, ByteString resumeToken, long sequenceNumber) {
-    return new QueryData(query, targetId, sequenceNumber, purpose, snapshotVersion, resumeToken);
   }
 }

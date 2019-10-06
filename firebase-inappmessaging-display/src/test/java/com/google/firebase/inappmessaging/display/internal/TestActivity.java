@@ -16,8 +16,8 @@ package com.google.firebase.inappmessaging.display.internal;
 
 import android.app.Activity;
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.view.WindowManager;
+import androidx.annotation.NonNull;
 import java.util.Objects;
 
 class TestActivity extends Activity {

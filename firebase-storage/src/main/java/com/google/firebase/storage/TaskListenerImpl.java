@@ -16,10 +16,9 @@ package com.google.firebase.storage;
 
 import android.app.Activity;
 import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.ActivityLifecycleListener;
 import com.google.firebase.storage.internal.SmartHandler;
 import java.util.HashMap;
@@ -29,45 +28,43 @@ import java.util.concurrent.Executor;
 
 /** Helper class to manage listener subscriptions on executor/activity. */
 /*package*/
-@PublicApi
-class TaskListenerImpl<TListenerType, TResult extends StorageTask.ProvideError> {
-  private final Queue<TListenerType> mListenerQueue = new ConcurrentLinkedQueue<>();
-  private final HashMap<TListenerType, SmartHandler> mHandlerMap = new HashMap<>();
-  private StorageTask<TResult> mTask;
-  private int mTargetStates;
-  private OnRaise<TListenerType, TResult> mOnRaise;
 
-  @PublicApi
+class TaskListenerImpl<ListenerTypeT, ResultT extends StorageTask.ProvideError> {
+  private final Queue<ListenerTypeT> listenerQueue = new ConcurrentLinkedQueue<>();
+  private final HashMap<ListenerTypeT, SmartHandler> handlerMap = new HashMap<>();
+  private StorageTask<ResultT> task;
+  private int targetStates;
+  private OnRaise<ListenerTypeT, ResultT> onRaise;
+
   public TaskListenerImpl(
-      @NonNull StorageTask<TResult> task,
+      @NonNull StorageTask<ResultT> task,
       int targetInternalStates,
-      @NonNull OnRaise<TListenerType, TResult> onRaise) {
-    mTask = task;
-    mTargetStates = targetInternalStates;
-    mOnRaise = onRaise;
+      @NonNull OnRaise<ListenerTypeT, ResultT> onRaise) {
+    this.task = task;
+    this.targetStates = targetInternalStates;
+    this.onRaise = onRaise;
   }
 
   /* For Test Only*/
   public int getListenerCount() {
-    return Math.max(mListenerQueue.size(), mHandlerMap.size());
+    return Math.max(listenerQueue.size(), handlerMap.size());
   }
 
-  @PublicApi
   public void addListener(
       @Nullable Activity activity,
       @Nullable Executor executor,
-      @NonNull final TListenerType listener) {
+      @NonNull final ListenerTypeT listener) {
     Preconditions.checkNotNull(listener);
 
     boolean shouldFire = false;
     SmartHandler handler;
-    synchronized (mTask.getSyncObject()) {
-      if ((mTask.getInternalState() & mTargetStates) != 0) {
+    synchronized (task.getSyncObject()) {
+      if ((task.getInternalState() & targetStates) != 0) {
         shouldFire = true;
       }
-      mListenerQueue.add(listener);
+      listenerQueue.add(listener);
       handler = new SmartHandler(executor);
-      mHandlerMap.put(listener, handler);
+      handlerMap.put(listener, handler);
       if (activity != null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
           Preconditions.checkArgument(!activity.isDestroyed(), "Activity is already destroyed!");
@@ -78,38 +75,36 @@ class TaskListenerImpl<TListenerType, TResult extends StorageTask.ProvideError> 
     }
 
     if (shouldFire) {
-      final TResult snappedState = mTask.snapState();
-      handler.callBack(() -> mOnRaise.raise(listener, snappedState));
+      final ResultT snappedState = task.snapState();
+      handler.callBack(() -> onRaise.raise(listener, snappedState));
     }
   }
 
-  @PublicApi
   public void onInternalStateChanged() {
-    if ((mTask.getInternalState() & mTargetStates) != 0) {
-      final TResult snappedState = mTask.snapState();
-      for (TListenerType c : mListenerQueue) {
-        final TListenerType finalCallback = c;
-        SmartHandler handler = mHandlerMap.get(c);
+    if ((task.getInternalState() & targetStates) != 0) {
+      final ResultT snappedState = task.snapState();
+      for (ListenerTypeT c : listenerQueue) {
+        final ListenerTypeT finalCallback = c;
+        SmartHandler handler = handlerMap.get(c);
         if (handler != null) {
-          handler.callBack(() -> mOnRaise.raise(finalCallback, snappedState));
+          handler.callBack(() -> onRaise.raise(finalCallback, snappedState));
         }
       }
     }
   }
 
   /** Removes a listener. */
-  @PublicApi
-  public void removeListener(@NonNull TListenerType listener) {
+  public void removeListener(@NonNull ListenerTypeT listener) {
     Preconditions.checkNotNull(listener);
 
-    synchronized (mTask.getSyncObject()) {
-      mHandlerMap.remove(listener);
-      mListenerQueue.remove(listener);
+    synchronized (task.getSyncObject()) {
+      handlerMap.remove(listener);
+      listenerQueue.remove(listener);
       ActivityLifecycleListener.getInstance().removeCookie(listener);
     }
   }
 
-  interface OnRaise<TListenerType, TResult> {
-    void raise(@NonNull TListenerType listener, @NonNull TResult snappedState);
+  interface OnRaise<ListenerTypeT, ResultT> {
+    void raise(@NonNull ListenerTypeT listener, @NonNull ResultT snappedState);
   }
 }

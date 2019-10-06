@@ -16,12 +16,13 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import javax.annotation.Nullable;
+import com.google.firebase.firestore.model.value.ObjectValue;
 
 /** Represents a Delete operation */
 public final class DeleteMutation extends Mutation {
@@ -85,12 +86,7 @@ public final class DeleteMutation extends Mutation {
 
   @Nullable
   @Override
-  public FieldMask getFieldMask() {
+  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
     return null;
-  }
-
-  @Override
-  public boolean isIdempotent() {
-    return true;
   }
 }

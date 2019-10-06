@@ -14,15 +14,16 @@
 
 package com.google.android.datatransport.runtime;
 
-import android.content.Context;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
+import javax.inject.Provider;
 
 public class TestWorkScheduler implements WorkScheduler {
 
-  private final Context context;
+  private final Provider<Uploader> uploader;
 
-  public TestWorkScheduler(Context applicationContext) {
-    this.context = applicationContext;
+  TestWorkScheduler(Provider<Uploader> uploader) {
+    this.uploader = uploader;
   }
 
   @Override
@@ -30,7 +31,6 @@ public class TestWorkScheduler implements WorkScheduler {
     if (attemptNumber > 2) {
       return;
     }
-    TransportRuntime.initialize(context);
-    TransportRuntime.getInstance().getUploader().upload(transportContext, attemptNumber, () -> {});
+    uploader.get().upload(transportContext, attemptNumber, () -> {});
   }
 }

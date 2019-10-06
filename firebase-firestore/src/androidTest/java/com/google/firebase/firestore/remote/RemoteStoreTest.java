@@ -16,14 +16,15 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
+import com.google.firebase.firestore.local.SimpleQueryEngine;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
@@ -44,31 +45,39 @@ public class RemoteStoreTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             null,
-            InstrumentationRegistry.getContext());
+            ApplicationProvider.getApplicationContext(),
+            null);
     Semaphore networkChangeSemaphore = new Semaphore(0);
     RemoteStore.RemoteStoreCallback callback =
         new RemoteStore.RemoteStoreCallback() {
+          @Override
           public void handleRemoteEvent(RemoteEvent remoteEvent) {}
 
+          @Override
           public void handleRejectedListen(int targetId, Status error) {}
 
+          @Override
           public void handleSuccessfulWrite(MutationBatchResult successfulWrite) {}
 
+          @Override
           public void handleRejectedWrite(int batchId, Status error) {}
 
+          @Override
           public void handleOnlineStateChange(OnlineState onlineState) {
             networkChangeSemaphore.release();
           }
 
+          @Override
           public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
             return null;
           }
         };
 
     FakeConnectivityMonitor connectivityMonitor = new FakeConnectivityMonitor();
+    SimpleQueryEngine queryEngine = new SimpleQueryEngine();
     Persistence persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     persistence.start();
-    LocalStore localStore = new LocalStore(persistence, User.UNAUTHENTICATED);
+    LocalStore localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
     RemoteStore remoteStore =
         new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
 
@@ -90,7 +99,7 @@ public class RemoteStoreTest {
     waitFor(testQueue.enqueue(() -> {}));
   }
 
-  class FakeConnectivityMonitor implements ConnectivityMonitor {
+  static class FakeConnectivityMonitor implements ConnectivityMonitor {
     private Consumer<NetworkStatus> callback = null;
 
     @Override

@@ -14,9 +14,8 @@
 
 package com.google.firebase.database;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.database.core.utilities.encoding.CustomClassMapper;
@@ -39,7 +38,6 @@ import java.util.Iterator;
  * DatabaseReference DatabaseReference} reference (e.g. with {@link
  * DatabaseReference#setValue(Object)}).
  */
-@PublicApi
 public class DataSnapshot {
 
   private final IndexedNode node;
@@ -63,7 +61,6 @@ public class DataSnapshot {
    * @return The DataSnapshot for the child location
    */
   @NonNull
-  @PublicApi
   public DataSnapshot child(@NonNull String path) {
     DatabaseReference childRef = query.child(path);
     Node childNode = this.node.getNode().getChild(new Path(path));
@@ -76,7 +73,6 @@ public class DataSnapshot {
    * @param path A relative path to the location of child data
    * @return Whether or not the specified child location has data
    */
-  @PublicApi
   public boolean hasChild(@NonNull String path) {
     if (query.getParent() == null) {
       Validation.validateRootPathString(path);
@@ -91,7 +87,6 @@ public class DataSnapshot {
    *
    * @return True if the snapshot has any children, otherwise false
    */
-  @PublicApi
   public boolean hasChildren() {
     return node.getNode().getChildCount() > 0;
   }
@@ -101,7 +96,6 @@ public class DataSnapshot {
    *
    * @return True if the snapshot contains a non-null value, otherwise false
    */
-  @PublicApi
   public boolean exists() {
     return !node.getNode().isEmpty();
   }
@@ -126,7 +120,6 @@ public class DataSnapshot {
    *     location.
    */
   @Nullable
-  @PublicApi
   public Object getValue() {
     return node.getNode().getValue();
   }
@@ -156,7 +149,6 @@ public class DataSnapshot {
    *     location.
    */
   @Nullable
-  @PublicApi
   public Object getValue(boolean useExportFormat) {
     return node.getNode().getValue(useExportFormat);
   }
@@ -206,7 +198,6 @@ public class DataSnapshot {
    *     if there is no data at this location.
    */
   @Nullable
-  @PublicApi
   public <T> T getValue(@NonNull Class<T> valueType) {
     Object value = node.getNode().getValue();
     return CustomClassMapper.convertToCustomClass(value, valueType);
@@ -233,14 +224,12 @@ public class DataSnapshot {
    *     there is no data at this location.
    */
   @Nullable
-  @PublicApi
   public <T> T getValue(@NonNull GenericTypeIndicator<T> t) {
     Object value = node.getNode().getValue();
     return CustomClassMapper.convertToCustomClass(value, t);
   }
 
   /** @return The number of immediate children in the this snapshot */
-  @PublicApi
   public long getChildrenCount() {
     return node.getNode().getChildCount();
   }
@@ -251,7 +240,6 @@ public class DataSnapshot {
    * @return A DatabaseReference corresponding to the location that this snapshot came from
    */
   @NonNull
-  @PublicApi
   public DatabaseReference getRef() {
     return query;
   }
@@ -261,7 +249,6 @@ public class DataSnapshot {
    *     to the database root.
    */
   @Nullable
-  @PublicApi
   public String getKey() {
     return query.getKey();
   }
@@ -277,7 +264,6 @@ public class DataSnapshot {
    * @return The immediate children of this snapshot
    */
   @NonNull
-  @PublicApi
   public Iterable<DataSnapshot> getChildren() {
     final Iterator<NamedNode> iter = node.iterator();
     return new Iterable<DataSnapshot>() {
@@ -321,7 +307,6 @@ public class DataSnapshot {
    * @return the priority of the data contained in this snapshot as a native type
    */
   @Nullable
-  @PublicApi
   public Object getPriority() {
     Object priority = node.getNode().getPriority().getValue();
     if (priority instanceof Long) {

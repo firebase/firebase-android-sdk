@@ -16,10 +16,9 @@ package com.google.firebase.database;
 
 import static com.google.firebase.database.DatabaseReference.CompletionListener;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
 import com.google.firebase.database.core.ValidationPath;
@@ -40,7 +39,6 @@ import java.util.Map;
  * Instances of this class are obtained by calling {@link DatabaseReference#onDisconnect()
  * onDisconnect} on a Firebase Database ref.
  */
-@PublicApi
 public class OnDisconnect {
 
   private Repo repo;
@@ -62,7 +60,6 @@ public class OnDisconnect {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> setValue(@Nullable Object value) {
     return onDisconnectSetInternal(value, PriorityUtilities.NullPriority(), null);
   }
@@ -80,7 +77,6 @@ public class OnDisconnect {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> setValue(@Nullable Object value, @Nullable String priority) {
     return onDisconnectSetInternal(value, PriorityUtilities.parsePriority(path, priority), null);
   }
@@ -97,7 +93,6 @@ public class OnDisconnect {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> setValue(@Nullable Object value, double priority) {
     return onDisconnectSetInternal(value, PriorityUtilities.parsePriority(path, priority), null);
   }
@@ -112,7 +107,6 @@ public class OnDisconnect {
    * @param value The value to be set when a disconnect occurs or null to delete the existing value
    * @param listener A listener that will be triggered once the server has queued up the operation
    */
-  @PublicApi
   public void setValue(@Nullable Object value, @Nullable CompletionListener listener) {
     onDisconnectSetInternal(value, PriorityUtilities.NullPriority(), listener);
   }
@@ -129,7 +123,6 @@ public class OnDisconnect {
    *     priority
    * @param listener A listener that will be triggered once the server has queued up the operation
    */
-  @PublicApi
   public void setValue(
       @Nullable Object value, @Nullable String priority, @Nullable CompletionListener listener) {
     onDisconnectSetInternal(value, PriorityUtilities.parsePriority(path, priority), listener);
@@ -146,7 +139,6 @@ public class OnDisconnect {
    * @param priority The priority to be set when a disconnect occurs
    * @param listener A listener that will be triggered once the server has queued up the operation
    */
-  @PublicApi
   public void setValue(
       @Nullable Object value, double priority, @Nullable CompletionListener listener) {
     onDisconnectSetInternal(value, PriorityUtilities.parsePriority(path, priority), listener);
@@ -163,7 +155,6 @@ public class OnDisconnect {
    * @param priority The priority to be set when a disconnect occurs
    * @param listener A listener that will be triggered once the server has queued up the operation
    */
-  @PublicApi
   public void setValue(
       @Nullable Object value, @Nullable Map priority, @Nullable CompletionListener listener) {
     onDisconnectSetInternal(value, PriorityUtilities.parsePriority(path, priority), listener);
@@ -196,7 +187,6 @@ public class OnDisconnect {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> updateChildren(@NonNull Map<String, Object> update) {
     return updateChildrenInternal(update, null);
   }
@@ -207,7 +197,6 @@ public class OnDisconnect {
    * @param update The paths to update, along with their desired values
    * @param listener A listener that will be triggered once the server has queued up the operation
    */
-  @PublicApi
   public void updateChildren(
       @NonNull final Map<String, Object> update, @Nullable final CompletionListener listener) {
     updateChildrenInternal(update, listener);
@@ -235,7 +224,6 @@ public class OnDisconnect {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> removeValue() {
     return setValue(null);
   }
@@ -245,7 +233,6 @@ public class OnDisconnect {
    *
    * @param listener A listener that will be triggered once the server has queued up the operation
    */
-  @PublicApi
   public void removeValue(@Nullable CompletionListener listener) {
     setValue(null, listener);
   }
@@ -258,7 +245,6 @@ public class OnDisconnect {
    * @return The {@link Task} for this operation.
    */
   @NonNull
-  @PublicApi
   public Task<Void> cancel() {
     return cancelInternal(null);
   }
@@ -268,7 +254,6 @@ public class OnDisconnect {
    *
    * @param listener A listener that will be triggered once the server has cancelled the operations
    */
-  @PublicApi
   public void cancel(@NonNull final CompletionListener listener) {
     cancelInternal(listener);
   }

@@ -15,15 +15,12 @@
 package com.google.firebase.storage;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
-import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.Slashes;
 import com.google.firebase.storage.internal.Util;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,7 +34,6 @@ import org.json.JSONObject;
  * content type. You may also store custom metadata key value pairs. Metadata values may be used to
  * authorize operations using declarative validation rules.
  */
-@PublicApi
 public class StorageMetadata {
   private static final String TAG = "StorageMetadata";
 
@@ -112,7 +108,6 @@ public class StorageMetadata {
       MetadataValue.withDefaultValue(Collections.emptyMap());
 
   /** Creates a {@link StorageMetadata} object to hold metadata for a {@link StorageReference} */
-  @PublicApi
   public StorageMetadata() {}
 
   private StorageMetadata(@NonNull StorageMetadata original, boolean fullClone) {
@@ -139,7 +134,7 @@ public class StorageMetadata {
   }
 
   /** @return the content type of the {@link StorageReference}. */
-  @PublicApi
+  @Nullable
   public String getContentType() {
     return mContentType.getValue();
   }
@@ -150,7 +145,7 @@ public class StorageMetadata {
    * @param key The key for which the metadata should be returned
    * @return the metadata stored in the object the given key.
    */
-  @PublicApi
+  @Nullable
   public String getCustomMetadata(@NonNull String key) {
     if (TextUtils.isEmpty(key)) {
       return null;
@@ -161,7 +156,6 @@ public class StorageMetadata {
 
   /** @return the keys for custom metadata. */
   @NonNull
-  @PublicApi
   public Set<String> getCustomMetadataKeys() {
     Map<String, String> metadata = mCustomMetadata.getValue();
     return metadata.keySet();
@@ -169,14 +163,12 @@ public class StorageMetadata {
 
   /** @return the path of the {@link StorageReference} object */
   @NonNull
-  @PublicApi
   public String getPath() {
     return mPath != null ? mPath : "";
   }
 
   /** @return a simple name of the {@link StorageReference} object */
   @Nullable
-  @PublicApi
   public String getName() {
     String path = getPath();
     if (TextUtils.isEmpty(path)) {
@@ -191,81 +183,69 @@ public class StorageMetadata {
 
   /** @return the owning Google Cloud Storage bucket for the {@link StorageReference} */
   @Nullable
-  @PublicApi
   public String getBucket() {
     return mBucket;
   }
 
   /** @return a version String indicating what version of the {@link StorageReference} */
   @Nullable
-  @PublicApi
   public String getGeneration() {
     return mGeneration;
   }
 
   /** @return a version String indicating the version of this {@link StorageMetadata} */
   @Nullable
-  @PublicApi
   public String getMetadataGeneration() {
     return mMetadataGeneration;
   }
 
   /** @return the time the {@link StorageReference} was created. */
-  @PublicApi
   public long getCreationTimeMillis() {
     return Util.parseDateTime(mCreationTime);
   }
 
   /** @return the time the {@link StorageReference} was last updated. */
-  @PublicApi
   public long getUpdatedTimeMillis() {
     return Util.parseDateTime(mUpdatedTime);
   }
 
   /** @return the stored Size in bytes of the {@link StorageReference} object */
-  @PublicApi
   public long getSizeBytes() {
     return mSize;
   }
 
   /** @return the MD5Hash of the {@link StorageReference} object */
   @Nullable
-  @PublicApi
   public String getMd5Hash() {
     return mMD5Hash;
   }
 
   /** @return the Cache Control setting of the {@link StorageReference} */
   @Nullable
-  @PublicApi
   public String getCacheControl() {
     return mCacheControl.getValue();
   }
 
   /** @return the content disposition of the {@link StorageReference} */
   @Nullable
-  @PublicApi
   public String getContentDisposition() {
     return mContentDisposition.getValue();
   }
 
   /** @return the content encoding for the {@link StorageReference} */
   @Nullable
-  @PublicApi
   public String getContentEncoding() {
     return mContentEncoding.getValue();
   }
 
   /** @return the content language for the {@link StorageReference} */
   @Nullable
-  @PublicApi
   public String getContentLanguage() {
     return mContentLanguage.getValue();
   }
 
   /** @return the associated {@link StorageReference} for which this metadata belongs to. */
   @Nullable
-  @PublicApi
   public StorageReference getReference() {
     if (mStorageRef == null) {
       if (mStorage != null) {
@@ -274,18 +254,12 @@ public class StorageMetadata {
         if (TextUtils.isEmpty(bucket) || TextUtils.isEmpty(path)) {
           return null;
         }
-        Uri uri;
-        try {
-          uri =
-              new Uri.Builder()
-                  .scheme("gs")
-                  .authority(bucket)
-                  .encodedPath(Slashes.preserveSlashEncode(path))
-                  .build();
-        } catch (UnsupportedEncodingException e) {
-          Log.e(TAG, "Unable to create a valid default Uri. " + bucket + path, e);
-          throw new IllegalStateException(e);
-        }
+        Uri uri =
+            new Uri.Builder()
+                .scheme("gs")
+                .authority(bucket)
+                .encodedPath(Slashes.preserveSlashEncode(path))
+                .build();
 
         return new StorageReference(uri, mStorage);
       }
@@ -294,7 +268,7 @@ public class StorageMetadata {
   }
 
   @NonNull
-  JSONObject createJSONObject() throws JSONException {
+  JSONObject createJSONObject() {
     Map<String, Object> jsonData = new HashMap<>();
 
     if (mContentType.isUserProvided()) {
@@ -320,13 +294,11 @@ public class StorageMetadata {
   }
 
   /** Creates a StorageMetadata object. */
-  @PublicApi
   public static class Builder {
     StorageMetadata mMetadata;
     boolean mFromJSON;
 
     /** Creates an empty set of metadata. */
-    @PublicApi
     public Builder() {
       mMetadata = new StorageMetadata();
     }
@@ -336,8 +308,7 @@ public class StorageMetadata {
      *
      * @param original The source of the metadata to build from.
      */
-    @PublicApi
-    public Builder(StorageMetadata original) {
+    public Builder(@NonNull StorageMetadata original) {
       mMetadata = new StorageMetadata(original, false);
     }
 
@@ -368,11 +339,11 @@ public class StorageMetadata {
       mMetadata.mGeneration = jsonObject.optString(GENERATION_KEY);
       mMetadata.mPath = jsonObject.optString(NAME_KEY);
       mMetadata.mBucket = jsonObject.optString(BUCKET_KEY);
-      mMetadata.mMetadataGeneration = (jsonObject.optString(META_GENERATION_KEY));
-      mMetadata.mCreationTime = (jsonObject.optString(TIME_CREATED_KEY));
-      mMetadata.mUpdatedTime = (jsonObject.optString(TIME_UPDATED_KEY));
-      mMetadata.mSize = (jsonObject.optLong(SIZE_KEY));
-      mMetadata.mMD5Hash = (jsonObject.optString(MD5_HASH_KEY));
+      mMetadata.mMetadataGeneration = jsonObject.optString(META_GENERATION_KEY);
+      mMetadata.mCreationTime = jsonObject.optString(TIME_CREATED_KEY);
+      mMetadata.mUpdatedTime = jsonObject.optString(TIME_UPDATED_KEY);
+      mMetadata.mSize = jsonObject.optLong(SIZE_KEY);
+      mMetadata.mMD5Hash = jsonObject.optString(MD5_HASH_KEY);
 
       if (jsonObject.has(CUSTOM_METADATA_KEY) && !jsonObject.isNull(CUSTOM_METADATA_KEY)) {
         JSONObject customMetadata = jsonObject.getJSONObject(CUSTOM_METADATA_KEY);
@@ -400,7 +371,7 @@ public class StorageMetadata {
       }
     }
 
-    @PublicApi
+    @NonNull
     public StorageMetadata build() {
       return new StorageMetadata(mMetadata, mFromJSON);
     }
@@ -410,10 +381,16 @@ public class StorageMetadata {
      *
      * @param contentLanguage the new content language.
      */
-    @PublicApi
+    @NonNull
     public Builder setContentLanguage(@Nullable String contentLanguage) {
       mMetadata.mContentLanguage = MetadataValue.withUserValue(contentLanguage);
       return this;
+    }
+
+    /** @return the content language for the {@link StorageReference} */
+    @Nullable
+    public String getContentLanguage() {
+      return mMetadata.mContentLanguage.getValue();
     }
 
     /**
@@ -421,30 +398,50 @@ public class StorageMetadata {
      *
      * @param contentEncoding the new encoding to use.
      */
-    @PublicApi
+    @NonNull
     public Builder setContentEncoding(@Nullable String contentEncoding) {
       mMetadata.mContentEncoding = MetadataValue.withUserValue(contentEncoding);
       return this;
     }
 
+    /** @return the content encoding for the {@link StorageReference} */
+    @Nullable
+    public String getContentEncoding() {
+      return mMetadata.mContentEncoding.getValue();
+    }
+
     /**
-     * @param contentDisposition changes the content disposition for the {@link StorageReference}
+     * Changes the content disposition for the {@link StorageReference}
+     *
+     * @param contentDisposition the new content disposition to use.
      */
-    @PublicApi
+    @NonNull
     public Builder setContentDisposition(@Nullable String contentDisposition) {
       mMetadata.mContentDisposition = MetadataValue.withUserValue(contentDisposition);
       return this;
     }
 
+    /** @return the content disposition for the {@link StorageReference} */
+    @Nullable
+    public String getContentDisposition() {
+      return mMetadata.mContentDisposition.getValue();
+    }
+
     /**
-     * sets the Cache Control for the {@link StorageReference}
+     * Sets the Cache Control header for the {@link StorageReference}
      *
      * @param cacheControl the new Cache Control setting.
      */
-    @PublicApi
+    @NonNull
     public Builder setCacheControl(@Nullable String cacheControl) {
       mMetadata.mCacheControl = MetadataValue.withUserValue(cacheControl);
       return this;
+    }
+
+    /** @return the Cache Control header for the {@link StorageReference} */
+    @Nullable
+    public String getCacheControl() {
+      return mMetadata.mCacheControl.getValue();
     }
 
     /**
@@ -453,8 +450,8 @@ public class StorageMetadata {
      * @param key the key of the new value
      * @param value the value to set.
      */
-    @PublicApi
-    public Builder setCustomMetadata(String key, String value) {
+    @NonNull
+    public Builder setCustomMetadata(@NonNull String key, @Nullable String value) {
       if (!mMetadata.mCustomMetadata.isUserProvided()) {
         mMetadata.mCustomMetadata = MetadataValue.withUserValue(new HashMap<>());
       }
@@ -467,10 +464,16 @@ public class StorageMetadata {
      *
      * @param contentType the new Content Type.
      */
-    @PublicApi
+    @NonNull
     public Builder setContentType(@Nullable String contentType) {
       mMetadata.mContentType = MetadataValue.withUserValue(contentType);
       return this;
+    }
+
+    /** @return the Content Type of this associated {@link StorageReference} */
+    @Nullable
+    public String getContentType() {
+      return mMetadata.mContentType.getValue();
     }
   }
 }

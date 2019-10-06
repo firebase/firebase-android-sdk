@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
 public class DependencyTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);
@@ -73,11 +73,9 @@ public class DependencyTest {
    * If this test fails, its because you added a new method/overload to Task and you need to let
    * someone in Firebase Storage know. Otherwise users will see NotImplementedException on these new
    * methods for Storage Tasks. Please contact benwu@ for more info.
-   *
-   * @throws Exception
    */
   @Test
-  public void catchNewTaskMethods() throws Exception {
+  public void catchNewTaskMethods() {
     StringBuilder builder = new StringBuilder();
 
     try {
@@ -96,7 +94,7 @@ public class DependencyTest {
     }
     String newValue = builder.toString();
     if (!expected.equals(newValue)) {
-      System.err.println("Exepected:\n" + expected + "\nBut got:\n" + newValue);
+      System.err.println("Expected:\n" + expected + "\nBut got:\n" + newValue);
     }
     Assert.assertEquals(expected, newValue);
   }

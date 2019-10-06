@@ -20,11 +20,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.RepoManager;
-import com.google.firebase.database.core.utilities.ParsedUrl;
-import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.future.ReadFuture;
 import com.google.firebase.database.future.WriteFuture;
 import java.util.List;
@@ -46,21 +44,6 @@ public class RealtimeTest {
   @After
   public void tearDown() {
     IntegrationTestHelpers.failOnFirstUncaughtException();
-  }
-
-  @Test
-  public void testUrlParsing() throws DatabaseException {
-    ParsedUrl parsed = Utilities.parseUrl("http://gsoltis.fblocal.com:9000");
-    assertEquals(parsed.path.toString(), "/");
-    assertEquals(parsed.repoInfo.host, "gsoltis.fblocal.com:9000");
-    assertEquals(parsed.repoInfo.internalHost, "gsoltis.fblocal.com:9000");
-    assertEquals(parsed.repoInfo.secure, false);
-
-    parsed = Utilities.parseUrl("http://gsoltis.firebaseio.com/foo/bar");
-    assertEquals(parsed.path.toString(), "/foo/bar");
-    assertEquals(parsed.repoInfo.host, "gsoltis.firebaseio.com");
-    assertEquals(parsed.repoInfo.internalHost, "gsoltis.firebaseio.com");
-    assertEquals(parsed.repoInfo.secure, true);
   }
 
   @Test

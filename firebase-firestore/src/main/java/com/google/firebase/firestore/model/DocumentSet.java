@@ -16,7 +16,8 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import java.util.ArrayList;
@@ -24,7 +25,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /**
  * An immutable set of documents (unique by key) ordered by the given comparator or ordered by key

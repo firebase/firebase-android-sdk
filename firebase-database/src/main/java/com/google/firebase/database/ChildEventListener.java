@@ -14,9 +14,8 @@
 
 package com.google.firebase.database;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Classes implementing this interface can be used to receive events about changes in the child
@@ -24,7 +23,6 @@ import com.google.firebase.annotations.PublicApi;
  * location using {@link DatabaseReference#addChildEventListener(ChildEventListener)} and the
  * appropriate method will be triggered when changes occur.
  */
-@PublicApi
 public interface ChildEventListener {
 
   /**
@@ -35,7 +33,6 @@ public interface ChildEventListener {
    * @param previousChildName The key name of sibling location ordered before the new child. This
    *     will be null for the first child node of a location.
    */
-  @PublicApi
   public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName);
 
   /**
@@ -45,7 +42,6 @@ public interface ChildEventListener {
    * @param previousChildName The key name of sibling location ordered before the child. This will
    *     be null for the first child node of a location.
    */
-  @PublicApi
   public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName);
 
   /**
@@ -54,7 +50,6 @@ public interface ChildEventListener {
    *
    * @param snapshot An immutable snapshot of the data at the child that was removed.
    */
-  @PublicApi
   public void onChildRemoved(@NonNull DataSnapshot snapshot);
 
   /**
@@ -67,7 +62,6 @@ public interface ChildEventListener {
    * @param previousChildName The key name of the sibling location ordered before the child
    *     location. This will be null if this location is ordered first.
    */
-  @PublicApi
   public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName);
 
   /**
@@ -78,6 +72,5 @@ public interface ChildEventListener {
    *
    * @param error A description of the error that occurred
    */
-  @PublicApi
   public void onCancelled(@NonNull DatabaseError error);
 }

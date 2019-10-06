@@ -15,25 +15,26 @@
 package com.google.firebase.storage;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.storage.internal.Slashes;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -43,8 +44,7 @@ import java.util.concurrent.Executor;
  * href="https://cloud.google.com/storage/">Google Cloud Storage</a>)
  */
 @SuppressWarnings("unused")
-@PublicApi
-public class StorageReference {
+public class StorageReference implements Comparable<StorageReference> {
   private static final String TAG = "StorageReference";
 
   private final Uri mStorageUri;
@@ -79,24 +79,13 @@ public class StorageReference {
    * @return the child {@link StorageReference}.
    */
   @NonNull
-  @PublicApi
   public StorageReference child(@NonNull String pathString) {
     Preconditions.checkArgument(
         !TextUtils.isEmpty(pathString), "childName cannot be null or empty");
 
     pathString = Slashes.normalizeSlashes(pathString);
-    Uri child;
-    try {
-      child =
-          mStorageUri
-              .buildUpon()
-              .appendEncodedPath(Slashes.preserveSlashEncode(pathString))
-              .build();
-    } catch (UnsupportedEncodingException e) {
-      Log.e(TAG, "Unable to create a valid default Uri. " + pathString, e);
-
-      throw new IllegalArgumentException("childName");
-    }
+    Uri child =
+        mStorageUri.buildUpon().appendEncodedPath(Slashes.preserveSlashEncode(pathString)).build();
     return new StorageReference(child, mFirebaseStorage);
   }
 
@@ -113,7 +102,6 @@ public class StorageReference {
    * @return the parent {@link StorageReference}.
    */
   @Nullable
-  @PublicApi
   public StorageReference getParent() {
     String path = mStorageUri.getPath();
     if (TextUtils.isEmpty(path) || path.equals("/")) {
@@ -136,7 +124,6 @@ public class StorageReference {
    * @return the root {@link StorageReference}.
    */
   @NonNull
-  @PublicApi
   public StorageReference getRoot() {
     Uri child = mStorageUri.buildUpon().path("").build();
     return new StorageReference(child, mFirebaseStorage);
@@ -148,7 +135,6 @@ public class StorageReference {
    * @return the name.
    */
   @NonNull
-  @PublicApi
   public String getName() {
     String path = mStorageUri.getPath();
     assert path != null;
@@ -165,7 +151,6 @@ public class StorageReference {
    * @return the path.
    */
   @NonNull
-  @PublicApi
   public String getPath() {
     String path = mStorageUri.getPath();
     assert path != null;
@@ -178,7 +163,6 @@ public class StorageReference {
    * @return the bucket.
    */
   @NonNull
-  @PublicApi
   public String getBucket() {
     return mStorageUri.getAuthority();
   }
@@ -189,7 +173,6 @@ public class StorageReference {
    * @return The {@link FirebaseStorage} service.
    */
   @NonNull
-  @PublicApi
   public FirebaseStorage getStorage() {
     return mFirebaseStorage;
   }
@@ -213,7 +196,6 @@ public class StorageReference {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putBytes(@NonNull byte[] bytes) {
     Preconditions.checkArgument(bytes != null, "bytes cannot be null");
 
@@ -234,7 +216,6 @@ public class StorageReference {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putBytes(@NonNull byte[] bytes, @NonNull StorageMetadata metadata) {
     Preconditions.checkArgument(bytes != null, "bytes cannot be null");
     Preconditions.checkArgument(metadata != null, "metadata cannot be null");
@@ -253,7 +234,6 @@ public class StorageReference {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putFile(@NonNull Uri uri) {
     Preconditions.checkArgument(uri != null, "uri cannot be null");
 
@@ -273,7 +253,6 @@ public class StorageReference {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putFile(@NonNull Uri uri, @NonNull StorageMetadata metadata) {
     Preconditions.checkArgument(uri != null, "uri cannot be null");
     Preconditions.checkArgument(metadata != null, "metadata cannot be null");
@@ -296,7 +275,6 @@ public class StorageReference {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putFile(
       @NonNull Uri uri, @Nullable StorageMetadata metadata, @Nullable Uri existingUploadUri) {
     Preconditions.checkArgument(uri != null, "uri cannot be null");
@@ -316,7 +294,6 @@ public class StorageReference {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putStream(@NonNull InputStream stream) {
     Preconditions.checkArgument(stream != null, "stream cannot be null");
 
@@ -336,7 +313,6 @@ public class StorageReference {
    */
   @SuppressWarnings("ConstantConditions")
   @NonNull
-  @PublicApi
   public UploadTask putStream(@NonNull InputStream stream, @NonNull StorageMetadata metadata) {
     Preconditions.checkArgument(stream != null, "stream cannot be null");
     Preconditions.checkArgument(metadata != null, "metadata cannot be null");
@@ -352,14 +328,12 @@ public class StorageReference {
 
   /** @return the set of active upload tasks currently in progress or recently completed. */
   @NonNull
-  @PublicApi
   public List<UploadTask> getActiveUploadTasks() {
     return StorageTaskManager.getInstance().getUploadTasksUnder(this);
   }
 
   /** @return the set of active download tasks currently in progress or recently completed. */
   @NonNull
-  @PublicApi
   public List<FileDownloadTask> getActiveDownloadTasks() {
     return StorageTaskManager.getInstance().getDownloadTasksUnder(this);
   }
@@ -374,7 +348,6 @@ public class StorageReference {
    */
   @SuppressWarnings("deprecation")
   @NonNull
-  @PublicApi
   public Task<StorageMetadata> getMetadata() {
     TaskCompletionSource<StorageMetadata> pendingResult = new TaskCompletionSource<>();
     StorageTaskScheduler.getInstance().scheduleCommand(new GetMetadataTask(this, pendingResult));
@@ -391,7 +364,6 @@ public class StorageReference {
    */
   @SuppressWarnings("deprecation,unused")
   @NonNull
-  @PublicApi
   public Task<Uri> getDownloadUrl() {
     TaskCompletionSource<Uri> pendingResult = new TaskCompletionSource<>();
     StorageTaskScheduler.getInstance().scheduleCommand(new GetDownloadUrlTask(this, pendingResult));
@@ -407,7 +379,6 @@ public class StorageReference {
    */
   @SuppressWarnings("deprecation")
   @NonNull
-  @PublicApi
   public Task<StorageMetadata> updateMetadata(@NonNull StorageMetadata metadata) {
     Preconditions.checkNotNull(metadata);
 
@@ -433,7 +404,6 @@ public class StorageReference {
    */
   @SuppressWarnings("deprecation")
   @NonNull
-  @PublicApi
   public Task<byte[]> getBytes(final long maxDownloadSizeBytes) {
     final TaskCompletionSource<byte[]> pendingResult = new TaskCompletionSource<>();
 
@@ -441,7 +411,6 @@ public class StorageReference {
     task.setStreamProcessor(
             new StreamDownloadTask.StreamProcessor() {
               @Override
-              @PublicApi
               public void doInBackground(StreamDownloadTask.TaskSnapshot state, InputStream stream)
                   throws IOException {
                 try {
@@ -469,7 +438,6 @@ public class StorageReference {
         .addOnSuccessListener(
             new OnSuccessListener<StreamDownloadTask.TaskSnapshot>() {
               @Override
-              @PublicApi
               public void onSuccess(StreamDownloadTask.TaskSnapshot state) {
                 if (!pendingResult.getTask().isComplete()) {
                   // something went wrong and we didn't set results, but we think it worked.
@@ -482,7 +450,6 @@ public class StorageReference {
         .addOnFailureListener(
             new OnFailureListener() {
               @Override
-              @PublicApi
               public void onFailure(@NonNull Exception e) {
                 StorageException se = StorageException.fromExceptionAndHttpCode(e, 0);
                 assert se != null;
@@ -503,7 +470,6 @@ public class StorageReference {
    * @return A {@link FileDownloadTask} that can be used to monitor or manage the download.
    */
   @NonNull
-  @PublicApi
   public FileDownloadTask getFile(@NonNull Uri destinationUri) {
     FileDownloadTask task = new FileDownloadTask(this, destinationUri);
     task.queue();
@@ -518,7 +484,6 @@ public class StorageReference {
    * @return A {@link FileDownloadTask} that can be used to monitor or manage the download.
    */
   @NonNull
-  @PublicApi
   public FileDownloadTask getFile(@NonNull File destinationFile) {
     return getFile(Uri.fromFile(destinationFile));
   }
@@ -532,7 +497,6 @@ public class StorageReference {
    * @return A {@link FileDownloadTask} that can be used to monitor or manage the download.
    */
   @NonNull
-  @PublicApi
   public StreamDownloadTask getStream() {
     StreamDownloadTask task = new StreamDownloadTask(this);
     task.queue();
@@ -549,7 +513,6 @@ public class StorageReference {
    * @return A {@link FileDownloadTask} that can be used to monitor or manage the download.
    */
   @NonNull
-  @PublicApi
   public StreamDownloadTask getStream(@NonNull StreamDownloadTask.StreamProcessor processor) {
     StreamDownloadTask task = new StreamDownloadTask(this);
     task.setStreamProcessor(processor);
@@ -563,14 +526,127 @@ public class StorageReference {
   /**
    * Deletes the object at this {@link StorageReference}.
    *
-   * @return a {@link Task} that indicates whether the operation succeeded or failed.
+   * @return A {@link Task} that indicates whether the operation succeeded or failed.
    */
-  @PublicApi
+  @NonNull
   public Task<Void> delete() {
     TaskCompletionSource<Void> pendingResult = new TaskCompletionSource<>();
     StorageTaskScheduler.getInstance().scheduleCommand(new DeleteStorageTask(this, pendingResult));
     return pendingResult.getTask();
   }
+
+  // region List
+
+  /**
+   * List up to {@code maxResults} items (files) and prefixes (folders) under this StorageReference.
+   *
+   * <p>"/" is treated as a path delimiter. Cloud Storage for Firebase does not support object paths
+   * that end with "/" or contain two consecutive "/"s. All invalid objects in Google Cloud Storage
+   * will be filtered.
+   *
+   * <p>{@code list()} is only available for projects using <a
+   * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
+   * Rules Version 2</a>.
+   *
+   * @param maxResults The maximum number of results to return in a single page. Must be greater
+   *     than 0 and at most 1000.
+   * @return A a {@link Task} that returns up to maxResults items and prefixes under the current
+   *     StorageReference.
+   */
+  @NonNull
+  public Task<ListResult> list(int maxResults) {
+    Preconditions.checkArgument(maxResults > 0, "maxResults must be greater than zero");
+    Preconditions.checkArgument(maxResults <= 1000, "maxResults must be at most 1000");
+    return listHelper(maxResults, /* pageToken */ null);
+  }
+
+  /**
+   * Resumes a previous call to {@link #list(int)}, starting after a pagination token. Returns the
+   * next set of items (files) and prefixes (folders) under this StorageReference.
+   *
+   * <p>"/" is treated as a path delimiter. Cloud Storage for Firebase does not support object paths
+   * that end with "/" or contain two consecutive "/"s. All invalid objects in Google Cloud Storage
+   * will be filtered.
+   *
+   * <p>{@code list()} is only available for projects using <a
+   * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
+   * Rules Version 2</a>.
+   *
+   * @param maxResults The maximum number of results to return in a single page. Must be greater
+   *     than 0 and at most 1000.
+   * @param pageToken A page token from a previous call to list.
+   * @return A a {@link Task} that returns the next items and prefixes under the current
+   *     StorageReference.
+   */
+  @NonNull
+  public Task<ListResult> list(int maxResults, @NonNull String pageToken) {
+    Preconditions.checkArgument(maxResults > 0, "maxResults must be greater than zero");
+    Preconditions.checkArgument(maxResults <= 1000, "maxResults must be at most 1000");
+    Preconditions.checkArgument(
+        pageToken != null, "pageToken must be non-null to resume a previous list() operation");
+    return listHelper(maxResults, pageToken);
+  }
+
+  /**
+   * List all items (files) and prefixes (folders) under this StorageReference.
+   *
+   * <p>This is a helper method for calling {@code list()} repeatedly until there are no more
+   * results. Consistency of the result is not guaranteed if objects are inserted or removed while
+   * this operation is executing.
+   *
+   * <p>{@code listAll()} is only available for projects using <a
+   * href="https://firebase.google.com/docs/rules/rules-behavior#security_rules_version_2">Firebase
+   * Rules Version 2</a>.
+   *
+   * @throws OutOfMemoryError If there are too many items at this location.
+   * @return A {@link Task} that returns all items and prefixes under the current StorageReference.
+   */
+  @NonNull
+  public Task<ListResult> listAll() {
+    TaskCompletionSource<ListResult> pendingResult = new TaskCompletionSource<>();
+
+    List<StorageReference> prefixes = new ArrayList<>();
+    List<StorageReference> items = new ArrayList<>();
+
+    Executor executor = StorageTaskScheduler.getInstance().getCommandPoolExecutor();
+    Task<ListResult> list = listHelper(/* maxResults= */ null, /* pageToken= */ null);
+
+    Continuation<ListResult, Task<Void>> continuation =
+        new Continuation<ListResult, Task<Void>>() {
+          @Override
+          public Task<Void> then(@NonNull Task<ListResult> currentPage) {
+            if (currentPage.isSuccessful()) {
+              ListResult result = currentPage.getResult();
+              prefixes.addAll(result.getPrefixes());
+              items.addAll(result.getItems());
+
+              if (result.getPageToken() != null) {
+                Task<ListResult> nextPage =
+                    listHelper(/* maxResults= */ null, result.getPageToken());
+                nextPage.continueWithTask(executor, this);
+              } else {
+                pendingResult.setResult(new ListResult(prefixes, items, /* pageToken= */ null));
+              }
+            } else {
+              pendingResult.setException(currentPage.getException());
+            }
+
+            return Tasks.forResult(null);
+          }
+        };
+
+    list.continueWithTask(executor, continuation);
+
+    return pendingResult.getTask();
+  }
+
+  private Task<ListResult> listHelper(@Nullable Integer maxResults, @Nullable String pageToken) {
+    TaskCompletionSource<ListResult> pendingResult = new TaskCompletionSource<>();
+    StorageTaskScheduler.getInstance()
+        .scheduleCommand(new ListTask(this, maxResults, pageToken, pendingResult));
+    return pendingResult.getTask();
+  }
+
   // endregion
 
   // region package private methods
@@ -602,5 +678,12 @@ public class StorageReference {
   @Override
   public int hashCode() {
     return toString().hashCode();
+  }
+
+  @Override
+  public int compareTo(@NonNull StorageReference other) {
+    // mStorageUri contains a reference to the GCS bucket as well as the fully qualified path
+    // of this reference.
+    return mStorageUri.compareTo(other.mStorageUri);
   }
 }

@@ -31,5 +31,6 @@ android {
 dependencies {
     firestoreImplementation project(":firebase-firestore")
     firestoreImplementation "com.google.android.gms:play-services-auth:16.0.1"
-    firestoreImplementation "com.android.support:support-v4:27.1.0"
+    firestoreImplementation "com.google.android.gms:play-services-base:17.0.0"
+    firestoreImplementation 'androidx.legacy:legacy-support-v4:1.0.0'
 }

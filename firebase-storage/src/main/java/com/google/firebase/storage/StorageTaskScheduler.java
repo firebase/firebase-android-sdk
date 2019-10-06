@@ -14,9 +14,10 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.RestrictTo;
+import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -81,6 +82,10 @@ public class StorageTaskScheduler {
     CALLBACK_QUEUE_EXECUTOR.execute(task);
   }
 
+  public Executor getCommandPoolExecutor() {
+    return COMMAND_POOL_EXECUTOR;
+  }
+
   /** The thread factory for Storage threads. */
   static class StorageThreadFactory implements ThreadFactory {
     private final AtomicInteger threadNumber = new AtomicInteger(1);
@@ -91,6 +96,7 @@ public class StorageTaskScheduler {
     }
 
     @Override
+    @SuppressWarnings("ThreadPriorityCheck")
     public Thread newThread(@NonNull Runnable r) {
       Thread t = new Thread(r, "FirebaseStorage-" + mNameSuffix + threadNumber.getAndIncrement());
       t.setDaemon(false);

@@ -16,11 +16,10 @@ package com.google.firebase.database;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RestrictTo;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.android.gms.common.internal.Objects;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.database.core.ChildEventRegistration;
 import com.google.firebase.database.core.EventRegistration;
 import com.google.firebase.database.core.Path;
@@ -49,7 +48,6 @@ import com.google.firebase.database.snapshot.ValueIndex;
  * <br>
  * Instances of Query are obtained by calling startAt(), endAt(), or limit() on a DatabaseReference.
  */
-@PublicApi
 public class Query {
 
   /** @hide */
@@ -145,7 +143,6 @@ public class Query {
    * @return A reference to the listener provided. Save this to remove the listener later.
    */
   @NonNull
-  @PublicApi
   public ValueEventListener addValueEventListener(@NonNull ValueEventListener listener) {
     addEventRegistration(new ValueEventRegistration(repo, listener, getSpec()));
     return listener;
@@ -159,7 +156,6 @@ public class Query {
    * @return A reference to the listener provided. Save this to remove the listener later.
    */
   @NonNull
-  @PublicApi
   public ChildEventListener addChildEventListener(@NonNull ChildEventListener listener) {
     addEventRegistration(new ChildEventRegistration(repo, listener, getSpec()));
     return listener;
@@ -171,7 +167,6 @@ public class Query {
    *
    * @param listener The listener to be called with the data
    */
-  @PublicApi
   public void addListenerForSingleValueEvent(@NonNull final ValueEventListener listener) {
     addEventRegistration(
         new ValueEventRegistration(
@@ -197,7 +192,6 @@ public class Query {
    *
    * @param listener The listener to remove
    */
-  @PublicApi
   public void removeEventListener(@NonNull final ValueEventListener listener) {
     if (listener == null) {
       throw new NullPointerException("listener must not be null");
@@ -210,7 +204,6 @@ public class Query {
    *
    * @param listener The listener to remove
    */
-  @PublicApi
   public void removeEventListener(@NonNull final ChildEventListener listener) {
     if (listener == null) {
       throw new NullPointerException("listener must not be null");
@@ -250,7 +243,6 @@ public class Query {
    * @param keepSynced Pass `true` to keep this location synchronized, pass `false` to stop
    *     synchronization.
    */
-  @PublicApi
   public void keepSynced(final boolean keepSynced) {
     if (!this.path.isEmpty() && this.path.getFront().equals(ChildKey.getInfoKey())) {
       throw new DatabaseException("Can't call keepSynced() on .info paths.");
@@ -284,7 +276,6 @@ public class Query {
    * @return A Query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query startAt(@Nullable String value) {
     return startAt(value, null);
   }
@@ -297,7 +288,6 @@ public class Query {
    * @return A Query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query startAt(double value) {
     return startAt(value, null);
   }
@@ -311,7 +301,6 @@ public class Query {
    * @since 2.0
    */
   @NonNull
-  @PublicApi
   public Query startAt(boolean value) {
     return startAt(value, null);
   }
@@ -326,7 +315,6 @@ public class Query {
    * @return A Query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query startAt(@Nullable String value, @Nullable String key) {
     Node node =
         value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
@@ -343,7 +331,6 @@ public class Query {
    * @return A Query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query startAt(double value, @Nullable String key) {
     return startAt(new DoubleNode(value, PriorityUtilities.NullPriority()), key);
   }
@@ -359,7 +346,6 @@ public class Query {
    * @since 2.0
    */
   @NonNull
-  @PublicApi
   public Query startAt(boolean value, @Nullable String key) {
     return startAt(new BooleanNode(value, PriorityUtilities.NullPriority()), key);
   }
@@ -388,7 +374,6 @@ public class Query {
    * @return A Query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query endAt(@Nullable String value) {
     return endAt(value, null);
   }
@@ -401,7 +386,6 @@ public class Query {
    * @return A Query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query endAt(double value) {
     return endAt(value, null);
   }
@@ -415,7 +399,6 @@ public class Query {
    * @since 2.0
    */
   @NonNull
-  @PublicApi
   public Query endAt(boolean value) {
     return endAt(value, null);
   }
@@ -430,7 +413,6 @@ public class Query {
    * @return A Query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query endAt(@Nullable String value, @Nullable String key) {
     Node node =
         value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
@@ -447,7 +429,6 @@ public class Query {
    * @return A Query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query endAt(double value, @Nullable String key) {
     return endAt(new DoubleNode(value, PriorityUtilities.NullPriority()), key);
   }
@@ -463,7 +444,6 @@ public class Query {
    * @since 2.0
    */
   @NonNull
-  @PublicApi
   public Query endAt(boolean value, @Nullable String key) {
     return endAt(new BooleanNode(value, PriorityUtilities.NullPriority()), key);
   }
@@ -491,7 +471,6 @@ public class Query {
    * @return A query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query equalTo(@Nullable String value) {
     validateEqualToCall();
     return this.startAt(value).endAt(value);
@@ -504,7 +483,6 @@ public class Query {
    * @return A query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query equalTo(double value) {
     validateEqualToCall();
     return this.startAt(value).endAt(value);
@@ -518,7 +496,6 @@ public class Query {
    * @since 2.0
    */
   @NonNull
-  @PublicApi
   public Query equalTo(boolean value) {
     validateEqualToCall();
     return this.startAt(value).endAt(value);
@@ -533,7 +510,6 @@ public class Query {
    * @return A query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query equalTo(@Nullable String value, @Nullable String key) {
     validateEqualToCall();
     return this.startAt(value, key).endAt(value, key);
@@ -548,7 +524,6 @@ public class Query {
    * @return A query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query equalTo(double value, @Nullable String key) {
     validateEqualToCall();
     return this.startAt(value, key).endAt(value, key);
@@ -563,7 +538,6 @@ public class Query {
    * @return A query with the new constraint
    */
   @NonNull
-  @PublicApi
   public Query equalTo(boolean value, @Nullable String key) {
     validateEqualToCall();
     return this.startAt(value, key).endAt(value, key);
@@ -577,7 +551,6 @@ public class Query {
    * @since 2.0
    */
   @NonNull
-  @PublicApi
   public Query limitToFirst(int limit) {
     if (limit <= 0) {
       throw new IllegalArgumentException("Limit must be a positive integer!");
@@ -597,7 +570,6 @@ public class Query {
    * @since 2.0
    */
   @NonNull
-  @PublicApi
   public Query limitToLast(int limit) {
     if (limit <= 0) {
       throw new IllegalArgumentException("Limit must be a positive integer!");
@@ -617,7 +589,6 @@ public class Query {
    * @since 2.0
    */
   @NonNull
-  @PublicApi
   public Query orderByChild(@NonNull String path) {
     if (path == null) {
       throw new NullPointerException("Key can't be null");
@@ -651,7 +622,6 @@ public class Query {
    * @since 2.0
    */
   @NonNull
-  @PublicApi
   public Query orderByPriority() {
     validateNoOrderByCall();
     QueryParams newParams = params.orderBy(PriorityIndex.getInstance());
@@ -666,7 +636,6 @@ public class Query {
    * @since 2.0
    */
   @NonNull
-  @PublicApi
   public Query orderByKey() {
     validateNoOrderByCall();
     QueryParams newParams = this.params.orderBy(KeyIndex.getInstance());
@@ -681,7 +650,6 @@ public class Query {
    * @since 2.2
    */
   @NonNull
-  @PublicApi
   public Query orderByValue() {
     validateNoOrderByCall();
     return new Query(repo, path, params.orderBy(ValueIndex.getInstance()), true);
@@ -689,7 +657,6 @@ public class Query {
 
   /** @return A DatabaseReference to this location */
   @NonNull
-  @PublicApi
   public DatabaseReference getRef() {
     return new DatabaseReference(repo, getPath());
   }

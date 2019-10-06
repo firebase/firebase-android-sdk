@@ -20,15 +20,14 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.StorageException;
-import com.google.firebase.storage.internal.Slashes;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactoryImpl;
 import java.io.BufferedOutputStream;
@@ -37,11 +36,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,8 +68,8 @@ public abstract class NetworkRequest {
   private static final String CONTENT_LENGTH = "Content-Length";
   private static final String UTF_8 = "UTF-8";
 
-  @NonNull public static String sNetworkRequestUrl = "https://firebasestorage.googleapis.com/v0";
-  @NonNull public static String sUploadUrl = "https://firebasestorage.googleapis.com/v0/b/";
+  @NonNull static Uri sNetworkRequestUrl = Uri.parse("https://firebasestorage.googleapis.com/v0");
+
   // For test purposes only.
   /*package*/ static HttpURLConnectionFactory connectionFactory =
       new HttpURLConnectionFactoryImpl();
@@ -100,8 +97,7 @@ public abstract class NetworkRequest {
 
   @NonNull
   public static String getAuthority() {
-    Uri uri = Uri.parse(sNetworkRequestUrl);
-    return uri.getAuthority();
+    return sNetworkRequestUrl.getAuthority();
   }
 
   /**
@@ -110,31 +106,38 @@ public abstract class NetworkRequest {
    * @return Url for the target REST call in string form.
    */
   @NonNull
-  public static String getdefaultURL(@NonNull Uri gsUri) {
+  public static Uri getDefaultURL(@NonNull Uri gsUri) {
     Preconditions.checkNotNull(gsUri);
-
     String pathWithoutBucket = getPathWithoutBucket(gsUri);
-    return sNetworkRequestUrl
-        + "/b/"
-        + gsUri.getAuthority()
-        + "/o/"
-        + (pathWithoutBucket != null ? Slashes.unSlashize(pathWithoutBucket) : "");
+    Uri.Builder uriBuilder = sNetworkRequestUrl.buildUpon();
+    uriBuilder.appendPath("b");
+    uriBuilder.appendPath(gsUri.getAuthority());
+    uriBuilder.appendPath("o");
+    uriBuilder.appendPath(pathWithoutBucket);
+    return uriBuilder.build();
   }
 
   /**
-   * Returns the path of the object but excludes the bucket name
+   * Returns the decoded path of the object but excludes the bucket name
    *
    * @param gsUri the "gs://" Uri of the blob.
    * @return the path in string form.
    */
-  @Nullable
-  public static String getPathWithoutBucket(@NonNull Uri gsUri) {
-    String path = gsUri.getEncodedPath();
-    if (path != null && path.startsWith("/")) {
-      // this should always be true.
-      path = path.substring(1);
+  private static String getPathWithoutBucket(@NonNull Uri gsUri) {
+    String path = gsUri.getPath();
+    if (path == null) {
+      return "";
     }
-    return path;
+    return path.startsWith("/") ? path.substring(1) : path;
+  }
+
+  /**
+   * Returns the decoded path of the object but excludes the bucket name
+   *
+   * @return the path in string form.
+   */
+  String getPathWithoutBucket() {
+    return getPathWithoutBucket(mGsUri);
   }
 
   @NonNull
@@ -146,18 +149,8 @@ public abstract class NetworkRequest {
    * @return Url for the target REST call in string form.
    */
   @NonNull
-  protected String getURL() {
-    return getdefaultURL(mGsUri);
-  }
-
-  /**
-   * Returns the path of the object but excludes the bucket name
-   *
-   * @return the path in string form.
-   */
-  @Nullable
-  public String getPathWithoutBucket() {
-    return getPathWithoutBucket(mGsUri);
+  protected Uri getURL() {
+    return getDefaultURL(mGsUri);
   }
 
   /**
@@ -193,10 +186,10 @@ public abstract class NetworkRequest {
   /**
    * If overridden, returns the query parameters to send on the REST request.
    *
-   * @return query parameters in string form.
+   * @return If applicable, query params as a Map.
    */
   @Nullable
-  protected String getQueryParameters() throws UnsupportedEncodingException {
+  protected Map<String, String> getQueryParameters() {
     return null;
   }
 
@@ -309,16 +302,18 @@ public abstract class NetworkRequest {
     HttpURLConnection conn;
     URL url;
 
-    String urlString;
-    String queryParams = getQueryParameters();
-    if (TextUtils.isEmpty(queryParams)) {
-      urlString = getURL();
-    } else {
-      urlString = getURL() + "?" + queryParams;
+    Uri connectionUri = getURL();
+
+    Map<String, String> queryParams = getQueryParameters();
+    if (queryParams != null) {
+      Uri.Builder uriBuilder = connectionUri.buildUpon();
+      for (Map.Entry<String, String> param : queryParams.entrySet()) {
+        uriBuilder.appendQueryParameter(param.getKey(), param.getValue());
+      }
+      connectionUri = uriBuilder.build();
     }
 
-    url = new URL(urlString);
-    conn = connectionFactory.createInstance(url);
+    conn = connectionFactory.createInstance(new URL(connectionUri.toString()));
     return conn;
   }
 
@@ -418,22 +413,6 @@ public abstract class NetworkRequest {
     }
   }
 
-  private void processResponseStream() throws IOException {
-    if (isResultSuccess()) {
-      parseSuccessulResponse(resultInputStream);
-    } else {
-      parseErrorResponse(resultInputStream);
-    }
-  }
-
-  protected void parseSuccessulResponse(@Nullable InputStream resultStream) throws IOException {
-    parseResponse(resultStream);
-  }
-
-  protected void parseErrorResponse(@Nullable InputStream resultStream) throws IOException {
-    parseResponse(resultStream);
-  }
-
   @SuppressWarnings("TryFinallyCanBeTryWithResources")
   private void parseResponse(@Nullable InputStream resultStream) throws IOException {
     StringBuilder sb = new StringBuilder();
@@ -453,6 +432,22 @@ public abstract class NetworkRequest {
     if (!isResultSuccess()) {
       mException = new IOException(rawStringResponse);
     }
+  }
+
+  private void processResponseStream() throws IOException {
+    if (isResultSuccess()) {
+      parseSuccessulResponse(resultInputStream);
+    } else {
+      parseErrorResponse(resultInputStream);
+    }
+  }
+
+  protected void parseSuccessulResponse(@Nullable InputStream resultStream) throws IOException {
+    parseResponse(resultStream);
+  }
+
+  protected void parseErrorResponse(@Nullable InputStream resultStream) throws IOException {
+    parseResponse(resultStream);
   }
 
   @Nullable
@@ -506,29 +501,6 @@ public abstract class NetworkRequest {
    */
   public boolean isResultSuccess() {
     return resultCode >= 200 && resultCode < 300;
-  }
-
-  String getPostDataString(@Nullable List<String> keys, List<String> values, boolean encode)
-      throws UnsupportedEncodingException {
-    if (keys == null || keys.size() == 0) {
-      return null;
-    }
-
-    StringBuilder result = new StringBuilder();
-    boolean first = true;
-    for (int i = 0; i < keys.size(); i++) {
-      if (first) {
-        first = false;
-      } else {
-        result.append("&");
-      }
-
-      result.append(encode ? URLEncoder.encode(keys.get(i), "UTF-8") : keys.get(i));
-      result.append("=");
-      result.append(encode ? URLEncoder.encode(values.get(i), "UTF-8") : values.get(i));
-    }
-
-    return result.toString();
   }
 
   @Nullable

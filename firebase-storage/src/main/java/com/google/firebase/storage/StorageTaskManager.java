@@ -14,7 +14,7 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,21 +32,21 @@ import java.util.Map;
 /*package*/ class StorageTaskManager {
   private static final StorageTaskManager _instance = new StorageTaskManager();
 
-  private final Map<String, WeakReference<StorageTask>> mInProgressTasks = new HashMap<>();
+  private final Map<String, WeakReference<StorageTask<?>>> inProgressTasks = new HashMap<>();
 
-  private final Object mSyncObject = new Object();
+  private final Object syncObject = new Object();
 
   static StorageTaskManager getInstance() {
     return _instance;
   }
 
   public List<UploadTask> getUploadTasksUnder(@NonNull StorageReference parent) {
-    synchronized (mSyncObject) {
+    synchronized (syncObject) {
       ArrayList<UploadTask> inProgressList = new ArrayList<>();
       String parentPath = parent.toString();
-      for (Map.Entry<String, WeakReference<StorageTask>> entry : mInProgressTasks.entrySet()) {
+      for (Map.Entry<String, WeakReference<StorageTask<?>>> entry : inProgressTasks.entrySet()) {
         if (entry.getKey().startsWith(parentPath)) {
-          StorageTask task = entry.getValue().get();
+          StorageTask<?> task = entry.getValue().get();
           if (task instanceof UploadTask) {
             inProgressList.add((UploadTask) task);
           }
@@ -57,12 +57,12 @@ import java.util.Map;
   }
 
   public List<FileDownloadTask> getDownloadTasksUnder(@NonNull StorageReference parent) {
-    synchronized (mSyncObject) {
+    synchronized (syncObject) {
       ArrayList<FileDownloadTask> inProgressList = new ArrayList<>();
       String parentPath = parent.toString();
-      for (Map.Entry<String, WeakReference<StorageTask>> entry : mInProgressTasks.entrySet()) {
+      for (Map.Entry<String, WeakReference<StorageTask<?>>> entry : inProgressTasks.entrySet()) {
         if (entry.getKey().startsWith(parentPath)) {
-          StorageTask task = entry.getValue().get();
+          StorageTask<?> task = entry.getValue().get();
           if (task instanceof FileDownloadTask) {
             inProgressList.add((FileDownloadTask) task);
           }
@@ -72,21 +72,21 @@ import java.util.Map;
     }
   }
 
-  public void ensureRegistered(StorageTask targetTask) {
-    synchronized (mSyncObject) {
+  public void ensureRegistered(StorageTask<?> targetTask) {
+    synchronized (syncObject) {
       // ensure *this* is added to the in progress list
-      mInProgressTasks.put(targetTask.getStorage().toString(), new WeakReference<>(targetTask));
+      inProgressTasks.put(targetTask.getStorage().toString(), new WeakReference<>(targetTask));
     }
   }
 
-  public void unRegister(StorageTask targetTask) {
-    synchronized (mSyncObject) {
+  public void unRegister(StorageTask<?> targetTask) {
+    synchronized (syncObject) {
       // ensure *this* is added to the in progress list
       String key = targetTask.getStorage().toString();
-      WeakReference<StorageTask> weakReference = mInProgressTasks.get(key);
-      StorageTask task = weakReference != null ? weakReference.get() : null;
+      WeakReference<StorageTask<?>> weakReference = inProgressTasks.get(key);
+      StorageTask<?> task = weakReference != null ? weakReference.get() : null;
       if (task == null || task == targetTask) {
-        mInProgressTasks.remove(key);
+        inProgressTasks.remove(key);
       }
     }
   }

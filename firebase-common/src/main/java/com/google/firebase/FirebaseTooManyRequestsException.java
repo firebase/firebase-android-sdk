@@ -14,17 +14,15 @@
 
 package com.google.firebase;
 
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
 
 /**
  * Exception thrown when a request to a Firebase service has been blocked due to having received too
  * many consecutive requests from the same device. Retry the request later to resolve.
  */
-@PublicApi
 public class FirebaseTooManyRequestsException extends FirebaseException {
 
-  @PublicApi
-  public FirebaseTooManyRequestsException(String message) {
+  public FirebaseTooManyRequestsException(@NonNull String message) {
     super(message);
   }
 }

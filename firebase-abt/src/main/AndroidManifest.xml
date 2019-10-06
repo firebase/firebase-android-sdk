@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.google.firebase.abt">
+  <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
+  <!--<uses-sdk android:minSdkVersion="14"/>-->
+  <application>
+    <service android:name="com.google.firebase.components.ComponentDiscoveryService">
+      <meta-data
+          android:name="com.google.firebase.components:com.google.firebase.abt.component.AbtRegistrar"
+          android:value="com.google.firebase.components.ComponentRegistrar"/>
+    </service>
+  </application>
+</manifest>

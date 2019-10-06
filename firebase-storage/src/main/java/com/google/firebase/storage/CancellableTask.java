@@ -15,20 +15,18 @@
 package com.google.firebase.storage;
 
 import android.app.Activity;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.annotations.PublicApi;
 import java.util.concurrent.Executor;
 
 /**
  * Represents an asynchronous operation that can be canceled.
  *
- * @param <TState> the type of state this operation returns in events.
+ * @param <StateT> the type of state this operation returns in events.
  */
 @SuppressWarnings("unused")
-@PublicApi
-public abstract class CancellableTask<TState> extends Task<TState> {
+public abstract class CancellableTask<StateT> extends Task<StateT> {
   /**
    * Attempts to cancel the task. A canceled task cannot be resumed later. A canceled task calls
    * back on listeners subscribed to {@link Task#addOnFailureListener(OnFailureListener)} with an
@@ -37,16 +35,13 @@ public abstract class CancellableTask<TState> extends Task<TState> {
    * @return true if this task was successfully canceled or is in the process of being canceled.
    *     Returns false if the task is already completed or in a state that cannot be canceled.
    */
-  @PublicApi
   public abstract boolean cancel();
 
   /** @return true if the task has been canceled. */
-  @PublicApi
   @Override
   public abstract boolean isCanceled();
 
   /** @return true if the task is currently running. */
-  @PublicApi
   public abstract boolean isInProgress();
 
   /**
@@ -54,9 +49,9 @@ public abstract class CancellableTask<TState> extends Task<TState> {
    *
    * @return this Task
    */
-  @PublicApi
-  public abstract CancellableTask<TState> addOnProgressListener(
-      @NonNull OnProgressListener<? super TState> listener);
+  @NonNull
+  public abstract CancellableTask<StateT> addOnProgressListener(
+      @NonNull OnProgressListener<? super StateT> listener);
 
   /**
    * Adds a listener that is called periodically while the ControllableTask executes.
@@ -64,9 +59,9 @@ public abstract class CancellableTask<TState> extends Task<TState> {
    * @param executor the executor to use to call the listener
    * @return this Task
    */
-  @PublicApi
-  public abstract CancellableTask<TState> addOnProgressListener(
-      @NonNull Executor executor, @NonNull OnProgressListener<? super TState> listener);
+  @NonNull
+  public abstract CancellableTask<StateT> addOnProgressListener(
+      @NonNull Executor executor, @NonNull OnProgressListener<? super StateT> listener);
 
   /**
    * Adds a listener that is called periodically while the ControllableTask executes.
@@ -75,7 +70,7 @@ public abstract class CancellableTask<TState> extends Task<TState> {
    *     removed.
    * @return this Task
    */
-  @PublicApi
-  public abstract CancellableTask<TState> addOnProgressListener(
-      @NonNull Activity activity, @NonNull OnProgressListener<? super TState> listener);
+  @NonNull
+  public abstract CancellableTask<StateT> addOnProgressListener(
+      @NonNull Activity activity, @NonNull OnProgressListener<? super StateT> listener);
 }

@@ -20,11 +20,11 @@ import static com.google.firebase.firestore.util.Util.voidErrorTransformer;
 import static java.util.Collections.singletonList;
 
 import android.app.Activity;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.annotations.PublicApi;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
@@ -45,19 +45,17 @@ import com.google.firebase.firestore.util.Util;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
 
 /**
- * A DocumentReference refers to a document location in a Firestore database and can be used to
- * write, read, or listen to the location. There may or may not exist a document at the referenced
- * location. A DocumentReference can also be used to create a CollectionReference to a
- * subcollection.
+ * A {@code DocumentReference} refers to a document location in a Cloud Firestore database and can
+ * be used to write, read, or listen to the location. There may or may not exist a document at the
+ * referenced location. A {@code DocumentReference} can also be used to create a {@link
+ * CollectionReference} to a subcollection.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
-@PublicApi
 public class DocumentReference {
 
   private final DocumentKey key;
@@ -89,26 +87,23 @@ public class DocumentReference {
     return key;
   }
 
-  /** Gets the Firestore instance associated with this document reference. */
+  /** Gets the Cloud Firestore instance associated with this document reference. */
   @NonNull
-  @PublicApi
   public FirebaseFirestore getFirestore() {
     return firestore;
   }
 
   @NonNull
-  @PublicApi
   public String getId() {
     return key.getPath().getLastSegment();
   }
 
   /**
-   * Gets a CollectionReference to the collection that contains this document.
+   * Gets a {@code CollectionReference} to the collection that contains this document.
    *
-   * @return The CollectionReference that contains this document.
+   * @return The {@code CollectionReference} that contains this document.
    */
   @NonNull
-  @PublicApi
   public CollectionReference getParent() {
     return new CollectionReference(key.getPath().popLast(), firestore);
   }
@@ -120,20 +115,18 @@ public class DocumentReference {
    * @return The path of this document.
    */
   @NonNull
-  @PublicApi
   public String getPath() {
     return key.getPath().canonicalString();
   }
 
   /**
-   * Gets a CollectionReference instance that refers to the subcollection at the specified path
-   * relative to this document.
+   * Gets a {@code CollectionReference} instance that refers to the subcollection at the specified
+   * path relative to this document.
    *
    * @param collectionPath A slash-separated relative path to a subcollection.
-   * @return The CollectionReference instance.
+   * @return The {@code CollectionReference} instance.
    */
   @NonNull
-  @PublicApi
   public CollectionReference collection(@NonNull String collectionPath) {
     checkNotNull(collectionPath, "Provided collection path must not be null.");
     return new CollectionReference(
@@ -141,23 +134,22 @@ public class DocumentReference {
   }
 
   /**
-   * Overwrites the document referred to by this DocumentReference. If the document does not yet
-   * exist, it will be created. If a document already exists, it will be overwritten.
+   * Overwrites the document referred to by this {@code DocumentReference}. If the document does not
+   * yet exist, it will be created. If a document already exists, it will be overwritten.
    *
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> set(@NonNull Object data) {
     return set(data, SetOptions.OVERWRITE);
   }
 
   /**
-   * Writes to the document referred to by this DocumentReference. If the document does not yet
-   * exist, it will be created. If you pass {@link SetOptions}, the provided data can be merged into
-   * an existing document.
+   * Writes to the document referred to by this {@code DocumentReference}. If the document does not
+   * yet exist, it will be created. If you pass {@code SetOptions}, the provided data can be merged
+   * into an existing document.
    *
    * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
    *     document contents).
@@ -165,7 +157,6 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> set(@NonNull Object data, @NonNull SetOptions options) {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
@@ -180,23 +171,22 @@ public class DocumentReference {
   }
 
   /**
-   * Updates fields in the document referred to by this DocumentReference. If no document exists
-   * yet, the update will fail.
+   * Updates fields in the document referred to by this {@code DocumentReference}. If no document
+   * exists yet, the update will fail.
    *
    * @param data A map of field / value pairs to update. Fields can contain dots to reference nested
    *     fields within the document.
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> update(@NonNull Map<String, Object> data) {
     ParsedUpdateData parsedData = firestore.getDataConverter().parseUpdateData(data);
     return update(parsedData);
   }
 
   /**
-   * Updates fields in the document referred to by this DocumentReference. If no document exists
-   * yet, the update will fail.
+   * Updates fields in the document referred to by this {@code DocumentReference}. If no document
+   * exists yet, the update will fail.
    *
    * @param field The first field to update. Fields can contain dots to reference a nested field
    *     within the document.
@@ -205,7 +195,6 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> update(
       @NonNull String field, @Nullable Object value, Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
@@ -218,8 +207,8 @@ public class DocumentReference {
   }
 
   /**
-   * Updates fields in the document referred to by this DocumentReference. If no document exists
-   * yet, the update will fail.
+   * Updates fields in the document referred to by this {@code DocumentReference}. If no document
+   * exists yet, the update will fail.
    *
    * @param fieldPath The first field to update.
    * @param value The first value
@@ -227,7 +216,6 @@ public class DocumentReference {
    * @return A Task that will be resolved when the write finishes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> update(
       @NonNull FieldPath fieldPath, @Nullable Object value, Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
@@ -247,12 +235,11 @@ public class DocumentReference {
   }
 
   /**
-   * Deletes the document referred to by this DocumentReference.
+   * Deletes the document referred to by this {@code DocumentReference}.
    *
    * @return A Task that will be resolved when the delete completes.
    */
   @NonNull
-  @PublicApi
   public Task<Void> delete() {
     return firestore
         .getClient()
@@ -261,30 +248,28 @@ public class DocumentReference {
   }
 
   /**
-   * Reads the document referenced by this DocumentReference.
+   * Reads the document referenced by this {@code DocumentReference}.
    *
-   * @return A Task that will be resolved with the contents of the Document at this
-   *     DocumentReference.
+   * @return A Task that will be resolved with the contents of the Document at this {@code
+   *     DocumentReference}.
    */
   @NonNull
-  @PublicApi
   public Task<DocumentSnapshot> get() {
     return get(Source.DEFAULT);
   }
 
   /**
-   * Reads the document referenced by this DocumentReference.
+   * Reads the document referenced by this {@code DocumentReference}.
    *
    * <p>By default, {@code get()} attempts to provide up-to-date data when possible by waiting for
    * data from the server, but it may return cached data or fail if you are offline and the server
-   * cannot be reached. This behavior can be altered via the {@link Source} parameter.
+   * cannot be reached. This behavior can be altered via the {@code Source} parameter.
    *
    * @param source A value to configure the get behavior.
-   * @return A Task that will be resolved with the contents of the Document at this
-   *     DocumentReference.
+   * @return A Task that will be resolved with the contents of the Document at this {@code
+   *     DocumentReference}.
    */
   @NonNull
-  @PublicApi
   public Task<DocumentSnapshot> get(@NonNull Source source) {
     if (source == Source.CACHE) {
       return firestore
@@ -372,35 +357,33 @@ public class DocumentReference {
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference.
+   * Starts listening to the document referenced by this {@code DocumentReference}.
    *
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull EventListener<DocumentSnapshot> listener) {
     return addSnapshotListener(MetadataChanges.EXCLUDE, listener);
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference.
+   * Starts listening to the document referenced by this {@code DocumentReference}.
    *
    * @param executor The executor to use to call the listener.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Executor executor, @NonNull EventListener<DocumentSnapshot> listener) {
     return addSnapshotListener(executor, MetadataChanges.EXCLUDE, listener);
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference using an Activity-scoped
-   * listener.
+   * Starts listening to the document referenced by this {@code DocumentReference} using an
+   * Activity-scoped listener.
    *
    * <p>The listener will be automatically removed during {@link Activity#onStop}.
    *
@@ -409,14 +392,14 @@ public class DocumentReference {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Activity activity, @NonNull EventListener<DocumentSnapshot> listener) {
     return addSnapshotListener(activity, MetadataChanges.EXCLUDE, listener);
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference with the given options.
+   * Starts listening to the document referenced by this {@code DocumentReference} with the given
+   * options.
    *
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
    *     DocumentSnapshot.getMetadata()} changed) should trigger snapshot events.
@@ -424,14 +407,14 @@ public class DocumentReference {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull MetadataChanges metadataChanges, @NonNull EventListener<DocumentSnapshot> listener) {
     return addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, metadataChanges, listener);
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference with the given options.
+   * Starts listening to the document referenced by this {@code DocumentReference} with the given
+   * options.
    *
    * @param executor The executor to use to call the listener.
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
@@ -440,7 +423,6 @@ public class DocumentReference {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Executor executor,
       @NonNull MetadataChanges metadataChanges,
@@ -452,8 +434,8 @@ public class DocumentReference {
   }
 
   /**
-   * Starts listening to the document referenced by this DocumentReference with the given options
-   * using an Activity-scoped listener.
+   * Starts listening to the document referenced by this {@code DocumentReference} with the given
+   * options using an Activity-scoped listener.
    *
    * <p>The listener will be automatically removed during {@link Activity#onStop}.
    *
@@ -464,7 +446,6 @@ public class DocumentReference {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  @PublicApi
   public ListenerRegistration addSnapshotListener(
       @NonNull Activity activity,
       @NonNull MetadataChanges metadataChanges,
@@ -479,7 +460,7 @@ public class DocumentReference {
   /**
    * Internal helper method to create add a snapshot listener.
    *
-   * <p>Will be Activity scoped if the activity parameter is non-null.
+   * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
    *
    * @param userExecutor The executor to use to call the listener.
    * @param options The options to use for this listen.

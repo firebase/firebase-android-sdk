@@ -15,34 +15,22 @@
 package com.google.firebase.firestore.local;
 
 import android.content.Context;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.remote.RemoteSerializer;
-import org.robolectric.RuntimeEnvironment;
 
 public final class PersistenceTestHelpers {
 
   /** A counter for generating unique database names. */
   private static int databaseNameCounter = 0;
 
-  public static SQLitePersistence openSQLitePersistence(String name) {
-    return openSQLitePersistence(name, LruGarbageCollector.Params.Default());
-  }
-
-  public static SQLitePersistence openSQLitePersistence(
-      String name, LruGarbageCollector.Params params) {
-    DatabaseId databaseId = DatabaseId.forProject("projectId");
-    LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
-    Context context = RuntimeEnvironment.application;
-    SQLitePersistence persistence =
-        new SQLitePersistence(context, name, databaseId, serializer, params);
-    persistence.start();
-    return persistence;
-  }
-
   public static String nextSQLiteDatabaseName() {
     return "test-" + databaseNameCounter++;
   }
 
+  public static SQLitePersistence createSQLitePersistence(String name) {
+    return openSQLitePersistence(name, LruGarbageCollector.Params.Default());
+  }
   /**
    * Creates and starts a new SQLitePersistence instance for testing.
    *
@@ -75,6 +63,17 @@ public final class PersistenceTestHelpers {
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     MemoryPersistence persistence =
         MemoryPersistence.createLruGcMemoryPersistence(params, serializer);
+    persistence.start();
+    return persistence;
+  }
+
+  private static SQLitePersistence openSQLitePersistence(
+      String name, LruGarbageCollector.Params params) {
+    DatabaseId databaseId = DatabaseId.forProject("projectId");
+    LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
+    Context context = ApplicationProvider.getApplicationContext();
+    SQLitePersistence persistence =
+        new SQLitePersistence(context, name, databaseId, serializer, params);
     persistence.start();
     return persistence;
   }

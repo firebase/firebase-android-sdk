@@ -16,9 +16,6 @@ package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.DoubleValue;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.NullValue;
 
 /** Interface used for all query filters. */
 public abstract class Filter {
@@ -28,7 +25,9 @@ public abstract class Filter {
     EQUAL("=="),
     GREATER_THAN(">"),
     GREATER_THAN_OR_EQUAL(">="),
-    ARRAY_CONTAINS("array_contains");
+    ARRAY_CONTAINS("array_contains"),
+    ARRAY_CONTAINS_ANY("array_contains_any"),
+    IN("in");
 
     private final String text;
 
@@ -39,32 +38,6 @@ public abstract class Filter {
     @Override
     public String toString() {
       return text;
-    }
-  }
-
-  /**
-   * Gets a Filter instance for the provided path, operator, and value.
-   *
-   * <p>Note that if the relation operator is EQUAL and the value is null or NaN, this will return
-   * the appropriate NullFilter or NaNFilter class instead of a RelationFilter.
-   */
-  public static Filter create(FieldPath path, Operator operator, FieldValue value) {
-    if (value.equals(NullValue.nullValue())) {
-      if (operator != Filter.Operator.EQUAL) {
-        throw new IllegalArgumentException(
-            "Invalid Query. You can only perform equality comparisons on null (via "
-                + "whereEqualTo()).");
-      }
-      return new NullFilter(path);
-    } else if (value.equals(DoubleValue.NaN)) {
-      if (operator != Filter.Operator.EQUAL) {
-        throw new IllegalArgumentException(
-            "Invalid Query. You can only perform equality comparisons on NaN (via "
-                + "whereEqualTo()).");
-      }
-      return new NaNFilter(path);
-    } else {
-      return new RelationFilter(path, operator, value);
     }
   }
 

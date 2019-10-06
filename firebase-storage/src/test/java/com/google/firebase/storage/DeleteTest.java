@@ -27,13 +27,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
 public class DeleteTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);
@@ -58,19 +57,12 @@ public class DeleteTest {
   @SuppressWarnings("ConstantConditions")
   @Test
   public void deleteBlob() throws Exception {
-    final MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("deleteBlob", false);
-
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("deleteBlob", false);
     Task<StringBuilder> task = TestCommandHelper.deleteBlob();
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("deleteBlob", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    assert (false);
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("deleteBlob", task.getResult().toString());
   }
 }

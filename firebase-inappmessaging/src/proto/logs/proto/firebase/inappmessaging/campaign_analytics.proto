@@ -1,0 +1,138 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Protos for firebase inappmessaging campaign analytics
+
+syntax = "proto2";
+
+package logs.proto.firebase.inappmessaging;
+
+option java_package = "com.google.firebase.inappmessaging";
+option java_multiple_files = true;
+option java_outer_classname = "FirebaseInAppMessagingCampaignAnalyticsProto";
+
+// Single unit of analytics data collected from firebase integrated 3P apps
+// using the inappmessaging SDK.
+// Every campaign analytics event that is logged will correspond to this object.
+message CampaignAnalytics {
+  // [required] the firebase project to which the client app belongs
+  optional string project_number = 1;
+  // [required] the campaign id of the campaign for which the analytics data
+  // is being recorded. Note: campaigns are project scoped.
+  optional string campaign_id = 2;
+
+  // [required] Additional metadata about the an application especially within
+  // the context of firebase project
+  optional ClientAppInfo client_app = 3;
+
+  // [required] The timestamp in milliseconds since epoch when the click was
+  // recorded. This time is recorded using the device clock.
+  optional int64 client_timestamp_millis = 4;
+
+  oneof event {
+    // The event type that's being recorded
+    EventType event_type = 5;
+
+    // Information about how the message was dismissed
+    DismissType dismiss_type = 6;
+
+    // Error encountered while rendering messages if any
+    RenderErrorReason render_error_reason = 7;
+
+    // Error encountered while fetching messages from FIAM backend if any
+    FetchErrorReason fetch_error_reason = 8;
+  }
+
+  // [required] The version of the FIAM SDK that's being used
+  optional string fiam_sdk_version = 9;
+
+  // ios only - number of times uploads for this log were retried.
+  // By default, this should be zero indicating that the log uploaded in first
+  // attempt. Every subsequent attempt should increment the previous
+  // attempt's count.
+  optional int32 engagementMetrics_delivery_retry_count = 10;
+}
+
+// Enum representing the kind of event that's being recorded
+enum EventType {
+  // Unspecified event type
+  UNKNOWN_EVENT_TYPE = 0;
+
+  // Event representing an impression of a message
+  IMPRESSION_EVENT_TYPE = 1;
+
+  // Event representing an action click on a message
+  CLICK_EVENT_TYPE = 2;
+}
+
+// A list of possible actions that can result in dismissal of a message.
+enum DismissType {
+  // Unspecified dismiss type
+  UNKNOWN_DISMISS_TYPE = 0;
+
+  // Message was dismissed automatically as done by the SDK after a timeout
+  AUTO = 1;
+
+  // Message was dismissed by clicking on cancel button or outside the message
+  CLICK = 2;
+
+  // Message was swiped
+  SWIPE = 3;
+}
+
+// A list of possible reasons that could lead to the SDK not showing the message
+// in the application.
+enum RenderErrorReason {
+  // Generic error
+  UNSPECIFIED_RENDER_ERROR = 0;
+
+  // Failure to fetch the image in the message
+  IMAGE_FETCH_ERROR = 1;
+
+  // Failure to display the message
+  IMAGE_DISPLAY_ERROR = 2;
+
+  // Image has an unsupported format
+  IMAGE_UNSUPPORTED_FORMAT = 3;
+}
+
+
+// A list of possible errors encountered while fetching messages from the FIAM
+// backend by the SDK
+enum FetchErrorReason {
+  // Generic error
+  UNSPECIFIED_FETCH_ERROR = 0;
+
+  // Errors related to any server-side errors (5xx).
+  SERVER_ERROR = 1;
+
+  // Errors related to any client-side errors (4xx).
+  CLIENT_ERROR = 2;
+
+  // Errors related to the network on the client
+  NETWORK_ERROR = 3;
+}
+
+// Additional metadata about an app that is not provided by default
+message ClientAppInfo {
+  // Identifier for the application that has been registered with firebase.
+  // Contains pantheon project number, platform and the hash of the (package
+  // name or bundle id) fields in hex.
+  // [Version]:[Project Number]:[Platform]:[Hash(package_name/bundle_id)]
+  optional string google_app_id = 1;  // required.
+
+  // The Firebase Instance Id which is used to compute
+  // the distinct devices for which the metrics are recorded.
+  optional string firebase_instance_id = 2;
+}

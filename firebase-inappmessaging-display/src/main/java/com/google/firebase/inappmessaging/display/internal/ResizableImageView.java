@@ -17,9 +17,10 @@ package com.google.firebase.inappmessaging.display.internal;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import androidx.annotation.NonNull;
+import androidx.appcompat.widget.AppCompatImageView;
 
 /**
  * The purpose of this Image view is best explained in the SO post:
@@ -33,7 +34,7 @@ import android.util.DisplayMetrics;
  * @hide
  */
 // TODO (ashwinraghav) tests pending
-public class ResizableImageView extends android.support.v7.widget.AppCompatImageView {
+public class ResizableImageView extends AppCompatImageView {
   private int mDensityDpi;
 
   public ResizableImageView(Context context) {

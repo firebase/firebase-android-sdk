@@ -16,25 +16,23 @@ package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import android.support.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /**
- * A QuerySnapshot contains the results of a query. It can contain zero or more DocumentSnapshot
- * objects.
+ * A {@code QuerySnapshot} contains the results of a query. It can contain zero or more {@link
+ * DocumentSnapshot} objects.
  *
- * <p><b>Subclassing Note</b>: Firestore classes are not meant to be subclassed except for use in
- * test mocks. Subclassing is not supported in production code and new SDK releases may break code
- * that does so.
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
-@PublicApi
 public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
 
   private final Query originalQuery;
@@ -80,14 +78,12 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   }
 
   @NonNull
-  @PublicApi
   public Query getQuery() {
     return originalQuery;
   }
 
-  /** @return The metadata for this document snapshot. */
+  /** @return The metadata for this query snapshot. */
   @NonNull
-  @PublicApi
   public SnapshotMetadata getMetadata() {
     return metadata;
   }
@@ -101,7 +97,6 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
    * @return The list of document changes since the last snapshot.
    */
   @NonNull
-  @PublicApi
   public List<DocumentChange> getDocumentChanges() {
     return getDocumentChanges(MetadataChanges.EXCLUDE);
   }
@@ -115,7 +110,6 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
    * @return The list of document changes since the last snapshot.
    */
   @NonNull
-  @PublicApi
   public List<DocumentChange> getDocumentChanges(@NonNull MetadataChanges metadataChanges) {
     if (MetadataChanges.INCLUDE.equals(metadataChanges) && snapshot.excludesMetadataChanges()) {
       throw new IllegalArgumentException(
@@ -132,12 +126,11 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   }
 
   /**
-   * Returns the documents in this QuerySnapshot as a List in order of the query.
+   * Returns the documents in this {@code QuerySnapshot} as a List in order of the query.
    *
    * @return The list of documents.
    */
   @NonNull
-  @PublicApi
   public List<DocumentSnapshot> getDocuments() {
     List<DocumentSnapshot> res = new ArrayList<>(snapshot.getDocuments().size());
     for (com.google.firebase.firestore.model.Document doc : snapshot.getDocuments()) {
@@ -146,47 +139,42 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
     return res;
   }
 
-  /** Returns true if there are no documents in the QuerySnapshot. */
-  @PublicApi
+  /** Returns true if there are no documents in the {@code QuerySnapshot}. */
   public boolean isEmpty() {
     return snapshot.getDocuments().isEmpty();
   }
 
-  /** Returns the number of documents in the QuerySnapshot. */
-  @PublicApi
+  /** Returns the number of documents in the {@code QuerySnapshot}. */
   public int size() {
     return snapshot.getDocuments().size();
   }
 
   @Override
   @NonNull
-  @PublicApi
   public Iterator<QueryDocumentSnapshot> iterator() {
     return new QuerySnapshotIterator(snapshot.getDocuments().iterator());
   }
 
   /**
-   * Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as
-   * a list.
+   * Returns the contents of the documents in the {@code QuerySnapshot}, converted to the provided
+   * class, as a list.
    *
    * @param clazz The POJO type used to convert the documents in the list.
    */
   @NonNull
-  @PublicApi
   public <T> List<T> toObjects(@NonNull Class<T> clazz) {
     return toObjects(clazz, DocumentSnapshot.ServerTimestampBehavior.DEFAULT);
   }
 
   /**
-   * Returns the contents of the documents in the QuerySnapshot, converted to the provided class, as
-   * a list.
+   * Returns the contents of the documents in the {@code QuerySnapshot}, converted to the provided
+   * class, as a list.
    *
    * @param clazz The POJO type used to convert the documents in the list.
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
    */
   @NonNull
-  @PublicApi
   public <T> List<T> toObjects(
       @NonNull Class<T> clazz,
       @NonNull DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior) {

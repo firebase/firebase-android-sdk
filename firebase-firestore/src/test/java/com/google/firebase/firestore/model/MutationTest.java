@@ -30,6 +30,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
@@ -48,6 +49,7 @@ import com.google.firebase.firestore.model.value.StringValue;
 import com.google.firebase.firestore.model.value.TimestampValue;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
@@ -164,8 +166,8 @@ public class MutationTest {
         new Document(
             key("collection/key"),
             version(0),
-            expectedData,
-            Document.DocumentState.LOCAL_MUTATIONS);
+            Document.DocumentState.LOCAL_MUTATIONS,
+            expectedData);
     assertEquals(expectedDoc, transformedDoc);
   }
 
@@ -620,5 +622,90 @@ public class MutationTest {
     assertVersionTransitions(delete, docV3, mutationResult, docV7Deleted);
     assertVersionTransitions(delete, deletedV3, mutationResult, docV7Deleted);
     assertVersionTransitions(delete, null, mutationResult, docV7Deleted);
+  }
+
+  @Test
+  public void testNonTransformMutationBaseValue() {
+    Map<String, Object> data = map("foo", "foo");
+    Document baseDoc = doc("collection/key", 0, data);
+
+    Mutation set = setMutation("collection/key", map("foo", "bar"));
+    assertNull(set.extractBaseValue(baseDoc));
+
+    Mutation patch = patchMutation("collection/key", map("foo", "bar"));
+    assertNull(patch.extractBaseValue(baseDoc));
+
+    Mutation delete = deleteMutation("collection/key");
+    assertNull(delete.extractBaseValue(baseDoc));
+  }
+
+  @Test
+  public void testServerTimestampBaseValue() {
+    Map<String, Object> allValues = map("time", "foo");
+    allValues.put("nested", new HashMap<>(allValues));
+    Document baseDoc = doc("collection/key", 0, allValues);
+
+    Map<String, Object> allTransforms = map("time", FieldValue.serverTimestamp());
+    allTransforms.put("nested", new HashMap<>(allTransforms));
+
+    // Server timestamps are idempotent and don't have base values.
+    Mutation transformMutation = transformMutation("collection/key", allTransforms);
+    assertNull(transformMutation.extractBaseValue(baseDoc));
+  }
+
+  @Test
+  public void testNumericIncrementBaseValue() {
+    Map<String, Object> allValues =
+        map("ignore", "foo", "double", 42.0, "long", 42, "string", "foo", "map", map());
+    allValues.put("nested", new HashMap<>(allValues));
+    Document baseDoc = doc("collection/key", 0, allValues);
+
+    Map<String, Object> allTransforms =
+        map(
+            "double",
+            FieldValue.increment(1),
+            "long",
+            FieldValue.increment(1),
+            "string",
+            FieldValue.increment(1),
+            "map",
+            FieldValue.increment(1),
+            "missing",
+            FieldValue.increment(1));
+    allTransforms.put("nested", new HashMap<>(allTransforms));
+
+    Mutation transformMutation = transformMutation("collection/key", allTransforms);
+    ObjectValue baseValue = transformMutation.extractBaseValue(baseDoc);
+
+    com.google.firebase.firestore.model.value.FieldValue expected =
+        wrap(
+            map(
+                "double",
+                42.0,
+                "long",
+                42,
+                "string",
+                0,
+                "map",
+                0,
+                "missing",
+                0,
+                "nested",
+                map("double", 42.0, "long", 42, "string", 0, "map", 0, "missing", 0)));
+    assertEquals(expected, baseValue);
+  }
+
+  @Test
+  public void testIncrementTwice() {
+    Document baseDoc = doc("collection/key", 0, map("sum", "0"));
+
+    Map<String, Object> increment = map("sum", FieldValue.increment(1));
+    Mutation transformMutation = transformMutation("collection/key", increment);
+
+    MaybeDocument mutatedDoc =
+        transformMutation.applyToLocalView(baseDoc, baseDoc, Timestamp.now());
+    mutatedDoc = transformMutation.applyToLocalView(mutatedDoc, baseDoc, Timestamp.now());
+
+    assertEquals(wrap(2L), ((Document) mutatedDoc).getField(field("sum")));
   }
 }

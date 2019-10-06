@@ -18,8 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
 import java.util.Date;
 
 /**
@@ -35,10 +34,9 @@ import java.util.Date;
  *     https://github.com/google/protobuf/blob/master/src/google/protobuf/timestamp.proto">The
  *     reference timestamp definition</a>
  */
-@PublicApi
 public final class Timestamp implements Comparable<Timestamp>, Parcelable {
 
-  @PublicApi @NonNull
+  @NonNull
   public static final Parcelable.Creator<Timestamp> CREATOR =
       new Parcelable.Creator<Timestamp>() {
         @Override
@@ -61,21 +59,19 @@ public final class Timestamp implements Comparable<Timestamp>, Parcelable {
    *     Negative second values with fractions must still have non-negative nanoseconds values that
    *     count forward in time. Must be from 0 to 999,999,999 inclusive.
    */
-  @PublicApi
   public Timestamp(long seconds, int nanoseconds) {
     validateRange(seconds, nanoseconds);
     this.seconds = seconds;
     this.nanoseconds = nanoseconds;
   }
 
-  protected Timestamp(Parcel in) {
+  protected Timestamp(@NonNull Parcel in) {
     this.seconds = in.readLong();
     this.nanoseconds = in.readInt();
   }
 
   /** Creates a new timestamp from the given date. */
-  @PublicApi
-  public Timestamp(Date date) {
+  public Timestamp(@NonNull Date date) {
     long millis = date.getTime();
     long seconds = millis / 1000;
     int nanoseconds = (int) (millis % 1000) * 1000000;
@@ -89,26 +85,22 @@ public final class Timestamp implements Comparable<Timestamp>, Parcelable {
   }
 
   /** Creates a new timestamp with the current date, with millisecond precision. */
-  @PublicApi
   @NonNull
   public static Timestamp now() {
     return new Timestamp(new Date());
   }
 
   /** Returns the seconds part of the timestamp. */
-  @PublicApi
   public long getSeconds() {
     return seconds;
   }
 
   /** Returns the sub-second part of the timestamp, in nanoseconds. */
-  @PublicApi
   public int getNanoseconds() {
     return nanoseconds;
   }
 
   /** Returns a new Date corresponding to this timestamp. This may lose precision. */
-  @PublicApi
   @NonNull
   public Date toDate() {
     return new Date(seconds * 1000 + (nanoseconds / 1000000));
@@ -120,14 +112,13 @@ public final class Timestamp implements Comparable<Timestamp>, Parcelable {
   }
 
   @Override
-  public void writeToParcel(Parcel dest, int flags) {
+  public void writeToParcel(@NonNull Parcel dest, int flags) {
     dest.writeLong(this.seconds);
     dest.writeInt(this.nanoseconds);
   }
 
   @Override
-  @PublicApi
-  public int compareTo(Timestamp other) {
+  public int compareTo(@NonNull Timestamp other) {
     if (seconds == other.seconds) {
       return Integer.signum(nanoseconds - other.nanoseconds);
     }

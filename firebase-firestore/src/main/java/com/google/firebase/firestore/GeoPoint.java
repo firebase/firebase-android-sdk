@@ -14,24 +14,21 @@
 
 package com.google.firebase.firestore;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.util.Util;
 
-/** Immutable class representing a GeoPoint in Firestore */
-@PublicApi
+/** Immutable class representing a {@code GeoPoint} in Cloud Firestore */
 public class GeoPoint implements Comparable<GeoPoint> {
   private final double latitude;
   private final double longitude;
 
   /**
-   * Construct a new GeoPoint using the provided latitude and longitude values.
+   * Construct a new {@code GeoPoint} using the provided latitude and longitude values.
    *
-   * @param latitude The latitude of this GeoPoint in the range [-90, 90].
-   * @param longitude The longitude of this GeoPoint in the range [-180, 180].
+   * @param latitude The latitude of this {@code GeoPoint} in the range [-90, 90].
+   * @param longitude The longitude of this {@code GeoPoint} in the range [-180, 180].
    */
-  @PublicApi
   public GeoPoint(double latitude, double longitude) {
     if (Double.isNaN(latitude) || latitude < -90 || latitude > 90) {
       throw new IllegalArgumentException("Latitude must be in the range of [-90, 90]");
@@ -43,20 +40,17 @@ public class GeoPoint implements Comparable<GeoPoint> {
     this.longitude = longitude;
   }
 
-  /** @return The latitude value of this GeoPoint. */
-  @PublicApi
+  /** @return The latitude value of this {@code GeoPoint}. */
   public double getLatitude() {
     return latitude;
   }
 
-  /** @return The longitude value of this GeoPoint. */
-  @PublicApi
+  /** @return The longitude value of this {@code GeoPoint}. */
   public double getLongitude() {
     return longitude;
   }
 
   @Override
-  @PublicApi
   public int compareTo(@NonNull GeoPoint other) {
     int comparison = Util.compareDoubles(latitude, other.latitude);
     if (comparison == 0) {

@@ -47,7 +47,7 @@
             ]
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
               "query": {
@@ -64,7 +64,7 @@
             }
           }
         },
-        "expect": [
+        "expectedSnapshotEvents": [
           {
             "query": {
               "path": "collection",
@@ -134,7 +134,7 @@
           "version": 2000,
           "targetIds": []
         },
-        "expect": [
+        "expectedSnapshotEvents": [
           {
             "query": {
               "path": "collection",
@@ -191,7 +191,7 @@
             ]
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
               "query": {
@@ -219,7 +219,7 @@
           "docs": [
             {
               "key": "collection/a",
-              "version": 0,
+              "version": 1000,
               "value": {
                 "key": "a",
                 "sort": 2
@@ -252,15 +252,15 @@
           [
             2
           ],
-          "resume-token-1000"
+          "resume-token-1002"
         ]
       },
       {
         "watchSnapshot": {
-          "version": 1000,
+          "version": 1002,
           "targetIds": []
         },
-        "expect": [
+        "expectedSnapshotEvents": [
           {
             "query": {
               "path": "collection",
@@ -287,7 +287,7 @@
               },
               {
                 "key": "collection/a",
-                "version": 0,
+                "version": 1000,
                 "value": {
                   "key": "a",
                   "sort": 2
@@ -318,7 +318,7 @@
             ]
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {}
         }
       },
@@ -343,7 +343,7 @@
             ]
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
               "query": {
@@ -356,11 +356,11 @@
                   ]
                 ]
               },
-              "resumeToken": "resume-token-1000"
+              "resumeToken": "resume-token-1002"
             }
           }
         },
-        "expect": [
+        "expectedSnapshotEvents": [
           {
             "query": {
               "path": "collection",
@@ -387,7 +387,7 @@
               },
               {
                 "key": "collection/a",
-                "version": 0,
+                "version": 1000,
                 "value": {
                   "key": "a",
                   "sort": 2
@@ -422,15 +422,15 @@
           [
             2
           ],
-          "resume-token-1000"
+          "resume-token-1002"
         ]
       },
       {
         "watchSnapshot": {
-          "version": 1000,
+          "version": 1002,
           "targetIds": []
         },
-        "expect": [
+        "expectedSnapshotEvents": [
           {
             "query": {
               "path": "collection",

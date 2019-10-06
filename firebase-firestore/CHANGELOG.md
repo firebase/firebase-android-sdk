@@ -1,4 +1,71 @@
 # Unreleased
+- [feature] Added an `addSnapshotsInSyncListener()` method to 
+  `FirebaseFirestore`that notifies you when all your snapshot listeners are
+  in sync with each other.
+
+# 21.1.2
+- [fixed] Fixed a crash that could occur when a large number of documents were
+  removed during garbage collection of the persistence cache.
+
+# 21.1.1
+- [fixed] Addressed a regression in 21.1.0 that caused the crash: "Cannot add
+  document to the RemoteDocumentCache with a read time of zero".
+
+# 21.1.0
+- [feature] Added a `terminate()` method to `FirebaseFirestore` which
+  terminates the instance, releasing any held resources. Once it completes, you
+  can optionally call `clearPersistence()` to wipe persisted Firestore data from
+  disk.
+- [feature] Added a `waitForPendingWrites()` method to `FirebaseFirestore`
+  which allows users to wait on a promise that resolves when all pending writes
+  are acknowledged by the Firestore backend.
+- [changed] Transactions now perform exponential backoff before retrying. This
+  means transactions on highly contended documents are more likely to succeed.
+
+# 21.0.0
+- [changed] Transactions are now more flexible. Some sequences of operations
+  that were previously incorrectly disallowed are now allowed. For example,
+  after reading a document that doesn't exist, you can now set it multiple
+  times successfully in a transaction.
+- [fixed] Fixed an issue where query results were temporarily missing documents
+  that previously had not matched but had been updated to now match the
+  query (#155).
+
+# 20.2.0
+- [feature] Added a `@DocumentId` annotation which can be used on a
+  `DocumentReference` or `String` property in a POJO to indicate that the SDK
+  should automatically populate it with the document's ID.
+- [fixed] Fixed an internal assertion that was triggered when an update
+  with a `FieldValue.serverTimestamp()` and an update with a
+  `FieldValue.increment()` were pending for the same document (#491).
+- [changed] Improved performance of queries with large result sets.
+- [changed] Improved performance for queries with filters that only return a
+  small subset of the documents in a collection.
+- [changed] Instead of failing silently, Firestore now crashes the client app
+  if it fails to load SSL Ciphers. To avoid these crashes, you must bundle 
+  Conscrypt to support non-GMSCore devices on Android API level 19 (KitKat) or
+  earlier (for more information, refer to
+  https://github.com/grpc/grpc-java/blob/master/SECURITY.md#tls-on-android).
+- [changed] Failed transactions now fail with the exception from the last 
+  attempt instead of always failing with an exception with code `ABORTED`.
+
+# 20.1.0
+- [changed] SSL and gRPC initialization now happens on a separate thread, which
+  reduces the time taken to produce the first query result.
+- [feature] Added `clearPersistence()`, which clears the persistent storage
+  including pending writes and cached documents. This is intended to help
+  write reliable tests (https://github.com/firebase/firebase-js-sdk/issues/449).
+
+# 20.0.0
+- [changed] Migrated from the Android Support Libraries to the Jetpack
+  (AndroidX) Libraries.
+
+# 19.0.2
+- [fixed] Updated gRPC to 1.21.0. A bug in the prior version would occasionally
+  cause a crash if a network state change occurred concurrently with an RPC.
+  (#428)
+
+# 19.0.1
 - [fixed] Fixed an issue that prevented schema migrations for clients with
   large offline datasets (#370).
 

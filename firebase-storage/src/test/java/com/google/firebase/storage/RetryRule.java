@@ -18,13 +18,15 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+/** Retries tests that fail due to the test harnesses' unpredictable threading behavior. */
 public class RetryRule implements TestRule {
-  private int retryCount;
+  private final int retryCount;
 
   public RetryRule(int retryCount) {
     this.retryCount = retryCount;
   }
 
+  @Override
   public Statement apply(final Statement base, Description description) {
     return new Statement() {
       @Override

@@ -14,7 +14,7 @@
 package com.google.firebase.ktx
 
 import android.content.Context
-import android.support.annotation.Keep
+import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.components.Component
@@ -57,7 +57,6 @@ internal const val LIBRARY_NAME: String = "fire-core-ktx"
 class FirebaseCommonKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> {
         return listOf(
-                LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
-                LibraryVersionComponent.create("kotlin", BuildConfig.KOTLIN_VERSION))
+                LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
     }
 }

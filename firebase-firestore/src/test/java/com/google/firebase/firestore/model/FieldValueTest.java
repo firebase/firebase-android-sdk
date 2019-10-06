@@ -17,6 +17,7 @@ package com.google.firebase.firestore.model;
 import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.dbId;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.value.BlobValue;
 import com.google.firebase.firestore.model.value.BooleanValue;
 import com.google.firebase.firestore.model.value.DoubleValue;
@@ -83,6 +85,21 @@ public class FieldValueTest {
     assertNull(obj.get(field("foo.a.b")));
     assertNull(obj.get(field("bar")));
     assertNull(obj.get(field("bar.a")));
+  }
+
+  @Test
+  public void testExtractsFieldMask() {
+    FieldValue val =
+        wrapObject(
+            "a",
+            "b",
+            "map",
+            map("a", 1, "b", true, "c", "string", "nested", map("d", "e")),
+            "emptymap",
+            map());
+    assertTrue(val instanceof ObjectValue);
+    FieldMask mask = ((ObjectValue) val).getFieldMask();
+    assertEquals(fieldMask("a", "map.a", "map.b", "map.c", "map.nested.d", "emptymap"), mask);
   }
 
   @Test

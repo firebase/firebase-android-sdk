@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
@@ -39,15 +39,22 @@ public abstract class ArrayTransformOperation implements TransformOperation {
   }
 
   @Override
-  public FieldValue applyToLocalView(FieldValue previousValue, Timestamp localWriteTime) {
+  public FieldValue applyToLocalView(@Nullable FieldValue previousValue, Timestamp localWriteTime) {
     return apply(previousValue);
   }
 
   @Override
-  public FieldValue applyToRemoteDocument(FieldValue previousValue, FieldValue transformResult) {
+  public FieldValue applyToRemoteDocument(
+      @Nullable FieldValue previousValue, FieldValue transformResult) {
     // The server just sends null as the transform result for array operations, so we have to
     // calculate a result the same as we do for local applications.
     return apply(previousValue);
+  }
+
+  @Override
+  @Nullable
+  public FieldValue computeBaseValue(@Nullable FieldValue currentValue) {
+    return null; // Array transforms are idempotent and don't require a base value.
   }
 
   @Override
@@ -73,7 +80,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
   }
 
   /** Applies this ArrayTransformOperation against the specified previousValue. */
-  protected abstract ArrayValue apply(FieldValue previousValue);
+  protected abstract ArrayValue apply(@Nullable FieldValue previousValue);
 
   /**
    * Inspects the provided value, returning an ArrayList copy of the internal array if it's an
@@ -88,11 +95,6 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     }
   }
 
-  @Override
-  public boolean isIdempotent() {
-    return true;
-  }
-
   /** An array union transform operation. */
   public static class Union extends ArrayTransformOperation {
     public Union(List<FieldValue> elements) {
@@ -100,7 +102,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     }
 
     @Override
-    protected ArrayValue apply(FieldValue previousValue) {
+    protected ArrayValue apply(@Nullable FieldValue previousValue) {
       ArrayList<FieldValue> result = coercedFieldValuesArray(previousValue);
       for (FieldValue element : getElements()) {
         if (!result.contains(element)) {
@@ -118,7 +120,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     }
 
     @Override
-    protected ArrayValue apply(FieldValue previousValue) {
+    protected ArrayValue apply(@Nullable FieldValue previousValue) {
       ArrayList<FieldValue> result = coercedFieldValuesArray(previousValue);
       for (FieldValue element : getElements()) {
         result.removeAll(Collections.singleton(element));

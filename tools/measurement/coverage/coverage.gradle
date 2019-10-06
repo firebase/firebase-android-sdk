@@ -13,6 +13,7 @@
 // limitations under the License.
 
 
+import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import com.google.firebase.gradle.plugins.measurement.coverage.GenerateMeasurementsTask
 import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
 
@@ -21,7 +22,6 @@ task generateCoverageMeasurements(type: GenerateMeasurementsTask) {
     description 'Runs checkCoverage task in all projects and calculates coverage percents.'
     group 'Measurements'
 
-    dependsOn rootProject.allprojects.collect { it.tasks.withType(JacocoReport) }.flatten()
     reportFile = file("$buildDir/coverage-report.json")
 }
 
@@ -30,6 +30,6 @@ task uploadCoverageMeasurements(type: UploadMeasurementsTask) {
     group 'Measurements'
 
     dependsOn generateCoverageMeasurements
-    reportFile = file("$buildDir/coverage-report.json")
+    reportFiles = files("$buildDir/coverage-report.json")
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }

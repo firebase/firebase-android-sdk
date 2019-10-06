@@ -108,12 +108,9 @@ class PublishingPlugin implements Plugin<Project> {
                     publications {
                         mavenAar(MavenPublication) {
                             from sub.components.android
-                            // TODO(vkryachko): move it to a more appropriate place once the
-                            // FirebaseLibraryPlugin migration is complete
-                            if (sub.name == 'ktx') {
-                                artifactId = "$sub.parent.name-ktx"
-                                groupId = sub.parent.group
-                            }
+
+                            artifactId = firebaseLibrary.artifactId.get()
+                            groupId = firebaseLibrary.groupId.get()
                             if (firebaseLibrary.publishSources) {
                                 artifact sub.tasks.create("sourcesJar", Jar) {
                                     from sub.android.sourceSets.main.java.srcDirs
@@ -143,8 +140,10 @@ class PublishingPlugin implements Plugin<Project> {
             def buildMavenZip = project.task('buildMavenZip', type: Zip) {
                 dependsOn publishProjectsToBuildDir
 
+                archiveFileName = 'm2repository.zip'
+                destinationDirectory = project.buildDir
+
                 from "$project.buildDir/m2repository"
-                archiveName "$project.buildDir/m2repository.zip"
             }
 
             def info = project.task('publishPrintInfo') {

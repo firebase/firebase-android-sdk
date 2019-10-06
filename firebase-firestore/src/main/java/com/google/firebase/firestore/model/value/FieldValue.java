@@ -16,9 +16,9 @@ package com.google.firebase.firestore.model.value;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.util.Util;
-import javax.annotation.Nullable;
 
 /**
  * A field value represents a data type as stored by Firestore.
@@ -62,15 +62,6 @@ public abstract class FieldValue implements Comparable<FieldValue> {
    */
   @Nullable
   public abstract Object value();
-
-  /**
-   * Converts a FieldValue into the value that users will see in document snapshots using the
-   * provided deserialization options.
-   */
-  @Nullable
-  public Object value(FieldValueOptions options) {
-    return value();
-  }
 
   @Override
   public abstract boolean equals(Object o);

@@ -32,9 +32,9 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.UserManager;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.common.base.Defaults;
 import com.google.firebase.auth.FirebaseAuth;
@@ -142,9 +142,10 @@ public class FirebaseAppTest {
 
     // After sorting the user agents are expected to be {"fire-android/", "fire-auth/x.y.z",
     // "fire-core/x.y.z", "test-component/1.2.3"}
-    assertThat(actualUserAgent[0]).contains("fire-android");
-    assertThat(actualUserAgent[1]).contains("fire-auth");
-    assertThat(actualUserAgent[2]).contains("fire-core");
+    assertThat(actualUserAgent[0]).contains("fire-analytics");
+    assertThat(actualUserAgent[1]).contains("fire-android");
+    assertThat(actualUserAgent[2]).contains("fire-auth");
+    assertThat(actualUserAgent[3]).contains("fire-core");
   }
 
   @Test
@@ -348,18 +349,18 @@ public class FirebaseAppTest {
 
     Context appContext = mockContext.getApplicationContext();
 
-    assertThat(firebaseApp.get(Context.class)).isSameAs(appContext);
-    assertThat(firebaseApp.get(FirebaseApp.class)).isSameAs(firebaseApp);
+    assertThat(firebaseApp.get(Context.class)).isSameInstanceAs(appContext);
+    assertThat(firebaseApp.get(FirebaseApp.class)).isSameInstanceAs(firebaseApp);
 
     TestComponentOne one = firebaseApp.get(TestComponentOne.class);
     assertThat(one).isNotNull();
-    assertThat(one.getContext()).isSameAs(appContext);
+    assertThat(one.getContext()).isSameInstanceAs(appContext);
 
     TestComponentTwo two = firebaseApp.get(TestComponentTwo.class);
     assertThat(two).isNotNull();
-    assertThat(two.getApp()).isSameAs(firebaseApp);
-    assertThat(two.getOptions()).isSameAs(firebaseApp.getOptions());
-    assertThat(two.getOne()).isSameAs(one);
+    assertThat(two.getApp()).isSameInstanceAs(firebaseApp);
+    assertThat(two.getOptions()).isSameInstanceAs(firebaseApp.getOptions());
+    assertThat(two.getOne()).isSameInstanceAs(one);
   }
 
   @Test

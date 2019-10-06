@@ -44,8 +44,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import junit.framework.Assert;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,7 +62,7 @@ import org.robolectric.shadows.ShadowNetworkInfo;
 /** Tests for {@link FirebaseStorage}. */
 @SuppressWarnings("ConstantConditions")
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
 public class UploadTest {
 
   private static final String TEST_ASSET_ROOT = "assets/";
@@ -91,21 +91,13 @@ public class UploadTest {
   public void smallTextUpload() throws Exception {
     System.out.println("Starting test smallTextUpload.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("smallTextUpload", true);
-
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("smallTextUpload", true);
     Task<StringBuilder> task = TestUploadHelper.smallTextUpload();
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("smallTextUpload", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("smallTextUpload", task.getResult().toString());
   }
 
   @Test
@@ -137,33 +129,24 @@ public class UploadTest {
           taskException.set(exception);
         });
 
-    for (int i = 0; i < 300000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (taskException.get() != null) {
-        // Test the various exception accessors.
-        try {
-          task.getResult();
-          Assert.fail();
-        } catch (RuntimeExecutionException e) {
-          Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
-          // Task failed.
-        }
+    // TODO(mrschmidt): Lower the timeout
+    TestUtil.await(task, 300, TimeUnit.SECONDS);
 
-        try {
-          task.getResult(StorageException.class);
-          Assert.fail();
-        } catch (StorageException e) {
-          Assert.assertEquals(taskException.get().getCause(), e.getCause());
-          // Task failed.
-        }
-
-        Assert.assertEquals(taskException.get().getCause(), task.getException().getCause());
-
-        return;
-      }
-      Thread.sleep(1);
+    try {
+      task.getResult();
+      Assert.fail();
+    } catch (RuntimeExecutionException e) {
+      Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
     }
-    Assert.fail();
+
+    try {
+      task.getResult(StorageException.class);
+      Assert.fail();
+    } catch (StorageException e) {
+      Assert.assertEquals(taskException.get().getCause(), e.getCause());
+    }
+
+    Assert.assertEquals(taskException.get().getCause(), task.getException().getCause());
   }
 
   @Test
@@ -266,13 +249,7 @@ public class UploadTest {
 
     activityController.stop();
 
-    for (int i = 0; i < 5000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (Tasks.whenAllComplete(pendingTasks).isComplete()) {
-        break;
-      }
-      Thread.sleep(1);
-    }
+    TestUtil.await(Tasks.whenAll(pendingTasks), 5, TimeUnit.SECONDS);
 
     Assert.assertTrue(
         StorageTaskManager.getInstance().getUploadTasksUnder(storage.getParent()).isEmpty());
@@ -282,69 +259,50 @@ public class UploadTest {
   public void cancelledUpload() throws Exception {
     System.out.println("Starting test cancelledUpload.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("cancelledUpload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("cancelledUpload", true);
     Task<StringBuilder> task = TestUploadHelper.byteUploadCancel();
 
-    for (int i = 0; i < 500000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("cancelledUpload", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+    // TODO(mrschmidt): Lower the timeout
+    TestUtil.await(task, 500, TimeUnit.SECONDS);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("cancelledUpload", task.getResult().toString());
   }
 
   @Test
   public void uploadWithSpace() throws Exception {
     System.out.println("Starting test uploadWithSpace.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("uploadWithSpace", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("uploadWithSpace", true);
+    StorageReference storage =
+        FirebaseStorage.getInstance().getReference().child("hello world.txt");
+    Task<StringBuilder> task = TestUploadHelper.byteUpload(storage);
 
-    Task<StringBuilder> task = TestUploadHelper.uploadWithSpace();
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("uploadWithSpace", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("uploadWithSpace", task.getResult().toString());
   }
 
   @Test
   public void smallTextUpload2() throws Exception {
     System.out.println("Starting test smallTextUpload2.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("smallTextUpload2", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("smallTextUpload2", true);
 
     Task<StringBuilder> task = TestUploadHelper.smallTextUpload2();
-    for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("smallTextUpload2", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("smallTextUpload2", task.getResult().toString());
   }
 
   @Test
   public void fileUpload() throws Exception {
     System.out.println("Starting test fileUpload.");
 
-    final MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileUpload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileUpload", true);
 
     String filename = TEST_ASSET_ROOT + "image.jpg";
     ClassLoader classLoader = UploadTest.class.getClassLoader();
@@ -356,24 +314,18 @@ public class UploadTest {
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "image.jpg");
-    for (int i = 0; i < 5000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("fileUpload", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+
+    TestUtil.await(task, 5, TimeUnit.SECONDS);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("fileUpload", task.getResult().toString());
   }
 
   @Test
   public void emptyUpload() throws Exception {
     System.out.println("Starting test emptyUpload.");
 
-    final MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("emptyUpload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("emptyUpload", true);
 
     String filename = TEST_ASSET_ROOT + "empty.dat";
     ClassLoader classLoader = UploadTest.class.getClassLoader();
@@ -385,26 +337,34 @@ public class UploadTest {
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "empty.dat");
-    for (int i = 0; i < 5000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("emptyUpload", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+
+    TestUtil.await(task, 5, TimeUnit.SECONDS);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("emptyUpload", task.getResult().toString());
+  }
+
+  @Test
+  public void unicodeUpload() throws Exception {
+    System.out.println("Starting test unicodeUpload.");
+
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("uploadWithUnicode", true);
+    StorageReference storage = FirebaseStorage.getInstance().getReference().child("\\%:😊");
+    Task<StringBuilder> task = TestUploadHelper.byteUpload(storage);
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("uploadWithUnicode", task.getResult().toString());
   }
 
   @Test
   public void fileUploadWithPauseCancel() throws Exception {
     System.out.println("Starting test fileUploadWithPauseCancel.");
 
-    ResumableUploadCancelRequest.CANCEL_CALLED = false;
+    ResumableUploadCancelRequest.cancelCalled = false;
 
-    final MockConnectionFactory factory =
+    MockConnectionFactory factory =
         NetworkLayerMock.ensureNetworkMock("fileUploadWithPauseCancel", true);
 
     factory.setPauseRecord(4);
@@ -420,25 +380,19 @@ public class UploadTest {
 
     Task<StringBuilder> task =
         TestUploadHelper.fileUploadWithPauseCancel(factory.getSemaphore(), sourceFile);
+
     // This is 20 seconds due to a fairness bug where resumed tasks can be put at the end.
-    for (int i = 0; i < 20000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        TestUtil.verifyTaskStateChanges("fileUploadWithPauseCancel", task.getResult().toString());
-        Assert.assertTrue(ResumableUploadCancelRequest.CANCEL_CALLED);
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+    TestUtil.await(task, 20, TimeUnit.SECONDS);
+
+    TestUtil.verifyTaskStateChanges("fileUploadWithPauseCancel", task.getResult().toString());
+    Assert.assertTrue(ResumableUploadCancelRequest.cancelCalled);
   }
 
   @Test
   public void fileUploadWithPauseResume() throws Exception {
     System.out.println("Starting test fileUploadWithPauseResume.");
 
-    final MockConnectionFactory factory =
+    MockConnectionFactory factory =
         NetworkLayerMock.ensureNetworkMock("fileUploadWithPauseResume", true);
 
     factory.setPauseRecord(4);
@@ -454,24 +408,18 @@ public class UploadTest {
 
     Task<StringBuilder> task =
         TestUploadHelper.fileUploadWithPauseResume(factory.getSemaphore(), sourceFile);
+
     // This is 20 seconds due to a fairness bug where resumed tasks can be put at the end.
-    for (int i = 0; i < 20000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        TestUtil.verifyTaskStateChanges("fileUploadWithPauseResume", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+    TestUtil.await(task, 20, TimeUnit.SECONDS);
+
+    TestUtil.verifyTaskStateChanges("fileUploadWithPauseResume", task.getResult().toString());
   }
 
   @Test
   public void fileUploadWithQueueCancel() throws Exception {
     System.out.println("Starting test fileUploadWithQueueCancel.");
 
-    ResumableUploadCancelRequest.CANCEL_CALLED = false;
+    ResumableUploadCancelRequest.cancelCalled = false;
 
     final StringBuilder taskOutput = new StringBuilder();
     NetworkLayerMock.ensureNetworkMock("fileUploadWithPauseCancel", true);
@@ -485,46 +433,33 @@ public class UploadTest {
         RuntimeEnvironment.application.getApplicationContext().getContentResolver();
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
-    Semaphore semaphore = TestUploadHelper.fileUploadQueuedCancel(taskOutput, sourceFile);
-    for (int i = 0; i < 2000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (semaphore.tryAcquire(1, 1, TimeUnit.MILLISECONDS)) {
-        // success!
-        TestUtil.verifyTaskStateChanges("fileUploadWithQueueCancel", taskOutput.toString());
-        Assert.assertFalse(ResumableUploadCancelRequest.CANCEL_CALLED);
-        return;
-      }
-    }
-    Assert.fail();
+    Task<Void> task = TestUploadHelper.fileUploadQueuedCancel(taskOutput, sourceFile);
+
+    TestUtil.await(task, 2, TimeUnit.SECONDS);
+
+    TestUtil.verifyTaskStateChanges("fileUploadWithQueueCancel", taskOutput.toString());
+    Assert.assertFalse(ResumableUploadCancelRequest.cancelCalled);
   }
 
   @Test
   public void adaptiveChunking() throws Exception {
     System.out.println("Starting test adaptiveChunking.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("adaptiveChunking", false);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("adaptiveChunking", false);
 
     Task<StringBuilder> task = TestUploadHelper.adaptiveChunking();
-    for (int i = 0; i < 5000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("adaptiveChunking", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("adaptiveChunking", task.getResult().toString());
   }
 
   @Test
   public void fileUploadRecovery() throws Exception {
     System.out.println("Starting test fileUploadRecovery.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("fileUploadRecovery", false);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileUploadRecovery", false);
 
     String filename = TEST_ASSET_ROOT + "flubbertest.jpg";
     ClassLoader classLoader = UploadTest.class.getClassLoader();
@@ -536,24 +471,18 @@ public class UploadTest {
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
-    for (int i = 0; i < 5000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("fileUploadRecovery", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+
+    TestUtil.await(task, 5, TimeUnit.SECONDS);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("fileUploadRecovery", task.getResult().toString());
   }
 
   @Test
   public void fileUploadNoRecovery() throws Exception {
     System.out.println("Starting test fileUploadNoRecovery.");
 
-    final MockConnectionFactory factory =
+    MockConnectionFactory factory =
         NetworkLayerMock.ensureNetworkMock("fileUploadNoRecovery", false);
 
     String filename = TEST_ASSET_ROOT + "flubbertest.jpg";
@@ -566,39 +495,26 @@ public class UploadTest {
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
-    for (int i = 0; i < 5000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges("fileUploadNoRecovery", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+
+    TestUtil.await(task, 5, TimeUnit.SECONDS);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("fileUploadNoRecovery", task.getResult().toString());
   }
 
   @Test
   public void streamUploadWithInterruptions() throws InterruptedException {
     System.out.println("Starting test streamUploadWithInterruptions.");
 
-    final MockConnectionFactory factory =
+    MockConnectionFactory factory =
         NetworkLayerMock.ensureNetworkMock("streamUploadWithInterruptions", false);
 
     Task<StringBuilder> task = TestUploadHelper.streamUploadWithInterruptions();
-    for (int i = 0; i < 5000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
-      if (task.isComplete()) {
-        // success!
-        factory.verifyOldMock();
-        TestUtil.verifyTaskStateChanges(
-            "streamUploadWithInterruptions", task.getResult().toString());
-        return;
-      }
-      Thread.sleep(1);
-    }
-    Assert.fail();
+
+    TestUtil.await(task, 5, TimeUnit.SECONDS);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("streamUploadWithInterruptions", task.getResult().toString());
   }
 
   @Test
@@ -663,8 +579,7 @@ public class UploadTest {
   public void badConnectivitySmallUpload() throws Exception {
     System.out.println("Starting test badConnectivitySmallUpload.");
 
-    final MockConnectionFactory factory =
-        NetworkLayerMock.ensureNetworkMock("smallTextUpload", true);
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("smallTextUpload", true);
 
     ConnectivityManager connectivityManager =
         (ConnectivityManager)
@@ -693,17 +608,12 @@ public class UploadTest {
           });
 
       Task<StringBuilder> task = TestUploadHelper.smallTextUpload();
-      for (int i = 0; i < 300000; i++) {
-        Robolectric.flushForegroundThreadScheduler();
-        if (task.isComplete()) {
-          // success!
-          factory.verifyOldMock();
-          TestUtil.verifyTaskStateChanges("smallTextUpload", task.getResult().toString());
-          return;
-        }
-        Thread.sleep(1);
-      }
-      Assert.fail();
+
+      // TODO(mrschmidt): Lower the timeout
+      TestUtil.await(task, 300, TimeUnit.SECONDS);
+
+      factory.verifyOldMock();
+      TestUtil.verifyTaskStateChanges("smallTextUpload", task.getResult().toString());
     } finally {
       MockClockHelper.install(new MockClockHelper());
       Shadows.shadowOf(connectivityManager).setActiveNetworkInfo(originalNetwork);

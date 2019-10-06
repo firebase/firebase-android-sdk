@@ -16,7 +16,7 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import android.app.job.JobInfo;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.auto.value.AutoValue;
@@ -62,12 +62,20 @@ public abstract class SchedulerConfig {
 
   private static final long THIRTY_SECONDS = 30 * 1000;
 
+  private static final long ONE_SECOND = 1000;
+
   public static SchedulerConfig getDefault(Clock clock) {
     return SchedulerConfig.builder()
         .addConfig(
             Priority.DEFAULT,
             ConfigValue.builder()
                 .setDelta(THIRTY_SECONDS)
+                .setMaxAllowedDelay(TWENTY_FOUR_HOURS)
+                .build())
+        .addConfig(
+            Priority.HIGHEST,
+            ConfigValue.builder()
+                .setDelta(ONE_SECOND)
                 .setMaxAllowedDelay(TWENTY_FOUR_HOURS)
                 .build())
         .addConfig(

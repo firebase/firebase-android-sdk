@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteStatement;
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
@@ -39,7 +40,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Nullable;
 
 /** A mutation queue for a specific user, backed by SQLite. */
 final class SQLiteMutationQueue implements MutationQueue {
@@ -237,6 +237,13 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   @Override
+  public int getHighestUnacknowledgedBatchId() {
+    return db.query("SELECT IFNULL(MAX(batch_id), ?) FROM mutations WHERE uid = ?")
+        .binding(MutationBatch.UNKNOWN, uid)
+        .firstValue(row -> row.getInt(0));
+  }
+
+  @Override
   public List<MutationBatch> getAllMutationBatches() {
     List<MutationBatch> result = new ArrayList<>();
     db.query(
@@ -263,6 +270,7 @@ final class SQLiteMutationQueue implements MutationQueue {
                 + "ORDER BY dm.batch_id")
         .binding(BLOB_MAX_INLINE_LENGTH, uid, path)
         .forEach(row -> result.add(decodeInlineMutationBatch(row.getInt(0), row.getBlob(1))));
+
     return result;
   }
 
@@ -342,6 +350,7 @@ final class SQLiteMutationQueue implements MutationQueue {
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
     List<MutationBatch> result = new ArrayList<>();
+
     db.query(
             "SELECT dm.batch_id, dm.path, SUBSTR(m.mutations, 1, ?) "
                 + "FROM document_mutations dm, mutations m "
@@ -354,9 +363,9 @@ final class SQLiteMutationQueue implements MutationQueue {
         .binding(BLOB_MAX_INLINE_LENGTH, uid, prefixPath, prefixSuccessorPath)
         .forEach(
             row -> {
-              // Ensure unique batches only. This works because the batches come out in order so we
-              // only need to ensure that the batchId of this row is different from the preceding
-              // one.
+              // Ensure unique batches only. This works because the batches come out in order so
+              // we only need to ensure that the batchId of this row is different from the
+              // preceding one.
               int batchId = row.getInt(0);
               int size = result.size();
               if (size > 0 && batchId == result.get(size - 1).getBatchId()) {

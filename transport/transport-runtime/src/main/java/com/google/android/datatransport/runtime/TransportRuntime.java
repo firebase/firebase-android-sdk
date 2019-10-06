@@ -15,11 +15,13 @@
 package com.google.android.datatransport.runtime;
 
 import android.content.Context;
-import android.support.annotation.RestrictTo;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
+import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkInitializer;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
@@ -36,7 +38,7 @@ import javax.inject.Singleton;
 @Singleton
 public class TransportRuntime implements TransportInternal {
 
-  private static volatile TransportRuntimeComponent INSTANCE = null;
+  private static volatile TransportRuntimeComponent instance = null;
 
   private final Clock eventClock;
   private final Clock uptimeClock;
@@ -48,11 +50,14 @@ public class TransportRuntime implements TransportInternal {
       @WallTime Clock eventClock,
       @Monotonic Clock uptimeClock,
       Scheduler scheduler,
-      Uploader uploader) {
+      Uploader uploader,
+      WorkInitializer initializer) {
     this.eventClock = eventClock;
     this.uptimeClock = uptimeClock;
     this.scheduler = scheduler;
     this.uploader = uploader;
+
+    initializer.ensureContextsScheduled();
   }
 
   /**
@@ -61,12 +66,14 @@ public class TransportRuntime implements TransportInternal {
    * <p>This method must be called before {@link #getInstance()}.
    */
   public static void initialize(Context applicationContext) {
-    if (INSTANCE == null) {
+    if (instance == null) {
       synchronized (TransportRuntime.class) {
-        INSTANCE =
-            DaggerTransportRuntimeComponent.builder()
-                .setApplicationContext(applicationContext)
-                .build();
+        if (instance == null) {
+          instance =
+              DaggerTransportRuntimeComponent.builder()
+                  .setApplicationContext(applicationContext)
+                  .build();
+        }
       }
     }
     // send warning
@@ -78,7 +85,7 @@ public class TransportRuntime implements TransportInternal {
    * @throws IllegalStateException if {@link #initialize(Context)} is not called before this method.
    */
   public static TransportRuntime getInstance() {
-    TransportRuntimeComponent localRef = INSTANCE;
+    TransportRuntimeComponent localRef = instance;
     if (localRef == null) {
       throw new IllegalStateException("Not initialized!");
     }
@@ -91,22 +98,33 @@ public class TransportRuntime implements TransportInternal {
       throws Throwable {
     TransportRuntimeComponent original;
     synchronized (TransportRuntime.class) {
-      original = INSTANCE;
-      INSTANCE = component;
+      original = instance;
+      instance = component;
     }
     try {
       callable.call();
     } finally {
       synchronized (TransportRuntime.class) {
-        INSTANCE = original;
+        instance = original;
       }
     }
   }
 
   /** Returns a {@link TransportFactory} for a given {@code backendName}. */
+  @Deprecated
   public TransportFactory newFactory(String backendName) {
     return new TransportFactoryImpl(
         TransportContext.builder().setBackendName(backendName).build(), this);
+  }
+
+  /** Returns a {@link TransportFactory} for a given {@code backendName}. */
+  public TransportFactory newFactory(Destination destination) {
+    return new TransportFactoryImpl(
+        TransportContext.builder()
+            .setBackendName(destination.getName())
+            .setExtras(destination.getExtras())
+            .build(),
+        this);
   }
 
   @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -115,10 +133,11 @@ public class TransportRuntime implements TransportInternal {
   }
 
   @Override
-  public void send(SendRequest request) {
+  public void send(SendRequest request, TransportScheduleCallback callback) {
     scheduler.schedule(
         request.getTransportContext().withPriority(request.getEvent().getPriority()),
-        convert(request));
+        convert(request),
+        callback);
   }
 
   private EventInternal convert(SendRequest request) {

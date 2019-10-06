@@ -15,19 +15,17 @@
 package com.google.firebase.storage;
 
 import android.app.Activity;
-import android.support.annotation.NonNull;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
 import java.util.concurrent.Executor;
 
 /**
  * Represents an asynchronous operation that can be paused, resumed and canceled. This task also
  * receives progress and other state change notifications.
  *
- * @param <TState> the type of state this operation returns in events.
+ * @param <StateT> the type of state this operation returns in events.
  */
 @SuppressWarnings("unused")
-@PublicApi
-public abstract class ControllableTask<TState> extends CancellableTask<TState> {
+public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
 
   /**
    * Attempts to pause the task. A paused task can later be resumed.
@@ -35,7 +33,6 @@ public abstract class ControllableTask<TState> extends CancellableTask<TState> {
    * @return true if this task was successfully paused or is in the process of being paused. Returns
    *     false if the task is already completed or in a state that cannot be paused.
    */
-  @PublicApi
   public abstract boolean pause();
 
   /**
@@ -44,11 +41,9 @@ public abstract class ControllableTask<TState> extends CancellableTask<TState> {
    * @return true if the task is successfully resumed or is in the process of being resumed. Returns
    *     false if the task is already completed or in a state that cannot be resumed.
    */
-  @PublicApi
   public abstract boolean resume();
 
   /** @return true if the task has been paused. */
-  @PublicApi
   public abstract boolean isPaused();
 
   /**
@@ -56,9 +51,9 @@ public abstract class ControllableTask<TState> extends CancellableTask<TState> {
    *
    * @return this Task
    */
-  @PublicApi
-  public abstract ControllableTask<TState> addOnPausedListener(
-      @NonNull OnPausedListener<? super TState> listener);
+  @NonNull
+  public abstract ControllableTask<StateT> addOnPausedListener(
+      @NonNull OnPausedListener<? super StateT> listener);
 
   /**
    * Adds a listener that is called when the Task becomes paused.
@@ -66,9 +61,9 @@ public abstract class ControllableTask<TState> extends CancellableTask<TState> {
    * @param executor the executor to use to call the listener
    * @return this Task
    */
-  @PublicApi
-  public abstract ControllableTask<TState> addOnPausedListener(
-      @NonNull Executor executor, @NonNull OnPausedListener<? super TState> listener);
+  @NonNull
+  public abstract ControllableTask<StateT> addOnPausedListener(
+      @NonNull Executor executor, @NonNull OnPausedListener<? super StateT> listener);
 
   /**
    * Adds a listener that is called when the Task becomes paused.
@@ -77,7 +72,7 @@ public abstract class ControllableTask<TState> extends CancellableTask<TState> {
    *     removed.
    * @return this Task
    */
-  @PublicApi
-  public abstract ControllableTask<TState> addOnPausedListener(
-      @NonNull Activity activity, @NonNull OnPausedListener<? super TState> listener);
+  @NonNull
+  public abstract ControllableTask<StateT> addOnPausedListener(
+      @NonNull Activity activity, @NonNull OnPausedListener<? super StateT> listener);
 }

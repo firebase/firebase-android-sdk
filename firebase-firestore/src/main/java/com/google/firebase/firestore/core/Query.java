@@ -16,6 +16,7 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.Document;
@@ -28,7 +29,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /** Represents the internal structure of a Firestore Query */
 public final class Query {
@@ -117,6 +117,18 @@ public final class Query {
     return collectionGroup != null;
   }
 
+  /**
+   * Returns true if this query does not specify any query constraints that could remove results.
+   */
+  public boolean matchesAllDocuments() {
+    return filters.isEmpty()
+        && limit == NO_LIMIT
+        && startAt == null
+        && endAt == null
+        && (getExplicitOrderBy().isEmpty()
+            || (getExplicitOrderBy().size() == 1 && getFirstOrderByField().isKeyField()));
+  }
+
   /** The filters on the documents returned by the query. */
   public List<Filter> getFilters() {
     return filters;
@@ -157,26 +169,31 @@ public final class Query {
   @Nullable
   public FieldPath inequalityField() {
     for (Filter filter : filters) {
-      if (filter instanceof RelationFilter) {
-        RelationFilter relationFilter = (RelationFilter) filter;
-        if (relationFilter.isInequality()) {
-          return relationFilter.getField();
+      if (filter instanceof FieldFilter) {
+        FieldFilter fieldfilter = (FieldFilter) filter;
+        if (fieldfilter.isInequality()) {
+          return fieldfilter.getField();
         }
       }
     }
     return null;
   }
 
-  public boolean hasArrayContainsFilter() {
+  /**
+   * Checks if any of the provided filter operators are included in the query and returns the first
+   * one that is, or null if none are.
+   */
+  @Nullable
+  public Operator findFilterOperator(List<Operator> operators) {
     for (Filter filter : filters) {
-      if (filter instanceof RelationFilter) {
-        RelationFilter relationFilter = (RelationFilter) filter;
-        if (relationFilter.getOperator() == Operator.ARRAY_CONTAINS) {
-          return true;
+      if (filter instanceof FieldFilter) {
+        Operator filterOp = ((FieldFilter) filter).getOperator();
+        if (operators.contains(filterOp)) {
+          return filterOp;
         }
       }
     }
-    return false;
+    return null;
   }
 
   /**
@@ -188,7 +205,7 @@ public final class Query {
   public Query filter(Filter filter) {
     hardAssert(!isDocumentQuery(), "No filter is allowed for document query");
     FieldPath newInequalityField = null;
-    if (filter instanceof RelationFilter && ((RelationFilter) filter).isInequality()) {
+    if (filter instanceof FieldFilter && ((FieldFilter) filter).isInequality()) {
       newInequalityField = filter.getField();
     }
 

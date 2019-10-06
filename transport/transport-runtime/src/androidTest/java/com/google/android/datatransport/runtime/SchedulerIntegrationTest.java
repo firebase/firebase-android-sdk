@@ -24,8 +24,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
@@ -35,6 +35,7 @@ import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.scheduling.locking.Locker;
+import java.nio.charset.Charset;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Rule;
@@ -73,6 +74,12 @@ public class SchedulerIntegrationTest {
                               .build())
                       .addConfig(
                           Priority.VERY_LOW,
+                          SchedulerConfig.ConfigValue.builder()
+                              .setDelta(500)
+                              .setMaxAllowedDelay(100000)
+                              .build())
+                      .addConfig(
+                          Priority.HIGHEST,
                           SchedulerConfig.ConfigValue.builder()
                               .setDelta(500)
                               .setMaxAllowedDelay(100000)
@@ -142,7 +149,7 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data".getBytes())
+            .setPayload("Data".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
@@ -165,7 +172,7 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data".getBytes())
+            .setPayload("Data".getBytes(Charset.defaultCharset()))
             .build();
     Event<String> stringEvent2 = Event.ofData("Data2");
     EventInternal expectedEvent2 =
@@ -173,7 +180,7 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data2".getBytes())
+            .setPayload("Data2".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     transport.send(stringEvent2);
@@ -203,7 +210,7 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data".getBytes())
+            .setPayload("Data".getBytes(Charset.defaultCharset()))
             .build();
     transport.send(stringEvent);
     TransportFactory factory2 = runtime.newFactory(secondBackendName);

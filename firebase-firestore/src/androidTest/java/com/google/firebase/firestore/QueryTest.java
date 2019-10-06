@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
@@ -23,12 +24,12 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -425,6 +427,78 @@ public class QueryTest {
 
     // NOTE: The backend doesn't currently support null, NaN, objects, or arrays, so there isn't
     // much of anything else interesting to test.
+  }
+
+  @Test
+  public void testQueriesCanUseInFilters() {
+    // TODO(in-queries): Re-enable in prod once feature lands in backend.
+    Assume.assumeTrue(isRunningAgainstEmulator());
+
+    Map<String, Object> docA = map("zip", 98101L);
+    Map<String, Object> docB = map("zip", 91102L);
+    Map<String, Object> docC = map("zip", 98103L);
+    Map<String, Object> docD = map("zip", asList(98101L));
+    Map<String, Object> docE = map("zip", asList("98101", map("zip", 98101L)));
+    Map<String, Object> docF = map("zip", map("code", 500L));
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF));
+
+    // Search for zips matching [98101, 98103].
+    QuerySnapshot snapshot = waitFor(collection.whereIn("zip", asList(98101L, 98103L)).get());
+    assertEquals(asList(docA, docC), querySnapshotToValues(snapshot));
+
+    // With objects.
+    snapshot = waitFor(collection.whereIn("zip", asList(map("code", 500L))).get());
+    assertEquals(asList(docF), querySnapshotToValues(snapshot));
+  }
+
+  @Test
+  public void testQueriesCanUseInFiltersWithDocIds() {
+    // TODO(in-queries): Re-enable in prod once feature lands in backend.
+    Assume.assumeTrue(isRunningAgainstEmulator());
+
+    Map<String, String> docA = map("key", "aa");
+    Map<String, String> docB = map("key", "ab");
+    Map<String, String> docC = map("key", "ba");
+    Map<String, String> docD = map("key", "bb");
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "aa", docA,
+            "ab", docB,
+            "ba", docC,
+            "bb", docD);
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+    QuerySnapshot docs =
+        waitFor(collection.whereIn(FieldPath.documentId(), asList("aa", "ab")).get());
+    assertEquals(asList(docA, docB), querySnapshotToValues(docs));
+  }
+
+  @Test
+  public void testQueriesCanUseArrayContainsAnyFilters() {
+    // TODO(in-queries): Re-enable in prod once feature lands in backend.
+    Assume.assumeTrue(isRunningAgainstEmulator());
+
+    Map<String, Object> docA = map("array", asList(42L));
+    Map<String, Object> docB = map("array", asList("a", 42L, "c"));
+    Map<String, Object> docC = map("array", asList(41.999, "42", map("a", asList(42))));
+    Map<String, Object> docD = map("array", asList(42L), "array2", asList("bingo"));
+    Map<String, Object> docE = map("array", asList(43L));
+    Map<String, Object> docF = map("array", asList(map("a", 42L)));
+    Map<String, Object> docG = map("array", 42L);
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF));
+
+    // Search for "array" to contain [42, 43].
+    QuerySnapshot snapshot =
+        waitFor(collection.whereArrayContainsAny("array", asList(42L, 43L)).get());
+    assertEquals(asList(docA, docB, docD, docE), querySnapshotToValues(snapshot));
+
+    // With objects.
+    snapshot = waitFor(collection.whereArrayContainsAny("array", asList(map("a", 42L))).get());
+    assertEquals(asList(docF), querySnapshotToValues(snapshot));
   }
 
   @Test

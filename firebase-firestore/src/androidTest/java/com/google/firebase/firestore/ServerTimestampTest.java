@@ -19,14 +19,14 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDoc
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior;
@@ -181,6 +181,12 @@ public class ServerTimestampTest {
     DocumentSnapshot previousSnapshot = accumulator.awaitRemoteEvent();
     verifyTimestampsAreResolved(previousSnapshot);
 
+    // The following update includes an update of the nested map "deep", which updates it to contain
+    // a single ServerTimestamp. As such, the update is split into two mutations: One that sets
+    // "deep" to an empty map and overwrites the previous ServerTimestamp value and a second
+    // transform that writes the new ServerTimestamp. This step in the test verifies that we can
+    // still access the old ServerTimestamp value (from `previousSnapshot`) even though it was
+    // removed in an intermediate step.
     waitFor(docRef.update(updateData));
     verifyTimestampsUsePreviousValue(accumulator.awaitLocalEvent(), previousSnapshot);
     verifyTimestampsAreResolved(accumulator.awaitRemoteEvent());
@@ -319,9 +325,7 @@ public class ServerTimestampTest {
     Exception e = waitForException(completion);
     assertNotNull(e);
     assertTrue(e instanceof FirebaseFirestoreException);
-    // TODO: This should be a NOT_FOUND, but right now we retry transactions on any
-    // error and so this turns into ABORTED instead.
-    assertEquals(Code.ABORTED, ((FirebaseFirestoreException) e).getCode());
+    assertEquals(Code.NOT_FOUND, ((FirebaseFirestoreException) e).getCode());
   }
 
   @Test

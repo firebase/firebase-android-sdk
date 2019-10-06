@@ -15,10 +15,12 @@
 
 package com.google.firebase.gradle.plugins.measurement.coverage
 
+import groovy.json.JsonOutput
+import java.text.SimpleDateFormat
 import org.gradle.api.DefaultTask
-import org.gradle.api.Project
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 
@@ -38,6 +40,8 @@ public class GenerateMeasurementsTask extends DefaultTask {
 
         assert project.tasks.withType(JacocoReport).size() == 1 : 'Found multiple tasks which generate coverage reports.'
         coverageTaskName = project.tasks.withType(JacocoReport)[0].name
+
+        dependsOn(findAllProductCoverageTasks())
     }
 
     @TaskAction
@@ -50,7 +54,11 @@ public class GenerateMeasurementsTask extends DefaultTask {
         }
     }
 
-    private def getCoveragePercentFromReport(_project) {
+    // This method was called in a closure in `generateJson` method. At runtime,
+    // the closure is bound to a synthetic child class of this class generated
+    // by Gradle.
+    // Need to mark as protected or public to be callable within the closure.
+    protected def getCoverageForProject(_project) {
         def path = "${_project.jacoco.reportsDir}/${coverageTaskName}/${coverageTaskName}.xml"
         try {
             def report = parser.parse(path)
@@ -68,63 +76,34 @@ public class GenerateMeasurementsTask extends DefaultTask {
         }
     }
 
-    private def trimProjectPathLeadingColon(path) {
-        return path.startsWith(':') ? path.drop(1) : path
+    private def findAllFirebaseProductProjects() {
+        return project.rootProject.allprojects.findAll {
+            it.extensions.findByType(FirebaseLibraryExtension) != null
+        }
+    }
+
+    private def findAllProductCoverageTasks() {
+        return findAllFirebaseProductProjects().collect {
+            it.tasks.withType(JacocoReport)
+        }.flatten()
     }
 
     private def generateJson(pullRequestNumber) {
-        def coverages = [:]
+        def now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())
+        def projects = findAllFirebaseProductProjects()
 
-        // TODO(yifany@): Consolidate mappings with apksize and iOS.
-        def sdkMap = [
-                'firebase-common': 0,
-                'firebase-common-ktx': 1,
-                'firebase-database': 2,
-                'firebase-database-collection': 3,
-                'firebase-firestore': 4,
-                'firebase-firestore-ktx': 5,
-                'firebase-functions': 6,
-                'firebase-inappmessaging-display': 7,
-                'firebase-storage': 8,
-                'firebase-datatransport': 9,
-
-                // 'firebase-common-ktx' and 'firebase-firestore-ktx' has been
-                // made a subproject of their corresponding java projects in PR
-                // #409 and #426. Old mappings are kept for backward
-                // compatibility reason.
-                'firebase-common:ktx': 10,
-                'firebase-firestore:ktx': 11
-        ]
-
-        for (Project p: project.rootProject.subprojects) {
-            def name = trimProjectPathLeadingColon(p.path)
-            if (name.startsWith('firebase')) {
-                def percent = getCoveragePercentFromReport(p)
-                if (sdkMap.containsKey(name)) {
-                    coverages[sdkMap[name]] = percent
-                } else {
-                    project.logger.warn("Find SDK with name: $name not defined in the SDK to ID mapping.")
-                }
-            }
+        def replacements = projects.collect {
+            [ it.path, pullRequestNumber, getCoverageForProject(it), now ]
         }
-
-        def replacements = coverages.collect {
-            "[$pullRequestNumber, $it.key, $it.value]"
-        }.join(", ")
 
         // TODO(yifany@): Better way of formatting json. No hard code names.
         def json = """
             {
                 tables: [
                     {
-                        table_name: "PullRequests",
-                        column_names: ["pull_request_id"],
-                        replace_measurements: [[$pullRequestNumber]],
-                    },
-                    {
-                        table_name: "Coverage2",
-                        column_names: ["pull_request_id", "sdk_id", "coverage_percent"],
-                        replace_measurements: [$replacements],
+                        table_name: "AndroidCodeCoverage",
+                        column_names: ["product_name", "pull_request_id", "coverage_total", "collection_time"],
+                        replace_measurements: ${JsonOutput.toJson(replacements)},
                     },
                 ],
             }

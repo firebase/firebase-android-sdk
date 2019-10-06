@@ -16,7 +16,7 @@
         android:gravity="center_horizontal"
         android:weightSum="@dimen/bannerWeightSum">
 
-        <android.support.constraint.ConstraintLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/banner_content_root"
             style="@style/FiamUI.Banner"
             android:layout_width="0dp"
@@ -74,7 +74,7 @@
                 app:layout_constraintVertical_bias="0.0"
                 tools:text="@string/placeholder_lorem_ipsum_short" />
 
-        </android.support.constraint.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </LinearLayout>
 

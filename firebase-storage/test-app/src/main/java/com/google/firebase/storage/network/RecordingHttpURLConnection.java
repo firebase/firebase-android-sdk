@@ -15,8 +15,8 @@
 package com.google.firebase.storage.network;
 
 import android.os.Build;
-import android.support.annotation.Nullable;
 import android.util.Base64;
+import androidx.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -51,6 +51,7 @@ public class RecordingHttpURLConnection extends HttpURLConnection {
     super(wrappedConnection.getURL());
     mWrappedConnection = wrappedConnection;
     mBuilder = builder;
+    mBuilder.append("\n<new>");
     mBuilder.append("\nUrl:").append(wrappedConnection.getURL().toString());
     this.injector = injector;
   }

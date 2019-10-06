@@ -15,11 +15,11 @@
 package com.google.firebase.inappmessaging.display.internal.layout;
 
 import android.content.Context;
-import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.FrameLayout;
+import androidx.annotation.RequiresApi;
 import com.google.firebase.inappmessaging.display.internal.layout.util.BackButtonHandler;
 
 /** @hide */

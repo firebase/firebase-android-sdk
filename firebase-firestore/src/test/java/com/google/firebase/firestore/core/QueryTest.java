@@ -31,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -157,6 +158,80 @@ public class QueryTest {
     // array with element
     document = doc("collection/1", 0, map("array", asList(1L, "2", 42L, map("a", asList(42L)))));
     assertTrue(query.matches(document));
+  }
+
+  @Test
+  public void testInFilters() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("zip", "in", asList(12345)));
+
+    Document document = doc("collection/1", 0, map("zip", 12345));
+    assertTrue(query.matches(document));
+
+    // Value matches in array.
+    document = doc("collection/1", 0, map("zip", asList(12345)));
+    assertFalse(query.matches(document));
+
+    // Non-type match.
+    document = doc("collection/1", 0, map("zip", "12345"));
+    assertFalse(query.matches(document));
+
+    // Nested match.
+    document = doc("collection/1", 0, map("zip", asList("12345", map("zip", 12345))));
+    assertFalse(query.matches(document));
+  }
+
+  @Test
+  public void testInFiltersWithObjectValues() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("zip", "in", asList(map("a", asList(42)))));
+
+    // Containing object in array.
+    Document document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
+    assertFalse(query.matches(document));
+
+    // Containing object.
+    document = doc("collection/1", 0, map("zip", map("a", asList(42))));
+    assertTrue(query.matches(document));
+  }
+
+  @Test
+  public void testArrayContainsAnyFilters() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("zip", "array-contains-any", asList(12345)));
+
+    Document document = doc("collection/1", 0, map("zip", asList(12345)));
+    assertTrue(query.matches(document));
+
+    // Value matches in non-array.
+    document = doc("collection/1", 0, map("zip", 12345));
+    assertFalse(query.matches(document));
+
+    // Non-type match.
+    document = doc("collection/1", 0, map("zip", asList("12345")));
+    assertFalse(query.matches(document));
+
+    // Nested match.
+    document = doc("collection/1", 0, map("zip", asList("12345", map("zip", asList(12345)))));
+    assertFalse(query.matches(document));
+  }
+
+  @Test
+  public void testArrayContainsAnyFiltersWithObjectValues() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("zip", "array-contains-any", asList(map("a", asList(42)))));
+
+    // Containing object in array.
+    Document document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
+    assertTrue(query.matches(document));
+
+    // Containing object.
+    document = doc("collection/1", 0, map("zip", map("a", asList(42))));
+    assertFalse(query.matches(document));
   }
 
   @Test
@@ -453,5 +528,29 @@ public class QueryTest {
     assertEquals(
         asList(orderBy("foo", "desc"), orderBy("bar", "asc"), orderBy(KEY_FIELD_NAME, "asc")),
         baseQuery.orderBy(orderBy("foo", "desc")).orderBy(orderBy("bar", "asc")).getOrderBy());
+  }
+
+  @Test
+  public void testMatchesAllDocuments() {
+    Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
+    assertTrue(baseQuery.matchesAllDocuments());
+
+    Query query = baseQuery.orderBy(orderBy("__name__"));
+    assertTrue(query.matchesAllDocuments());
+
+    query = baseQuery.orderBy(orderBy("foo"));
+    assertFalse(query.matchesAllDocuments());
+
+    query = baseQuery.filter(filter("foo", "==", "bar"));
+    assertFalse(query.matchesAllDocuments());
+
+    query = baseQuery.limit(1);
+    assertFalse(query.matchesAllDocuments());
+
+    query = baseQuery.startAt(new Bound(Collections.emptyList(), true));
+    assertFalse(query.matchesAllDocuments());
+
+    query = baseQuery.endAt(new Bound(Collections.emptyList(), true));
+    assertFalse(query.matchesAllDocuments());
   }
 }

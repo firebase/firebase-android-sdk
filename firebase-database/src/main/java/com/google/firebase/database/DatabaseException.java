@@ -14,14 +14,12 @@
 
 package com.google.firebase.database;
 
-import android.support.annotation.RestrictTo;
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.RestrictTo;
 
 /**
  * This error is thrown when the Firebase Database library is unable to operate on the input it has
  * been given.
  */
-@PublicApi
 public class DatabaseException extends RuntimeException {
 
   /**

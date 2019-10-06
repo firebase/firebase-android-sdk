@@ -14,11 +14,10 @@
 
 package com.google.firebase.storage;
 
-import com.google.firebase.annotations.PublicApi;
+import androidx.annotation.NonNull;
 
 /** A listener that is called periodically during execution of the {@link ControllableTask}. */
-@PublicApi
-public interface OnProgressListener<TProgress> {
-  @PublicApi
-  void onProgress(TProgress snapshot);
+public interface OnProgressListener<ProgressT> {
+
+  void onProgress(@NonNull ProgressT snapshot);
 }

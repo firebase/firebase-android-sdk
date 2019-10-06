@@ -16,9 +16,10 @@ package com.google.firebase.functions;
 
 import android.content.Context;
 import android.os.Handler;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.security.ProviderInstaller;
 import com.google.android.gms.security.ProviderInstaller.ProviderInstallListener;
@@ -127,7 +128,8 @@ public class FirebaseFunctions {
    * @param app The app for the Firebase project.
    * @param region The region for the HTTPS trigger, such as "us-central1".
    */
-  public static FirebaseFunctions getInstance(FirebaseApp app, String region) {
+  @NonNull
+  public static FirebaseFunctions getInstance(@NonNull FirebaseApp app, @NonNull String region) {
     Preconditions.checkNotNull(app, "You must call FirebaseApp.initializeApp first.");
     Preconditions.checkNotNull(region);
 
@@ -142,7 +144,8 @@ public class FirebaseFunctions {
    *
    * @param app The app for the Firebase project.
    */
-  public static FirebaseFunctions getInstance(FirebaseApp app) {
+  @NonNull
+  public static FirebaseFunctions getInstance(@NonNull FirebaseApp app) {
     return getInstance(app, "us-central1");
   }
 
@@ -151,17 +154,20 @@ public class FirebaseFunctions {
    *
    * @param region The region for the HTTPS trigger, such as "us-central1".
    */
-  public static FirebaseFunctions getInstance(String region) {
+  @NonNull
+  public static FirebaseFunctions getInstance(@NonNull String region) {
     return getInstance(FirebaseApp.getInstance(), region);
   }
 
   /** Creates a Cloud Functions client with the default app. */
+  @NonNull
   public static FirebaseFunctions getInstance() {
     return getInstance(FirebaseApp.getInstance(), "us-central1");
   }
 
   /** Returns a reference to the Callable HTTPS trigger with the given name. */
-  public HttpsCallableReference getHttpsCallable(String name) {
+  @NonNull
+  public HttpsCallableReference getHttpsCallable(@NonNull String name) {
     return new HttpsCallableReference(this, name);
   }
 
@@ -187,7 +193,8 @@ public class FirebaseFunctions {
    *
    * @param origin The origin of the local emulator, such as "http://10.0.2.2:5005".
    */
-  public void useFunctionsEmulator(String origin) {
+  public void useFunctionsEmulator(@NonNull String origin) {
+    Preconditions.checkNotNull(origin, "origin cannot be null");
     urlFormat = origin + "/%2$s/%1$s/%3$s";
   }
 
@@ -221,10 +228,11 @@ public class FirebaseFunctions {
    * @return A Task that will be completed when the request is complete.
    */
   private Task<HttpsCallableResult> call(
-      String name, @Nullable Object data, HttpsCallableContext context, HttpsCallOptions options) {
-    if (name == null) {
-      throw new IllegalArgumentException("name cannot be null");
-    }
+      @NonNull String name,
+      @Nullable Object data,
+      HttpsCallableContext context,
+      HttpsCallOptions options) {
+    Preconditions.checkNotNull(name, "name cannot be null");
     URL url = getURL(name);
 
     Map<String, Object> body = new HashMap<>();

@@ -60,4 +60,13 @@ public class BindingWrapperFactory {
             .build();
     return inAppMessageComponent.bannerBindingWrapper();
   }
+
+  public BindingWrapper createCardBindingWrapper(
+      InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
+    InAppMessageComponent inAppMessageComponent =
+        DaggerInAppMessageComponent.builder()
+            .inflaterModule(new InflaterModule(inAppMessage, config, application))
+            .build();
+    return inAppMessageComponent.cardBindingWrapper();
+  }
 }

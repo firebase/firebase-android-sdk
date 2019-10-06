@@ -15,7 +15,7 @@
 package com.google.firebase.functions;
 
 import android.content.Context;
-import android.support.annotation.GuardedBy;
+import androidx.annotation.GuardedBy;
 import java.util.HashMap;
 import java.util.Map;
 

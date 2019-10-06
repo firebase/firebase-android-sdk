@@ -16,8 +16,8 @@ package com.google.firebase.storage;
 
 import android.app.Activity;
 import android.net.Uri;
-import android.support.annotation.Nullable;
 import android.util.Log;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -134,10 +134,8 @@ public class TestUploadHelper {
         });
   }
 
-  public static Task<StringBuilder> uploadWithSpace() {
+  public static Task<StringBuilder> byteUpload(StorageReference storage) {
     final StringBuilder builder = new StringBuilder();
-    StorageReference storage =
-        FirebaseStorage.getInstance().getReference().child("hello world.txt");
     String foo = "This is a test!!!";
     byte[] bytes = foo.getBytes(Charset.forName("UTF-8"));
     StorageMetadata metadata = new StorageMetadata.Builder().setContentType("text/plain").build();
@@ -300,7 +298,7 @@ public class TestUploadHelper {
      * indicates end of stream.
      */
     class WonkyStream extends InputStream {
-      private ArrayList<byte[]> streamData = new ArrayList<>();
+      private final ArrayList<byte[]> streamData = new ArrayList<>();
 
       private WonkyStream() {
         streamData.add(new byte[] {0, 1, 2});
@@ -319,17 +317,6 @@ public class TestUploadHelper {
         }
       }
 
-      private void removeData(int removeFirst) {
-        if (streamData.get(0).length == removeFirst) {
-          streamData.remove(0);
-        } else {
-          streamData.set(
-              0,
-              Arrays.copyOfRange(
-                  streamData.get(0), removeFirst, streamData.get(0).length - removeFirst));
-        }
-      }
-
       @Override
       public int read(byte[] b, int off, int len) {
         if (streamData.isEmpty()) {
@@ -339,6 +326,17 @@ public class TestUploadHelper {
           System.arraycopy(streamData.get(0), 0, b, off, length);
           removeData(length);
           return length;
+        }
+      }
+
+      private void removeData(int removeFirst) {
+        if (streamData.get(0).length == removeFirst) {
+          streamData.remove(0);
+        } else {
+          streamData.set(
+              0,
+              Arrays.copyOfRange(
+                  streamData.get(0), removeFirst, streamData.get(0).length - removeFirst));
         }
       }
 
@@ -509,8 +507,10 @@ public class TestUploadHelper {
     return task.continueWith(ignored -> builder);
   }
 
-  public static Semaphore fileUploadQueuedCancel(
+  public static Task<Void> fileUploadQueuedCancel(
       final StringBuilder builder, final Uri sourcefile) {
+    TaskCompletionSource<Void> result = new TaskCompletionSource<>();
+
     final StorageReference storage = FirebaseStorage.getInstance().getReference("image.jpg");
     StorageMetadata metadata =
         new StorageMetadata.Builder()
@@ -534,7 +534,7 @@ public class TestUploadHelper {
           String statusMessage = "\nonComplete:Success=\n" + completedTask.isSuccessful();
           Log.i(TAG, statusMessage);
           builder.append(statusMessage);
-          semaphore.release();
+          result.setResult(null);
         });
 
     // cancel while the task is still queued.
@@ -542,7 +542,7 @@ public class TestUploadHelper {
 
     ControllableSchedulerHelper.getInstance().resume();
 
-    return semaphore;
+    return result.getTask();
   }
 
   public static Task<StringBuilder> adaptiveChunking() {
@@ -692,7 +692,8 @@ public class TestUploadHelper {
         StorageTaskManager.getInstance().getUploadTasksUnder(reference.getParent());
     Preconditions.checkState(
         uploadTasksAtParent.size() == expectedTasks,
-        "Expected active upload task at location %s to contain %s item(s), but contained %s item(s)",
+        "Expected active upload task at location %s to contain %s item(s), "
+            + "but contained %s item(s)",
         reference.getParent(),
         uploadTasksAtParent.size());
   }

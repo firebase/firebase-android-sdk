@@ -19,8 +19,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 import com.google.firebase.database.core.utilities.encoding.CustomClassMapper;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -625,6 +626,22 @@ public class MapperTest {
 
     public String getValue() {
       return this.value;
+    }
+  }
+
+  private static class MultiBoundedMapBean<T extends String & Serializable> {
+    private Map<String, T> values;
+
+    public Map<String, T> getValues() {
+      return values;
+    }
+  }
+
+  private static class MultiBoundedMapHolderBean {
+    private MultiBoundedMapBean<String> map;
+
+    public MultiBoundedMapBean<String> getMap() {
+      return map;
     }
   }
 
@@ -1761,6 +1778,33 @@ public class MapperTest {
     GenericBean<String> bean =
         deserialize("{'value': 'foo'}", new NonGenericTypeIndicatorConcreteSubclass());
     assertEquals("foo", bean.value);
+  }
+
+  @Test
+  public void usingWildcardInGenericTypeIndicatorIsAllowed() {
+    Map<String, String> fooMap = Collections.singletonMap("foo", "bar");
+    assertEquals(
+        fooMap,
+        CustomClassMapper.convertToCustomClass(
+            fooMap, new GenericTypeIndicator<Map<String, ? extends String>>() {}));
+  }
+
+  @Test(expected = DatabaseException.class)
+  public void usingLowerBoundWildcardsIsForbidden() {
+    Map<String, String> fooMap = Collections.singletonMap("foo", "bar");
+    CustomClassMapper.convertToCustomClass(
+        fooMap, new GenericTypeIndicator<Map<String, ? super String>>() {});
+  }
+
+  @Test
+  public void multiBoundedWildcardsUsesTheFirst() {
+    Map<String, Object> source =
+        Collections.singletonMap(
+            "map", Collections.singletonMap("values", Collections.singletonMap("foo", "bar")));
+    MultiBoundedMapHolderBean bean =
+        CustomClassMapper.convertToCustomClass(source, MultiBoundedMapHolderBean.class);
+    Map<String, String> expected = Collections.singletonMap("foo", "bar");
+    assertEquals(expected, bean.map.values);
   }
 
   @Test(expected = DatabaseException.class)

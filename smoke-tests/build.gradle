@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+
 buildscript {
   repositories {
     google()
@@ -19,91 +23,75 @@ buildscript {
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:3.3.2"
-    classpath "com.google.gms:google-services:4.0.0"
+    classpath "com.android.tools.build:gradle:3.4.2"
+    classpath "com.google.gms:google-services:4.3.0"
   }
 }
 
 apply plugin: "com.android.application"
 
 android {
-  compileSdkVersion 24
+  compileSdkVersion 28
 
   defaultConfig {
     minSdkVersion 16
     multiDexEnabled true
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    versionName "1.0.0"
   }
 
-  flavorDimensions "systemUnderTest"
-
-  productFlavors {
-    combined {
-      dimension "systemUnderTest"
-      applicationId "com.google.firebase.testing.combined"
-    }
-
-    database {
-      dimension "systemUnderTest"
-      applicationId "com.google.firebase.testing.database"
-    }
-
-    firestore {
-      dimension "systemUnderTest"
-      applicationId "com.google.firebase.testing.firestore"
-    }
-
-    storage {
-      dimension "systemUnderTest"
-      applicationId "com.google.firebase.testing.storage"
+  buildTypes {
+    release {
+      minifyEnabled true
+      shrinkResources true
+      signingConfig signingConfigs.debug
+      proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "smoke-test-rules.pro"
+      testProguardFiles "infrastructure-rules.pro"
     }
   }
 
-  sourceSets {
-    combined {
-      java.srcDirs = [
-          "src/combined/java",
-	  "src/database/java",
-	  "src/firestore/java",
-	  "src/storage/java",
-      ]
-    }
+  if (project.hasProperty("testBuildType")) {
+    testBuildType project.getProperty("testBuildType")
   }
-}
-
-repositories {
-  google()
-  jcenter()
 }
 
 apply from: "configure.gradle"
 
 dependencies {
-  // Common
-  api "androidx.test:runner:1.1.0"
-  api "com.google.truth:truth:0.43"
-  api "junit:junit:4.12"
-
-  implementation "androidx.test:rules:1.1.0"
+  // Firebase
+  implementation "com.google.firebase:firebase-analytics"
+  implementation "com.google.firebase:firebase-appindexing"
+  implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
+  implementation "com.google.firebase:firebase-config"
+  implementation "com.google.firebase:firebase-database"
+  implementation "com.google.firebase:firebase-dynamic-links"
+  implementation "com.google.firebase:firebase-firestore"
+  implementation "com.google.firebase:firebase-functions"
+  implementation "com.google.firebase:firebase-inappmessaging"
+  implementation "com.google.firebase:firebase-messaging"
+  implementation "com.google.firebase:firebase-ml-natural-language"
+  implementation "com.google.firebase:firebase-ml-vision"
+  implementation "com.google.firebase:firebase-storage"
 
-  // All
-  combinedImplementation "com.google.firebase:firebase-auth"
-  combinedImplementation "com.google.firebase:firebase-database"
-  combinedImplementation "com.google.firebase:firebase-firestore"
-  combinedImplementation "com.google.firebase:firebase-storage"
+  // Common utilities (application side)
+  implementation "androidx.test:rules:1.2.0"
+  implementation "androidx.test:runner:1.2.0"
+  implementation "com.google.truth:truth:0.44"
+  implementation "junit:junit:4.12"
 
-  // Database
-  databaseImplementation "com.google.firebase:firebase-auth"
-  databaseImplementation "com.google.firebase:firebase-database"
+  // Common utilities (instrumentation side)
+  androidTestImplementation "androidx.test:core:1.2.0"
+  androidTestImplementation "androidx.test:runner:1.2.0"
+  androidTestImplementation "junit:junit:4.12"
+}
 
-  // Firestore
-  firestoreImplementation "com.google.firebase:firebase-auth"
-  firestoreImplementation "com.google.firebase:firebase-firestore"
+clean.doLast {
+  def paths = Files.newDirectoryStream(Paths.get("."), "build-*")
 
-  // Storage
-  storageImplementation "com.google.firebase:firebase-auth"
-  storageImplementation "com.google.firebase:firebase-storage"
+  for (Path path : paths) {
+    project.delete "$path/"
+  }
 }
 
 apply plugin: "com.google.gms.google-services"

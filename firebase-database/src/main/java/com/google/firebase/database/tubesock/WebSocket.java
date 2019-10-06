@@ -16,7 +16,7 @@ package com.google.firebase.database.tubesock;
 
 import android.net.SSLCertificateSocketFactory;
 import android.net.SSLSessionCache;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.firebase.database.connection.ConnectionContext;
 import com.google.firebase.database.logging.LogWrapper;
 import java.io.DataInputStream;
@@ -427,9 +427,8 @@ public class WebSocket {
       receiver.run();
     } catch (WebSocketException wse) {
       eventHandler.onError(wse);
-    } catch (IOException ioe) {
-      eventHandler.onError(
-          new WebSocketException("error while connecting: " + ioe.getMessage(), ioe));
+    } catch (Throwable t) {
+      eventHandler.onError(new WebSocketException("error while connecting: " + t.getMessage(), t));
     } finally {
       close();
     }

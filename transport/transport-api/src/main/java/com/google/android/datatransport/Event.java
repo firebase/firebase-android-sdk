@@ -14,7 +14,7 @@
 
 package com.google.android.datatransport;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
 @AutoValue
@@ -40,5 +40,13 @@ public abstract class Event<T> {
 
   public static <T> Event<T> ofTelemetry(T value) {
     return new AutoValue_Event<>(null, value, Priority.VERY_LOW);
+  }
+
+  public static <T> Event<T> ofUrgent(int code, T value) {
+    return new AutoValue_Event<>(code, value, Priority.HIGHEST);
+  }
+
+  public static <T> Event<T> ofUrgent(T value) {
+    return new AutoValue_Event<>(null, value, Priority.HIGHEST);
   }
 }

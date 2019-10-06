@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.google.firebase.inappmessaging">
+    <uses-sdk android:minSdkVersion="16"/>
+    <application
+        android:label="FirebaseCommonTests" >
+        <uses-library android:name="android.test.runner" />
+    </application>
+    <instrumentation
+        android:name="androidx.test.runner.AndroidJUnitRunner"
+        android:targetPackage="com.google.firebase.inappmessaging" />
+</manifest>

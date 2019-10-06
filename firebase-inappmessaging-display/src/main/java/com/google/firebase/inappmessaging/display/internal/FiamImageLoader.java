@@ -14,8 +14,8 @@
 
 package com.google.firebase.inappmessaging.display.internal;
 
-import android.support.annotation.Nullable;
 import android.widget.ImageView;
+import androidx.annotation.Nullable;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.FirebaseAppScope;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;

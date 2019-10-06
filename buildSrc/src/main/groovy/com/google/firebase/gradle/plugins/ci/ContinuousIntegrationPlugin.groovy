@@ -97,7 +97,6 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
 
         def affectedProjects = AffectedProjectFinder.builder()
                 .project(project)
-                .changedPaths(changedPaths(project.rootDir))
                 .ignorePaths(extension.ignorePaths)
                 .build()
                 .find()
@@ -141,13 +140,6 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                 }
             }
         }
-    }
-
-    private static Set<String> changedPaths(File workDir) {
-        return 'git diff --name-only --submodule=diff HEAD@{0} HEAD@{1}'
-                .execute([], workDir)
-                .text
-                .readLines()
     }
 
     private static final ANDROID_PLUGINS = ["com.android.application", "com.android.library",

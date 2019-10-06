@@ -15,7 +15,8 @@
 package com.google.firebase.firestore.remote;
 
 import android.content.Context;
-import android.support.annotation.VisibleForTesting;
+import android.os.Build;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -26,16 +27,13 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.FirestoreChannel;
-import com.google.firebase.firestore.util.Supplier;
 import com.google.firestore.v1.BatchGetDocumentsRequest;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
 import com.google.firestore.v1.FirestoreGrpc;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
-import io.grpc.android.AndroidChannelBuilder;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,7 +41,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLHandshakeException;
 
 /**
  * Datastore represents a proxy for the remote server, hiding details of the RPC layer. It:
@@ -60,8 +58,18 @@ import java.util.concurrent.TimeUnit;
  */
 public class Datastore {
 
+  /**
+   * Error message to surface when Firestore fails to establish an SSL connection. A failed SSL
+   * connection likely indicates that the developer needs to provide an updated OpenSSL stack as
+   * part of their app's dependencies.
+   */
+  static final String SSL_DEPENDENCY_ERROR_MESSAGE =
+      "The Cloud Firestore client failed to establish a secure connection. This is likely a "
+          + "problem with your app, rather than with Cloud Firestore itself. See "
+          + "https://bit.ly/2XFpdma for instructions on how to enable TLS on Android 4.x devices.";
+
   /** Set of lowercase, white-listed headers for logging purposes. */
-  public static final Set<String> WHITE_LISTED_HEADERS =
+  static final Set<String> WHITE_LISTED_HEADERS =
       new HashSet<>(
           Arrays.asList(
               "date",
@@ -76,60 +84,19 @@ public class Datastore {
 
   private final FirestoreChannel channel;
 
-  private static Supplier<ManagedChannelBuilder<?>> overrideChannelBuilderSupplier;
-
-  /**
-   * Helper function to globally override the channel that RPCs use. Useful for testing when you
-   * want to bypass SSL certificate checking.
-   *
-   * @param channelBuilderSupplier The supplier for a channel builder that is used to create gRPC
-   *     channels.
-   */
-  @VisibleForTesting
-  public static void overrideChannelBuilder(
-      Supplier<ManagedChannelBuilder<?>> channelBuilderSupplier) {
-    Datastore.overrideChannelBuilderSupplier = channelBuilderSupplier;
-  }
-
   public Datastore(
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
       CredentialsProvider credentialsProvider,
-      Context context) {
+      Context context,
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
 
-    ManagedChannelBuilder<?> channelBuilder;
-    if (overrideChannelBuilderSupplier != null) {
-      channelBuilder = overrideChannelBuilderSupplier.get();
-    } else {
-      channelBuilder = ManagedChannelBuilder.forTarget(databaseInfo.getHost());
-      if (!databaseInfo.isSslEnabled()) {
-        // Note that the boolean flag does *NOT* indicate whether or not plaintext should be used
-        channelBuilder.usePlaintext();
-      }
-    }
-
-    // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will usually
-    // notify gRPC when a connection dies. But not always. This acts as a failsafe.)
-    channelBuilder.keepAliveTime(30, TimeUnit.SECONDS);
-
-    // This ensures all callbacks are issued on the worker queue. If this call is removed,
-    // all calls need to be audited to make sure they are executed on the right thread.
-    channelBuilder.executor(workerQueue.getExecutor());
-
-    // Wrap the ManagedChannelBuilder in an AndroidChannelBuilder. This allows the channel to
-    // respond more gracefully to network change events (such as switching from cell to wifi).
-    AndroidChannelBuilder androidChannelBuilder =
-        AndroidChannelBuilder.fromBuilder(channelBuilder).context(context);
-
     channel =
         new FirestoreChannel(
-            workerQueue,
-            credentialsProvider,
-            androidChannelBuilder.build(),
-            databaseInfo.getDatabaseId());
+            workerQueue, context, credentialsProvider, databaseInfo, metadataProvider);
   }
 
   void shutdown() {
@@ -226,8 +193,18 @@ public class Datastore {
    * @see #isPermanentWriteError for classifying write errors.
    */
   public static boolean isPermanentError(Status status) {
+    return isPermanentError(FirebaseFirestoreException.Code.fromValue(status.getCode().value()));
+  }
+
+  /**
+   * Determines whether the given error code represents a permanent error when received in response
+   * to a non-write operation.
+   *
+   * @see #isPermanentWriteError for classifying write errors.
+   */
+  public static boolean isPermanentError(FirebaseFirestoreException.Code code) {
     // See go/firestore-client-errors
-    switch (status.getCode()) {
+    switch (code) {
       case OK:
         throw new IllegalArgumentException("Treated status OK as error");
       case CANCELLED:
@@ -254,8 +231,24 @@ public class Datastore {
       case DATA_LOSS:
         return true;
       default:
-        throw new IllegalArgumentException("Unknown gRPC status code: " + status.getCode());
+        throw new IllegalArgumentException("Unknown gRPC status code: " + code);
     }
+  }
+
+  /**
+   * Determine whether the given status maps to the error that GRPC-Java throws when an Android
+   * device is missing required SSL Ciphers.
+   *
+   * <p>This error is non-recoverable and must be addressed by the app developer.
+   */
+  public static boolean isSslHandshakeError(Status status) {
+    Status.Code code = status.getCode();
+    Throwable t = status.getCause();
+
+    return Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
+        && code.equals(Status.Code.UNAVAILABLE)
+        && (t instanceof SSLHandshakeException
+            || (t instanceof ConnectException && t.getMessage().contains("EHOSTUNREACH")));
   }
 
   /**

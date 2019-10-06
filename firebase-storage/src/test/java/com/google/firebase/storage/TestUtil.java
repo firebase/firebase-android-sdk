@@ -14,7 +14,8 @@
 
 package com.google.firebase.storage;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import java.io.BufferedReader;
@@ -22,7 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
-import junit.framework.Assert;
+import java.util.concurrent.TimeUnit;
+import org.junit.Assert;
+import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 
 /** Test helpers. */
@@ -77,21 +80,19 @@ public class TestUtil {
     }
 
     StringBuilder baselineContents = new StringBuilder();
-    try {
-      BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
+    try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))) {
       // skip to first <new>
       String line;
       while ((line = br.readLine()) != null) {
         baselineContents.append(line).append("\n");
       }
-      inputStream.close();
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
 
-    try {
-      BufferedReader current = new BufferedReader(new StringReader(contents));
-      BufferedReader baseline = new BufferedReader(new StringReader(baselineContents.toString()));
+    try (BufferedReader current = new BufferedReader(new StringReader(contents));
+        BufferedReader baseline =
+            new BufferedReader(new StringReader(baselineContents.toString()))) {
       String originalLine;
       String newLine;
       // skip to first <new>
@@ -110,7 +111,7 @@ public class TestUtil {
         } else {
           if (!originalLine.equals(newLine)) {
             System.err.println("Original:");
-            System.err.println(baselineContents.toString());
+            System.err.println(baselineContents);
             System.err.println("New:");
             System.err.println(contents);
           }
@@ -118,16 +119,35 @@ public class TestUtil {
         }
         line++;
       }
-      current.close();
-      baseline.close();
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Awaits for a Task until `timeout` expires, but flushes the Robolectric scheduler to allow newly
+   * added Tasks to be executed.
+   */
+  static void await(Task<?> task, int timeout, TimeUnit timeUnit) throws InterruptedException {
+    long timeoutMillis = timeUnit.toMillis(timeout);
+
+    for (int i = 0; i < timeoutMillis; i++) {
+      Robolectric.flushForegroundThreadScheduler();
+      if (task.isComplete()) {
+        // success!
+        return;
+      }
+      Thread.sleep(1);
     }
 
-    try {
-      inputStream.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    Assert.fail("Timeout occurred");
+  }
+
+  /**
+   * Awaits for a Task for 3 seconds, but flushes the Robolectric scheduler to allow newly added
+   * Tasks to be executed.
+   */
+  static void await(Task<?> task) throws InterruptedException {
+    await(task, 3, TimeUnit.SECONDS);
   }
 }

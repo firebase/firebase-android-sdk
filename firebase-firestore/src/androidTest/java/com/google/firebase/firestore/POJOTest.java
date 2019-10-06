@@ -19,9 +19,9 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDoc
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
@@ -38,7 +38,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class POJOTest {
-  public static class POJO {
+  public static final class POJO {
 
     double number;
     String str;
@@ -123,7 +123,7 @@ public class POJOTest {
       if (this == o) {
         return true;
       }
-      if (o == null || getClass() != o.getClass()) {
+      if (o == null || !(o instanceof POJO)) {
         return false;
       }
 
@@ -201,6 +201,34 @@ public class POJOTest {
     }
   }
 
+  public static final class POJOWithDocumentIdAnnotation {
+    String str;
+    @DocumentId public DocumentReference autoPopulatedReference;
+    @DocumentId String docReferenceId;
+
+    static class NestedPOJO {
+      @DocumentId public DocumentReference autoPopulatedReference;
+    }
+
+    public NestedPOJO nested = new NestedPOJO();
+
+    public String getDocReferenceId() {
+      return docReferenceId;
+    }
+
+    public void setDocReferenceId(String id) {
+      this.docReferenceId = id;
+    }
+
+    public String getStr() {
+      return str;
+    }
+
+    public void setStr(String str) {
+      this.str = str;
+    }
+  }
+
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();
@@ -214,6 +242,20 @@ public class POJOTest {
     DocumentSnapshot doc = waitFor(reference.get());
     POJO otherData = doc.toObject(POJO.class);
     assertEquals(data, otherData);
+  }
+
+  @Test
+  public void testDocumentIdAnnotation() {
+    CollectionReference collection = testCollection();
+    POJOWithDocumentIdAnnotation data = new POJOWithDocumentIdAnnotation();
+    data.setStr("name");
+    DocumentReference reference = waitFor(collection.add(data));
+    DocumentSnapshot doc = waitFor(reference.get());
+    POJOWithDocumentIdAnnotation readFromStore = doc.toObject(POJOWithDocumentIdAnnotation.class);
+    assertEquals("name", readFromStore.getStr());
+    assertEquals(reference, readFromStore.autoPopulatedReference);
+    assertEquals(reference, readFromStore.nested.autoPopulatedReference);
+    assertEquals(reference.getId(), readFromStore.getDocReferenceId());
   }
 
   @Test

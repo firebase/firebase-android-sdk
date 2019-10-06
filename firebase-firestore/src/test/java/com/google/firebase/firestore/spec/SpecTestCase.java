@@ -31,10 +31,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import android.util.Pair;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.collect.Sets;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
@@ -47,7 +50,9 @@ import com.google.firebase.firestore.core.SyncEngine;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryData;
+import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.SimpleQueryEngine;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -94,7 +99,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.util.concurrent.RoboExecutorService;
 
 /**
@@ -185,6 +189,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private final List<DocumentKey> acknowledgedDocs =
       Collections.synchronizedList(new ArrayList<>());
   private final List<DocumentKey> rejectedDocs = Collections.synchronizedList(new ArrayList<>());
+  private List<EventListener<Void>> snapshotsInSyncListeners;
+  private int snapshotsInSyncEvents = 0;
 
   /** An executor to use for test callbacks. */
   private final RoboExecutorService backgroundExecutor = new RoboExecutorService();
@@ -247,6 +253,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     expectedLimboDocs = new HashSet<>();
     expectedActiveTargets = new HashMap<>();
+
+    snapshotsInSyncListeners = Collections.synchronizedList(new ArrayList<>());
   }
 
   protected void specTearDown() throws Exception {
@@ -262,15 +270,17 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
    */
   private void initClient() {
     localPersistence = getPersistence(garbageCollectionEnabled);
-    LocalStore localStore = new LocalStore(localPersistence, currentUser);
+    // TODO(index-free): Update to index-free query engine when it becomes default.
+    QueryEngine queryEngine = new SimpleQueryEngine();
+    LocalStore localStore = new LocalStore(localPersistence, queryEngine, currentUser);
 
     queue = new AsyncQueue();
 
     // Set up the sync engine and various stores.
-    datastore = new MockDatastore(queue, RuntimeEnvironment.application);
+    datastore = new MockDatastore(queue, ApplicationProvider.getApplicationContext());
 
     ConnectivityMonitor connectivityMonitor =
-        new AndroidConnectivityMonitor(RuntimeEnvironment.application);
+        new AndroidConnectivityMonitor(ApplicationProvider.getApplicationContext());
     remoteStore = new RemoteStore(this, localStore, datastore, queue, connectivityMonitor);
     syncEngine = new SyncEngine(localStore, remoteStore, currentUser);
     eventManager = new EventManager(syncEngine);
@@ -484,6 +494,22 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
   private void doDelete(String key) throws Exception {
     doMutation(deleteMutation(key));
+  }
+
+  private void doAddSnapshotsInSyncListener() {
+    EventListener<Void> eventListener =
+        (Void v, FirebaseFirestoreException error) -> snapshotsInSyncEvents += 1;
+    snapshotsInSyncListeners.add(eventListener);
+    eventManager.addSnapshotsInSyncListener(eventListener);
+  }
+
+  private void doRemoveSnapshotsInSyncListener() throws Exception {
+    if (snapshotsInSyncListeners.size() == 0) {
+      throw Assert.fail("There must be a listener to unlisten to");
+    } else {
+      EventListener<Void> listenerToRemove = snapshotsInSyncListeners.remove(0);
+      eventManager.removeSnapshotsInSyncListener(listenerToRemove);
+    }
   }
 
   // Helper for calling datastore.writeWatchChange() on the AsyncQueue.
@@ -720,6 +746,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       doPatch(step.getJSONArray("userPatch"));
     } else if (step.has("userDelete")) {
       doDelete(step.getString("userDelete"));
+    } else if (step.has("addSnapshotsInSyncListener")) {
+      doAddSnapshotsInSyncListener();
+    } else if (step.has("removeSnapshotsInSyncListener")) {
+      doRemoveSnapshotsInSyncListener();
     } else if (step.has("drainQueue")) {
       doDrainQueue();
     } else if (step.has("watchAck")) {
@@ -807,8 +837,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
-  private void validateStepExpectations(@Nullable JSONArray stepExpectations) throws JSONException {
-    if (stepExpectations == null) {
+  private void validateExpectedSnapshotEvents(@Nullable JSONArray expectedEventsJson)
+      throws JSONException {
+    if (expectedEventsJson == null) {
       for (QueryEvent event : events) {
         fail("Unexpected event: " + event);
       }
@@ -819,8 +850,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     events.sort((q1, q2) -> q1.query.getCanonicalId().compareTo(q2.query.getCanonicalId()));
 
     List<JSONObject> expectedEvents = new ArrayList<>();
-    for (int i = 0; i < stepExpectations.length(); ++i) {
-      expectedEvents.add(stepExpectations.getJSONObject(i));
+    for (int i = 0; i < expectedEventsJson.length(); ++i) {
+      expectedEvents.add(expectedEventsJson.getJSONObject(i));
     }
     expectedEvents.sort(
         (left, right) -> {
@@ -837,37 +868,39 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     for (; i < expectedEvents.size() && i < events.size(); ++i) {
       assertEventMatches(expectedEvents.get(i), events.get(i));
     }
-    for (; i < stepExpectations.length(); ++i) {
-      fail("Missing event: " + stepExpectations.get(i));
+    for (; i < expectedEventsJson.length(); ++i) {
+      fail("Missing event: " + expectedEventsJson.get(i));
     }
     for (; i < events.size(); ++i) {
       fail("Unexpected event: " + events.get(i));
     }
   }
 
-  private void validateStateExpectations(@Nullable JSONObject expected) throws JSONException {
-    if (expected != null) {
-      if (expected.has("numOutstandingWrites")) {
-        assertEquals(expected.getInt("numOutstandingWrites"), writesSent());
+  private void validateExpectedState(@Nullable JSONObject expectedState) throws JSONException {
+    if (expectedState != null) {
+      if (expectedState.has("numOutstandingWrites")) {
+        assertEquals(expectedState.getInt("numOutstandingWrites"), writesSent());
       }
-      if (expected.has("writeStreamRequestCount")) {
+      if (expectedState.has("writeStreamRequestCount")) {
         assertEquals(
-            expected.getInt("writeStreamRequestCount"), datastore.getWriteStreamRequestCount());
+            expectedState.getInt("writeStreamRequestCount"),
+            datastore.getWriteStreamRequestCount());
       }
-      if (expected.has("watchStreamRequestCount")) {
+      if (expectedState.has("watchStreamRequestCount")) {
         assertEquals(
-            expected.getInt("watchStreamRequestCount"), datastore.getWatchStreamRequestCount());
+            expectedState.getInt("watchStreamRequestCount"),
+            datastore.getWatchStreamRequestCount());
       }
-      if (expected.has("limboDocs")) {
+      if (expectedState.has("limboDocs")) {
         expectedLimboDocs = new HashSet<>();
-        JSONArray limboDocs = expected.getJSONArray("limboDocs");
+        JSONArray limboDocs = expectedState.getJSONArray("limboDocs");
         for (int i = 0; i < limboDocs.length(); i++) {
           expectedLimboDocs.add(key((String) limboDocs.get(i)));
         }
       }
-      if (expected.has("activeTargets")) {
+      if (expectedState.has("activeTargets")) {
         expectedActiveTargets = new HashMap<>();
-        JSONObject activeTargets = expected.getJSONObject("activeTargets");
+        JSONObject activeTargets = expectedState.getJSONObject("activeTargets");
         Iterator<String> keys = activeTargets.keys();
         while (keys.hasNext()) {
           String targetIdString = keys.next();
@@ -879,25 +912,25 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           // TODO: populate the purpose of the target once it's possible to encode that in the
           // spec tests. For now, hard-code that it's a listen despite the fact that it's not always
           // the right value.
-          expectedActiveTargets.put(
-              targetId,
-              new QueryData(
-                  query,
-                  targetId,
-                  ARBITRARY_SEQUENCE_NUMBER,
-                  QueryPurpose.LISTEN,
-                  SnapshotVersion.NONE,
-                  ByteString.copyFromUtf8(resumeToken)));
+          QueryData queryData =
+              new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN)
+                  .withResumeToken(ByteString.copyFromUtf8(resumeToken), SnapshotVersion.NONE);
+          expectedActiveTargets.put(targetId, queryData);
         }
       }
     }
 
     // Always validate the we received the expected number of events.
-    validateUserCallbacks(expected);
+    validateUserCallbacks(expectedState);
     // Always validate that the expected limbo docs match the actual limbo docs.
     validateLimboDocs();
     // Always validate that the expected active targets match the actual active targets.
     validateActiveTargets();
+  }
+
+  private void validateSnapshotsInSyncEvents(int expectedCount) {
+    assertEquals(expectedCount, snapshotsInSyncEvents);
+    snapshotsInSyncEvents = 0;
   }
 
   private void validateUserCallbacks(@Nullable JSONObject expected) throws JSONException {
@@ -983,10 +1016,12 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       specSetUp(config);
       for (int i = 0; i < steps.length(); ++i) {
         JSONObject step = steps.getJSONObject(i);
-        @Nullable JSONArray expect = step.optJSONArray("expect");
-        step.remove("expect");
-        @Nullable JSONObject stateExpect = step.optJSONObject("stateExpect");
-        step.remove("stateExpect");
+        @Nullable JSONArray expectedSnapshotEvents = step.optJSONArray("expectedSnapshotEvents");
+        step.remove("expectedSnapshotEvents");
+        @Nullable JSONObject expectedState = step.optJSONObject("expectedState");
+        step.remove("expectedState");
+        int expectedSnapshotsInSyncEvents = step.optInt("expectedSnapshotsInSyncEvents");
+        step.remove("expectedSnapshotsInSyncEvents");
 
         log("    Doing step " + step);
         doStep(step);
@@ -995,14 +1030,15 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         backgroundExecutor.execute(() -> drainBackgroundQueue.setResult(null));
         waitFor(drainBackgroundQueue.getTask());
 
-        if (expect != null) {
-          log("      Validating step expectations " + expect);
+        if (expectedSnapshotEvents != null) {
+          log("      Validating expected snapshot events " + expectedSnapshotEvents);
         }
-        validateStepExpectations(expect);
-        if (stateExpect != null) {
-          log("      Validating state expectations " + stateExpect);
+        validateExpectedSnapshotEvents(expectedSnapshotEvents);
+        if (expectedState != null) {
+          log("      Validating state expectations " + expectedState);
         }
-        validateStateExpectations(stateExpect);
+        validateExpectedState(expectedState);
+        validateSnapshotsInSyncEvents(expectedSnapshotsInSyncEvents);
         events.clear();
         acknowledgedDocs.clear();
         rejectedDocs.clear();

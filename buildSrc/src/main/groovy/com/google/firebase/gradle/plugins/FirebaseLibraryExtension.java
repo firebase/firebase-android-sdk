@@ -16,6 +16,7 @@ package com.google.firebase.gradle.plugins;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,6 +25,8 @@ import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.UnknownDomainObjectException;
+import org.gradle.api.internal.provider.DefaultProvider;
+import org.gradle.api.provider.Property;
 import org.gradle.api.publish.maven.MavenPom;
 
 public class FirebaseLibraryExtension {
@@ -36,8 +39,14 @@ public class FirebaseLibraryExtension {
   /** Indicates whether sources are published alongside the library. */
   public boolean publishSources;
 
+  /** Static analysis configuration. */
+  public final FirebaseStaticAnalysis staticAnalysis;
+
   /** Firebase Test Lab configuration/ */
   public final FirebaseTestLabExtension testLab;
+
+  public Property<String> groupId;
+  public Property<String> artifactId;
 
   private Action<MavenPom> customizePomAction =
       pom -> {
@@ -60,6 +69,30 @@ public class FirebaseLibraryExtension {
   public FirebaseLibraryExtension(Project project) {
     this.project = project;
     this.testLab = new FirebaseTestLabExtension(project.getObjects());
+    this.artifactId = project.getObjects().property(String.class);
+    this.groupId = project.getObjects().property(String.class);
+
+    if ("ktx".equals(project.getName()) && project.getParent() != null) {
+      artifactId.set(new DefaultProvider<>(() -> project.getParent().getName() + "-ktx"));
+      groupId.set(new DefaultProvider<>(() -> project.getParent().getGroup().toString()));
+    } else {
+      artifactId.set(new DefaultProvider<>(project::getName));
+      groupId.set(new DefaultProvider<>(() -> project.getGroup().toString()));
+    }
+    this.staticAnalysis = initializeStaticAnalysis(project);
+  }
+
+  private FirebaseStaticAnalysis initializeStaticAnalysis(Project project) {
+    return new FirebaseStaticAnalysis(
+        projectsFromProperty(project, "firebase.checks.errorproneProjects"),
+        projectsFromProperty(project, "firebase.checks.lintProjects"));
+  }
+
+  private Set<String> projectsFromProperty(Project project, String propertyName) {
+    if (!project.hasProperty(propertyName)) {
+      return Collections.emptySet();
+    }
+    return ImmutableSet.copyOf(project.property(propertyName).toString().split(",", -1));
   }
 
   /** Configure Firebase Test Lab. */
@@ -110,5 +143,9 @@ public class FirebaseLibraryExtension {
     if (customizePomAction != null) {
       customizePomAction.execute(pom);
     }
+  }
+
+  public void staticAnalysis(Action<FirebaseStaticAnalysis> action) {
+    action.execute(staticAnalysis);
   }
 }

@@ -18,6 +18,8 @@ import static com.google.firebase.firestore.model.DocumentCollections.emptyDocum
 import static com.google.firebase.firestore.model.DocumentCollections.emptyMaybeDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -28,9 +30,10 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.firebase.firestore.model.mutation.PatchMutation;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * A readonly view of the local state of all documents we're tracking (i.e. we have a cached version
@@ -38,7 +41,7 @@ import javax.annotation.Nullable;
  * mutations in the MutationQueue to the RemoteDocumentCache.
  */
 // TODO: Turn this into the UnifiedDocumentCache / whatever.
-final class LocalDocumentsView {
+class LocalDocumentsView {
 
   private final RemoteDocumentCache remoteDocumentCache;
   private final MutationQueue mutationQueue;
@@ -51,6 +54,21 @@ final class LocalDocumentsView {
     this.remoteDocumentCache = remoteDocumentCache;
     this.mutationQueue = mutationQueue;
     this.indexManager = indexManager;
+  }
+
+  @VisibleForTesting
+  RemoteDocumentCache getRemoteDocumentCache() {
+    return remoteDocumentCache;
+  }
+
+  @VisibleForTesting
+  MutationQueue getMutationQueue() {
+    return mutationQueue;
+  }
+
+  @VisibleForTesting
+  IndexManager getIndexManager() {
+    return indexManager;
   }
 
   /**
@@ -129,15 +147,22 @@ final class LocalDocumentsView {
   // documents in a given collection so that SimpleQueryEngine can do that and then filter in
   // memory.
 
-  /** Performs a query against the local view of all documents. */
-  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(Query query) {
+  /**
+   * Performs a query against the local view of all documents.
+   *
+   * @param query The query to match documents against.
+   * @param sinceReadTime If not set to SnapshotVersion.MIN, return only documents that have been
+   *     read since this snapshot version (exclusive).
+   */
+  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+      Query query, SnapshotVersion sinceReadTime) {
     ResourcePath path = query.getPath();
     if (query.isDocumentQuery()) {
       return getDocumentsMatchingDocumentQuery(path);
     } else if (query.isCollectionGroupQuery()) {
-      return getDocumentsMatchingCollectionGroupQuery(query);
+      return getDocumentsMatchingCollectionGroupQuery(query, sinceReadTime);
     } else {
-      return getDocumentsMatchingCollectionQuery(query);
+      return getDocumentsMatchingCollectionQuery(query, sinceReadTime);
     }
   }
 
@@ -154,7 +179,7 @@ final class LocalDocumentsView {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionGroupQuery(
-      Query query) {
+      Query query, SnapshotVersion sinceReadTime) {
     hardAssert(
         query.getPath().isEmpty(),
         "Currently we only support collection group queries at the root.");
@@ -167,7 +192,7 @@ final class LocalDocumentsView {
     for (ResourcePath parent : parents) {
       Query collectionQuery = query.asCollectionQueryAtPath(parent.append(collectionId));
       ImmutableSortedMap<DocumentKey, Document> collectionResults =
-          getDocumentsMatchingCollectionQuery(collectionQuery);
+          getDocumentsMatchingCollectionQuery(collectionQuery, sinceReadTime);
       for (Map.Entry<DocumentKey, Document> docEntry : collectionResults) {
         results = results.insert(docEntry.getKey(), docEntry.getValue());
       }
@@ -177,11 +202,14 @@ final class LocalDocumentsView {
 
   /** Queries the remote documents and overlays mutations. */
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
-      Query query) {
+      Query query, SnapshotVersion sinceReadTime) {
     ImmutableSortedMap<DocumentKey, Document> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query);
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
 
     List<MutationBatch> matchingBatches = mutationQueue.getAllMutationBatchesAffectingQuery(query);
+
+    results = addMissingBaseDocuments(matchingBatches, results);
+
     for (MutationBatch batch : matchingBatches) {
       for (Mutation mutation : batch.getMutations()) {
         // Only process documents belonging to the collection.
@@ -209,5 +237,35 @@ final class LocalDocumentsView {
     }
 
     return results;
+  }
+
+  /**
+   * It is possible that a {@code PatchMutation} can make a document match a query, even if the
+   * version in the {@code RemoteDocumentCache} is not a match yet (waiting for server to ack). To
+   * handle this, we find all document keys affected by the {@code PatchMutation}s that are not in
+   * {@code existingDocs} yet, and back fill them via {@code remoteDocumentCache.getAll}, otherwise
+   * those {@code PatchMutation}s will be ignored because no base document can be found, and lead to
+   * missing results for the query.
+   */
+  private ImmutableSortedMap<DocumentKey, Document> addMissingBaseDocuments(
+      List<MutationBatch> matchingBatches, ImmutableSortedMap<DocumentKey, Document> existingDocs) {
+    HashSet<DocumentKey> missingDocKeys = new HashSet<>();
+    for (MutationBatch batch : matchingBatches) {
+      for (Mutation mutation : batch.getMutations()) {
+        if (mutation instanceof PatchMutation && !existingDocs.containsKey(mutation.getKey())) {
+          missingDocKeys.add(mutation.getKey());
+        }
+      }
+    }
+
+    ImmutableSortedMap<DocumentKey, Document> mergedDocs = existingDocs;
+    Map<DocumentKey, MaybeDocument> missingDocs = remoteDocumentCache.getAll(missingDocKeys);
+    for (Map.Entry<DocumentKey, MaybeDocument> entry : missingDocs.entrySet()) {
+      if (entry.getValue() != null && (entry.getValue() instanceof Document)) {
+        mergedDocs = mergedDocs.insert(entry.getKey(), (Document) entry.getValue());
+      }
+    }
+
+    return mergedDocs;
   }
 }

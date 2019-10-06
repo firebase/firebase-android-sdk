@@ -53,7 +53,7 @@ class KtxTests {
     @Test
     fun `Firebase#app should delegate to FirebaseApp#getInstance()`() {
         withApp(FirebaseApp.DEFAULT_APP_NAME) {
-            assertThat(Firebase.app).isSameAs(FirebaseApp.getInstance())
+            assertThat(Firebase.app).isSameInstanceAs(FirebaseApp.getInstance())
         }
     }
 
@@ -61,14 +61,14 @@ class KtxTests {
     fun `Firebase#app(String) should delegate to FirebaseApp#getInstance(String)`() {
         val appName = "testApp"
         withApp(appName) {
-            assertThat(Firebase.app(appName)).isSameAs(FirebaseApp.getInstance(appName))
+            assertThat(Firebase.app(appName)).isSameInstanceAs(FirebaseApp.getInstance(appName))
         }
     }
 
     @Test
     fun `Firebase#options should delegate to FirebaseApp#getInstance()#options`() {
         withApp(FirebaseApp.DEFAULT_APP_NAME) {
-            assertThat(Firebase.options).isSameAs(FirebaseApp.getInstance().options)
+            assertThat(Firebase.options).isSameInstanceAs(FirebaseApp.getInstance().options)
         }
     }
 
@@ -79,8 +79,8 @@ class KtxTests {
         try {
             assertThat(app).isNotNull()
             assertThat(app.name).isEqualTo(FirebaseApp.DEFAULT_APP_NAME)
-            assertThat(app.options).isSameAs(options)
-            assertThat(app.applicationContext).isSameAs(RuntimeEnvironment.application)
+            assertThat(app.options).isSameInstanceAs(options)
+            assertThat(app.applicationContext).isSameInstanceAs(RuntimeEnvironment.application)
         } finally {
             app.delete()
         }
@@ -94,8 +94,8 @@ class KtxTests {
         try {
             assertThat(app).isNotNull()
             assertThat(app.name).isEqualTo(name)
-            assertThat(app.options).isSameAs(options)
-            assertThat(app.applicationContext).isSameAs(RuntimeEnvironment.application)
+            assertThat(app.options).isSameInstanceAs(options)
+            assertThat(app.applicationContext).isSameInstanceAs(RuntimeEnvironment.application)
         } finally {
             app.delete()
         }
