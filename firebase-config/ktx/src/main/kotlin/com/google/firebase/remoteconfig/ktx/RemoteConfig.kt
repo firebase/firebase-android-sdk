@@ -44,12 +44,6 @@ fun remoteConfigSettings(init: FirebaseRemoteConfigSettings.Builder.() -> Unit):
     return builder.build()
 }
 
-fun FirebaseRemoteConfig.setConfigSettingsAsync(init: FirebaseRemoteConfigSettings.Builder.() -> Unit): Task<Void> {
-    val builder = FirebaseRemoteConfigSettings.Builder()
-    builder.init()
-    return setConfigSettingsAsync(builder.build())
-}
-
 internal const val LIBRARY_NAME: String = "fire-cfg-ktx"
 
 /** @suppress */
