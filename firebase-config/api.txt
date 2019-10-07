@@ -85,6 +85,8 @@ package com.google.firebase.remoteconfig {
     method @Deprecated @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder setDeveloperModeEnabled(boolean);
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder setFetchTimeoutInSeconds(long);
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder setMinimumFetchIntervalInSeconds(long);
+    method public long getFetchTimeoutInSeconds();
+    method public long getMinimumFetchIntervalInSeconds();
   }
 
   public interface FirebaseRemoteConfigValue {
