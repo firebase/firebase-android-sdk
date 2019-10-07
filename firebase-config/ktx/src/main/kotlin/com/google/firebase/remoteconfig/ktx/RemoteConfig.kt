@@ -38,13 +38,13 @@ operator fun FirebaseRemoteConfig.get(key: String): FirebaseRemoteConfigValue {
     return this.getValue(key)
 }
 
-fun remoteConfigSettings(init: FirebaseRemoteConfigSettings.Builder.() -> Unit) : FirebaseRemoteConfigSettings {
+fun remoteConfigSettings(init: FirebaseRemoteConfigSettings.Builder.() -> Unit): FirebaseRemoteConfigSettings {
     val builder = FirebaseRemoteConfigSettings.Builder()
     builder.init()
     return builder.build()
 }
 
-fun FirebaseRemoteConfig.setConfigSettingsAsync(init: FirebaseRemoteConfigSettings.Builder.() -> Unit) : Task<Void> {
+fun FirebaseRemoteConfig.setConfigSettingsAsync(init: FirebaseRemoteConfigSettings.Builder.() -> Unit): Task<Void> {
     val builder = FirebaseRemoteConfigSettings.Builder()
     builder.init()
     return setConfigSettingsAsync(builder.build())
