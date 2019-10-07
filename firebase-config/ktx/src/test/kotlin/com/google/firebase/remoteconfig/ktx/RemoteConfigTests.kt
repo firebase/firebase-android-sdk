@@ -112,8 +112,8 @@ class ConfigTests : BaseTestCase() {
         val minFetchInterval = 3600L
         val fetchTimeout = 60L
         val configSettings = remoteConfigSettings {
-            setMinimumFetchIntervalInSeconds(minFetchInterval)
-            setFetchTimeoutInSeconds(fetchTimeout)
+            minimumFetchIntervalInSeconds = minFetchInterval
+            fetchTimeoutInSeconds = fetchTimeout
         }
         assertThat(configSettings.minimumFetchIntervalInSeconds).isEqualTo(minFetchInterval)
         assertThat(configSettings.fetchTimeoutInSeconds).isEqualTo(fetchTimeout)

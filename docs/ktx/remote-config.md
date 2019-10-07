@@ -79,8 +79,8 @@ remoteConfig.setConfigSettingsAsync(configSettings)
 **Kotlin + KTX**
 ```kotlin
 val configSettings = remoteConfigSettings {
-    setMinimumFetchIntervalInSeconds(3600)
-    setFetchTimeoutInSeconds(60)
+    minimumFetchIntervalInSeconds = 3600
+    fetchTimeoutInSeconds = 60
 }
 remoteConfig.setConfigSettingsAsync(configSettings)
 ```
