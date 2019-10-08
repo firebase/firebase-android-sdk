@@ -14,15 +14,22 @@
 
 package com.google.android.datatransport.runtime;
 
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
+import java.util.Set;
 
 final class TransportFactoryImpl implements TransportFactory {
+  private final Set<Encoding> supportedPayloadEncodings;
   private final TransportContext transportContext;
   private final TransportInternal transportInternal;
 
-  TransportFactoryImpl(TransportContext transportContext, TransportInternal transportInternal) {
+  TransportFactoryImpl(
+      Set<Encoding> supportedPayloadEncodings,
+      TransportContext transportContext,
+      TransportInternal transportInternal) {
+    this.supportedPayloadEncodings = supportedPayloadEncodings;
     this.transportContext = transportContext;
     this.transportInternal = transportInternal;
   }
@@ -30,6 +37,22 @@ final class TransportFactoryImpl implements TransportFactory {
   @Override
   public <T> Transport<T> getTransport(
       String name, Class<T> payloadType, Transformer<T, byte[]> payloadTransformer) {
-    return new TransportImpl<>(transportContext, name, payloadTransformer, transportInternal);
+    return getTransport(name, payloadType, Encoding.of("proto"), payloadTransformer);
+  }
+
+  @Override
+  public <T> Transport<T> getTransport(
+      String name,
+      Class<T> payloadType,
+      Encoding payloadEncoding,
+      Transformer<T, byte[]> payloadTransformer) {
+    if (!supportedPayloadEncodings.contains(payloadEncoding)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "%s is not supported byt this factory. Supported encodings are: %s.",
+              payloadEncoding, supportedPayloadEncodings));
+    }
+    return new TransportImpl<>(
+        transportContext, name, payloadEncoding, payloadTransformer, transportInternal);
   }
 }

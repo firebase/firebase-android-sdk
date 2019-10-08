@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
@@ -48,6 +49,7 @@ public class SchedulerIntegrationTest {
   private static final String TEST_KEY = "test";
   private static final String TEST_VALUE = "test-value";
   private static final String testTransport = "testTransport";
+  private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
 
   private final TransportBackend mockBackend = mock(TransportBackend.class);
   private final TransportBackend mockBackend2 = mock(TransportBackend.class);
@@ -149,7 +151,8 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data".getBytes(Charset.defaultCharset()))
+            .setEncodedPayload(
+                new EncodedPayload(PROTOBUF_ENCODING, "Data".getBytes(Charset.defaultCharset())))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1)).decorate(eq(expectedEvent));
@@ -172,7 +175,8 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data".getBytes(Charset.defaultCharset()))
+            .setEncodedPayload(
+                new EncodedPayload(PROTOBUF_ENCODING, "Data".getBytes(Charset.defaultCharset())))
             .build();
     Event<String> stringEvent2 = Event.ofData("Data2");
     EventInternal expectedEvent2 =
@@ -180,7 +184,8 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data2".getBytes(Charset.defaultCharset()))
+            .setEncodedPayload(
+                new EncodedPayload(PROTOBUF_ENCODING, "Data2".getBytes(Charset.defaultCharset())))
             .build();
     transport.send(stringEvent);
     transport.send(stringEvent2);
@@ -210,7 +215,8 @@ public class SchedulerIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("Data".getBytes(Charset.defaultCharset()))
+            .setEncodedPayload(
+                new EncodedPayload(PROTOBUF_ENCODING, "Data".getBytes(Charset.defaultCharset())))
             .build();
     transport.send(stringEvent);
     TransportFactory factory2 = runtime.newFactory(secondBackendName);

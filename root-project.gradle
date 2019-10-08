@@ -100,7 +100,7 @@ configure(subprojects) {
     }
     task(['type': JacocoReport, 'dependsOn': 'check', 'group': 'Coverage',
           'description': 'Generates JaCoCo unit test coverage reports.'], checkCoverage) {
-        def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/proto/**', '**Manifest*.*']
+        def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/proto/**', '**Manifest*.*', '**/AutoValue_*.class', '**/*_*Factory.class']
         classDirectories = files([
             fileTree(dir: "$buildDir/intermediates/javac/release", excludes: excludes),
             fileTree(dir: "$buildDir/tmp/kotlin-classes/release", excludes: excludes),
