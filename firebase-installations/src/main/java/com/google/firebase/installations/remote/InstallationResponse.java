@@ -25,6 +25,9 @@ public abstract class InstallationResponse {
   public abstract String getName();
 
   @NonNull
+  public abstract String getFid();
+
+  @NonNull
   public abstract String getRefreshToken();
 
   @NonNull
@@ -43,6 +46,9 @@ public abstract class InstallationResponse {
   public abstract static class Builder {
     @NonNull
     public abstract Builder setName(@NonNull String value);
+
+    @NonNull
+    public abstract Builder setFid(@NonNull String value);
 
     @NonNull
     public abstract Builder setRefreshToken(@NonNull String value);

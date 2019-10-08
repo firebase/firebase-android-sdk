@@ -283,7 +283,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               /*appId= */ getApplicationId());
       persistedFid.insertOrUpdatePersistedFidEntry(
           PersistedFidEntry.builder()
-              .setFirebaseInstallationId(persistedFidEntry.getFirebaseInstallationId())
+              .setFirebaseInstallationId(installationResponse.getFid())
               .setRegistrationStatus(RegistrationStatus.REGISTERED)
               .setAuthToken(installationResponse.getAuthToken().getToken())
               .setRefreshToken(installationResponse.getRefreshToken())

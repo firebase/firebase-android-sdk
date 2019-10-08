@@ -19,6 +19,8 @@ import com.google.firebase.installations.remote.InstallationResponse;
 
 public final class FisAndroidTestConstants {
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
+  /** Invalid FID. */
+  public static final String INVALID_TEST_FID = "invalid";
 
   public static final String TEST_PROJECT_ID = "777777777777";
 
@@ -45,6 +47,7 @@ public final class FisAndroidTestConstants {
   public static final InstallationResponse TEST_INSTALLATION_RESPONSE =
       InstallationResponse.builder()
           .setName("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)
+          .setFid(TEST_FID_1)
           .setRefreshToken(TEST_REFRESH_TOKEN)
           .setAuthToken(
               InstallationTokenResult.builder()
