@@ -30,6 +30,12 @@ public abstract class InstallationTokenResult {
   @NonNull
   public abstract long getTokenExpirationInSecs();
 
+  /**
+   * The amount of time, in seconds, when the auth-token was created for this Firebase Installation.
+   */
+  @NonNull
+  public abstract long getTokenCreationTimestampInSecs();
+
   @NonNull
   public abstract Builder toBuilder();
 
@@ -46,6 +52,9 @@ public abstract class InstallationTokenResult {
 
     @NonNull
     public abstract Builder setTokenExpirationInSecs(long value);
+
+    @NonNull
+    public abstract Builder setTokenCreationTimestampInSecs(long value);
 
     @NonNull
     public abstract InstallationTokenResult build();

@@ -528,6 +528,7 @@ public class FirebaseInstallationsInstrumentedTest {
                     InstallationTokenResult.builder()
                         .setToken(TEST_AUTH_TOKEN_3)
                         .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                        .setTokenCreationTimestampInSecs(TEST_CREATION_TIMESTAMP_1)
                         .build()))
         .doAnswer(
             AdditionalAnswers.answersWithDelay(
@@ -536,6 +537,7 @@ public class FirebaseInstallationsInstrumentedTest {
                     InstallationTokenResult.builder()
                         .setToken(TEST_AUTH_TOKEN_4)
                         .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                        .setTokenCreationTimestampInSecs(TEST_CREATION_TIMESTAMP_1)
                         .build()))
         .when(backendClientReturnsOk)
         .generateAuthToken(anyString(), anyString(), anyString(), anyString());

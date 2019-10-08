@@ -35,6 +35,7 @@ class GetAuthTokenListener implements StateListener {
           InstallationTokenResult.builder()
               .setToken(persistedFidEntry.getAuthToken())
               .setTokenExpirationInSecs(persistedFidEntry.getExpiresInSecs())
+              .setTokenCreationTimestampInSecs(persistedFidEntry.getTokenCreationEpochInSecs())
               .build());
       return true;
     }
