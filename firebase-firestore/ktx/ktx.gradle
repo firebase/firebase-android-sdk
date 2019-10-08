@@ -20,6 +20,7 @@ plugins {
 firebaseLibrary {
     releaseWith project(':firebase-firestore')
     publishSources = true
+    publishJavadoc = false
 }
 
 android {
