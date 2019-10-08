@@ -43,7 +43,7 @@ class AarSizeJsonBuilder {
         }
 
         def sizes = sdkAarSizes.collect {
-            "[$pullRequestNumber, $it.first, $it.second]"
+            "[$pullRequestNumber, \"$it.first\", $it.second]"
         }.join(", ")
 
         def json = """
