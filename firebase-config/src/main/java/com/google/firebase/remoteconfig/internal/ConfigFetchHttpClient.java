@@ -39,9 +39,6 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.util.Log;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.datatransport.Event;
-import com.google.android.datatransport.Transport;
-import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.firebase.remoteconfig.BuildConfig;
@@ -49,9 +46,6 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
-import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent;
-import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent.EventType;
-import com.google.firebase.remoteconfig.proto.ClientMetrics.FetchEvent;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -81,7 +75,6 @@ public class ConfigFetchHttpClient {
   private static final String API_KEY_HEADER = "X-Goog-Api-Key";
   private static final String ETAG_HEADER = "ETag";
   private static final String IF_NONE_MATCH_HEADER = "If-None-Match";
-  private static final String TRANSPORT_FINAL = "-1"; //(TODO) Replace with actual logSource int
   private static final String X_ANDROID_PACKAGE_HEADER = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER = "X-Android-Cert";
   private static final String X_GOOGLE_GFE_CAN_RETRY = "X-Google-GFE-Can-Retry";
@@ -94,7 +87,7 @@ public class ConfigFetchHttpClient {
   private final long connectTimeoutInSeconds;
   private final long readTimeoutInSeconds;
 
-  private Transport<ClientLogEvent> transport;
+  private ConfigLogger configLogger;
 
   /**
    * Creates a client for {@link #fetch}ing data from the Firebase Remote Config server.
@@ -106,7 +99,7 @@ public class ConfigFetchHttpClient {
       String namespace,
       long connectTimeoutInSeconds,
       long readTimeoutInSeconds,
-      TransportFactory transportFactory) {
+      ConfigLogger configLogger) {
     this.context = context;
     this.appId = appId;
     this.apiKey = apiKey;
@@ -114,9 +107,7 @@ public class ConfigFetchHttpClient {
     this.namespace = namespace;
     this.connectTimeoutInSeconds = connectTimeoutInSeconds;
     this.readTimeoutInSeconds = readTimeoutInSeconds;
-    this.transport =
-        transportFactory.getTransport(
-            TRANSPORT_FINAL, ClientLogEvent.class, ClientLogEvent::toByteArray);
+    this.configLogger = configLogger;
   }
 
   /**
@@ -232,26 +223,10 @@ public class ConfigFetchHttpClient {
     ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
 
     long endTime = System.currentTimeMillis();
-    ClientLogEvent clientLogEvent = generateClientLogEvent(instanceId, startTime, endTime);
-    transport.send(Event.ofTelemetry(clientLogEvent));
+    configLogger.logFetchEvent(appId, namespace, instanceId, System.currentTimeMillis(),
+        endTime - startTime);
 
     return FetchResponse.forBackendUpdatesFetched(fetchedConfigs, fetchResponseETag);
-  }
-
-  @VisibleForTesting
-  public ClientLogEvent generateClientLogEvent(String instanceId, long startTime, long endTime) {
-    return ClientLogEvent.newBuilder()
-        .setAppId(appId)
-        .setNamespace(namespace)
-        .setFid(instanceId) // (TODO) Replace with FID?
-        .setTimestampMillis(System.currentTimeMillis())
-        .setEventType(EventType.FETCH)
-        .setSdkVersion(BuildConfig.VERSION_NAME)
-        .setFetchEvent(
-          FetchEvent.newBuilder()
-              .setNetworkLatencyMillis(endTime - startTime)
-              .build())
-        .build();
   }
 
   private void setUpUrlConnection(

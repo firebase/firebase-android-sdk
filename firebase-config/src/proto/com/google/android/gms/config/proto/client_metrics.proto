@@ -37,7 +37,7 @@ message ClientLogEvent {
 
   // The namespace of values being fetched from Remote Config. Used to
   // differentiate between third-party and first-party apps.
-  required string namespace = 2;
+  required string namespace_id = 2;
 
   // The Firebase Installation ID, which is used to identify an instance of
   // Firebase for metric aggregation purposes.

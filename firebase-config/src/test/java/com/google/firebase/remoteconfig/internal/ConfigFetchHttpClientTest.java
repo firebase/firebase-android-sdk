@@ -35,12 +35,10 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFie
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 import static org.mockito.Mockito.verify;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
-import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.util.MockClock;
@@ -52,8 +50,6 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent;
-import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent.EventType;
-import com.google.firebase.remoteconfig.proto.ClientMetrics.FetchEvent;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
@@ -66,8 +62,6 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -92,7 +86,8 @@ public class ConfigFetchHttpClientTest {
       "etag-" + PROJECT_NUMBER + "-" + DEFAULT_NAMESPACE + "-fetch-%d";
   private static final String FIRST_ETAG = String.format(ETAG_FORMAT, 1);
   private static final String SECOND_ETAG = String.format(ETAG_FORMAT, 2);
-  private static final String TRANSPORT_FINAL = "-1"; //(TODO) Replace with actual logSource int
+  
+  private static final String TRANSPORT_FINAL = "-1"; // (TODO) Replace with actual logSource int
 
   private Context context;
   private ConfigFetchHttpClient configFetchHttpClient;
@@ -103,8 +98,8 @@ public class ConfigFetchHttpClientTest {
   private TransportFactory mockTransportFactory;
   @Mock
   private Transport<ClientLogEvent> mockTransport;
-  @Captor
-  ArgumentCaptor<Event<ClientLogEvent>> logEventCaptor;
+  @Mock
+  private ConfigLogger mockConfigLogger;
 
   private MockClock mockClock;
 
@@ -119,6 +114,8 @@ public class ConfigFetchHttpClientTest {
         mockTransportFactory.getTransport(
             TRANSPORT_FINAL, ClientLogEvent.class, ClientLogEvent::toByteArray);
 
+    mockConfigLogger = new ConfigLogger(mockTransport);
+
     configFetchHttpClient =
         new ConfigFetchHttpClient(
             context,
@@ -127,7 +124,7 @@ public class ConfigFetchHttpClientTest {
             DEFAULT_NAMESPACE,
             /* connectTimeoutInSeconds= */ 10L,
             /* readTimeoutInSeconds= */ 10L,
-            mockTransportFactory);
+            mockConfigLogger);
 
     hasChangeResponseBody =
         new JSONObject()
@@ -188,117 +185,8 @@ public class ConfigFetchHttpClientTest {
 
     fetch(FIRST_ETAG);
 
-    verify(mockTransport).send(any());
-  }
-
-  @Test
-  public void fetch_newValues_logsAppId() throws Exception {
-    setServerResponseTo(hasChangeResponseBody, SECOND_ETAG);
-
-    fetch(FIRST_ETAG);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    assertThat(clientLogEvent.getAppId()).isEqualTo(FAKE_APP_ID);
-  }
-
-
-  @Test
-  public void fetch_newValues_logsNamespace() throws Exception {
-    setServerResponseTo(hasChangeResponseBody, SECOND_ETAG);
-
-    fetch(FIRST_ETAG);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    assertThat(clientLogEvent.getNamespace()).isEqualTo(DEFAULT_NAMESPACE);
-  }
-
-  @Test
-  public void fetch_newValues_logsFid() throws Exception {
-    setServerResponseTo(hasChangeResponseBody, SECOND_ETAG);
-
-    fetch(FIRST_ETAG);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    assertThat(clientLogEvent.getFid()).isEqualTo(INSTANCE_ID_STRING);
-  }
-
-  @Test
-  public void fetch_newValues_logsTimestamp() throws Exception {
-    setServerResponseTo(hasChangeResponseBody, SECOND_ETAG);
-
-    when(configFetchHttpClient.generateClientLogEvent(INSTANCE_ID_STRING, 0, 10))
-        .thenReturn(generateFakeClientLogEvent());
-
-    fetch(FIRST_ETAG);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    assertThat(clientLogEvent.getTimestampMillis()).isEqualTo(100);
-
-  }
-
-  @Test
-  public void fetch_newValues_logsEventType() throws Exception {
-    setServerResponseTo(hasChangeResponseBody, SECOND_ETAG);
-
-    fetch(FIRST_ETAG);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    assertThat(clientLogEvent.getEventType()).isEqualTo(EventType.FETCH);
-
-  }
-
-  @Test
-  public void fetch_newValues_logsSdkVersion() throws Exception {
-    setServerResponseTo(hasChangeResponseBody, SECOND_ETAG);
-
-    fetch(FIRST_ETAG);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    assertThat(clientLogEvent.getSdkVersion()).isEqualTo(BuildConfig.VERSION_NAME);
-  }
-
-  @Test
-  public void fetch_newValues_logsNetworkLatency() throws Exception {
-    setServerResponseTo(hasChangeResponseBody, SECOND_ETAG);
-
-    when(configFetchHttpClient.generateClientLogEvent(INSTANCE_ID_STRING, 0, 10))
-        .thenReturn(generateFakeClientLogEvent());
-
-    fetch(FIRST_ETAG);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    FetchEvent fetchEvent = clientLogEvent.getFetchEvent();
-    assertThat(fetchEvent.getNetworkLatencyMillis()).isEqualTo(10);
-  }
-
-  private static ClientLogEvent generateFakeClientLogEvent() {
-    return (ClientLogEvent) ClientLogEvent.newBuilder()
-        .setAppId(FAKE_APP_ID)
-        .setNamespace(DEFAULT_NAMESPACE)
-        .setFid(INSTANCE_ID_STRING)
-        .setTimestampMillis(100)
-        .setEventType(EventType.FETCH)
-        .setSdkVersion(BuildConfig.VERSION_NAME)
-        .setFetchEvent(
-            (FetchEvent) FetchEvent
-                .newBuilder()
-                .setNetworkLatencyMillis(10)
-                .build())
-        .build();
+    verify(mockConfigLogger).logFetchEvent(FAKE_APP_ID, DEFAULT_NAMESPACE,
+        INSTANCE_ID_STRING, any(), any());
   }
 
   @Test
@@ -387,7 +275,7 @@ public class ConfigFetchHttpClientTest {
             DEFAULT_NAMESPACE,
             /* connectTimeoutInSeconds= */ 15L,
             /* readTimeoutInSeconds= */ 20L,
-            mockTransportFactory);
+            mockConfigLogger);
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
 
     fetch(FIRST_ETAG);
