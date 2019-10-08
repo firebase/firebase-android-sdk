@@ -211,15 +211,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   private final void doRegistration() {
-      try {
-        PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+    try {
+      PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-        // New FID needs to be created
-        if (persistedFidEntry.isErrored() || persistedFidEntry.isNotGenerated()) {
-          String fid = utils.createRandomFid();
-          persistFid(fid);
-          persistedFidEntry = persistedFid.readPersistedFidEntryValue();
-        }
+      // New FID needs to be created
+      if (persistedFidEntry.isErrored() || persistedFidEntry.isNotGenerated()) {
+        String fid = utils.createRandomFid();
+        persistFid(fid);
+        persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+      }
 
       // Always notify the GetIdListeners. For GetAuthTokenListeners, only notify if force
       // refreshing auth token is not required.
@@ -229,21 +229,21 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         }
       }
 
-        // FID needs to be registered
-        if (persistedFidEntry.isUnregistered()) {
-          registerAndSaveFid(persistedFidEntry);
-          persistedFidEntry = persistedFid.readPersistedFidEntryValue();
-        }
+      // FID needs to be registered
+      if (persistedFidEntry.isUnregistered()) {
+        registerAndSaveFid(persistedFidEntry);
+        persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+      }
 
-        // Don't notify the listeners at this point; we might as well make ure the auth token is up
-        // to date before letting them know.
+      // Don't notify the listeners at this point; we might as well make ure the auth token is up
+      // to date before letting them know.
 
-        boolean needRefresh = utils.isAuthTokenExpired(persistedFidEntry);
-        if (!needRefresh) {
-          synchronized (lock) {
-            needRefresh = shouldRefreshAuthToken;
-          }
+      boolean needRefresh = utils.isAuthTokenExpired(persistedFidEntry);
+      if (!needRefresh) {
+        synchronized (lock) {
+          needRefresh = shouldRefreshAuthToken;
         }
+      }
 
       // Refresh Auth token if needed
       if (needRefresh) {
@@ -263,7 +263,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
               .build();
       persistedFid.insertOrUpdatePersistedFidEntry(errorFidEntry);
-      triggerOnStateReached(errorFidEntry);
+      triggerOnException(errorFidEntry, e);
     }
   }
 
