@@ -42,19 +42,19 @@ class Utils {
   /** Length of new-format FIDs as introduced in 2019. */
   public static final int FID_LENGTH = 22;
 
-  private static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = 3600L; // 1 hour
+  private static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = TimeUnit.HOURS.toSeconds(1);
 
   Utils(Clock clock) {
     this.clock = clock;
   }
 
   /**
-   * Checks if the FIS Auth token is expired or going to expire in next 1 hour
-   * (AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS).
+   * Checks if the FIS Auth token is expired or going to expire in next 1 hour {@link
+   * #AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS}.
    */
   public boolean isAuthTokenExpired(PersistedFidEntry persistedFidEntry) {
-    return (persistedFidEntry.getTokenCreationEpochInSecs() + persistedFidEntry.getExpiresInSecs()
-        > currentTimeInSecs() + AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS);
+    return persistedFidEntry.getTokenCreationEpochInSecs() + persistedFidEntry.getExpiresInSecs()
+        > currentTimeInSecs() + AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS;
   }
 
   /** Returns current time in seconds. */
