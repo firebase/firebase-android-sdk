@@ -189,7 +189,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       Iterator<StateListener> it = listeners.iterator();
       while (it.hasNext()) {
         StateListener l = it.next();
-        boolean doneListening = l.onStateReached(persistedFidEntry);
+        boolean doneListening = l.onStateReached(persistedFidEntry, shouldRefreshAuthToken);
         if (doneListening) {
           it.remove();
         }
@@ -221,18 +221,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         persistedFidEntry = persistedFid.readPersistedFidEntryValue();
       }
 
-      // Always notify the GetIdListeners. For GetAuthTokenListeners, only notify if force
-      // refreshing auth token is not required.
-      synchronized (lock) {
-        if (!shouldRefreshAuthToken) {
-          triggerOnStateReached(persistedFidEntry);
-        }
-      }
+      triggerOnStateReached(persistedFidEntry);
 
       // FID needs to be registered
       if (persistedFidEntry.isUnregistered()) {
         registerAndSaveFid(persistedFidEntry);
         persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+        // Newly registered Fid will have valid auth token. No refresh required.
+        synchronized (lock) {
+          shouldRefreshAuthToken = false;
+        }
       }
 
       // Don't notify the listeners at this point; we might as well make ure the auth token is up
@@ -248,10 +246,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       // Refresh Auth token if needed
       if (needRefresh) {
         fetchAuthTokenFromServer(persistedFidEntry);
+        persistedFidEntry = persistedFid.readPersistedFidEntryValue();
         synchronized (lock) {
           shouldRefreshAuthToken = false;
         }
-        persistedFidEntry = persistedFid.readPersistedFidEntryValue();
       }
 
       triggerOnStateReached(persistedFidEntry);

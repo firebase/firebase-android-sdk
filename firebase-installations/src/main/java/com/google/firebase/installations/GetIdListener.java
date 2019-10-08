@@ -25,7 +25,7 @@ class GetIdListener implements StateListener {
   }
 
   @Override
-  public boolean onStateReached(PersistedFidEntry persistedFidEntry) {
+  public boolean onStateReached(PersistedFidEntry persistedFidEntry, boolean unused) {
     if (persistedFidEntry.isUnregistered() || persistedFidEntry.isRegistered()) {
       taskCompletionSource.trySetResult(persistedFidEntry.getFirebaseInstallationId());
       return true;

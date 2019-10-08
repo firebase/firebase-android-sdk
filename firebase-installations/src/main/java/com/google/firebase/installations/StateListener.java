@@ -17,14 +17,13 @@ package com.google.firebase.installations;
 import com.google.firebase.installations.local.PersistedFidEntry;
 
 interface StateListener {
-
   /**
    * Returns {@code true} if the defined {@link PersistedFidEntry} state is reached, {@code false}
    * otherwise.
    */
-  boolean onStateReached(PersistedFidEntry persistedFidEntry);
+  boolean onStateReached(PersistedFidEntry persistedFidEntry, boolean shouldRefreshAuthToken);
 
-  /**
+    /**
    * Returns {@code true} if an exception is thrown while registering a Firebase Installation,
    * {@code false} otherwise.
    */
