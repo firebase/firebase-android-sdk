@@ -58,6 +58,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Object lock = new Object();
 
   @GuardedBy("lock")
+  private boolean shouldRefreshAuthToken;
+
+  @GuardedBy("lock")
   private final List<StateListener> listeners = new ArrayList<>();
 
   /** package private constructor. */
@@ -126,7 +129,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<String> getId() {
     Task<String> task = addGetIdListener();
-    executor.execute(doRegistration(DO_NOT_FORCE_REFRESH));
+    executor.execute(this::doRegistration);
     return task;
   }
 
@@ -141,10 +144,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   @NonNull
   @Override
-  public synchronized Task<InstallationTokenResult> getAuthToken(
-      @AuthTokenOption int authTokenOption) {
-    Task<InstallationTokenResult> task = addGetAuthTokenListener();
-    executor.execute(doRegistration(authTokenOption));
+  public Task<InstallationTokenResult> getAuthToken(@AuthTokenOption int authTokenOption) {
+    Task<InstallationTokenResult> task = addGetAuthTokenListener(authTokenOption);
+    executor.execute(this::doRegistration);
     return task;
   }
 
@@ -168,11 +170,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return taskCompletionSource.getTask();
   }
 
-  private Task<InstallationTokenResult> addGetAuthTokenListener() {
+  private Task<InstallationTokenResult> addGetAuthTokenListener(
+      @AuthTokenOption int authTokenOption) {
     TaskCompletionSource<InstallationTokenResult> taskCompletionSource =
         new TaskCompletionSource<>();
     StateListener l = new GetAuthTokenListener(utils, taskCompletionSource);
     synchronized (lock) {
+      if (authTokenOption == FORCE_REFRESH) {
+        shouldRefreshAuthToken = true;
+      }
       listeners.add(l);
     }
     return taskCompletionSource.getTask();
@@ -183,60 +189,67 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       Iterator<StateListener> it = listeners.iterator();
       while (it.hasNext()) {
         StateListener l = it.next();
-        boolean doneListening = l.onStateReached(persistedFidEntry);
+        boolean doneListening = l.onStateReached(persistedFidEntry, shouldRefreshAuthToken);
         if (doneListening) {
           it.remove();
-          break;
         }
       }
     }
   }
 
-  private final Runnable doRegistration(int authTokenOption) {
-    return () -> {
-      try {
-        PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+  private final void doRegistration() {
+    try {
+      PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
 
-        // New FID needs to be created
-        if (persistedFidEntry.isErrored() || persistedFidEntry.isNotGenerated()) {
-          String fid = utils.createRandomFid();
-          persistFid(fid);
-          persistedFidEntry = persistedFid.readPersistedFidEntryValue();
-        }
-
-        // GetIdListener will be notified as authTokenOption is always DO_NOT_FORCE_REFRESH.
-        // GetAuthTokenListener should only be notified if FORCE_REFRESH is not required.
-        if (authTokenOption != FORCE_REFRESH) {
-          triggerOnStateReached(persistedFidEntry);
-        }
-
-        // FID needs to be registered
-        if (persistedFidEntry.isUnregistered()) {
-          registerAndSaveFid(persistedFidEntry);
-          persistedFidEntry = persistedFid.readPersistedFidEntryValue();
-        }
-
-        // Don't notify the listeners at this point; we might as well make ure the auth token is up
-        // to date before letting them know.
-
-        // Refresh Auth token if needed
-        if (authTokenOption == FORCE_REFRESH || utils.isAuthTokenExpired(persistedFidEntry)) {
-          fetchAuthTokenFromServer(persistedFidEntry);
-          persistedFidEntry = persistedFid.readPersistedFidEntryValue();
-        }
-
-        triggerOnStateReached(persistedFidEntry);
-      } catch (Exception e) {
-        PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
-        PersistedFidEntry errorFidEntry =
-            persistedFidEntry
-                .toBuilder()
-                .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
-                .build();
-        persistedFid.insertOrUpdatePersistedFidEntry(errorFidEntry);
-        triggerOnStateReached(errorFidEntry);
+      // New FID needs to be created
+      if (persistedFidEntry.isErrored() || persistedFidEntry.isNotGenerated()) {
+        String fid = utils.createRandomFid();
+        persistFid(fid);
+        persistedFidEntry = persistedFid.readPersistedFidEntryValue();
       }
-    };
+
+      triggerOnStateReached(persistedFidEntry);
+
+      // FID needs to be registered
+      if (persistedFidEntry.isUnregistered()) {
+        registerAndSaveFid(persistedFidEntry);
+        persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+        // Newly registered Fid will have valid auth token. No refresh required.
+        synchronized (lock) {
+          shouldRefreshAuthToken = false;
+        }
+      }
+
+      // Don't notify the listeners at this point; we might as well make ure the auth token is up
+      // to date before letting them know.
+
+      boolean needRefresh = utils.isAuthTokenExpired(persistedFidEntry);
+      if (!needRefresh) {
+        synchronized (lock) {
+          needRefresh = shouldRefreshAuthToken;
+        }
+      }
+
+      // Refresh Auth token if needed
+      if (needRefresh) {
+        fetchAuthTokenFromServer(persistedFidEntry);
+        persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+        synchronized (lock) {
+          shouldRefreshAuthToken = false;
+        }
+      }
+
+      triggerOnStateReached(persistedFidEntry);
+    } catch (Exception e) {
+      PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
+      PersistedFidEntry errorFidEntry =
+          persistedFidEntry
+              .toBuilder()
+              .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
+              .build();
+      persistedFid.insertOrUpdatePersistedFidEntry(errorFidEntry);
+      triggerOnStateReached(errorFidEntry);
+    }
   }
 
   private void persistFid(String fid) throws FirebaseInstallationsException {
