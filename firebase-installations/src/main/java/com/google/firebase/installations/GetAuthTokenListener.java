@@ -28,9 +28,12 @@ class GetAuthTokenListener implements StateListener {
   }
 
   @Override
-  public boolean onStateReached(PersistedFidEntry persistedFidEntry) {
+  public boolean onStateReached(
+      PersistedFidEntry persistedFidEntry, boolean shouldRefreshAuthToken) {
     // AuthTokenListener state is reached when FID is registered and has a valid auth token
-    if (persistedFidEntry.isRegistered() && !utils.isAuthTokenExpired(persistedFidEntry)) {
+    if (persistedFidEntry.isRegistered()
+        && !utils.isAuthTokenExpired(persistedFidEntry)
+        && !shouldRefreshAuthToken) {
       resultTaskCompletionSource.setResult(
           InstallationTokenResult.builder()
               .setToken(persistedFidEntry.getAuthToken())
