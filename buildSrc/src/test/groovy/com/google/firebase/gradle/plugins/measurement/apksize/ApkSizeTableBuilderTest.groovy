@@ -38,7 +38,7 @@ public class ApkSizeTableBuilderTest {
   @Test
   public void toTableString_withOneMeasurement() {
     def expected = HEADER +
-        "|firebase foo         |debug              |              255,000|"
+        "|firebase foo                   |debug              |              255,000|"
 
     def builder = new ApkSizeTableBuilder()
     builder.addApkSize("firebase foo", "debug", 255000)
