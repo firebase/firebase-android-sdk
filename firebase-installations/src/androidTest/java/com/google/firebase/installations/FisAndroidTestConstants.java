@@ -49,15 +49,15 @@ public final class FisAndroidTestConstants {
           .setAuthToken(
               InstallationTokenResult.builder()
                   .setToken(TEST_AUTH_TOKEN)
-                  .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                  .setTokenCreationTimestampInSecs(TEST_CREATION_TIMESTAMP_1)
+                  .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                  .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
                   .build())
           .build();
 
   public static final InstallationTokenResult TEST_INSTALLATION_TOKEN_RESULT =
       InstallationTokenResult.builder()
           .setToken(TEST_AUTH_TOKEN_2)
-          .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-          .setTokenCreationTimestampInSecs(TEST_CREATION_TIMESTAMP_1)
+          .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+          .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
           .build();
 }

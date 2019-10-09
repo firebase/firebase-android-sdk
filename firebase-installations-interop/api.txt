@@ -5,8 +5,8 @@ package com.google.firebase.installations {
     ctor public InstallationTokenResult();
     method @NonNull public static com.google.firebase.installations.InstallationTokenResult.Builder builder();
     method @NonNull public abstract String getToken();
-    method @NonNull public abstract long getTokenCreationTimestampInSecs();
-    method @NonNull public abstract long getTokenExpirationInSecs();
+    method @NonNull public abstract long getTokenCreationTimestamp();
+    method @NonNull public abstract long getTokenExpirationTimestamp();
     method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder toBuilder();
   }
 
@@ -14,8 +14,8 @@ package com.google.firebase.installations {
     ctor public InstallationTokenResult.Builder();
     method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult build();
     method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setToken(@NonNull String);
-    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setTokenCreationTimestampInSecs(long);
-    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setTokenExpirationInSecs(long);
+    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setTokenCreationTimestamp(long);
+    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setTokenExpirationTimestamp(long);
   }
 
 }

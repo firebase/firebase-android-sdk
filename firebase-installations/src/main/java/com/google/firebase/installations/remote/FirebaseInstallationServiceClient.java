@@ -272,7 +272,7 @@ public class FirebaseInstallationServiceClient {
           if (key.equals("token")) {
             installationTokenResult.setToken(reader.nextString());
           } else if (key.equals("expiresIn")) {
-            installationTokenResult.setTokenExpirationInSecs(
+            installationTokenResult.setTokenExpirationTimestamp(
                 TimeUnit.MILLISECONDS.toSeconds(reader.nextLong()));
           } else {
             reader.skipValue();
@@ -301,7 +301,7 @@ public class FirebaseInstallationServiceClient {
       if (name.equals("token")) {
         builder.setToken(reader.nextString());
       } else if (name.equals("expiresIn")) {
-        builder.setTokenExpirationInSecs(TimeUnit.MILLISECONDS.toSeconds(reader.nextLong()));
+        builder.setTokenExpirationTimestamp(TimeUnit.MILLISECONDS.toSeconds(reader.nextLong()));
       } else {
         reader.skipValue();
       }
