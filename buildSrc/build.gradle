@@ -43,7 +43,7 @@ dependencies {
     implementation 'io.opencensus:opencensus-exporter-stats-stackdriver:0.18.0'
     runtime 'io.opencensus:opencensus-impl:0.18.0'
 
-    implementation 'com.android.tools.build:gradle:3.4.1'
+    implementation 'com.android.tools.build:gradle:3.5.1'
     testImplementation 'junit:junit:4.12'
     testImplementation('org.spockframework:spock-core:1.1-groovy-2.4') {
         exclude group: 'org.codehaus.groovy'
