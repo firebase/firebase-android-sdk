@@ -23,7 +23,7 @@ interface StateListener {
    */
   boolean onStateReached(PersistedFidEntry persistedFidEntry, boolean shouldRefreshAuthToken);
 
-    /**
+  /**
    * Returns {@code true} if an exception is thrown while registering a Firebase Installation,
    * {@code false} otherwise.
    */
