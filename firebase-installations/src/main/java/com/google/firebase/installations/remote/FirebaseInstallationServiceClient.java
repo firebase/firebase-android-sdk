@@ -262,7 +262,7 @@ public class FirebaseInstallationServiceClient {
     while (reader.hasNext()) {
       String name = reader.nextName();
       if (name.equals("name")) {
-        builder.setName(reader.nextString());
+        builder.setUri(reader.nextString());
       } else if (name.equals("fid")) {
         builder.setFid(reader.nextString());
       } else if (name.equals("refreshToken")) {

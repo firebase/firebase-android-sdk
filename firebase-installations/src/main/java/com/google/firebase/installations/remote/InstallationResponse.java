@@ -22,7 +22,7 @@ import com.google.firebase.installations.InstallationTokenResult;
 public abstract class InstallationResponse {
 
   @NonNull
-  public abstract String getName();
+  public abstract String getUri();
 
   @NonNull
   public abstract String getFid();
@@ -45,7 +45,7 @@ public abstract class InstallationResponse {
   @AutoValue.Builder
   public abstract static class Builder {
     @NonNull
-    public abstract Builder setName(@NonNull String value);
+    public abstract Builder setUri(@NonNull String value);
 
     @NonNull
     public abstract Builder setFid(@NonNull String value);

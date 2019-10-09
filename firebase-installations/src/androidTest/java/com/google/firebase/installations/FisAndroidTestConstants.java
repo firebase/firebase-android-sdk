@@ -46,7 +46,7 @@ public final class FisAndroidTestConstants {
       PersistedFidEntry.builder().build();
   public static final InstallationResponse TEST_INSTALLATION_RESPONSE =
       InstallationResponse.builder()
-          .setName("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)
+          .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)
           .setFid(TEST_FID_1)
           .setRefreshToken(TEST_REFRESH_TOKEN)
           .setAuthToken(
