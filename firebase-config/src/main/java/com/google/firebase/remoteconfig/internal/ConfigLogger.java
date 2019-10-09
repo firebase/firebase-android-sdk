@@ -35,8 +35,7 @@ public class ConfigLogger {
   }
 
   /**
-   * Creates a {@link ClientLogEvent} with Fetch-specific metrics {@link FetchEvent}
-   * and sends the Event via {@link Transport} to log to the backend.
+   * Creates and log a {@link ClientLogEvent} that contains metrics related to a {@link FetchEvent}
    */
   void logFetchEvent(
       String appId, String namespace, String fid, long timestampMillis, long networkLatencyMillis) {
@@ -51,8 +50,8 @@ public class ConfigLogger {
   }
 
   /**
-   * Takes a general {@link ClientLogEvent.Builder} and networkLatencyMillis
-   * and returns a Fetch-specific {@link ClientLogEvent}
+   * Takes a general {@link ClientLogEvent.Builder} and networkLatencyMillis and returns a
+   * Fetch-specific {@link ClientLogEvent}
    */
   private ClientLogEvent createFetchEvent(
       ClientLogEvent.Builder clientLogEventBuilder, long networkLatencyMillis) {
@@ -64,8 +63,8 @@ public class ConfigLogger {
   }
 
   /**
-   * Returns a {@link ClientLogEvent.Builder} that instantiates general fields for
-   * client-side metrics.
+   * Returns a {@link ClientLogEvent.Builder} that instantiates general fields for client-side
+   * metrics.
    */
   private ClientLogEvent.Builder createClientLogEventBuilder(
       String appId, String namespace, String fid, long timestampMillis, String sdkVersion) {
