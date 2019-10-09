@@ -89,9 +89,7 @@ public class ConfigFetchHttpClient {
 
   private ConfigLogger configLogger;
 
-  /**
-   * Creates a client for {@link #fetch}ing data from the Firebase Remote Config server.
-   */
+  /** Creates a client for {@link #fetch}ing data from the Firebase Remote Config server. */
   public ConfigFetchHttpClient(
       Context context,
       String appId,
@@ -110,17 +108,13 @@ public class ConfigFetchHttpClient {
     this.configLogger = configLogger;
   }
 
-  /**
-   * Used to verify that the timeout is being set correctly.
-   */
+  /** Used to verify that the timeout is being set correctly. */
   @VisibleForTesting
   public long getConnectTimeoutInSeconds() {
     return connectTimeoutInSeconds;
   }
 
-  /**
-   * Used to verify that the timeout is being set correctly.
-   */
+  /** Used to verify that the timeout is being set correctly. */
   @VisibleForTesting
   public long getReadTimeoutInSeconds() {
     return readTimeoutInSeconds;
@@ -158,15 +152,15 @@ public class ConfigFetchHttpClient {
    * contains an "entries" field with parameters fetched from the FRC server.
    *
    * @param urlConnection a {@link HttpURLConnection} created by a call to {@link
-   * #createHttpURLConnection}.
+   *     #createHttpURLConnection}.
    * @param instanceId the Firebase Instance ID that identifies a Firebase App Instance.
    * @param instanceIdToken a valid Firebase Instance ID Token that authenticates a Firebase App
-   * Instance.
+   *     Instance.
    * @param analyticsUserProperties a map of Google Analytics User Properties and the device's
-   * corresponding values.
+   *     corresponding values.
    * @param lastFetchETag the ETag returned by the last successful fetch call to the FRC server. The
-   * server uses this ETag to determine if there has been a change in the response body since the
-   * last fetch.
+   *     server uses this ETag to determine if there has been a change in the response body since
+   *     the last fetch.
    * @param customHeaders custom HTTP headers that will be sent to the FRC server.
    * @param currentTime the current time on the device that is performing the fetch.
    */
@@ -223,8 +217,12 @@ public class ConfigFetchHttpClient {
     ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
 
     long endTime = System.currentTimeMillis();
-    configLogger.logFetchEvent(appId, namespace, instanceId, System.currentTimeMillis(),
-        endTime - startTime);
+    configLogger.logFetchEvent(
+        appId,
+        namespace,
+        instanceId,
+        /* timestampMillis = */ System.currentTimeMillis(),
+        /* networkLatencyMillis = */ endTime - startTime);
 
     return FetchResponse.forBackendUpdatesFetched(fetchedConfigs, fetchResponseETag);
   }
@@ -262,9 +260,7 @@ public class ConfigFetchHttpClient {
     urlConnection.setRequestProperty("Accept", "application/json");
   }
 
-  /**
-   * Sends developer specified custom headers to the Remote Config server.
-   */
+  /** Sends developer specified custom headers to the Remote Config server. */
   private void setCustomRequestHeaders(
       HttpURLConnection urlConnection, Map<String, String> customHeaders) {
     for (Map.Entry<String, String> customHeaderEntry : customHeaders.entrySet()) {
@@ -272,9 +268,7 @@ public class ConfigFetchHttpClient {
     }
   }
 
-  /**
-   * Gets the Android package's SHA-1 fingerprint.
-   */
+  /** Gets the Android package's SHA-1 fingerprint. */
   private String getFingerprintHashForPackage() {
     byte[] hash;
 
@@ -360,9 +354,7 @@ public class ConfigFetchHttpClient {
     return new JSONObject(responseStringBuilder.toString());
   }
 
-  /**
-   * Returns true if the backend has updated fetch values.
-   */
+  /** Returns true if the backend has updated fetch values. */
   private boolean backendHasUpdates(JSONObject response) {
     try {
       return !response.get(STATE).equals("NO_CHANGE");

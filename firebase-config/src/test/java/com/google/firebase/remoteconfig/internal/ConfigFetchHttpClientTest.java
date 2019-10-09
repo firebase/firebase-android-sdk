@@ -33,14 +33,12 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFie
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
-import com.google.android.datatransport.Transport;
-import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -49,7 +47,6 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
-import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
@@ -62,6 +59,7 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -86,19 +84,14 @@ public class ConfigFetchHttpClientTest {
       "etag-" + PROJECT_NUMBER + "-" + DEFAULT_NAMESPACE + "-fetch-%d";
   private static final String FIRST_ETAG = String.format(ETAG_FORMAT, 1);
   private static final String SECOND_ETAG = String.format(ETAG_FORMAT, 2);
-  
-  private static final String TRANSPORT_FINAL = "-1"; // (TODO) Replace with actual logSource int
 
   private Context context;
   private ConfigFetchHttpClient configFetchHttpClient;
   private JSONObject hasChangeResponseBody;
   private JSONObject noChangeResponseBody;
   private FakeHttpURLConnection fakeHttpURLConnection;
-  @Mock
-  private TransportFactory mockTransportFactory;
-  @Mock
-  private Transport<ClientLogEvent> mockTransport;
-  @Mock
+
+  @Mock(answer = Answers.RETURNS_SMART_NULLS)
   private ConfigLogger mockConfigLogger;
 
   private MockClock mockClock;
@@ -107,14 +100,6 @@ public class ConfigFetchHttpClientTest {
   public void setUp() throws Exception {
     initMocks(this);
     context = RuntimeEnvironment.application;
-
-    mockTransportFactory = mock(TransportFactory.class);
-
-    mockTransport =
-        mockTransportFactory.getTransport(
-            TRANSPORT_FINAL, ClientLogEvent.class, ClientLogEvent::toByteArray);
-
-    mockConfigLogger = new ConfigLogger(mockTransport);
 
     configFetchHttpClient =
         new ConfigFetchHttpClient(
@@ -185,8 +170,13 @@ public class ConfigFetchHttpClientTest {
 
     fetch(FIRST_ETAG);
 
-    verify(mockConfigLogger).logFetchEvent(FAKE_APP_ID, DEFAULT_NAMESPACE,
-        INSTANCE_ID_STRING, any(), any());
+    verify(mockConfigLogger)
+        .logFetchEvent(
+            /* appId = */ eq(FAKE_APP_ID),
+            /* namespaceId = */ eq(DEFAULT_NAMESPACE),
+            /* fid = */ eq(INSTANCE_ID_STRING),
+            /* timestampMillis = */ anyLong(),
+            /* networkLatencyMillis = */ anyLong());
   }
 
   @Test

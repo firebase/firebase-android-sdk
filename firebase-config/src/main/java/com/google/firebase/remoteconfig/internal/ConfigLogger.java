@@ -31,39 +31,31 @@ public class ConfigLogger {
   }
 
   public void logFetchEvent(
-      String appId,
-      String namespace,
-      String fid,
-      long timestampMillis,
-      long latency) {
+      String appId, String namespace, String fid, long timestampMillis, long networkLatencyMillis) {
 
-    ClientLogEvent.Builder clientLogEventBuilder = createClientLogEventBuilder(
-        appId,
-        namespace,
-        fid,
-        timestampMillis,
-        BuildConfig.VERSION_NAME);
+    ClientLogEvent.Builder clientLogEventBuilder =
+        createClientLogEventBuilder(
+            appId, namespace, fid, timestampMillis, /* sdkVersion = */ BuildConfig.VERSION_NAME);
 
-    ClientLogEvent fetchEvent = createFetchEvent(clientLogEventBuilder, latency);
+    ClientLogEvent fetchEvent = createFetchEvent(clientLogEventBuilder, networkLatencyMillis);
 
     transport.send(Event.ofData(fetchEvent));
   }
 
   @VisibleForTesting
-  public ClientLogEvent createFetchEvent(ClientLogEvent.Builder clientLogEventBuilder,
-      long latency) {
+  public ClientLogEvent createFetchEvent(
+      ClientLogEvent.Builder clientLogEventBuilder, long networkLatencyMillis) {
     return clientLogEventBuilder
         .setEventType(EventType.FETCH)
-        .setFetchEvent(FetchEvent.newBuilder().setNetworkLatencyMillis(latency).build())
+        .setFetchEvent(
+            FetchEvent.newBuilder()
+                .setNetworkLatencyMillis(networkLatencyMillis)
+                .build())
         .build();
   }
 
   private ClientLogEvent.Builder createClientLogEventBuilder(
-      String appId,
-      String namespace,
-      String fid,
-      long timestampMillis,
-      String sdkVersion) {
+      String appId, String namespace, String fid, long timestampMillis, String sdkVersion) {
 
     return ClientLogEvent.newBuilder()
         .setAppId(appId)
@@ -72,5 +64,4 @@ public class ConfigLogger {
         .setTimestampMillis(timestampMillis)
         .setSdkVersion(sdkVersion);
   }
-
 }

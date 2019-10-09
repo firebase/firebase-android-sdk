@@ -57,29 +57,19 @@ import java.util.concurrent.Executors;
  */
 @KeepForSdk
 public class RemoteConfigComponent {
-
-  /**
-   * Name of the file where activated configs are stored.
-   */
+  /** Name of the file where activated configs are stored. */
   public static final String ACTIVATE_FILE_NAME = "activate";
-  /**
-   * Name of the file where fetched configs are stored.
-   */
+  /** Name of the file where fetched configs are stored. */
   public static final String FETCH_FILE_NAME = "fetch";
-  /**
-   * Name of the file where defaults configs are stored.
-   */
+  /** Name of the file where defaults configs are stored. */
   public static final String DEFAULTS_FILE_NAME = "defaults";
-  /**
-   * Timeout for the call to the Firebase Remote Config servers in second.
-   */
+  /** Timeout for the call to the Firebase Remote Config servers in second. */
   public static final long NETWORK_CONNECTION_TIMEOUT_IN_SECONDS = 60;
 
   private static final String FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX = "frc";
   private static final String PREFERENCES_FILE_NAME = "settings";
 
-  @VisibleForTesting
-  public static final String DEFAULT_NAMESPACE = "firebase";
+  @VisibleForTesting public static final String DEFAULT_NAMESPACE = "firebase";
 
   private static final Clock DEFAULT_CLOCK = DefaultClock.getInstance();
   private static final Random DEFAULT_RANDOM = new Random();
@@ -94,19 +84,15 @@ public class RemoteConfigComponent {
   private final FirebaseApp firebaseApp;
   private final FirebaseInstanceId firebaseInstanceId;
   private final FirebaseABTesting firebaseAbt;
-  private final TransportFactory transportFactory;
   private final ConfigLogger configLogger;
-  @Nullable
-  private final AnalyticsConnector analyticsConnector;
+  @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final String appId;
 
   @GuardedBy("this")
   private Map<String, String> customHeaders = new HashMap<>();
 
-  /**
-   * Firebase Remote Config Component constructor.
-   */
+  /** Firebase Remote Config Component constructor. */
   RemoteConfigComponent(
       Context context,
       FirebaseApp firebaseApp,
@@ -126,9 +112,7 @@ public class RemoteConfigComponent {
         /* loadGetDefault= */ true);
   }
 
-  /**
-   * Firebase Remote Config Component constructor for testing component logic.
-   */
+  /** Firebase Remote Config Component constructor for testing component logic. */
   @VisibleForTesting
   protected RemoteConfigComponent(
       Context context,
@@ -145,15 +129,14 @@ public class RemoteConfigComponent {
     this.firebaseApp = firebaseApp;
     this.firebaseInstanceId = firebaseInstanceId;
     this.firebaseAbt = firebaseAbt;
-    this.transportFactory = transportFactory;
 
     Transport<ClientLogEvent> transport =
         transportFactory.getTransport(
-            TRANSPORT_FINAL,
-            ClientLogEvent.class,
-            ClientLogEvent::toByteArray);
-
+            /* name = */ TRANSPORT_FINAL,
+            /* payloadType = */ ClientLogEvent.class,
+            /* payloadTransformer = */ ClientLogEvent::toByteArray);
     this.configLogger = new ConfigLogger(transport);
+
     this.analyticsConnector = analyticsConnector;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
@@ -310,7 +293,7 @@ public class RemoteConfigComponent {
    * SDKs, so ABT should not be used outside the 3P namespace.
    *
    * @return True if {@code firebaseApp} is the main {@link FirebaseApp} and {@code namespace} is
-   * the 3P namespace.
+   *     the 3P namespace.
    */
   private static boolean isAbtSupported(FirebaseApp firebaseApp, String namespace) {
     return namespace.equals(DEFAULT_NAMESPACE) && isPrimaryApp(firebaseApp);
