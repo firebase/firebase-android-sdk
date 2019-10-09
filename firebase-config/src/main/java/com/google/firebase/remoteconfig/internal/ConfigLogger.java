@@ -14,7 +14,6 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
 import com.google.firebase.remoteconfig.BuildConfig;
@@ -42,15 +41,12 @@ public class ConfigLogger {
     transport.send(Event.ofData(fetchEvent));
   }
 
-  @VisibleForTesting
-  public ClientLogEvent createFetchEvent(
+  private ClientLogEvent createFetchEvent(
       ClientLogEvent.Builder clientLogEventBuilder, long networkLatencyMillis) {
     return clientLogEventBuilder
         .setEventType(EventType.FETCH)
         .setFetchEvent(
-            FetchEvent.newBuilder()
-                .setNetworkLatencyMillis(networkLatencyMillis)
-                .build())
+            FetchEvent.newBuilder().setNetworkLatencyMillis(networkLatencyMillis).build())
         .build();
   }
 
