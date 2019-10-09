@@ -15,6 +15,7 @@
 package com.google.firebase.installations.remote;
 
 import static android.content.ContentValues.TAG;
+import static com.google.android.gms.common.internal.Preconditions.checkArgument;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -23,12 +24,13 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
+import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
@@ -60,6 +62,11 @@ public class FirebaseInstallationServiceClient {
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
 
   private static final int NETWORK_TIMEOUT_MILLIS = 10000;
+
+  private static final Pattern EXPIRATION_TIMESTAMP_PATTERN = Pattern.compile("[0-9]+s");
+
+  @VisibleForTesting
+  static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
 
   private final Context context;
 
@@ -273,7 +280,7 @@ public class FirebaseInstallationServiceClient {
             installationTokenResult.setToken(reader.nextString());
           } else if (key.equals("expiresIn")) {
             installationTokenResult.setTokenExpirationInSecs(
-                TimeUnit.MILLISECONDS.toSeconds(reader.nextLong()));
+                parseTokenExpirationTimestamp(reader.nextString()));
           } else {
             reader.skipValue();
           }
@@ -301,7 +308,7 @@ public class FirebaseInstallationServiceClient {
       if (name.equals("token")) {
         builder.setToken(reader.nextString());
       } else if (name.equals("expiresIn")) {
-        builder.setTokenExpirationInSecs(TimeUnit.MILLISECONDS.toSeconds(reader.nextLong()));
+        builder.setTokenExpirationInSecs(parseTokenExpirationTimestamp(reader.nextString()));
       } else {
         reader.skipValue();
       }
@@ -328,5 +335,20 @@ public class FirebaseInstallationServiceClient {
       Log.e(TAG, "No such package: " + context.getPackageName(), e);
       return null;
     }
+  }
+
+  /**
+   * Returns parsed token expiration timestamp in seconds.
+   *
+   * @param expiresIn is expiration timestamp in String format: 604800s
+   */
+  @VisibleForTesting
+  static long parseTokenExpirationTimestamp(String expiresIn) {
+    checkArgument(
+        EXPIRATION_TIMESTAMP_PATTERN.matcher(expiresIn).matches(),
+        PARSING_EXPIRATION_TIME_ERROR_MESSAGE);
+    return (expiresIn == null || expiresIn.length() == 0)
+        ? 0L
+        : Long.parseLong(expiresIn.substring(0, expiresIn.length() - 1));
   }
 }
