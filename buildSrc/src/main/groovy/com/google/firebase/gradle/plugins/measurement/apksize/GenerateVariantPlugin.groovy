@@ -24,20 +24,16 @@ class GenerateVariantPlugin implements Plugin<Project> {
     void apply(Project project) {
         def childProjects = project.rootProject.childProjects
         def firebaseProjectsNames = childProjects.findAll { isFirebaseProject(it.value) }.keySet()
-        project.android {
-            firebaseProjectsNames.each {
-                productFlavors.create("$it") {
+        firebaseProjectsNames.each { projectName ->
+            project.android {
+                productFlavors.create("$projectName") {
                     dimension "apkSize"
                 }
-            }
-            firebaseProjectsNames.each {
-                sourceSets.getByName(it) { sourceSet ->
+                sourceSets.getByName(projectName) { sourceSet ->
                     sourceSet.java.srcDirs += ['src/empty/java']
                 }
             }
-        }
-        firebaseProjectsNames.each {
-            project.dependencies.add("${it}Implementation", project.rootProject.project(":${it}"))
+            project.dependencies.add("${projectName}Implementation", project.rootProject.project(":${projectName}"))
         }
     }
 
