@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.gradle.plugins.measurement.apksize.GenerateMeasurementsTask
-import com.google.firebase.gradle.plugins.measurement.aarsize.GenerateMeasurementsTask as GenerateAarMeasurementTask
 import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
+import com.google.firebase.gradle.plugins.measurement.aarsize.GenerateMeasurementsTask as GenerateAarMeasurementTask
+import com.google.firebase.gradle.plugins.measurement.apksize.GenerateMeasurementsTask
+import com.google.firebase.gradle.plugins.measurement.apksize.GenerateVariantPlugin
 
 apply plugin: "com.android.application"
 apply from: "default.gradle"
@@ -27,14 +28,8 @@ android {
     }
 }
 
-apply from: "src/common/common.gradle"
-apply from: "src/config/config.gradle"
-apply from: "src/database/database.gradle"
-apply from: "src/firestore/firestore.gradle"
-apply from: "src/functions/functions.gradle"
-apply from: "src/inappmessagingdisplay/inappmessaging-display.gradle"
-apply from: "src/storage/storage.gradle"
-apply from: "src/transport/transport.gradle"
+apply from: "src/empty/empty.gradle"
+apply plugin: GenerateVariantPlugin
 
 /**
  * This task builds all supported variants (only aggressive as of writing) and writes the
