@@ -17,5 +17,5 @@ package com.google.firebase.installations;
 import com.google.firebase.installations.local.PersistedFidEntry;
 
 interface StateListener {
-  boolean onStateReached(PersistedFidEntry persistedFidEntry);
+  boolean onStateReached(PersistedFidEntry persistedFidEntry, boolean shouldRefreshAuthToken);
 }
