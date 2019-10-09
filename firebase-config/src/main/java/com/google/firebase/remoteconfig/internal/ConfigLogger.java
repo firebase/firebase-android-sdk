@@ -34,6 +34,10 @@ public class ConfigLogger {
     this.transport = transport;
   }
 
+  /**
+   * Creates a {@link ClientLogEvent} with Fetch-specific metrics {@link FetchEvent}
+   * and sends the Event via {@link Transport} to log to the backend.
+   */
   void logFetchEvent(
       String appId, String namespace, String fid, long timestampMillis, long networkLatencyMillis) {
 
@@ -46,6 +50,10 @@ public class ConfigLogger {
     transport.send(Event.ofData(fetchEvent));
   }
 
+  /**
+   * Takes a general {@link ClientLogEvent.Builder} and networkLatencyMillis
+   * and returns a Fetch-specific {@link ClientLogEvent}
+   */
   private ClientLogEvent createFetchEvent(
       ClientLogEvent.Builder clientLogEventBuilder, long networkLatencyMillis) {
     return clientLogEventBuilder
@@ -55,6 +63,10 @@ public class ConfigLogger {
         .build();
   }
 
+  /**
+   * Returns a {@link ClientLogEvent.Builder} that instantiates general fields for
+   * client-side metrics.
+   */
   private ClientLogEvent.Builder createClientLogEventBuilder(
       String appId, String namespace, String fid, long timestampMillis, String sdkVersion) {
 
