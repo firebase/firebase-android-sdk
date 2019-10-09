@@ -298,7 +298,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .setRegistrationStatus(RegistrationStatus.REGISTERED)
               .setAuthToken(installationResponse.getAuthToken().getToken())
               .setRefreshToken(installationResponse.getRefreshToken())
-              .setExpiresInSecs(installationResponse.getAuthToken().getTokenExpirationInSecs())
+              .setExpiresInSecs(installationResponse.getAuthToken().getTokenExpirationTimestamp())
               .setTokenCreationEpochInSecs(creationTime)
               .build());
 
@@ -327,7 +327,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .setRegistrationStatus(RegistrationStatus.REGISTERED)
               .setAuthToken(tokenResult.getToken())
               .setRefreshToken(persistedFidEntry.getRefreshToken())
-              .setExpiresInSecs(tokenResult.getTokenExpirationInSecs())
+              .setExpiresInSecs(tokenResult.getTokenExpirationTimestamp())
               .setTokenCreationEpochInSecs(creationTime)
               .build());
 
