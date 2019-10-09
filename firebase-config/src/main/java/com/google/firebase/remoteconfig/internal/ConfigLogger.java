@@ -21,6 +21,11 @@ import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent;
 import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent.EventType;
 import com.google.firebase.remoteconfig.proto.ClientMetrics.FetchEvent;
 
+/**
+ * Lightweight client for logging client side metrics for Firebase Remote Config.
+ *
+ * @author Jacqueline Doan
+ */
 public class ConfigLogger {
 
   private final Transport<ClientLogEvent> transport;
@@ -29,12 +34,12 @@ public class ConfigLogger {
     this.transport = transport;
   }
 
-  public void logFetchEvent(
+  void logFetchEvent(
       String appId, String namespace, String fid, long timestampMillis, long networkLatencyMillis) {
 
     ClientLogEvent.Builder clientLogEventBuilder =
         createClientLogEventBuilder(
-            appId, namespace, fid, timestampMillis, /* sdkVersion = */ BuildConfig.VERSION_NAME);
+            appId, namespace, fid, timestampMillis, /* sdkVersion= */ BuildConfig.VERSION_NAME);
 
     ClientLogEvent fetchEvent = createFetchEvent(clientLogEventBuilder, networkLatencyMillis);
 

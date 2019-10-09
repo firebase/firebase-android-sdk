@@ -53,8 +53,8 @@ public class ConfigLoggerTest {
         FAKE_APP_ID,
         DEFAULT_NAMESPACE,
         FAKE_FID,
-        /* timestampMillis = */ 100,
-        /* networkLatencyMillis = */ 10);
+        /* timestampMillis= */ 100,
+        /* networkLatencyMillis= */ 10);
 
     verify(mockTransport).send(logEventCaptor.capture());
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
@@ -67,8 +67,8 @@ public class ConfigLoggerTest {
         FAKE_APP_ID,
         DEFAULT_NAMESPACE,
         FAKE_FID,
-        /* timestampMillis = */ 100,
-        /* networkLatencyMillis = */ 10);
+        /* timestampMillis= */ 100,
+        /* networkLatencyMillis= */ 10);
 
     verify(mockTransport).send(logEventCaptor.capture());
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
@@ -81,8 +81,8 @@ public class ConfigLoggerTest {
         FAKE_APP_ID,
         DEFAULT_NAMESPACE,
         FAKE_FID,
-        /* timestampMillis = */ 100,
-        /* networkLatencyMillis = */ 10);
+        /* timestampMillis= */ 100,
+        /* networkLatencyMillis= */ 10);
 
     verify(mockTransport).send(logEventCaptor.capture());
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
@@ -95,8 +95,8 @@ public class ConfigLoggerTest {
         FAKE_APP_ID,
         DEFAULT_NAMESPACE,
         FAKE_FID,
-        /* timestampMillis = */ 100,
-        /* networkLatencyMillis = */ 10);
+        /* timestampMillis= */ 100,
+        /* networkLatencyMillis= */ 10);
 
     verify(mockTransport).send(logEventCaptor.capture());
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
@@ -109,8 +109,8 @@ public class ConfigLoggerTest {
         FAKE_APP_ID,
         DEFAULT_NAMESPACE,
         FAKE_FID,
-        /* timestampMillis = */ 100,
-        /* networkLatencyMillis = */ 10);
+        /* timestampMillis= */ 100,
+        /* networkLatencyMillis= */ 10);
 
     verify(mockTransport).send(logEventCaptor.capture());
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
@@ -123,8 +123,8 @@ public class ConfigLoggerTest {
         FAKE_APP_ID,
         DEFAULT_NAMESPACE,
         FAKE_FID,
-        /* timestampMillis = */ 100,
-        /* networkLatencyMillis = */ 10);
+        /* timestampMillis= */ 100,
+        /* networkLatencyMillis= */ 10);
 
     verify(mockTransport).send(logEventCaptor.capture());
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
@@ -137,8 +137,8 @@ public class ConfigLoggerTest {
         FAKE_APP_ID,
         DEFAULT_NAMESPACE,
         FAKE_FID,
-        /* timestampMillis = */ 100,
-        /* networkLatencyMillis = */ 10);
+        /* timestampMillis= */ 100,
+        /* networkLatencyMillis= */ 10);
 
     verify(mockTransport).send(logEventCaptor.capture());
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();

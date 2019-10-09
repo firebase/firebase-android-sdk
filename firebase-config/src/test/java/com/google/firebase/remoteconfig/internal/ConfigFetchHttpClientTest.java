@@ -172,11 +172,11 @@ public class ConfigFetchHttpClientTest {
 
     verify(mockConfigLogger)
         .logFetchEvent(
-            /* appId = */ eq(FAKE_APP_ID),
-            /* namespaceId = */ eq(DEFAULT_NAMESPACE),
-            /* fid = */ eq(INSTANCE_ID_STRING),
-            /* timestampMillis = */ anyLong(),
-            /* networkLatencyMillis = */ anyLong());
+            /* appId= */ eq(FAKE_APP_ID),
+            /* namespaceId= */ eq(DEFAULT_NAMESPACE),
+            /* fid= */ eq(INSTANCE_ID_STRING),
+            /* timestampMillis= */ anyLong(),
+            /* networkLatencyMillis= */ anyLong());
   }
 
   @Test

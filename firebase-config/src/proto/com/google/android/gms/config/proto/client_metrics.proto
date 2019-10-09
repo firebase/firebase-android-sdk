@@ -23,7 +23,7 @@ option java_outer_classname = "ClientMetrics";
 // Single unit of metrics data collected from Firebase integrated apps using the
 // Remote Config SDK.
 // Every clientside metrics related event that is logged will correspond to
-// this object.
+// one of these enums.
 message ClientLogEvent {
   enum EventType {
     FETCH = 0;

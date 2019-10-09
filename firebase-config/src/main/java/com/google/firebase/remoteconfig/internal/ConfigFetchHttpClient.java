@@ -87,7 +87,7 @@ public class ConfigFetchHttpClient {
   private final long connectTimeoutInSeconds;
   private final long readTimeoutInSeconds;
 
-  private ConfigLogger configLogger;
+  private final ConfigLogger configLogger;
 
   /** Creates a client for {@link #fetch}ing data from the Firebase Remote Config server. */
   public ConfigFetchHttpClient(
@@ -221,8 +221,8 @@ public class ConfigFetchHttpClient {
         appId,
         namespace,
         instanceId,
-        /* timestampMillis = */ System.currentTimeMillis(),
-        /* networkLatencyMillis = */ endTime - startTime);
+        /* timestampMillis= */ endTime,
+        /* networkLatencyMillis= */ endTime - startTime);
 
     return FetchResponse.forBackendUpdatesFetched(fetchedConfigs, fetchResponseETag);
   }
