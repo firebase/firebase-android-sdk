@@ -386,7 +386,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .isInstanceOf(FirebaseInstallationsException.class);
       assertWithMessage("Exception status doesn't match")
           .that(((FirebaseInstallationsException) expected.getCause()).getStatus())
-          .isEqualTo(FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+          .isEqualTo(FirebaseInstallationsException.Status.CLIENT_ERROR);
     }
   }
 

@@ -27,15 +27,16 @@ class GetIdListener implements StateListener {
   @Override
   public boolean onStateReached(PersistedFidEntry persistedFidEntry, boolean unused) {
     if (persistedFidEntry.isUnregistered() || persistedFidEntry.isRegistered()) {
-      taskCompletionSource.setResult(persistedFidEntry.getFirebaseInstallationId());
+      taskCompletionSource.trySetResult(persistedFidEntry.getFirebaseInstallationId());
       return true;
     }
+    return false;
+  }
 
+  @Override
+  public boolean onException(PersistedFidEntry persistedFidEntry, Exception exception) {
     if (persistedFidEntry.isErrored()) {
-      taskCompletionSource.setException(
-          new FirebaseInstallationsException(
-              "Failed to update client side cache.",
-              FirebaseInstallationsException.Status.CLIENT_ERROR));
+      taskCompletionSource.trySetException(exception);
       return true;
     }
     return false;
