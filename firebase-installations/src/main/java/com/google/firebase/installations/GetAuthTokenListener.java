@@ -37,16 +37,18 @@ class GetAuthTokenListener implements StateListener {
       resultTaskCompletionSource.setResult(
           InstallationTokenResult.builder()
               .setToken(persistedFidEntry.getAuthToken())
-              .setTokenExpirationInSecs(persistedFidEntry.getExpiresInSecs())
+              .setTokenExpirationTimestamp(persistedFidEntry.getExpiresInSecs())
+              .setTokenCreationTimestamp(persistedFidEntry.getTokenCreationEpochInSecs())
               .build());
       return true;
     }
+    return false;
+  }
 
+  @Override
+  public boolean onException(PersistedFidEntry persistedFidEntry, Exception exception) {
     if (persistedFidEntry.isErrored()) {
-      resultTaskCompletionSource.setException(
-          new FirebaseInstallationsException(
-              "Firebase Installation is not registered.",
-              FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR));
+      resultTaskCompletionSource.trySetException(exception);
       return true;
     }
     return false;

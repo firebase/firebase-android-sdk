@@ -197,6 +197,19 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
   }
 
+  private void triggerOnException(PersistedFidEntry persistedFidEntry, Exception exception) {
+    synchronized (lock) {
+      Iterator<StateListener> it = listeners.iterator();
+      while (it.hasNext()) {
+        StateListener l = it.next();
+        boolean doneListening = l.onException(persistedFidEntry, exception);
+        if (doneListening) {
+          it.remove();
+        }
+      }
+    }
+  }
+
   private final void doRegistration() {
     try {
       PersistedFidEntry persistedFidEntry = persistedFid.readPersistedFidEntryValue();
@@ -248,7 +261,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
               .build();
       persistedFid.insertOrUpdatePersistedFidEntry(errorFidEntry);
-      triggerOnStateReached(errorFidEntry);
+      triggerOnException(errorFidEntry, e);
     }
   }
 
@@ -285,7 +298,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .setRegistrationStatus(RegistrationStatus.REGISTERED)
               .setAuthToken(installationResponse.getAuthToken().getToken())
               .setRefreshToken(installationResponse.getRefreshToken())
-              .setExpiresInSecs(installationResponse.getAuthToken().getTokenExpirationInSecs())
+              .setExpiresInSecs(installationResponse.getAuthToken().getTokenExpirationTimestamp())
               .setTokenCreationEpochInSecs(creationTime)
               .build());
 
@@ -314,7 +327,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .setRegistrationStatus(RegistrationStatus.REGISTERED)
               .setAuthToken(tokenResult.getToken())
               .setRefreshToken(persistedFidEntry.getRefreshToken())
-              .setExpiresInSecs(tokenResult.getTokenExpirationInSecs())
+              .setExpiresInSecs(tokenResult.getTokenExpirationTimestamp())
               .setTokenCreationEpochInSecs(creationTime)
               .build());
 

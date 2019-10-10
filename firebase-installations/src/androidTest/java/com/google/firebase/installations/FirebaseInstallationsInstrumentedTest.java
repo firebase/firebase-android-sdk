@@ -425,7 +425,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .isInstanceOf(FirebaseInstallationsException.class);
       assertWithMessage("Exception status doesn't match")
           .that(((FirebaseInstallationsException) expected.getCause()).getStatus())
-          .isEqualTo(FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+          .isEqualTo(FirebaseInstallationsException.Status.CLIENT_ERROR);
     }
   }
 
@@ -566,7 +566,8 @@ public class FirebaseInstallationsInstrumentedTest {
                 (unused) ->
                     InstallationTokenResult.builder()
                         .setToken(TEST_AUTH_TOKEN_3)
-                        .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                        .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                        .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
                         .build()))
         .doAnswer(
             AdditionalAnswers.answersWithDelay(
@@ -574,7 +575,8 @@ public class FirebaseInstallationsInstrumentedTest {
                 (unused) ->
                     InstallationTokenResult.builder()
                         .setToken(TEST_AUTH_TOKEN_4)
-                        .setTokenExpirationInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                        .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                        .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
                         .build()))
         .when(backendClientReturnsOk)
         .generateAuthToken(anyString(), anyString(), anyString(), anyString());
