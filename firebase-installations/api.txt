@@ -72,22 +72,9 @@ package com.google.firebase.installations.remote {
 
   public class FirebaseInstallationServiceClient {
     ctor public FirebaseInstallationServiceClient(@NonNull Context);
-    method @NonNull public com.google.firebase.installations.remote.InstallationResponse createFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws com.google.firebase.installations.remote.FirebaseInstallationServiceException;
-    method @NonNull public void deleteFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws com.google.firebase.installations.remote.FirebaseInstallationServiceException;
-    method @NonNull public InstallationTokenResult generateAuthToken(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws com.google.firebase.installations.remote.FirebaseInstallationServiceException;
-  }
-
-  public class FirebaseInstallationServiceException {
-    ctor public FirebaseInstallationServiceException(@NonNull com.google.firebase.installations.remote.FirebaseInstallationServiceException.Status);
-    ctor public FirebaseInstallationServiceException(@NonNull String, @NonNull com.google.firebase.installations.remote.FirebaseInstallationServiceException.Status);
-    ctor public FirebaseInstallationServiceException(@NonNull String, @NonNull com.google.firebase.installations.remote.FirebaseInstallationServiceException.Status, @NonNull Throwable);
-    method @NonNull public com.google.firebase.installations.remote.FirebaseInstallationServiceException.Status getStatus();
-  }
-
-  public enum FirebaseInstallationServiceException.Status {
-    enum_constant public static final com.google.firebase.installations.remote.FirebaseInstallationServiceException.Status NETWORK_ERROR;
-    enum_constant public static final com.google.firebase.installations.remote.FirebaseInstallationServiceException.Status SERVER_ERROR;
-    enum_constant public static final com.google.firebase.installations.remote.FirebaseInstallationServiceException.Status UNAUTHORIZED;
+    method @NonNull public com.google.firebase.installations.remote.InstallationResponse createFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
+    method @NonNull public void deleteFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
+    method @NonNull public InstallationTokenResult generateAuthToken(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
   }
 
   public abstract class InstallationResponse {
