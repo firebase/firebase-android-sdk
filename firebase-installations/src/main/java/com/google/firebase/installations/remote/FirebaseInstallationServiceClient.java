@@ -310,7 +310,7 @@ public class FirebaseInstallationServiceClient {
     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getErrorStream(), UTF_8));
     StringBuilder response = new StringBuilder();
     for (String input = reader.readLine(); input != null; input = reader.readLine()) {
-      response.append(input).append(System.getProperty("line.separator"));
+      response.append(input).append('\n');
     }
     return String.format(
         "The server responded with an error. HTTP response: [%d %s %s]",
