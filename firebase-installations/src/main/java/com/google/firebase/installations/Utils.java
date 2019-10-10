@@ -15,13 +15,17 @@
 package com.google.firebase.installations;
 
 import androidx.annotation.NonNull;
+import com.google.android.gms.common.util.Clock;
+import com.google.firebase.installations.local.PersistedFidEntry;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /** Util methods used for {@link FirebaseInstallations} */
 class Utils {
 
+  private final Clock clock;
   /**
    * 1 Byte with the first 4 header-bits set to the identifying FID prefix 0111 (0x7). Use this
    * constant to create FIDs or check the first byte of FIDs. This prefix is also used in legacy
@@ -37,6 +41,26 @@ class Utils {
 
   /** Length of new-format FIDs as introduced in 2019. */
   public static final int FID_LENGTH = 22;
+
+  private static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = TimeUnit.HOURS.toSeconds(1);
+
+  Utils(Clock clock) {
+    this.clock = clock;
+  }
+
+  /**
+   * Checks if the FIS Auth token is expired or going to expire in next 1 hour {@link
+   * #AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS}.
+   */
+  public boolean isAuthTokenExpired(PersistedFidEntry persistedFidEntry) {
+    return persistedFidEntry.getTokenCreationEpochInSecs() + persistedFidEntry.getExpiresInSecs()
+        > currentTimeInSecs() + AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS;
+  }
+
+  /** Returns current time in seconds. */
+  public long currentTimeInSecs() {
+    return TimeUnit.MILLISECONDS.toSeconds(clock.currentTimeMillis());
+  }
 
   /**
    * Creates a random FID of valid format without checking if the FID is already in use by any
