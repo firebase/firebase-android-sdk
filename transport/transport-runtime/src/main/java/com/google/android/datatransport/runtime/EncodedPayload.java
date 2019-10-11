@@ -23,6 +23,8 @@ import java.util.Arrays;
  *
  * <p>It is essentially a pair of {@code (encoding, bytes)}, where {@code bytes} are encoded using
  * {@code encoding}.
+ *
+ * <p>Overrides {@link #equals(Object)} and {@link #hashCode()} to enable value semantics.
  */
 public final class EncodedPayload {
   private final Encoding encoding;
@@ -50,7 +52,7 @@ public final class EncodedPayload {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (!(o instanceof EncodedPayload)) return false;
 
     EncodedPayload that = (EncodedPayload) o;
 

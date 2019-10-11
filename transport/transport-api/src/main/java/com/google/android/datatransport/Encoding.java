@@ -17,7 +17,11 @@ package com.google.android.datatransport;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-/** Represents encodings. */
+/**
+ * Represents encodings.
+ *
+ * <p>Overrides {@link #equals(Object)} and {@link #hashCode()} to enable value semantics.
+ */
 public final class Encoding {
   private final String name;
 
@@ -40,7 +44,7 @@ public final class Encoding {
   @Override
   public boolean equals(@Nullable Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (!(o instanceof Encoding)) return false;
 
     return this.name.equals(((Encoding) o).name);
   }

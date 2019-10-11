@@ -551,6 +551,62 @@ public class CctTransportBackendTest {
     assertEquals(BackendResponse.ok(3), response);
   }
 
+  @Test
+  public void send_withEventsOfUnsupportedEncoding_shouldBeSkipped() throws IOException {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+
+    BackendRequest backendRequest =
+        BackendRequest.builder()
+            .setEvents(
+                Arrays.asList(
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("3")
+                            .setEncodedPayload(
+                                new EncodedPayload(Encoding.of("yaml"), PAYLOAD.toByteArray()))
+                            .build()),
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName(TEST_NAME)
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
+                            .setCode(CODE)
+                            .build())))
+            .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
+            .build();
+
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf"))
+            .withHeader("Content-Encoding", equalTo("gzip"))
+            .andMatching(batchRequestMatcher.test(batch -> batch.getLogRequestCount() == 2))
+            .andMatching(firstLogRequestMatcher.test(r -> r.getLogSource() == 3))
+            .andMatching(firstLogRequestMatcher.test(r -> r.getLogEventCount() == 0))
+            .andMatching(secondLogRequestMatcher.test(r -> TEST_NAME.equals(r.getLogSourceName())))
+            .andMatching(secondLogRequestMatcher.test(r -> r.getLogEventCount() == 1)));
+
+    assertEquals(BackendResponse.ok(3), response);
+  }
+
   // When there is no active network, the ConnectivityManager returns null when
   // getActiveNetworkInfo() is called.
   @Implements(ConnectivityManager.class)

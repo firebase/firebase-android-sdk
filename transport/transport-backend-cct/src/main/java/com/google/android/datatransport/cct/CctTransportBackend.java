@@ -22,6 +22,7 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.proto.AndroidClientInfo;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
@@ -197,6 +198,12 @@ final class CctTransportBackend implements TransportBackend {
       }
 
       for (EventInternal eventInternal : entry.getValue()) {
+        Encoding encoding = eventInternal.getEncodedPayload().getEncoding();
+        if (!encoding.equals(Encoding.of("proto"))) {
+          Logging.d(LOG_TAG, "Received event of unsupported encoding %s. Skipping...", encoding);
+          continue;
+        }
+
         LogEvent.Builder event =
             LogEvent.newBuilder()
                 .setEventTimeMs(eventInternal.getEventMillis())

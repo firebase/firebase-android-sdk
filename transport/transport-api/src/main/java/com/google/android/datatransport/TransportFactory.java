@@ -19,7 +19,7 @@ public interface TransportFactory {
   /**
    * Returns a named transport instance that can be used to send values of type T.
    *
-   * @param name name of the transport.
+   * @param name Name of the transport.
    * @param payloadType The type that can be sent by the returned {@link Transport}.
    * @param payloadTransformer Transformer that converts values of T to byte arrays.
    * @deprecated Use {@link #getTransport(String, Class, Encoding, Transformer)} instead.
@@ -41,7 +41,7 @@ public interface TransportFactory {
    *       MyProto::getBytes);
    * }</pre>
    *
-   * @param name name of the transport.
+   * @param name Name of the transport.
    * @param payloadType The type that can be sent by the returned {@link Transport}.
    * @param payloadEncoding {@link Encoding} used by {@code payloadTransformer}.
    * @param payloadTransformer Transformer that converts values of T to byte arrays.
