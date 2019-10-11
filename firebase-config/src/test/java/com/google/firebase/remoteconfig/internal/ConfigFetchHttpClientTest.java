@@ -33,9 +33,12 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFie
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
+import com.google.android.datatransport.Transport;
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -44,6 +47,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
+import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
@@ -56,6 +60,8 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
+import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -85,12 +91,19 @@ public class ConfigFetchHttpClientTest {
   private JSONObject noChangeResponseBody;
   private FakeHttpURLConnection fakeHttpURLConnection;
 
+  @Mock Transport<ClientLogEvent> mockTransport;
+
+  @Mock(answer = Answers.RETURNS_SMART_NULLS)
+  private ConfigLogger mockConfigLogger;
+
   private MockClock mockClock;
 
   @Before
   public void setUp() throws Exception {
     initMocks(this);
+
     context = RuntimeEnvironment.application;
+
     configFetchHttpClient =
         new ConfigFetchHttpClient(
             context,
@@ -98,7 +111,8 @@ public class ConfigFetchHttpClientTest {
             API_KEY,
             DEFAULT_NAMESPACE,
             /* connectTimeoutInSeconds= */ 10L,
-            /* readTimeoutInSeconds= */ 10L);
+            /* readTimeoutInSeconds= */ 10L,
+            mockConfigLogger);
 
     hasChangeResponseBody =
         new JSONObject()
@@ -151,6 +165,15 @@ public class ConfigFetchHttpClientTest {
         .isEqualTo(hasChangeResponseBody.getJSONArray(EXPERIMENT_DESCRIPTIONS).toString());
     assertThat(response.getFetchedConfigs().getFetchTime())
         .isEqualTo(new Date(mockClock.currentTimeMillis()));
+  }
+
+  @Test
+  public void fetch_newValues_logsClientLogEvent() throws Exception {
+    setServerResponseTo(hasChangeResponseBody, SECOND_ETAG);
+
+    fetch(FIRST_ETAG);
+
+    verify(mockConfigLogger).logFetchEvent(/* networkLatencyMillis= */ anyLong());
   }
 
   @Test
@@ -238,7 +261,8 @@ public class ConfigFetchHttpClientTest {
             API_KEY,
             DEFAULT_NAMESPACE,
             /* connectTimeoutInSeconds= */ 15L,
-            /* readTimeoutInSeconds= */ 20L);
+            /* readTimeoutInSeconds= */ 20L,
+            mockConfigLogger);
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
 
     fetch(FIRST_ETAG);
