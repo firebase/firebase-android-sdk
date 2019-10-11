@@ -255,9 +255,7 @@ public class ConfigFetchHttpClient {
     urlConnection.setRequestProperty("Accept", "application/json");
   }
 
-  /**
-   * Sends developer specified custom headers to the Remote Config server.
-   */
+  /** Sends developer specified custom headers to the Remote Config server. */
   private void setCustomRequestHeaders(
       HttpURLConnection urlConnection, Map<String, String> customHeaders) {
     for (Map.Entry<String, String> customHeaderEntry : customHeaders.entrySet()) {
