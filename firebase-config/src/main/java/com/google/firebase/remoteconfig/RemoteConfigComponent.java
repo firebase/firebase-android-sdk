@@ -136,9 +136,9 @@ public class RemoteConfigComponent {
 
     this.transport =
         transportFactory.getTransport(
-            /* name = */ TRANSPORT_FINAL,
-            /* payloadType = */ ClientLogEvent.class,
-            /* payloadTransformer = */ ClientLogEvent::toByteArray);
+            /* name= */ TRANSPORT_FINAL,
+            /* payloadType= */ ClientLogEvent.class,
+            /* payloadTransformer= */ ClientLogEvent::toByteArray);
 
     // When the component is first loaded, it will use a cached executor.
     // The getDefault call creates race conditions in tests, where the getDefault might be executing
