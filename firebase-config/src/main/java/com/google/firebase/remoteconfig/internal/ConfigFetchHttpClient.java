@@ -71,6 +71,7 @@ import org.json.JSONObject;
  * @author Lucas Png
  */
 public class ConfigFetchHttpClient {
+
   private static final String API_KEY_HEADER = "X-Goog-Api-Key";
   private static final String ETAG_HEADER = "ETag";
   private static final String IF_NONE_MATCH_HEADER = "If-None-Match";
@@ -86,6 +87,8 @@ public class ConfigFetchHttpClient {
   private final long connectTimeoutInSeconds;
   private final long readTimeoutInSeconds;
 
+  private final ConfigLogger configLogger;
+
   /** Creates a client for {@link #fetch}ing data from the Firebase Remote Config server. */
   public ConfigFetchHttpClient(
       Context context,
@@ -93,7 +96,8 @@ public class ConfigFetchHttpClient {
       String apiKey,
       String namespace,
       long connectTimeoutInSeconds,
-      long readTimeoutInSeconds) {
+      long readTimeoutInSeconds,
+      ConfigLogger configLogger) {
     this.context = context;
     this.appId = appId;
     this.apiKey = apiKey;
@@ -101,6 +105,7 @@ public class ConfigFetchHttpClient {
     this.namespace = namespace;
     this.connectTimeoutInSeconds = connectTimeoutInSeconds;
     this.readTimeoutInSeconds = readTimeoutInSeconds;
+    this.configLogger = configLogger;
   }
 
   /** Used to verify that the timeout is being set correctly. */
@@ -170,6 +175,9 @@ public class ConfigFetchHttpClient {
       Map<String, String> customHeaders,
       Date currentTime)
       throws FirebaseRemoteConfigException {
+
+    long startTime = System.currentTimeMillis();
+
     setUpUrlConnection(urlConnection, lastFetchETag, customHeaders);
 
     String fetchResponseETag;
@@ -207,6 +215,10 @@ public class ConfigFetchHttpClient {
     }
 
     ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
+
+    long endTime = System.currentTimeMillis();
+    configLogger.logFetchEvent(/* networkLatencyMillis= */ endTime - startTime);
+
     return FetchResponse.forBackendUpdatesFetched(fetchedConfigs, fetchResponseETag);
   }
 

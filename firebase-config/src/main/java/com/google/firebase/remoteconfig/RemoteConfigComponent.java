@@ -19,6 +19,8 @@ import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.datatransport.Transport;
+import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
@@ -31,9 +33,11 @@ import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
+import com.google.firebase.remoteconfig.internal.ConfigLogger;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.LegacyConfigsHandler;
+import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -73,11 +77,14 @@ public class RemoteConfigComponent {
   @GuardedBy("this")
   private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
 
+  private static final String TRANSPORT_FINAL = "-1"; // (TODO) Replace with actual logSource int
+
   private final Context context;
   private final ExecutorService executorService;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstanceId firebaseInstanceId;
   private final FirebaseABTesting firebaseAbt;
+  private final Transport<ClientLogEvent> transport;
   @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final String appId;
@@ -91,6 +98,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstanceId firebaseInstanceId,
       FirebaseABTesting firebaseAbt,
+      TransportFactory transportFactory,
       @Nullable AnalyticsConnector analyticsConnector) {
     this(
         context,
@@ -98,6 +106,7 @@ public class RemoteConfigComponent {
         firebaseApp,
         firebaseInstanceId,
         firebaseAbt,
+        transportFactory,
         analyticsConnector,
         new LegacyConfigsHandler(context, firebaseApp.getOptions().getApplicationId()),
         /* loadGetDefault= */ true);
@@ -111,6 +120,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstanceId firebaseInstanceId,
       FirebaseABTesting firebaseAbt,
+      TransportFactory transportFactory,
       @Nullable AnalyticsConnector analyticsConnector,
       LegacyConfigsHandler legacyConfigsHandler,
       boolean loadGetDefault) {
@@ -122,6 +132,12 @@ public class RemoteConfigComponent {
     this.analyticsConnector = analyticsConnector;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
+
+    this.transport =
+        transportFactory.getTransport(
+            /* name= */ TRANSPORT_FINAL,
+            /* payloadType= */ ClientLogEvent.class,
+            /* payloadTransformer= */ ClientLogEvent::toByteArray);
 
     // When the component is first loaded, it will use a cached executor.
     // The getDefault call creates race conditions in tests, where the getDefault might be executing
@@ -220,6 +236,10 @@ public class RemoteConfigComponent {
         Executors.newCachedThreadPool(), ConfigStorageClient.getInstance(context, fileName));
   }
 
+  ConfigLogger getConfigLogger(String namespace) {
+    return new ConfigLogger(transport, appId, namespace, firebaseInstanceId, DEFAULT_CLOCK);
+  }
+
   @VisibleForTesting
   ConfigFetchHttpClient getFrcBackendApiClient(
       String apiKey, String namespace, ConfigMetadataClient metadataClient) {
@@ -230,7 +250,8 @@ public class RemoteConfigComponent {
         apiKey,
         namespace,
         metadataClient.getFetchTimeoutInSeconds(),
-        NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+        NETWORK_CONNECTION_TIMEOUT_IN_SECONDS,
+        getConfigLogger(namespace));
   }
 
   @VisibleForTesting
