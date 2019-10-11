@@ -26,36 +26,36 @@ import java.util.List;
  * A layer that locally persists a few Firebase Installation attributes on top the Firebase
  * Installation API.
  */
-public class PersistedFid {
+public class PersistedInstallation {
   // Registration Status of each persisted fid entry
   // NOTE: never change the ordinal of the enum values because the enum values are stored in shared
   // prefs as their ordinal numbers.
   public enum RegistrationStatus {
     /**
-     * {@link PersistedFidEntry} default registration status. Next state: UNREGISTERED - A new FID
-     * is created and persisted locally before registering with FIS servers.
+     * {@link PersistedInstallationEntry} default registration status. Next state: UNREGISTERED - A
+     * new FID is created and persisted locally before registering with FIS servers.
      */
     NOT_GENERATED,
     /**
-     * {@link PersistedFidEntry} is not synced with FIS servers. Next state: REGISTERED - If FID
-     * registration is successful. REGISTER_ERROR - If FID registration or refresh auth token
+     * {@link PersistedInstallationEntry} is not synced with FIS servers. Next state: REGISTERED -
+     * If FID registration is successful. REGISTER_ERROR - If FID registration or refresh auth token
      * failed.
      */
     UNREGISTERED,
     /**
-     * {@link PersistedFidEntry} is synced to FIS servers. Next state: REGISTER_ERROR - If FID
-     * registration or refresh auth token failed.
+     * {@link PersistedInstallationEntry} is synced to FIS servers. Next state: REGISTER_ERROR - If
+     * FID registration or refresh auth token failed.
      */
     REGISTERED,
     /**
-     * {@link PersistedFidEntry} is in error state when an exception is thrown while syncing with
-     * FIS server. Next state: UNREGISTERED - A new FID is created and persisted locally before
-     * registering with FIS servers.
+     * {@link PersistedInstallationEntry} is in error state when an exception is thrown while
+     * syncing with FIS server. Next state: UNREGISTERED - A new FID is created and persisted
+     * locally before registering with FIS servers.
      */
     REGISTER_ERROR,
   }
 
-  private static final String SHARED_PREFS_NAME = "PersistedFid";
+  private static final String SHARED_PREFS_NAME = "PersistedInstallation";
 
   private static final String FIREBASE_INSTALLATION_ID_KEY = "Fid";
   private static final String AUTH_TOKEN_KEY = "AuthToken";
@@ -78,7 +78,7 @@ public class PersistedFid {
 
   private final String persistenceKey;
 
-  public PersistedFid(@NonNull FirebaseApp firebaseApp) {
+  public PersistedInstallation(@NonNull FirebaseApp firebaseApp) {
     // Different FirebaseApp in the same Android application should have the same application
     // context and same dir path
     prefs =
@@ -89,7 +89,7 @@ public class PersistedFid {
   }
 
   @NonNull
-  public PersistedFidEntry readPersistedFidEntryValue() {
+  public PersistedInstallationEntry readPersistedInstallationEntryValue() {
     synchronized (prefs) {
       String fid = prefs.getString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
       int status = prefs.getInt(getSharedPreferencesKey(PERSISTED_STATUS_KEY), -1);
@@ -100,9 +100,9 @@ public class PersistedFid {
       long expiresIn = prefs.getLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), 0);
 
       if (fid == null || !(status >= 0 && status < RegistrationStatus.values().length)) {
-        return PersistedFidEntry.builder().build();
+        return PersistedInstallationEntry.builder().build();
       }
-      return PersistedFidEntry.builder()
+      return PersistedInstallationEntry.builder()
           .setFirebaseInstallationId(fid)
           .setRegistrationStatus(RegistrationStatus.values()[status])
           .setAuthToken(authToken)
@@ -114,7 +114,8 @@ public class PersistedFid {
   }
 
   @NonNull
-  public boolean insertOrUpdatePersistedFidEntry(@NonNull PersistedFidEntry entryValue) {
+  public boolean insertOrUpdatePersistedInstallationEntry(
+      @NonNull PersistedInstallationEntry entryValue) {
     synchronized (prefs) {
       SharedPreferences.Editor editor = prefs.edit();
       editor.putString(
