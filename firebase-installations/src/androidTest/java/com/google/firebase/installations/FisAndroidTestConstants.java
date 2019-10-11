@@ -14,7 +14,7 @@
 
 package com.google.firebase.installations;
 
-import com.google.firebase.installations.local.PersistedFidEntry;
+import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.InstallationResponse;
 
 public final class FisAndroidTestConstants {
@@ -42,8 +42,8 @@ public final class FisAndroidTestConstants {
   public static final long TEST_CREATION_TIMESTAMP_1 = 2000L;
   public static final long TEST_CREATION_TIMESTAMP_2 = 2L;
 
-  public static final PersistedFidEntry DEFAULT_PERSISTED_FID_ENTRY =
-      PersistedFidEntry.builder().build();
+  public static final PersistedInstallationEntry DEFAULT_PERSISTED_INSTALLATION_ENTRY =
+      PersistedInstallationEntry.builder().build();
   public static final InstallationResponse TEST_INSTALLATION_RESPONSE =
       InstallationResponse.builder()
           .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)

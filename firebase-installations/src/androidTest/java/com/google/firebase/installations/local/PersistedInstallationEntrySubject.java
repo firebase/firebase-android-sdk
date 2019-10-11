@@ -18,37 +18,40 @@ import static com.google.common.truth.Truth.assertAbout;
 
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Subject;
-import com.google.firebase.installations.local.PersistedFid.RegistrationStatus;
+import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
-public final class PersistedFidEntrySubject extends Subject {
+public final class PersistedInstallationEntrySubject extends Subject {
 
   // User-defined entry point
-  public static PersistedFidEntrySubject assertThat(
-      @NullableDecl PersistedFidEntry persistedFidEntry) {
-    return assertAbout(PERSISTED_FID_ENTRY_SUBJECT_FACTORY).that(persistedFidEntry);
+  public static PersistedInstallationEntrySubject assertThat(
+      @NullableDecl PersistedInstallationEntry persistedInstallationEntry) {
+    return assertAbout(PERSISTED_INSTALLATION_ENTRY_SUBJECT_FACTORY)
+        .that(persistedInstallationEntry);
   }
 
   // Static method for getting the subject factory (for use with assertAbout())
-  public static Subject.Factory<PersistedFidEntrySubject, PersistedFidEntry> persistedFidEntry() {
-    return PERSISTED_FID_ENTRY_SUBJECT_FACTORY;
+  public static Subject.Factory<PersistedInstallationEntrySubject, PersistedInstallationEntry>
+      persistedInstallationEntry() {
+    return PERSISTED_INSTALLATION_ENTRY_SUBJECT_FACTORY;
   }
 
-  // Boiler-plate Subject.Factory for EmployeeSubject
-  private static final Subject.Factory<PersistedFidEntrySubject, PersistedFidEntry>
-      PERSISTED_FID_ENTRY_SUBJECT_FACTORY = PersistedFidEntrySubject::new;
+  // Boiler-plate Subject.Factory for PersistedInstallationEntrySubject
+  private static final Subject.Factory<
+          PersistedInstallationEntrySubject, PersistedInstallationEntry>
+      PERSISTED_INSTALLATION_ENTRY_SUBJECT_FACTORY = PersistedInstallationEntrySubject::new;
 
-  private final PersistedFidEntry actual;
+  private final PersistedInstallationEntry actual;
 
   /**
    * Constructor for use by subclasses. If you want to create an instance of this class itself, call
-   * {@link Subject#check(String, PersistedFidEntry ..) check(...)}{@code .that(actual)}.
+   * {@link Subject#check(String, PersistedInstallationEntry ..) check(...)}{@code .that(actual)}.
    *
    * @param metadata
    * @param actual
    */
-  protected PersistedFidEntrySubject(
-      FailureMetadata metadata, @NullableDecl PersistedFidEntry actual) {
+  protected PersistedInstallationEntrySubject(
+      FailureMetadata metadata, @NullableDecl PersistedInstallationEntry actual) {
     super(metadata, actual);
     this.actual = actual;
   }
