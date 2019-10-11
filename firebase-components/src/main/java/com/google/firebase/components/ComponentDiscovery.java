@@ -57,26 +57,6 @@ public final class ComponentDiscovery<T> {
   private final T context;
   private final RegistrarNameRetriever<T> retriever;
 
-  /**
-   * @deprecated It's unsafe to use when firebase_common is not available. Use {@link
-   *     #forContext(Context, Class)} instead.
-   * @throws IllegalStateException if firebase_common is not available.
-   */
-  @Deprecated
-  public static ComponentDiscovery<Context> forContext(Context context) {
-    return forContext(context, loadLegacyDiscoveryService());
-  }
-
-  @SuppressWarnings("unchecked")
-  private static Class<? extends Service> loadLegacyDiscoveryService() {
-    try {
-      return (Class<? extends Service>)
-          Class.forName("com.google.firebase.components.ComponentDiscoveryService");
-    } catch (ClassNotFoundException e) {
-      throw new IllegalStateException("ComponentDiscoveryService is not available.", e);
-    }
-  }
-
   public static ComponentDiscovery<Context> forContext(
       Context context, Class<? extends Service> discoveryService) {
     return new ComponentDiscovery<>(context, new MetadataRegistrarNameRetriever(discoveryService));
