@@ -16,14 +16,15 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
-import com.google.firebase.remoteconfig.BuildConfig;
+import com.google.android.gms.common.util.MockClock;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent;
-import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent.EventType;
 import com.google.firebase.remoteconfig.proto.ClientMetrics.FetchEvent;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,113 +37,49 @@ public class ConfigLoggerTest {
   private static final String FAKE_APP_ID = "1:14368190084:android:09cb977358c6f241";
   private static final String FAKE_FID = "fake instance id";
   private static final String DEFAULT_NAMESPACE = RemoteConfigComponent.DEFAULT_NAMESPACE;
+  private static final long FAKE_TIMESTAMP = 100L;
 
+  private MockClock mockClock;
   @Mock private Transport<ClientLogEvent> mockTransport;
+  @Mock private FirebaseInstanceId mockFirebaseInstanceId;
+
   @Captor ArgumentCaptor<Event<ClientLogEvent>> logEventCaptor;
   private ConfigLogger configLogger;
 
   @Before
   public void setup() {
     initMocks(this);
-    configLogger = new ConfigLogger(mockTransport);
+    mockClock = new MockClock(0L);
+
+    configLogger =
+        new ConfigLogger(
+            mockTransport, FAKE_APP_ID, DEFAULT_NAMESPACE, mockFirebaseInstanceId, mockClock);
   }
 
   @Test
-  public void fetch_newValues_logsAppId() {
-    configLogger.logFetchEvent(
-        FAKE_APP_ID,
-        DEFAULT_NAMESPACE,
-        FAKE_FID,
-        /* timestampMillis= */ 100,
-        /* networkLatencyMillis= */ 10);
+  public void logFetchEvent_populatesClientLogEventCorrectly() {
+    when(mockFirebaseInstanceId.getId()).thenReturn(FAKE_FID);
+    mockClock.advance(FAKE_TIMESTAMP);
+
+    configLogger.logFetchEvent(/* networkLatencyMillis= */ 10);
 
     verify(mockTransport).send(logEventCaptor.capture());
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
     assertThat(clientLogEvent.getAppId()).isEqualTo(FAKE_APP_ID);
-  }
-
-  @Test
-  public void fetch_newValues_logsNamespace() {
-    configLogger.logFetchEvent(
-        FAKE_APP_ID,
-        DEFAULT_NAMESPACE,
-        FAKE_FID,
-        /* timestampMillis= */ 100,
-        /* networkLatencyMillis= */ 10);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
     assertThat(clientLogEvent.getNamespaceId()).isEqualTo(DEFAULT_NAMESPACE);
-  }
-
-  @Test
-  public void fetch_newValues_logsFid() {
-    configLogger.logFetchEvent(
-        FAKE_APP_ID,
-        DEFAULT_NAMESPACE,
-        FAKE_FID,
-        /* timestampMillis= */ 100,
-        /* networkLatencyMillis= */ 10);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
     assertThat(clientLogEvent.getFid()).isEqualTo(FAKE_FID);
+    assertThat(clientLogEvent.getTimestampMillis()).isEqualTo(FAKE_TIMESTAMP);
   }
 
   @Test
-  public void fetch_newValues_logsTimestamp() {
-    configLogger.logFetchEvent(
-        FAKE_APP_ID,
-        DEFAULT_NAMESPACE,
-        FAKE_FID,
-        /* timestampMillis= */ 100,
-        /* networkLatencyMillis= */ 10);
+  public void logFetchEvent_populatesFetchEventCorrectly() {
+    when(mockFirebaseInstanceId.getId()).thenReturn(FAKE_FID);
 
-    verify(mockTransport).send(logEventCaptor.capture());
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    assertThat(clientLogEvent.getTimestampMillis()).isEqualTo(100);
-  }
-
-  @Test
-  public void fetch_newValues_logsEventType() {
-    configLogger.logFetchEvent(
-        FAKE_APP_ID,
-        DEFAULT_NAMESPACE,
-        FAKE_FID,
-        /* timestampMillis= */ 100,
-        /* networkLatencyMillis= */ 10);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    assertThat(clientLogEvent.getEventType()).isEqualTo(EventType.FETCH);
-  }
-
-  @Test
-  public void fetch_newValues_logsSdkVersion() {
-    configLogger.logFetchEvent(
-        FAKE_APP_ID,
-        DEFAULT_NAMESPACE,
-        FAKE_FID,
-        /* timestampMillis= */ 100,
-        /* networkLatencyMillis= */ 10);
-
-    verify(mockTransport).send(logEventCaptor.capture());
-    ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
-    assertThat(clientLogEvent.getSdkVersion()).isEqualTo(BuildConfig.VERSION_NAME);
-  }
-
-  @Test
-  public void fetch_newValues_logsNetworkLatencyMillis() {
-    configLogger.logFetchEvent(
-        FAKE_APP_ID,
-        DEFAULT_NAMESPACE,
-        FAKE_FID,
-        /* timestampMillis= */ 100,
-        /* networkLatencyMillis= */ 10);
+    configLogger.logFetchEvent(/* networkLatencyMillis= */ 10L);
 
     verify(mockTransport).send(logEventCaptor.capture());
     ClientLogEvent clientLogEvent = logEventCaptor.getValue().getPayload();
     FetchEvent fetchEvent = clientLogEvent.getFetchEvent();
-    assertThat(fetchEvent.getNetworkLatencyMillis()).isEqualTo(10);
+    assertThat(fetchEvent.getNetworkLatencyMillis()).isEqualTo(10L);
   }
 }

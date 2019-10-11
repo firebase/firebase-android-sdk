@@ -84,7 +84,7 @@ public class RemoteConfigComponent {
   private final FirebaseApp firebaseApp;
   private final FirebaseInstanceId firebaseInstanceId;
   private final FirebaseABTesting firebaseAbt;
-  private final ConfigLogger configLogger;
+  private final Transport<ClientLogEvent> transport;
   @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final String appId;
@@ -130,16 +130,15 @@ public class RemoteConfigComponent {
     this.firebaseInstanceId = firebaseInstanceId;
     this.firebaseAbt = firebaseAbt;
 
-    Transport<ClientLogEvent> transport =
+    this.analyticsConnector = analyticsConnector;
+
+    this.appId = firebaseApp.getOptions().getApplicationId();
+
+    this.transport =
         transportFactory.getTransport(
             /* name = */ TRANSPORT_FINAL,
             /* payloadType = */ ClientLogEvent.class,
             /* payloadTransformer = */ ClientLogEvent::toByteArray);
-    this.configLogger = new ConfigLogger(transport);
-
-    this.analyticsConnector = analyticsConnector;
-
-    this.appId = firebaseApp.getOptions().getApplicationId();
 
     // When the component is first loaded, it will use a cached executor.
     // The getDefault call creates race conditions in tests, where the getDefault might be executing
@@ -238,6 +237,10 @@ public class RemoteConfigComponent {
         Executors.newCachedThreadPool(), ConfigStorageClient.getInstance(context, fileName));
   }
 
+  ConfigLogger getConfigLogger(String namespace) {
+    return new ConfigLogger(transport, appId, namespace, firebaseInstanceId, DEFAULT_CLOCK);
+  }
+
   @VisibleForTesting
   ConfigFetchHttpClient getFrcBackendApiClient(
       String apiKey, String namespace, ConfigMetadataClient metadataClient) {
@@ -249,7 +252,7 @@ public class RemoteConfigComponent {
         namespace,
         metadataClient.getFetchTimeoutInSeconds(),
         NETWORK_CONNECTION_TIMEOUT_IN_SECONDS,
-        configLogger);
+        getConfigLogger(namespace));
   }
 
   @VisibleForTesting

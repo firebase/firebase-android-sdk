@@ -16,6 +16,9 @@ package com.google.firebase.remoteconfig.internal;
 
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
+import com.google.android.gms.common.util.Clock;
+import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.remoteconfig.BuildConfig;
 import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent;
 import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent.EventType;
@@ -28,52 +31,57 @@ import com.google.firebase.remoteconfig.proto.ClientMetrics.FetchEvent;
  */
 public class ConfigLogger {
 
-  private final Transport<ClientLogEvent> transport;
+  private final Clock clock;
 
-  public ConfigLogger(Transport<ClientLogEvent> transport) {
+  private final String appId;
+  private final FirebaseInstanceId firebaseInstanceId;
+  private final Transport<ClientLogEvent> transport;
+  private String namespace;
+
+  public ConfigLogger(
+      Transport<ClientLogEvent> transport,
+      String appId,
+      String namespace,
+      FirebaseInstanceId firebaseInstanceId,
+      Clock clock) {
+
     this.transport = transport;
+    this.appId = appId;
+    this.namespace = namespace;
+    this.firebaseInstanceId = firebaseInstanceId;
+    this.clock = clock;
+  }
+
+  @VisibleForTesting
+  public String getNamespace() {
+    return this.namespace;
   }
 
   /**
    * Creates and log a {@link ClientLogEvent} that contains metrics related to a {@link FetchEvent}
    */
-  void logFetchEvent(
-      String appId, String namespace, String fid, long timestampMillis, long networkLatencyMillis) {
+  void logFetchEvent(long networkLatencyMillis) {
 
-    ClientLogEvent.Builder clientLogEventBuilder =
-        createClientLogEventBuilder(
-            appId, namespace, fid, timestampMillis, /* sdkVersion= */ BuildConfig.VERSION_NAME);
-
-    ClientLogEvent fetchEvent = createFetchEvent(clientLogEventBuilder, networkLatencyMillis);
+    ClientLogEvent fetchEvent =
+        createClientLogEventBuilder()
+            .setEventType(EventType.FETCH)
+            .setFetchEvent(
+                FetchEvent.newBuilder().setNetworkLatencyMillis(networkLatencyMillis).build())
+            .build();
 
     transport.send(Event.ofData(fetchEvent));
-  }
-
-  /**
-   * Takes a general {@link ClientLogEvent.Builder} and networkLatencyMillis and returns a
-   * Fetch-specific {@link ClientLogEvent}
-   */
-  private ClientLogEvent createFetchEvent(
-      ClientLogEvent.Builder clientLogEventBuilder, long networkLatencyMillis) {
-    return clientLogEventBuilder
-        .setEventType(EventType.FETCH)
-        .setFetchEvent(
-            FetchEvent.newBuilder().setNetworkLatencyMillis(networkLatencyMillis).build())
-        .build();
   }
 
   /**
    * Returns a {@link ClientLogEvent.Builder} that instantiates general fields for client-side
    * metrics.
    */
-  private ClientLogEvent.Builder createClientLogEventBuilder(
-      String appId, String namespace, String fid, long timestampMillis, String sdkVersion) {
-
+  private ClientLogEvent.Builder createClientLogEventBuilder() {
     return ClientLogEvent.newBuilder()
-        .setAppId(appId)
-        .setNamespaceId(namespace)
-        .setFid(fid)
-        .setTimestampMillis(timestampMillis)
-        .setSdkVersion(sdkVersion);
+        .setAppId(this.appId)
+        .setNamespaceId(this.namespace)
+        .setFid(firebaseInstanceId.getId())
+        .setTimestampMillis(clock.currentTimeMillis())
+        .setSdkVersion(BuildConfig.VERSION_NAME);
   }
 }

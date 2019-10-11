@@ -217,12 +217,7 @@ public class ConfigFetchHttpClient {
     ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
 
     long endTime = System.currentTimeMillis();
-    configLogger.logFetchEvent(
-        appId,
-        namespace,
-        instanceId,
-        /* timestampMillis= */ endTime,
-        /* networkLatencyMillis= */ endTime - startTime);
+    configLogger.logFetchEvent(/* networkLatencyMillis= */ endTime - startTime);
 
     return FetchResponse.forBackendUpdatesFetched(fetchedConfigs, fetchResponseETag);
   }
@@ -260,9 +255,7 @@ public class ConfigFetchHttpClient {
     urlConnection.setRequestProperty("Accept", "application/json");
   }
 
-  /**
-   * Sends developer specified custom headers to the Remote Config server.
-   */
+  /** Sends developer specified custom headers to the Remote Config server. */
   private void setCustomRequestHeaders(
       HttpURLConnection urlConnection, Map<String, String> customHeaders) {
     for (Map.Entry<String, String> customHeaderEntry : customHeaders.entrySet()) {

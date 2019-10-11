@@ -34,11 +34,11 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFie
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
+import com.google.android.datatransport.Transport;
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -47,6 +47,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
+import com.google.firebase.remoteconfig.proto.ClientMetrics.ClientLogEvent;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
@@ -90,6 +91,8 @@ public class ConfigFetchHttpClientTest {
   private JSONObject noChangeResponseBody;
   private FakeHttpURLConnection fakeHttpURLConnection;
 
+  @Mock Transport<ClientLogEvent> mockTransport;
+
   @Mock(answer = Answers.RETURNS_SMART_NULLS)
   private ConfigLogger mockConfigLogger;
 
@@ -98,6 +101,7 @@ public class ConfigFetchHttpClientTest {
   @Before
   public void setUp() throws Exception {
     initMocks(this);
+
     context = RuntimeEnvironment.application;
 
     configFetchHttpClient =
@@ -169,13 +173,7 @@ public class ConfigFetchHttpClientTest {
 
     fetch(FIRST_ETAG);
 
-    verify(mockConfigLogger)
-        .logFetchEvent(
-            /* appId= */ eq(FAKE_APP_ID),
-            /* namespaceId= */ eq(DEFAULT_NAMESPACE),
-            /* fid= */ eq(INSTANCE_ID_STRING),
-            /* timestampMillis= */ anyLong(),
-            /* networkLatencyMillis= */ anyLong());
+    verify(mockConfigLogger).logFetchEvent(/* networkLatencyMillis= */ anyLong());
   }
 
   @Test
