@@ -29,9 +29,6 @@ class GenerateVariantPlugin implements Plugin<Project> {
                 productFlavors.create("$projectName") {
                     dimension "apkSize"
                 }
-                sourceSets.getByName(projectName) { sourceSet ->
-                    sourceSet.java.srcDirs += ['src/empty/java']
-                }
             }
             project.dependencies.add("${projectName}Implementation", project.rootProject.project(":${projectName}"))
         }

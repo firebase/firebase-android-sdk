@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.apksize;
 
-/** SampleCode interface allows to load sample code for the selected build variant */
-import android.content.Context;
-
-public interface SampleCode {
-  void runSample(Context context);
+android {
+    productFlavors {
+        base {
+            dimension "apkSize"
+            applicationId "com.google.apksize.base"
+        }
+    }
 }

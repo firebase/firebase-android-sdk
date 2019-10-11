@@ -28,7 +28,7 @@ android {
     }
 }
 
-apply from: "src/empty/empty.gradle"
+apply from: "src/base/base.gradle"
 apply plugin: GenerateVariantPlugin
 
 /**
