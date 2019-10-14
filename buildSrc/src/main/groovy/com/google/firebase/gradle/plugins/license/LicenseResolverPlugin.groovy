@@ -15,15 +15,6 @@
 package com.google.firebase.gradle.plugins.license
 
 import com.android.build.gradle.tasks.BundleAar
-import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.AnotherMITLicenseFetcher
-import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.AndroidSdkTermsFetcher
-import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.AnotherApache2LicenseFetcher
-import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.Apache2LicenseFetcher
-import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.BSDLicenseFetcher
-import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.CreativeCommonsLicenseFetcher
-import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.GnuClasspathLicenseFetcher
-import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.MITLicenseFetcher
-import com.google.firebase.gradle.plugins.license.RemoteLicenseFetcher.YetAnotherApache2LicenseFetcher
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -48,13 +39,6 @@ import org.gradle.api.artifacts.Configuration
  * </ul>
  */
 class LicenseResolverPlugin implements Plugin<Project> {
-    List<RemoteLicenseFetcher> remoteLicenseFetchers =
-            [new AndroidSdkTermsFetcher(),
-             new Apache2LicenseFetcher(),
-             new AnotherApache2LicenseFetcher(),
-             new YetAnotherApache2LicenseFetcher(),
-             new BSDLicenseFetcher(),
-             new CreativeCommonsLicenseFetcher(), new MITLicenseFetcher(), new AnotherMITLicenseFetcher(), new GnuClasspathLicenseFetcher()]
     final static ANDROID_PLUGINS = ["com.android.application", "com.android.library",
                                     "com.android.test"]
 
@@ -74,22 +58,11 @@ class LicenseResolverPlugin implements Plugin<Project> {
                 }
             }
 
-            File downloadsDir = new File("$project.buildDir/generated/downloads")
             File licensesDir = new File("$project.buildDir/generated/third_party_licenses")
 
-            DownloadLicenseTask downloadLicensesTask = project.task('downloadLicenses',
-                    type: DownloadLicenseTask) {
-                description "Downloads remote licenses"
-                outputDir = downloadsDir
-                parsers = remoteLicenseFetchers
-            }
-
             if (isAndroidProject(project)) {
-
-                def licensesTask = project.tasks.create("generateLicenses", GenerateLicensesTask, conf).configure {
-                    dependsOn downloadLicensesTask
+                def licensesTask = project.tasks.create("generateLicenses", GenerateLicensesTask).configure {
                     additionalLicenses = thirdPartyLicenses.getLibraries()
-                    licenseDownloadDir = downloadsDir
                     outputDir = licensesDir
                 }
 

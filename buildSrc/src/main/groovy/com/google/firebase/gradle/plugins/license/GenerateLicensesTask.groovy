@@ -28,28 +28,17 @@ import javax.inject.Inject
 class GenerateLicensesTask extends DefaultTask {
     private static final int NEW_LINE_LENGTH = "\n".getBytes().length
 
-    private final LicenseResolver licenseResolver
-    private final Configuration inputConfiguration
 
 
     @Input
     List<ProjectLicense> additionalLicenses
 
-    @InputDirectory
-    File licenseDownloadDir
-
     @OutputDirectory
     File outputDir
 
-    @Inject
-    GenerateLicensesTask(Configuration configuration) {
-        this(configuration, new LicenseResolver())
-    }
 
-    GenerateLicensesTask(Configuration configuration, LicenseResolver licenseResolver) {
-        this.inputConfiguration = configuration
-        this.licenseResolver = licenseResolver
 
+    GenerateLicensesTask() {
         // it's impossible to tell if the configuration we depend on changed without resolving it, but
         // the configuration is most likely not resolvable.
         outputs.upToDateWhen { false }
@@ -58,29 +47,19 @@ class GenerateLicensesTask extends DefaultTask {
 
     @TaskAction
     void execute(IncrementalTaskInputs inputs) {
-        Set<ProjectLicense> licenses = licenseResolver.resolve(project, inputConfiguration) + additionalLicenses
-
-        Set<URI> licenseUris = licenses.collectMany { it.licenseUris } as Set
+        Set<URI> licenseUris = additionalLicenses.collectMany { it.licenseUris } as Set
 
         //Fetch local licenses into memory
         Map<URI, String> licenseCache = licenseUris.collectEntries {
-
             File file
-            if (it.getScheme() == "file") {
-                file = new File(it)
-                if (!file.exists()) {
-                    throw new GradleException("License file not found at ${it.toString()}",
-                            new FileNotFoundException())
-                }
-            } else {
-                file = new File(licenseDownloadDir, "${it.toString().hashCode()}")
-                if (!file.exists()) {
-                    throw new GradleException(
-                            "License file was not downloaded from ${it.toString()}. " +
-                                    "Did you forget to add a custom RemoteLicenseFetcher?",
-                            new FileNotFoundException())
-                }
+            file = new File(it)
+
+
+            if (!file.exists()) {
+                throw new GradleException("License file not found at ${it.toString()}",
+                        new FileNotFoundException())
             }
+
 
             [(it): file.text]
         }
@@ -97,7 +76,7 @@ class GenerateLicensesTask extends DefaultTask {
         textFile.withPrintWriter { writer ->
             long writeOffset = 0
 
-            jsonBuilder = new JsonBuilder(licenses.collectEntries { projectLicense ->
+            jsonBuilder = new JsonBuilder(additionalLicenses.collectEntries { projectLicense ->
                 String name = projectLicense.name
                 List<URI> uris = projectLicense.licenseUris
 
