@@ -118,14 +118,13 @@ public class FirebaseInstallationServiceClient {
         }
 
         int httpResponseCode = httpsURLConnection.getResponseCode();
-        switch (httpResponseCode) {
-          case 200:
-            return readCreateResponse(httpsURLConnection);
-          case 500:
-            retryCount++;
-            break;
-          default:
-            throw new FirebaseException(readErrorResponse(httpsURLConnection));
+
+        if (httpResponseCode == 200) {
+          return readCreateResponse(httpsURLConnection);
+        } else if (httpResponseCode >= 500 && httpResponseCode < 600) {
+          retryCount++;
+        } else {
+          throw new FirebaseException(readErrorResponse(httpsURLConnection));
         }
       }
       // Return empty installation response after max retries
@@ -220,14 +219,13 @@ public class FirebaseInstallationServiceClient {
         httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
         int httpResponseCode = httpsURLConnection.getResponseCode();
-        switch (httpResponseCode) {
-          case 200:
-            return readGenerateAuthTokenResponse(httpsURLConnection);
-          case 500:
-            retryCount++;
-            break;
-          default:
-            throw new FirebaseException(readErrorResponse(httpsURLConnection));
+
+        if (httpResponseCode == 200) {
+          return readGenerateAuthTokenResponse(httpsURLConnection);
+        } else if (httpResponseCode >= 500 && httpResponseCode < 600) {
+          retryCount++;
+        } else {
+          throw new FirebaseException(readErrorResponse(httpsURLConnection));
         }
       }
       throw new FirebaseException(INTERNAL_SERVER_ERROR_MESSAGE);

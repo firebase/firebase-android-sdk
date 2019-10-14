@@ -293,7 +293,8 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   @Test
-  public void testGetId_500ServerError_UnregisteredFID() throws Exception {
+  public void testGetId_ServerError_UnregisteredFID() throws Exception {
+    // Mocking server error on FIS createFirebaseInstallation, returns empty InstallationResponse
     when(backendClientReturnsOk.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(InstallationResponse.builder().build());

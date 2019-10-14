@@ -226,7 +226,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
       if (persistedInstallationEntry.isErrored()) {
         throw new FirebaseInstallationsException(
-            persistedInstallationEntry.getFISException(),
+            persistedInstallationEntry.getFisError(),
             FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
       }
 
@@ -268,7 +268,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       PersistedInstallationEntry errorInstallationEntry =
           persistedInstallationEntry
               .toBuilder()
-              .setFISException(e.getMessage())
+              .setFisError(e.getMessage())
               .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
               .build();
       persistedInstallation.insertOrUpdatePersistedInstallationEntry(errorInstallationEntry);
