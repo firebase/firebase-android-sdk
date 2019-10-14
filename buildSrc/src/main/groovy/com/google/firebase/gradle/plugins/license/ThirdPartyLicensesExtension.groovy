@@ -22,7 +22,7 @@ class ThirdPartyLicensesExtension {
         this.baseDir = baseDir
     }
 
-    /** Add a library with its licenses in passed-in files(relative to rootDir). */
+    /** Add a library with its licenses in passed-in files(relative to rootDir). Only file URIs are supported*/
     void add(String name, String... licenseUris) throws IOException {
         additionalLicenses.add(
                 new ProjectLicense(name: name, explicitLicenseUris: licenseUris.collect {
