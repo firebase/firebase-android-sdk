@@ -80,10 +80,10 @@ dependencies {
     implementation "com.squareup.picasso:picasso:2.71828"
     implementation "com.squareup.okhttp:okhttp:2.7.5"
 
-    implementation "com.google.dagger:dagger:2.22"
-    implementation "com.google.dagger:dagger-android-support:2.22"
+    implementation "com.google.dagger:dagger:2.24"
+    implementation "com.google.dagger:dagger-android-support:2.24"
 
-    annotationProcessor "com.google.dagger:dagger-compiler:2.22"
+    annotationProcessor "com.google.dagger:dagger-compiler:2.24"
     annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
     annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
 
