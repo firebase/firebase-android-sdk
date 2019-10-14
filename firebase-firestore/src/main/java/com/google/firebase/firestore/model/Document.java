@@ -117,10 +117,12 @@ public final class Document extends MaybeDocument {
     } else {
       hardAssert(proto != null && converter != null, "Expected proto and converter to be non-null");
 
+      Map<FieldPath, FieldValue> fieldValueCache = this.fieldValueCache;
       if (fieldValueCache == null) {
         // TODO(b/136090445): Remove the cache when `getField` is no longer called during Query
         // ordering.
         fieldValueCache = new ConcurrentHashMap<>();
+        this.fieldValueCache = fieldValueCache;
       }
 
       FieldValue fieldValue = fieldValueCache.get(path);
