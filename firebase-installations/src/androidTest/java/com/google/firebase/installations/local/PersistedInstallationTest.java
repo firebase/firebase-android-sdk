@@ -14,7 +14,7 @@
 
 package com.google.firebase.installations.local;
 
-import static com.google.firebase.installations.FisAndroidTestConstants.DEFAULT_PERSISTED_FID_ENTRY;
+import static com.google.firebase.installations.FisAndroidTestConstants.DEFAULT_PERSISTED_INSTALLATION_ENTRY;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_2;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
@@ -23,27 +23,27 @@ import static com.google.firebase.installations.FisAndroidTestConstants.TEST_CRE
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_FID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_REFRESH_TOKEN;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP;
-import static com.google.firebase.installations.local.PersistedFidEntrySubject.assertThat;
+import static com.google.firebase.installations.local.PersistedInstallationEntrySubject.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.installations.local.PersistedFid.RegistrationStatus;
+import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Instrumented tests for {@link PersistedFid} */
+/** Instrumented tests for {@link PersistedInstallation} */
 @RunWith(AndroidJUnit4.class)
-public class PersistedFidTest {
+public class PersistedInstallationTest {
 
   private FirebaseApp firebaseApp0;
   private FirebaseApp firebaseApp1;
-  private PersistedFid persistedFid0;
-  private PersistedFid persistedFid1;
+  private PersistedInstallation persistedInstallation0;
+  private PersistedInstallation persistedInstallation1;
 
   @Before
   public void setUp() {
@@ -57,36 +57,39 @@ public class PersistedFidTest {
             ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder().setApplicationId(TEST_APP_ID_2).build(),
             "firebase_app_1");
-    persistedFid0 = new PersistedFid(firebaseApp0);
-    persistedFid1 = new PersistedFid(firebaseApp1);
+    persistedInstallation0 = new PersistedInstallation(firebaseApp0);
+    persistedInstallation1 = new PersistedInstallation(firebaseApp1);
   }
 
   @After
   public void cleanUp() throws Exception {
-    persistedFid0.clear();
-    persistedFid1.clear();
+    persistedInstallation0.clear();
+    persistedInstallation1.clear();
   }
 
   @Test
-  public void testReadPersistedFidEntry_Null() {
-    assertThat(persistedFid0.readPersistedFidEntryValue()).isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
-    assertThat(persistedFid1.readPersistedFidEntryValue()).isEqualTo(DEFAULT_PERSISTED_FID_ENTRY);
+  public void testReadPersistedInstallationEntry_Null() {
+    assertThat(persistedInstallation0.readPersistedInstallationEntryValue())
+        .isEqualTo(DEFAULT_PERSISTED_INSTALLATION_ENTRY);
+    assertThat(persistedInstallation1.readPersistedInstallationEntryValue())
+        .isEqualTo(DEFAULT_PERSISTED_INSTALLATION_ENTRY);
   }
 
   @Test
-  public void testUpdateAndReadPersistedFidEntry_successful() throws Exception {
-    // Insert Persisted Fid Entry with Unregistered status in Shared Prefs
+  public void testUpdateAndReadPersistedInstallationEntry_successful() throws Exception {
+    // Insert Persisted Installation Entry with Unregistered status in Shared Prefs
     assertTrue(
-        persistedFid0.insertOrUpdatePersistedFidEntry(
-            PersistedFidEntry.builder()
+        persistedInstallation0.insertOrUpdatePersistedInstallationEntry(
+            PersistedInstallationEntry.builder()
                 .setFirebaseInstallationId(TEST_FID_1)
                 .setAuthToken(TEST_AUTH_TOKEN)
                 .setRefreshToken(TEST_REFRESH_TOKEN)
-                .setRegistrationStatus(PersistedFid.RegistrationStatus.UNREGISTERED)
+                .setRegistrationStatus(PersistedInstallation.RegistrationStatus.UNREGISTERED)
                 .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_1)
                 .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
                 .build()));
-    PersistedFidEntry entryValue = persistedFid0.readPersistedFidEntryValue();
+    PersistedInstallationEntry entryValue =
+        persistedInstallation0.readPersistedInstallationEntryValue();
 
     // Validate insertion was successful
     assertThat(entryValue).hasFid(TEST_FID_1);
@@ -98,16 +101,16 @@ public class PersistedFidTest {
 
     // Update Persisted Fid Entry with Registered status in Shared Prefs
     assertTrue(
-        persistedFid0.insertOrUpdatePersistedFidEntry(
-            PersistedFidEntry.builder()
+        persistedInstallation0.insertOrUpdatePersistedInstallationEntry(
+            PersistedInstallationEntry.builder()
                 .setFirebaseInstallationId(TEST_FID_1)
                 .setAuthToken(TEST_AUTH_TOKEN)
                 .setRefreshToken(TEST_REFRESH_TOKEN)
-                .setRegistrationStatus(PersistedFid.RegistrationStatus.REGISTERED)
+                .setRegistrationStatus(PersistedInstallation.RegistrationStatus.REGISTERED)
                 .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_2)
                 .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
                 .build()));
-    entryValue = persistedFid0.readPersistedFidEntryValue();
+    entryValue = persistedInstallation0.readPersistedInstallationEntryValue();
 
     // Validate update was successful
     assertThat(entryValue).hasFid(TEST_FID_1);

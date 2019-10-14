@@ -15,7 +15,7 @@
 package com.google.firebase.installations;
 
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.installations.local.PersistedFidEntry;
+import com.google.firebase.installations.local.PersistedInstallationEntry;
 
 class GetIdListener implements StateListener {
   final TaskCompletionSource<String> taskCompletionSource;
@@ -25,17 +25,19 @@ class GetIdListener implements StateListener {
   }
 
   @Override
-  public boolean onStateReached(PersistedFidEntry persistedFidEntry, boolean unused) {
-    if (persistedFidEntry.isUnregistered() || persistedFidEntry.isRegistered()) {
-      taskCompletionSource.trySetResult(persistedFidEntry.getFirebaseInstallationId());
+  public boolean onStateReached(
+      PersistedInstallationEntry persistedInstallationEntry, boolean unused) {
+    if (persistedInstallationEntry.isUnregistered() || persistedInstallationEntry.isRegistered()) {
+      taskCompletionSource.trySetResult(persistedInstallationEntry.getFirebaseInstallationId());
       return true;
     }
     return false;
   }
 
   @Override
-  public boolean onException(PersistedFidEntry persistedFidEntry, Exception exception) {
-    if (persistedFidEntry.isErrored()) {
+  public boolean onException(
+      PersistedInstallationEntry persistedInstallationEntry, Exception exception) {
+    if (persistedInstallationEntry.isErrored()) {
       taskCompletionSource.trySetException(exception);
       return true;
     }

@@ -14,11 +14,13 @@
 
 package com.google.firebase.installations;
 
-import com.google.firebase.installations.local.PersistedFidEntry;
+import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.InstallationResponse;
 
 public final class FisAndroidTestConstants {
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
+  /** Invalid FID. */
+  public static final String INVALID_TEST_FID = "invalid";
 
   public static final String TEST_PROJECT_ID = "777777777777";
 
@@ -40,11 +42,12 @@ public final class FisAndroidTestConstants {
   public static final long TEST_CREATION_TIMESTAMP_1 = 2000L;
   public static final long TEST_CREATION_TIMESTAMP_2 = 2L;
 
-  public static final PersistedFidEntry DEFAULT_PERSISTED_FID_ENTRY =
-      PersistedFidEntry.builder().build();
+  public static final PersistedInstallationEntry DEFAULT_PERSISTED_INSTALLATION_ENTRY =
+      PersistedInstallationEntry.builder().build();
   public static final InstallationResponse TEST_INSTALLATION_RESPONSE =
       InstallationResponse.builder()
-          .setName("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)
+          .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)
+          .setFid(TEST_FID_1)
           .setRefreshToken(TEST_REFRESH_TOKEN)
           .setAuthToken(
               InstallationTokenResult.builder()
