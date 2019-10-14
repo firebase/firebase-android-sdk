@@ -25,7 +25,9 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.FirebaseException;
 import com.google.firebase.installations.InstallationTokenResult;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -53,10 +55,8 @@ public class FirebaseInstallationServiceClient {
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
 
-  private static final String UNAUTHORIZED_ERROR_MESSAGE =
-      "The request did not have the required credentials.";
   private static final String INTERNAL_SERVER_ERROR_MESSAGE = "There was an internal server error.";
-  private static final String NETWORK_ERROR_MESSAGE = "The server returned an unexpected error:";
+  private static final String NETWORK_ERROR_MESSAGE = "The server returned an unexpected error: %s";
 
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
@@ -64,6 +64,9 @@ public class FirebaseInstallationServiceClient {
   private static final int NETWORK_TIMEOUT_MILLIS = 10000;
 
   private static final Pattern EXPIRATION_TIMESTAMP_PATTERN = Pattern.compile("[0-9]+s");
+
+  private static final int MAX_RETRIES = 1;
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   @VisibleForTesting
   static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
@@ -86,9 +89,10 @@ public class FirebaseInstallationServiceClient {
   @NonNull
   public InstallationResponse createFirebaseInstallation(
       @NonNull String apiKey, @NonNull String fid, @NonNull String projectID, @NonNull String appId)
-      throws FirebaseInstallationServiceException {
+      throws FirebaseException {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
     try {
+      int retryCount = 0;
       URL url =
           new URL(
               String.format(
@@ -97,46 +101,36 @@ public class FirebaseInstallationServiceClient {
                   FIREBASE_INSTALLATIONS_API_VERSION,
                   resourceName,
                   apiKey));
+      while (retryCount <= MAX_RETRIES) {
+        HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
+        httpsURLConnection.setRequestMethod("POST");
+        httpsURLConnection.setDoOutput(true);
 
-      HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
-      httpsURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
-      httpsURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
-      httpsURLConnection.setDoOutput(true);
-      httpsURLConnection.setRequestMethod("POST");
-      httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
-      httpsURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
-      httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
-      httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
-      httpsURLConnection.addRequestProperty(
-          X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
+        GZIPOutputStream gzipOutputStream =
+            new GZIPOutputStream(httpsURLConnection.getOutputStream());
+        try {
+          gzipOutputStream.write(
+              buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
+        } catch (JSONException e) {
+          throw new IllegalStateException(e);
+        } finally {
+          gzipOutputStream.close();
+        }
 
-      GZIPOutputStream gzipOutputStream =
-          new GZIPOutputStream(httpsURLConnection.getOutputStream());
-      try {
-        gzipOutputStream.write(
-            buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
-      } catch (JSONException e) {
-        throw new IllegalStateException(e);
-      } finally {
-        gzipOutputStream.close();
+        int httpResponseCode = httpsURLConnection.getResponseCode();
+        switch (httpResponseCode) {
+          case 200:
+            return readCreateResponse(httpsURLConnection);
+          case 500:
+            retryCount++;
+            break;
+          default:
+            throw new FirebaseException(readErrorResponse(httpsURLConnection));
+        }
       }
-
-      int httpResponseCode = httpsURLConnection.getResponseCode();
-      switch (httpResponseCode) {
-        case 200:
-          return readCreateResponse(httpsURLConnection);
-        case 401:
-          throw new FirebaseInstallationServiceException(
-              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Status.UNAUTHORIZED);
-        default:
-          throw new FirebaseInstallationServiceException(
-              INTERNAL_SERVER_ERROR_MESSAGE,
-              FirebaseInstallationServiceException.Status.SERVER_ERROR);
-      }
+      throw new FirebaseException(INTERNAL_SERVER_ERROR_MESSAGE);
     } catch (IOException e) {
-      throw new FirebaseInstallationServiceException(
-          NETWORK_ERROR_MESSAGE + e.getMessage(),
-          FirebaseInstallationServiceException.Status.NETWORK_ERROR);
+      throw new FirebaseException(String.format(NETWORK_ERROR_MESSAGE, e.getMessage()));
     }
   }
 
@@ -163,7 +157,7 @@ public class FirebaseInstallationServiceClient {
       @NonNull String fid,
       @NonNull String projectID,
       @NonNull String refreshToken)
-      throws FirebaseInstallationServiceException {
+      throws FirebaseException {
     String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
     try {
       URL url =
@@ -175,31 +169,19 @@ public class FirebaseInstallationServiceClient {
                   resourceName,
                   apiKey));
 
-      HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
-      httpsURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
-      httpsURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
-      httpsURLConnection.setDoOutput(true);
+      HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
       httpsURLConnection.setRequestMethod("DELETE");
       httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
-      httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
-      httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
 
       int httpResponseCode = httpsURLConnection.getResponseCode();
       switch (httpResponseCode) {
         case 200:
           return;
-        case 401:
-          throw new FirebaseInstallationServiceException(
-              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Status.UNAUTHORIZED);
         default:
-          throw new FirebaseInstallationServiceException(
-              INTERNAL_SERVER_ERROR_MESSAGE,
-              FirebaseInstallationServiceException.Status.SERVER_ERROR);
+          throw new FirebaseException(readErrorResponse(httpsURLConnection));
       }
     } catch (IOException e) {
-      throw new FirebaseInstallationServiceException(
-          NETWORK_ERROR_MESSAGE + e.getMessage(),
-          FirebaseInstallationServiceException.Status.NETWORK_ERROR);
+      throw new FirebaseException(String.format(NETWORK_ERROR_MESSAGE, e.getMessage()));
     }
   }
 
@@ -218,10 +200,11 @@ public class FirebaseInstallationServiceClient {
       @NonNull String fid,
       @NonNull String projectID,
       @NonNull String refreshToken)
-      throws FirebaseInstallationServiceException {
+      throws FirebaseException {
     String resourceName =
         String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
     try {
+      int retryCount = 0;
       URL url =
           new URL(
               String.format(
@@ -230,39 +213,44 @@ public class FirebaseInstallationServiceClient {
                   FIREBASE_INSTALLATIONS_API_VERSION,
                   resourceName,
                   apiKey));
+      while (retryCount <= MAX_RETRIES) {
+        HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
+        httpsURLConnection.setRequestMethod("POST");
+        httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
-      HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
-      httpsURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
-      httpsURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
-      httpsURLConnection.setDoOutput(true);
-      httpsURLConnection.setRequestMethod("POST");
-      httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
-      httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
-      httpsURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
-      httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
-
-      int httpResponseCode = httpsURLConnection.getResponseCode();
-      switch (httpResponseCode) {
-        case 200:
-          return readGenerateAuthTokenResponse(httpsURLConnection);
-        case 401:
-          throw new FirebaseInstallationServiceException(
-              UNAUTHORIZED_ERROR_MESSAGE, FirebaseInstallationServiceException.Status.UNAUTHORIZED);
-        default:
-          throw new FirebaseInstallationServiceException(
-              INTERNAL_SERVER_ERROR_MESSAGE,
-              FirebaseInstallationServiceException.Status.SERVER_ERROR);
+        int httpResponseCode = httpsURLConnection.getResponseCode();
+        switch (httpResponseCode) {
+          case 200:
+            return readGenerateAuthTokenResponse(httpsURLConnection);
+          case 500:
+            retryCount++;
+            break;
+          default:
+            throw new FirebaseException(readErrorResponse(httpsURLConnection));
+        }
       }
+      throw new FirebaseException(INTERNAL_SERVER_ERROR_MESSAGE);
     } catch (IOException e) {
-      throw new FirebaseInstallationServiceException(
-          NETWORK_ERROR_MESSAGE + e.getMessage(),
-          FirebaseInstallationServiceException.Status.NETWORK_ERROR);
+      throw new FirebaseException(String.format(NETWORK_ERROR_MESSAGE, e.getMessage()));
     }
   }
+
+  private HttpsURLConnection openHttpsURLConnection(URL url) throws IOException {
+    HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+    httpsURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
+    httpsURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
+    httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+    httpsURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
+    httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+    httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+    httpsURLConnection.addRequestProperty(
+        X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
+    return httpsURLConnection;
+  }
+
   // Read the response from the createFirebaseInstallation API.
   private InstallationResponse readCreateResponse(HttpsURLConnection conn) throws IOException {
-    JsonReader reader =
-        new JsonReader(new InputStreamReader(conn.getInputStream(), Charset.defaultCharset()));
+    JsonReader reader = new JsonReader(new InputStreamReader(conn.getInputStream(), UTF_8));
     InstallationTokenResult.Builder installationTokenResult = InstallationTokenResult.builder();
     InstallationResponse.Builder builder = InstallationResponse.builder();
     reader.beginObject();
@@ -301,8 +289,7 @@ public class FirebaseInstallationServiceClient {
   // Read the response from the generateAuthToken FirebaseInstallation API.
   private InstallationTokenResult readGenerateAuthTokenResponse(HttpsURLConnection conn)
       throws IOException {
-    JsonReader reader =
-        new JsonReader(new InputStreamReader(conn.getInputStream(), Charset.defaultCharset()));
+    JsonReader reader = new JsonReader(new InputStreamReader(conn.getInputStream(), UTF_8));
     InstallationTokenResult.Builder builder = InstallationTokenResult.builder();
     reader.beginObject();
     while (reader.hasNext()) {
@@ -318,6 +305,18 @@ public class FirebaseInstallationServiceClient {
     reader.endObject();
 
     return builder.build();
+  }
+
+  // Read the error message from the response.
+  private String readErrorResponse(HttpsURLConnection conn) throws IOException {
+    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getErrorStream(), UTF_8));
+    StringBuilder response = new StringBuilder();
+    for (String input = reader.readLine(); input != null; input = reader.readLine()) {
+      response.append(input).append('\n');
+    }
+    return String.format(
+        "The server responded with an error. HTTP response: [%d %s %s]",
+        conn.getResponseCode(), conn.getResponseMessage(), response);
   }
 
   /** Gets the Android package's SHA-1 fingerprint. */

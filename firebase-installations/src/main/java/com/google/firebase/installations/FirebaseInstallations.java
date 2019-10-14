@@ -23,11 +23,11 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseException;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
-import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import com.google.firebase.installations.remote.InstallationResponse;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -306,7 +306,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .setTokenCreationEpochInSecs(creationTime)
               .build());
 
-    } catch (FirebaseInstallationServiceException exception) {
+    } catch (FirebaseException exception) {
       throw new FirebaseInstallationsException(
           exception.getMessage(), FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
     }
@@ -336,7 +336,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               .build());
 
       return tokenResult;
-    } catch (FirebaseInstallationServiceException exception) {
+    } catch (FirebaseException exception) {
       throw new FirebaseInstallationsException(
           "Failed to generate auth token for a Firebase Installation.",
           FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
@@ -361,7 +361,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             firebaseApp.getOptions().getProjectId(),
             persistedInstallationEntry.getRefreshToken());
 
-      } catch (FirebaseInstallationServiceException exception) {
+      } catch (FirebaseException exception) {
         throw new FirebaseInstallationsException(
             "Failed to delete a Firebase Installation.",
             FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);

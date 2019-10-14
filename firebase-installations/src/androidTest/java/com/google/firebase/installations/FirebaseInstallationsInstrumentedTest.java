@@ -49,12 +49,12 @@ import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
-import com.google.firebase.installations.remote.FirebaseInstallationServiceException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -139,7 +139,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .build();
 
   @Before
-  public void setUp() throws FirebaseInstallationServiceException {
+  public void setUp() throws FirebaseException {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
     executor = new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
@@ -168,9 +168,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
     when(backendClientReturnsError.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(
-            new FirebaseInstallationServiceException(
-                "SDK Error", FirebaseInstallationServiceException.Status.SERVER_ERROR));
+        .thenThrow(new FirebaseException("SDK Error"));
 
     when(mockUtils.createRandomFid()).thenReturn(TEST_FID_1);
     when(mockUtils.currentTimeInSecs()).thenReturn(TEST_CREATION_TIMESTAMP_2);
@@ -180,9 +178,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .when(backendClientReturnsOk)
         .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
     // Mocks server error on FIS deletion
-    doThrow(
-            new FirebaseInstallationServiceException(
-                "Server Error", FirebaseInstallationServiceException.Status.SERVER_ERROR))
+    doThrow(new FirebaseException("Server Error"))
         .when(backendClientReturnsError)
         .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
   }
@@ -524,9 +520,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .thenReturn(REGISTERED_INSTALLATION_ENTRY);
     when(backendClientReturnsError.generateAuthToken(
             anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(
-            new FirebaseInstallationServiceException(
-                "Server Error", FirebaseInstallationServiceException.Status.SERVER_ERROR));
+        .thenThrow(new FirebaseException("Server Error"));
     when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
 
     FirebaseInstallations firebaseInstallations =
