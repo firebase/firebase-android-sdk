@@ -15,7 +15,7 @@
 package com.google.firebase.installations;
 
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.installations.local.PersistedFidEntry;
+import com.google.firebase.installations.local.PersistedInstallationEntry;
 
 class GetAuthTokenListener implements StateListener {
   private final Utils utils;
@@ -29,16 +29,16 @@ class GetAuthTokenListener implements StateListener {
 
   @Override
   public boolean onStateReached(
-      PersistedFidEntry persistedFidEntry, boolean shouldRefreshAuthToken) {
+      PersistedInstallationEntry persistedInstallationEntry, boolean shouldRefreshAuthToken) {
     // AuthTokenListener state is reached when FID is registered and has a valid auth token
-    if (persistedFidEntry.isRegistered()
-        && !utils.isAuthTokenExpired(persistedFidEntry)
+    if (persistedInstallationEntry.isRegistered()
+        && !utils.isAuthTokenExpired(persistedInstallationEntry)
         && !shouldRefreshAuthToken) {
       resultTaskCompletionSource.setResult(
           InstallationTokenResult.builder()
-              .setToken(persistedFidEntry.getAuthToken())
-              .setTokenExpirationTimestamp(persistedFidEntry.getExpiresInSecs())
-              .setTokenCreationTimestamp(persistedFidEntry.getTokenCreationEpochInSecs())
+              .setToken(persistedInstallationEntry.getAuthToken())
+              .setTokenExpirationTimestamp(persistedInstallationEntry.getExpiresInSecs())
+              .setTokenCreationTimestamp(persistedInstallationEntry.getTokenCreationEpochInSecs())
               .build());
       return true;
     }
@@ -46,8 +46,9 @@ class GetAuthTokenListener implements StateListener {
   }
 
   @Override
-  public boolean onException(PersistedFidEntry persistedFidEntry, Exception exception) {
-    if (persistedFidEntry.isErrored()) {
+  public boolean onException(
+      PersistedInstallationEntry persistedInstallationEntry, Exception exception) {
+    if (persistedInstallationEntry.isErrored()) {
       resultTaskCompletionSource.trySetException(exception);
       return true;
     }
