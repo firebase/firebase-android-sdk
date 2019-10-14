@@ -15,22 +15,23 @@
 package com.google.firebase.installations.remote;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.installations.InstallationTokenResult;
 
 @AutoValue
 public abstract class InstallationResponse {
 
-  @NonNull
+  @Nullable
   public abstract String getUri();
 
-  @NonNull
+  @Nullable
   public abstract String getFid();
 
-  @NonNull
+  @Nullable
   public abstract String getRefreshToken();
 
-  @NonNull
+  @Nullable
   public abstract InstallationTokenResult getAuthToken();
 
   @NonNull

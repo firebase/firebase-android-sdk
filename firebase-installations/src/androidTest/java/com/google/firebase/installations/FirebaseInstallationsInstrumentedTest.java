@@ -55,6 +55,7 @@ import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
+import com.google.firebase.installations.remote.InstallationResponse;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -289,6 +290,31 @@ public class FirebaseInstallationsInstrumentedTest {
         persistedInstallation.readPersistedInstallationEntryValue();
     assertThat(updatedInstallationEntry).hasFid(TEST_FID_1);
     assertThat(updatedInstallationEntry).hasRegistrationStatus(RegistrationStatus.REGISTER_ERROR);
+  }
+
+  @Test
+  public void testGetId_500ServerError_UnregisteredFID() throws Exception {
+    when(backendClientReturnsOk.createFirebaseInstallation(
+            anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(InstallationResponse.builder().build());
+
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            executor, firebaseApp, backendClientReturnsOk, persistedInstallation, mockUtils);
+
+    Tasks.await(firebaseInstallations.getId());
+
+    PersistedInstallationEntry entryValue =
+        persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(entryValue).hasFid(TEST_FID_1);
+
+    // Waiting for Task that registers FID on the FIS Servers
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+
+    PersistedInstallationEntry updatedInstallationEntry =
+        persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(updatedInstallationEntry).hasFid(TEST_FID_1);
+    assertThat(updatedInstallationEntry).hasRegistrationStatus(RegistrationStatus.UNREGISTERED);
   }
 
   @Test

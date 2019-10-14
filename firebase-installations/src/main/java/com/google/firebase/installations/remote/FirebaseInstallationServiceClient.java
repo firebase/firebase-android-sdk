@@ -128,7 +128,8 @@ public class FirebaseInstallationServiceClient {
             throw new FirebaseException(readErrorResponse(httpsURLConnection));
         }
       }
-      throw new FirebaseException(INTERNAL_SERVER_ERROR_MESSAGE);
+      // Return empty installation response after max retries
+      return InstallationResponse.builder().build();
     } catch (IOException e) {
       throw new FirebaseException(String.format(NETWORK_ERROR_MESSAGE, e.getMessage()));
     }

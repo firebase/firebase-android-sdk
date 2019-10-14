@@ -218,10 +218,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           persistedInstallation.readPersistedInstallationEntryValue();
 
       // New FID needs to be created
-      if (persistedInstallationEntry.isErrored() || persistedInstallationEntry.isNotGenerated()) {
+      if (persistedInstallationEntry.isNotGenerated()) {
         String fid = utils.createRandomFid();
         persistFid(fid);
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
+      }
+
+      if (persistedInstallationEntry.isErrored()) {
+        throw new FirebaseInstallationsException(
+            persistedInstallationEntry.getFISException(),
+            FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
       }
 
       triggerOnStateReached(persistedInstallationEntry);
@@ -262,6 +268,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       PersistedInstallationEntry errorInstallationEntry =
           persistedInstallationEntry
               .toBuilder()
+              .setFISException(e.getMessage())
               .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
               .build();
       persistedInstallation.insertOrUpdatePersistedInstallationEntry(errorInstallationEntry);
@@ -296,15 +303,17 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               /*fid= */ persistedInstallationEntry.getFirebaseInstallationId(),
               /*projectID= */ firebaseApp.getOptions().getProjectId(),
               /*appId= */ getApplicationId());
-      persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-          PersistedInstallationEntry.builder()
-              .setFirebaseInstallationId(installationResponse.getFid())
-              .setRegistrationStatus(RegistrationStatus.REGISTERED)
-              .setAuthToken(installationResponse.getAuthToken().getToken())
-              .setRefreshToken(installationResponse.getRefreshToken())
-              .setExpiresInSecs(installationResponse.getAuthToken().getTokenExpirationTimestamp())
-              .setTokenCreationEpochInSecs(creationTime)
-              .build());
+      if (installationResponse.getFid() != null) {
+        persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+            PersistedInstallationEntry.builder()
+                .setFirebaseInstallationId(installationResponse.getFid())
+                .setRegistrationStatus(RegistrationStatus.REGISTERED)
+                .setAuthToken(installationResponse.getAuthToken().getToken())
+                .setRefreshToken(installationResponse.getRefreshToken())
+                .setExpiresInSecs(installationResponse.getAuthToken().getTokenExpirationTimestamp())
+                .setTokenCreationEpochInSecs(creationTime)
+                .build());
+      }
 
     } catch (FirebaseException exception) {
       throw new FirebaseInstallationsException(
