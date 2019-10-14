@@ -68,7 +68,7 @@ public abstract class NetworkRequest {
   private static final String CONTENT_LENGTH = "Content-Length";
   private static final String UTF_8 = "UTF-8";
 
-  @NonNull static Uri sNetworkRequestUrl = Uri.parse("https://firebasestorage.googleapis.com/v0");
+  @NonNull public static Uri sNetworkRequestUrl = Uri.parse("https://firebasestorage.googleapis.com/v0");
 
   // For test purposes only.
   /*package*/ static HttpURLConnectionFactory connectionFactory =
