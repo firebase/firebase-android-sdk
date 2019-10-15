@@ -267,7 +267,7 @@ class FirestoreChannel {
   }
 
   private FirebaseFirestoreException exceptionFromStatus(Status status) {
-    if (Datastore.isMissingSSLCiphers(status)) {
+    if (Datastore.isMissingSslCiphers(status)) {
       return new FirebaseFirestoreException(
           Datastore.SSL_DEPENDENCY_ERROR_MESSAGE,
           Code.fromValue(status.getCode().value()),

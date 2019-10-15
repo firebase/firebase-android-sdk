@@ -271,7 +271,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
         "Can't provide an error when not in an error state.");
     workerQueue.verifyIsCurrentThread();
 
-    if (Datastore.isMissingSSLCiphers(status)) {
+    if (Datastore.isMissingSslCiphers(status)) {
       // The Android device is missing required SSL Ciphers. This error is non-recoverable and must
       // be addressed by the app developer (see https://bit.ly/2XFpdma).
       Util.crashMainThread(
