@@ -22,6 +22,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
@@ -58,7 +60,8 @@ public class UploaderTest {
           .setTransportName("42")
           .setEventMillis(1)
           .setUptimeMillis(2)
-          .setPayload("Hello".getBytes(Charset.defaultCharset()))
+          .setEncodedPayload(
+              new EncodedPayload(Encoding.of("proto"), "Hello".getBytes(Charset.defaultCharset())))
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();

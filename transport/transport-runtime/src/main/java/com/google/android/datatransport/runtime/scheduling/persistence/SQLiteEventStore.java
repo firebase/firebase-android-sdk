@@ -24,6 +24,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.logging.Logging;
@@ -54,6 +56,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   static final int MAX_RETRIES = 10;
 
   private static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
+  private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
 
   private final SchemaManager schemaManager;
   private final Clock wallClock;
@@ -106,7 +109,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
               values.put("transport_name", event.getTransportName());
               values.put("timestamp_ms", event.getEventMillis());
               values.put("uptime_ms", event.getUptimeMillis());
-              values.put("payload", event.getPayload());
+              values.put("payload_encoding", event.getEncodedPayload().getEncoding().getName());
+              values.put("payload", event.getEncodedPayload().getBytes());
               values.put("code", event.getCode());
               values.put("num_attempts", 0);
               long newEventId = db.insert("events", null, values);
@@ -347,7 +351,15 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     tryWithCursor(
         db.query(
             "events",
-            new String[] {"_id", "transport_name", "timestamp_ms", "uptime_ms", "payload", "code"},
+            new String[] {
+              "_id",
+              "transport_name",
+              "timestamp_ms",
+              "uptime_ms",
+              "payload_encoding",
+              "payload",
+              "code"
+            },
             "context_id = ?",
             new String[] {contextId.toString()},
             null,
@@ -362,15 +374,23 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
                     .setTransportName(cursor.getString(1))
                     .setEventMillis(cursor.getLong(2))
                     .setUptimeMillis(cursor.getLong(3))
-                    .setPayload(cursor.getBlob(4));
-            if (!cursor.isNull(5)) {
-              event.setCode(cursor.getInt(5));
+                    .setEncodedPayload(
+                        new EncodedPayload(toEncoding(cursor.getString(4)), cursor.getBlob(5)));
+            if (!cursor.isNull(6)) {
+              event.setCode(cursor.getInt(6));
             }
             events.add(PersistedEvent.create(id, transportContext, event.build()));
           }
           return null;
         });
     return events;
+  }
+
+  private static Encoding toEncoding(@Nullable String value) {
+    if (value == null) {
+      return PROTOBUF_ENCODING;
+    }
+    return Encoding.of(value);
   }
 
   /** Loads metadata pairs for given events. */
