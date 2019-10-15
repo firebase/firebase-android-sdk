@@ -247,8 +247,7 @@ public class Datastore {
 
     return Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
         && code.equals(Status.Code.UNAVAILABLE)
-        && (t instanceof SSLHandshakeException
-            || (t instanceof ConnectException && t.getMessage().contains("EHOSTUNREACH")));
+        && t instanceof SSLHandshakeException;
   }
 
   /**
