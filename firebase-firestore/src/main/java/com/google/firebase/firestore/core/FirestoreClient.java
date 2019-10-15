@@ -123,7 +123,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
           } else {
             asyncQueue.enqueueAndForget(
                 () -> {
-                  hardAssert(syncEngine !== null, "SyncEngine not yet initialized");
+                  hardAssert(syncEngine != null, "SyncEngine not yet initialized");
                   Logger.debug(LOG_TAG, "Credential changed. Current user: %s", user.getUid());
                   syncEngine.handleCredentialChange(user);
                 });
