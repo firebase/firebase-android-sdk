@@ -121,11 +121,15 @@ public class FirebaseInstallationServiceClient {
 
         if (httpResponseCode == 200) {
           return readCreateResponse(httpsURLConnection);
-        } else if (httpResponseCode >= 500 && httpResponseCode < 600) {
-          retryCount++;
-        } else {
-          throw new FirebaseException(readErrorResponse(httpsURLConnection));
         }
+        // Usually the FIS server recovers from errors: retry one time before giving up.
+        if (httpResponseCode >= 500 && httpResponseCode < 600) {
+          retryCount++;
+          continue;
+        }
+
+        // Unrecoverable server response or unknown error
+        throw new FirebaseException(readErrorResponse(httpsURLConnection));
       }
       // Return empty installation response after max retries
       return InstallationResponse.builder().build();
@@ -222,11 +226,15 @@ public class FirebaseInstallationServiceClient {
 
         if (httpResponseCode == 200) {
           return readGenerateAuthTokenResponse(httpsURLConnection);
-        } else if (httpResponseCode >= 500 && httpResponseCode < 600) {
-          retryCount++;
-        } else {
-          throw new FirebaseException(readErrorResponse(httpsURLConnection));
         }
+        // Usually the FIS server recovers from errors: retry one time before giving up.
+        if (httpResponseCode >= 500 && httpResponseCode < 600) {
+          retryCount++;
+          continue;
+        }
+
+        // Unrecoverable server response or unknown error
+        throw new FirebaseException(readErrorResponse(httpsURLConnection));
       }
       throw new FirebaseException(INTERNAL_SERVER_ERROR_MESSAGE);
     } catch (IOException e) {
