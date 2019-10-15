@@ -121,9 +121,9 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
             hardAssert(!firstUser.getTask().isComplete(), "Already fulfilled first user task");
             firstUser.setResult(user);
           } else {
-            // this fires twoce and sync engine isnt' initialized
             asyncQueue.enqueueAndForget(
                 () -> {
+                  hardAssert(syncEngine !== null, "SyncEngine not yet initialized");
                   Logger.debug(LOG_TAG, "Credential changed. Current user: %s", user.getUid());
                   syncEngine.handleCredentialChange(user);
                 });
