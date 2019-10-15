@@ -46,4 +46,8 @@ public final class Logging {
   public static void e(String tag, String message, Throwable e) {
     Log.e(getTag(tag), message, e);
   }
+
+  public static void w(String tag, String message, Object arg1) {
+    Log.w(getTag(tag), String.format(message, arg1));
+  }
 }

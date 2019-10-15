@@ -200,7 +200,7 @@ final class CctTransportBackend implements TransportBackend {
       for (EventInternal eventInternal : entry.getValue()) {
         Encoding encoding = eventInternal.getEncodedPayload().getEncoding();
         if (!encoding.equals(Encoding.of("proto"))) {
-          Logging.d(LOG_TAG, "Received event of unsupported encoding %s. Skipping...", encoding);
+          Logging.w(LOG_TAG, "Received event of unsupported encoding %s. Skipping...", encoding);
           continue;
         }
 
