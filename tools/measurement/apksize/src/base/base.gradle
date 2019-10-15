@@ -15,22 +15,9 @@
 
 android {
     productFlavors {
-        functions {
+        base {
             dimension "apkSize"
-            applicationId "com.google.apksize.functions"
+            applicationId "com.google.apksize.base"
         }
     }
-    sourceSets {
-        functions {
-            java.srcDirs = [
-                "src/functions/java",
-            ]
-        }
-    }
-}
-dependencies {
-    functionsImplementation project(":firebase-functions")
-    functionsImplementation "com.google.android.gms:play-services-auth:16.0.1"
-    functionsImplementation "com.google.android.gms:play-services-base:16.1.0"
-    functionsImplementation 'androidx.legacy:legacy-support-v4:1.0.0'
 }

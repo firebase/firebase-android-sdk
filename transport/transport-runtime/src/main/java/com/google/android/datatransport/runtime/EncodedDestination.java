@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.apksize;
+package com.google.android.datatransport.runtime;
 
-import android.content.Context;
+import com.google.android.datatransport.Encoding;
+import java.util.Set;
 
-public class SampleCodeLoader {
-
-  public void runSamples(Context context) {
-    new InAppMessagingDisplay().runSample(context);
-  }
+/** Extended {@link Destination} with supported {@link Encoding encodings}. */
+public interface EncodedDestination extends Destination {
+  Set<Encoding> getSupportedEncodings();
 }

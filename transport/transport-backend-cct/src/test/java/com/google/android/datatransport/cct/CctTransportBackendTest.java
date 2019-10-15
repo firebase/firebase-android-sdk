@@ -32,6 +32,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.ProtoMatchers.PredicateMatcher;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
@@ -39,6 +40,7 @@ import com.google.android.datatransport.cct.proto.LogEvent;
 import com.google.android.datatransport.cct.proto.LogRequest;
 import com.google.android.datatransport.cct.proto.LogResponse;
 import com.google.android.datatransport.cct.proto.NetworkConnectionInfo;
+import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
@@ -68,6 +70,7 @@ public class CctTransportBackendTest {
       ByteString.copyFrom("TelemetryData".getBytes(Charset.defaultCharset()));
   private static final int CODE = 5;
   private static final String TEST_NAME = "hello";
+  private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
 
   private static final PredicateMatcher<Request, BatchedLogRequest> batchRequestMatcher =
       protoMatcher(BatchedLogRequest.class);
@@ -106,14 +109,16 @@ public class CctTransportBackendTest {
                         .setEventMillis(INITIAL_WALL_TIME)
                         .setUptimeMillis(INITIAL_UPTIME)
                         .setTransportName(transportName)
-                        .setPayload(PAYLOAD.toByteArray())
+                        .setEncodedPayload(
+                            new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
                         .build()),
                 BACKEND.decorate(
                     EventInternal.builder()
                         .setEventMillis(INITIAL_WALL_TIME)
                         .setUptimeMillis(INITIAL_UPTIME)
                         .setTransportName(transportName)
-                        .setPayload(PAYLOAD.toByteArray())
+                        .setEncodedPayload(
+                            new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
                         .setCode(CODE)
                         .build())))
         .setExtras(destination.getExtras())
@@ -264,14 +269,16 @@ public class CctTransportBackendTest {
                             .setEventMillis(INITIAL_WALL_TIME)
                             .setUptimeMillis(INITIAL_UPTIME)
                             .setTransportName("4")
-                            .setPayload(PAYLOAD.toByteArray())
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
                             .build()),
                     BACKEND.decorate(
                         EventInternal.builder()
                             .setEventMillis(INITIAL_WALL_TIME)
                             .setUptimeMillis(INITIAL_UPTIME)
                             .setTransportName("4")
-                            .setPayload(PAYLOAD.toByteArray())
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
                             .setCode(CODE)
                             .build())))
             .setExtras("not a valid extras".getBytes("UTF-8"))
@@ -362,7 +369,7 @@ public class CctTransportBackendTest {
                 .setEventMillis(INITIAL_WALL_TIME)
                 .setUptimeMillis(INITIAL_UPTIME)
                 .setTransportName("3")
-                .setPayload(PAYLOAD.toByteArray())
+                .setEncodedPayload(new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
                 .build());
 
     assertThat(result.get(CctTransportBackend.KEY_NETWORK_TYPE))
@@ -383,7 +390,7 @@ public class CctTransportBackendTest {
                 .setEventMillis(INITIAL_WALL_TIME)
                 .setUptimeMillis(INITIAL_UPTIME)
                 .setTransportName("3")
-                .setPayload(PAYLOAD.toByteArray())
+                .setEncodedPayload(new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
                 .build());
 
     assertThat(result.get(CctTransportBackend.KEY_NETWORK_TYPE))
@@ -513,14 +520,16 @@ public class CctTransportBackendTest {
                             .setEventMillis(INITIAL_WALL_TIME)
                             .setUptimeMillis(INITIAL_UPTIME)
                             .setTransportName("3")
-                            .setPayload(PAYLOAD.toByteArray())
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
                             .build()),
                     BACKEND.decorate(
                         EventInternal.builder()
                             .setEventMillis(INITIAL_WALL_TIME)
                             .setUptimeMillis(INITIAL_UPTIME)
                             .setTransportName(TEST_NAME)
-                            .setPayload(PAYLOAD.toByteArray())
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
                             .setCode(CODE)
                             .build())))
             .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
@@ -538,6 +547,62 @@ public class CctTransportBackendTest {
             .andMatching(firstLogRequestMatcher.test(r -> r.getLogSource() == 3))
             .andMatching(
                 secondLogRequestMatcher.test(r -> TEST_NAME.equals(r.getLogSourceName()))));
+
+    assertEquals(BackendResponse.ok(3), response);
+  }
+
+  @Test
+  public void send_withEventsOfUnsupportedEncoding_shouldBeSkipped() throws IOException {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;")
+                    .withBody(
+                        LogResponse.newBuilder()
+                            .setNextRequestWaitMillis(3)
+                            .build()
+                            .toByteArray())));
+
+    BackendRequest backendRequest =
+        BackendRequest.builder()
+            .setEvents(
+                Arrays.asList(
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("3")
+                            .setEncodedPayload(
+                                new EncodedPayload(Encoding.of("yaml"), PAYLOAD.toByteArray()))
+                            .build()),
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName(TEST_NAME)
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
+                            .setCode(CODE)
+                            .build())))
+            .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
+            .build();
+
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader("Content-Type", equalTo("application/x-protobuf"))
+            .withHeader("Content-Encoding", equalTo("gzip"))
+            .andMatching(batchRequestMatcher.test(batch -> batch.getLogRequestCount() == 2))
+            .andMatching(firstLogRequestMatcher.test(r -> r.getLogSource() == 3))
+            .andMatching(firstLogRequestMatcher.test(r -> r.getLogEventCount() == 0))
+            .andMatching(secondLogRequestMatcher.test(r -> TEST_NAME.equals(r.getLogSourceName())))
+            .andMatching(secondLogRequestMatcher.test(r -> r.getLogEventCount() == 1)));
 
     assertEquals(BackendResponse.ok(3), response);
   }
