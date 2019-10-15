@@ -1,4 +1,8 @@
 # Unreleased
+- [fixed] Fixed an issue where Android API level 19 and earlier devices would
+  crash when unable to connect to Firestore (#904).
+
+# 21.2.0
 - [fixed] Fixed a race condition in Documents where access to getData and
   getField on the same document in different threads could cause a
   NullPointerException.
