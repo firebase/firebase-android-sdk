@@ -47,6 +47,7 @@ dependencies {
 
     implementation project(':firebase-common')
     implementation project(':firebase-common:ktx')
+    implementation project(':firebase-components')
     implementation project(':firebase-storage')
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'

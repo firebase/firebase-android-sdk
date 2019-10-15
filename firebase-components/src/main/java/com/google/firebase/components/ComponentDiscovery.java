@@ -14,6 +14,7 @@
 
 package com.google.firebase.components;
 
+import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -56,8 +57,9 @@ public final class ComponentDiscovery<T> {
   private final T context;
   private final RegistrarNameRetriever<T> retriever;
 
-  public static ComponentDiscovery<Context> forContext(Context context) {
-    return new ComponentDiscovery<>(context, new MetadataRegistrarNameRetriever());
+  public static ComponentDiscovery<Context> forContext(
+      Context context, Class<? extends Service> discoveryService) {
+    return new ComponentDiscovery<>(context, new MetadataRegistrarNameRetriever(discoveryService));
   }
 
   @VisibleForTesting
@@ -101,6 +103,12 @@ public final class ComponentDiscovery<T> {
 
   private static class MetadataRegistrarNameRetriever implements RegistrarNameRetriever<Context> {
 
+    private final Class<? extends Service> discoveryService;
+
+    private MetadataRegistrarNameRetriever(Class<? extends Service> discoveryService) {
+      this.discoveryService = discoveryService;
+    }
+
     @Override
     public List<String> retrieve(Context ctx) {
       Bundle metadata = getMetadata(ctx);
@@ -120,7 +128,7 @@ public final class ComponentDiscovery<T> {
       return registrarNames;
     }
 
-    private static Bundle getMetadata(Context context) {
+    private Bundle getMetadata(Context context) {
       try {
         PackageManager manager = context.getPackageManager();
         if (manager == null) {
@@ -129,10 +137,9 @@ public final class ComponentDiscovery<T> {
         }
         ServiceInfo info =
             manager.getServiceInfo(
-                new ComponentName(context, ComponentDiscoveryService.class),
-                PackageManager.GET_META_DATA);
+                new ComponentName(context, discoveryService), PackageManager.GET_META_DATA);
         if (info == null) {
-          Log.w(TAG, "ComponentDiscoveryService has no service info.");
+          Log.w(TAG, discoveryService + " has no service info.");
           return null;
         }
         return info.metaData;
