@@ -29,6 +29,7 @@ import com.google.firebase.installations.local.PersistedInstallation.Registratio
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.InstallationResponse;
+import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -303,7 +304,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               /*fid= */ persistedInstallationEntry.getFirebaseInstallationId(),
               /*projectID= */ firebaseApp.getOptions().getProjectId(),
               /*appId= */ getApplicationId());
-      if (installationResponse.getFid() != null) {
+      if (installationResponse.getResponseCode() == ResponseCode.OK) {
         persistedInstallation.insertOrUpdatePersistedInstallationEntry(
             PersistedInstallationEntry.builder()
                 .setFirebaseInstallationId(installationResponse.getFid())

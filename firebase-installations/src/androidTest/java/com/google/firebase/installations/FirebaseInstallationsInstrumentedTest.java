@@ -17,6 +17,7 @@ package com.google.firebase.installations;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.installations.FisAndroidTestConstants.DEFAULT_PERSISTED_INSTALLATION_ENTRY;
 import static com.google.firebase.installations.FisAndroidTestConstants.INVALID_TEST_FID;
+import static com.google.firebase.installations.FisAndroidTestConstants.SERVER_ERROR_INSTALLATION_RESPONSE;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_API_KEY;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
@@ -55,7 +56,6 @@ import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
-import com.google.firebase.installations.remote.InstallationResponse;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -297,7 +297,7 @@ public class FirebaseInstallationsInstrumentedTest {
     // Mocking server error on FIS createFirebaseInstallation, returns empty InstallationResponse
     when(backendClientReturnsOk.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(InstallationResponse.builder().build());
+        .thenReturn(SERVER_ERROR_INSTALLATION_RESPONSE);
 
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(

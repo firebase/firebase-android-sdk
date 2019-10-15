@@ -85,6 +85,7 @@ package com.google.firebase.installations.remote {
     method @Nullable public abstract InstallationTokenResult getAuthToken();
     method @Nullable public abstract String getFid();
     method @Nullable public abstract String getRefreshToken();
+    method @Nullable public abstract com.google.firebase.installations.remote.InstallationResponse.ResponseCode getResponseCode();
     method @Nullable public abstract String getUri();
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder toBuilder();
   }
@@ -95,7 +96,13 @@ package com.google.firebase.installations.remote {
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setAuthToken(@NonNull InstallationTokenResult);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setFid(@NonNull String);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setRefreshToken(@NonNull String);
+    method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setResponseCode(@NonNull com.google.firebase.installations.remote.InstallationResponse.ResponseCode);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setUri(@NonNull String);
+  }
+
+  public enum InstallationResponse.ResponseCode {
+    enum_constant public static final com.google.firebase.installations.remote.InstallationResponse.ResponseCode OK;
+    enum_constant public static final com.google.firebase.installations.remote.InstallationResponse.ResponseCode SERVER_ERROR;
   }
 
 }

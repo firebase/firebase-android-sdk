@@ -22,6 +22,13 @@ import com.google.firebase.installations.InstallationTokenResult;
 @AutoValue
 public abstract class InstallationResponse {
 
+  public enum ResponseCode {
+    // Returned on success
+    OK,
+    // An error occurred on the server while processing this request(temporary)
+    SERVER_ERROR
+  }
+
   @Nullable
   public abstract String getUri();
 
@@ -33,6 +40,9 @@ public abstract class InstallationResponse {
 
   @Nullable
   public abstract InstallationTokenResult getAuthToken();
+
+  @Nullable
+  public abstract ResponseCode getResponseCode();
 
   @NonNull
   public abstract Builder toBuilder();
@@ -56,6 +66,9 @@ public abstract class InstallationResponse {
 
     @NonNull
     public abstract Builder setAuthToken(@NonNull InstallationTokenResult value);
+
+    @NonNull
+    public abstract Builder setResponseCode(@NonNull ResponseCode value);
 
     @NonNull
     public abstract InstallationResponse build();

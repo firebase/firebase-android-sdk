@@ -27,6 +27,7 @@ import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -131,8 +132,8 @@ public class FirebaseInstallationServiceClient {
         // Unrecoverable server response or unknown error
         throw new FirebaseException(readErrorResponse(httpsURLConnection));
       }
-      // Return empty installation response after max retries
-      return InstallationResponse.builder().build();
+      // Return empty installation response with SERVER_ERROR response code after max retries
+      return InstallationResponse.builder().setResponseCode(ResponseCode.SERVER_ERROR).build();
     } catch (IOException e) {
       throw new FirebaseException(String.format(NETWORK_ERROR_MESSAGE, e.getMessage()));
     }
@@ -290,7 +291,7 @@ public class FirebaseInstallationServiceClient {
     }
     reader.endObject();
 
-    return builder.build();
+    return builder.setResponseCode(ResponseCode.OK).build();
   }
 
   // Read the response from the generateAuthToken FirebaseInstallation API.
