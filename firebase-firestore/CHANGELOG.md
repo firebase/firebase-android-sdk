@@ -2,6 +2,8 @@
 - [feature] Added an `addSnapshotsInSyncListener()` method to 
   `FirebaseFirestore`that notifies you when all your snapshot listeners are
   in sync with each other.
+- [fixed] Fixed an issue where Android API level 19 and earlier devices would
+  crash when unable to connect to Firestore (#904).
 
 # 21.1.2
 - [fixed] Fixed a crash that could occur when a large number of documents were

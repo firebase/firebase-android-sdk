@@ -240,13 +240,20 @@ public class Datastore {
    *
    * <p>This error is non-recoverable and must be addressed by the app developer.
    */
-  public static boolean isSslHandshakeError(Status status) {
+  public static boolean isMissingSSLCiphers(Status status) {
     Status.Code code = status.getCode();
     Throwable t = status.getCause();
 
+    // Check for the presence of a cipher error in the even of an SSLHandshakeException. This is
+    // the special case of SSLHandshakeException that contains the cipher error.
+    boolean hasCipherError = false;
+    if (t instanceof SSLHandshakeException && t.toString().contains("no ciphers available")) {
+      hasCipherError = true;
+    }
+
     return Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
         && code.equals(Status.Code.UNAVAILABLE)
-        && t instanceof SSLHandshakeException;
+        && hasCipherError;
   }
 
   /**
