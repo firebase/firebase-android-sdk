@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime;
 import android.content.Context;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
@@ -25,6 +26,8 @@ import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkIni
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -114,17 +117,28 @@ public class TransportRuntime implements TransportInternal {
   @Deprecated
   public TransportFactory newFactory(String backendName) {
     return new TransportFactoryImpl(
-        TransportContext.builder().setBackendName(backendName).build(), this);
+        getSupportedEncodings(null),
+        TransportContext.builder().setBackendName(backendName).build(),
+        this);
   }
 
   /** Returns a {@link TransportFactory} for a given {@code backendName}. */
   public TransportFactory newFactory(Destination destination) {
     return new TransportFactoryImpl(
+        getSupportedEncodings(destination),
         TransportContext.builder()
             .setBackendName(destination.getName())
             .setExtras(destination.getExtras())
             .build(),
         this);
+  }
+
+  private static Set<Encoding> getSupportedEncodings(Destination destination) {
+    if (destination instanceof EncodedDestination) {
+      EncodedDestination encodedDestination = (EncodedDestination) destination;
+      return Collections.unmodifiableSet(encodedDestination.getSupportedEncodings());
+    }
+    return Collections.singleton(Encoding.of("proto"));
   }
 
   @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -145,7 +159,7 @@ public class TransportRuntime implements TransportInternal {
         .setEventMillis(eventClock.getTime())
         .setUptimeMillis(uptimeClock.getTime())
         .setTransportName(request.getTransportName())
-        .setPayload(request.getPayload())
+        .setEncodedPayload(new EncodedPayload(request.getEncoding(), request.getPayload()))
         .setCode(request.getEvent().getCode())
         .build();
   }
