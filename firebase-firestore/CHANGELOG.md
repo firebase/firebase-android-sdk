@@ -9,6 +9,8 @@
 - [feature] Added an `addSnapshotsInSyncListener()` method to 
   `FirebaseFirestore`that notifies you when all your snapshot listeners are
   in sync with each other.
+- [fixed] Fix a race condition that could cause a `NullPointerException` during
+  client initialization.
 
 # 21.1.2
 - [fixed] Fixed a crash that could occur when a large number of documents were
