@@ -17,6 +17,7 @@ package com.google.firebase.installations;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.installations.FisAndroidTestConstants.DEFAULT_PERSISTED_INSTALLATION_ENTRY;
 import static com.google.firebase.installations.FisAndroidTestConstants.INVALID_TEST_FID;
+import static com.google.firebase.installations.FisAndroidTestConstants.SERVER_ERROR_INSTALLATION_RESPONSE;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_API_KEY;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_APP_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_AUTH_TOKEN;
@@ -289,6 +290,32 @@ public class FirebaseInstallationsInstrumentedTest {
         persistedInstallation.readPersistedInstallationEntryValue();
     assertThat(updatedInstallationEntry).hasFid(TEST_FID_1);
     assertThat(updatedInstallationEntry).hasRegistrationStatus(RegistrationStatus.REGISTER_ERROR);
+  }
+
+  @Test
+  public void testGetId_ServerError_UnregisteredFID() throws Exception {
+    // Mocking server error on FIS createFirebaseInstallation, returns empty InstallationResponse
+    when(backendClientReturnsOk.createFirebaseInstallation(
+            anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(SERVER_ERROR_INSTALLATION_RESPONSE);
+
+    FirebaseInstallations firebaseInstallations =
+        new FirebaseInstallations(
+            executor, firebaseApp, backendClientReturnsOk, persistedInstallation, mockUtils);
+
+    Tasks.await(firebaseInstallations.getId());
+
+    PersistedInstallationEntry entryValue =
+        persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(entryValue).hasFid(TEST_FID_1);
+
+    // Waiting for Task that registers FID on the FIS Servers
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+
+    PersistedInstallationEntry updatedInstallationEntry =
+        persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(updatedInstallationEntry).hasFid(TEST_FID_1);
+    assertThat(updatedInstallationEntry).hasRegistrationStatus(RegistrationStatus.UNREGISTERED);
   }
 
   @Test

@@ -16,6 +16,7 @@ package com.google.firebase.installations;
 
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.InstallationResponse;
+import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 
 public final class FisAndroidTestConstants {
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
@@ -55,6 +56,7 @@ public final class FisAndroidTestConstants {
                   .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
                   .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
                   .build())
+          .setResponseCode(ResponseCode.OK)
           .build();
 
   public static final InstallationTokenResult TEST_INSTALLATION_TOKEN_RESULT =
@@ -63,4 +65,7 @@ public final class FisAndroidTestConstants {
           .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
           .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
           .build();
+
+  public static final InstallationResponse SERVER_ERROR_INSTALLATION_RESPONSE =
+      InstallationResponse.builder().setResponseCode(ResponseCode.SERVER_ERROR).build();
 }

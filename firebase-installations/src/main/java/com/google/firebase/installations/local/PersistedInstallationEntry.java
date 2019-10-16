@@ -41,6 +41,9 @@ public abstract class PersistedInstallationEntry {
 
   public abstract long getTokenCreationEpochInSecs();
 
+  @Nullable
+  public abstract String getFisError();
+
   public boolean isRegistered() {
     return getRegistrationStatus() == PersistedInstallation.RegistrationStatus.REGISTERED;
   }
@@ -89,6 +92,9 @@ public abstract class PersistedInstallationEntry {
 
     @NonNull
     public abstract Builder setTokenCreationEpochInSecs(long value);
+
+    @NonNull
+    public abstract Builder setFisError(@Nullable String value);
 
     @NonNull
     public abstract PersistedInstallationEntry build();

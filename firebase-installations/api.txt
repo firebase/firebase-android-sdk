@@ -45,6 +45,7 @@ package com.google.firebase.installations.local {
     method @Nullable public abstract String getAuthToken();
     method public abstract long getExpiresInSecs();
     method @Nullable public abstract String getFirebaseInstallationId();
+    method @Nullable public abstract String getFisError();
     method @Nullable public abstract String getRefreshToken();
     method @NonNull public abstract com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus getRegistrationStatus();
     method public abstract long getTokenCreationEpochInSecs();
@@ -61,6 +62,7 @@ package com.google.firebase.installations.local {
     method @NonNull public abstract com.google.firebase.installations.local.PersistedInstallationEntry.Builder setAuthToken(@Nullable String);
     method @NonNull public abstract com.google.firebase.installations.local.PersistedInstallationEntry.Builder setExpiresInSecs(long);
     method @NonNull public abstract com.google.firebase.installations.local.PersistedInstallationEntry.Builder setFirebaseInstallationId(@NonNull String);
+    method @NonNull public abstract com.google.firebase.installations.local.PersistedInstallationEntry.Builder setFisError(@Nullable String);
     method @NonNull public abstract com.google.firebase.installations.local.PersistedInstallationEntry.Builder setRefreshToken(@Nullable String);
     method @NonNull public abstract com.google.firebase.installations.local.PersistedInstallationEntry.Builder setRegistrationStatus(@NonNull com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus);
     method @NonNull public abstract com.google.firebase.installations.local.PersistedInstallationEntry.Builder setTokenCreationEpochInSecs(long);
@@ -80,10 +82,11 @@ package com.google.firebase.installations.remote {
   public abstract class InstallationResponse {
     ctor public InstallationResponse();
     method @NonNull public static com.google.firebase.installations.remote.InstallationResponse.Builder builder();
-    method @NonNull public abstract InstallationTokenResult getAuthToken();
-    method @NonNull public abstract String getFid();
-    method @NonNull public abstract String getRefreshToken();
-    method @NonNull public abstract String getUri();
+    method @Nullable public abstract InstallationTokenResult getAuthToken();
+    method @Nullable public abstract String getFid();
+    method @Nullable public abstract String getRefreshToken();
+    method @Nullable public abstract com.google.firebase.installations.remote.InstallationResponse.ResponseCode getResponseCode();
+    method @Nullable public abstract String getUri();
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder toBuilder();
   }
 
@@ -93,7 +96,13 @@ package com.google.firebase.installations.remote {
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setAuthToken(@NonNull InstallationTokenResult);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setFid(@NonNull String);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setRefreshToken(@NonNull String);
+    method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setResponseCode(@NonNull com.google.firebase.installations.remote.InstallationResponse.ResponseCode);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setUri(@NonNull String);
+  }
+
+  public enum InstallationResponse.ResponseCode {
+    enum_constant public static final com.google.firebase.installations.remote.InstallationResponse.ResponseCode OK;
+    enum_constant public static final com.google.firebase.installations.remote.InstallationResponse.ResponseCode SERVER_ERROR;
   }
 
 }

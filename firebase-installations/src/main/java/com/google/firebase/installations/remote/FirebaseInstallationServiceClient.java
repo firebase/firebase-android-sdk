@@ -27,6 +27,7 @@ import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -118,17 +119,21 @@ public class FirebaseInstallationServiceClient {
         }
 
         int httpResponseCode = httpsURLConnection.getResponseCode();
-        switch (httpResponseCode) {
-          case 200:
-            return readCreateResponse(httpsURLConnection);
-          case 500:
-            retryCount++;
-            break;
-          default:
-            throw new FirebaseException(readErrorResponse(httpsURLConnection));
+
+        if (httpResponseCode == 200) {
+          return readCreateResponse(httpsURLConnection);
         }
+        // Usually the FIS server recovers from errors: retry one time before giving up.
+        if (httpResponseCode >= 500 && httpResponseCode < 600) {
+          retryCount++;
+          continue;
+        }
+
+        // Unrecoverable server response or unknown error
+        throw new FirebaseException(readErrorResponse(httpsURLConnection));
       }
-      throw new FirebaseException(INTERNAL_SERVER_ERROR_MESSAGE);
+      // Return empty installation response with SERVER_ERROR response code after max retries
+      return InstallationResponse.builder().setResponseCode(ResponseCode.SERVER_ERROR).build();
     } catch (IOException e) {
       throw new FirebaseException(String.format(NETWORK_ERROR_MESSAGE, e.getMessage()));
     }
@@ -219,15 +224,18 @@ public class FirebaseInstallationServiceClient {
         httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
         int httpResponseCode = httpsURLConnection.getResponseCode();
-        switch (httpResponseCode) {
-          case 200:
-            return readGenerateAuthTokenResponse(httpsURLConnection);
-          case 500:
-            retryCount++;
-            break;
-          default:
-            throw new FirebaseException(readErrorResponse(httpsURLConnection));
+
+        if (httpResponseCode == 200) {
+          return readGenerateAuthTokenResponse(httpsURLConnection);
         }
+        // Usually the FIS server recovers from errors: retry one time before giving up.
+        if (httpResponseCode >= 500 && httpResponseCode < 600) {
+          retryCount++;
+          continue;
+        }
+
+        // Unrecoverable server response or unknown error
+        throw new FirebaseException(readErrorResponse(httpsURLConnection));
       }
       throw new FirebaseException(INTERNAL_SERVER_ERROR_MESSAGE);
     } catch (IOException e) {
@@ -283,7 +291,7 @@ public class FirebaseInstallationServiceClient {
     }
     reader.endObject();
 
-    return builder.build();
+    return builder.setResponseCode(ResponseCode.OK).build();
   }
 
   // Read the response from the generateAuthToken FirebaseInstallation API.
