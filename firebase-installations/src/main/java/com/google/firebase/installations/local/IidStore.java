@@ -61,7 +61,10 @@ public class IidStore {
       // Get id from the public key
       String base64PublicKey = iidPrefs.getString(STORE_KEY_PUB, /* defaultValue= */ null);
       if (base64PublicKey != null) {
-        return getIdFromPublicKey(parseKey(base64PublicKey));
+        PublicKey publicKey = parseKey(base64PublicKey);
+        if (publicKey != null) {
+          return getIdFromPublicKey(publicKey);
+        }
       }
 
       return null;
