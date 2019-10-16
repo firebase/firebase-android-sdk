@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import android.app.Activity;
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
-import android.util.Log;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage;
 import com.google.firebase.ml.naturallanguage.smartreply.FirebaseSmartReply;
@@ -36,7 +35,6 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public final class SmartReplyTest {
 
-    private static final String TAG = "SmartReplyTest";
     private static final String REMOTE_USER_ID = "some_user_id";
     private static final FirebaseSmartReply smartReply =
             FirebaseNaturalLanguage.getInstance().getSmartReply();
@@ -56,9 +54,6 @@ public final class SmartReplyTest {
 
         SmartReplySuggestionResult result = Tasks2.waitForSuccess(task);
         List<SmartReplySuggestion> suggestions = result.getSuggestions();
-        for (SmartReplySuggestion suggestion : suggestions) {
-            Log.v(TAG, suggestion.getText());
-        }
 
         assertThat(result.getStatus()).isEqualTo(SmartReplySuggestionResult.STATUS_SUCCESS);
         assertThat(suggestions).isNotEmpty();
@@ -74,7 +69,6 @@ public final class SmartReplyTest {
         Task<SmartReplySuggestionResult> task = smartReply.suggestReplies(messages);
 
         SmartReplySuggestionResult result = Tasks2.waitForSuccess(task);
-        List<SmartReplySuggestion> suggestions = result.getSuggestions();
 
         assertThat(result.getStatus()).isEqualTo(
                 SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE);

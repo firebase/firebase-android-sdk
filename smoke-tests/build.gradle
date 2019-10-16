@@ -50,6 +50,8 @@ android {
     }
   }
 
+  // As required by Firebase Android Smart Reply doc:
+  // https://firebase.google.com/docs/ml-kit/android/generate-smart-replies#before-you-begin
   aaptOptions {
     noCompress "tflite"
   }
