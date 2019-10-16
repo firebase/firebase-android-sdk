@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
@@ -56,6 +57,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final PersistedInstallation persistedInstallation;
   private final ExecutorService executor;
   private final Utils utils;
+  private final IidStore iidStore;
   private final Object lock = new Object();
 
   @GuardedBy("lock")
@@ -71,7 +73,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         firebaseApp,
         new FirebaseInstallationServiceClient(firebaseApp.getApplicationContext()),
         new PersistedInstallation(firebaseApp),
-        new Utils(DefaultClock.getInstance()));
+        new Utils(DefaultClock.getInstance()),
+        new IidStore(firebaseApp));
   }
 
   FirebaseInstallations(
@@ -79,12 +82,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       FirebaseApp firebaseApp,
       FirebaseInstallationServiceClient serviceClient,
       PersistedInstallation persistedInstallation,
-      Utils utils) {
+      Utils utils,
+      IidStore iidStore) {
     this.firebaseApp = firebaseApp;
     this.serviceClient = serviceClient;
     this.executor = executor;
     this.persistedInstallation = persistedInstallation;
     this.utils = utils;
+    this.iidStore = iidStore;
   }
 
   /**
@@ -220,7 +225,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
       // New FID needs to be created
       if (persistedInstallationEntry.isNotGenerated()) {
-        String fid = utils.createRandomFid();
+
+        // Read the existing iid for this firebase installation
+        String fid = iidStore.readIid();
+        if (fid == null) {
+          fid = utils.createRandomFid();
+        }
         persistFid(fid);
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
       }
