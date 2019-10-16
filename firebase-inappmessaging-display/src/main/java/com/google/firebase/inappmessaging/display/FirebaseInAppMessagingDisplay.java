@@ -100,8 +100,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   private FiamListener fiamListener;
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks callbacks;
-  private com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay
-      firebaseInAppMessagingDisplay;
 
   @Inject
   FirebaseInAppMessagingDisplay(
@@ -185,22 +183,18 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   public void onActivityStarted(final Activity activity) {
     super.onActivityStarted(activity);
     // Register FIAM listener with the headless sdk.
-    firebaseInAppMessagingDisplay =
-        new com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay() {
-          @Override
-          public void displayMessage(InAppMessage iam, FirebaseInAppMessagingDisplayCallbacks cb) {
-            // When we are in the middle of showing a message, we ignore other notifications these
-            // messages will be fired when the corresponding events happen the next time.
-            if (inAppMessage != null || headlessInAppMessaging.areMessagesSuppressed()) {
-              Logging.logd("Active FIAM exists. Skipping trigger");
-              return;
-            }
-            inAppMessage = iam;
-            callbacks = cb;
-            showActiveFiam(activity);
+    headlessInAppMessaging.setMessageDisplayComponent(
+        (iam, cb) -> {
+          // When we are in the middle of showing a message, we ignore other notifications these
+          // messages will be fired when the corresponding events happen the next time.
+          if (inAppMessage != null || headlessInAppMessaging.areMessagesSuppressed()) {
+            Logging.logd("Active FIAM exists. Skipping trigger");
+            return;
           }
-        };
-    headlessInAppMessaging.setMessageDisplayComponent(firebaseInAppMessagingDisplay);
+          inAppMessage = iam;
+          callbacks = cb;
+          showActiveFiam(activity);
+        });
   }
 
   /**
