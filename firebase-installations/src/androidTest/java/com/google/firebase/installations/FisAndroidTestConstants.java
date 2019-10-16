@@ -43,12 +43,28 @@ public final class FisAndroidTestConstants {
   public static final long TEST_CREATION_TIMESTAMP_1 = 2000L;
   public static final long TEST_CREATION_TIMESTAMP_2 = 2L;
 
+  public static final String TEST_INSTANCE_ID_1 = "ccccccccccc";
+
   public static final PersistedInstallationEntry DEFAULT_PERSISTED_INSTALLATION_ENTRY =
       PersistedInstallationEntry.builder().build();
   public static final InstallationResponse TEST_INSTALLATION_RESPONSE =
       InstallationResponse.builder()
           .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)
           .setFid(TEST_FID_1)
+          .setRefreshToken(TEST_REFRESH_TOKEN)
+          .setAuthToken(
+              InstallationTokenResult.builder()
+                  .setToken(TEST_AUTH_TOKEN)
+                  .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                  .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
+                  .build())
+          .setResponseCode(ResponseCode.OK)
+          .build();
+
+  public static final InstallationResponse TEST_INSTALLATION_RESPONSE_WITH_IID =
+      InstallationResponse.builder()
+          .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_INSTANCE_ID_1)
+          .setFid(TEST_INSTANCE_ID_1)
           .setRefreshToken(TEST_REFRESH_TOKEN)
           .setAuthToken(
               InstallationTokenResult.builder()
