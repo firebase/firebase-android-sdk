@@ -196,8 +196,6 @@ public class FirebaseInstallationsInstrumentedTest {
     doThrow(new FirebaseException("Server Error"))
         .when(backendClientReturnsError)
         .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
-
-    when(mockIidStore.readIid()).thenReturn(null);
   }
 
   @After
@@ -205,17 +203,20 @@ public class FirebaseInstallationsInstrumentedTest {
     persistedInstallation.clear();
   }
 
+  private FirebaseInstallations getFirebaseInstallations() {
+    return new FirebaseInstallations(
+        executor,
+        firebaseApp,
+        backendClientReturnsOk,
+        persistedInstallation,
+        mockUtils,
+        mockIidStore);
+  }
+
   @Test
   public void testGetId_PersistedInstallationOk_BackendOk() throws Exception {
     when(mockUtils.isAuthTokenExpired(REGISTERED_IID_ENTRY)).thenReturn(false);
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     // No exception, means success.
     assertWithMessage("getId Task failed.")
@@ -241,14 +242,7 @@ public class FirebaseInstallationsInstrumentedTest {
     when(backendClientReturnsOk.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE_WITH_IID);
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     // No exception, means success.
     assertWithMessage("getId Task failed.")
@@ -273,14 +267,7 @@ public class FirebaseInstallationsInstrumentedTest {
     when(backendClientReturnsOk.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     // Call getId multiple times
     Task<String> task1 = firebaseInstallations.getId();
@@ -308,14 +295,7 @@ public class FirebaseInstallationsInstrumentedTest {
     // Update local storage with installation entry that has invalid fid.
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(INVALID_INSTALLATION_ENTRY);
     when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     // No exception, means success.
     assertWithMessage("getId Task failed.")
@@ -368,14 +348,7 @@ public class FirebaseInstallationsInstrumentedTest {
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(SERVER_ERROR_INSTALLATION_RESPONSE);
 
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     Tasks.await(firebaseInstallations.getId());
 
@@ -487,14 +460,7 @@ public class FirebaseInstallationsInstrumentedTest {
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(EXPIRED_AUTH_TOKEN_ENTRY);
     when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
 
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     assertWithMessage("getId Task failed")
         .that(Tasks.await(firebaseInstallations.getId()))
@@ -519,14 +485,7 @@ public class FirebaseInstallationsInstrumentedTest {
   @Test
   public void testGetAuthToken_fidDoesNotExist_successful() throws Exception {
     when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
 
@@ -595,14 +554,7 @@ public class FirebaseInstallationsInstrumentedTest {
     when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
     when(mockUtils.isAuthTokenExpired(UPDATED_AUTH_TOKEN_ENTRY)).thenReturn(false);
 
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     InstallationTokenResult installationTokenResult =
         Tasks.await(
@@ -622,14 +574,7 @@ public class FirebaseInstallationsInstrumentedTest {
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(UNREGISTERED_INSTALLATION_ENTRY);
     when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
 
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     InstallationTokenResult installationTokenResult =
         Tasks.await(
@@ -685,14 +630,7 @@ public class FirebaseInstallationsInstrumentedTest {
     when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
     when(mockUtils.isAuthTokenExpired(UPDATED_AUTH_TOKEN_ENTRY)).thenReturn(false);
 
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     // Call getAuthToken multiple times with DO_NOT_FORCE_REFRESH option
     Task<InstallationTokenResult> task1 =
@@ -741,14 +679,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .generateAuthToken(anyString(), anyString(), anyString(), anyString());
     when(mockUtils.isAuthTokenExpired(any())).thenReturn(false);
 
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     // Call getAuthToken multiple times with FORCE_REFRESH option.
     Task<InstallationTokenResult> task1 =
@@ -775,14 +706,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testDelete_registeredFID_successful() throws Exception {
     // Update local storage with a registered installation entry
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(REGISTERED_INSTALLATION_ENTRY);
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     Tasks.await(firebaseInstallations.delete());
 
@@ -797,14 +721,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testDelete_unregisteredFID_successful() throws Exception {
     // Update local storage with a unregistered installation entry
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(UNREGISTERED_INSTALLATION_ENTRY);
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     Tasks.await(firebaseInstallations.delete());
 
@@ -817,14 +734,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testDelete_emptyPersistedFidEntry_successful() throws Exception {
-    FirebaseInstallations firebaseInstallations =
-        new FirebaseInstallations(
-            executor,
-            firebaseApp,
-            backendClientReturnsOk,
-            persistedInstallation,
-            mockUtils,
-            mockIidStore);
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     Tasks.await(firebaseInstallations.delete());
 

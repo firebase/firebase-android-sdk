@@ -41,7 +41,7 @@ public class IidStore {
 
   public IidStore(@NonNull FirebaseApp firebaseApp) {
     // Different FirebaseApp in the same Android application should have the same application
-    // context and same dir path
+    // context and same dir path. We only read existing Iids for the default firebase application.
     iidPrefs =
         firebaseApp
             .getApplicationContext()
