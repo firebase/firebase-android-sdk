@@ -57,7 +57,7 @@ public class IndexFreeQueryEngineTest {
       doc("coll/a", 1, map("matches", true, "order", 1), Document.DocumentState.LOCAL_MUTATIONS);
   private static final Document PENDING_NON_MATCHING_DOC_A =
       doc("coll/a", 1, map("matches", false, "order", 1), Document.DocumentState.LOCAL_MUTATIONS);
-  private static final Document UDPATED_DOC_A =
+  private static final Document UPDATED_DOC_A =
       doc("coll/a", 11, map("matches", true, "order", 1), Document.DocumentState.SYNCED);
   private static final Document MATCHING_DOC_B =
       doc("coll/b", 1, map("matches", true, "order", 2), Document.DocumentState.SYNCED);
@@ -261,8 +261,8 @@ public class IndexFreeQueryEngineTest {
 
     // Add a query mapping for a document that matches, but that sorts below another document based
     // due to an update that the SDK received after the query's snapshot was persisted.
-    addDocument(UDPATED_DOC_A);
-    persistQueryMapping(UDPATED_DOC_A.getKey());
+    addDocument(UPDATED_DOC_A);
+    persistQueryMapping(UPDATED_DOC_A.getKey());
 
     addDocument(MATCHING_DOC_B);
 
