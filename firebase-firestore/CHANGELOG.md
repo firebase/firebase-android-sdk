@@ -1,16 +1,18 @@
 # Unreleased
+
+# 21.2.1
 - [fixed] Fixed an issue where Android API level 19 and earlier devices would
   crash when unable to connect to Firestore (#904).
-
-# 21.2.0
 - [fixed] Fixed a race condition in Documents where access to getData and
   getField on the same document in different threads could cause a
   NullPointerException.
+- [fixed] Fix a race condition that could cause a `NullPointerException` during
+  client initialization.
+
+# 21.2.0
 - [feature] Added an `addSnapshotsInSyncListener()` method to 
   `FirebaseFirestore`that notifies you when all your snapshot listeners are
   in sync with each other.
-- [fixed] Fix a race condition that could cause a `NullPointerException` during
-  client initialization.
 
 # 21.1.2
 - [fixed] Fixed a crash that could occur when a large number of documents were
