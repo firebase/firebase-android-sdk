@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.gradle.plugins.license
+package com.google.firebase.gradle.plugins.license;
 
-import com.android.build.gradle.tasks.BundleAar
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
+import com.android.build.gradle.tasks.BundleAar;
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import com.google.firebase.gradle.plugins.license.ThirdPartyLicensesExtension;
+import java.io.File;
+import java.util.Arrays;
 
 /**
  * Interprets the implementation config for the underlying project and generates license artifacts.
@@ -39,43 +42,40 @@ import org.gradle.api.artifacts.Configuration
  * </ul>
  */
 class LicenseResolverPlugin implements Plugin<Project> {
-    final static ANDROID_PLUGINS = ["com.android.application", "com.android.library",
-                                    "com.android.test"]
+    private final static String[] ANDROID_PLUGINS = {"com.android.application", "com.android.library",
+                                    "com.android.test"};
 
     @Override
-    void apply(Project project) {
+    public void apply(Project project) {
         ThirdPartyLicensesExtension thirdPartyLicenses =
-                project.extensions.create('thirdPartyLicenses', ThirdPartyLicensesExtension,
-                        project.getRootDir())
+                project.getExtensions().create("thirdPartyLicenses", ThirdPartyLicensesExtension.class);
 
-        project.afterEvaluate {
-            def conf = project.configurations.create('allExternalDependencies')
-            def targetConfiguration = project.plugins.hasPlugin('com.android.library') ? 'releaseRuntimeClasspath' : 'runtimeClasspath'
-
-            project.configurations.all { Configuration c ->
-                if (c.name == targetConfiguration) {
-                    conf.extendsFrom c
-                }
+        project.afterEvaluate ( it -> {
+            if (!isAndroidProject(project)) {
+                return;
             }
 
-            File licensesDir = new File("$project.buildDir/generated/third_party_licenses")
+            File licensesDir = new File(String.join("/",project.getBuildDir().getAbsolutePath(), "generated", "third_party_licenses"));
 
-            if (isAndroidProject(project)) {
-                def licensesTask = project.tasks.create("generateLicenses", GenerateLicensesTask).configure {
-                    additionalLicenses = thirdPartyLicenses.getLibraries()
-                    outputDir = licensesDir
-                }
+            GenerateLicensesTask licensesTask = project.getTasks().create("generateLicenses", GenerateLicensesTask.class, task -> {
+                task.setAdditionalLicenses(thirdPartyLicenses.getLibraries());
+                task.setOutputDir(licensesDir);
+            });
 
-                project.tasks.withType(BundleAar) {
-                    dependsOn licensesTask
-                    from licensesTask.outputDir
-                }
-            }
+            project.getTasks().withType(BundleAar.class, task -> {
+                task.dependsOn(licensesTask);
+                task.from(licensesTask.getOutputDir());
+            });
 
-        }
+        });
     }
 
-    static isAndroidProject(project) {
-        ANDROID_PLUGINS.find { plugin -> project.plugins.hasPlugin(plugin) }
+    private static boolean isAndroidProject(Project project) {
+        for(String plugin : ANDROID_PLUGINS) {
+            if(project.getPlugins().hasPlugin(plugin)){
+                return true;
+            }
+        }
+        return false;
     }
 }

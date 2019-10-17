@@ -131,12 +131,12 @@ class LicenseResolverPluginSpec extends Specification {
         e.getMessage().contains("License file not found")
     }
 
-    private String getLicenseText(module) {
+    private String getLicenseText() {
         new File("${testProjectDir.root}/build/generated/third_party_licenses/",
                 'third_party_licenses.txt').text
     }
 
-    private String getLicenseJson(module) {
+    private String getLicenseJson() {
         new File("${testProjectDir.root}/build/generated/third_party_licenses/",
                 'third_party_licenses.json').text
     }
@@ -144,7 +144,7 @@ class LicenseResolverPluginSpec extends Specification {
     private BuildResult build(taskName) {
         GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withArguments(taskName)
+                .withArguments(taskName, "--stacktrace")
                 .withPluginClasspath()
                 .build()
     }
