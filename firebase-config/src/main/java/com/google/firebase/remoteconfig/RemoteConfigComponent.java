@@ -77,7 +77,7 @@ public class RemoteConfigComponent {
   @GuardedBy("this")
   private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
 
-  private static final String TRANSPORT_FINAL = "-1"; // (TODO) Replace with actual logSource int
+  private static final String TRANSPORT_NAME = "1224";
 
   private final Context context;
   private final ExecutorService executorService;
@@ -135,7 +135,7 @@ public class RemoteConfigComponent {
 
     this.transport =
         transportFactory.getTransport(
-            /* name= */ TRANSPORT_FINAL,
+            /* name= */ TRANSPORT_NAME,
             /* payloadType= */ ClientLogEvent.class,
             /* payloadTransformer= */ ClientLogEvent::toByteArray);
 
