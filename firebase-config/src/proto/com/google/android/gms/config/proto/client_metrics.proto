@@ -26,8 +26,9 @@ option java_outer_classname = "ClientMetrics";
 // one of these enums.
 message ClientLogEvent {
   enum EventType {
-    FETCH = 0;
-    ACTIVATE = 1;
+    EVENT_TYPE_UNSPECIFIED = 0;
+    FETCH = 1;
+    ACTIVATE = 2;
   }
 
   // Identifier for the application that has been registered with Firebase.
@@ -48,7 +49,7 @@ message ClientLogEvent {
   required int64 timestamp_millis = 4;
 
   // The Remote Config client-side event that the metrics are being logged for.
-  required EventType event_type = 5;
+  required EventType event_type = 5 [default = EVENT_TYPE_UNSPECIFIED];
 
   // The Firebase Remote Config SDK version.
   optional string sdk_version = 6;
