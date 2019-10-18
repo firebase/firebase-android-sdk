@@ -14,7 +14,6 @@
 
 package com.google.firebase.components;
 
-import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.inject.Provider;
 
@@ -27,7 +26,6 @@ import com.google.firebase.inject.Provider;
  *
  * <p>Note: the class is thread-safe.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Lazy<T> implements Provider<T> {
 
   private static final Object UNINITIALIZED = new Object();

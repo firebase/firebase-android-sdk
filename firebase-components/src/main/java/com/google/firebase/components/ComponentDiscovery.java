@@ -39,7 +39,7 @@ import java.util.List;
  * <pre>{@code
  * <meta-data
  * android:name="com.google.firebase.components:com.example.foo.FooRegistrar"
- * android:value="ComponentRegistrar" />
+ * android:value="com.google.firebase.components.ComponentRegistrar" />
  * }</pre>
  */
 public final class ComponentDiscovery<T> {

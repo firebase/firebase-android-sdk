@@ -17,7 +17,6 @@ package com.google.firebase.components;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
-import com.google.common.truth.Truth;
 import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,11 +93,11 @@ public final class ComponentRuntimeTest {
             Collections.singletonList(new ComponentRegistrarImpl()),
             Component.of(initTracker, InitTracker.class));
 
-    Truth.assertThat(initTracker.isInitialized()).isFalse();
+    assertThat(initTracker.isInitialized()).isFalse();
 
     runtime.initializeEagerComponents(true);
 
-    Truth.assertThat(initTracker.isInitialized()).isTrue();
+    assertThat(initTracker.isInitialized()).isTrue();
   }
 
   @Test
@@ -111,13 +110,13 @@ public final class ComponentRuntimeTest {
             Collections.singletonList(new ComponentRegistrarImpl()),
             Component.of(initTracker, InitTracker.class));
 
-    Truth.assertThat(initTracker.isInitialized()).isFalse();
+    assertThat(initTracker.isInitialized()).isFalse();
 
     ComponentTwo componentTwo = runtime.get(ComponentTwo.class);
     assertThat(componentTwo.getOne()).isNotNull();
-    Truth.assertThat(componentTwo.getOne().getTracker()).isSameInstanceAs(initTracker);
+    assertThat(componentTwo.getOne().getTracker()).isSameInstanceAs(initTracker);
 
-    Truth.assertThat(initTracker.isInitialized()).isTrue();
+    assertThat(initTracker.isInitialized()).isTrue();
   }
 
   @Test
