@@ -63,6 +63,7 @@ public class PersistedInstallation {
   private static final String TOKEN_CREATION_TIME_IN_SECONDS_KEY = "TokenCreationEpochInSecs";
   private static final String EXPIRES_IN_SECONDS_KEY = "ExpiresInSecs";
   private static final String PERSISTED_STATUS_KEY = "Status";
+  private static final String FIS_ERROR_KEY = "FisError";
 
   private static final List<String> FID_PREF_KEYS =
       Arrays.asList(
@@ -71,7 +72,8 @@ public class PersistedInstallation {
           REFRESH_TOKEN_KEY,
           TOKEN_CREATION_TIME_IN_SECONDS_KEY,
           EXPIRES_IN_SECONDS_KEY,
-          PERSISTED_STATUS_KEY);
+          PERSISTED_STATUS_KEY,
+          FIS_ERROR_KEY);
 
   @GuardedBy("prefs")
   private final SharedPreferences prefs;
@@ -98,6 +100,7 @@ public class PersistedInstallation {
       long tokenCreationTime =
           prefs.getLong(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY), 0);
       long expiresIn = prefs.getLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), 0);
+      String fisError = prefs.getString(getSharedPreferencesKey(FIS_ERROR_KEY), null);
 
       if (fid == null || !(status >= 0 && status < RegistrationStatus.values().length)) {
         return PersistedInstallationEntry.builder().build();
@@ -109,6 +112,7 @@ public class PersistedInstallation {
           .setRefreshToken(refreshToken)
           .setTokenCreationEpochInSecs(tokenCreationTime)
           .setExpiresInSecs(expiresIn)
+          .setFisError(fisError)
           .build();
     }
   }
@@ -131,6 +135,7 @@ public class PersistedInstallation {
           entryValue.getTokenCreationEpochInSecs());
       editor.putLong(
           getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), entryValue.getExpiresInSecs());
+      editor.putString(getSharedPreferencesKey(FIS_ERROR_KEY), entryValue.getFisError());
       return editor.commit();
     }
   }
