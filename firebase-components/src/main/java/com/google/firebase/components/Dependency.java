@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,10 @@
 package com.google.firebase.components;
 
 import androidx.annotation.IntDef;
-import com.google.android.gms.common.annotation.KeepForSdk;
-import com.google.android.gms.common.internal.Preconditions;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /** Represents a {@link Component} dependency. */
-@KeepForSdk
 public final class Dependency {
   /** Enumerates dependency types. */
   @IntDef({Type.OPTIONAL, Type.REQUIRED, Type.SET})
@@ -49,32 +46,26 @@ public final class Dependency {
     this.injection = injection;
   }
 
-  @KeepForSdk
   public static Dependency optional(Class<?> anInterface) {
     return new Dependency(anInterface, Type.OPTIONAL, Injection.DIRECT);
   }
 
-  @KeepForSdk
   public static Dependency required(Class<?> anInterface) {
     return new Dependency(anInterface, Type.REQUIRED, Injection.DIRECT);
   }
 
-  @KeepForSdk
   public static Dependency setOf(Class<?> anInterface) {
     return new Dependency(anInterface, Type.SET, Injection.DIRECT);
   }
 
-  @KeepForSdk
   public static Dependency optionalProvider(Class<?> anInterface) {
     return new Dependency(anInterface, Type.OPTIONAL, Injection.PROVIDER);
   }
 
-  @KeepForSdk
   public static Dependency requiredProvider(Class<?> anInterface) {
     return new Dependency(anInterface, Type.REQUIRED, Injection.PROVIDER);
   }
 
-  @KeepForSdk
   public static Dependency setOfProvider(Class<?> anInterface) {
     return new Dependency(anInterface, Type.SET, Injection.PROVIDER);
   }

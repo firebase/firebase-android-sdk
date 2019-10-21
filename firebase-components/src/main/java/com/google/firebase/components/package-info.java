@@ -12,15 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/** @hide */
 package com.google.firebase.components;
-
-import com.google.android.gms.common.annotation.KeepForSdk;
-
-/** Thrown when a missing dependency is detected. */
-@KeepForSdk
-public class MissingDependencyException extends DependencyException {
-  @KeepForSdk
-  public MissingDependencyException(String msg) {
-    super(msg);
-  }
-}

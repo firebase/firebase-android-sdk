@@ -12,19 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.components;
+package com.google.firebase.inject;
 
-import android.app.Service;
-import android.content.Intent;
-import android.os.IBinder;
-import androidx.annotation.Nullable;
-
-/** Container for component definition in <meta-data/>. */
-public class ComponentDiscoveryService extends Service {
-
-  @Override
-  @Nullable
-  public IBinder onBind(Intent intent) {
-    return null;
-  }
+/**
+ * Provides instances of T.
+ *
+ * @hide
+ */
+public interface Provider<T> {
+  /** Provides a fully constructed instance of T. */
+  T get();
 }
