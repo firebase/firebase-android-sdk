@@ -86,10 +86,11 @@ class FirestoreTests : BaseTestCase() {
 
     @Test
     fun `initialize FirebaseFirestore instance with provided FirebaseFirestoreSettings`() {
-        val firestore = Firebase.firestore {
-            setHost("http://10.0.0.2:8080")
-            setSslEnabled(false)
-            setPersistenceEnabled(false)
+        val firestore = Firebase.firestore
+        firestore.firestoreSettings = firestoreSettings {
+            host = "http://10.0.0.2:8080"
+            isSslEnabled = false
+            isPersistenceEnabled = false
         }
 
         val settings = FirebaseFirestoreSettings.Builder()
@@ -108,10 +109,11 @@ class FirestoreTests : BaseTestCase() {
     fun `initialize FirebaseFirestore instance with provided FirebaseFirestoreSettings and FirebaseApp`() {
         val app = Firebase.app(EXISTING_APP)
 
-        val firestore = Firebase.firestore(app) {
-            setHost("http://10.0.0.2:8080")
-            setSslEnabled(false)
-            setPersistenceEnabled(false)
+        val firestore = Firebase.firestore(app)
+        firestore.firestoreSettings = firestoreSettings {
+            host = "http://10.0.0.2:8080"
+            isSslEnabled = false
+            isPersistenceEnabled = false
         }
 
         val settings = FirebaseFirestoreSettings.Builder()
@@ -129,9 +131,9 @@ class FirestoreTests : BaseTestCase() {
     @Test
     fun `set FirebaseFirestoreSettings to an instance of FirebaseFirestore`() {
         Firebase.firestore.setSettings {
-            setHost("http://10.0.0.2:8080")
-            setSslEnabled(false)
-            setPersistenceEnabled(false)
+            host = "http://10.0.0.2:8080"
+            isSslEnabled = false
+            isPersistenceEnabled = false
         }
 
         val settings = FirebaseFirestoreSettings.Builder()

@@ -148,31 +148,18 @@ inline fun <reified T : Any> QuerySnapshot.toObjects(): List<T> = toObjects(T::c
 inline fun <reified T : Any> QuerySnapshot.toObjects(serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior): List<T> =
         toObjects(T::class.java, serverTimestampBehavior)
 
-/** Returns the [FirebaseFirestore] instance of the default [FirebaseApp] initialized using the [init] function. */
-fun Firebase.firestore(init: FirebaseFirestoreSettings.Builder.() -> Unit): FirebaseFirestore {
-    val builder = FirebaseFirestoreSettings.Builder()
-    builder.init()
-    val settings = builder.build()
-    val firestore = FirebaseFirestore.getInstance()
-    firestore.firestoreSettings = settings
-    return firestore
-}
-
-/** Returns the [FirebaseFirestore] instance of a given [FirebaseApp] initialized using the [init] function. */
-fun Firebase.firestore(app: FirebaseApp, init: FirebaseFirestoreSettings.Builder.() -> Unit): FirebaseFirestore {
-    val builder = FirebaseFirestoreSettings.Builder()
-    builder.init()
-    val settings = builder.build()
-    val firestore = FirebaseFirestore.getInstance(app)
-    firestore.firestoreSettings = settings
-    return firestore
-}
-
 /** Sets the settings from the [init] function to the [FirebaseFirestore] instance. */
 fun FirebaseFirestore.setSettings(init: FirebaseFirestoreSettings.Builder.() -> Unit) {
     val builder = FirebaseFirestoreSettings.Builder()
     builder.init()
     firestoreSettings = builder.build()
+}
+
+/** Returns a [FirebaseFirestoreSettings] instance initialized using the [init] function. */
+fun firestoreSettings(init: FirebaseFirestoreSettings.Builder.() -> Unit): FirebaseFirestoreSettings {
+    val builder = FirebaseFirestoreSettings.Builder()
+    builder.init()
+    return builder.build()
 }
 
 internal const val LIBRARY_NAME: String = "fire-fst-ktx"

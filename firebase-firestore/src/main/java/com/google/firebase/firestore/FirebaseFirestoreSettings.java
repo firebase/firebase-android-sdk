@@ -145,6 +145,22 @@ public final class FirebaseFirestoreSettings {
       return this;
     }
 
+    public String getHost() {
+      return host;
+    }
+
+    public boolean isSslEnabled() {
+      return sslEnabled;
+    }
+
+    public boolean isPersistenceEnabled() {
+      return persistenceEnabled;
+    }
+
+    public long getCacheSizeBytes() {
+      return cacheSizeBytes;
+    }
+
     @NonNull
     public FirebaseFirestoreSettings build() {
       if (!this.sslEnabled && this.host.equals(DEFAULT_HOST)) {
