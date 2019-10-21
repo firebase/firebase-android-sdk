@@ -216,7 +216,7 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setPersistenceEnabled(boolean);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setSslEnabled(boolean);
     method @Deprecated @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setTimestampsInSnapshotsEnabled(boolean);
-    method public String getHost();
+    method @Nullable public String getHost();
     method public boolean isPersistenceEnabled();
     method public boolean isSslEnabled();
     method public long getCacheSizeBytes();

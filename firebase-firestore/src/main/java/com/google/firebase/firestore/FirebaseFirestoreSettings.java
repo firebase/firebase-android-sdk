@@ -145,18 +145,26 @@ public final class FirebaseFirestoreSettings {
       return this;
     }
 
+    /** @return the host of the Cloud Firestore backend. */
+    @Nullable
     public String getHost() {
       return host;
     }
 
+    /** @return boolean indicating whether SSL is enabled or not. The default is to use SSL. */
     public boolean isSslEnabled() {
       return sslEnabled;
     }
 
+    /**
+     * @return boolean indicating whether local persistent storage is enabled or not.
+     * The default is to use local persistent storage.
+     */
     public boolean isPersistenceEnabled() {
       return persistenceEnabled;
     }
 
+    /** @return cache size for on-disk data. The default is 100 MB */
     public long getCacheSizeBytes() {
       return cacheSizeBytes;
     }
