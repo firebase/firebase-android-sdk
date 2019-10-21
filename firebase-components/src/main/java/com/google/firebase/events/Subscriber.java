@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,11 +14,9 @@
 
 package com.google.firebase.events;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
 import java.util.concurrent.Executor;
 
 /** Defines the API for event subscription. */
-@KeepForSdk
 public interface Subscriber {
 
   /**
@@ -30,7 +28,6 @@ public interface Subscriber {
    * <p>Note: subscribing the same (type, handler) pair on different executors will not register
    * multiple times. Instead only the last subscription will be respected.
    */
-  @KeepForSdk
   <T> void subscribe(Class<T> type, Executor executor, EventHandler<? super T> handler);
 
   /**
@@ -42,10 +39,8 @@ public interface Subscriber {
    * <p>By subscribing the {@link EventHandler}'s lifetime and its captured scope's is extended
    * until an unsubscribe is called.
    */
-  @KeepForSdk
   <T> void subscribe(Class<T> type, EventHandler<? super T> handler);
 
   /** Unsubscribe a handler from events of a given type. */
-  @KeepForSdk
   <T> void unsubscribe(Class<T> type, EventHandler<? super T> handler);
 }

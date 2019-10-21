@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.events;
+package com.google.firebase.components;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * Defines the event subscription handler.
- *
- * @hide
- */
-@KeepForSdk
-public interface EventHandler<T> {
-  @KeepForSdk
-  void handle(Event<T> event);
+/** Records a side-effect by a depended upon component. */
+public class InitTracker {
+  private final AtomicBoolean initialized = new AtomicBoolean(false);
+
+  public void initialize() {
+    initialized.set(true);
+  }
+
+  public boolean isInitialized() {
+    return initialized.get();
+  }
 }

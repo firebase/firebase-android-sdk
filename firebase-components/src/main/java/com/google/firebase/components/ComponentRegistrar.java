@@ -14,17 +14,15 @@
 
 package com.google.firebase.components;
 
-import android.app.Service;
-import android.content.Intent;
-import android.os.IBinder;
-import androidx.annotation.Nullable;
+import java.util.List;
 
-/** Container for component definition in <meta-data/>. */
-public class ComponentDiscoveryService extends Service {
-
-  @Override
-  @Nullable
-  public IBinder onBind(Intent intent) {
-    return null;
-  }
+/**
+ * Represents an SDK Registrar.
+ *
+ * <p>Individual SDKs are expected to provide an implementation of this interface in order to
+ * register themselves and to participate in dependency injection.
+ */
+public interface ComponentRegistrar {
+  /** Returns a list of components provided by this registrar. */
+  List<Component<?>> getComponents();
 }

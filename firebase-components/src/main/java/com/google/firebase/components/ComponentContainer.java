@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,18 +14,16 @@
 
 package com.google.firebase.components;
 
-import com.google.android.gms.common.annotation.KeepForSdk;
-import java.util.List;
+import com.google.firebase.inject.Provider;
+import java.util.Set;
 
-/**
- * Represents an SDK Registrar.
- *
- * <p>Individual SDKs are expected to provide an implementation of this interface in order to
- * register themselves and to participate in dependency injection.
- */
-@KeepForSdk
-public interface ComponentRegistrar {
-  /** Returns a list of components provided by this registrar. */
-  @KeepForSdk
-  List<Component<?>> getComponents();
+/** Provides a means to retrieve instances of requested classes/interfaces. */
+public interface ComponentContainer {
+  <T> T get(Class<T> anInterface);
+
+  <T> Provider<T> getProvider(Class<T> anInterface);
+
+  <T> Set<T> setOf(Class<T> anInterface);
+
+  <T> Provider<Set<T>> setOfProvider(Class<T> anInterface);
 }
