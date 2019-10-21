@@ -64,3 +64,23 @@ val maxCharacters = remoteConfig["max_characters"].asLong()
 
 val accessKey = remoteConfig["access_key"].asString()
 ```
+
+### Set Remote Config Settings
+
+**Kotlin**
+```kotlin
+val configSettings = FirebaseRemoteConfigSettings.Builder()
+        .setMinimumFetchIntervalInSeconds(3600)
+        .setFetchTimeoutInSeconds(60)
+        .build()
+remoteConfig.setConfigSettingsAsync(configSettings)
+```
+
+**Kotlin + KTX**
+```kotlin
+val configSettings = remoteConfigSettings {
+    minimumFetchIntervalInSeconds = 3600
+    fetchTimeoutInSeconds = 60
+}
+remoteConfig.setConfigSettingsAsync(configSettings)
+```
