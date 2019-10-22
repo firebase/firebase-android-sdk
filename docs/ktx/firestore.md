@@ -89,11 +89,4 @@ firestore.firestoreSettings = firestoreSettings {
     isSslEnabled = false
     isPersistenceEnabled = false
 }
-
-// Alternatively
-Firebase.firestore.setSettings {
-    host = "http://10.0.0.2:8080"
-    isSslEnabled = false
-    isPersistenceEnabled = false
-}
 ```

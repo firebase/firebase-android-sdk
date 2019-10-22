@@ -100,29 +100,6 @@ class FirestoreTests : BaseTestCase() {
         assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
         assertThat(isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
     }
-
-    @Test
-    fun `set FirebaseFirestoreSettings to an instance of FirebaseFirestore`() {
-        val host = "http://10.0.0.2:8080"
-        val isSslEnabled = false
-        val isPersistenceEnabled = false
-
-        Firebase.firestore.setSettings {
-            this.host = host
-            this.isSslEnabled = isSslEnabled
-            this.isPersistenceEnabled = isPersistenceEnabled
-        }
-
-        val settings = FirebaseFirestoreSettings.Builder()
-                .setHost(host)
-                .setSslEnabled(isSslEnabled)
-                .setPersistenceEnabled(isPersistenceEnabled)
-                .build()
-
-        assertThat(Firebase.firestore.firestoreSettings.host).isEqualTo(settings.host)
-        assertThat(Firebase.firestore.firestoreSettings.isSslEnabled).isEqualTo(settings.isSslEnabled)
-        assertThat(Firebase.firestore.firestoreSettings.isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
-    }
 }
 
 @RunWith(RobolectricTestRunner::class)
