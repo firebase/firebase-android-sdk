@@ -83,6 +83,23 @@ class FirestoreTests : BaseTestCase() {
         val app = Firebase.app(EXISTING_APP)
         assertThat(Firebase.firestore(app)).isSameInstanceAs(FirebaseFirestore.getInstance(app))
     }
+
+    @Test
+    fun `FirebaseFirestoreSettings builder works`() {
+        val host = "http://10.0.0.2:8080"
+        val isSslEnabled = false
+        val isPersistenceEnabled = false
+
+        val settings = firestoreSettings {
+            this.host = host
+            this.isSslEnabled = isSslEnabled
+            this.isPersistenceEnabled = isPersistenceEnabled
+        }
+
+        assertThat(host).isEqualTo(settings.host)
+        assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
+        assertThat(isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)

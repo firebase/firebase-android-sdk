@@ -145,6 +145,29 @@ public final class FirebaseFirestoreSettings {
       return this;
     }
 
+    /** @return the host of the Cloud Firestore backend. */
+    @Nullable
+    public String getHost() {
+      return host;
+    }
+
+    /** @return boolean indicating whether SSL is enabled or not. */
+    public boolean isSslEnabled() {
+      return sslEnabled;
+    }
+
+    /**
+     * @return boolean indicating whether local persistent storage is enabled or not.
+     */
+    public boolean isPersistenceEnabled() {
+      return persistenceEnabled;
+    }
+
+    /** @return cache size for on-disk data. */
+    public long getCacheSizeBytes() {
+      return cacheSizeBytes;
+    }
+
     @NonNull
     public FirebaseFirestoreSettings build() {
       if (!this.sslEnabled && this.host.equals(DEFAULT_HOST)) {
