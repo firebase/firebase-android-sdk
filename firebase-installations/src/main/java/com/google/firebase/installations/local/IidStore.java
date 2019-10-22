@@ -30,6 +30,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Optional;
 
 public class IidStore {
   private static final String IID_SHARED_PREFS_NAME = "com.google.android.gms.appid";
@@ -51,14 +52,20 @@ public class IidStore {
   @Nullable
   public String readIid() {
     synchronized (iidPrefs) {
-      // Reading iid from shared preferences
+      // Background: Some versions of the IID-SDK store the Instance-ID in local storage,
+      // others only store the App-Instance's Public-Key that can be used to calculate the
+      // Instance-ID.
+
+      // If such a version was used by this App-Instance, we can directly read the existing
+      // Instance-ID from storage and return it
       String id = iidPrefs.getString(STORE_KEY_ID, /* defaultValue= */ null);
 
       if (id != null) {
         return id;
       }
 
-      // Get id from the public key
+      // If this App-Instance did not store the Instance-ID in local storage, we may be able to find
+      // its Public-Key in order to calculate the App-Instance's Instance-ID.
       String base64PublicKey = iidPrefs.getString(STORE_KEY_PUB, /* defaultValue= */ null);
       if (base64PublicKey != null) {
         PublicKey publicKey = parseKey(base64PublicKey);
