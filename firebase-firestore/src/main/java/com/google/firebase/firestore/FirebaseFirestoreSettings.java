@@ -163,7 +163,7 @@ public final class FirebaseFirestoreSettings {
       return persistenceEnabled;
     }
 
-    /** @return cache size for on-disk data. The default is 100 MB */
+    /** @return cache size for on-disk data. */
     public long getCacheSizeBytes() {
       return cacheSizeBytes;
     }
