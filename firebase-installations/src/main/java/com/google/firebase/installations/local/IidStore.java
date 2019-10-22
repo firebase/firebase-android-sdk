@@ -30,7 +30,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Optional;
 
 public class IidStore {
   private static final String IID_SHARED_PREFS_NAME = "com.google.android.gms.appid";
