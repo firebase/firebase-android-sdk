@@ -158,7 +158,6 @@ public final class FirebaseFirestoreSettings {
 
     /**
      * @return boolean indicating whether local persistent storage is enabled or not.
-     * The default is to use local persistent storage.
      */
     public boolean isPersistenceEnabled() {
       return persistenceEnabled;
