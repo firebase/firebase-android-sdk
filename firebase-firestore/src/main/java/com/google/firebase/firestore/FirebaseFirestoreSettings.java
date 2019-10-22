@@ -151,7 +151,7 @@ public final class FirebaseFirestoreSettings {
       return host;
     }
 
-    /** @return boolean indicating whether SSL is enabled or not. The default is to use SSL. */
+    /** @return boolean indicating whether SSL is enabled or not. */
     public boolean isSslEnabled() {
       return sslEnabled;
     }
