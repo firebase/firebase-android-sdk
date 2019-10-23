@@ -59,7 +59,7 @@ class FirestoreChannel {
   private final CredentialsProvider credentialsProvider;
 
   /** Manages the gRPC channel and provides all gRPC ClientCalls. */
-  private final GrpcCallProvider callProvider;
+  private GrpcCallProvider callProvider;
 
   /** The value to use as resource prefix header. */
   private final String resourcePrefixValue;
@@ -90,6 +90,16 @@ class FirestoreChannel {
    */
   public void shutdown() {
     callProvider.shutdown();
+  }
+
+  /**
+   * Creates and starts a new bi-directional streaming RPC after creating a new connection for the
+   * channel.
+   */
+  <ReqT, RespT> ClientCall<ReqT, RespT> runBidiStreamingRpcWithReset(
+      MethodDescriptor<ReqT, RespT> method, IncomingStreamObserver<RespT> observer) {
+    this.callProvider.markChannelIdle();
+    return runBidiStreamingRpc(method, observer);
   }
 
   /**

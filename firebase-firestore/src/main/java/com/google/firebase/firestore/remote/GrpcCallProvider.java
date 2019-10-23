@@ -89,6 +89,17 @@ public class GrpcCallProvider {
             });
   }
 
+  /**
+   * Marks the underlying gRPC channel as idle. This allows on-going RPCs to continue, but the next
+   * RPC on the channel will trigger the creation of a new connection.
+   */
+  void markChannelIdle() {
+    ManagedChannel channel = this.channelTask.getResult();
+    if (channel != null) {
+      this.channelTask.getResult().enterIdle();
+    }
+  }
+
   /** Sets up the SSL provider and configures the gRPC channel. */
   private ManagedChannel initChannel(Context context, DatabaseInfo databaseInfo) {
     try {

@@ -17,9 +17,7 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.core.OnlineState;
-import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
-import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.Logger;
 import io.grpc.Status;
 import java.util.Locale;
@@ -30,9 +28,9 @@ import java.util.Locale;
  * heuristics.
  *
  * <p>In particular, when the client is trying to connect to the backend, we allow up to
- * MAX_WATCH_STREAM_FAILURES within ONLINE_STATE_TIMEOUT_MS for a connection to succeed. If we have
- * too many failures or the timeout elapses, then we set the OnlineState to OFFLINE, and the client
- * will behave as if it is offline (get() calls will return cached data, etc.).
+ * MAX_WATCH_STREAM_FAILURES within CONNECTIVITY_ATTEMPT_TIMEOUT_MS for a connection to succeed. If
+ * we have too many failures or the timeout elapses, then we set the OnlineState to OFFLINE, and the
+ * client will behave as if it is offline (get() calls will return cached data, etc.).
  */
 class OnlineStateTracker {
 
@@ -53,8 +51,9 @@ class OnlineStateTracker {
 
   // To deal with stream attempts that don't succeed or fail in a timely manner, we have a
   // timeout for OnlineState to reach ONLINE or OFFLINE. If the timeout is reached, we transition
-  // to OFFLINE rather than waiting indefinitely.
-  private static final int ONLINE_STATE_TIMEOUT_MS = 10 * 1000;
+  // to OFFLINE rather than waiting indefinitely. This timeout is also used when attempting to
+  // establish a connection when in an OFFLINE state.
+  static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 5 * 1000;
 
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "OnlineStateTracker";
@@ -66,23 +65,19 @@ class OnlineStateTracker {
   // MAX_WATCH_STREAM_FAILURES, we'll revert to OnlineState.OFFLINE.
   private int watchStreamFailures;
 
-  // A timer that elapses after ONLINE_STATE_TIMEOUT_MS, at which point we transition from
+  // A timer that elapses after CONNECTIVITY_ATTEMPT_TIMEOUT_MS, at which point we transition from
   // OnlineState.UNKNOWN to OFFLINE without waiting for the stream to actually fail
   // (MAX_WATCH_STREAM_FAILURES times).
-  private DelayedTask onlineStateTimer;
+  private DelayedTask connectivityAttemptTimer;
 
   // Whether the client should log a warning message if it fails to connect to the backend
   // (initially true, cleared after a successful stream, or if we've logged the message already).
   private boolean shouldWarnClientIsOffline;
 
-  // The AsyncQueue to use for running timers (and calling OnlineStateCallback methods).
-  private final AsyncQueue workerQueue;
-
   // The callback to notify on OnlineState changes.
   private final OnlineStateCallback onlineStateCallback;
 
-  OnlineStateTracker(AsyncQueue workerQueue, OnlineStateCallback onlineStateCallback) {
-    this.workerQueue = workerQueue;
+  OnlineStateTracker(OnlineStateCallback onlineStateCallback) {
     this.onlineStateCallback = onlineStateCallback;
     state = OnlineState.UNKNOWN;
     shouldWarnClientIsOffline = true;
@@ -92,33 +87,18 @@ class OnlineStateTracker {
    * Called by RemoteStore when a watch stream is started (including on each backoff attempt).
    *
    * <p>If this is the first attempt, it sets the OnlineState to UNKNOWN and starts the
-   * onlineStateTimer.
+   * setConnectivityAttemptTimer.
    */
-  void handleWatchStreamStart() {
-    if (watchStreamFailures == 0) {
-      setAndBroadcastState(OnlineState.UNKNOWN);
+  void handleWatchStreamConnectionFailed() {
+    logClientOfflineWarningIfNecessary(
+        String.format(
+            Locale.ENGLISH,
+            "Backend didn't respond within %d seconds\n",
+            CONNECTIVITY_ATTEMPT_TIMEOUT_MS / 1000));
+    setAndBroadcastState(OnlineState.OFFLINE);
 
-      hardAssert(onlineStateTimer == null, "onlineStateTimer shouldn't be started yet");
-      onlineStateTimer =
-          workerQueue.enqueueAfterDelay(
-              TimerId.ONLINE_STATE_TIMEOUT,
-              ONLINE_STATE_TIMEOUT_MS,
-              () -> {
-                onlineStateTimer = null;
-                hardAssert(
-                    state == OnlineState.UNKNOWN,
-                    "Timer should be canceled if we transitioned to a different state.");
-                logClientOfflineWarningIfNecessary(
-                    String.format(
-                        Locale.ENGLISH,
-                        "Backend didn't respond within %d seconds\n",
-                        ONLINE_STATE_TIMEOUT_MS / 1000));
-                setAndBroadcastState(OnlineState.OFFLINE);
-
-                // NOTE: handleWatchStreamFailure() will continue to increment watchStreamFailures
-                // even though we are already marked OFFLINE but this is non-harmful.
-              });
-    }
+    // NOTE: handleWatchStreamFailure() will continue to increment watchStreamFailures
+    // even though we are already marked OFFLINE but this is non-harmful.
   }
 
   /**
@@ -135,11 +115,11 @@ class OnlineStateTracker {
       // To get to OnlineState.ONLINE, updateState() must have been called which would have reset
       // our heuristics.
       hardAssert(this.watchStreamFailures == 0, "watchStreamFailures must be 0");
-      hardAssert(this.onlineStateTimer == null, "onlineStateTimer must be null");
+      hardAssert(this.connectivityAttemptTimer == null, "setConnectivityAttemptTimer must be null");
     } else {
       watchStreamFailures++;
       if (watchStreamFailures >= MAX_WATCH_STREAM_FAILURES) {
-        clearOnlineStateTimer();
+        clearConnectivityAttemptTimer();
         logClientOfflineWarningIfNecessary(
             String.format(
                 Locale.ENGLISH,
@@ -158,7 +138,7 @@ class OnlineStateTracker {
    * it must not be used in place of handleWatchStreamStart() and handleWatchStreamFailure().
    */
   void updateState(OnlineState newState) {
-    clearOnlineStateTimer();
+    clearConnectivityAttemptTimer();
     watchStreamFailures = 0;
 
     if (newState == OnlineState.ONLINE) {
@@ -171,6 +151,7 @@ class OnlineStateTracker {
   }
 
   private void setAndBroadcastState(OnlineState newState) {
+    Logger.debug("OST", "BCHEN: state set to " + newState);
     if (newState != state) {
       state = newState;
       onlineStateCallback.handleOnlineStateChange(newState);
@@ -194,10 +175,21 @@ class OnlineStateTracker {
     }
   }
 
-  private void clearOnlineStateTimer() {
-    if (onlineStateTimer != null) {
-      onlineStateTimer.cancel();
-      onlineStateTimer = null;
+  /** Clears the connectivity attempt timer that has been passed in. */
+  void clearConnectivityAttemptTimer() {
+    if (connectivityAttemptTimer != null) {
+      connectivityAttemptTimer.cancel();
+      connectivityAttemptTimer = null;
     }
+  }
+
+  /** Returns the number of times the WatchStream has tried unsuccessfully to start. */
+  int getWatchStreamFailures() {
+    return watchStreamFailures;
+  }
+
+  /** Set the connectivity attempt timer to track. */
+  void setConnectivityAttemptTimer(DelayedTask connectivityAttemptTimer) {
+    this.connectivityAttemptTimer = connectivityAttemptTimer;
   }
 }

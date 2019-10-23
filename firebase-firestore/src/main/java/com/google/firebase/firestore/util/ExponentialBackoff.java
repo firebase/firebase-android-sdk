@@ -36,8 +36,8 @@ public class ExponentialBackoff {
   private final TimerId timerId;
   private final long initialDelayMs;
   private final double backoffFactor;
-  private final long maxDelayMs;
 
+  private long maxDelayMs;
   private long currentBaseMs;
   private long lastAttemptTime;
   private DelayedTask timerTask;
@@ -104,6 +104,16 @@ public class ExponentialBackoff {
   }
 
   /**
+   * Set the backoff's maximum delay for only the next call to backoffAndRun, after which the delay
+   * will be reset to maxDelayMs.
+   *
+   * @param newMax The temporary maximum delay to set.
+   */
+  public void setTemporaryMaxDelay(long newMax) {
+    maxDelayMs = newMax;
+  }
+
+  /**
    * Waits for currentDelayMs, increases the delay and runs the specified task. If there was a
    * pending backoff task waiting to run already, it will be canceled.
    *
@@ -121,7 +131,6 @@ public class ExponentialBackoff {
 
     // Guard against the backoff delay already being past.
     long remainingDelayMs = Math.max(0, desiredDelayWithJitterMs - delaySoFarMs);
-
     if (currentBaseMs > 0) {
       Logger.debug(
           getClass().getSimpleName(),
@@ -151,6 +160,9 @@ public class ExponentialBackoff {
     } else if (currentBaseMs > maxDelayMs) {
       currentBaseMs = maxDelayMs;
     }
+
+    // Reset max delay to the default.
+    maxDelayMs = DEFAULT_BACKOFF_MAX_DELAY_MS;
   }
 
   public void cancel() {

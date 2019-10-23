@@ -174,6 +174,9 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   /** The time a stream stays open after it is marked idle. */
   private static final long IDLE_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(1);
 
+  /** Maximum backoff time when reconnecting. */
+  private static final long RECONNECT_BACKOFF_MAX_DELAY_MS = TimeUnit.SECONDS.toMillis(5);
+
   @Nullable private DelayedTask idleTimer;
 
   private final FirestoreChannel firestoreChannel;
@@ -193,6 +196,9 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   private ClientCall<ReqT, RespT> call;
   final ExponentialBackoff backoff;
   final CallbackT listener;
+
+  /** Whether we should start the gRPC stream with a new underlying connection. */
+  private boolean useNewConnection = false;
 
   AbstractStream(
       FirestoreChannel channel,
@@ -244,7 +250,12 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
 
     CloseGuardedRunner closeGuardedRunner = new CloseGuardedRunner(closeCount);
     StreamObserver streamObserver = new StreamObserver(closeGuardedRunner);
-    call = firestoreChannel.runBidiStreamingRpc(methodDescriptor, streamObserver);
+    if (useNewConnection) {
+      call = firestoreChannel.runBidiStreamingRpcWithReset(methodDescriptor, streamObserver);
+      useNewConnection = false;
+    } else {
+      call = firestoreChannel.runBidiStreamingRpc(methodDescriptor, streamObserver);
+    }
 
     state = State.Starting;
   }
@@ -290,18 +301,23 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     if (code == Code.OK) {
       // If this is an intentional close ensure we don't delay our next connection attempt.
       backoff.reset();
-
     } else if (code == Code.RESOURCE_EXHAUSTED) {
       Logger.debug(
           getClass().getSimpleName(),
           "(%x) Using maximum backoff delay to prevent overloading the backend.",
           System.identityHashCode(this));
       backoff.resetToMax();
-
     } else if (code == Code.UNAUTHENTICATED) {
       // "unauthenticated" error means the token was rejected. Try force refreshing it in case it
       // just expired.
       firestoreChannel.invalidateToken();
+    } else if (code == Code.UNAVAILABLE) {
+      if (useNewConnection
+          || status.getCause() instanceof java.net.ConnectException
+          || status.getCause() instanceof java.net.UnknownHostException) {
+        backoff.setTemporaryMaxDelay(RECONNECT_BACKOFF_MAX_DELAY_MS);
+        useNewConnection = true;
+      }
     }
 
     if (finalState != State.Error) {
@@ -372,6 +388,14 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
       // When timing out an idle stream there's no reason to force the stream into backoff when
       // it restarts so set the stream state to Initial instead of Error.
       close(State.Initial, Status.OK);
+    }
+  }
+
+  /** Called by the idle timer when the stream should close due to inactivity. */
+  void handleConnectionAttemptTimeout() {
+    useNewConnection = true;
+    if (this.isOpen()) {
+      close(State.Error, Status.UNAVAILABLE);
     }
   }
 
