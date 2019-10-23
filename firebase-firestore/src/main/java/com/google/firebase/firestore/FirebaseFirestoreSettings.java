@@ -146,7 +146,7 @@ public final class FirebaseFirestoreSettings {
     }
 
     /** @return the host of the Cloud Firestore backend. */
-    @Nullable
+    @NonNull
     public String getHost() {
       return host;
     }
