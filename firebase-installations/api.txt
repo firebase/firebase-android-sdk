@@ -26,7 +26,7 @@ package com.google.firebase.installations {
 package com.google.firebase.installations.local {
 
   public class IidStore {
-    ctor public IidStore(@NonNull FirebaseApp);
+    ctor public IidStore();
     method @Nullable public String readIid();
   }
 

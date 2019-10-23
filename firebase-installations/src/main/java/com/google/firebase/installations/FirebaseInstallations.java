@@ -74,7 +74,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         new FirebaseInstallationServiceClient(firebaseApp.getApplicationContext()),
         new PersistedInstallation(firebaseApp),
         new Utils(DefaultClock.getInstance()),
-        new IidStore(firebaseApp));
+        new IidStore());
   }
 
   FirebaseInstallations(
@@ -226,11 +226,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       // New FID needs to be created
       if (persistedInstallationEntry.isNotGenerated()) {
 
-        // Read the existing iid for this firebase installation
-        String fid = iidStore.readIid();
-        if (fid == null) {
-          fid = utils.createRandomFid();
-        }
+        // For a default firebase installation read the existing iid. For other custom firebase
+        // installations create a new fid
+        String fid = readExistingIidOrCreateFid();
         persistFid(fid);
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
       }
@@ -285,6 +283,19 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       persistedInstallation.insertOrUpdatePersistedInstallationEntry(errorInstallationEntry);
       triggerOnException(errorInstallationEntry, e);
     }
+  }
+
+  private String readExistingIidOrCreateFid() {
+    // Check if this firebase app is the default (first initialized) instance
+    if (!firebaseApp.equals(FirebaseApp.getInstance())) {
+      return utils.createRandomFid();
+    }
+    // For a default firebase installation, read the existing iid from shared prefs
+    String fid = iidStore.readIid();
+    if (fid == null) {
+      fid = utils.createRandomFid();
+    }
+    return fid;
   }
 
   private void persistFid(String fid) throws FirebaseInstallationsException {

@@ -39,11 +39,11 @@ public class IidStore {
   @GuardedBy("iidPrefs")
   private final SharedPreferences iidPrefs;
 
-  public IidStore(@NonNull FirebaseApp firebaseApp) {
+  public IidStore() {
     // Different FirebaseApp in the same Android application should have the same application
     // context and same dir path. We only read existing Iids for the default firebase application.
     iidPrefs =
-        firebaseApp
+        FirebaseApp.getInstance()
             .getApplicationContext()
             .getSharedPreferences(IID_SHARED_PREFS_NAME, Context.MODE_PRIVATE);
   }
