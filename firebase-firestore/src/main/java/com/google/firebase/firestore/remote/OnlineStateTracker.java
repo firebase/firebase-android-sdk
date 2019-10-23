@@ -115,7 +115,7 @@ class OnlineStateTracker {
       // To get to OnlineState.ONLINE, updateState() must have been called which would have reset
       // our heuristics.
       hardAssert(this.watchStreamFailures == 0, "watchStreamFailures must be 0");
-      hardAssert(this.connectivityAttemptTimer == null, "setConnectivityAttemptTimer must be null");
+      hardAssert(this.connectivityAttemptTimer == null, "connectivityAttemptTimer must be null");
     } else {
       watchStreamFailures++;
       if (watchStreamFailures >= MAX_WATCH_STREAM_FAILURES) {
@@ -151,7 +151,6 @@ class OnlineStateTracker {
   }
 
   private void setAndBroadcastState(OnlineState newState) {
-    Logger.debug("OST", "BCHEN: state set to " + newState);
     if (newState != state) {
       state = newState;
       onlineStateCallback.handleOnlineStateChange(newState);
