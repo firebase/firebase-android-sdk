@@ -226,7 +226,8 @@ public class FirebaseInstallationsInstrumentedTest {
         persistedInstallation.readPersistedInstallationEntryValue();
     assertThat(entryValue).hasFid(TEST_FID_1);
 
-    // Waiting for Task that registers FID on the FIS Servers
+    // getId() returns fid immediately but registers fid asynchronously.  Waiting for half a second
+    // while we mock fid registration. We dont send an actual request to FIS in tests.
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     PersistedInstallationEntry updatedInstallationEntry =

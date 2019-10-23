@@ -31,6 +31,9 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 
+/**
+ * Read existing iid only for default (first initialized) instance of this firebase application.*
+ */
 public class IidStore {
   private static final String IID_SHARED_PREFS_NAME = "com.google.android.gms.appid";
   private static final String STORE_KEY_PUB = "|S||P|";
@@ -57,7 +60,7 @@ public class IidStore {
 
       // If such a version was used by this App-Instance, we can directly read the existing
       // Instance-ID from storage and return it
-      String id = iidPrefs.getString(STORE_KEY_ID, /* defaultValue= */ null);
+      String id = readInstanceIdFromLocalStorage();
 
       if (id != null) {
         return id;
@@ -65,15 +68,31 @@ public class IidStore {
 
       // If this App-Instance did not store the Instance-ID in local storage, we may be able to find
       // its Public-Key in order to calculate the App-Instance's Instance-ID.
+      return readPublicKeyFromLocalStorageAndCalculateInstanceId();
+    }
+  }
+
+  @Nullable
+  private String readInstanceIdFromLocalStorage() {
+    synchronized (iidPrefs) {
+      return iidPrefs.getString(STORE_KEY_ID, /* defaultValue= */ null);
+    }
+  }
+
+  @Nullable
+  private String readPublicKeyFromLocalStorageAndCalculateInstanceId() {
+    synchronized (iidPrefs) {
       String base64PublicKey = iidPrefs.getString(STORE_KEY_PUB, /* defaultValue= */ null);
-      if (base64PublicKey != null) {
-        PublicKey publicKey = parseKey(base64PublicKey);
-        if (publicKey != null) {
-          return getIdFromPublicKey(publicKey);
-        }
+      if (base64PublicKey == null) {
+        return null;
       }
 
-      return null;
+      PublicKey publicKey = parseKey(base64PublicKey);
+      if (publicKey == null) {
+        return null;
+      }
+
+      return getIdFromPublicKey(publicKey);
     }
   }
 
