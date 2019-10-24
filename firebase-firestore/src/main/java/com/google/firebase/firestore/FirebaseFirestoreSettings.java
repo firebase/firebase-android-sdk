@@ -156,9 +156,7 @@ public final class FirebaseFirestoreSettings {
       return sslEnabled;
     }
 
-    /**
-     * @return boolean indicating whether local persistent storage is enabled or not.
-     */
+    /** @return boolean indicating whether local persistent storage is enabled or not. */
     public boolean isPersistenceEnabled() {
       return persistenceEnabled;
     }
