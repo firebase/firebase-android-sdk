@@ -81,7 +81,7 @@ public class FiamWindowManager {
   }
 
   public boolean isFiamDisplayed() {
-    if(bindingWrapper == null) {
+    if (bindingWrapper == null) {
       return false;
     }
     return bindingWrapper.getRootView().isShown();
