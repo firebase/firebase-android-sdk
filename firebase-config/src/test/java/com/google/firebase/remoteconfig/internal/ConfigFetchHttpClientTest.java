@@ -187,6 +187,15 @@ public class ConfigFetchHttpClientTest {
   }
 
   @Test
+  public void fetch_noChange_logsClientLogEvent() throws Exception {
+    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
+
+    fetch(SECOND_ETAG);
+
+    verify(mockConfigLogger).logFetchEvent(/* networkLatencyMillis= */ anyLong());
+  }
+
+  @Test
   public void fetch_setsAllHeaders_sendsAllHeadersToServer() throws Exception {
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
     Map<String, String> customHeaders = ImmutableMap.of("x-enable-fetch", "true");
