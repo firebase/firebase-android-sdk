@@ -210,14 +210,14 @@ public class ConfigFetchHttpClient {
       }
     }
 
+    long endTime = System.currentTimeMillis();
+    configLogger.logFetchEvent(/* networkLatencyMillis= */ endTime - startTime);
+
     if (!backendHasUpdates(fetchResponse)) {
       return FetchResponse.forBackendHasNoUpdates(currentTime);
     }
 
     ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
-
-    long endTime = System.currentTimeMillis();
-    configLogger.logFetchEvent(/* networkLatencyMillis= */ endTime - startTime);
 
     return FetchResponse.forBackendUpdatesFetched(fetchedConfigs, fetchResponseETag);
   }
