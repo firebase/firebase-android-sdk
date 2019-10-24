@@ -146,7 +146,7 @@ public final class FirebaseFirestoreSettings {
     }
 
     /** @return the host of the Cloud Firestore backend. */
-    @Nullable
+    @NonNull
     public String getHost() {
       return host;
     }
@@ -156,9 +156,7 @@ public final class FirebaseFirestoreSettings {
       return sslEnabled;
     }
 
-    /**
-     * @return boolean indicating whether local persistent storage is enabled or not.
-     */
+    /** @return boolean indicating whether local persistent storage is enabled or not. */
     public boolean isPersistenceEnabled() {
       return persistenceEnabled;
     }
