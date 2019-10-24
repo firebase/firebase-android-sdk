@@ -431,9 +431,6 @@ public class QueryTest {
 
   @Test
   public void testQueriesCanUseInFilters() {
-    // TODO(in-queries): Re-enable in prod once feature lands in backend.
-    Assume.assumeTrue(isRunningAgainstEmulator());
-
     Map<String, Object> docA = map("zip", 98101L);
     Map<String, Object> docB = map("zip", 91102L);
     Map<String, Object> docC = map("zip", 98103L);
@@ -455,9 +452,6 @@ public class QueryTest {
 
   @Test
   public void testQueriesCanUseInFiltersWithDocIds() {
-    // TODO(in-queries): Re-enable in prod once feature lands in backend.
-    Assume.assumeTrue(isRunningAgainstEmulator());
-
     Map<String, String> docA = map("key", "aa");
     Map<String, String> docB = map("key", "ab");
     Map<String, String> docC = map("key", "ba");
@@ -476,9 +470,6 @@ public class QueryTest {
 
   @Test
   public void testQueriesCanUseArrayContainsAnyFilters() {
-    // TODO(in-queries): Re-enable in prod once feature lands in backend.
-    Assume.assumeTrue(isRunningAgainstEmulator());
-
     Map<String, Object> docA = map("array", asList(42L));
     Map<String, Object> docB = map("array", asList("a", 42L, "c"));
     Map<String, Object> docC = map("array", asList(41.999, "42", map("a", asList(42))));
