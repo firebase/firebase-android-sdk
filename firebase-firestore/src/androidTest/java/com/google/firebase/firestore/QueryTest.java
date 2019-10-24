@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
@@ -39,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
