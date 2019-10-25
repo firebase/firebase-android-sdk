@@ -25,6 +25,11 @@ package com.google.firebase.installations {
 
 package com.google.firebase.installations.local {
 
+  public class IidStore {
+    ctor public IidStore();
+    method @Nullable public String readIid();
+  }
+
   public class PersistedInstallation {
     ctor public PersistedInstallation(@NonNull FirebaseApp);
     method @NonNull public boolean clear();
