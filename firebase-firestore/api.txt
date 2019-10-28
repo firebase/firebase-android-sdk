@@ -149,8 +149,8 @@ package com.google.firebase.firestore {
 
   public class FirebaseFirestore {
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull Activity, @NonNull Runnable);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull Executor, @NonNull Runnable);
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(Activity, @NonNull Runnable);
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(Executor, @NonNull Runnable);
     method @NonNull public com.google.firebase.firestore.WriteBatch batch();
     method @NonNull public Task<Void> clearPersistence();
     method @NonNull public com.google.firebase.firestore.CollectionReference collection(@NonNull String);
@@ -214,15 +214,15 @@ package com.google.firebase.firestore {
     ctor public FirebaseFirestoreSettings.Builder();
     ctor public FirebaseFirestoreSettings.Builder(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings build();
-    method public long getCacheSizeBytes();
-    method @NonNull public String getHost();
-    method public boolean isPersistenceEnabled();
-    method public boolean isSslEnabled();
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setCacheSizeBytes(long);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setHost(@NonNull String);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setPersistenceEnabled(boolean);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setSslEnabled(boolean);
     method @Deprecated @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setTimestampsInSnapshotsEnabled(boolean);
+    method @Nullable public String getHost();
+    method public boolean isPersistenceEnabled();
+    method public boolean isSslEnabled();
+    method public long getCacheSizeBytes();
   }
 
   public class GeoPoint {

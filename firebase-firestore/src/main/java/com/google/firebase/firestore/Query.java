@@ -248,68 +248,68 @@ public class Query {
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field, the value must be an array, and that the array must contain at least one
-   * value from the provided array.
+   * the specified field, the values must be an array, and that the array must contain at least one
+   * values from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
    * combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param field The name of the field containing an array to search.
-   * @param value The array that contains the values to match.
+   * @param values The list that contains the values to match.
    * @return The created {@code Query}.
    */
   @NonNull
-  public Query whereArrayContainsAny(@NonNull String field, @NonNull List<Object> value) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS_ANY, value);
+  public Query whereArrayContainsAny(@NonNull String field, @NonNull List<? extends Object> values) {
+    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS_ANY, values);
   }
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field, the value must be an array, and that the array must contain at least one
-   * value from the provided array.
+   * the specified field, the values must be an array, and that the array must contain at least one
+   * values from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
    * combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param fieldPath The path of the field containing an array to search.
-   * @param value The array that contains the values to match.
+   * @param values The list that contains the values to match.
    * @return The created {@code Query}.
    */
   @NonNull
-  public Query whereArrayContainsAny(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
-    return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, value);
+  public Query whereArrayContainsAny(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
+    return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, values);
   }
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field and the value must equal one of the values from the provided array.
+   * the specified field and the values must equal one of the values from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
    * {@code whereArrayContainsAny()}.
    *
    * @param field The name of the field to search.
-   * @param value The array that contains the values to match.
+   * @param values The list that contains the values to match.
    * @return The created {@code Query}.
    */
   @NonNull
-  public Query whereIn(@NonNull String field, @NonNull List<Object> value) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.IN, value);
+  public Query whereIn(@NonNull String field, @NonNull List<? extends Object> values) {
+    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.IN, values);
   }
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field and the value must equal one of the values from the provided array.
+   * the specified field and the values must equal one of the values from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
    * {@code whereArrayContainsAny()}.
    *
    * @param fieldPath The path of the field to search.
-   * @param value The array that contains the values to match.
+   * @param values The list that contains the values to match.
    * @return The created {@code Query}.
    */
   @NonNull
-  public Query whereIn(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
-    return whereHelper(fieldPath, Operator.IN, value);
+  public Query whereIn(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
+    return whereHelper(fieldPath, Operator.IN, values);
   }
 
   /**
