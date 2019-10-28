@@ -274,17 +274,17 @@ public class Query {
    * combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param field The name of the field containing an array to search.
-   * @param first The first value of the array that contains the values to match.
-   * @param rest The other values of the array that contain the values to match.
+   * @param value The first value to match against.
+   * @param moreValues Additional values to match against.
    * @return The created {@code Query}.
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereArrayContainsAny(@NonNull String field, @NonNull Object first, Object... rest) {
+  Query whereArrayContainsAny(@NonNull String field, @NonNull Object value, Object... moreValues) {
     return whereHelper(
         FieldPath.fromDotSeparatedPath(field),
         Operator.ARRAY_CONTAINS_ANY,
-        Lists.asList(first, rest));
+        Lists.asList(value, moreValues));
   }
 
   /**
@@ -314,14 +314,14 @@ public class Query {
    * combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param fieldPath The path of the field containing an array to search.
-   * @param first The first value of the array that contains the values to match.
-   * @param rest The other values of the array that contain the values to match.
+   * @param value The first value to match against.
+   * @param moreValues Additional values to match against.
    * @return The created {@code Query}.
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereArrayContainsAny(@NonNull FieldPath fieldPath, Object first, Object... rest) {
-    return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, Lists.asList(first, rest));
+  Query whereArrayContainsAny(@NonNull FieldPath fieldPath, Object value, Object... moreValues) {
+    return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, Lists.asList(value, moreValues));
   }
 
   /**
@@ -349,15 +349,15 @@ public class Query {
    * {@code whereArrayContainsAny()}.
    *
    * @param field The name of the field to search.
-   * @param first The first value of the array that contains the values to match.
-   * @param rest The other values of the array that contain the values to match.
+   * @param value The first value to match against.
+   * @param moreValues Additional values to match against.
    * @return The created {@code Query}.
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereIn(@NonNull String field, Object first, Object... rest) {
+  Query whereIn(@NonNull String field, Object value, Object... moreValues) {
     return whereHelper(
-        FieldPath.fromDotSeparatedPath(field), Operator.IN, Lists.asList(first, rest));
+        FieldPath.fromDotSeparatedPath(field), Operator.IN, Lists.asList(value, moreValues));
   }
 
   /**
@@ -385,14 +385,14 @@ public class Query {
    * {@code whereArrayContainsAny()}.
    *
    * @param fieldPath The path of the field to search.
-   * @param first The first value of the array that contains the values to match.
-   * @param rest The other values of the array that contain the values to match.
+   * @param value The first value to match against.
+   * @param moreValues Additional values to match against.
    * @return The created {@code Query}.
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereIn(@NonNull FieldPath fieldPath, Object first, Object... rest) {
-    return whereHelper(fieldPath, Operator.IN, Lists.asList(first, rest));
+  Query whereIn(@NonNull FieldPath fieldPath, Object value, Object... moreValues) {
+    return whereHelper(fieldPath, Operator.IN, Lists.asList(value, moreValues));
   }
 
   /**
