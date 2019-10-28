@@ -469,8 +469,7 @@ public class QueryTest {
             "ba", docC,
             "bb", docD);
     CollectionReference collection = testCollectionWithDocs(testDocs);
-    QuerySnapshot docs =
-        waitFor(collection.whereIn(FieldPath.documentId(), asList("aa", "ab")).get());
+    QuerySnapshot docs = waitFor(collection.whereIn(FieldPath.documentId(), "aa", "ab").get());
     assertEquals(asList(docA, docB), querySnapshotToValues(docs));
   }
 
@@ -492,8 +491,7 @@ public class QueryTest {
             map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF));
 
     // Search for "array" to contain [42, 43].
-    QuerySnapshot snapshot =
-        waitFor(collection.whereArrayContainsAny("array", asList(42L, 43L)).get());
+    QuerySnapshot snapshot = waitFor(collection.whereArrayContainsAny("array", 42L, 43L).get());
     assertEquals(asList(docA, docB, docD, docE), querySnapshotToValues(snapshot));
 
     // With objects.

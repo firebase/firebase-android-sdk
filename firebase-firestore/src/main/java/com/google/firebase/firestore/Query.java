@@ -24,6 +24,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.common.collect.Lists;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
@@ -260,8 +261,30 @@ public class Query {
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereArrayContainsAny(@NonNull String field, @NonNull List<Object> value) {
+  Query whereArrayContainsAny(@NonNull String field, @NonNull List<? extends Object> value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS_ANY, value);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field, the value must be an array, and that the array must contain at least one
+   * value from the provided array.
+   *
+   * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
+   * combined with {@code whereArrayContains()} or {@code whereIn()}.
+   *
+   * @param field The name of the field containing an array to search.
+   * @param first The first value of the array that contains the values to match.
+   * @param rest The other values of the array that contain the values to match.
+   * @return The created {@code Query}.
+   */
+  // TODO(in-queries): Expose to public once backend is ready.
+  @NonNull
+  Query whereArrayContainsAny(@NonNull String field, @NonNull Object first, Object... rest) {
+    return whereHelper(
+        FieldPath.fromDotSeparatedPath(field),
+        Operator.ARRAY_CONTAINS_ANY,
+        Lists.asList(first, rest));
   }
 
   /**
@@ -278,8 +301,27 @@ public class Query {
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereArrayContainsAny(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
+  Query whereArrayContainsAny(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> value) {
     return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, value);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field, the value must be an array, and that the array must contain at least one
+   * value from the provided array.
+   *
+   * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
+   * combined with {@code whereArrayContains()} or {@code whereIn()}.
+   *
+   * @param fieldPath The path of the field containing an array to search.
+   * @param first The first value of the array that contains the values to match.
+   * @param rest The other values of the array that contain the values to match.
+   * @return The created {@code Query}.
+   */
+  // TODO(in-queries): Expose to public once backend is ready.
+  @NonNull
+  Query whereArrayContainsAny(@NonNull FieldPath fieldPath, Object first, Object... rest) {
+    return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, Lists.asList(first, rest));
   }
 
   /**
@@ -295,8 +337,27 @@ public class Query {
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereIn(@NonNull String field, @NonNull List<Object> value) {
+  Query whereIn(@NonNull String field, @NonNull List<? extends Object> value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.IN, value);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value must equal one of the values from the provided array.
+   *
+   * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
+   * {@code whereArrayContainsAny()}.
+   *
+   * @param field The name of the field to search.
+   * @param first The first value of the array that contains the values to match.
+   * @param rest The other values of the array that contain the values to match.
+   * @return The created {@code Query}.
+   */
+  // TODO(in-queries): Expose to public once backend is ready.
+  @NonNull
+  Query whereIn(@NonNull String field, Object first, Object... rest) {
+    return whereHelper(
+        FieldPath.fromDotSeparatedPath(field), Operator.IN, Lists.asList(first, rest));
   }
 
   /**
@@ -312,8 +373,26 @@ public class Query {
    */
   // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereIn(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
+  Query whereIn(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> value) {
     return whereHelper(fieldPath, Operator.IN, value);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value must equal one of the values from the provided array.
+   *
+   * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
+   * {@code whereArrayContainsAny()}.
+   *
+   * @param fieldPath The path of the field to search.
+   * @param first The first value of the array that contains the values to match.
+   * @param rest The other values of the array that contain the values to match.
+   * @return The created {@code Query}.
+   */
+  // TODO(in-queries): Expose to public once backend is ready.
+  @NonNull
+  Query whereIn(@NonNull FieldPath fieldPath, Object first, Object... rest) {
+    return whereHelper(fieldPath, Operator.IN, Lists.asList(first, rest));
   }
 
   /**

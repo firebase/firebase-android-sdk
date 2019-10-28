@@ -570,6 +570,10 @@ public class FirestoreTest {
     query.whereArrayContainsAny("y", Arrays.asList("cat"));
     // In on different field works.
     query.whereIn("y", Arrays.asList("cat"));
+    // Array contains any with varargs works.
+    collection.whereArrayContainsAny("a", "b", "c", 42);
+    // In with varargs works.
+    collection.whereIn("a", "b", "c", 42);
 
     // Ordering by inequality field succeeds.
     query.orderBy("x");
