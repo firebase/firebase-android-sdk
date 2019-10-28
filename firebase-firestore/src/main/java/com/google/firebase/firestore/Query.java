@@ -248,8 +248,8 @@ public class Query {
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field, the values must be an array, and that the array must contain at least one
-   * values from the provided list.
+   * the specified field, the value must be an array, and that the array must contain at least one
+   * value from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
    * combined with {@code whereArrayContains()} or {@code whereIn()}.
@@ -266,8 +266,8 @@ public class Query {
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field, the values must be an array, and that the array must contain at least one
-   * values from the provided list.
+   * the specified field, the value must be an array, and that the array must contain at least one
+   * value from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
    * combined with {@code whereArrayContains()} or {@code whereIn()}.
@@ -284,7 +284,7 @@ public class Query {
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field and the values must equal one of the values from the provided list.
+   * the specified field and the value must equal one of the values from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
    * {@code whereArrayContainsAny()}.
@@ -300,7 +300,7 @@ public class Query {
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field and the values must equal one of the values from the provided list.
+   * the specified field and the value must equal one of the values from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
    * {@code whereArrayContainsAny()}.
