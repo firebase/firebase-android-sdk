@@ -259,7 +259,8 @@ public class Query {
    * @return The created {@code Query}.
    */
   @NonNull
-  public Query whereArrayContainsAny(@NonNull String field, @NonNull List<? extends Object> values) {
+  public Query whereArrayContainsAny(
+      @NonNull String field, @NonNull List<? extends Object> values) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS_ANY, values);
   }
 
@@ -276,7 +277,8 @@ public class Query {
    * @return The created {@code Query}.
    */
   @NonNull
-  public Query whereArrayContainsAny(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
+  public Query whereArrayContainsAny(
+      @NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
     return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, values);
   }
 
