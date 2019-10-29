@@ -59,7 +59,7 @@ public class AnalyticsEventsManagerTest {
 
   private static final TriggeringCondition.Builder onAnalyticsEvent =
       TriggeringCondition.newBuilder()
-          .setContextualTrigger(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT_1));
+          .setEvent(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT_1));
   private static final TriggeringCondition onForeground =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
 
@@ -128,8 +128,7 @@ public class AnalyticsEventsManagerTest {
     String event2 = "event2";
 
     TriggeringCondition.Builder onAnalyticsEvent2 =
-        TriggeringCondition.newBuilder()
-            .setContextualTrigger(ContextualTrigger.newBuilder().setName(event2));
+        TriggeringCondition.newBuilder().setEvent(ContextualTrigger.newBuilder().setName(event2));
 
     ThickContent.Builder event2ContentBuilder =
         ThickContent.newBuilder()
@@ -160,14 +159,11 @@ public class AnalyticsEventsManagerTest {
     String event4 = "event4";
 
     TriggeringCondition.Builder onAnalyticsEvent2 =
-        TriggeringCondition.newBuilder()
-            .setContextualTrigger(ContextualTrigger.newBuilder().setName(event2));
+        TriggeringCondition.newBuilder().setEvent(ContextualTrigger.newBuilder().setName(event2));
     TriggeringCondition.Builder onAnalyticsEvent3 =
-        TriggeringCondition.newBuilder()
-            .setContextualTrigger(ContextualTrigger.newBuilder().setName(event3));
+        TriggeringCondition.newBuilder().setEvent(ContextualTrigger.newBuilder().setName(event3));
     TriggeringCondition.Builder onAnalyticsEvent4 =
-        TriggeringCondition.newBuilder()
-            .setContextualTrigger(ContextualTrigger.newBuilder().setName(event4));
+        TriggeringCondition.newBuilder().setEvent(ContextualTrigger.newBuilder().setName(event4));
 
     ThickContent.Builder event1ContentBuilder =
         ThickContent.newBuilder()
@@ -209,7 +205,7 @@ public class AnalyticsEventsManagerTest {
 
       TriggeringCondition.Builder onAnalyticsEvent =
           TriggeringCondition.newBuilder()
-              .setContextualTrigger(ContextualTrigger.newBuilder().setName(String.valueOf(i)));
+              .setEvent(ContextualTrigger.newBuilder().setName(String.valueOf(i)));
       contentBuilder.addTriggeringConditions(onAnalyticsEvent);
       expectedNames.add(String.valueOf(i));
     }

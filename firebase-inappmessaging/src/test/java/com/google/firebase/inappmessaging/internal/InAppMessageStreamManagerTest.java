@@ -75,7 +75,7 @@ public class InAppMessageStreamManagerTest {
 
   private static final TriggeringCondition.Builder ON_ANALYTICS_TRIGGER =
       TriggeringCondition.newBuilder()
-          .setContextualTrigger(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT_NAME));
+          .setEvent(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT_NAME));
   private static final TriggeringCondition ON_FOREGROUND_TRIGGER =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
   private static final Priority priorityTwo = Priority.newBuilder().setValue(2).build();

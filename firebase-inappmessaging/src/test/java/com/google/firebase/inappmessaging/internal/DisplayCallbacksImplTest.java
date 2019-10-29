@@ -95,7 +95,7 @@ public class DisplayCallbacksImplTest {
 
   private static final TriggeringCondition.Builder onAnalyticsEvent =
       TriggeringCondition.newBuilder()
-          .setContextualTrigger(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT_NAME));
+          .setEvent(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT_NAME));
   private static final TriggeringCondition onForeground =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
 
