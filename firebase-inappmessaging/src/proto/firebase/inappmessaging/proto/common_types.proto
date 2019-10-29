@@ -46,7 +46,7 @@ message CampaignTime {
 message TriggeringCondition {
   oneof condition {
     Trigger fiam_trigger = 1;
-    ContextualTrigger contextual_trigger = 2;
+    ContextualTrigger event = 2;
   }
 }
 
