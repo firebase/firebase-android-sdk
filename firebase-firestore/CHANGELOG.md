@@ -1,4 +1,9 @@
 # Unreleased (21.3.0)
+- [feature] Added `Query.whereIn()` and `Query.whereArrayContainsAny()` query
+  operators. `Query.whereIn()` finds documents where a specified field’s value
+  is IN a specified array. `Query.whereArrayContainsAny()` finds documents
+  where a specified field is an array and contains ANY element of a specified
+  array.
 - [changed] Improved the performance of repeatedly executed queries. Recently
   executed queries should see dramatic improvements. This benefit is reduced
   if changes accumulate while the query is inactive. Queries that use the
