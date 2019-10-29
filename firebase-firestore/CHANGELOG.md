@@ -1,4 +1,9 @@
 # Unreleased
+- [feature] Added `Query.whereIn()` and `Query.whereArrayContainsAny()` query
+  operators. `Query.whereIn()` finds documents where a specified field’s value
+  is IN a specified array. `Query.whereArrayContainsAny()` finds documents
+  where a specified field is an array and contains ANY element of a specified
+  array.
 
 # 21.2.1
 - [fixed] Fixed an issue where Android API level 19 and earlier devices would
