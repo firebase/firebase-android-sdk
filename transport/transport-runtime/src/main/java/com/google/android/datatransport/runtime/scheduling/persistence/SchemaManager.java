@@ -73,7 +73,7 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final String DROP_CONTEXTS_SQL = "DROP TABLE transport_contexts";
 
-  static int SCHEMA_VERSION = 2;
+  static int SCHEMA_VERSION = 3;
 
   private static final SchemaManager.Migration MIGRATE_TO_V1 =
       (db) -> {
@@ -92,8 +92,11 @@ final class SchemaManager extends SQLiteOpenHelper {
         db.execSQL("DROP INDEX contexts_backend_priority");
       };
 
+  private static final SchemaManager.Migration MIGRATE_TO_V3 =
+      db -> db.execSQL("ALTER TABLE events ADD COLUMN payload_encoding TEXT");
+
   private static final List<Migration> INCREMENTAL_MIGRATIONS =
-      Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2);
+      Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2, MIGRATE_TO_V3);
 
   @Inject
   SchemaManager(Context context, @Named("SCHEMA_VERSION") int schemaVersion) {

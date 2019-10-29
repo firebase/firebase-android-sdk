@@ -27,7 +27,12 @@ public abstract class EventInternal {
   @Nullable
   public abstract Integer getCode();
 
-  public abstract byte[] getPayload();
+  public abstract EncodedPayload getEncodedPayload();
+
+  @Deprecated
+  public byte[] getPayload() {
+    return getEncodedPayload().getBytes();
+  }
 
   public abstract long getEventMillis();
 
@@ -63,7 +68,7 @@ public abstract class EventInternal {
     return new AutoValue_EventInternal.Builder()
         .setTransportName(getTransportName())
         .setCode(getCode())
-        .setPayload(getPayload())
+        .setEncodedPayload(getEncodedPayload())
         .setEventMillis(getEventMillis())
         .setUptimeMillis(getUptimeMillis())
         .setAutoMetadata(new HashMap<>(getAutoMetadata()));
@@ -79,7 +84,7 @@ public abstract class EventInternal {
 
     public abstract Builder setCode(Integer value);
 
-    public abstract Builder setPayload(byte[] value);
+    public abstract Builder setEncodedPayload(EncodedPayload value);
 
     public abstract Builder setEventMillis(long value);
 

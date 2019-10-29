@@ -16,11 +16,14 @@ package com.google.android.datatransport.cct;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.datatransport.runtime.Destination;
+import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.runtime.EncodedDestination;
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.Set;
 import java.util.regex.Pattern;
 
-public final class CCTDestination implements Destination {
+public final class CCTDestination implements EncodedDestination {
   static final String DESTINATION_NAME = "cct";
 
   static final String DEFAULT_END_POINT =
@@ -56,6 +59,11 @@ public final class CCTDestination implements Destination {
   @Override
   public byte[] getExtras() {
     return asByteArray();
+  }
+
+  @Override
+  public Set<Encoding> getSupportedEncodings() {
+    return Collections.singleton(Encoding.of("proto"));
   }
 
   @Nullable

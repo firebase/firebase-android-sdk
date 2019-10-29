@@ -62,7 +62,7 @@ public class IndexFreeQueryEngine implements QueryEngine {
       ImmutableSortedSet<DocumentKey> remoteKeys) {
     hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
 
-    // Queries that match all document don't benefit from using IndexFreeQueries. It is more
+    // Queries that match all documents don't benefit from using IndexFreeQueries. It is more
     // efficient to scan all documents in a collection, rather than to perform individual lookups.
     if (query.matchesAllDocuments()) {
       return executeFullCollectionScan(query);

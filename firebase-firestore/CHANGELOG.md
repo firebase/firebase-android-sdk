@@ -1,4 +1,20 @@
 # Unreleased
+- [feature] Added `Query.whereIn()` and `Query.whereArrayContainsAny()` query
+  operators. `Query.whereIn()` finds documents where a specified field’s value
+  is IN a specified array. `Query.whereArrayContainsAny()` finds documents
+  where a specified field is an array and contains ANY element of a specified
+  array.
+
+# 21.2.1
+- [fixed] Fixed an issue where Android API level 19 and earlier devices would
+  crash when unable to connect to Firestore (#904).
+- [fixed] Fixed a race condition in Documents where access to getData and
+  getField on the same document in different threads could cause a
+  NullPointerException.
+- [fixed] Fix a race condition that could cause a `NullPointerException` during
+  client initialization.
+
+# 21.2.0
 - [feature] Added an `addSnapshotsInSyncListener()` method to 
   `FirebaseFirestore`that notifies you when all your snapshot listeners are
   in sync with each other.
