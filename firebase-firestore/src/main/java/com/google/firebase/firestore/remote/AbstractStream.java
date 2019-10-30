@@ -266,6 +266,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
    *
    * @param finalState the intended state of the stream after closing.
    * @param status the status to emit to the listener.
+   * @param forceNewConnection whether to use a new connection the next time we open the stream
    */
   private void close(State finalState, Status status, boolean forceNewConnection) {
     hardAssert(isStarted(), "Only started streams should be closed.");
@@ -304,6 +305,9 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
       // just expired.
       firestoreChannel.invalidateToken();
     } else if (code == Code.UNAVAILABLE) {
+      // These exceptions are thrown when the gRPC stream is closed with an connection error. For
+      // these cases, we need to use a new connection for the next connection attempt, which is
+      // done by marking the underlying channel as idle.
       if (forceNewConnection
           || status.getCause() instanceof java.net.ConnectException
           || status.getCause() instanceof java.net.UnknownHostException) {
@@ -389,6 +393,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
 
   /** Called when the connectivity attempt timer runs out. */
   void handleConnectionAttemptTimeout() {
+    // We want to force a new connection on the next connection attempt whenever we fail to connect.
     close(State.Error, Status.UNAVAILABLE, true);
   }
 

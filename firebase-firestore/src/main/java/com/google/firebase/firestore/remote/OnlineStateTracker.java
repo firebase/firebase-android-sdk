@@ -17,7 +17,6 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.core.OnlineState;
-import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
 import com.google.firebase.firestore.util.Logger;
 import io.grpc.Status;
@@ -78,11 +77,7 @@ class OnlineStateTracker {
   // The callback to notify on OnlineState changes.
   private final OnlineStateCallback onlineStateCallback;
 
-  // The AsyncQueue to use for running timers (and calling OnlineStateCallback methods).
-  private final AsyncQueue workerQueue;
-
-  OnlineStateTracker(OnlineStateCallback onlineStateCallback, AsyncQueue workerQueue) {
-    this.workerQueue = workerQueue;
+  OnlineStateTracker(OnlineStateCallback onlineStateCallback) {
     this.onlineStateCallback = onlineStateCallback;
     state = OnlineState.UNKNOWN;
     shouldWarnClientIsOffline = true;
