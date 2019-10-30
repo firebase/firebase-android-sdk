@@ -81,7 +81,10 @@ public class FiamWindowManager {
   }
 
   public boolean isFiamDisplayed() {
-    return bindingWrapper != null;
+    if (bindingWrapper == null) {
+      return false;
+    }
+    return bindingWrapper.getRootView().isShown();
   }
 
   /** Removes the in app message from the surrounding window */
