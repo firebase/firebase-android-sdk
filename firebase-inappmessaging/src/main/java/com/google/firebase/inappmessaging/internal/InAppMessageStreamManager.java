@@ -103,8 +103,7 @@ public class InAppMessageStreamManager {
   }
 
   private static boolean hasAnalyticsTrigger(TriggeringCondition tc, String event) {
-    return tc.getContextualTrigger() != null
-        && tc.getContextualTrigger().getName().toString().equals(event);
+    return tc.getEvent() != null && tc.getEvent().getName().toString().equals(event);
   }
 
   private static boolean isActive(Clock clock, VanillaCampaignPayload vanillaPayload) {
