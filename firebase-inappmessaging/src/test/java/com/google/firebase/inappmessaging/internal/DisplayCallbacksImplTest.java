@@ -94,8 +94,7 @@ public class DisplayCallbacksImplTest {
   private static final String LIMITER_KEY = "LIMITER_KEY";
 
   private static final TriggeringCondition.Builder onAnalyticsEvent =
-      TriggeringCondition.newBuilder()
-          .setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
+      TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
   private static final TriggeringCondition onForeground =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
 

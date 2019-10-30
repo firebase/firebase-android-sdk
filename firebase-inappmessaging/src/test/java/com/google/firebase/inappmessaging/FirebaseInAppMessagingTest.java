@@ -79,8 +79,7 @@ public class FirebaseInAppMessagingTest {
   private static final String ANALYTICS_EVENT_NAME = "event1";
 
   private static final TriggeringCondition.Builder onAnalyticsEvent =
-      TriggeringCondition.newBuilder()
-          .setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
+      TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
   private static final TriggeringCondition onForeground =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
 

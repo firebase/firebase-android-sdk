@@ -58,8 +58,7 @@ public class AnalyticsEventsManagerTest {
   private static final String ANALYTICS_EVENT_1 = "event1";
 
   private static final TriggeringCondition.Builder onAnalyticsEvent =
-      TriggeringCondition.newBuilder()
-          .setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_1));
+      TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_1));
   private static final TriggeringCondition onForeground =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
 
@@ -204,8 +203,7 @@ public class AnalyticsEventsManagerTest {
     for (int i = 0; i < 51; i++) {
 
       TriggeringCondition.Builder onAnalyticsEvent =
-          TriggeringCondition.newBuilder()
-              .setEvent(Event.newBuilder().setName(String.valueOf(i)));
+          TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(String.valueOf(i)));
       contentBuilder.addTriggeringConditions(onAnalyticsEvent);
       expectedNames.add(String.valueOf(i));
     }
