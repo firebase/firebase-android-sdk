@@ -92,14 +92,8 @@ class FirestoreChannel {
     callProvider.shutdown();
   }
 
-  /**
-   * Creates and starts a new bi-directional streaming RPC after creating a new connection for the
-   * channel.
-   */
-  <ReqT, RespT> ClientCall<ReqT, RespT> runBidiStreamingRpcWithReset(
-      MethodDescriptor<ReqT, RespT> method, IncomingStreamObserver<RespT> observer) {
+  public void markChannelIdle() {
     this.callProvider.markChannelIdle();
-    return runBidiStreamingRpc(method, observer);
   }
 
   /**

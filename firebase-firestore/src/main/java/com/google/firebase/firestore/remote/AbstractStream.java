@@ -197,9 +197,6 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   final ExponentialBackoff backoff;
   final CallbackT listener;
 
-  /** Whether we should start the gRPC stream with a new underlying connection. */
-  private boolean useNewConnection = false;
-
   AbstractStream(
       FirestoreChannel channel,
       MethodDescriptor<ReqT, RespT> methodDescriptor,
@@ -250,12 +247,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
 
     CloseGuardedRunner closeGuardedRunner = new CloseGuardedRunner(closeCount);
     StreamObserver streamObserver = new StreamObserver(closeGuardedRunner);
-    if (useNewConnection) {
-      call = firestoreChannel.runBidiStreamingRpcWithReset(methodDescriptor, streamObserver);
-      useNewConnection = false;
-    } else {
-      call = firestoreChannel.runBidiStreamingRpc(methodDescriptor, streamObserver);
-    }
+    call = firestoreChannel.runBidiStreamingRpc(methodDescriptor, streamObserver);
 
     state = State.Starting;
   }
@@ -275,7 +267,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
    * @param finalState the intended state of the stream after closing.
    * @param status the status to emit to the listener.
    */
-  private void close(State finalState, Status status) {
+  private void close(State finalState, Status status, boolean forceNewConnection) {
     hardAssert(isStarted(), "Only started streams should be closed.");
     hardAssert(
         finalState == State.Error || status.equals(Status.OK),
@@ -312,11 +304,11 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
       // just expired.
       firestoreChannel.invalidateToken();
     } else if (code == Code.UNAVAILABLE) {
-      if (useNewConnection
+      if (forceNewConnection
           || status.getCause() instanceof java.net.ConnectException
           || status.getCause() instanceof java.net.UnknownHostException) {
         backoff.setTemporaryMaxDelay(RECONNECT_BACKOFF_MAX_DELAY_MS);
-        useNewConnection = true;
+        firestoreChannel.markChannelIdle();
       }
     }
 
@@ -347,6 +339,10 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
 
     // Notify the listener that the stream closed.
     listener.onClose(status);
+  }
+
+  private void close(State finalState, Status status) {
+    close(finalState, status, false);
   }
 
   /**
@@ -391,12 +387,9 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     }
   }
 
-  /** Called by the idle timer when the stream should close due to inactivity. */
+  /** Called when the connectivity attempt timer runs out. */
   void handleConnectionAttemptTimeout() {
-    useNewConnection = true;
-    if (this.isOpen()) {
-      close(State.Error, Status.UNAVAILABLE);
-    }
+    close(State.Error, Status.UNAVAILABLE, true);
   }
 
   /** Called when GRPC closes the stream, which should always be due to some error. */
