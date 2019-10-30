@@ -131,6 +131,7 @@ public class ExponentialBackoff {
 
     // Guard against the backoff delay already being past.
     long remainingDelayMs = Math.max(0, desiredDelayWithJitterMs - delaySoFarMs);
+
     if (currentBaseMs > 0) {
       Logger.debug(
           getClass().getSimpleName(),
