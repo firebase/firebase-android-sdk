@@ -69,7 +69,7 @@ public class AnalyticsEventsManager {
     Set<String> analyticsEvents = new HashSet<>();
     for (CampaignProto.ThickContent content : response.getMessagesList()) {
       for (CommonTypesProto.TriggeringCondition condition : content.getTriggeringConditionsList()) {
-        if (condition.getEvent() != null && !TextUtils.isEmpty(condition.getEvent().getName())) {
+        if (!TextUtils.isEmpty(condition.getEvent().getName())) {
           analyticsEvents.add(condition.getEvent().getName());
         }
       }
