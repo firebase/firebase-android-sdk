@@ -68,6 +68,12 @@ public class MockDatastore extends Datastore {
     }
 
     @Override
+    protected void close(State finalState, Status status, boolean forceNewConnection) {
+      open = false;
+      listener.onClose(status);
+    }
+
+    @Override
     public boolean isStarted() {
       return open;
     }

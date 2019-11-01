@@ -164,8 +164,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     listenTargets = new HashMap<>();
     writePipeline = new ArrayDeque<>();
-    onlineStateTracker =
-        new OnlineStateTracker(remoteStoreCallback::handleOnlineStateChange);
+    onlineStateTracker = new OnlineStateTracker(remoteStoreCallback::handleOnlineStateChange);
 
     // Create new streams (but note they're not started yet).
     watchStream =
@@ -417,7 +416,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         "startWatchStream() called when shouldStartWatchStream() is false.");
     watchChangeAggregator = new WatchChangeAggregator(this);
     watchStream.start();
-
     onlineStateTracker.handleWatchStreamStart();
 
     DelayedTask connectivityAttemptTimer =
@@ -430,7 +428,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
               if (canUseNetwork()) {
                 attemptReconnect();
               }
-              onlineStateTracker.handleWatchStreamFailure(Status.UNAVAILABLE);
             });
     onlineStateTracker.setConnectivityAttemptTimer(connectivityAttemptTimer);
   }

@@ -100,6 +100,7 @@ class OnlineStateTracker {
       hardAssert(this.connectivityAttemptTimer == null, "connectivityAttemptTimer must be null");
     } else {
       watchStreamFailures++;
+      clearConnectivityAttemptTimer();
       if (watchStreamFailures >= MAX_WATCH_STREAM_FAILURES) {
         logClientOfflineWarningIfNecessary(
             String.format(
@@ -162,7 +163,7 @@ class OnlineStateTracker {
   }
 
   /** Clears the connectivity attempt timer that has been passed in. */
-  void clearConnectivityAttemptTimer() {
+  private void clearConnectivityAttemptTimer() {
     if (connectivityAttemptTimer != null) {
       connectivityAttemptTimer.cancel();
       connectivityAttemptTimer = null;

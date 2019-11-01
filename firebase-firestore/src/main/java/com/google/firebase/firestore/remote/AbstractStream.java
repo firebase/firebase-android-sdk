@@ -268,7 +268,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
    * @param status the status to emit to the listener.
    * @param forceNewConnection whether to use a new connection the next time we open the stream
    */
-  private void close(State finalState, Status status, boolean forceNewConnection) {
+  protected void close(State finalState, Status status, boolean forceNewConnection) {
     hardAssert(isStarted(), "Only started streams should be closed.");
     hardAssert(
         finalState == State.Error || status.equals(Status.OK),
@@ -345,7 +345,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     listener.onClose(status);
   }
 
-  private void close(State finalState, Status status) {
+  protected void close(State finalState, Status status) {
     close(finalState, status, false);
   }
 
