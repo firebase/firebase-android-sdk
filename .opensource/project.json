@@ -11,7 +11,7 @@
         "docs/ktx/firestore.md": "Firestore KTX",
         "docs/ktx/functions.md": "Functions KTX",
         "docs/ktx/fiam.md": "In-App Messaging KTX",
-        "docs/ktx/fiamd.md": "InApp Messaging Display KTX",
+        "docs/ktx/fiamd.md": "In-App Messaging Display KTX",
         "docs/ktx/remote-config.md": "Remote Config KTX",
         "docs/ktx/storage.md": "Storage KTX",
         "docs/ktx/database.md": "Realtime Database KTX"
