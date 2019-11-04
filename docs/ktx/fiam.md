@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-To use the Firebase InAppMessaging Android SDK with Kotlin Extensions, add the following
+To use the Firebase In-App Messaging Android SDK with Kotlin Extensions, add the following
 to your app's `build.gradle` file:
 
 ```groovy
