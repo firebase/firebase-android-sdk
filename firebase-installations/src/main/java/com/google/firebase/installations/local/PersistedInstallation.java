@@ -53,6 +53,7 @@ public class PersistedInstallation {
      * locally before registering with FIS servers.
      */
     REGISTER_ERROR,
+    AUTHENTICATION_TOKEN_ERROR,
   }
 
   private static final String SHARED_PREFS_NAME = "PersistedInstallation";

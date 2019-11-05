@@ -29,12 +29,12 @@ import static com.google.firebase.installations.FisAndroidTestConstants.TEST_CRE
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_FID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_INSTALLATION_RESPONSE;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_INSTALLATION_RESPONSE_WITH_IID;
-import static com.google.firebase.installations.FisAndroidTestConstants.TEST_INSTALLATION_TOKEN_RESULT;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_INSTANCE_ID_1;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_PROJECT_ID;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_REFRESH_TOKEN;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP_2;
+import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_RESULT;
 import static com.google.firebase.installations.local.PersistedInstallationEntrySubject.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -59,6 +59,7 @@ import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
+import com.google.firebase.installations.remote.TokenResult;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -174,7 +175,7 @@ public class FirebaseInstallationsInstrumentedTest {
     // Mocks successful auth token generation
     when(backendClientReturnsOk.generateAuthToken(
             anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(TEST_INSTALLATION_TOKEN_RESULT);
+        .thenReturn(TEST_TOKEN_RESULT);
 
     when(persistedInstallationReturnsError.insertOrUpdatePersistedInstallationEntry(any()))
         .thenReturn(false);
@@ -589,6 +590,41 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   @Test
+  public void testGetAuthToken_fidError_persistedInstallationCleared() throws Exception {
+    // Update local storage with an expired installation entry to ensure that generate auth token
+    // is called.
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(EXPIRED_AUTH_TOKEN_ENTRY);
+    // Mocks error during auth token generation
+    when(backendClientReturnsOk.generateAuthToken(
+            anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(
+            TokenResult.builder().setResponseCode(TokenResult.ResponseCode.FID_ERROR).build());
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(true, false);
+
+    FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
+
+    // Expect exception
+    try {
+      Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH));
+      fail("getAuthToken() failed due to Server Error.");
+    } catch (ExecutionException expected) {
+      assertWithMessage("Exception class doesn't match")
+          .that(expected)
+          .hasCauseThat()
+          .isInstanceOf(FirebaseInstallationsException.class);
+      assertWithMessage("Exception status doesn't match")
+          .that(((FirebaseInstallationsException) expected.getCause()).getStatus())
+          .isEqualTo(FirebaseInstallationsException.Status.CLIENT_ERROR);
+    }
+
+    verify(backendClientReturnsOk, times(1))
+        .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
+    PersistedInstallationEntry updatedInstallationEntry =
+        persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(updatedInstallationEntry).hasRegistrationStatus(RegistrationStatus.NOT_GENERATED);
+  }
+
+  @Test
   public void testGetAuthToken_serverError_failure() throws Exception {
     when(mockPersistedInstallation.readPersistedInstallationEntryValue())
         .thenReturn(REGISTERED_INSTALLATION_ENTRY);
@@ -662,19 +698,19 @@ public class FirebaseInstallationsInstrumentedTest {
             AdditionalAnswers.answersWithDelay(
                 500,
                 (unused) ->
-                    InstallationTokenResult.builder()
+                    TokenResult.builder()
                         .setToken(TEST_AUTH_TOKEN_3)
                         .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                        .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
+                        .setResponseCode(TokenResult.ResponseCode.OK)
                         .build()))
         .doAnswer(
             AdditionalAnswers.answersWithDelay(
                 500,
                 (unused) ->
-                    InstallationTokenResult.builder()
+                    TokenResult.builder()
                         .setToken(TEST_AUTH_TOKEN_4)
                         .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                        .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
+                        .setResponseCode(TokenResult.ResponseCode.OK)
                         .build()))
         .when(backendClientReturnsOk)
         .generateAuthToken(anyString(), anyString(), anyString(), anyString());

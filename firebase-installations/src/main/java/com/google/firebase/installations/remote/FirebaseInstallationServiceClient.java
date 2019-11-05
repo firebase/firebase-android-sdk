@@ -200,7 +200,7 @@ public class FirebaseInstallationServiceClient {
    * @param refreshToken a token used to authenticate FIS requests
    */
   @NonNull
-  public InstallationTokenResult generateAuthToken(
+  public TokenResult generateAuthToken(
       @NonNull String apiKey,
       @NonNull String fid,
       @NonNull String projectID,
@@ -228,6 +228,17 @@ public class FirebaseInstallationServiceClient {
         if (httpResponseCode == 200) {
           return readGenerateAuthTokenResponse(httpsURLConnection);
         }
+
+        if (httpResponseCode == 401) {
+          return TokenResult.builder()
+              .setResponseCode(TokenResult.ResponseCode.REFRESH_TOKEN_ERROR)
+              .build();
+        }
+
+        if (httpResponseCode == 404) {
+          return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.FID_ERROR).build();
+        }
+
         // Usually the FIS server recovers from errors: retry one time before giving up.
         if (httpResponseCode >= 500 && httpResponseCode < 600) {
           retryCount++;
@@ -295,10 +306,9 @@ public class FirebaseInstallationServiceClient {
   }
 
   // Read the response from the generateAuthToken FirebaseInstallation API.
-  private InstallationTokenResult readGenerateAuthTokenResponse(HttpsURLConnection conn)
-      throws IOException {
+  private TokenResult readGenerateAuthTokenResponse(HttpsURLConnection conn) throws IOException {
     JsonReader reader = new JsonReader(new InputStreamReader(conn.getInputStream(), UTF_8));
-    InstallationTokenResult.Builder builder = InstallationTokenResult.builder();
+    TokenResult.Builder builder = TokenResult.builder();
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();
@@ -312,7 +322,7 @@ public class FirebaseInstallationServiceClient {
     }
     reader.endObject();
 
-    return builder.build();
+    return builder.setResponseCode(TokenResult.ResponseCode.OK).build();
   }
 
   // Read the error message from the response.
