@@ -84,6 +84,19 @@ class OnlineStateTracker {
   }
 
   /**
+   * Called by RemoteStore when a watch stream is started (including on each backoff attempt).
+   *
+   * <p>If this is the first attempt, it sets the OnlineState to UNKNOWN.
+   */
+  void handleWatchStreamStart() {
+    if (watchStreamFailures == 0) {
+      setAndBroadcastState(OnlineState.UNKNOWN);
+    }
+    hardAssert(
+        connectivityAttemptTimer == null, "connectivityAttemptTimer shouldn't be started yet");
+  }
+
+  /**
    * Called by RemoteStore when a watch stream fails.
    *
    * <p>Updates our OnlineState as appropriate. The first failure moves us to OnlineState.UNKNOWN.
@@ -110,12 +123,6 @@ class OnlineStateTracker {
                 status));
         setAndBroadcastState(OnlineState.OFFLINE);
       }
-    }
-  }
-
-  void handleWatchStreamStart() {
-    if (watchStreamFailures == 0) {
-      setAndBroadcastState(OnlineState.UNKNOWN);
     }
   }
 

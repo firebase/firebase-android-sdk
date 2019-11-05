@@ -67,7 +67,7 @@ public class AsyncQueue {
      * A timer used in OnlineStateTracker to transition from OnlineState UNKNOWN to OFFLINE after a
      * set timeout, rather than waiting indefinitely for success or failure.
      */
-    ONLINE_STATE_TIMEOUT,
+    CONNECTIVITY_ATTEMPT_TIMER,
     /** A timer used to periodically attempt LRU Garbage collection */
     GARBAGE_COLLECTION,
     /**

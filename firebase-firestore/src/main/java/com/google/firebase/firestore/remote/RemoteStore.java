@@ -420,7 +420,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     DelayedTask connectivityAttemptTimer =
         workerQueue.enqueueAfterDelay(
-            TimerId.ONLINE_STATE_TIMEOUT,
+            TimerId.CONNECTIVITY_ATTEMPT_TIMER,
             CONNECTIVITY_ATTEMPT_TIMEOUT_MS,
             () -> {
               // If the network has been explicitly disabled, make sure we don't accidentally

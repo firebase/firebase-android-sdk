@@ -59,7 +59,7 @@ class FirestoreChannel {
   private final CredentialsProvider credentialsProvider;
 
   /** Manages the gRPC channel and provides all gRPC ClientCalls. */
-  private GrpcCallProvider callProvider;
+  private final GrpcCallProvider callProvider;
 
   /** The value to use as resource prefix header. */
   private final String resourcePrefixValue;
@@ -92,6 +92,11 @@ class FirestoreChannel {
     callProvider.shutdown();
   }
 
+  /**
+   * Marks the underlying gRPC channel as idle. This allows on-going RPCs to continue, but the next
+   * RPC on the channel will trigger the creation of a new connection. This method is primarily used
+   * to reset the underlying connection.
+   */
   public void markChannelIdle() {
     this.callProvider.markChannelIdle();
   }

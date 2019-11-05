@@ -688,7 +688,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         timerId = TimerId.WRITE_STREAM_CONNECTION_BACKOFF;
         break;
       case "online_state_timeout":
-        timerId = TimerId.ONLINE_STATE_TIMEOUT;
+        timerId = TimerId.CONNECTIVITY_ATTEMPT_TIMER;
         break;
       default:
         throw Assert.fail("runTimer spec step specified unknown timer: %s", timer);
