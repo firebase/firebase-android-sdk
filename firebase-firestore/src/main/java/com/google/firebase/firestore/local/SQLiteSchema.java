@@ -145,7 +145,7 @@ class SQLiteSchema {
     }
 
     if (fromVersion == 9 && toVersion >= 10) {
-      // Firestore v21.10 contained a regeression that led us to disable an assert that is required
+      // Firestore v21.10 contained a regression that led us to disable an assert that is required
       // to ensure data integrity. While the schema did not change between version 9 and 10, we use
       // the schema bump to version 10 to clear any affected data.
       dropLastLimboFreeSnapshotVersion();

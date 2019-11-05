@@ -30,6 +30,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
+import com.google.firebase.firestore.local.IndexFreeQueryEngine;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LruDelegate;
@@ -39,7 +40,6 @@ import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.SQLitePersistence;
-import com.google.firebase.firestore.local.SimpleQueryEngine;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -267,10 +267,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     }
 
     persistence.start();
-    // TODO(index-free): Use IndexFreeQueryEngine/IndexedQueryEngine as appropriate. When we enable
-    // IndexFreeQueryEngine, we have to reset the "lastLimboFreeSnapshotVersion" for all persisted
-    // QueryData as we had to revert the part of the change that ensured that the data is reliable.
-    QueryEngine queryEngine = new SimpleQueryEngine();
+    QueryEngine queryEngine = new IndexFreeQueryEngine();
     localStore = new LocalStore(persistence, queryEngine, user);
     if (gc != null) {
       lruScheduler = gc.newScheduler(asyncQueue, localStore);

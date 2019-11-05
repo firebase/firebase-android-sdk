@@ -32,7 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
-import com.google.firebase.inappmessaging.CommonTypesProto.ContextualTrigger;
+import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
@@ -74,8 +74,7 @@ public class InAppMessageStreamManagerTest {
   private static final long FUTURE = NOW + 1000000;
 
   private static final TriggeringCondition.Builder ON_ANALYTICS_TRIGGER =
-      TriggeringCondition.newBuilder()
-          .setContextualTrigger(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT_NAME));
+      TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
   private static final TriggeringCondition ON_FOREGROUND_TRIGGER =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
   private static final Priority priorityTwo = Priority.newBuilder().setValue(2).build();

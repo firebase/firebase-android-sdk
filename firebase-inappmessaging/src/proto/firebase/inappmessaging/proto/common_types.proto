@@ -46,11 +46,11 @@ message CampaignTime {
 message TriggeringCondition {
   oneof condition {
     Trigger fiam_trigger = 1;
-    ContextualTrigger contextual_trigger = 2;
+    Event event = 2;
   }
 }
 
-message ContextualTrigger {
+message Event {
   // Triggers that represent the context for the in app message
   repeated TriggerParam trigger_params = 1;
 
