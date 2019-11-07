@@ -1,4 +1,4 @@
-# InAppMessagingDisplay Kotlin Extensions
+# In-App Messaging Display Kotlin Extensions
 
 ## Getting Started
 
