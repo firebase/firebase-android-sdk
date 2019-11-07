@@ -148,6 +148,9 @@ package com.google.firebase.firestore {
   }
 
   public class FirebaseFirestore {
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable);
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(Activity, @NonNull Runnable);
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(Executor, @NonNull Runnable);
     method @NonNull public com.google.firebase.firestore.WriteBatch batch();
     method @NonNull public Task<Void> clearPersistence();
     method @NonNull public com.google.firebase.firestore.CollectionReference collection(@NonNull String);
@@ -216,6 +219,10 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setPersistenceEnabled(boolean);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setSslEnabled(boolean);
     method @Deprecated @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setTimestampsInSnapshotsEnabled(boolean);
+    method @Nullable public String getHost();
+    method public boolean isPersistenceEnabled();
+    method public boolean isSslEnabled();
+    method public long getCacheSizeBytes();
   }
 
   public class GeoPoint {
@@ -271,12 +278,16 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.Query startAt(Object...);
     method @NonNull public com.google.firebase.firestore.Query whereArrayContains(@NonNull String, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereArrayContains(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
+    method @NonNull public com.google.firebase.firestore.Query whereArrayContainsAny(@NonNull String, @NonNull List<Object>);
+    method @NonNull public com.google.firebase.firestore.Query whereArrayContainsAny(@NonNull com.google.firebase.firestore.FieldPath, @NonNull List<Object>);
     method @NonNull public com.google.firebase.firestore.Query whereEqualTo(@NonNull String, @Nullable Object);
     method @NonNull public com.google.firebase.firestore.Query whereEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
     method @NonNull public com.google.firebase.firestore.Query whereGreaterThan(@NonNull String, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereGreaterThan(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereGreaterThanOrEqualTo(@NonNull String, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereGreaterThanOrEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
+    method @NonNull public com.google.firebase.firestore.Query whereIn(@NonNull String, @NonNull List<Object>);
+    method @NonNull public com.google.firebase.firestore.Query whereIn(@NonNull com.google.firebase.firestore.FieldPath, @NonNull List<Object>);
     method @NonNull public com.google.firebase.firestore.Query whereLessThan(@NonNull String, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereLessThan(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereLessThanOrEqualTo(@NonNull String, @NonNull Object);

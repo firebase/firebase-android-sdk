@@ -55,7 +55,6 @@ class LicenseResolverPluginSpec extends Specification {
 
         thirdPartyLicenses {
             add 'customLib1', "file:///${new File("src/test/fixtures/license.txt").absolutePath}"
-            add 'customLib2', "http://www.apache.org/licenses/LICENSE-2.0.txt"
         }
         """
 
@@ -80,7 +79,6 @@ class LicenseResolverPluginSpec extends Specification {
 
         def json = getLicenseJson()
         def txt = getLicenseText()
-        def picassoIndex = new JsonSlurper().parseText(json).Picasso
         def customLibIndex1 = new JsonSlurper().parseText(json).customLib1
         def customLibIndex2 = new JsonSlurper().parseText(json).customLib2
 
@@ -96,21 +94,12 @@ class LicenseResolverPluginSpec extends Specification {
         json != ""
 
         and: "license txt file contains dependency name"
-        txt.contains("OkHttp")
+        txt.contains("customLib1")
 
         and: "license txt file contains license"
-        txt.contains("Apache License")
+        txt.contains("Test license")
 
         and: "license index leads us directly to the license"
-        txt
-            .substring(picassoIndex.start, picassoIndex.start + picassoIndex.length)
-            .trim().startsWith("Apache License")
-
-        txt
-            .substring(picassoIndex.start, picassoIndex.start + picassoIndex.length)
-            .trim().endsWith("limitations under the License.")
-
-        and: "custom license declarations are present in the index"
         txt
             .substring(customLibIndex1.start, customLibIndex1.start + customLibIndex1.length)
             .trim().startsWith("Test license")
@@ -118,50 +107,9 @@ class LicenseResolverPluginSpec extends Specification {
         txt
             .substring(customLibIndex1.start, customLibIndex1.start + customLibIndex1.length)
             .trim().endsWith("Test license")
-
-        and: "explicit license declarations are present in the index"
-        txt
-            .substring(customLibIndex2.start, customLibIndex2.start + customLibIndex2.length)
-            .trim().startsWith("Apache License")
-
-        txt
-            .substring(customLibIndex1.start, customLibIndex2.start + customLibIndex2.length)
-            .trim().endsWith("limitations under the License.")
     }
 
-    def "License tasks cache downloaded licenses"() {
-        when:
-        def result = idempotentBuild("generateLicenses")
-
-        then: "Count the number of times the license was downloaded"
-        result.output.count(
-                'Downloading license from http://www.apache.org/licenses/LICENSE-2.0.txt') == 1
-
-    }
-
-    def "License tasks throw a useful exception when license is not parsable"() {
-        given:
-        buildFile.write """
-            plugins {
-                id 'com.android.library'
-                id 'LicenseResolverPlugin'
-            }
-            android.compileSdkVersion = 26
-
-            thirdPartyLicenses {
-                add 'customLib', "http://www.unparsablelicense.com"
-            }
-        """
-
-        when:
-        build("generateLicenses")
-
-        then:
-        Exception e = thrown(Exception)
-        e.getMessage().contains("Did you forget to add a custom RemoteLicenseFetcher?")
-    }
-
-    def "License tasks throw useful exception if file URI nor found"() {
+    def "License tasks throw useful exception if file URI not found"() {
         given:
         buildFile.write """
             plugins {
@@ -183,12 +131,12 @@ class LicenseResolverPluginSpec extends Specification {
         e.getMessage().contains("License file not found")
     }
 
-    private String getLicenseText(module) {
+    private String getLicenseText() {
         new File("${testProjectDir.root}/build/generated/third_party_licenses/",
                 'third_party_licenses.txt').text
     }
 
-    private String getLicenseJson(module) {
+    private String getLicenseJson() {
         new File("${testProjectDir.root}/build/generated/third_party_licenses/",
                 'third_party_licenses.json').text
     }
@@ -196,7 +144,7 @@ class LicenseResolverPluginSpec extends Specification {
     private BuildResult build(taskName) {
         GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withArguments(taskName)
+                .withArguments(taskName, "--stacktrace")
                 .withPluginClasspath()
                 .build()
     }

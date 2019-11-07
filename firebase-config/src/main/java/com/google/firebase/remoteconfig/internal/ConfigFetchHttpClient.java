@@ -195,6 +195,11 @@ public class ConfigFetchHttpClient {
           "The client had an error while calling the backend!", e);
     } finally {
       urlConnection.disconnect();
+      // Explicitly close the input stream due to a bug in the Android okhttp implementation.
+      try {
+        urlConnection.getInputStream().close();
+      } catch (IOException e) {
+      }
     }
 
     if (!backendHasUpdates(fetchResponse)) {

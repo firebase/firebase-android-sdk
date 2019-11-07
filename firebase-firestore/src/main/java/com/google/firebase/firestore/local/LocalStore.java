@@ -396,9 +396,9 @@ public final class LocalStore {
                 || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
                 || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
                     && existingDoc.hasPendingWrites())) {
-              // TODO(index-free): Comment in this assert when we enable Index-Free queries
-              // hardAssert(!SnapshotVersion.NONE.equals(remoteEvent.getSnapshotVersion()), "Cannot
-              // add a document when the remote version is zero");
+              hardAssert(
+                  !SnapshotVersion.NONE.equals(remoteEvent.getSnapshotVersion()),
+                  "Cannot add a document when the remote version is zero");
               remoteDocuments.add(doc, remoteEvent.getSnapshotVersion());
               changedDocs.put(key, doc);
             } else {

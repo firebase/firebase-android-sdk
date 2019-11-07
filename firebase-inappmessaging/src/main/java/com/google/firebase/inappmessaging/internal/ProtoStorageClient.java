@@ -97,7 +97,7 @@ public class ProtoStorageClient {
             try (FileInputStream inputStream = application.openFileInput(fileName)) {
               return parser.parseFrom(inputStream);
             } catch (InvalidProtocolBufferException | FileNotFoundException e) {
-              Logging.logw("Recoverable exception while reading cache: " + e.getMessage());
+              Logging.logi("Recoverable exception while reading cache: " + e.getMessage());
               return null;
             }
           }

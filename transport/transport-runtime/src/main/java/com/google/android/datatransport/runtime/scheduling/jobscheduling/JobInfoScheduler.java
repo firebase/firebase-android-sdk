@@ -27,7 +27,9 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.zip.Adler32;
 
 /**
@@ -59,10 +61,12 @@ public class JobInfoScheduler implements WorkScheduler {
   @VisibleForTesting
   int getJobId(TransportContext transportContext) {
     Adler32 checksum = new Adler32();
-    checksum.update(context.getPackageName().getBytes());
-    checksum.update(transportContext.getBackendName().getBytes());
+    checksum.update(context.getPackageName().getBytes(Charset.forName("UTF-8")));
+    checksum.update(transportContext.getBackendName().getBytes(Charset.forName("UTF-8")));
     checksum.update(
-        ByteBuffer.allocate(4).putInt(transportContext.getPriority().ordinal()).array());
+        ByteBuffer.allocate(4)
+            .putInt(PriorityMapping.toInt(transportContext.getPriority()))
+            .array());
     if (transportContext.getExtras() != null) {
       checksum.update(transportContext.getExtras());
     }
@@ -111,7 +115,7 @@ public class JobInfoScheduler implements WorkScheduler {
     PersistableBundle bundle = new PersistableBundle();
     bundle.putInt(ATTEMPT_NUMBER, attemptNumber);
     bundle.putString(BACKEND_NAME, transportContext.getBackendName());
-    bundle.putInt(EVENT_PRIORITY, transportContext.getPriority().ordinal());
+    bundle.putInt(EVENT_PRIORITY, PriorityMapping.toInt(transportContext.getPriority()));
     if (transportContext.getExtras() != null) {
       bundle.putString(EXTRAS, encodeToString(transportContext.getExtras(), DEFAULT));
     }

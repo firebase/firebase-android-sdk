@@ -67,9 +67,6 @@ configure(subprojects) {
         google()
         jcenter()
         mavenLocal()
-        maven {
-            url "https://oss.sonatype.org/content/repositories/snapshots"
-        }
     }
     apply plugin: 'net.ltgt.errorprone'
     dependencies {
@@ -106,9 +103,7 @@ configure(subprojects) {
         def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/proto/**', '**Manifest*.*']
         classDirectories = files([
             fileTree(dir: "$buildDir/intermediates/javac/release", excludes: excludes),
-            fileTree(dir: "$buildDir/intermediates/javac/releaseUnitTest", excludes: excludes),
             fileTree(dir: "$buildDir/tmp/kotlin-classes/release", excludes: excludes),
-            fileTree(dir: "$buildDir/tmp/kotlin-classes/releaseUnitTest", excludes: excludes),
         ])
         sourceDirectories = files(['src/main/java', 'src/main/kotlin'])
         executionData = fileTree(dir: "$buildDir", includes: ['jacoco/*.exec'])

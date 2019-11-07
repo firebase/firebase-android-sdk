@@ -43,7 +43,7 @@ public abstract class TransportContext {
   public abstract Priority getPriority();
 
   @Override
-  public String toString() {
+  public final String toString() {
     return String.format(
         "TransportContext(%s, %s, %s)",
         getBackendName(),
@@ -72,7 +72,6 @@ public abstract class TransportContext {
 
   @AutoValue.Builder
   public abstract static class Builder {
-    private static final Priority[] ALL_PRIORITIES = Priority.values();
 
     public abstract Builder setBackendName(String name);
 
@@ -81,16 +80,6 @@ public abstract class TransportContext {
     /** @hide */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public abstract Builder setPriority(Priority priority);
-
-    /** @hide */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public Builder setPriority(int value) {
-      if (value < 0 || value >= ALL_PRIORITIES.length) {
-        throw new IllegalArgumentException("Unknown Priority for value " + value);
-      }
-      setPriority(ALL_PRIORITIES[value]);
-      return this;
-    }
 
     public abstract TransportContext build();
   }

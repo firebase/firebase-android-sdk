@@ -1,4 +1,1 @@
--dontwarn com.google.firebase.components.Component$Instantiation
--dontwarn com.google.firebase.components.Component$ComponentType
 -dontwarn com.google.firebase.platforminfo.KotlinDetector
--keep class * implements com.google.firebase.components.ComponentRegistrar

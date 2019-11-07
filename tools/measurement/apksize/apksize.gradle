@@ -12,22 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.gradle.plugins.measurement.apksize.GenerateMeasurementsTask
-import com.google.firebase.gradle.plugins.measurement.aarsize.GenerateMeasurementsTask as GenerateAarMeasurementTask
 import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
+import com.google.firebase.gradle.plugins.measurement.aarsize.GenerateMeasurementsTask as GenerateAarMeasurementTask
+import com.google.firebase.gradle.plugins.measurement.apksize.GenerateMeasurementsTask
+import com.google.firebase.gradle.plugins.measurement.apksize.GenerateVariantPlugin
 
 apply plugin: "com.android.application"
 apply from: "default.gradle"
 android {
     flavorDimensions "apkSize"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
-apply from: "src/config/config.gradle"
-apply from: "src/database/database.gradle"
-apply from: "src/firestore/firestore.gradle"
-apply from: "src/functions/functions.gradle"
-apply from: "src/inappmessagingdisplay/inappmessaging-display.gradle"
-apply from: "src/storage/storage.gradle"
+apply from: "src/base/base.gradle"
+apply plugin: GenerateVariantPlugin
 
 /**
  * This task builds all supported variants (only aggressive as of writing) and writes the
@@ -48,6 +50,7 @@ task generateAarSizeMeasurements(type: GenerateAarMeasurementTask) {
     group 'Measurements'
 
     dependsOn (":publishAllToBuildDir")
+    reportFile = file("$buildDir/aar-size-report.json")
 }
 
 /**
@@ -61,8 +64,9 @@ task uploadApkSizeMeasurements(type: UploadMeasurementsTask) {
     group 'Measurements'
 
     dependsOn generateApkSizeMeasurements
+    dependsOn generateAarSizeMeasurements
 
-    reportFile = file("$buildDir/size-report.json")
+    reportFiles = files("$buildDir/size-report.json", "$buildDir/aar-size-report.json")
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }
 
