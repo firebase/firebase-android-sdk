@@ -529,7 +529,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         // reconnect).
         QueryData requestQueryData =
             new QueryData(
-                queryData.getQuery(),
+                queryData.getTarget(),
                 targetId,
                 queryData.getSequenceNumber(),
                 QueryPurpose.EXISTENCE_FILTER_MISMATCH);

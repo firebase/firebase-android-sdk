@@ -912,7 +912,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           // spec tests. For now, hard-code that it's a listen despite the fact that it's not always
           // the right value.
           QueryData queryData =
-              new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN)
+              new QueryData(
+                      query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN)
                   .withResumeToken(ByteString.copyFromUtf8(resumeToken), SnapshotVersion.NONE);
           expectedActiveTargets.put(targetId, queryData);
         }
@@ -997,7 +998,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       // TODO: validate the purpose of the target once it's possible to encode that in the
       // spec tests. For now, only validate properties that can be validated.
       // assertEquals(expectedTarget, actualTarget);
-      assertEquals(expectedTarget.getQuery(), actualTarget.getQuery());
+      assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
       assertEquals(expectedTarget.getTargetId(), actualTarget.getTargetId());
       assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
       assertEquals(

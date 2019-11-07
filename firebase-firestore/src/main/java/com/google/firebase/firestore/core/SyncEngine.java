@@ -181,16 +181,14 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     hardAssert(!queryViewsByQuery.containsKey(query), "We already listen to query: %s", query);
 
     QueryData queryData = localStore.allocateQuery(query);
-    ViewSnapshot viewSnapshot = initializeViewAndComputeSnapshot(queryData);
+    ViewSnapshot viewSnapshot = initializeViewAndComputeSnapshot(query, queryData.getTargetId());
     syncEngineListener.onViewSnapshots(Collections.singletonList(viewSnapshot));
 
     remoteStore.listen(queryData);
     return queryData.getTargetId();
   }
 
-  private ViewSnapshot initializeViewAndComputeSnapshot(QueryData queryData) {
-    Query query = queryData.getQuery();
-
+  private ViewSnapshot initializeViewAndComputeSnapshot(Query query, int targetId) {
     QueryResult queryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
 
     View view = new View(query, queryResult.getRemoteKeys());
@@ -200,9 +198,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
         view.getLimboDocuments().size() == 0,
         "View returned limbo docs before target ack from the server");
 
-    QueryView queryView = new QueryView(query, queryData.getTargetId(), view);
+    QueryView queryView = new QueryView(query, targetId, view);
     queryViewsByQuery.put(query, queryView);
-    queryViewsByTarget.put(queryData.getTargetId(), queryView);
+    queryViewsByTarget.put(targetId, queryView);
     return viewChange.getSnapshot();
   }
 
@@ -578,7 +576,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       Query query = Query.atPath(key.getPath());
       QueryData queryData =
           new QueryData(
-              query, limboTargetId, ListenSequence.INVALID, QueryPurpose.LIMBO_RESOLUTION);
+              query.toTarget(),
+              limboTargetId,
+              ListenSequence.INVALID,
+              QueryPurpose.LIMBO_RESOLUTION);
       limboResolutionsByTarget.put(limboTargetId, new LimboResolution(key));
       remoteStore.listen(queryData);
       limboTargetsByKey.put(key, limboTargetId);

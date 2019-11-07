@@ -52,6 +52,7 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -171,7 +172,7 @@ public abstract class LocalStoreTestCase {
   }
 
   private int allocateQuery(Query query) {
-    QueryData queryData = localStore.allocateQuery(query);
+    QueryData queryData = localStore.allocateTarget(query.toTarget());
     lastTargetId = queryData.getTargetId();
     return queryData.getTargetId();
   }
@@ -182,7 +183,7 @@ public abstract class LocalStoreTestCase {
   }
 
   private void releaseQuery(Query query) {
-    localStore.releaseQuery(query);
+    localStore.releaseTarget(query.toTarget());
   }
 
   /** Asserts that the last target ID is the given number. */
@@ -1061,28 +1062,29 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testLastLimboFreeSnapshotIsAdvancedDuringViewProcessing() {
     // This test verifies that the `lastLimboFreeSnapshot` version for QueryData is advanced when
-    // we compute a limbo-free free view and that the mapping is persisted when we release a query.
+    // we compute a limbo-free free view and that the mapping is persisted when we release a target.
 
     Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Target target = query.toTarget();
     int targetId = allocateQuery(query);
 
-    // Advance the query snapshot.
+    // Advance the target snapshot.
     applyRemoteEvent(noChangeEvent(targetId, 10));
 
-    // At this point, we have not yet confirmed that the query is limbo free.
-    QueryData cachedQueryData = localStore.getQueryData(query);
+    // At this point, we have not yet confirmed that the target is limbo free.
+    QueryData cachedQueryData = localStore.getQueryData(target);
     Assert.assertEquals(SnapshotVersion.NONE, cachedQueryData.getLastLimboFreeSnapshotVersion());
 
     // Mark the view synced, which updates the last limbo free snapshot version.
     udpateViews(targetId, /* fromCache=*/ false);
-    cachedQueryData = localStore.getQueryData(query);
+    cachedQueryData = localStore.getQueryData(target);
     Assert.assertEquals(version(10), cachedQueryData.getLastLimboFreeSnapshotVersion());
 
-    // The last limbo free snapshot version is persisted even if we release the query.
+    // The last limbo free snapshot version is persisted even if we release the target.
     releaseQuery(query);
 
     if (!garbageCollectorIsEager()) {
-      cachedQueryData = localStore.getQueryData(query);
+      cachedQueryData = localStore.getQueryData(target);
       Assert.assertEquals(version(10), cachedQueryData.getLastLimboFreeSnapshotVersion());
     }
   }

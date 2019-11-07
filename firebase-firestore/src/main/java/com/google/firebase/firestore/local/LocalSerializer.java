@@ -18,7 +18,7 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -210,40 +210,40 @@ public final class LocalSerializer {
         .setSnapshotVersion(rpcSerializer.encodeVersion(queryData.getSnapshotVersion()))
         .setResumeToken(queryData.getResumeToken());
 
-    Query query = queryData.getQuery();
-    if (query.isDocumentQuery()) {
-      result.setDocuments(rpcSerializer.encodeDocumentsTarget(query));
+    Target target = queryData.getTarget();
+    if (target.isDocumentQuery()) {
+      result.setDocuments(rpcSerializer.encodeDocumentsTarget(target));
     } else {
-      result.setQuery(rpcSerializer.encodeQueryTarget(query));
+      result.setQuery(rpcSerializer.encodeQueryTarget(target));
     }
 
     return result.build();
   }
 
-  QueryData decodeQueryData(com.google.firebase.firestore.proto.Target target) {
-    int targetId = target.getTargetId();
-    SnapshotVersion version = rpcSerializer.decodeVersion(target.getSnapshotVersion());
+  QueryData decodeQueryData(com.google.firebase.firestore.proto.Target targetProto) {
+    int targetId = targetProto.getTargetId();
+    SnapshotVersion version = rpcSerializer.decodeVersion(targetProto.getSnapshotVersion());
     SnapshotVersion lastLimboFreeSnapshotVersion =
-        rpcSerializer.decodeVersion(target.getLastLimboFreeSnapshotVersion());
-    ByteString resumeToken = target.getResumeToken();
-    long sequenceNumber = target.getLastListenSequenceNumber();
+        rpcSerializer.decodeVersion(targetProto.getLastLimboFreeSnapshotVersion());
+    ByteString resumeToken = targetProto.getResumeToken();
+    long sequenceNumber = targetProto.getLastListenSequenceNumber();
 
-    Query query;
-    switch (target.getTargetTypeCase()) {
+    Target target;
+    switch (targetProto.getTargetTypeCase()) {
       case DOCUMENTS:
-        query = rpcSerializer.decodeDocumentsTarget(target.getDocuments());
+        target = rpcSerializer.decodeDocumentsTarget(targetProto.getDocuments());
         break;
 
       case QUERY:
-        query = rpcSerializer.decodeQueryTarget(target.getQuery());
+        target = rpcSerializer.decodeQueryTarget(targetProto.getQuery());
         break;
 
       default:
-        throw fail("Unknown targetType %d", target.getTargetTypeCase());
+        throw fail("Unknown targetType %d", targetProto.getTargetTypeCase());
     }
 
     return new QueryData(
-        query,
+        target,
         targetId,
         sequenceNumber,
         QueryPurpose.LISTEN,
