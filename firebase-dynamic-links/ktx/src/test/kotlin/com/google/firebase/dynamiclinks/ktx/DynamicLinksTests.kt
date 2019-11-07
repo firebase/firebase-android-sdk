@@ -83,7 +83,7 @@ class DynamicLinksTests : BaseTestCase() {
         val link = "https://example.com"
         val domainUriPrefix = "https://example.page.link"
 
-        val dynamicLinkKtx = Firebase.dynamicLinks.createDynamicLink {
+        val dynamicLinkKtx = Firebase.dynamicLinks.dynamicLink {
             setLink(Uri.parse(link))
             setDomainUriPrefix(domainUriPrefix)
         }
@@ -98,125 +98,125 @@ class DynamicLinksTests : BaseTestCase() {
 
     @Test
     fun `androidParameters type-safe builder extension works`() {
-        val fallbackUrl = "https://android.com"
-        val minimumVersion = 19
+        val fallbackLink = "https://android.com"
+        val minVersion = 19
         val packageName = "com.example.android"
 
-        val dynamicLink = Firebase.dynamicLinks.createDynamicLink {
-            setLink(Uri.parse("https://example.com"))
-            setDomainUriPrefix("https://example.page.link")
+        val dynamicLink = Firebase.dynamicLinks.dynamicLink {
+            link = Uri.parse("https://example.com")
+            domainUriPrefix = "https://example.page.link"
             androidParameters {
-                setMinimumVersion(minimumVersion)
-                setFallbackUrl(Uri.parse(fallbackUrl))
+                minimumVersion = minVersion
+                fallbackUrl = Uri.parse(fallbackLink)
             }
         }
 
-        val anotherDynamicLink = Firebase.dynamicLinks.createDynamicLink {
-            setLink(Uri.parse("https://example.com"))
-            setDomainUriPrefix("https://example.page.link")
+        val anotherDynamicLink = Firebase.dynamicLinks.dynamicLink {
+            link = Uri.parse("https://example.com")
+            domainUriPrefix = "https://example.page.link"
             androidParameters(packageName) {
-                setMinimumVersion(minimumVersion)
-                setFallbackUrl(Uri.parse(fallbackUrl))
+                minimumVersion = minVersion
+                fallbackUrl = Uri.parse(fallbackLink)
             }
         }
 
-        assertThat(dynamicLink.uri.getQueryParameter("amv")?.toInt()).isEqualTo(minimumVersion)
-        assertThat(dynamicLink.uri.getQueryParameter("afl")).isEqualTo(fallbackUrl)
+        assertThat(dynamicLink.uri.getQueryParameter("amv")?.toInt()).isEqualTo(minVersion)
+        assertThat(dynamicLink.uri.getQueryParameter("afl")).isEqualTo(fallbackLink)
 
-        assertThat(anotherDynamicLink.uri.getQueryParameter("amv")?.toInt()).isEqualTo(minimumVersion)
-        assertThat(anotherDynamicLink.uri.getQueryParameter("afl")).isEqualTo(fallbackUrl)
+        assertThat(anotherDynamicLink.uri.getQueryParameter("amv")?.toInt()).isEqualTo(minVersion)
+        assertThat(anotherDynamicLink.uri.getQueryParameter("afl")).isEqualTo(fallbackLink)
         assertThat(anotherDynamicLink.uri.getQueryParameter("apn")).isEqualTo(packageName)
     }
 
     @Test
     fun `iosParameters type-safe builder extension works`() {
-        val appStoreId = "123456789"
-        val minimumVersion = "1.0.1"
-        val bundleId = "com.example.ios"
+        val iosAppStoreId = "123456789"
+        val iosMinimumVersion = "1.0.1"
+        val iosBundleId = "com.example.ios"
 
-        val dynamicLink = Firebase.dynamicLinks.createDynamicLink {
-            setLink(Uri.parse("https://example.com"))
-            setDomainUriPrefix("https://example.page.link")
-            iosParameters(bundleId) {
-                setAppStoreId(appStoreId)
-                setMinimumVersion(minimumVersion)
+        val dynamicLink = Firebase.dynamicLinks.dynamicLink {
+            link = Uri.parse("https://example.com")
+            domainUriPrefix = "https://example.page.link"
+            iosParameters(iosBundleId) {
+                appStoreId = iosAppStoreId
+                minimumVersion = iosMinimumVersion
             }
         }
 
-        assertThat(dynamicLink.uri.getQueryParameter("ibi")).isEqualTo(bundleId)
-        assertThat(dynamicLink.uri.getQueryParameter("imv")).isEqualTo(minimumVersion)
-        assertThat(dynamicLink.uri.getQueryParameter("isi")).isEqualTo(appStoreId)
+        assertThat(dynamicLink.uri.getQueryParameter("ibi")).isEqualTo(iosBundleId)
+        assertThat(dynamicLink.uri.getQueryParameter("imv")).isEqualTo(iosMinimumVersion)
+        assertThat(dynamicLink.uri.getQueryParameter("isi")).isEqualTo(iosAppStoreId)
     }
 
     @Test
     fun `googleAnalyticsParameters type-safe builder extension works`() {
-        val term = "Example Term"
-        val content = "Example Content"
-        val source = "Twitter"
-        val medium = "Social"
-        val campaign = "Example Promo"
+        val campaignTerm = "Example Term"
+        val campaignContent = "Example Content"
+        val campaignSource = "Twitter"
+        val campaignMedium = "Social"
+        val campaignName = "Example Promo"
 
-        val dynamicLink = Firebase.dynamicLinks.createDynamicLink {
-            setLink(Uri.parse("https://example.com"))
-            setDomainUriPrefix("https://example.page.link")
-            googleAnalyticsParameters(source, medium, campaign) {
-                setTerm(term)
-                setContent(content)
+        val dynamicLink = Firebase.dynamicLinks.dynamicLink {
+            link = Uri.parse("https://example.com")
+            domainUriPrefix = "https://example.page.link"
+            googleAnalyticsParameters(campaignSource, campaignMedium, campaignName) {
+                term = campaignTerm
+                content = campaignContent
             }
         }
 
-        assertThat(dynamicLink.uri.getQueryParameter("utm_content")).isEqualTo(content)
-        assertThat(dynamicLink.uri.getQueryParameter("utm_term")).isEqualTo(term)
-        assertThat(dynamicLink.uri.getQueryParameter("utm_source")).isEqualTo(source)
-        assertThat(dynamicLink.uri.getQueryParameter("utm_medium")).isEqualTo(medium)
-        assertThat(dynamicLink.uri.getQueryParameter("utm_campaign")).isEqualTo(campaign)
+        assertThat(dynamicLink.uri.getQueryParameter("utm_content")).isEqualTo(campaignContent)
+        assertThat(dynamicLink.uri.getQueryParameter("utm_term")).isEqualTo(campaignTerm)
+        assertThat(dynamicLink.uri.getQueryParameter("utm_source")).isEqualTo(campaignSource)
+        assertThat(dynamicLink.uri.getQueryParameter("utm_medium")).isEqualTo(campaignMedium)
+        assertThat(dynamicLink.uri.getQueryParameter("utm_campaign")).isEqualTo(campaignName)
     }
 
     @Test
     fun `itunesConnectAnalyticsParameters type-safe builder extension works`() {
-        val campaignToken = "example-campaign"
-        val providerToken = "123456"
+        val ct = "example-campaign"
+        val pt = "123456"
 
-        val dynamicLink = Firebase.dynamicLinks.createDynamicLink {
-            setLink(Uri.parse("https://example.com"))
-            setDomainUriPrefix("https://example.page.link")
+        val dynamicLink = Firebase.dynamicLinks.dynamicLink {
+            link = Uri.parse("https://example.com")
+            domainUriPrefix = "https://example.page.link"
             itunesConnectAnalyticsParameters {
-                setProviderToken(providerToken)
-                setCampaignToken(campaignToken)
+                providerToken = pt
+                campaignToken = ct
             }
         }
 
-        assertThat(dynamicLink.uri.getQueryParameter("pt")).isEqualTo(providerToken)
-        assertThat(dynamicLink.uri.getQueryParameter("ct")).isEqualTo(campaignToken)
+        assertThat(dynamicLink.uri.getQueryParameter("pt")).isEqualTo(pt)
+        assertThat(dynamicLink.uri.getQueryParameter("ct")).isEqualTo(ct)
     }
 
     @Test
     fun `socialMetaTagParameters type-safe builder extension works`() {
-        val title = "Example Title"
-        val description = "This link works whether the app is installed or not!"
+        val socialTitle = "Example Title"
+        val socialDescription = "This link works whether the app is installed or not!"
 
-        val dynamicLink = Firebase.dynamicLinks.createDynamicLink {
-            setLink(Uri.parse("https://example.com"))
-            setDomainUriPrefix("https://example.page.link")
+        val dynamicLink = Firebase.dynamicLinks.dynamicLink {
+            link = Uri.parse("https://example.com")
+            domainUriPrefix = "https://example.page.link"
             socialMetaTagParameters {
-                setTitle(title)
-                setDescription(description)
+                title = socialTitle
+                description = socialDescription
             }
         }
 
-        assertThat(dynamicLink.uri.getQueryParameter("st")).isEqualTo(title)
-        assertThat(dynamicLink.uri.getQueryParameter("sd")).isEqualTo(description)
+        assertThat(dynamicLink.uri.getQueryParameter("st")).isEqualTo(socialTitle)
+        assertThat(dynamicLink.uri.getQueryParameter("sd")).isEqualTo(socialDescription)
     }
 
     @Test
     fun `navigationInfoParameters type-safe builder extension works`() {
         val forcedRedirect = true
 
-        val dynamicLink = Firebase.dynamicLinks.createDynamicLink {
-            setLink(Uri.parse("https://example.com"))
-            setDomainUriPrefix("https://example.page.link")
+        val dynamicLink = Firebase.dynamicLinks.dynamicLink {
+            link = Uri.parse("https://example.com")
+            domainUriPrefix = "https://example.page.link"
             navigationInfoParameters {
-                setForcedRedirectEnabled(forcedRedirect)
+                forcedRedirectEnabled = true
             }
         }
 
