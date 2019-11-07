@@ -15,13 +15,15 @@ dependencies:
   * `firebase-firestore-ktx`
   * `firebase-functions`
   * `firebase-functions-ktx`
+  * `firebase-inappmessaging`
+  * `firebase-inappmessaging-ktx`
   * `firebase-inappmessaging-display`
   * `firebase-inappmessaging-display-ktx`
   * `firebase-remote-config`
   * `firebase-remote-config-ktx`
   * `firebase-storage`
   * `firebase-storage-ktx`
-  
+
 
 Firebase is an app development platform with tools to help you build, grow and
 monetize your app. More information about Firebase can be found at
