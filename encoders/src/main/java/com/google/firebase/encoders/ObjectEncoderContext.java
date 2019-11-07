@@ -56,6 +56,7 @@ public interface ObjectEncoderContext {
   ObjectEncoderContext add(@NonNull String name, double value)
       throws IOException, EncodingException;
 
+  // TODO: Add support for `long`.
   /** Add an entry with {@code name} mapped to the encoded primitive type of {@code value}. */
   @NonNull
   ObjectEncoderContext add(@NonNull String name, int value) throws IOException, EncodingException;

@@ -52,42 +52,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       jsonWriter.nullValue();
       return this;
     }
-    if (o.getClass().isArray()) {
-      jsonWriter.beginArray();
-      if (o.getClass().getComponentType() == int.class) {
-        int[] array = (int[]) o;
-        for (int item : array) {
-          jsonWriter.value(item);
-        }
-      } else if (o.getClass().getComponentType() == double.class) {
-        double[] array = (double[]) o;
-        for (double item : array) {
-          jsonWriter.value(item);
-        }
-      } else if (o.getClass().getComponentType() == boolean.class) {
-        boolean[] array = (boolean[]) o;
-        for (boolean item : array) {
-          jsonWriter.value(item);
-        }
-      } else {
-        Object[] array = (Object[]) o;
-        for (Object item : array) {
-          addSingle(item);
-        }
-      }
-      jsonWriter.endArray();
-      return this;
-    }
-    if (o instanceof Collection) {
-      Collection collection = (Collection) o;
-      jsonWriter.beginArray();
-      for (Object elem : collection) {
-        addSingle(elem);
-      }
-      jsonWriter.endObject();
-      return this;
-    }
-    return addSingle(o);
+    return add(o);
   }
 
   @NonNull
@@ -143,11 +108,46 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     return this;
   }
 
-  // Does not support collections
   @NonNull
-  <T> JsonValueObjectEncoderContext addSingle(@Nullable T o) throws IOException, EncodingException {
+  JsonValueObjectEncoderContext add(@Nullable Object o) throws IOException, EncodingException {
     if (o == null) {
       jsonWriter.nullValue();
+      return this;
+    }
+    // TODO: Add missing primitive types.
+    if (o.getClass().isArray()) {
+      jsonWriter.beginArray();
+      if (o.getClass().getComponentType() == int.class) {
+        int[] array = (int[]) o;
+        for (int item : array) {
+          jsonWriter.value(item);
+        }
+      } else if (o.getClass().getComponentType() == double.class) {
+        double[] array = (double[]) o;
+        for (double item : array) {
+          jsonWriter.value(item);
+        }
+      } else if (o.getClass().getComponentType() == boolean.class) {
+        boolean[] array = (boolean[]) o;
+        for (boolean item : array) {
+          jsonWriter.value(item);
+        }
+      } else {
+        Object[] array = (Object[]) o;
+        for (Object item : array) {
+          add(item);
+        }
+      }
+      jsonWriter.endArray();
+      return this;
+    }
+    if (o instanceof Collection) {
+      Collection collection = (Collection) o;
+      jsonWriter.beginArray();
+      for (Object elem : collection) {
+        add(elem);
+      }
+      jsonWriter.endArray();
       return this;
     }
     if (defaultEncoders.containsKey(o.getClass())) {

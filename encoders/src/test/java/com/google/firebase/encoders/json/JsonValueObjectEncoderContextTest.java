@@ -17,6 +17,7 @@ package com.google.firebase.encoders.json;
 import static com.google.common.truth.Truth.assertThat;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.common.collect.Lists;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
@@ -109,6 +110,66 @@ public class JsonValueObjectEncoderContextTest {
             String.format(
                 "{\"String\":%s,\"Integer\":%s,\"Double\":%s,\"Boolean\":%s,\"Null\":%s}",
                 "[\"string1\",\"string2\"]", "[1,2]", "[1.1,2.2]", "[true,false]", "[null,null]"));
+  }
+
+  @Test
+  public void testEncodingCollection() throws IOException, EncodingException {
+    ObjectEncoder<InnerDummyClass> anotherObjectEncoder =
+        (o, ctx) -> {
+          ctx.add("Name", "innerClass");
+        };
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> {
+          ctx.add("String", Lists.newArrayList("string1", "string2"))
+              .add(
+                  "Objects",
+                  Lists.newArrayList(InnerDummyClass.INSTANCE, InnerDummyClass.INSTANCE));
+        };
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .registerEncoder(InnerDummyClass.class, anotherObjectEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result)
+        .isEqualTo(
+            String.format(
+                "{\"String\":%s,\"Objects\":%s}",
+                "[\"string1\",\"string2\"]",
+                "[{\"Name\":\"innerClass\"},{\"Name\":\"innerClass\"}]"));
+  }
+
+  @Test
+  public void testEncodingNestedCollection() throws IOException, EncodingException {
+    ObjectEncoder<InnerDummyClass> anotherObjectEncoder =
+        (o, ctx) -> {
+          ctx.add("Name", "innerClass");
+        };
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> {
+          ctx.add("String", Lists.newArrayList("string1", "string2"))
+              .add(
+                  "Objects",
+                  Lists.newArrayList(
+                      Lists.newArrayList(InnerDummyClass.INSTANCE),
+                      Lists.newArrayList(InnerDummyClass.INSTANCE)));
+        };
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .registerEncoder(InnerDummyClass.class, anotherObjectEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result)
+        .isEqualTo(
+            String.format(
+                "{\"String\":%s,\"Objects\":%s}",
+                "[\"string1\",\"string2\"]",
+                "[[{\"Name\":\"innerClass\"}],[{\"Name\":\"innerClass\"}]]"));
   }
 
   @Test

@@ -28,9 +28,9 @@ import java.io.Writer;
 public interface DataEncoder {
 
   /** Encodes {@code obj} into {@code writer}. */
-  <T> void encode(@NonNull T obj, @NonNull Writer writer) throws IOException, EncodingException;
+  void encode(@NonNull Object obj, @NonNull Writer writer) throws IOException, EncodingException;
 
   /** Returns the string-encoded representation of {@code obj}. */
   @NonNull
-  <T> String encode(@NonNull T obj) throws EncodingException;
+  String encode(@NonNull Object obj) throws EncodingException;
 }

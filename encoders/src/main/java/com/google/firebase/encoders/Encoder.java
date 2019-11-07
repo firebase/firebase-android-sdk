@@ -19,13 +19,13 @@ import androidx.annotation.Nullable;
 import java.io.IOException;
 
 /**
- * An {@code Encoder} takes objects and writes them in {@link EncoderContext}.
+ * An {@link Encoder} takes objects and writes them in {@code EncoderContext}.
  *
- * <p>This interface should be used as base for interfaces with concrete {@code EncoderContexts}.
+ * <p>This interface should be used as base for interfaces with concrete {@code Contexts}.
  */
-interface Encoder<T, EncoderContext> {
+interface Encoder<TValue, TContext> {
 
-  /** Encode {@code obj} using {@code EncoderContext}. */
-  void encode(@Nullable T obj, @NonNull EncoderContext context)
+  /** Encode {@code obj} using {@code TContext}. */
+  void encode(@Nullable TValue obj, @NonNull TContext context)
       throws EncodingException, IOException;
 }

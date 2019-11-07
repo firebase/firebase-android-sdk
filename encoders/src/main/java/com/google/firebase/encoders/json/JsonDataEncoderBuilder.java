@@ -33,16 +33,8 @@ import java.util.TimeZone;
 
 public final class JsonDataEncoderBuilder {
 
-  private Map<Class, ObjectEncoder> defaultEncoders = new HashMap<>();
-  private Map<Class, ValueEncoder> defaultExtendedEncoders = new HashMap<>();
-
-  private static final class StringEncoder implements ValueEncoder<String> {
-    @Override
-    public void encode(@Nullable String o, @NonNull ValueEncoderContext ctx)
-        throws EncodingException, IOException {
-      ctx.add(o);
-    }
-  }
+  private Map<Class, ObjectEncoder> objectEncoders = new HashMap<>();
+  private Map<Class, ValueEncoder> valueEncoders = new HashMap<>();
 
   private static final class TimestampEncoder implements ValueEncoder<Date> {
     private static final DateFormat rfc339;
@@ -59,22 +51,25 @@ public final class JsonDataEncoderBuilder {
     }
   }
 
+  private static final ValueEncoder<String> STRING_ENCODER = (o, ctx) -> ctx.add(o);
+  private static final TimestampEncoder TIMESTAMP_ENCODER = new TimestampEncoder();
+
   public JsonDataEncoderBuilder() {
-    defaultExtendedEncoders.put(String.class, new StringEncoder());
-    defaultExtendedEncoders.put(Date.class, new TimestampEncoder());
+    valueEncoders.put(String.class, STRING_ENCODER);
+    valueEncoders.put(Date.class, TIMESTAMP_ENCODER);
   }
 
   @NonNull
   <T> JsonDataEncoderBuilder registerEncoder(
       @NonNull Class<T> clazz, @NonNull ObjectEncoder<T> objectEncoder) {
-    defaultEncoders.put(clazz, objectEncoder);
+    objectEncoders.put(clazz, objectEncoder);
     return this;
   }
 
   @NonNull
   <T> JsonDataEncoderBuilder registerEncoder(
       @NonNull Class<T> clazz, @NonNull ValueEncoder<T> encoder) {
-    defaultExtendedEncoders.put(clazz, encoder);
+    valueEncoders.put(clazz, encoder);
     return this;
   }
 
@@ -82,16 +77,16 @@ public final class JsonDataEncoderBuilder {
   DataEncoder build() {
     return new DataEncoder() {
       @Override
-      public <T> void encode(T o, Writer writer) throws IOException, EncodingException {
+      public void encode(Object o, Writer writer) throws IOException, EncodingException {
         JsonValueObjectEncoderContext encoderContext =
-            new JsonValueObjectEncoderContext(writer, defaultEncoders, defaultExtendedEncoders);
+            new JsonValueObjectEncoderContext(writer, objectEncoders, valueEncoders);
         encoderContext.initialize();
-        encoderContext.addSingle(o);
+        encoderContext.add(o);
         encoderContext.close();
       }
 
       @Override
-      public <T> String encode(T o) throws EncodingException {
+      public String encode(Object o) throws EncodingException {
         StringWriter stringWriter = new StringWriter();
         try {
           encode(o, stringWriter);

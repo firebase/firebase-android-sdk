@@ -34,6 +34,7 @@ public interface ValueEncoderContext {
   @NonNull
   ValueEncoderContext add(double value) throws IOException, EncodingException;
 
+  // TODO: Add support for `long`.
   /** Adds {@code value} as a primitive encoded value. */
   @NonNull
   ValueEncoderContext add(int value) throws IOException, EncodingException;

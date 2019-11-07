@@ -2,8 +2,8 @@
 package com.google.firebase.encoders {
 
   public interface DataEncoder {
-    method public <T> void encode(@NonNull T, @NonNull Writer) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public <T> String encode(@NonNull T) throws com.google.firebase.encoders.EncodingException;
+    method public void encode(@NonNull Object, @NonNull Writer) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public String encode(@NonNull Object) throws com.google.firebase.encoders.EncodingException;
   }
 
   public final class EncodingException {
