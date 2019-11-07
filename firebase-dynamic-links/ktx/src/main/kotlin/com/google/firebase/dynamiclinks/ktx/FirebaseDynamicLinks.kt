@@ -98,7 +98,7 @@ fun DynamicLink.Builder.navigationInfoParameters(init: DynamicLink.NavigationInf
 }
 
 /** Creates a [DynamicLink] object initialized using the [init] function. */
-fun FirebaseDynamicLinks.createDynamicLink(init: DynamicLink.Builder.() -> Unit): DynamicLink {
+fun FirebaseDynamicLinks.dynamicLink(init: DynamicLink.Builder.() -> Unit): DynamicLink {
     val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
     builder.init()
     return builder.buildDynamicLink()
