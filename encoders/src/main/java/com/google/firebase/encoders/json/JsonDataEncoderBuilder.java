@@ -52,10 +52,16 @@ public final class JsonDataEncoderBuilder {
   }
 
   private static final ValueEncoder<String> STRING_ENCODER = (o, ctx) -> ctx.add(o);
+  private static final ValueEncoder<Integer> INTEGER_ENCODER = (o, ctx) -> ctx.add(o);
+  private static final ValueEncoder<Double> DOUBLE_ENCODER = (o, ctx) -> ctx.add(o);
+  private static final ValueEncoder<Boolean> BOOLEAN_ENCODER = (o, ctx) -> ctx.add(o);
   private static final TimestampEncoder TIMESTAMP_ENCODER = new TimestampEncoder();
 
   public JsonDataEncoderBuilder() {
     valueEncoders.put(String.class, STRING_ENCODER);
+    valueEncoders.put(Integer.class, INTEGER_ENCODER);
+    valueEncoders.put(Double.class, DOUBLE_ENCODER);
+    valueEncoders.put(Boolean.class, BOOLEAN_ENCODER);
     valueEncoders.put(Date.class, TIMESTAMP_ENCODER);
   }
 

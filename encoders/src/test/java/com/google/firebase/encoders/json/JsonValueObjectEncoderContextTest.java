@@ -142,6 +142,29 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
+  public void testEncodingCollectionBoxedPrimitives() throws IOException, EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> {
+          ctx.add("Integer", Lists.newArrayList(1, 2, 3))
+              .add("Double", Lists.newArrayList(1.1, 2.2, 3.3))
+              .add("Boolean", Lists.newArrayList(true, false));
+          ;
+        };
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result)
+        .isEqualTo(
+            String.format(
+                "{\"Integer\":%s,\"Double\":%s,\"Boolean\":%s}",
+                "[1,2,3]", "[1.1,2.2,3.3]", "[true,false]"));
+  }
+
+  @Test
   public void testEncodingNestedCollection() throws IOException, EncodingException {
     ObjectEncoder<InnerDummyClass> anotherObjectEncoder =
         (o, ctx) -> {
