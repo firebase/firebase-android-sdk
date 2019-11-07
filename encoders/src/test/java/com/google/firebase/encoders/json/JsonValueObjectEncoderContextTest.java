@@ -15,6 +15,9 @@
 package com.google.firebase.encoders.json;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.common.collect.Lists;
@@ -23,6 +26,7 @@ import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ValueEncoder;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.Calendar;
 import java.util.TimeZone;
 import org.junit.Assert;
@@ -258,5 +262,20 @@ public class JsonValueObjectEncoderContextTest {
   public void testMissingEncoder() throws IOException, EncodingException {
     DataEncoder dataEncoder = new JsonDataEncoderBuilder().build();
     Assert.assertThrows(EncodingException.class, () -> dataEncoder.encode(DummyClass.INSTANCE));
+  }
+
+  @Test
+  public void testEncoderError() throws IOException, EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder = (o, ctx) -> ctx.add("name", "value");
+    Writer mockWriter = mock(Writer.class);
+    doThrow(IOException.class).when(mockWriter).write(any(String.class));
+
+    Assert.assertThrows(
+        IOException.class,
+        () ->
+            new JsonDataEncoderBuilder()
+                .registerEncoder(DummyClass.class, objectEncoder)
+                .build()
+                .encode(DummyClass.INSTANCE, mockWriter));
   }
 }
