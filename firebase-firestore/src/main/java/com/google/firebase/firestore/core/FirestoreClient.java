@@ -30,6 +30,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
+import com.google.firebase.firestore.local.IndexFreeQueryEngine;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LruDelegate;
@@ -39,7 +40,6 @@ import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.SQLitePersistence;
-import com.google.firebase.firestore.local.SimpleQueryEngine;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -96,19 +96,6 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
     TaskCompletionSource<User> firstUser = new TaskCompletionSource<>();
     final AtomicBoolean initialized = new AtomicBoolean(false);
-    credentialsProvider.setChangeListener(
-        (User user) -> {
-          if (initialized.compareAndSet(false, true)) {
-            hardAssert(!firstUser.getTask().isComplete(), "Already fulfilled first user task");
-            firstUser.setResult(user);
-          } else {
-            asyncQueue.enqueueAndForget(
-                () -> {
-                  Logger.debug(LOG_TAG, "Credential changed. Current user: %s", user.getUid());
-                  syncEngine.handleCredentialChange(user);
-                });
-          }
-        });
 
     // Defer initialization until we get the current user from the changeListener. This is
     // guaranteed to be synchronously dispatched onto our worker queue, so we will be initialized
@@ -125,6 +112,21 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
                 settings.getCacheSizeBytes());
           } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
+          }
+        });
+
+    credentialsProvider.setChangeListener(
+        (User user) -> {
+          if (initialized.compareAndSet(false, true)) {
+            hardAssert(!firstUser.getTask().isComplete(), "Already fulfilled first user task");
+            firstUser.setResult(user);
+          } else {
+            asyncQueue.enqueueAndForget(
+                () -> {
+                  hardAssert(syncEngine != null, "SyncEngine not yet initialized");
+                  Logger.debug(LOG_TAG, "Credential changed. Current user: %s", user.getUid());
+                  syncEngine.handleCredentialChange(user);
+                });
           }
         });
   }
@@ -219,9 +221,8 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     return source.getTask();
   }
 
-  /** Tries to execute the transaction in updateFunction up to retries times. */
-  public <TResult> Task<TResult> transaction(
-      Function<Transaction, Task<TResult>> updateFunction, int retries) {
+  /** Tries to execute the transaction in updateFunction. */
+  public <TResult> Task<TResult> transaction(Function<Transaction, Task<TResult>> updateFunction) {
     this.verifyNotTerminated();
     return AsyncQueue.callTask(
         asyncQueue.getExecutor(), () -> syncEngine.transaction(asyncQueue, updateFunction));
@@ -266,10 +267,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     }
 
     persistence.start();
-    // TODO(index-free): Use IndexFreeQueryEngine/IndexedQueryEngine as appropriate. When we enable
-    // IndexFreeQueryEngine, we have to reset the "lastLimboFreeSnapshotVersion" for all persisted
-    // QueryData as we had to revert the part of the change that ensured that the data is reliable.
-    QueryEngine queryEngine = new SimpleQueryEngine();
+    QueryEngine queryEngine = new IndexFreeQueryEngine();
     localStore = new LocalStore(persistence, queryEngine, user);
     if (gc != null) {
       lruScheduler = gc.newScheduler(asyncQueue, localStore);

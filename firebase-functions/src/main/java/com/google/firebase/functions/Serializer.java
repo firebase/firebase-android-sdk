@@ -107,8 +107,8 @@ class Serializer {
       Iterator<String> keys = m.keys();
       while (keys.hasNext()) {
         String k = keys.next();
-        if (!(k instanceof String)) {
-          throw new IllegalArgumentException("Object keys must be strings.");
+        if (k == null) {
+          throw new IllegalArgumentException("Object keys cannot be null.");
         }
         String key = (String) k;
         Object value = encode(m.opt(k));

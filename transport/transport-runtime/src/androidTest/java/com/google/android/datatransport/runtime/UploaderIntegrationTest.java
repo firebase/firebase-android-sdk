@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
@@ -50,6 +51,7 @@ import org.mockito.stubbing.Answer;
 @RunWith(AndroidJUnit4.class)
 public class UploaderIntegrationTest {
   private static final String testTransport = "testTransport";
+  private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
   private final TransportBackend mockBackend = mock(TransportBackend.class);
   private final BackendRegistry mockRegistry = mock(BackendRegistry.class);
   private final Context context = InstrumentationRegistry.getInstrumentation().getContext();
@@ -99,7 +101,9 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
+            .setEncodedPayload(
+                new EncodedPayload(
+                    PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(2))
@@ -136,7 +140,9 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
+            .setEncodedPayload(
+                new EncodedPayload(
+                    PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1))
@@ -168,7 +174,9 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
+            .setEncodedPayload(
+                new EncodedPayload(
+                    PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
     transport.send(stringEvent);
     verify(mockBackend, times(1))
@@ -200,7 +208,9 @@ public class UploaderIntegrationTest {
             .setEventMillis(3)
             .setUptimeMillis(1)
             .setTransportName(testTransport)
-            .setPayload("TelemetryData".getBytes(Charset.defaultCharset()))
+            .setEncodedPayload(
+                new EncodedPayload(
+                    PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
     transport.send(stringEvent);
     verify(spyScheduler, times(1)).schedule(any(), eq(2));

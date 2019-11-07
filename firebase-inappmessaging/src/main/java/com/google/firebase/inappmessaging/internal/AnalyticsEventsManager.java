@@ -69,9 +69,8 @@ public class AnalyticsEventsManager {
     Set<String> analyticsEvents = new HashSet<>();
     for (CampaignProto.ThickContent content : response.getMessagesList()) {
       for (CommonTypesProto.TriggeringCondition condition : content.getTriggeringConditionsList()) {
-        if (condition.getContextualTrigger() != null
-            && !TextUtils.isEmpty(condition.getContextualTrigger().getName())) {
-          analyticsEvents.add(condition.getContextualTrigger().getName());
+        if (!TextUtils.isEmpty(condition.getEvent().getName())) {
+          analyticsEvents.add(condition.getEvent().getName());
         }
       }
     }

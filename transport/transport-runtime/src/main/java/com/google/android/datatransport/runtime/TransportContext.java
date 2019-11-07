@@ -43,7 +43,7 @@ public abstract class TransportContext {
   public abstract Priority getPriority();
 
   @Override
-  public String toString() {
+  public final String toString() {
     return String.format(
         "TransportContext(%s, %s, %s)",
         getBackendName(),

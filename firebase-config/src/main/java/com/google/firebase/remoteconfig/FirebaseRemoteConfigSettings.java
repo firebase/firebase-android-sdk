@@ -135,6 +135,21 @@ public class FirebaseRemoteConfigSettings {
     }
 
     /**
+     * Returns the fetch timeout in seconds.
+     *
+     * <p>The timeout specifies how long the client should wait for a connection to the Firebase
+     * Remote Config servers.
+     */
+    public long getFetchTimeoutInSeconds() {
+      return fetchTimeoutInSeconds;
+    }
+
+    /** Returns the minimum interval between successive fetches calls in seconds. */
+    public long getMinimumFetchIntervalInSeconds() {
+      return minimumFetchInterval;
+    }
+
+    /**
      * Returns a {@link FirebaseRemoteConfigSettings} with the settings provided to this builder.
      */
     @NonNull

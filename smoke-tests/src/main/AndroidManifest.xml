@@ -12,6 +12,6 @@
     </activity>
 
     <meta-data android:name="com.google.firebase.testing.classes"
-      android:value="com.google.firebase.testing.combined.AllTests" />
+      android:value="com.google.firebase.testing.TestSuite" />
   </application>
 </manifest>

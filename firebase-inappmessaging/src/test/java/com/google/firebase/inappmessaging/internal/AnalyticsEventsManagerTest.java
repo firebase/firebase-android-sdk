@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 
 import android.util.Log;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.inappmessaging.CommonTypesProto.ContextualTrigger;
+import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.MessagesProto.BannerMessage;
@@ -58,8 +58,7 @@ public class AnalyticsEventsManagerTest {
   private static final String ANALYTICS_EVENT_1 = "event1";
 
   private static final TriggeringCondition.Builder onAnalyticsEvent =
-      TriggeringCondition.newBuilder()
-          .setContextualTrigger(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT_1));
+      TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_1));
   private static final TriggeringCondition onForeground =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
 
@@ -128,8 +127,7 @@ public class AnalyticsEventsManagerTest {
     String event2 = "event2";
 
     TriggeringCondition.Builder onAnalyticsEvent2 =
-        TriggeringCondition.newBuilder()
-            .setContextualTrigger(ContextualTrigger.newBuilder().setName(event2));
+        TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(event2));
 
     ThickContent.Builder event2ContentBuilder =
         ThickContent.newBuilder()
@@ -160,14 +158,11 @@ public class AnalyticsEventsManagerTest {
     String event4 = "event4";
 
     TriggeringCondition.Builder onAnalyticsEvent2 =
-        TriggeringCondition.newBuilder()
-            .setContextualTrigger(ContextualTrigger.newBuilder().setName(event2));
+        TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(event2));
     TriggeringCondition.Builder onAnalyticsEvent3 =
-        TriggeringCondition.newBuilder()
-            .setContextualTrigger(ContextualTrigger.newBuilder().setName(event3));
+        TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(event3));
     TriggeringCondition.Builder onAnalyticsEvent4 =
-        TriggeringCondition.newBuilder()
-            .setContextualTrigger(ContextualTrigger.newBuilder().setName(event4));
+        TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(event4));
 
     ThickContent.Builder event1ContentBuilder =
         ThickContent.newBuilder()
@@ -208,8 +203,7 @@ public class AnalyticsEventsManagerTest {
     for (int i = 0; i < 51; i++) {
 
       TriggeringCondition.Builder onAnalyticsEvent =
-          TriggeringCondition.newBuilder()
-              .setContextualTrigger(ContextualTrigger.newBuilder().setName(String.valueOf(i)));
+          TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(String.valueOf(i)));
       contentBuilder.addTriggeringConditions(onAnalyticsEvent);
       expectedNames.add(String.valueOf(i));
     }
