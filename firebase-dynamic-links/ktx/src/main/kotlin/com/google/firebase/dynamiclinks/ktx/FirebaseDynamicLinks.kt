@@ -112,7 +112,7 @@ fun FirebaseDynamicLinks.shortLinkAsync(init: DynamicLink.Builder.() -> Unit): T
 }
 
 /** Creates a [ShortDynamicLink] object initialized using the [init] function. */
-fun FirebaseDynamicLinks.createShortDynamicLink(suffix: Int, init: DynamicLink.Builder.() -> Unit): Task<ShortDynamicLink> {
+fun FirebaseDynamicLinks.shortLinkAsync(suffix: Int, init: DynamicLink.Builder.() -> Unit): Task<ShortDynamicLink> {
     val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
     builder.init()
     return builder.buildShortDynamicLink(suffix)
