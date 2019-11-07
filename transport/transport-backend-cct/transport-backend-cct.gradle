@@ -71,6 +71,7 @@ dependencies {
 
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
 
+    testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation("com.github.tomakehurst:wiremock-jre8:2.21.0") {
