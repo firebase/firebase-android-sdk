@@ -451,16 +451,16 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesListenRequestLabels() {
     Query query = query("collection/key");
-    QueryData queryData = new QueryData(query, 2, 3, QueryPurpose.LISTEN);
+    QueryData queryData = new QueryData(query.toTarget(), 2, 3, QueryPurpose.LISTEN);
 
     Map<String, String> result = serializer.encodeListenRequestLabels(queryData);
     assertNull(result);
 
-    queryData = new QueryData(query, 2, 3, QueryPurpose.LIMBO_RESOLUTION);
+    queryData = new QueryData(query.toTarget(), 2, 3, QueryPurpose.LIMBO_RESOLUTION);
     result = serializer.encodeListenRequestLabels(queryData);
     assertEquals(map("goog-listen-tags", "limbo-document"), result);
 
-    queryData = new QueryData(query, 2, 3, QueryPurpose.EXISTENCE_FILTER_MISMATCH);
+    queryData = new QueryData(query.toTarget(), 2, 3, QueryPurpose.EXISTENCE_FILTER_MISMATCH);
     result = serializer.encodeListenRequestLabels(queryData);
     assertEquals(map("goog-listen-tags", "existence-filter-mismatch"), result);
   }
@@ -468,7 +468,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesFirstLevelKeyQueries() {
     Query q = Query.atPath(ResourcePath.fromString("docs/1"));
-    Target actual = serializer.encodeTarget(new QueryData(q, 1, 2, QueryPurpose.LISTEN));
+    Target actual = serializer.encodeTarget(new QueryData(q.toTarget(), 1, 2, QueryPurpose.LISTEN));
 
     DocumentsTarget.Builder docs =
         DocumentsTarget.newBuilder().addDocuments("projects/p/databases/d/documents/docs/1");
@@ -480,7 +480,9 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeDocumentsTarget(serializer.encodeDocumentsTarget(q)), q);
+    assertEquals(
+        serializer.decodeDocumentsTarget(serializer.encodeDocumentsTarget(q.toTarget())),
+        q.toTarget());
   }
 
   @Test
@@ -504,7 +506,8 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
   }
 
   @Test
@@ -529,7 +532,8 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
   }
 
   @Test
@@ -564,7 +568,8 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
   }
 
   @Test
@@ -625,7 +630,8 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
   }
 
   @Test
@@ -739,7 +745,8 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
   }
 
   @Test
@@ -767,7 +774,8 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
   }
 
   @Test
@@ -801,7 +809,8 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
   }
 
   @Test
@@ -826,7 +835,8 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
   }
 
   @Test
@@ -866,14 +876,15 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
   }
 
   @Test
   public void testEncodesResumeTokens() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
     QueryData queryData =
-        new QueryData(q, 1, 2, QueryPurpose.LISTEN)
+        new QueryData(q.toTarget(), 1, 2, QueryPurpose.LISTEN)
             .withResumeToken(TestUtil.resumeToken(1000), SnapshotVersion.NONE);
     Target actual = serializer.encodeTarget(queryData);
 
@@ -894,7 +905,8 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(serializer.decodeQueryTarget(serializer.encodeQueryTarget(q)), q);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
   }
 
   /**
@@ -902,7 +914,7 @@ public final class RemoteSerializerTest {
    * QueryData, but for the most part we're just testing variations on Query.
    */
   private QueryData wrapQueryData(Query query) {
-    return new QueryData(query, 1, 2, QueryPurpose.LISTEN);
+    return new QueryData(query.toTarget(), 1, 2, QueryPurpose.LISTEN);
   }
 
   @Test

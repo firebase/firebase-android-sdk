@@ -22,10 +22,9 @@ import android.util.SparseArray;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -97,10 +96,11 @@ final class SQLiteQueryCache implements QueryCache {
 
   private void saveQueryData(QueryData queryData) {
     int targetId = queryData.getTargetId();
-    String canonicalId = queryData.getQuery().getCanonicalId();
+    String canonicalId = queryData.getTarget().getCanonicalId();
     Timestamp version = queryData.getSnapshotVersion().getTimestamp();
 
-    Target targetProto = localSerializer.encodeQueryData(queryData);
+    com.google.firebase.firestore.proto.Target targetProto =
+        localSerializer.encodeQueryData(queryData);
 
     db.execute(
         "INSERT OR REPLACE INTO targets ("
@@ -207,11 +207,11 @@ final class SQLiteQueryCache implements QueryCache {
 
   @Nullable
   @Override
-  public QueryData getQueryData(Query query) {
+  public QueryData getQueryData(Target target) {
     // Querying the targets table by canonical_id may yield more than one result because
     // canonical_id values are not required to be unique per target. This query depends on the
     // query_targets index to be efficient.
-    String canonicalId = query.getCanonicalId();
+    String canonicalId = target.getCanonicalId();
     QueryDataHolder result = new QueryDataHolder();
     db.query("SELECT target_proto FROM targets WHERE canonical_id = ?")
         .binding(canonicalId)
@@ -222,7 +222,7 @@ final class SQLiteQueryCache implements QueryCache {
 
               // After finding a potential match, check that the query is actually equal to the
               // requested query.
-              if (query.equals(found.getQuery())) {
+              if (target.equals(found.getTarget())) {
                 result.queryData = found;
               }
             });
@@ -235,7 +235,8 @@ final class SQLiteQueryCache implements QueryCache {
 
   private QueryData decodeQueryData(byte[] bytes) {
     try {
-      return localSerializer.decodeQueryData(Target.parseFrom(bytes));
+      return localSerializer.decodeQueryData(
+          com.google.firebase.firestore.proto.Target.parseFrom(bytes));
     } catch (InvalidProtocolBufferException e) {
       throw fail("QueryData failed to parse: %s", e);
     }

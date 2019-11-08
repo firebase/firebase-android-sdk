@@ -30,10 +30,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-/** Represents the internal structure of a Firestore Query */
+/**
+ * Encapsulates all the query attributes we support in the SDK. It can be run against the
+ * LocalStore, as well as be converted to a {@code Target} to query the RemoteStore results.
+ */
 public final class Query {
-  public static final long NO_LIMIT = -1;
-
   /**
    * Creates and returns a new Query.
    *
@@ -52,6 +53,9 @@ public final class Query {
   private final List<OrderBy> explicitSortOrder;
 
   private List<OrderBy> memoizedOrderBy;
+
+  // The corresponding Target of this Query instance.
+  private @Nullable Target memoizedTarget;
 
   private final List<Filter> filters;
 
@@ -92,7 +96,7 @@ public final class Query {
         collectionGroup,
         Collections.emptyList(),
         Collections.emptyList(),
-        NO_LIMIT,
+        Target.NO_LIMIT,
         null,
         null);
   }
@@ -122,7 +126,7 @@ public final class Query {
    */
   public boolean matchesAllDocuments() {
     return filters.isEmpty()
-        && limit == NO_LIMIT
+        && limit == Target.NO_LIMIT
         && startAt == null
         && endAt == null
         && (getExplicitOrderBy().isEmpty()
@@ -144,7 +148,7 @@ public final class Query {
   }
 
   public boolean hasLimit() {
-    return limit != NO_LIMIT;
+    return limit != Target.NO_LIMIT;
   }
 
   /** An optional bound to start the query at. */
@@ -425,50 +429,30 @@ public final class Query {
     }
   }
 
+  /** @return A {@code Target} instance this query will be mapped to in backend and local store. */
+  public Target toTarget() {
+    if (this.memoizedTarget == null) {
+      this.memoizedTarget =
+          new Target(
+              this.getPath(),
+              this.getCollectionGroup(),
+              this.getFilters(),
+              this.getOrderBy(),
+              this.limit,
+              this.getStartAt(),
+              this.getEndAt());
+    }
+
+    return this.memoizedTarget;
+  }
+
   /**
    * Returns a canonical string representing this query. This should match the iOS and Android
    * canonical ids for a query exactly.
    */
+  // TODO(wuandy): This is now only used in tests and SpecTestCase. Maybe we can delete it?
   public String getCanonicalId() {
-    // TODO: Cache the return value.
-    StringBuilder builder = new StringBuilder();
-    builder.append(getPath().canonicalString());
-
-    if (collectionGroup != null) {
-      builder.append("|cg:");
-      builder.append(collectionGroup);
-    }
-
-    // Add filters.
-    builder.append("|f:");
-    for (Filter filter : getFilters()) {
-      builder.append(filter.getCanonicalId());
-    }
-
-    // Add order by.
-    builder.append("|ob:");
-    for (OrderBy orderBy : getOrderBy()) {
-      builder.append(orderBy.getField().canonicalString());
-      builder.append(orderBy.getDirection().equals(Direction.ASCENDING) ? "asc" : "desc");
-    }
-
-    // Add limit.
-    if (hasLimit()) {
-      builder.append("|l:");
-      builder.append(getLimit());
-    }
-
-    if (startAt != null) {
-      builder.append("|lb:");
-      builder.append(startAt.canonicalString());
-    }
-
-    if (endAt != null) {
-      builder.append("|ub:");
-      builder.append(endAt.canonicalString());
-    }
-
-    return builder.toString();
+    return this.toTarget().getCanonicalId();
   }
 
   @Override
@@ -482,70 +466,19 @@ public final class Query {
 
     Query query = (Query) o;
 
-    if (collectionGroup != null
-        ? !collectionGroup.equals(query.collectionGroup)
-        : query.collectionGroup != null) {
-      return false;
-    }
-    if (limit != query.limit) {
-      return false;
-    }
-    if (!getOrderBy().equals(query.getOrderBy())) {
-      return false;
-    }
-    if (!filters.equals(query.filters)) {
-      return false;
-    }
-    if (!path.equals(query.path)) {
-      return false;
-    }
-    if (startAt != null ? !startAt.equals(query.startAt) : query.startAt != null) {
-      return false;
-    }
-    return endAt != null ? endAt.equals(query.endAt) : query.endAt == null;
+    return this.toTarget().equals(query.toTarget());
   }
 
   @Override
   public int hashCode() {
-    int result = getOrderBy().hashCode();
-    result = 31 * result + (collectionGroup != null ? collectionGroup.hashCode() : 0);
-    result = 31 * result + filters.hashCode();
-    result = 31 * result + path.hashCode();
-    result = 31 * result + (int) (limit ^ (limit >>> 32));
-    result = 31 * result + (startAt != null ? startAt.hashCode() : 0);
-    result = 31 * result + (endAt != null ? endAt.hashCode() : 0);
-    return result;
+    return this.toTarget().hashCode();
   }
 
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append("Query(");
-    builder.append(path.canonicalString());
-    if (collectionGroup != null) {
-      builder.append(" collectionGroup=");
-      builder.append(collectionGroup);
-    }
-    if (!filters.isEmpty()) {
-      builder.append(" where ");
-      for (int i = 0; i < filters.size(); i++) {
-        if (i > 0) {
-          builder.append(" and ");
-        }
-        builder.append(filters.get(i).toString());
-      }
-    }
-
-    if (!explicitSortOrder.isEmpty()) {
-      builder.append(" order by ");
-      for (int i = 0; i < explicitSortOrder.size(); i++) {
-        if (i > 0) {
-          builder.append(", ");
-        }
-        builder.append(explicitSortOrder.get(i));
-      }
-    }
-
+    builder.append("Query(target=");
+    builder.append(this.toTarget().toString());
     builder.append(")");
     return builder.toString();
   }
