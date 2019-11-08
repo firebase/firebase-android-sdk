@@ -149,16 +149,17 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       jsonWriter.endArray();
       return this;
     }
-    if (objectEncoders.containsKey(o.getClass())) {
+    @SuppressWarnings("unchecked") // safe because get the encoder by checking the object's type.
+    ObjectEncoder<Object> objectEncoder = (ObjectEncoder<Object>) objectEncoders.get(o.getClass());
+    if (objectEncoder != null) {
       jsonWriter.beginObject();
-      ObjectEncoder<Object> objectEncoder =
-          (ObjectEncoder<Object>) objectEncoders.get(o.getClass());
       objectEncoder.encode(o, this);
       jsonWriter.endObject();
       return this;
     }
-    if (valueEncoders.containsKey(o.getClass())) {
-      ValueEncoder<Object> valueEncoder = (ValueEncoder<Object>) valueEncoders.get(o.getClass());
+    @SuppressWarnings("unchecked") // safe because get the encoder by checking the object's type.
+    ValueEncoder<Object> valueEncoder = (ValueEncoder<Object>) valueEncoders.get(o.getClass());
+    if (valueEncoder != null) {
       valueEncoder.encode(o, this);
       return this;
     }
