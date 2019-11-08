@@ -90,7 +90,8 @@ public final class JsonDataEncoderBuilder {
   public DataEncoder build() {
     return new DataEncoder() {
       @Override
-      public void encode(@NonNull Object o, @NonNull Writer writer) throws IOException, EncodingException {
+      public void encode(@NonNull Object o, @NonNull Writer writer)
+          throws IOException, EncodingException {
         JsonValueObjectEncoderContext encoderContext =
             new JsonValueObjectEncoderContext(writer, objectEncoders, valueEncoders);
         encoderContext.add(o);
