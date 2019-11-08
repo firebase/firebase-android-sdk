@@ -36,7 +36,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   JsonValueObjectEncoderContext(
       @NonNull Writer writer,
-      @NonNull Map<Class, ObjectEncoder> defaultEncoders,
+      @NonNull Map<Class, ObjectEncoder> objectEncoders,
       @NonNull Map<Class, ValueEncoder> defaultExtendedEncoders) {
     this.writer = writer;
     this.defaultEncoders = defaultEncoders;
@@ -162,7 +162,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     }
 
     throw new EncodingException(
-        "Couldn't find default encoder for " + o.getClass().getCanonicalName());
+        "Couldn't find encoder for type " + o.getClass().getCanonicalName());
   }
 
   void initialize() {
