@@ -37,6 +37,9 @@ package com.google.firebase.encoders.json {
 
   public final class JsonDataEncoderBuilder {
     ctor public JsonDataEncoderBuilder();
+    method @NonNull public com.google.firebase.encoders.DataEncoder build();
+    method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ObjectEncoder<T>);
+    method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ValueEncoder<T>);
   }
 
 }
