@@ -28,6 +28,10 @@ public final class Hello {
     return "foo";
   }
 
+  public Hello getHello() {
+    return null;
+  }
+
   public World getWorld() {
     return new World();
   }

@@ -21,6 +21,10 @@ public class World {
     return 0;
   }
 
+  public Hello getHello() {
+    return null;
+  }
+
   public Boolean getBool() {
     return true;
   }

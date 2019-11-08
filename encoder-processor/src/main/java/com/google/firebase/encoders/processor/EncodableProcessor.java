@@ -161,6 +161,9 @@ public class EncodableProcessor extends AbstractProcessor {
       return;
     }
 
+    // add encoder early so that we don't infinitely recurse in case of types containing themselves.
+    outTypeEncoders.put(element.asType(), null);
+
     MethodSpec.Builder methodBuilder =
         MethodSpec.methodBuilder("encode")
             .addParameter(TypeName.get(element.asType()), "value")
