@@ -24,16 +24,16 @@ import java.util.List;
 
 /**
  * A Target represents the WatchTarget representation of a Query, which is used by the LocalStore
- * and the RemoteStore to keep track of and to execute backend queries. While multiple Query can map
- * to the same Target, each Targets maps to a single WatchTarget in RemoteStore and a single
+ * and the RemoteStore to keep track of and to execute backend queries. While multiple Queries can
+ * map to the same Target, each Target maps to a single WatchTarget in RemoteStore and a single
  * TargetData entry in persistence.
  */
 public final class Target {
   public static final long NO_LIMIT = -1;
 
-  private @Nullable String memorizedCannonicalId;
+  private @Nullable String memoizedCannonicalId;
 
-  private final List<OrderBy> explicitSortOrder;
+  private final List<OrderBy> orderBy;
   private final List<Filter> filters;
 
   private final ResourcePath path;
@@ -52,17 +52,17 @@ public final class Target {
    * <p>NOTE: you should always construct Target from {@code Query.toTarget} instead of using this
    * constructor, because Query provides an implicit {@code orderBy} property.
    */
-  public Target(
+  Target(
       ResourcePath path,
       @Nullable String collectionGroup,
       List<Filter> filters,
-      List<OrderBy> explicitSortOrder,
+      List<OrderBy> orderBy,
       long limit,
       @Nullable Bound startAt,
       @Nullable Bound endAt) {
     this.path = path;
     this.collectionGroup = collectionGroup;
-    this.explicitSortOrder = explicitSortOrder;
+    this.orderBy = orderBy;
     this.filters = filters;
     this.limit = limit;
     this.startAt = startAt;
@@ -113,12 +113,15 @@ public final class Target {
   }
 
   public List<OrderBy> getOrderBy() {
-    return this.explicitSortOrder;
+    return this.orderBy;
   }
 
   /** Returns a canonical string representing this target. */
   public String getCanonicalId() {
-    // TODO: Cache the return value.
+    if (memoizedCannonicalId != null) {
+      return memoizedCannonicalId;
+    }
+
     StringBuilder builder = new StringBuilder();
     builder.append(getPath().canonicalString());
 
@@ -156,7 +159,8 @@ public final class Target {
       builder.append(endAt.canonicalString());
     }
 
-    return builder.toString();
+    memoizedCannonicalId = builder.toString();
+    return memoizedCannonicalId;
   }
 
   @Override
@@ -178,7 +182,7 @@ public final class Target {
     if (limit != target.limit) {
       return false;
     }
-    if (!getOrderBy().equals(target.getOrderBy())) {
+    if (!orderBy.equals(target.orderBy)) {
       return false;
     }
     if (!filters.equals(target.filters)) {
@@ -195,7 +199,7 @@ public final class Target {
 
   @Override
   public int hashCode() {
-    int result = getOrderBy().hashCode();
+    int result = orderBy.hashCode();
     result = 31 * result + (collectionGroup != null ? collectionGroup.hashCode() : 0);
     result = 31 * result + filters.hashCode();
     result = 31 * result + path.hashCode();
@@ -224,13 +228,13 @@ public final class Target {
       }
     }
 
-    if (!explicitSortOrder.isEmpty()) {
+    if (!orderBy.isEmpty()) {
       builder.append(" order by ");
-      for (int i = 0; i < explicitSortOrder.size(); i++) {
+      for (int i = 0; i < orderBy.size(); i++) {
         if (i > 0) {
           builder.append(", ");
         }
-        builder.append(explicitSortOrder.get(i));
+        builder.append(orderBy.get(i));
       }
     }
 

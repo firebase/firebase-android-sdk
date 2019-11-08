@@ -55,7 +55,7 @@ public final class Query {
   private List<OrderBy> memoizedOrderBy;
 
   // The corresponding Target of this Query instance.
-  private @Nullable Target memorizedTarget;
+  private @Nullable Target memoizedTarget;
 
   private final List<Filter> filters;
 
@@ -431,8 +431,8 @@ public final class Query {
 
   /** @return A {@code Target} instance this query will be mapped to in backend and local store. */
   public Target toTarget() {
-    if (this.memorizedTarget == null) {
-      this.memorizedTarget =
+    if (this.memoizedTarget == null) {
+      this.memoizedTarget =
           new Target(
               this.getPath(),
               this.getCollectionGroup(),
@@ -443,13 +443,14 @@ public final class Query {
               this.getEndAt());
     }
 
-    return this.memorizedTarget;
+    return this.memoizedTarget;
   }
 
   /**
    * Returns a canonical string representing this query. This should match the iOS and Android
    * canonical ids for a query exactly.
    */
+  // TODO(wuandy): This is now only used in tests and SpecTestCase. Maybe we can delete it?
   public String getCanonicalId() {
     return this.toTarget().getCanonicalId();
   }
