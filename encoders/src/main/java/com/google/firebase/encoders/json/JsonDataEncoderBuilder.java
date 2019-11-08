@@ -66,11 +66,6 @@ public final class JsonDataEncoderBuilder {
     registerEncoder(Date.class, TIMESTAMP_ENCODER);
   }
 
-  // Type-safe add
-  private <T> void addValueEncoder(@NonNull Class<T> clazz, @NonNull ValueEncoder<T> encoder) {
-    valueEncoders.put(clazz, encoder);
-  }
-
   @NonNull
   public <T> JsonDataEncoderBuilder registerEncoder(
       @NonNull Class<T> clazz, @NonNull ObjectEncoder<T> objectEncoder) {
@@ -95,7 +90,7 @@ public final class JsonDataEncoderBuilder {
   public DataEncoder build() {
     return new DataEncoder() {
       @Override
-      public void encode(Object o, Writer writer) throws IOException, EncodingException {
+      public void encode(@NonNull Object o, @NonNull Writer writer) throws IOException, EncodingException {
         JsonValueObjectEncoderContext encoderContext =
             new JsonValueObjectEncoderContext(writer, objectEncoders, valueEncoders);
         encoderContext.add(o);
@@ -103,7 +98,7 @@ public final class JsonDataEncoderBuilder {
       }
 
       @Override
-      public String encode(Object o) throws EncodingException {
+      public String encode(@NonNull Object o) throws EncodingException {
         StringWriter stringWriter = new StringWriter();
         try {
           encode(o, stringWriter);
