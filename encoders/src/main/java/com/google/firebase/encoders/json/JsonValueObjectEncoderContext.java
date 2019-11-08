@@ -29,7 +29,6 @@ import java.util.Map;
 
 final class JsonValueObjectEncoderContext implements ObjectEncoderContext, ValueEncoderContext {
 
-  private final Writer writer;
   private final JsonWriter jsonWriter;
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders;
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders;
@@ -38,7 +37,6 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       @NonNull Writer writer,
       @NonNull Map<Class<?>, ObjectEncoder<?>> objectEncoders,
       @NonNull Map<Class<?>, ValueEncoder<?>> valueEncoders) {
-    this.writer = writer;
     this.jsonWriter = new JsonWriter(writer);
     this.objectEncoders = objectEncoders;
     this.valueEncoders = valueEncoders;
