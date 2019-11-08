@@ -29,18 +29,19 @@ import java.util.Map;
 
 final class JsonValueObjectEncoderContext implements ObjectEncoderContext, ValueEncoderContext {
 
-  private Writer writer;
-  private JsonWriter jsonWriter;
-  private Map<Class, ObjectEncoder> defaultEncoders;
-  private Map<Class, ValueEncoder> defaultExtendedEncoders;
+  private final Writer writer;
+  private final JsonWriter jsonWriter;
+  private final Map<Class<?>, ObjectEncoder<?>> objectEncoders;
+  private final Map<Class<?>, ValueEncoder<?>> valueEncoders;
 
   JsonValueObjectEncoderContext(
       @NonNull Writer writer,
-      @NonNull Map<Class, ObjectEncoder> objectEncoders,
-      @NonNull Map<Class, ValueEncoder> defaultExtendedEncoders) {
+      @NonNull Map<Class<?>, ObjectEncoder<?>> objectEncoders,
+      @NonNull Map<Class<?>, ValueEncoder<?>> valueEncoders) {
     this.writer = writer;
-    this.defaultEncoders = defaultEncoders;
-    this.defaultExtendedEncoders = defaultExtendedEncoders;
+    this.jsonWriter = new JsonWriter(writer);
+    this.objectEncoders = objectEncoders;
+    this.valueEncoders = valueEncoders;
   }
 
   @NonNull
@@ -150,23 +151,22 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       jsonWriter.endArray();
       return this;
     }
-    if (defaultEncoders.containsKey(o.getClass())) {
+    if (objectEncoders.containsKey(o.getClass())) {
       jsonWriter.beginObject();
-      defaultEncoders.get(o.getClass()).encode(o, this);
+      ObjectEncoder<Object> objectEncoder =
+          (ObjectEncoder<Object>) objectEncoders.get(o.getClass());
+      objectEncoder.encode(o, this);
       jsonWriter.endObject();
       return this;
     }
-    if (defaultExtendedEncoders.containsKey(o.getClass())) {
-      defaultExtendedEncoders.get(o.getClass()).encode(o, this);
+    if (valueEncoders.containsKey(o.getClass())) {
+      ValueEncoder<Object> valueEncoder = (ValueEncoder<Object>) valueEncoders.get(o.getClass());
+      valueEncoder.encode(o, this);
       return this;
     }
 
     throw new EncodingException(
         "Couldn't find encoder for type " + o.getClass().getCanonicalName());
-  }
-
-  void initialize() {
-    jsonWriter = new JsonWriter(writer);
   }
 
   void close() throws IOException {

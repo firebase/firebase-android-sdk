@@ -28,19 +28,20 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
 public final class JsonDataEncoderBuilder {
 
-  private Map<Class, ObjectEncoder> objectEncoders = new HashMap<>();
-  private Map<Class, ValueEncoder> valueEncoders = new HashMap<>();
+  private final Map<Class<?>, ObjectEncoder<?>> objectEncoders = new HashMap<>();
+  private final Map<Class<?>, ValueEncoder<?>> valueEncoders = new HashMap<>();
 
   private static final class TimestampEncoder implements ValueEncoder<Date> {
     private static final DateFormat rfc339;
 
     static {
-      rfc339 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      rfc339 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
       rfc339.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
@@ -58,35 +59,45 @@ public final class JsonDataEncoderBuilder {
   private static final TimestampEncoder TIMESTAMP_ENCODER = new TimestampEncoder();
 
   public JsonDataEncoderBuilder() {
-    valueEncoders.put(String.class, STRING_ENCODER);
-    valueEncoders.put(Integer.class, INTEGER_ENCODER);
-    valueEncoders.put(Double.class, DOUBLE_ENCODER);
-    valueEncoders.put(Boolean.class, BOOLEAN_ENCODER);
-    valueEncoders.put(Date.class, TIMESTAMP_ENCODER);
+    registerEncoder(String.class, STRING_ENCODER);
+    registerEncoder(Integer.class, INTEGER_ENCODER);
+    registerEncoder(Double.class, DOUBLE_ENCODER);
+    registerEncoder(Boolean.class, BOOLEAN_ENCODER);
+    registerEncoder(Date.class, TIMESTAMP_ENCODER);
+  }
+
+  // Type-safe add
+  private <T> void addValueEncoder(@NonNull Class<T> clazz, @NonNull ValueEncoder<T> encoder) {
+    valueEncoders.put(clazz, encoder);
   }
 
   @NonNull
-  <T> JsonDataEncoderBuilder registerEncoder(
+  public <T> JsonDataEncoderBuilder registerEncoder(
       @NonNull Class<T> clazz, @NonNull ObjectEncoder<T> objectEncoder) {
+    if (objectEncoders.containsKey(clazz)) {
+      throw new IllegalArgumentException("Encoder already registered for " + clazz.getName());
+    }
     objectEncoders.put(clazz, objectEncoder);
     return this;
   }
 
   @NonNull
-  <T> JsonDataEncoderBuilder registerEncoder(
+  public <T> JsonDataEncoderBuilder registerEncoder(
       @NonNull Class<T> clazz, @NonNull ValueEncoder<T> encoder) {
+    if (valueEncoders.containsKey(clazz)) {
+      throw new IllegalArgumentException("Encoder already registered for " + clazz.getName());
+    }
     valueEncoders.put(clazz, encoder);
     return this;
   }
 
   @NonNull
-  DataEncoder build() {
+  public DataEncoder build() {
     return new DataEncoder() {
       @Override
       public void encode(Object o, Writer writer) throws IOException, EncodingException {
         JsonValueObjectEncoderContext encoderContext =
             new JsonValueObjectEncoderContext(writer, objectEncoders, valueEncoders);
-        encoderContext.initialize();
         encoderContext.add(o);
         encoderContext.close();
       }
