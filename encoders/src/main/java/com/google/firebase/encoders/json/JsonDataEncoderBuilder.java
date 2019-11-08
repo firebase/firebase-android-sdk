@@ -66,21 +66,21 @@ public final class JsonDataEncoderBuilder {
   }
 
   @NonNull
-  <T> JsonDataEncoderBuilder registerEncoder(
+  public <T> JsonDataEncoderBuilder registerEncoder(
       @NonNull Class<T> clazz, @NonNull ObjectEncoder<T> objectEncoder) {
     objectEncoders.put(clazz, objectEncoder);
     return this;
   }
 
   @NonNull
-  <T> JsonDataEncoderBuilder registerEncoder(
+  public <T> JsonDataEncoderBuilder registerEncoder(
       @NonNull Class<T> clazz, @NonNull ValueEncoder<T> encoder) {
     valueEncoders.put(clazz, encoder);
     return this;
   }
 
   @NonNull
-  DataEncoder build() {
+  public DataEncoder build() {
     return new DataEncoder() {
       @Override
       public void encode(Object o, Writer writer) throws IOException, EncodingException {
