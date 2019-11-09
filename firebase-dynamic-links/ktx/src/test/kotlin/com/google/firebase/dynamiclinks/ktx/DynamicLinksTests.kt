@@ -80,17 +80,17 @@ class DynamicLinksTests : BaseTestCase() {
 
     @Test
     fun `Firebase#dynamicLinks#createDynamicLink`() {
-        val link = "https://example.com"
-        val domainUriPrefix = "https://example.page.link"
+        val exampleLink = "https://example.com"
+        val exampleDomainUriPrefix = "https://example.page.link"
 
         val dynamicLinkKtx = Firebase.dynamicLinks.dynamicLink {
-            setLink(Uri.parse(link))
-            setDomainUriPrefix(domainUriPrefix)
+            link = Uri.parse(exampleLink)
+            domainUriPrefix = exampleDomainUriPrefix
         }
 
         val dynamicLink = FirebaseDynamicLinks.getInstance().createDynamicLink()
-                .setLink(Uri.parse(link))
-                .setDomainUriPrefix(domainUriPrefix)
+                .setLink(Uri.parse(exampleLink))
+                .setDomainUriPrefix(exampleDomainUriPrefix)
                 .buildDynamicLink()
 
         assertThat(dynamicLinkKtx.uri).isEqualTo(dynamicLink.uri)
