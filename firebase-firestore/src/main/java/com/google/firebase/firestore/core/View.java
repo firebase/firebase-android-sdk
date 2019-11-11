@@ -144,8 +144,12 @@ public class View {
     // Note that this should never get used in a refill (when previousChanges is set), because there
     // will only be adds -- no deletes or updates.
     Document lastDocInLimit =
-        (query.hasLimit() && oldDocumentSet.size() == query.getLimit())
+        (query.hasLimitToFirst() && oldDocumentSet.size() == query.getLimitToFirst())
             ? oldDocumentSet.getLastDocument()
+            : null;
+    Document firstDocInLimit =
+        (query.hasLimitToLast() && oldDocumentSet.size() == query.getLimitToLast())
+            ? oldDocumentSet.getFirstDocument()
             : null;
 
     for (Map.Entry<DocumentKey, ? extends MaybeDocument> entry : docChanges) {
@@ -190,9 +194,11 @@ public class View {
             changeSet.addChange(DocumentViewChange.create(Type.MODIFIED, newDoc));
             changeApplied = true;
 
-            if (lastDocInLimit != null && query.comparator().compare(newDoc, lastDocInLimit) > 0) {
-              // This doc moved from inside the limit to after the limit. That means there may be
-              // some doc in the local cache that's actually less than this one.
+            if ((lastDocInLimit != null && query.comparator().compare(newDoc, lastDocInLimit) > 0)
+                || (firstDocInLimit != null
+                    && query.comparator().compare(newDoc, firstDocInLimit) < 0)) {
+              // This doc moved from inside the limit to outside the limit. That means there may be
+              // some doc in the local cache that should be included instead.
               needsRefill = true;
             }
           }
@@ -206,7 +212,7 @@ public class View {
       } else if (oldDoc != null && newDoc == null) {
         changeSet.addChange(DocumentViewChange.create(Type.REMOVED, oldDoc));
         changeApplied = true;
-        if (lastDocInLimit != null) {
+        if (lastDocInLimit != null || firstDocInLimit != null) {
           // A doc was removed from a full limit query. We'll need to requery from the local cache
           // to see if we know about some other doc that should be in the results.
           needsRefill = true;
@@ -228,9 +234,14 @@ public class View {
       }
     }
 
-    if (query.hasLimit()) {
-      for (long i = newDocumentSet.size() - this.query.getLimit(); i > 0; --i) {
-        Document oldDoc = newDocumentSet.getLastDocument();
+    // Drop documents out to meet limitToFirst/limitToLast requirement.
+    if (query.hasLimitToFirst() || query.hasLimitToLast()) {
+      long limit = query.hasLimitToFirst() ? query.getLimitToFirst() : query.getLimitToLast();
+      for (long i = newDocumentSet.size() - limit; i > 0; --i) {
+        Document oldDoc =
+            query.hasLimitToFirst()
+                ? newDocumentSet.getLastDocument()
+                : newDocumentSet.getFirstDocument();
         newDocumentSet = newDocumentSet.remove(oldDoc.getKey());
         newMutatedKeys = newMutatedKeys.remove(oldDoc.getKey());
         changeSet.addChange(DocumentViewChange.create(Type.REMOVED, oldDoc));

@@ -152,13 +152,31 @@ public final class Query {
    * The maximum number of results to return. If there is no limit on the query, then this will
    * cause an assertion failure.
    */
-  public long getLimit() {
-    hardAssert(hasLimit(), "Called getLimit when no limit was set");
+  public long getLimitToFirst() {
+    hardAssert(hasLimitToFirst(), "Called getLimitToFirst when no limit was set");
     return limit;
   }
 
-  public boolean hasLimit() {
-    return limit != Target.NO_LIMIT;
+  public boolean hasLimitToFirst() {
+    return limitType == LimitType.LIMIT_TO_FIRST && limit != Target.NO_LIMIT;
+  }
+
+  /**
+   * The maximum number of last-matching results to return. If there is no limit on the query, then
+   * this will cause an assertion failure.
+   */
+  public long getLimitToLast() {
+    hardAssert(hasLimitToLast(), "Called getLimitToLast when no limit was set");
+    return limit;
+  }
+
+  public boolean hasLimitToLast() {
+    return limitType == LimitType.LIMIT_TO_LAST && limit != Target.NO_LIMIT;
+  }
+
+  public LimitType getLimitType() {
+    hardAssert(hasLimitToLast() || hasLimitToFirst(), "Called getLimitType when no limit was set");
+    return limitType;
   }
 
   /** An optional bound to start the query at. */
@@ -268,7 +286,7 @@ public final class Query {
    * @param limit The maximum number of results to return. If {@code limit == NO_LIMIT}, then no
    *     limit is applied. Otherwise, if {@code limit <= 0}, behavior is unspecified.
    */
-  public Query limit(long limit) {
+  public Query limitToFirst(long limit) {
     return new Query(
         path,
         collectionGroup,

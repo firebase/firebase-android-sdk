@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -78,6 +79,283 @@ public class QueryTest {
     QuerySnapshot set = waitFor(query.get());
     List<Map<String, Object>> data = querySnapshotToValues(set);
     assertEquals(asList(map("k", "d", "sort", 2L), map("k", "c", "sort", 1L)), data);
+  }
+
+  @Test
+  public void testLimitToLastMustAlsoHaveExplicitOrderBy() {
+    CollectionReference collection = testCollectionWithDocs(map());
+
+    Query query = collection.limitToLast(2);
+    expectError(
+        () -> waitFor(query.get()),
+        "limitToLast() queries require specifying at least one orderBy() clause");
+  }
+
+  @Test
+  public void testGetLimitToLastResultUsingDescendingOrder() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a", "sort", 0),
+                "b", map("k", "b", "sort", 1),
+                "c", map("k", "c", "sort", 1),
+                "d", map("k", "d", "sort", 2)));
+
+    Query query = collection.limitToLast(2).orderBy("sort", Direction.DESCENDING);
+    QuerySnapshot set = waitFor(query.get());
+    List<Map<String, Object>> data = querySnapshotToValues(set);
+    assertEquals(asList(map("k", "b", "sort", 1L), map("k", "a", "sort", 0L)), data);
+  }
+
+  @Test
+  public void testListenToLimitToLastViaSnapshot() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a", "sort", 0),
+                "b", map("k", "b", "sort", 1),
+                "c", map("k", "c", "sort", 1),
+                "d", map("k", "d", "sort", 2)));
+
+    List<QuerySnapshot> snapshots = new ArrayList<>();
+    Semaphore testCounter = new Semaphore(0);
+    Query query = collection.limitToLast(2).orderBy("sort", Direction.DESCENDING);
+
+    query.addSnapshotListener(
+        (snapshot, error) -> {
+          assertNull(error);
+          snapshots.add(snapshot);
+          testCounter.release();
+        });
+
+    waitFor(testCounter);
+
+    assertEquals(1, snapshots.size());
+    List<Map<String, Object>> data = querySnapshotToValues(snapshots.get(0));
+    assertEquals(asList(map("k", "b", "sort", 1L), map("k", "a", "sort", 0L)), data);
+
+    waitFor(collection.add(map("k", "e", "sort", -1)));
+    waitFor(testCounter);
+
+    assertEquals(2, snapshots.size());
+    data = querySnapshotToValues(snapshots.get(1));
+    assertEquals(asList(map("k", "a", "sort", 0L), map("k", "e", "sort", -1L)), data);
+  }
+
+  // Two queries that mapped to the same target ID are referred to as
+  // "mirror queries". An example for a mirror query is a limitToLast()
+  // query and a limit() query that share the same backend Target ID.
+  // Since limitToLast() queries are sent to the backend with a modified
+  // orderBy() clause, they can map to the same target representation as
+  // limit() query, even if both queries appear separate to the user.
+  @Test
+  public void testListenToMirrorQueries() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a", "sort", 0),
+                "b", map("k", "b", "sort", 1),
+                "c", map("k", "c", "sort", 1),
+                "d", map("k", "d", "sort", 2)));
+
+    List<QuerySnapshot> limitSnapshots = new ArrayList<>();
+    Semaphore limitTestCounter = new Semaphore(0);
+    Query limit = collection.limit(2).orderBy("sort", Direction.ASCENDING);
+
+    limit.addSnapshotListener(
+        (snapshot, error) -> {
+          assertNull(error);
+          limitSnapshots.add(snapshot);
+          limitTestCounter.release();
+        });
+
+    List<QuerySnapshot> limitToLastSnapshots = new ArrayList<>();
+    Semaphore limitToLastTestCounter = new Semaphore(0);
+    Query limitToLast = collection.limitToLast(2).orderBy("sort", Direction.DESCENDING);
+
+    limitToLast.addSnapshotListener(
+        (snapshot, error) -> {
+          assertNull(error);
+          limitToLastSnapshots.add(snapshot);
+          limitToLastTestCounter.release();
+        });
+
+    waitFor(limitTestCounter);
+    assertEquals(1, limitSnapshots.size());
+    List<Map<String, Object>> data = querySnapshotToValues(limitSnapshots.get(0));
+    assertEquals(asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)), data);
+
+    waitFor(limitToLastTestCounter);
+    assertEquals(1, limitToLastSnapshots.size());
+    data = querySnapshotToValues(limitToLastSnapshots.get(0));
+    assertEquals(asList(map("k", "b", "sort", 1L), map("k", "a", "sort", 0L)), data);
+
+    waitFor(collection.add(map("k", "e", "sort", -1)));
+
+    waitFor(limitTestCounter);
+    assertEquals(2, limitSnapshots.size());
+    data = querySnapshotToValues(limitSnapshots.get(1));
+    assertEquals(asList(map("k", "e", "sort", -1L), map("k", "a", "sort", 0L)), data);
+
+    waitFor(limitToLastTestCounter);
+    assertEquals(2, limitToLastSnapshots.size());
+    data = querySnapshotToValues(limitToLastSnapshots.get(1));
+    assertEquals(asList(map("k", "a", "sort", 0L), map("k", "e", "sort", -1L)), data);
+  }
+
+  @Test
+  public void testUnlistenFromMirrorQueries() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a", "sort", 0),
+                "b", map("k", "b", "sort", 1),
+                "c", map("k", "c", "sort", 1),
+                "d", map("k", "d", "sort", 2)));
+
+    List<QuerySnapshot> limitSnapshots = new ArrayList<>();
+    Semaphore limitTestCounter = new Semaphore(0);
+    Query limit = collection.limit(2).orderBy("sort", Direction.ASCENDING);
+
+    ListenerRegistration limitRegistration =
+        limit.addSnapshotListener(
+            (snapshot, error) -> {
+              assertNull(error);
+              limitSnapshots.add(snapshot);
+              limitTestCounter.release();
+            });
+
+    List<QuerySnapshot> limitToLastSnapshots = new ArrayList<>();
+    Semaphore limitToLastTestCounter = new Semaphore(0);
+    Query limitToLast = collection.limitToLast(2).orderBy("sort", Direction.DESCENDING);
+
+    ListenerRegistration limitToLastRegistration =
+        limitToLast.addSnapshotListener(
+            (snapshot, error) -> {
+              assertNull(error);
+              limitToLastSnapshots.add(snapshot);
+              limitToLastTestCounter.release();
+            });
+
+    waitFor(limitTestCounter);
+    assertEquals(1, limitSnapshots.size());
+
+    waitFor(limitToLastTestCounter);
+    assertEquals(1, limitToLastSnapshots.size());
+
+    limitRegistration.remove();
+
+    waitFor(collection.add(map("k", "e", "sort", -1)));
+
+    waitFor(limitToLastTestCounter);
+    assertEquals(2, limitToLastSnapshots.size());
+    List<Map<String, Object>> data = querySnapshotToValues(limitToLastSnapshots.get(1));
+    assertEquals(asList(map("k", "a", "sort", 0L), map("k", "e", "sort", -1L)), data);
+
+    limitToLastRegistration.remove();
+
+    waitFor(
+        collection
+            .add(map("k", "f", "sort", -1))
+            .continueWith(
+                task -> {
+                  limitTestCounter.release();
+                  limitToLastTestCounter.release();
+                  return null;
+                }));
+
+    waitFor(limitTestCounter);
+    waitFor(limitToLastTestCounter);
+
+    assertEquals(1, limitSnapshots.size());
+    assertEquals(2, limitToLastSnapshots.size());
+  }
+
+  @Test
+  public void testRelistenToMirrorQueries() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a", "sort", 0),
+                "b", map("k", "b", "sort", 1),
+                "c", map("k", "c", "sort", 1),
+                "d", map("k", "d", "sort", 2)));
+
+    List<QuerySnapshot> limitSnapshots = new ArrayList<>();
+    Semaphore limitTestCounter = new Semaphore(0);
+    Query limit = collection.limit(2).orderBy("sort", Direction.ASCENDING);
+
+    ListenerRegistration limitRegistration =
+        limit.addSnapshotListener(
+            (snapshot, error) -> {
+              assertNull(error);
+              limitSnapshots.add(snapshot);
+              limitTestCounter.release();
+            });
+
+    List<QuerySnapshot> limitToLastSnapshots = new ArrayList<>();
+    Semaphore limitToLastTestCounter = new Semaphore(0);
+    Query limitToLast = collection.limitToLast(2).orderBy("sort", Direction.DESCENDING);
+
+    ListenerRegistration limitToLastRegistration =
+        limitToLast.addSnapshotListener(
+            (snapshot, error) -> {
+              assertNull(error);
+              limitToLastSnapshots.add(snapshot);
+              limitToLastTestCounter.release();
+            });
+
+    waitFor(limitTestCounter);
+    assertEquals(1, limitSnapshots.size());
+
+    waitFor(limitToLastTestCounter);
+    assertEquals(1, limitToLastSnapshots.size());
+
+    // Unlisten then re-listen limit query.
+    limitRegistration.remove();
+    limit.addSnapshotListener(
+        (snapshot, error) -> {
+          assertNull(error);
+          limitSnapshots.add(snapshot);
+          limitTestCounter.release();
+        });
+
+    waitFor(limitTestCounter);
+    assertEquals(2, limitSnapshots.size());
+    List<Map<String, Object>> data = querySnapshotToValues(limitSnapshots.get(1));
+    assertEquals(asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)), data);
+
+    waitFor(collection.add(map("k", "e", "sort", -1)));
+
+    waitFor(limitTestCounter);
+    assertEquals(3, limitSnapshots.size());
+    data = querySnapshotToValues(limitSnapshots.get(2));
+    assertEquals(asList(map("k", "e", "sort", -1L), map("k", "a", "sort", 0L)), data);
+
+    waitFor(limitToLastTestCounter);
+    assertEquals(2, limitToLastSnapshots.size());
+    data = querySnapshotToValues(limitToLastSnapshots.get(1));
+    assertEquals(asList(map("k", "a", "sort", 0L), map("k", "e", "sort", -1L)), data);
+
+    // Unlisten to limitToLast, update a doc, then relisten to limitToLast
+    limitToLastRegistration.remove();
+    waitFor(collection.document("a").update(map("k", "a", "sort", -2)));
+    limitToLast.addSnapshotListener(
+        (snapshot, error) -> {
+          assertNull(error);
+          limitToLastSnapshots.add(snapshot);
+          limitToLastTestCounter.release();
+        });
+
+    waitFor(limitTestCounter);
+    assertEquals(4, limitSnapshots.size());
+    data = querySnapshotToValues(limitSnapshots.get(3));
+    assertEquals(asList(map("k", "a", "sort", -2L), map("k", "e", "sort", -1L)), data);
+
+    waitFor(limitToLastTestCounter);
+    assertEquals(3, limitToLastSnapshots.size());
+    data = querySnapshotToValues(limitToLastSnapshots.get(2));
+    assertEquals(asList(map("k", "e", "sort", -1L), map("k", "a", "sort", -2L)), data);
   }
 
   @Test
