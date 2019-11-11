@@ -348,7 +348,7 @@ public class Query {
       if (op == Operator.IN || op == Operator.ARRAY_CONTAINS_ANY) {
         validateDisjunctiveFilterElements(value, op);
       }
-      fieldValue = firestore.getDataConverter().parseQueryValue(value);
+      fieldValue = firestore.getDataConverter().parseQueryValue(value, op == Operator.IN);
     }
     Filter filter = FieldFilter.create(fieldPath.getInternalPath(), op, fieldValue);
     validateNewFilter(filter);
