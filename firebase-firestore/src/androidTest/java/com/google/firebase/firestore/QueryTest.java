@@ -435,13 +435,15 @@ public class QueryTest {
     Map<String, Object> docD = map("zip", asList(98101L));
     Map<String, Object> docE = map("zip", asList("98101", map("zip", 98101L)));
     Map<String, Object> docF = map("zip", map("code", 500L));
+    Map<String, Object> docG = map("zip", asList(98101L, 98102L));
     CollectionReference collection =
         testCollectionWithDocs(
-            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF));
+            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF, "g", docG));
 
-    // Search for zips matching [98101, 98103].
-    QuerySnapshot snapshot = waitFor(collection.whereIn("zip", asList(98101L, 98103L)).get());
-    assertEquals(asList(docA, docC), querySnapshotToValues(snapshot));
+    // Search for zips matching 98101, 98103, or [98101, 98102].
+    QuerySnapshot snapshot =
+        waitFor(collection.whereIn("zip", asList(98101L, 98103L, asList(98101L, 98102L))).get());
+    assertEquals(asList(docA, docC, docG), querySnapshotToValues(snapshot));
 
     // With objects.
     snapshot = waitFor(collection.whereIn("zip", asList(map("code", 500L))).get());
