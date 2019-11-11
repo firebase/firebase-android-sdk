@@ -574,8 +574,8 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new {@code Query} that's additionally limited to only return up to the
-   * specified number of documents.
+   * Creates and returns a new {@code Query} that only returns the first matching documents up to
+   * the specified number.
    *
    * @param limit The maximum number of items to return.
    * @return The created {@code Query}.
@@ -587,6 +587,25 @@ public class Query {
           "Invalid Query. Query limit (" + limit + ") is invalid. Limit must be positive.");
     }
     return new Query(query.limit(limit), firestore);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} that only returns the last matching documents up to the
+   * specified number.
+   *
+   * <p>You must specify at least one {@code orderBy} clause for {@code limitToLast} queries,
+   * otherwise an exception will be thrown during execution.
+   *
+   * @param limit The maximum number of items to return.
+   * @return The created {@code Query}.
+   */
+  @NonNull
+  public Query limitToLast(long limit) {
+    if (limit <= 0) {
+      throw new IllegalArgumentException(
+          "Invalid Query. Query limit (" + limit + ") is invalid. Limit must be positive.");
+    }
+    return new Query(query.limitToLast(limit), firestore);
   }
 
   /**
