@@ -68,9 +68,11 @@ public class CctTransportBackendTest {
   private static final long INITIAL_UPTIME = 10L;
   private static final ByteString PAYLOAD =
       ByteString.copyFrom("TelemetryData".getBytes(Charset.defaultCharset()));
+  private static final String JSON_PAYLOAD = "{\"hello\": false}";
   private static final int CODE = 5;
   private static final String TEST_NAME = "hello";
   private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
+  private static final Encoding JSON_ENCODING = Encoding.of("json");
 
   private static final PredicateMatcher<Request, BatchedLogRequest> batchRequestMatcher =
       protoMatcher(BatchedLogRequest.class);
@@ -118,7 +120,8 @@ public class CctTransportBackendTest {
                         .setUptimeMillis(INITIAL_UPTIME)
                         .setTransportName(transportName)
                         .setEncodedPayload(
-                            new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
+                            new EncodedPayload(
+                                JSON_ENCODING, JSON_PAYLOAD.getBytes(Charset.defaultCharset())))
                         .setCode(CODE)
                         .build())))
         .setExtras(destination.getExtras())
@@ -176,7 +179,10 @@ public class CctTransportBackendTest {
                                         .setMobileSubtypeValue(activeNetworkInfo.getSubtype())
                                         .build())))
             .andMatching(firstLogEventMatcher.test(e -> e.getEventCode() == 0))
-            .andMatching(secondLogEventMatcher.test(e -> e.getEventCode() == 5)));
+            .andMatching(
+                secondLogEventMatcher
+                    .test(e -> e.getEventCode() == 5)
+                    .test(e -> e.getSourceExtensionJsonProto3().equals(JSON_PAYLOAD))));
 
     assertEquals(BackendResponse.ok(3), response);
   }
