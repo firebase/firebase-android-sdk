@@ -30,9 +30,9 @@ import java.util.Locale;
  * heuristics.
  *
  * <p>In particular, when the client is trying to connect to the backend, we allow up to
- * MAX_WATCH_STREAM_FAILURES within CONNECTIVITY_ATTEMPT_TIMEOUT_MS for a connection to succeed. If
- * we have too many failures or the timeout elapses, then we set the OnlineState to OFFLINE, and the
- * client will behave as if it is offline (get() calls will return cached data, etc.).
+ * MAX_WATCH_STREAM_FAILURES within ONLINE_STATE_TIMEOUT_MS for a connection to succeed. If we have
+ * too many failures or the timeout elapses, then we set the OnlineState to OFFLINE, and the client
+ * will behave as if it is offline (get() calls will return cached data, etc.).
  */
 class OnlineStateTracker {
 
@@ -53,11 +53,13 @@ class OnlineStateTracker {
 
   // To deal with stream attempts that don't succeed or fail in a timely manner, we have a
   // timeout for OnlineState to reach ONLINE or OFFLINE. If the timeout is reached, we transition
-  // to OFFLINE rather than waiting indefinitely. This timeout is also used when attempting to
-  // establish a connection when in an OFFLINE state.
-  static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
-
+  // to OFFLINE rather than waiting indefinitely.
   private static final int ONLINE_STATE_TIMEOUT_MS = 10 * 1000;
+
+  // This timeout is also used when attempting to establish a connection. If a connection attempt
+  // does not succeed in time, we close the stream and restart the connection, rather than having
+  // it hang indefinitely.
+  static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
 
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "OnlineStateTracker";
@@ -69,11 +71,13 @@ class OnlineStateTracker {
   // MAX_WATCH_STREAM_FAILURES, we'll revert to OnlineState.OFFLINE.
   private int watchStreamFailures;
 
-  // A timer that elapses after CONNECTIVITY_ATTEMPT_TIMEOUT_MS, at which point we transition from
-  // OnlineState.UNKNOWN to OFFLINE without waiting for the stream to actually fail
-  // (MAX_WATCH_STREAM_FAILURES times).
+  // A timer that elapses after CONNECTIVTY_ATTEMPT_TIMEOUT_MS, at which point we close the
+  // stream, reset the underlying connection, and try connecting again.
   private DelayedTask connectivityAttemptTimer;
 
+  // A timer that elapses after ONLINE_STATE_TIMEOUT_MS, at which point we transition from
+  // OnlineState.UNKNOWN to OFFLINE without waiting for the stream to actually fail
+  // (MAX_WATCH_STREAM_FAILURES times).
   private DelayedTask onlineStateTimer;
 
   // Whether the client should log a warning message if it fails to connect to the backend
@@ -96,11 +100,13 @@ class OnlineStateTracker {
   /**
    * Called by RemoteStore when a watch stream is started (including on each backoff attempt).
    *
-   * <p>If this is the first attempt, it sets the OnlineState to UNKNOWN.
+   * <p>If this is the first attempt, it sets the OnlineState to UNKNOWN and starts the
+   * onlineStateTimer.
    */
   void handleWatchStreamStart() {
     if (watchStreamFailures == 0) {
       setAndBroadcastState(OnlineState.UNKNOWN);
+      hardAssert(onlineStateTimer == null, "onlineStateTimer shouldn't be started yet");
       onlineStateTimer =
           workerQueue.enqueueAfterDelay(
               TimerId.ONLINE_STATE_TIMEOUT,
@@ -140,6 +146,7 @@ class OnlineStateTracker {
       // our heuristics.
       hardAssert(this.watchStreamFailures == 0, "watchStreamFailures must be 0");
       hardAssert(this.connectivityAttemptTimer == null, "connectivityAttemptTimer must be null");
+      hardAssert(this.onlineStateTimer == null, "onlineStateTimer must be null");
     } else {
       watchStreamFailures++;
       clearConnectivityAttemptTimer();
