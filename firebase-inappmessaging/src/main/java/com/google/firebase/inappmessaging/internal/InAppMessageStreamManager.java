@@ -300,7 +300,6 @@ public class InAppMessageStreamManager {
 
   private Maybe<TriggeredInAppMessage> triggeredInAppMessage(
       ThickContent thickContent, String event) {
-
     InAppMessage inAppMessage =
         ProtoMarshallerClient.decode(
             thickContent.getContent(),
