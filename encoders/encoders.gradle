@@ -14,6 +14,6 @@
 
 
 configure(subprojects) {
-    group = 'com.google.firebase.encoders'
+    group = 'com.google.firebase'
 }
 
