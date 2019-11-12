@@ -182,8 +182,8 @@ public abstract class LocalStoreTestCase {
     lastQueryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
   }
 
-  private void releaseQuery(Query query) {
-    localStore.releaseTarget(query.toTarget());
+  private void releaseTarget(int targetId) {
+    localStore.releaseTarget(targetId);
   }
 
   /** Asserts that the last target ID is the given number. */
@@ -324,7 +324,7 @@ public abstract class LocalStoreTestCase {
     assertContains(
         doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
 
-    releaseQuery(query);
+    releaseTarget(2);
 
     // It has been acknowledged, and should no longer be retained as there is no target and mutation
     if (garbageCollectorIsEager()) {
@@ -390,7 +390,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 0, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
-    releaseQuery(query);
+    releaseTarget(targetId);
     acknowledgeMutation(3);
     assertChanged(doc("foo/bar", 3, map("foo", "bar"), Document.DocumentState.COMMITTED_MUTATIONS));
     // It has been acknowledged, and should no longer be retained as there is no target and mutation
@@ -548,7 +548,7 @@ public abstract class LocalStoreTestCase {
     assertContains(deletedDoc("foo/bar", 0));
 
     // Remove the target so only the mutation is pinning the document.
-    releaseQuery(query);
+    releaseTarget(targetId);
     acknowledgeMutation(2);
     if (garbageCollectorIsEager()) {
       // Neither the target nor the mutation pin the document, it should be gone.
@@ -571,7 +571,7 @@ public abstract class LocalStoreTestCase {
     assertRemoved("foo/bar");
     assertContains(deletedDoc("foo/bar", 0));
 
-    releaseQuery(query);
+    releaseTarget(targetId);
     acknowledgeMutation(2);
     assertRemoved("foo/bar");
     if (garbageCollectorIsEager()) {
@@ -624,7 +624,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
 
-    releaseQuery(query);
+    releaseTarget(targetId);
     acknowledgeMutation(2); // delete mutation
     assertChanged(doc("foo/bar", 2, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 2, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
@@ -750,7 +750,7 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 1, map("foo", "old")), asList(targetId), emptyList()));
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
-    releaseQuery(query);
+    releaseTarget(targetId);
     writeMutation(setMutation("foo/bah", map("foo", "bah")));
     writeMutation(deleteMutation("foo/baz"));
     assertContains(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
@@ -783,7 +783,7 @@ public abstract class LocalStoreTestCase {
         updateRemoteEvent(doc("foo/bar", 1, map("foo", "old")), asList(targetId), emptyList()));
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
     // Release the query so that our target count goes back to 0 and we are considered up-to-date.
-    releaseQuery(query);
+    releaseTarget(targetId);
     writeMutation(setMutation("foo/bah", map("foo", "bah")));
     writeMutation(deleteMutation("foo/baz"));
     assertContains(doc("foo/bar", 1, map("foo", "bar"), Document.DocumentState.LOCAL_MUTATIONS));
@@ -831,7 +831,7 @@ public abstract class LocalStoreTestCase {
 
     notifyLocalViewChanges(
         viewChanges(2, /* fromCache= */ false, emptyList(), asList("foo/bar", "foo/baz")));
-    releaseQuery(query);
+    releaseTarget(2);
 
     assertNotContains("foo/bar");
     assertNotContains("foo/baz");
@@ -929,10 +929,10 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(noChangeEvent(targetId, 1000));
 
     // Stop listening so that the query should become inactive (but persistent)
-    localStore.releaseQuery(query);
+    localStore.releaseTarget(targetId);
 
     // Should come back with the same resume token
-    QueryData queryData2 = localStore.allocateQuery(query);
+    QueryData queryData2 = localStore.allocateTarget(query.toTarget());
     assertEquals(resumeToken(1000), queryData2.getResumeToken());
   }
 
@@ -949,10 +949,10 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(TestUtil.noChangeEvent(targetId, 2000, WatchStream.EMPTY_RESUME_TOKEN));
 
     // Stop listening so that the query should become inactive (but persistent)
-    localStore.releaseQuery(query);
+    localStore.releaseTarget(targetId);
 
     // Should come back with the same resume token
-    QueryData queryData2 = localStore.allocateQuery(query);
+    QueryData queryData2 = localStore.allocateTarget(query.toTarget());
     assertEquals(resumeToken(1000), queryData2.getResumeToken());
   }
 
@@ -1081,7 +1081,7 @@ public abstract class LocalStoreTestCase {
     Assert.assertEquals(version(10), cachedQueryData.getLastLimboFreeSnapshotVersion());
 
     // The last limbo free snapshot version is persisted even if we release the target.
-    releaseQuery(query);
+    releaseTarget(targetId);
 
     if (!garbageCollectorIsEager()) {
       cachedQueryData = localStore.getQueryData(target);
@@ -1139,7 +1139,7 @@ public abstract class LocalStoreTestCase {
             asList(doc("foo/a", 10, map("matches", true))), asList(targetId), emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
     udpateViews(targetId, /* fromCache=*/ false);
-    releaseQuery(filteredQuery);
+    releaseTarget(targetId);
 
     // Start another query and add more matching documents to the collection.
     Query fullQuery = Query.atPath(ResourcePath.fromString("foo"));
@@ -1149,7 +1149,7 @@ public abstract class LocalStoreTestCase {
             asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 20, map("matches", true))),
             asList(targetId),
             emptyList()));
-    releaseQuery(fullQuery);
+    releaseTarget(targetId);
 
     // Run the original query again and ensure that both the original matches as well as all new
     // matches are included in the result set.
@@ -1177,7 +1177,7 @@ public abstract class LocalStoreTestCase {
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
     udpateViews(targetId, /* fromCache=*/ false);
-    releaseQuery(filteredQuery);
+    releaseTarget(targetId);
 
     // Modify one of the documents to no longer match while the filtered query is inactive.
     Query fullQuery = Query.atPath(ResourcePath.fromString("foo"));
@@ -1187,7 +1187,7 @@ public abstract class LocalStoreTestCase {
             asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 20, map("matches", false))),
             asList(targetId),
             emptyList()));
-    releaseQuery(fullQuery);
+    releaseTarget(targetId);
 
     // Re-run the filtered query and verify that the modified document is no longer returned.
     allocateQuery(filteredQuery);

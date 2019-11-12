@@ -521,11 +521,6 @@ public final class LocalStore {
     return localDocuments.getDocument(key);
   }
 
-  // TODO(wuandy): Delete this method, it's only for change isolation.
-  public QueryData allocateQuery(Query query) {
-    return allocateTarget(query.toTarget());
-  }
-
   /**
    * Assigns the given query an internal ID so that its results can be pinned so they don't get
    * GC'd. A query must be allocated in the local store before the store can be used to manage its
@@ -586,18 +581,11 @@ public final class LocalStore {
     int targetId;
   }
 
-  // TODO(wuandy): Delete this method, it's only for change isolation.
-  public void releaseQuery(Query query) {
-    releaseTarget(query.toTarget());
-  }
-
   /** Unpin all the documents associated with the given target. */
-  public void releaseTarget(Target target) {
+  public void releaseTarget(int targetId) {
     persistence.runTransaction(
         "Release target",
         () -> {
-          Integer targetId = targetIdByTarget.get(target);
-          hardAssert(targetId != null, "Tried to release nonexistent target: %s", target);
           QueryData queryData = queryDataByTarget.get(targetId);
 
           // References for documents sent via Watch are automatically removed when we delete a
@@ -613,7 +601,7 @@ public final class LocalStore {
           // Note: This also updates the query cache
           persistence.getReferenceDelegate().removeTarget(queryData);
           queryDataByTarget.remove(targetId);
-          targetIdByTarget.remove(target);
+          targetIdByTarget.remove(queryData.getTarget());
         });
   }
 
