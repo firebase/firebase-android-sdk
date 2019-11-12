@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
+import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,11 +37,12 @@ public class TestDeviceHelperTest {
   private static final CampaignProto.ThickContent.Builder thickContentBuilder =
       CampaignProto.ThickContent.newBuilder()
           .setContent(MessagesProto.Content.getDefaultInstance());
-  private static final CampaignProto.ThickContent thickContent = thickContentBuilder.build();
+  private static final CampaignProto.ThickContent thickContent =
+      (ThickContent) thickContentBuilder.build();
   private static final FetchEligibleCampaignsResponse.Builder campaignsResponseBuilder =
       FetchEligibleCampaignsResponse.newBuilder();
   private static final FetchEligibleCampaignsResponse campaignsResponse =
-      campaignsResponseBuilder.build();
+      (FetchEligibleCampaignsResponse) campaignsResponseBuilder.build();
 
   @Mock private SharedPreferencesUtils sharedPreferencesUtils;
   private TestDeviceHelper testDeviceHelper;
@@ -67,11 +69,12 @@ public class TestDeviceHelperTest {
     testDeviceHelper = new TestDeviceHelper(sharedPreferencesUtils);
 
     CampaignProto.ThickContent randomContent =
-        CampaignProto.ThickContent.newBuilder(thickContent).build();
+        (ThickContent) ThickContent.newBuilder(thickContent).build();
     FetchEligibleCampaignsResponse response =
-        FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
-            .addMessages(randomContent)
-            .build();
+        (FetchEligibleCampaignsResponse)
+            FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
+                .addMessages(randomContent)
+                .build();
 
     assertThat(testDeviceHelper.isAppInstallFresh()).isTrue();
     for (int i = 0; i < TestDeviceHelper.MAX_FETCH_COUNT - 1; i++) {
@@ -92,11 +95,12 @@ public class TestDeviceHelperTest {
     testDeviceHelper = new TestDeviceHelper(sharedPreferencesUtils);
 
     CampaignProto.ThickContent testContent =
-        CampaignProto.ThickContent.newBuilder(thickContent).setIsTestCampaign(true).build();
+        (ThickContent) ThickContent.newBuilder(thickContent).setIsTestCampaign(true).build();
     FetchEligibleCampaignsResponse response =
-        FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
-            .addMessages(testContent)
-            .build();
+        (FetchEligibleCampaignsResponse)
+            FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
+                .addMessages(testContent)
+                .build();
 
     assertThat(testDeviceHelper.isDeviceInTestMode()).isFalse();
     testDeviceHelper.processCampaignFetch(response);

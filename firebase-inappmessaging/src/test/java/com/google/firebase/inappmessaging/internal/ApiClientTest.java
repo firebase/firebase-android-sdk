@@ -57,10 +57,12 @@ public class ApiClientTest {
   private static final String TEST_PROJECT_NUMBER = "123";
   private static final String CAMPAIGN_ID = "campaign_id";
   private static final CampaignImpressionList campaignImpressionList =
-      CampaignImpressionList.newBuilder()
-          .addAlreadySeenCampaigns(
-              CampaignImpression.newBuilder().setCampaignId(CAMPAIGN_ID).build())
-          .build();
+      (CampaignImpressionList)
+          CampaignImpressionList.newBuilder()
+              .addAlreadySeenCampaigns(
+                  (CampaignImpression)
+                      CampaignImpression.newBuilder().setCampaignId(CAMPAIGN_ID).build())
+              .build();
   private FetchEligibleCampaignsResponse testFetchEligibleCampaignsResponse =
       FetchEligibleCampaignsResponse.getDefaultInstance();
   private static final String PACKAGE_NAME = "package_name";

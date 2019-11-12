@@ -41,6 +41,7 @@ import static com.google.firebase.inappmessaging.testutil.TestProtos.SECONDARY_A
 import static com.google.firebase.inappmessaging.testutil.TestProtos.TITLE_PROTO;
 
 import com.google.firebase.inappmessaging.MessagesProto;
+import com.google.firebase.inappmessaging.MessagesProto.Content;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -346,14 +347,15 @@ public class ProtoMarshallerClientTest {
   @Test
   public void card_withMinimumAttributes_createsInAppMessage() {
     MessagesProto.Content minimumCard =
-        MessagesProto.Content.newBuilder()
-            .setCard(
-                MessagesProto.CardMessage.newBuilder()
-                    .setPrimaryActionButton(BUTTON_PROTO)
-                    .setTitle(TITLE_PROTO)
-                    .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
-                    .setPortraitImageUrl(IMAGE_URL_STRING))
-            .build();
+        (Content)
+            Content.newBuilder()
+                .setCard(
+                    MessagesProto.CardMessage.newBuilder()
+                        .setPrimaryActionButton(BUTTON_PROTO)
+                        .setTitle(TITLE_PROTO)
+                        .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+                        .setPortraitImageUrl(IMAGE_URL_STRING))
+                .build();
 
     CardMessage expected =
         CardMessage.builder()
@@ -362,6 +364,30 @@ public class ProtoMarshallerClientTest {
             .setPortraitImageData(IMAGE_DATA)
             .setTitle(TITLE_MODEL)
             .build(CAMPAIGN_METADATA_MODEL, DATA);
+    InAppMessage actual = decode(minimumCard);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void card_withNoDataBundle_createsInAppMessage() {
+    MessagesProto.Content minimumCard =
+        (Content)
+            Content.newBuilder()
+                .setCard(
+                    MessagesProto.CardMessage.newBuilder()
+                        .setPrimaryActionButton(BUTTON_PROTO)
+                        .setTitle(TITLE_PROTO)
+                        .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+                        .setPortraitImageUrl(IMAGE_URL_STRING))
+                .build();
+
+    CardMessage expected =
+        CardMessage.builder()
+            .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+            .setPrimaryAction(ACTION_MODEL_WITHOUT_URL)
+            .setPortraitImageData(IMAGE_DATA)
+            .setTitle(TITLE_MODEL)
+            .build(CAMPAIGN_METADATA_MODEL, null);
     InAppMessage actual = decode(minimumCard);
     assertThat(actual).isEqualTo(expected);
   }
