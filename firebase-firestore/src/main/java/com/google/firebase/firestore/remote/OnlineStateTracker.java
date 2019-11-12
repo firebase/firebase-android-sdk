@@ -17,7 +17,9 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.core.OnlineState;
+import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
+import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.Logger;
 import io.grpc.Status;
 import java.util.Locale;
@@ -53,7 +55,9 @@ class OnlineStateTracker {
   // timeout for OnlineState to reach ONLINE or OFFLINE. If the timeout is reached, we transition
   // to OFFLINE rather than waiting indefinitely. This timeout is also used when attempting to
   // establish a connection when in an OFFLINE state.
-  static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 10 * 1000;
+  static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
+
+  private static final int ONLINE_STATE_TIMEOUT_MS = 10 * 1000;
 
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "OnlineStateTracker";
@@ -70,14 +74,20 @@ class OnlineStateTracker {
   // (MAX_WATCH_STREAM_FAILURES times).
   private DelayedTask connectivityAttemptTimer;
 
+  private DelayedTask onlineStateTimer;
+
   // Whether the client should log a warning message if it fails to connect to the backend
   // (initially true, cleared after a successful stream, or if we've logged the message already).
   private boolean shouldWarnClientIsOffline;
 
+  // The AsyncQueue to use for running timers (and calling OnlineStateCallback methods).
+  private final AsyncQueue workerQueue;
+
   // The callback to notify on OnlineState changes.
   private final OnlineStateCallback onlineStateCallback;
 
-  OnlineStateTracker(OnlineStateCallback onlineStateCallback) {
+  OnlineStateTracker(AsyncQueue workerQueue, OnlineStateCallback onlineStateCallback) {
+    this.workerQueue = workerQueue;
     this.onlineStateCallback = onlineStateCallback;
     state = OnlineState.UNKNOWN;
     shouldWarnClientIsOffline = true;
@@ -91,6 +101,25 @@ class OnlineStateTracker {
   void handleWatchStreamStart() {
     if (watchStreamFailures == 0) {
       setAndBroadcastState(OnlineState.UNKNOWN);
+      onlineStateTimer =
+          workerQueue.enqueueAfterDelay(
+              TimerId.ONLINE_STATE_TIMEOUT,
+              ONLINE_STATE_TIMEOUT_MS,
+              () -> {
+                onlineStateTimer = null;
+                hardAssert(
+                    state == OnlineState.UNKNOWN,
+                    "Timer should be canceled if we transitioned to a different state.");
+                logClientOfflineWarningIfNecessary(
+                    String.format(
+                        Locale.ENGLISH,
+                        "Backend didn't respond within %d seconds\n",
+                        ONLINE_STATE_TIMEOUT_MS / 1000));
+                setAndBroadcastState(OnlineState.OFFLINE);
+
+                // NOTE: handleWatchStreamFailure() will continue to increment watchStreamFailures
+                // even though we are already marked OFFLINE but this is non-harmful.
+              });
     }
     hardAssert(
         connectivityAttemptTimer == null, "connectivityAttemptTimer shouldn't be started yet");
@@ -174,6 +203,10 @@ class OnlineStateTracker {
     if (connectivityAttemptTimer != null) {
       connectivityAttemptTimer.cancel();
       connectivityAttemptTimer = null;
+    }
+    if (onlineStateTimer != null) {
+      onlineStateTimer.cancel();
+      onlineStateTimer = null;
     }
   }
 

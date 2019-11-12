@@ -164,7 +164,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     listenTargets = new HashMap<>();
     writePipeline = new ArrayDeque<>();
-    onlineStateTracker = new OnlineStateTracker(remoteStoreCallback::handleOnlineStateChange);
+    onlineStateTracker =
+        new OnlineStateTracker(this.workerQueue, remoteStoreCallback::handleOnlineStateChange);
 
     // Create new streams (but note they're not started yet).
     watchStream =

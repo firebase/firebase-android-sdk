@@ -67,14 +67,20 @@ public class AsyncQueue {
      * A timer used in OnlineStateTracker to transition from OnlineState UNKNOWN to OFFLINE after a
      * set timeout, rather than waiting indefinitely for success or failure.
      */
-    CONNECTIVITY_ATTEMPT_TIMER,
+    ONLINE_STATE_TIMEOUT,
     /** A timer used to periodically attempt LRU Garbage collection */
     GARBAGE_COLLECTION,
     /**
      * A timer used to retry transactions. Since there can be multiple concurrent transactions,
      * multiple of these may be in the queue at a given time.
      */
-    RETRY_TRANSACTION
+    RETRY_TRANSACTION,
+    /**
+     * A timer used in RemoteStore to monitor when a connection attempt is unsuccessful and retry
+     * accordingly. While `ONLINE_STATE_TIMEOUT` is used to transition from UNKNOWN to OFFLINE,
+     * `CONNECTIVITY_ATTEMPT_TIMER` is used for tracking and retrying connectivity attempts.
+     */
+    CONNECTIVITY_ATTEMPT_TIMER
   }
 
   /**

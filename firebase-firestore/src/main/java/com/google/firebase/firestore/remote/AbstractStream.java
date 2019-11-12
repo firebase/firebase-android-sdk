@@ -175,7 +175,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   private static final long IDLE_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(1);
 
   /** Maximum backoff time when reconnecting. */
-  private static final long RECONNECT_BACKOFF_MAX_DELAY_MS = TimeUnit.SECONDS.toMillis(5);
+  private static final long RECONNECT_BACKOFF_MAX_DELAY_MS = TimeUnit.SECONDS.toMillis(10);
 
   @Nullable private DelayedTask idleTimer;
 
