@@ -22,6 +22,7 @@ import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_ID_S
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_METADATA_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_NAME_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.CARD_MESSAGE_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_URL_STRING;
@@ -103,7 +104,7 @@ public class ProtoMarshallerClientTest {
         BannerMessage.builder()
             .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
             .setTitle(TITLE_MODEL)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
     InAppMessage actual = decode(minimumBanner);
     assertThat(actual).isEqualTo(expected);
   }
@@ -177,7 +178,7 @@ public class ProtoMarshallerClientTest {
         ModalMessage.builder()
             .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
             .setTitle(TITLE_MODEL)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
     InAppMessage actual = decode(minimumModal);
     assertThat(actual).isEqualTo(expected);
   }
@@ -222,7 +223,7 @@ public class ProtoMarshallerClientTest {
             .build();
 
     ImageOnlyMessage expected =
-        ImageOnlyMessage.builder().setImageData(IMAGE_DATA).build(CAMPAIGN_METADATA_MODEL);
+        ImageOnlyMessage.builder().setImageData(IMAGE_DATA).build(CAMPAIGN_METADATA_MODEL, DATA);
     InAppMessage actual = decode(minimumImageOnly);
     assertThat(actual).isEqualTo(expected);
   }
@@ -360,7 +361,7 @@ public class ProtoMarshallerClientTest {
             .setPrimaryAction(ACTION_MODEL_WITHOUT_URL)
             .setPortraitImageData(IMAGE_DATA)
             .setTitle(TITLE_MODEL)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
     InAppMessage actual = decode(minimumCard);
     assertThat(actual).isEqualTo(expected);
   }
@@ -386,6 +387,6 @@ public class ProtoMarshallerClientTest {
 
   private static InAppMessage decode(MessagesProto.Content message) {
     return ProtoMarshallerClient.decode(
-        message, CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE);
+        message, CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE, DATA);
   }
 }

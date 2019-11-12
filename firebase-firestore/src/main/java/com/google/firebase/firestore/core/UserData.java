@@ -52,7 +52,12 @@ public class UserData {
      * Indicates the source is a where clause, cursor bound, arrayUnion() element, etc. Of note,
      * ParseContext.isWrite() will return false.
      */
-    Argument
+    Argument,
+    /**
+     * Indicates that the source is an Argument that may directly contain nested arrays (e.g. the
+     * operand of a `whereIn` query).
+     */
+    ArrayArgument
   }
 
   /**
@@ -245,6 +250,7 @@ public class UserData {
         case Update:
           return true;
         case Argument:
+        case ArrayArgument:
           return false;
         default:
           throw Assert.fail(

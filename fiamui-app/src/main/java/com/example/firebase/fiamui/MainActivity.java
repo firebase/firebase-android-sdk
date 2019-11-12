@@ -30,6 +30,8 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay;
 import com.google.firebase.inappmessaging.model.*;
+import java.util.HashMap;
+import java.util.Map;
 import me.priyesh.chroma.ChromaDialog;
 import me.priyesh.chroma.ColorMode;
 import me.priyesh.chroma.ColorSelectListener;
@@ -154,13 +156,19 @@ public class MainActivity extends AppCompatActivity {
     String secondaryActionButtonTextString = secondaryActionButtonText.getText().toString();
 
     CampaignMetadata campaignMetadata = new CampaignMetadata("test_campaign", "name", true);
+    Map<String, String> data =
+        new HashMap<String, String>() {
+          {
+            put("up", "dog");
+          }
+        };
 
     if (useImageFiam.isChecked()) {
       ImageOnlyMessage.Builder builder = ImageOnlyMessage.builder();
       Action action = Action.builder().setActionUrl(actionButtonUrlString).build();
 
       ImageOnlyMessage message =
-          builder.setImageData(imageData).setAction(action).build(campaignMetadata);
+          builder.setImageData(imageData).setAction(action).build(campaignMetadata, data);
 
       FirebaseInAppMessagingDisplay.getInstance()
           .testMessage(this, message, new NoOpDisplayCallbacks());
@@ -181,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
               .setBody(body)
               .setImageData(imageData)
               .setAction(action)
-              .build(campaignMetadata);
+              .build(campaignMetadata, data);
 
       FirebaseInAppMessagingDisplay.getInstance()
           .testMessage(this, message, new NoOpDisplayCallbacks());
@@ -250,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
               .setLandscapeImageData(landscapeImageData)
               .setPrimaryAction(primaryAction)
               .setSecondaryAction(secondaryAction)
-              .build(campaignMetadata);
+              .build(campaignMetadata, data);
 
       FirebaseInAppMessagingDisplay.getInstance()
           .testMessage(this, message, new NoOpDisplayCallbacks());
@@ -290,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
               .setBody(body)
               .setImageData(imageData)
               .setAction(modalAction)
-              .build(campaignMetadata);
+              .build(campaignMetadata, data);
 
       FirebaseInAppMessagingDisplay.getInstance()
           .testMessage(this, message, new NoOpDisplayCallbacks());

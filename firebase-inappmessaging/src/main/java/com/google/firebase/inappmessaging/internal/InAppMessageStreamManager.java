@@ -300,12 +300,14 @@ public class InAppMessageStreamManager {
 
   private Maybe<TriggeredInAppMessage> triggeredInAppMessage(
       ThickContent thickContent, String event) {
+
     InAppMessage inAppMessage =
         ProtoMarshallerClient.decode(
             thickContent.getContent(),
             thickContent.getVanillaPayload().getCampaignId(),
             thickContent.getVanillaPayload().getCampaignName(),
-            thickContent.getIsTestCampaign());
+            thickContent.getIsTestCampaign(),
+            thickContent.getDataBundleMap());
     if (inAppMessage.getMessageType().equals(MessageType.UNSUPPORTED)) {
       return Maybe.empty();
     }

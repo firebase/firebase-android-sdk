@@ -15,6 +15,7 @@
 package com.google.firebase.inappmessaging.model;
 
 import androidx.annotation.NonNull;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 /** Encapsulates a Firebase In App ImageOnly Message. */
@@ -62,8 +63,9 @@ public class ImageOnlyMessage extends InAppMessage {
   private ImageOnlyMessage(
       @NonNull CampaignMetadata campaignMetadata,
       @NonNull ImageData imageData,
-      @Nullable Action action) {
-    super(campaignMetadata, MessageType.IMAGE_ONLY);
+      @Nullable Action action,
+      @Nullable Map<String, String> data) {
+    super(campaignMetadata, MessageType.IMAGE_ONLY, data);
     this.imageData = imageData;
     this.action = action;
   }
@@ -110,11 +112,11 @@ public class ImageOnlyMessage extends InAppMessage {
       return this;
     }
 
-    public ImageOnlyMessage build(CampaignMetadata campaignMetadata) {
+    public ImageOnlyMessage build(CampaignMetadata campaignMetadata, Map<String, String> data) {
       if (imageData == null) {
         throw new IllegalArgumentException("ImageOnly model must have image data");
       }
-      return new ImageOnlyMessage(campaignMetadata, imageData, action);
+      return new ImageOnlyMessage(campaignMetadata, imageData, action, data);
     }
   }
 }
