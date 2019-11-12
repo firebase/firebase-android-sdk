@@ -41,9 +41,10 @@ import org.robolectric.annotation.Config;
 public class ImpressionStorageClientTest {
   private static final String CAMPAIGN_ID = "campaign_id";
   private static final CampaignImpression campaignImpression =
-      CampaignImpression.newBuilder().setCampaignId(CAMPAIGN_ID).build();
+      (CampaignImpression) CampaignImpression.newBuilder().setCampaignId(CAMPAIGN_ID).build();
   private static final CampaignImpressionList campaignImpressionList =
-      CampaignImpressionList.newBuilder().addAlreadySeenCampaigns(campaignImpression).build();
+      (CampaignImpressionList)
+          CampaignImpressionList.newBuilder().addAlreadySeenCampaigns(campaignImpression).build();
   @Mock private ProtoStorageClient storageClient;
   private ImpressionStorageClient impressionStorageClient;
   private Completable fakeWrite;

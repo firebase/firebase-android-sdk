@@ -46,13 +46,22 @@ public class CampaignCacheClientTest {
   private static final long FUTURE = 1000;
 
   private final FetchEligibleCampaignsResponse fetchEligibleCampaignsResponse2 =
-      FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(FUTURE).build();
+      (FetchEligibleCampaignsResponse)
+          FetchEligibleCampaignsResponse.newBuilder()
+              .setExpirationEpochTimestampMillis(FUTURE)
+              .build();
 
   private final FetchEligibleCampaignsResponse fetchEligibleCampaignsResponse1 =
-      FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(FUTURE).build();
+      (FetchEligibleCampaignsResponse)
+          FetchEligibleCampaignsResponse.newBuilder()
+              .setExpirationEpochTimestampMillis(FUTURE)
+              .build();
 
   private final FetchEligibleCampaignsResponse expiredCampaignResponse =
-      FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(PAST).build();
+      (FetchEligibleCampaignsResponse)
+          FetchEligibleCampaignsResponse.newBuilder()
+              .setExpirationEpochTimestampMillis(PAST)
+              .build();
 
   CampaignCacheClient campaignCacheClient;
   TestObserver<FetchEligibleCampaignsResponse> storageWriteObserver;
