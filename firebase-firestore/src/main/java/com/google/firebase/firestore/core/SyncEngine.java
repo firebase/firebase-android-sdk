@@ -218,16 +218,17 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     QueryView queryView = queryViewsByQuery.get(query);
     hardAssert(queryView != null, "Trying to stop listening to a query not found");
 
-    // Only clean up the query view and query if this is not the only query mapped to its target.
-    if (queriesByTarget.get(queryView.getTargetId()).size() > 1) {
-      queriesByTarget.get(queryView.getTargetId()).remove(query);
-      queryViewsByQuery.remove(query);
-      return;
-    }
+    queryViewsByQuery.remove(query);
 
-    localStore.releaseTarget(queryView.getTargetId());
-    remoteStore.stopListening(queryView.getTargetId());
-    removeAndCleanupTarget(queryView.getTargetId(), Status.OK);
+    int targetId = queryView.getTargetId();
+    List<Query> targetQueries = queriesByTarget.get(targetId);
+    targetQueries.remove(query);
+
+    if (targetQueries.isEmpty()) {
+      localStore.releaseTarget(targetId);
+      remoteStore.stopListening(targetId);
+      removeAndCleanupTarget(targetId, Status.OK);
+    }
   }
 
   /**
