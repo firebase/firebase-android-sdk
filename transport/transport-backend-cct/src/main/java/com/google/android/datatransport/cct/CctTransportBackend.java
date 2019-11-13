@@ -266,7 +266,7 @@ final class CctTransportBackend implements TransportBackend {
       Logging.i(LOG_TAG, "Content-Type: " + connection.getHeaderField("Content-Type"));
       Logging.i(LOG_TAG, "Content-Encoding: " + connection.getHeaderField("Content-Encoding"));
 
-      if (responseCode == 302 || responseCode == 301 || responseCode == 307) {
+      if (responseCode == 302 || responseCode == 301) {
         String redirect = connection.getHeaderField("Location");
         return new HttpResponse(responseCode, new URL(redirect), 0);
       }
