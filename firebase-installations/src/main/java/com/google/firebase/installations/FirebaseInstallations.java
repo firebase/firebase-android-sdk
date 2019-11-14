@@ -271,16 +271,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         }
       }
 
-      // If persisted fid is in AUTH_TOKEN_ERROR state, clear the stored fid and update the
-      // listener with an exception.
-      if (persistedInstallationEntry.isAuthTokenErrored()) {
-        persistedInstallation.clear();
+      // If persisted installation entry is in NOT_GENERATED state, it was cleared due to
+      // authentication error during auth token generation.
+      if (persistedInstallationEntry.isNotGenerated()) {
         triggerOnException(
             persistedInstallationEntry,
             new FirebaseInstallationsException(
                 "Failed to generate auth token for this Firebase Installation. Call getId() "
                     + "to recreate a new Fid and a valid auth token.",
-                FirebaseInstallationsException.Status.CLIENT_ERROR));
+                FirebaseInstallationsException.Status.AUTHENTICATION_ERROR));
         return;
       }
 
@@ -370,16 +369,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               /*projectID= */ firebaseApp.getOptions().getProjectId(),
               /*refreshToken= */ persistedInstallationEntry.getRefreshToken());
 
-      if (tokenResult.getResponseCode() == TokenResult.ResponseCode.FID_ERROR
-          || tokenResult.getResponseCode() == TokenResult.ResponseCode.REFRESH_TOKEN_ERROR) {
-        persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-            persistedInstallationEntry
-                .toBuilder()
-                .setRegistrationStatus(RegistrationStatus.AUTHENTICATION_TOKEN_ERROR)
-                .build());
-      }
-
-      if (tokenResult.getResponseCode() == TokenResult.ResponseCode.OK) {
+      if (tokenResult.isSuccessful()) {
         persistedInstallation.insertOrUpdatePersistedInstallationEntry(
             persistedInstallationEntry
                 .toBuilder()
@@ -388,6 +378,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
                 .setExpiresInSecs(tokenResult.getTokenExpirationTimestamp())
                 .setTokenCreationEpochInSecs(creationTime)
                 .build());
+      } else if (tokenResult.isErrored()) {
+        persistedInstallation.clear();
       }
 
     } catch (FirebaseException exception) {

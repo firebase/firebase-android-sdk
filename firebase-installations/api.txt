@@ -17,6 +17,7 @@ package com.google.firebase.installations {
   }
 
   public enum FirebaseInstallationsException.Status {
+    enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status AUTHENTICATION_ERROR;
     enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status CLIENT_ERROR;
     enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status SDK_INTERNAL_ERROR;
   }
@@ -38,7 +39,6 @@ package com.google.firebase.installations.local {
   }
 
   public enum PersistedInstallation.RegistrationStatus {
-    enum_constant public static final com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus AUTHENTICATION_TOKEN_ERROR;
     enum_constant public static final com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus NOT_GENERATED;
     enum_constant public static final com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus REGISTERED;
     enum_constant public static final com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus REGISTER_ERROR;
@@ -55,7 +55,6 @@ package com.google.firebase.installations.local {
     method @Nullable public abstract String getRefreshToken();
     method @NonNull public abstract com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus getRegistrationStatus();
     method public abstract long getTokenCreationEpochInSecs();
-    method public boolean isAuthTokenErrored();
     method public boolean isErrored();
     method public boolean isNotGenerated();
     method public boolean isRegistered();
@@ -118,6 +117,8 @@ package com.google.firebase.installations.remote {
     method @Nullable public abstract com.google.firebase.installations.remote.TokenResult.ResponseCode getResponseCode();
     method @Nullable public abstract String getToken();
     method @NonNull public abstract long getTokenExpirationTimestamp();
+    method public boolean isErrored();
+    method public boolean isSuccessful();
     method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder toBuilder();
   }
 
