@@ -76,13 +76,6 @@ public final class FisAndroidTestConstants {
           .setResponseCode(ResponseCode.OK)
           .build();
 
-  public static final InstallationTokenResult TEST_INSTALLATION_TOKEN_RESULT =
-      InstallationTokenResult.builder()
-          .setToken(TEST_AUTH_TOKEN_2)
-          .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-          .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
-          .build();
-
   public static final TokenResult TEST_TOKEN_RESULT =
       TokenResult.builder()
           .setToken(TEST_AUTH_TOKEN_2)

@@ -60,11 +60,6 @@ public abstract class PersistedInstallationEntry {
     return getRegistrationStatus() == PersistedInstallation.RegistrationStatus.NOT_GENERATED;
   }
 
-  public boolean isAuthTokenErrored() {
-    return getRegistrationStatus()
-        == PersistedInstallation.RegistrationStatus.AUTHENTICATION_TOKEN_ERROR;
-  }
-
   @NonNull
   public abstract Builder toBuilder();
 

@@ -614,7 +614,7 @@ public class FirebaseInstallationsInstrumentedTest {
           .isInstanceOf(FirebaseInstallationsException.class);
       assertWithMessage("Exception status doesn't match")
           .that(((FirebaseInstallationsException) expected.getCause()).getStatus())
-          .isEqualTo(FirebaseInstallationsException.Status.CLIENT_ERROR);
+          .isEqualTo(FirebaseInstallationsException.Status.AUTHENTICATION_ERROR);
     }
 
     verify(backendClientReturnsOk, times(1))
