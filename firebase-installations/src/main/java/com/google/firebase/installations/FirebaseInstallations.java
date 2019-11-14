@@ -223,12 +223,20 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       PersistedInstallationEntry persistedInstallationEntry =
           persistedInstallation.readPersistedInstallationEntryValue();
 
+      // Default value of iidToken
+      String iidToken = null;
+
       // New FID needs to be created
       if (persistedInstallationEntry.isNotGenerated()) {
 
         // For a default firebase installation read the existing iid. For other custom firebase
         // installations create a new fid
         String fid = readExistingIidOrCreateFid();
+
+        // For a default firebase installation read the stored star scoped iid token. This token
+        // will be used for authenticating the iid on FIS server.
+        iidToken = iidStore.readToken();
+
         persistFid(fid);
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
       }
@@ -243,7 +251,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
       // FID needs to be registered
       if (persistedInstallationEntry.isUnregistered()) {
-        registerAndSaveFid(persistedInstallationEntry);
+        registerAndSaveFid(persistedInstallationEntry, iidToken);
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
         // Newly registered Fid will have valid auth token. No refresh required.
         synchronized (lock) {
@@ -314,7 +322,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /** Registers the created Fid with FIS servers and update the shared prefs. */
-  private Void registerAndSaveFid(PersistedInstallationEntry persistedInstallationEntry)
+  private Void registerAndSaveFid(
+      PersistedInstallationEntry persistedInstallationEntry, String iidToken)
       throws FirebaseInstallationsException {
     try {
       long creationTime = utils.currentTimeInSecs();
@@ -324,7 +333,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               /*apiKey= */ firebaseApp.getOptions().getApiKey(),
               /*fid= */ persistedInstallationEntry.getFirebaseInstallationId(),
               /*projectID= */ firebaseApp.getOptions().getProjectId(),
-              /*appId= */ getApplicationId());
+              /*appId= */ getApplicationId(),
+              /*iidToken= */ iidToken);
       if (installationResponse.getResponseCode() == ResponseCode.OK) {
         persistedInstallation.insertOrUpdatePersistedInstallationEntry(
             PersistedInstallationEntry.builder()

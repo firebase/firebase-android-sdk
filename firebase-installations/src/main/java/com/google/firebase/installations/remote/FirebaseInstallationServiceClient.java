@@ -22,6 +22,7 @@ import android.content.pm.PackageManager;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
@@ -61,6 +62,7 @@ public class FirebaseInstallationServiceClient {
 
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
+  private static final String X_ANDROID_IID_MIGRATION_KEY = "X-Goog-Fis-Android-Iid-Migration-Auth";
 
   private static final int NETWORK_TIMEOUT_MILLIS = 10000;
 
@@ -85,11 +87,16 @@ public class FirebaseInstallationServiceClient {
    * @param fid Firebase Installation Identifier
    * @param projectID Project Id
    * @param appId the identifier of a Firebase application
+   * @param iidToken the identifier of a Firebase application
    * @return {@link InstallationResponse} generated from the response body
    */
   @NonNull
   public InstallationResponse createFirebaseInstallation(
-      @NonNull String apiKey, @NonNull String fid, @NonNull String projectID, @NonNull String appId)
+      @NonNull String apiKey,
+      @NonNull String fid,
+      @NonNull String projectID,
+      @NonNull String appId,
+      @Nullable String iidToken)
       throws FirebaseException {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
     try {
@@ -106,6 +113,11 @@ public class FirebaseInstallationServiceClient {
         HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
         httpsURLConnection.setRequestMethod("POST");
         httpsURLConnection.setDoOutput(true);
+
+        // Set the iid token header for authenticating the iid migration to FIS.
+        if (iidToken != null) {
+          httpsURLConnection.addRequestProperty(X_ANDROID_IID_MIGRATION_KEY, iidToken);
+        }
 
         GZIPOutputStream gzipOutputStream =
             new GZIPOutputStream(httpsURLConnection.getOutputStream());
