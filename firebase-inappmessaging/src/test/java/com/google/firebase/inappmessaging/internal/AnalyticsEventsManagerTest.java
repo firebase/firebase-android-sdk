@@ -59,10 +59,9 @@ public class AnalyticsEventsManagerTest {
 
   private static final TriggeringCondition.Builder onAnalyticsEvent =
       TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_1));
-  private static final TriggeringCondition onForeground =
-      (TriggeringCondition) TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
+  private static final TriggeringCondition onForeground = TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
 
-  private static final Priority PRIORITY_TWO = (Priority) Priority.newBuilder().setValue(2).build();
+  private static final Priority PRIORITY_TWO = Priority.newBuilder().setValue(2).build();
   private static final VanillaCampaignPayload.Builder vanillaCampaign1 =
       VanillaCampaignPayload.newBuilder()
           .setCampaignId(CAMPAIGN_ID1)
@@ -112,7 +111,6 @@ public class AnalyticsEventsManagerTest {
   @Test
   public void extractAnalyticsEventNames_filtersOutFiamEvents() {
     FetchEligibleCampaignsResponse campaignsResponse =
-        (FetchEligibleCampaignsResponse)
             FetchEligibleCampaignsResponse.newBuilder()
                 .setExpirationEpochTimestampMillis(FUTURE)
                 .addMessages(ANALYTICS_EVENT_THICK_CONTENT_BUILDER)
@@ -138,7 +136,6 @@ public class AnalyticsEventsManagerTest {
             .setContent(Content.getDefaultInstance());
 
     FetchEligibleCampaignsResponse campaignsResponse =
-        (FetchEligibleCampaignsResponse)
             FetchEligibleCampaignsResponse.newBuilder()
                 .setExpirationEpochTimestampMillis(FUTURE)
                 .addMessages(ANALYTICS_EVENT_THICK_CONTENT_BUILDER)
@@ -184,7 +181,6 @@ public class AnalyticsEventsManagerTest {
             .setContent(Content.getDefaultInstance());
 
     FetchEligibleCampaignsResponse campaignsResponse =
-        (FetchEligibleCampaignsResponse)
             FetchEligibleCampaignsResponse.newBuilder()
                 .setExpirationEpochTimestampMillis(FUTURE)
                 .addMessages(event1ContentBuilder)
@@ -212,7 +208,6 @@ public class AnalyticsEventsManagerTest {
     }
 
     FetchEligibleCampaignsResponse campaignsResponse =
-        (FetchEligibleCampaignsResponse)
             FetchEligibleCampaignsResponse.newBuilder()
                 .setExpirationEpochTimestampMillis(FUTURE)
                 .addMessages(contentBuilder)

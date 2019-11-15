@@ -42,7 +42,7 @@ public class TestDeviceHelperTest {
   private static final FetchEligibleCampaignsResponse.Builder campaignsResponseBuilder =
       FetchEligibleCampaignsResponse.newBuilder();
   private static final FetchEligibleCampaignsResponse campaignsResponse =
-      (FetchEligibleCampaignsResponse) campaignsResponseBuilder.build();
+      campaignsResponseBuilder.build();
 
   @Mock private SharedPreferencesUtils sharedPreferencesUtils;
   private TestDeviceHelper testDeviceHelper;
@@ -68,10 +68,8 @@ public class TestDeviceHelperTest {
         .thenReturn(true);
     testDeviceHelper = new TestDeviceHelper(sharedPreferencesUtils);
 
-    CampaignProto.ThickContent randomContent =
-        (ThickContent) ThickContent.newBuilder(thickContent).build();
+    CampaignProto.ThickContent randomContent = ThickContent.newBuilder(thickContent).build();
     FetchEligibleCampaignsResponse response =
-        (FetchEligibleCampaignsResponse)
             FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
                 .addMessages(randomContent)
                 .build();
@@ -95,9 +93,8 @@ public class TestDeviceHelperTest {
     testDeviceHelper = new TestDeviceHelper(sharedPreferencesUtils);
 
     CampaignProto.ThickContent testContent =
-        (ThickContent) ThickContent.newBuilder(thickContent).setIsTestCampaign(true).build();
+        ThickContent.newBuilder(thickContent).setIsTestCampaign(true).build();
     FetchEligibleCampaignsResponse response =
-        (FetchEligibleCampaignsResponse)
             FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
                 .addMessages(testContent)
                 .build();

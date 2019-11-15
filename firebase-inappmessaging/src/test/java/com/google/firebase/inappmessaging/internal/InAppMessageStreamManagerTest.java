@@ -76,8 +76,8 @@ public class InAppMessageStreamManagerTest {
   private static final TriggeringCondition.Builder ON_ANALYTICS_TRIGGER =
       TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
   private static final TriggeringCondition ON_FOREGROUND_TRIGGER =
-      (TriggeringCondition) TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
-  private static final Priority priorityTwo = (Priority) Priority.newBuilder().setValue(2).build();
+      TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
+  private static final Priority priorityTwo = Priority.newBuilder().setValue(2).build();
   private static final VanillaCampaignPayload.Builder vanillaCampaign =
       VanillaCampaignPayload.newBuilder()
           .setCampaignId(CAMPAIGN_ID_STRING)
@@ -91,7 +91,7 @@ public class InAppMessageStreamManagerTest {
           .addTriggeringConditions(ON_ANALYTICS_TRIGGER)
           .setVanillaPayload(vanillaCampaign)
           .setContent(BANNER_MESSAGE_PROTO);
-  private static final ThickContent thickContent = (ThickContent) thickContentBuilder.build();
+  private static final ThickContent thickContent = thickContentBuilder.build();
 
   private static final TriggeredInAppMessage onForegroundTriggered =
       new TriggeredInAppMessage(BANNER_MESSAGE_MODEL, ON_FOREGROUND_EVENT_NAME);
@@ -102,15 +102,13 @@ public class InAppMessageStreamManagerTest {
           .setExpirationEpochTimestampMillis(FUTURE)
           .addMessages(thickContent);
   private static final FetchEligibleCampaignsResponse campaignsResponse =
-      (FetchEligibleCampaignsResponse) campaignsResponseBuilder.build();
+      campaignsResponseBuilder.build();
   private static final Schedulers schedulers =
       new Schedulers(trampoline(), trampoline(), trampoline());
 
   private static final CampaignImpressionList CAMPAIGN_IMPRESSIONS =
-      (CampaignImpressionList)
           CampaignImpressionList.newBuilder()
               .addAlreadySeenCampaigns(
-                  (CampaignImpression)
                       CampaignImpression.newBuilder().setCampaignId(CAMPAIGN_ID_STRING).build())
               .build();
   private static final String LIMITER_KEY = "LIMITER_KEY";
@@ -243,13 +241,11 @@ public class InAppMessageStreamManagerTest {
             .setCampaignStartTimeMillis(PAST)
             .setCampaignEndTimeMillis(PAST);
     ThickContent t =
-        (ThickContent)
             ThickContent.newBuilder(thickContent)
                 .clearContent()
                 .setVanillaPayload(expiredCampaign)
                 .build();
     FetchEligibleCampaignsResponse r =
-        (FetchEligibleCampaignsResponse)
             FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
                 .clearMessages()
                 .addMessages(t)
@@ -275,18 +271,15 @@ public class InAppMessageStreamManagerTest {
   @Test
   public void stream_onMultipleCampaigns_triggersTestMessage() {
     ThickContent highPriorityContent =
-        (ThickContent)
             ThickContent.newBuilder(thickContent)
                 .setPriority(Priority.newBuilder().setValue(1))
                 .build();
     ThickContent testContent =
-        (ThickContent)
             ThickContent.newBuilder(thickContent)
                 .setPriority(Priority.newBuilder().setValue(2))
                 .setIsTestCampaign(true)
                 .build();
     FetchEligibleCampaignsResponse response =
-        (FetchEligibleCampaignsResponse)
             FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
                 .addMessages(highPriorityContent)
                 .addMessages(testContent)
@@ -470,7 +463,6 @@ public class InAppMessageStreamManagerTest {
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(true));
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(true);
     ThickContent testMessageContent =
-        (ThickContent)
             ThickContent.newBuilder()
                 .setPriority(priorityTwo)
                 .addTriggeringConditions(ON_FOREGROUND_TRIGGER)
@@ -483,7 +475,6 @@ public class InAppMessageStreamManagerTest {
     TriggeredInAppMessage testTriggered =
         new TriggeredInAppMessage(BANNER_TEST_MESSAGE_MODEL, ON_FOREGROUND_EVENT_NAME);
     FetchEligibleCampaignsResponse response =
-        (FetchEligibleCampaignsResponse)
             FetchEligibleCampaignsResponse.newBuilder()
                 .setExpirationEpochTimestampMillis(FUTURE)
                 .addMessages(testMessageContent)
@@ -500,7 +491,6 @@ public class InAppMessageStreamManagerTest {
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(false));
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(true);
     ThickContent testMessageContent =
-        (ThickContent)
             ThickContent.newBuilder()
                 .setPriority(priorityTwo)
                 .addTriggeringConditions(ON_ANALYTICS_TRIGGER)
@@ -512,7 +502,6 @@ public class InAppMessageStreamManagerTest {
     TriggeredInAppMessage testTriggered =
         new TriggeredInAppMessage(BANNER_TEST_MESSAGE_MODEL, ON_FOREGROUND_EVENT_NAME);
     FetchEligibleCampaignsResponse response =
-        (FetchEligibleCampaignsResponse)
             FetchEligibleCampaignsResponse.newBuilder()
                 .setExpirationEpochTimestampMillis(FUTURE)
                 .addMessages(testMessageContent)

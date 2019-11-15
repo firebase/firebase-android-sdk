@@ -46,19 +46,16 @@ public class CampaignCacheClientTest {
   private static final long FUTURE = 1000;
 
   private final FetchEligibleCampaignsResponse fetchEligibleCampaignsResponse2 =
-      (FetchEligibleCampaignsResponse)
           FetchEligibleCampaignsResponse.newBuilder()
               .setExpirationEpochTimestampMillis(FUTURE)
               .build();
 
   private final FetchEligibleCampaignsResponse fetchEligibleCampaignsResponse1 =
-      (FetchEligibleCampaignsResponse)
           FetchEligibleCampaignsResponse.newBuilder()
               .setExpirationEpochTimestampMillis(FUTURE)
               .build();
 
   private final FetchEligibleCampaignsResponse expiredCampaignResponse =
-      (FetchEligibleCampaignsResponse)
           FetchEligibleCampaignsResponse.newBuilder()
               .setExpirationEpochTimestampMillis(PAST)
               .build();
