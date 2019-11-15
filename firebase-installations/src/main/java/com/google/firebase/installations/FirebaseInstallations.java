@@ -223,8 +223,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       PersistedInstallationEntry persistedInstallationEntry =
           persistedInstallation.readPersistedInstallationEntryValue();
 
-      // Default value of iidToken
-      String iidToken = null;
+      // Default value of instanceIdMigrationAuth: null
+      String instanceIdMigrationAuth = null;
 
       // New FID needs to be created
       if (persistedInstallationEntry.isNotGenerated()) {
@@ -235,7 +235,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
         // For a default firebase installation read the stored star scoped iid token. This token
         // will be used for authenticating the iid on FIS server.
-        iidToken = iidStore.readToken();
+        instanceIdMigrationAuth = iidStore.readToken();
 
         persistFid(fid);
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
@@ -251,7 +251,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
       // FID needs to be registered
       if (persistedInstallationEntry.isUnregistered()) {
-        registerAndSaveFid(persistedInstallationEntry, iidToken);
+        registerAndSaveFid(persistedInstallationEntry, instanceIdMigrationAuth);
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
         // Newly registered Fid will have valid auth token. No refresh required.
         synchronized (lock) {
