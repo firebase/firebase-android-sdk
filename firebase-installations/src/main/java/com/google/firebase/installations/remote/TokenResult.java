@@ -45,9 +45,7 @@ public abstract class TokenResult {
   /** A new FIS Auth-Token, created for this Firebase Installation. */
   @Nullable
   public abstract String getToken();
-  /**
-   * The amount of time, in seconds, before the auth-token expires for this Firebase Installation.
-   */
+  /** The timestamp, before the auth-token expires for this Firebase Installation. */
   @NonNull
   public abstract long getTokenExpirationTimestamp();
 

@@ -216,7 +216,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetId_PersistedInstallationOk_BackendOk() throws Exception {
-    when(mockUtils.isAuthTokenExpired(REGISTERED_IID_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_IID_ENTRY)).thenReturn(/*isValid*/ false);
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     // No exception, means success.
@@ -240,7 +240,7 @@ public class FirebaseInstallationsInstrumentedTest {
   @Test
   public void testGetId_migrateIid_successful() throws Exception {
     when(mockIidStore.readIid()).thenReturn(TEST_INSTANCE_ID_1);
-    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
     when(backendClientReturnsOk.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE_WITH_IID);
@@ -265,7 +265,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetId_multipleCalls_sameFIDReturned() throws Exception {
-    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
     when(backendClientReturnsOk.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
@@ -296,7 +296,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetId_invalidFid_storesValidFidFromResponse() throws Exception {
     // Update local storage with installation entry that has invalid fid.
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(INVALID_INSTALLATION_ENTRY);
-    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     // No exception, means success.
@@ -401,7 +401,7 @@ public class FirebaseInstallationsInstrumentedTest {
             invocation -> {
               throw new InterruptedException();
             });
-    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
 
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
@@ -433,7 +433,7 @@ public class FirebaseInstallationsInstrumentedTest {
             invocation -> {
               throw new InterruptedException();
             });
-    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
+    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(/*isExpired*/ true);
 
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
@@ -460,7 +460,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetId_expiredAuthToken_refreshesAuthToken() throws Exception {
     // Update local storage with installation entry that has auth token expired.
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(EXPIRED_AUTH_TOKEN_ENTRY);
-    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
+    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(/*isExpired*/ true);
 
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
@@ -486,7 +486,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetAuthToken_fidDoesNotExist_successful() throws Exception {
-    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
     Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
@@ -498,7 +498,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetAuthToken_PersistedInstallationError_failure() throws Exception {
-    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
             executor,
@@ -528,7 +528,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetAuthToken_fidExists_successful() throws Exception {
     when(mockPersistedInstallation.readPersistedInstallationEntryValue())
         .thenReturn(REGISTERED_INSTALLATION_ENTRY);
-    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
 
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
@@ -553,8 +553,8 @@ public class FirebaseInstallationsInstrumentedTest {
   @Test
   public void testGetAuthToken_expiredAuthToken_fetchedNewTokenFromFIS() throws Exception {
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(EXPIRED_AUTH_TOKEN_ENTRY);
-    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
-    when(mockUtils.isAuthTokenExpired(UPDATED_AUTH_TOKEN_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(/*isExpired*/ true);
+    when(mockUtils.isAuthTokenExpired(UPDATED_AUTH_TOKEN_ENTRY)).thenReturn(/*isValid*/ false);
 
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
@@ -574,7 +574,7 @@ public class FirebaseInstallationsInstrumentedTest {
     // Update local storage with a unregistered installation entry to validate that getAuthToken
     // calls getId to ensure FID registration and returns a valid auth token.
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(UNREGISTERED_INSTALLATION_ENTRY);
-    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
 
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
@@ -599,7 +599,8 @@ public class FirebaseInstallationsInstrumentedTest {
             anyString(), anyString(), anyString(), anyString()))
         .thenReturn(
             TokenResult.builder().setResponseCode(TokenResult.ResponseCode.FID_ERROR).build());
-    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(true, false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY))
+        .thenReturn(/* isExpired*/ true, /*isValid*/ false);
 
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
@@ -631,7 +632,7 @@ public class FirebaseInstallationsInstrumentedTest {
     when(backendClientReturnsError.generateAuthToken(
             anyString(), anyString(), anyString(), anyString()))
         .thenThrow(new FirebaseException("Server Error"));
-    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
 
     FirebaseInstallations firebaseInstallations =
         new FirebaseInstallations(
@@ -664,8 +665,8 @@ public class FirebaseInstallationsInstrumentedTest {
     // triggered simultaneously. Task2 waits for Task1 to complete. On task1 completion, task2 reads
     // the UPDATED_AUTH_TOKEN_FID_ENTRY generated by Task1.
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(EXPIRED_AUTH_TOKEN_ENTRY);
-    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(true);
-    when(mockUtils.isAuthTokenExpired(UPDATED_AUTH_TOKEN_ENTRY)).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(EXPIRED_AUTH_TOKEN_ENTRY)).thenReturn(/*isExpired*/ true);
+    when(mockUtils.isAuthTokenExpired(UPDATED_AUTH_TOKEN_ENTRY)).thenReturn(/*isValid*/ false);
 
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
@@ -714,7 +715,7 @@ public class FirebaseInstallationsInstrumentedTest {
                         .build()))
         .when(backendClientReturnsOk)
         .generateAuthToken(anyString(), anyString(), anyString(), anyString());
-    when(mockUtils.isAuthTokenExpired(any())).thenReturn(false);
+    when(mockUtils.isAuthTokenExpired(any())).thenReturn(/*isValid*/ false);
 
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
