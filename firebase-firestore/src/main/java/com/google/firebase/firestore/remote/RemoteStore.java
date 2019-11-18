@@ -351,17 +351,15 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   /**
    * Stops listening to the target with the given target ID.
    *
-   * <p>It is a no-op if the given target id is not being listened to.
+   * <p>It is an error if the given target id is not being listened to.
    *
    * <p>If this is called with the last active targetId, the watch stream enters idle mode and will
    * be torn down after one minute of inactivity.
    */
   public void stopListening(int targetId) {
-    if (!listenTargets.containsKey(targetId)) {
-      return;
-    }
-
-    listenTargets.remove(targetId);
+    QueryData queryData = listenTargets.remove(targetId);
+    hardAssert(
+        queryData != null, "stopListening called on target no currently watched: %d", targetId);
 
     // The watch stream might not be started if we're in a disconnected state
     if (watchStream.isOpen()) {

@@ -584,16 +584,14 @@ public final class LocalStore {
   /**
    * Unpin all the documents associated with the given target.
    *
-   * <p>Releasing a non-existing target is a no-op.
+   * <p>Releasing a non-existing target is an error.
    */
   public void releaseTarget(int targetId) {
     persistence.runTransaction(
         "Release target",
         () -> {
           QueryData queryData = queryDataByTarget.get(targetId);
-          if (queryData == null) {
-            return;
-          }
+          hardAssert(queryData != null, "Tried to release nonexistent target: %s", targetId);
 
           // References for documents sent via Watch are automatically removed when we delete a
           // query's target data from the reference delegate. Since this does not remove references
