@@ -323,13 +323,16 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   // Watch Stream
 
-  /** Listens to the target identified by the given QueryData. */
+  /**
+   * Listens to the target identified by the given QueryData.
+   *
+   * <p>It is a no-op if the target of the given query data is already being listened to.
+   */
   public void listen(QueryData queryData) {
     Integer targetId = queryData.getTargetId();
-    hardAssert(
-        !listenTargets.containsKey(targetId),
-        "listen called with duplicate target ID: %d",
-        targetId);
+    if (listenTargets.containsKey(targetId)) {
+      return;
+    }
 
     listenTargets.put(targetId, queryData);
 
@@ -347,6 +350,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   /**
    * Stops listening to the target with the given target ID.
+   *
+   * <p>It is an error if the given target id is not being listened to.
    *
    * <p>If this is called with the last active targetId, the watch stream enters idle mode and will
    * be torn down after one minute of inactivity.

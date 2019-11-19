@@ -807,7 +807,16 @@ public final class RemoteSerializer {
       endAt = decodeBound(query.getEndAt());
     }
 
-    return new Query(path, collectionGroup, filterBy, orderBy, limit, startAt, endAt).toTarget();
+    return new Query(
+            path,
+            collectionGroup,
+            filterBy,
+            orderBy,
+            limit,
+            Query.LimitType.LIMIT_TO_FIRST,
+            startAt,
+            endAt)
+        .toTarget();
   }
 
   // Filters

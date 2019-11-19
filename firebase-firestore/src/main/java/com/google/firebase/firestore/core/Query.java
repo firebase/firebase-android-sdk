@@ -35,6 +35,12 @@ import java.util.List;
  * LocalStore, as well as be converted to a {@code Target} to query the RemoteStore results.
  */
 public final class Query {
+
+  public enum LimitType {
+    LIMIT_TO_FIRST,
+    LIMIT_TO_LAST
+  }
+
   /**
    * Creates and returns a new Query.
    *
@@ -64,6 +70,7 @@ public final class Query {
   private final @Nullable String collectionGroup;
 
   private final long limit;
+  private final LimitType limitType;
 
   private final @Nullable Bound startAt;
   private final @Nullable Bound endAt;
@@ -75,6 +82,7 @@ public final class Query {
       List<Filter> filters,
       List<OrderBy> explicitSortOrder,
       long limit,
+      LimitType limitType,
       @Nullable Bound startAt,
       @Nullable Bound endAt) {
     this.path = path;
@@ -82,6 +90,7 @@ public final class Query {
     this.explicitSortOrder = explicitSortOrder;
     this.filters = filters;
     this.limit = limit;
+    this.limitType = limitType;
     this.startAt = startAt;
     this.endAt = endAt;
   }
@@ -97,6 +106,7 @@ public final class Query {
         Collections.emptyList(),
         Collections.emptyList(),
         Target.NO_LIMIT,
+        LimitType.LIMIT_TO_FIRST,
         null,
         null);
   }
@@ -142,13 +152,31 @@ public final class Query {
    * The maximum number of results to return. If there is no limit on the query, then this will
    * cause an assertion failure.
    */
-  public long getLimit() {
-    hardAssert(hasLimit(), "Called getLimit when no limit was set");
+  public long getLimitToFirst() {
+    hardAssert(hasLimitToFirst(), "Called getLimitToFirst when no limit was set");
     return limit;
   }
 
-  public boolean hasLimit() {
-    return limit != Target.NO_LIMIT;
+  public boolean hasLimitToFirst() {
+    return limitType == LimitType.LIMIT_TO_FIRST && limit != Target.NO_LIMIT;
+  }
+
+  /**
+   * The maximum number of last-matching results to return. If there is no limit on the query, then
+   * this will cause an assertion failure.
+   */
+  public long getLimitToLast() {
+    hardAssert(hasLimitToLast(), "Called getLimitToLast when no limit was set");
+    return limit;
+  }
+
+  public boolean hasLimitToLast() {
+    return limitType == LimitType.LIMIT_TO_LAST && limit != Target.NO_LIMIT;
+  }
+
+  public LimitType getLimitType() {
+    hardAssert(hasLimitToLast() || hasLimitToFirst(), "Called getLimitType when no limit was set");
+    return limitType;
   }
 
   /** An optional bound to start the query at. */
@@ -229,7 +257,7 @@ public final class Query {
     List<Filter> updatedFilter = new ArrayList<>(filters);
     updatedFilter.add(filter);
     return new Query(
-        path, collectionGroup, updatedFilter, explicitSortOrder, limit, startAt, endAt);
+        path, collectionGroup, updatedFilter, explicitSortOrder, limit, limitType, startAt, endAt);
   }
 
   /**
@@ -248,7 +276,8 @@ public final class Query {
     }
     List<OrderBy> updatedSortOrder = new ArrayList<>(explicitSortOrder);
     updatedSortOrder.add(order);
-    return new Query(path, collectionGroup, filters, updatedSortOrder, limit, startAt, endAt);
+    return new Query(
+        path, collectionGroup, filters, updatedSortOrder, limit, limitType, startAt, endAt);
   }
 
   /**
@@ -257,8 +286,34 @@ public final class Query {
    * @param limit The maximum number of results to return. If {@code limit == NO_LIMIT}, then no
    *     limit is applied. Otherwise, if {@code limit <= 0}, behavior is unspecified.
    */
-  public Query limit(long limit) {
-    return new Query(path, collectionGroup, filters, explicitSortOrder, limit, startAt, endAt);
+  public Query limitToFirst(long limit) {
+    return new Query(
+        path,
+        collectionGroup,
+        filters,
+        explicitSortOrder,
+        limit,
+        LimitType.LIMIT_TO_FIRST,
+        startAt,
+        endAt);
+  }
+
+  /**
+   * Returns a new Query with the given limit on how many last-matching results can be returned.
+   *
+   * @param limit The maximum number of results to return. If {@code limit == NO_LIMIT}, then no
+   *     limit is applied. Otherwise, if {@code limit <= 0}, behavior is unspecified.
+   */
+  public Query limitToLast(long limit) {
+    return new Query(
+        path,
+        collectionGroup,
+        filters,
+        explicitSortOrder,
+        limit,
+        LimitType.LIMIT_TO_LAST,
+        startAt,
+        endAt);
   }
 
   /**
@@ -268,7 +323,8 @@ public final class Query {
    * @return the new Query.
    */
   public Query startAt(Bound bound) {
-    return new Query(path, collectionGroup, filters, explicitSortOrder, limit, bound, endAt);
+    return new Query(
+        path, collectionGroup, filters, explicitSortOrder, limit, limitType, bound, endAt);
   }
 
   /**
@@ -278,7 +334,8 @@ public final class Query {
    * @return the new Query.
    */
   public Query endAt(Bound bound) {
-    return new Query(path, collectionGroup, filters, explicitSortOrder, limit, startAt, bound);
+    return new Query(
+        path, collectionGroup, filters, explicitSortOrder, limit, limitType, startAt, bound);
   }
 
   /**
@@ -288,7 +345,14 @@ public final class Query {
    */
   public Query asCollectionQueryAtPath(ResourcePath path) {
     return new Query(
-        path, /*collectionGroup=*/ null, filters, explicitSortOrder, limit, startAt, endAt);
+        path,
+        /*collectionGroup=*/ null,
+        filters,
+        explicitSortOrder,
+        limit,
+        limitType,
+        startAt,
+        endAt);
   }
 
   /**
@@ -432,15 +496,45 @@ public final class Query {
   /** @return A {@code Target} instance this query will be mapped to in backend and local store. */
   public Target toTarget() {
     if (this.memoizedTarget == null) {
-      this.memoizedTarget =
-          new Target(
-              this.getPath(),
-              this.getCollectionGroup(),
-              this.getFilters(),
-              this.getOrderBy(),
-              this.limit,
-              this.getStartAt(),
-              this.getEndAt());
+      if (this.limitType == LimitType.LIMIT_TO_FIRST) {
+        this.memoizedTarget =
+            new Target(
+                this.getPath(),
+                this.getCollectionGroup(),
+                this.getFilters(),
+                this.getOrderBy(),
+                this.limit,
+                this.getStartAt(),
+                this.getEndAt());
+      } else {
+        // Flip the orderBy directions since we want the last results
+        ArrayList<OrderBy> newOrderBy = new ArrayList<>();
+        for (OrderBy orderBy : this.getOrderBy()) {
+          Direction dir =
+              orderBy.getDirection() == Direction.DESCENDING
+                  ? Direction.ASCENDING
+                  : Direction.DESCENDING;
+          newOrderBy.add(OrderBy.getInstance(dir, orderBy.getField()));
+        }
+
+        // We need to swap the cursors to match the now-flipped query ordering.
+        Bound newStartAt =
+            this.endAt != null ? new Bound(this.endAt.getPosition(), !this.endAt.isBefore()) : null;
+        Bound newEndAt =
+            this.startAt != null
+                ? new Bound(this.startAt.getPosition(), !this.startAt.isBefore())
+                : null;
+
+        this.memoizedTarget =
+            new Target(
+                this.getPath(),
+                this.getCollectionGroup(),
+                this.getFilters(),
+                newOrderBy,
+                this.limit,
+                newStartAt,
+                newEndAt);
+      }
     }
 
     return this.memoizedTarget;
@@ -452,7 +546,7 @@ public final class Query {
    */
   // TODO(wuandy): This is now only used in tests and SpecTestCase. Maybe we can delete it?
   public String getCanonicalId() {
-    return this.toTarget().getCanonicalId();
+    return this.toTarget().getCanonicalId() + "|lt:" + limitType;
   }
 
   @Override
@@ -466,12 +560,16 @@ public final class Query {
 
     Query query = (Query) o;
 
+    if (this.limitType != query.limitType) {
+      return false;
+    }
+
     return this.toTarget().equals(query.toTarget());
   }
 
   @Override
   public int hashCode() {
-    return this.toTarget().hashCode();
+    return 31 * this.toTarget().hashCode() + limitType.hashCode();
   }
 
   @Override
@@ -479,6 +577,8 @@ public final class Query {
     StringBuilder builder = new StringBuilder();
     builder.append("Query(target=");
     builder.append(this.toTarget().toString());
+    builder.append(";limitType=");
+    builder.append(this.limitType.toString());
     builder.append(")");
     return builder.toString();
   }

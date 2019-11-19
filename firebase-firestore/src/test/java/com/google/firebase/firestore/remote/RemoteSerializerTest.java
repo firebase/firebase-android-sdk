@@ -815,7 +815,7 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesLimits() {
-    Query q = Query.atPath(ResourcePath.fromString("docs")).limit(26);
+    Query q = Query.atPath(ResourcePath.fromString("docs")).limitToFirst(26);
     Target actual = serializer.encodeTarget(wrapQueryData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =

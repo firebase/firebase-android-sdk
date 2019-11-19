@@ -522,9 +522,12 @@ public final class LocalStore {
   }
 
   /**
-   * Assigns the given query an internal ID so that its results can be pinned so they don't get
+   * Assigns the given target an internal ID so that its results can be pinned so they don't get
    * GC'd. A query must be allocated in the local store before the store can be used to manage its
    * view.
+   *
+   * <p>Allocating an already allocated target will return the existing @{code QueryData} for that
+   * target.
    */
   public QueryData allocateTarget(Target target) {
     int targetId;
@@ -551,13 +554,10 @@ public final class LocalStore {
       cached = holder.cached;
     }
 
-    // Sanity check to ensure that even when resuming a query it's not currently active.
-    hardAssert(
-        queryDataByTarget.get(targetId) == null,
-        "Tried to allocate an already allocated target: %s",
-        target);
-    queryDataByTarget.put(targetId, cached);
-    targetIdByTarget.put(target, targetId);
+    if (queryDataByTarget.get(targetId) == null) {
+      queryDataByTarget.put(targetId, cached);
+      targetIdByTarget.put(target, targetId);
+    }
     return cached;
   }
 
@@ -581,12 +581,17 @@ public final class LocalStore {
     int targetId;
   }
 
-  /** Unpin all the documents associated with the given target. */
+  /**
+   * Unpin all the documents associated with the given target.
+   *
+   * <p>Releasing a non-existing target is an error.
+   */
   public void releaseTarget(int targetId) {
     persistence.runTransaction(
         "Release target",
         () -> {
           QueryData queryData = queryDataByTarget.get(targetId);
+          hardAssert(queryData != null, "Tried to release nonexistent target: %s", targetId);
 
           // References for documents sent via Watch are automatically removed when we delete a
           // query's target data from the reference delegate. Since this does not remove references

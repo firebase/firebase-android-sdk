@@ -337,7 +337,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           queryDict.has("collectionGroup") ? queryDict.getString("collectionGroup") : null;
       Query query = new Query(ResourcePath.fromString(path), collectionGroup);
       if (queryDict.has("limit")) {
-        query = query.limit(queryDict.getLong("limit"));
+        query = query.limitToFirst(queryDict.getLong("limit"));
       }
       if (queryDict.has("filters")) {
         JSONArray array = queryDict.getJSONArray("filters");
