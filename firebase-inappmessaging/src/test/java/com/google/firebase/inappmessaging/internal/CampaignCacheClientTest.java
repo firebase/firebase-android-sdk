@@ -131,7 +131,7 @@ public class CampaignCacheClientTest {
   @Test
   public void get_noInMemoryCache_fetchesFromStorage() {
     when(storageClient.read(FetchEligibleCampaignsResponse.parser()))
-        .thenReturn(Maybe.just((fetchEligibleCampaignsResponse2)));
+        .thenReturn(Maybe.just(fetchEligibleCampaignsResponse2));
 
     TestSubscriber<FetchEligibleCampaignsResponse> subscriber =
         campaignCacheClient.get().toFlowable().test();
@@ -166,7 +166,7 @@ public class CampaignCacheClientTest {
   @Test
   public void get_whenStorageCacheExpired_isEmpty() {
     when(storageClient.read(FetchEligibleCampaignsResponse.parser()))
-        .thenReturn(Maybe.just((expiredCampaignResponse)));
+        .thenReturn(Maybe.just(expiredCampaignResponse));
 
     TestSubscriber<FetchEligibleCampaignsResponse> subscriber =
         campaignCacheClient.get().toFlowable().test();
