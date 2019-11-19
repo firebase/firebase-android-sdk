@@ -241,7 +241,8 @@ public class CardMessage extends InAppMessage {
       return this;
     }
 
-    public CardMessage build(CampaignMetadata campaignMetadata, Map<String, String> data) {
+    public CardMessage build(
+        CampaignMetadata campaignMetadata, @Nullable Map<String, String> data) {
       if (primaryAction == null) {
         throw new IllegalArgumentException("Card model must have a primary action");
       }

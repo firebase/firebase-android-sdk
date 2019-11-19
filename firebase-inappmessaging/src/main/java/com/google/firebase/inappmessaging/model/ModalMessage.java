@@ -173,7 +173,8 @@ public class ModalMessage extends InAppMessage {
       return this;
     }
 
-    public ModalMessage build(CampaignMetadata campaignMetadata, Map<String, String> data) {
+    public ModalMessage build(
+        CampaignMetadata campaignMetadata, @Nullable Map<String, String> data) {
       if (title == null) {
         throw new IllegalArgumentException("Modal model must have a title");
       }

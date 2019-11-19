@@ -59,7 +59,8 @@ public class AnalyticsEventsManagerTest {
 
   private static final TriggeringCondition.Builder onAnalyticsEvent =
       TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_1));
-  private static final TriggeringCondition onForeground = TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
+  private static final TriggeringCondition onForeground =
+      TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
 
   private static final Priority PRIORITY_TWO = Priority.newBuilder().setValue(2).build();
   private static final VanillaCampaignPayload.Builder vanillaCampaign1 =
@@ -111,11 +112,11 @@ public class AnalyticsEventsManagerTest {
   @Test
   public void extractAnalyticsEventNames_filtersOutFiamEvents() {
     FetchEligibleCampaignsResponse campaignsResponse =
-            FetchEligibleCampaignsResponse.newBuilder()
-                .setExpirationEpochTimestampMillis(FUTURE)
-                .addMessages(ANALYTICS_EVENT_THICK_CONTENT_BUILDER)
-                .addMessages(FOREGROUND_THICK_CONTENT_BUILDER)
-                .build();
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(ANALYTICS_EVENT_THICK_CONTENT_BUILDER)
+            .addMessages(FOREGROUND_THICK_CONTENT_BUILDER)
+            .build();
 
     Set<String> eventNames = AnalyticsEventsManager.extractAnalyticsEventNames(campaignsResponse);
     assertThat(eventNames).containsExactly(ANALYTICS_EVENT_1);
@@ -136,11 +137,11 @@ public class AnalyticsEventsManagerTest {
             .setContent(Content.getDefaultInstance());
 
     FetchEligibleCampaignsResponse campaignsResponse =
-            FetchEligibleCampaignsResponse.newBuilder()
-                .setExpirationEpochTimestampMillis(FUTURE)
-                .addMessages(ANALYTICS_EVENT_THICK_CONTENT_BUILDER)
-                .addMessages(event2ContentBuilder)
-                .build();
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(ANALYTICS_EVENT_THICK_CONTENT_BUILDER)
+            .addMessages(event2ContentBuilder)
+            .build();
 
     Set<String> expectedNames = new HashSet<>();
     expectedNames.add(ANALYTICS_EVENT_1);
@@ -181,11 +182,11 @@ public class AnalyticsEventsManagerTest {
             .setContent(Content.getDefaultInstance());
 
     FetchEligibleCampaignsResponse campaignsResponse =
-            FetchEligibleCampaignsResponse.newBuilder()
-                .setExpirationEpochTimestampMillis(FUTURE)
-                .addMessages(event1ContentBuilder)
-                .addMessages(event2ContentBuilder)
-                .build();
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(event1ContentBuilder)
+            .addMessages(event2ContentBuilder)
+            .build();
     Set<String> eventNames = AnalyticsEventsManager.extractAnalyticsEventNames(campaignsResponse);
     assertThat(eventNames).containsExactly(ANALYTICS_EVENT_1, event2, event3, event4);
   }
@@ -208,10 +209,10 @@ public class AnalyticsEventsManagerTest {
     }
 
     FetchEligibleCampaignsResponse campaignsResponse =
-            FetchEligibleCampaignsResponse.newBuilder()
-                .setExpirationEpochTimestampMillis(FUTURE)
-                .addMessages(contentBuilder)
-                .build();
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(contentBuilder)
+            .build();
     Set<String> eventNames = AnalyticsEventsManager.extractAnalyticsEventNames(campaignsResponse);
     assertThat(eventNames).containsExactlyElementsIn(expectedNames);
     logged.expectLogMessage(

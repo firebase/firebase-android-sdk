@@ -144,6 +144,8 @@ dependencies {
     }
     testImplementation 'io.grpc:grpc-testing:1.21.0'
     testImplementation 'joda-time:joda-time:2.9.2'
+    testImplementation 'com.google.guava:guava:24.1-jre-android'
+
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'

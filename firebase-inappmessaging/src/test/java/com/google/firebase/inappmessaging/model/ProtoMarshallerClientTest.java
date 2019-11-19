@@ -349,15 +349,14 @@ public class ProtoMarshallerClientTest {
   @Test
   public void card_withMinimumAttributes_createsInAppMessage() {
     MessagesProto.Content minimumCard =
-        (Content)
-            Content.newBuilder()
-                .setCard(
-                    MessagesProto.CardMessage.newBuilder()
-                        .setPrimaryActionButton(BUTTON_PROTO)
-                        .setTitle(TITLE_PROTO)
-                        .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
-                        .setPortraitImageUrl(IMAGE_URL_STRING))
-                .build();
+        Content.newBuilder()
+            .setCard(
+                MessagesProto.CardMessage.newBuilder()
+                    .setPrimaryActionButton(BUTTON_PROTO)
+                    .setTitle(TITLE_PROTO)
+                    .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+                    .setPortraitImageUrl(IMAGE_URL_STRING))
+            .build();
 
     CardMessage expected =
         CardMessage.builder()
@@ -373,14 +372,14 @@ public class ProtoMarshallerClientTest {
   @Test
   public void cardPropagatesDataBundle() {
     MessagesProto.Content minimumCard =
-            Content.newBuilder()
-                .setCard(
-                    MessagesProto.CardMessage.newBuilder()
-                        .setPrimaryActionButton(BUTTON_PROTO)
-                        .setTitle(TITLE_PROTO)
-                        .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
-                        .setPortraitImageUrl(IMAGE_URL_STRING))
-                .build();
+        Content.newBuilder()
+            .setCard(
+                MessagesProto.CardMessage.newBuilder()
+                    .setPrimaryActionButton(BUTTON_PROTO)
+                    .setTitle(TITLE_PROTO)
+                    .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+                    .setPortraitImageUrl(IMAGE_URL_STRING))
+            .build();
 
     CardMessage expected =
         CardMessage.builder()
@@ -397,14 +396,14 @@ public class ProtoMarshallerClientTest {
   @Test
   public void cardPropagatesNullDataBundle() {
     MessagesProto.Content minimumCard =
-            Content.newBuilder()
-                .setCard(
-                    MessagesProto.CardMessage.newBuilder()
-                        .setPrimaryActionButton(BUTTON_PROTO)
-                        .setTitle(TITLE_PROTO)
-                        .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
-                        .setPortraitImageUrl(IMAGE_URL_STRING))
-                .build();
+        Content.newBuilder()
+            .setCard(
+                MessagesProto.CardMessage.newBuilder()
+                    .setPrimaryActionButton(BUTTON_PROTO)
+                    .setTitle(TITLE_PROTO)
+                    .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+                    .setPortraitImageUrl(IMAGE_URL_STRING))
+            .build();
 
     CardMessage expected =
         CardMessage.builder()

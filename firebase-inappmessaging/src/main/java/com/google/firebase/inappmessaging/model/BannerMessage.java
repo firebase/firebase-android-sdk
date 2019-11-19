@@ -173,7 +173,8 @@ public class BannerMessage extends InAppMessage {
       return this;
     }
 
-    public BannerMessage build(CampaignMetadata campaignMetadata, Map<String, String> data) {
+    public BannerMessage build(
+        CampaignMetadata campaignMetadata, @Nullable Map<String, String> data) {
       if (title == null) {
         throw new IllegalArgumentException("Banner model must have a title");
       }

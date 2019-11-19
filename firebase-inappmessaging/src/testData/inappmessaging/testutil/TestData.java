@@ -42,6 +42,7 @@ public class TestData {
   public static final CampaignMetadata TEST_CAMPAIGN_METADATA_MODEL =
       new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_TEST_MESSAGE);
   public static final Map<String, String> DATA = new HashMap<>();
+
   static {
     DATA.put("up", "dog");
   }

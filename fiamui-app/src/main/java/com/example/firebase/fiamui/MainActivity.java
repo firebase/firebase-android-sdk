@@ -27,6 +27,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.common.collect.ImmutableMap;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay;
 import com.google.firebase.inappmessaging.model.*;
@@ -37,6 +38,7 @@ import me.priyesh.chroma.ColorMode;
 import me.priyesh.chroma.ColorSelectListener;
 
 public class MainActivity extends AppCompatActivity {
+
   @BindView(R.id.start)
   Button mStart;
 
@@ -156,12 +158,7 @@ public class MainActivity extends AppCompatActivity {
     String secondaryActionButtonTextString = secondaryActionButtonText.getText().toString();
 
     CampaignMetadata campaignMetadata = new CampaignMetadata("test_campaign", "name", true);
-    Map<String, String> data =
-        new HashMap<String, String>() {
-          {
-            put("up", "dog");
-          }
-        };
+    ImmutableMap<String, String> data = ImmutableMap.of("up", "dog");
 
     if (useImageFiam.isChecked()) {
       ImageOnlyMessage.Builder builder = ImageOnlyMessage.builder();

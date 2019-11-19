@@ -112,7 +112,8 @@ public class ImageOnlyMessage extends InAppMessage {
       return this;
     }
 
-    public ImageOnlyMessage build(CampaignMetadata campaignMetadata, Map<String, String> data) {
+    public ImageOnlyMessage build(
+        CampaignMetadata campaignMetadata, @Nullable Map<String, String> data) {
       if (imageData == null) {
         throw new IllegalArgumentException("ImageOnly model must have image data");
       }

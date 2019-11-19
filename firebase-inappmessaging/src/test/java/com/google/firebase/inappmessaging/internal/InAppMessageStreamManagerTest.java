@@ -107,10 +107,10 @@ public class InAppMessageStreamManagerTest {
       new Schedulers(trampoline(), trampoline(), trampoline());
 
   private static final CampaignImpressionList CAMPAIGN_IMPRESSIONS =
-          CampaignImpressionList.newBuilder()
-              .addAlreadySeenCampaigns(
-                      CampaignImpression.newBuilder().setCampaignId(CAMPAIGN_ID_STRING).build())
-              .build();
+      CampaignImpressionList.newBuilder()
+          .addAlreadySeenCampaigns(
+              CampaignImpression.newBuilder().setCampaignId(CAMPAIGN_ID_STRING).build())
+          .build();
   private static final String LIMITER_KEY = "LIMITER_KEY";
   private static final RateLimit appForegroundRateLimit =
       RateLimit.builder()
@@ -241,15 +241,15 @@ public class InAppMessageStreamManagerTest {
             .setCampaignStartTimeMillis(PAST)
             .setCampaignEndTimeMillis(PAST);
     ThickContent t =
-            ThickContent.newBuilder(thickContent)
-                .clearContent()
-                .setVanillaPayload(expiredCampaign)
-                .build();
+        ThickContent.newBuilder(thickContent)
+            .clearContent()
+            .setVanillaPayload(expiredCampaign)
+            .build();
     FetchEligibleCampaignsResponse r =
-            FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
-                .clearMessages()
-                .addMessages(t)
-                .build();
+        FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
+            .clearMessages()
+            .addMessages(t)
+            .build();
 
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
@@ -271,19 +271,19 @@ public class InAppMessageStreamManagerTest {
   @Test
   public void stream_onMultipleCampaigns_triggersTestMessage() {
     ThickContent highPriorityContent =
-            ThickContent.newBuilder(thickContent)
-                .setPriority(Priority.newBuilder().setValue(1))
-                .build();
+        ThickContent.newBuilder(thickContent)
+            .setPriority(Priority.newBuilder().setValue(1))
+            .build();
     ThickContent testContent =
-            ThickContent.newBuilder(thickContent)
-                .setPriority(Priority.newBuilder().setValue(2))
-                .setIsTestCampaign(true)
-                .build();
+        ThickContent.newBuilder(thickContent)
+            .setPriority(Priority.newBuilder().setValue(2))
+            .setIsTestCampaign(true)
+            .build();
     FetchEligibleCampaignsResponse response =
-            FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
-                .addMessages(highPriorityContent)
-                .addMessages(testContent)
-                .build();
+        FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
+            .addMessages(highPriorityContent)
+            .addMessages(testContent)
+            .build();
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(response);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
@@ -463,22 +463,22 @@ public class InAppMessageStreamManagerTest {
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(true));
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(true);
     ThickContent testMessageContent =
-            ThickContent.newBuilder()
-                .setPriority(priorityTwo)
-                .addTriggeringConditions(ON_FOREGROUND_TRIGGER)
-                .addTriggeringConditions(ON_ANALYTICS_TRIGGER)
-                .setIsTestCampaign(true)
-                .setVanillaPayload(vanillaCampaign)
-                .setContent(BANNER_MESSAGE_PROTO)
-                .build();
+        ThickContent.newBuilder()
+            .setPriority(priorityTwo)
+            .addTriggeringConditions(ON_FOREGROUND_TRIGGER)
+            .addTriggeringConditions(ON_ANALYTICS_TRIGGER)
+            .setIsTestCampaign(true)
+            .setVanillaPayload(vanillaCampaign)
+            .setContent(BANNER_MESSAGE_PROTO)
+            .build();
 
     TriggeredInAppMessage testTriggered =
         new TriggeredInAppMessage(BANNER_TEST_MESSAGE_MODEL, ON_FOREGROUND_EVENT_NAME);
     FetchEligibleCampaignsResponse response =
-            FetchEligibleCampaignsResponse.newBuilder()
-                .setExpirationEpochTimestampMillis(FUTURE)
-                .addMessages(testMessageContent)
-                .build();
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(testMessageContent)
+            .build();
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(response);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
@@ -491,21 +491,21 @@ public class InAppMessageStreamManagerTest {
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(false));
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(true);
     ThickContent testMessageContent =
-            ThickContent.newBuilder()
-                .setPriority(priorityTwo)
-                .addTriggeringConditions(ON_ANALYTICS_TRIGGER)
-                .setIsTestCampaign(true)
-                .setVanillaPayload(vanillaCampaign)
-                .setContent(BANNER_MESSAGE_PROTO)
-                .build();
+        ThickContent.newBuilder()
+            .setPriority(priorityTwo)
+            .addTriggeringConditions(ON_ANALYTICS_TRIGGER)
+            .setIsTestCampaign(true)
+            .setVanillaPayload(vanillaCampaign)
+            .setContent(BANNER_MESSAGE_PROTO)
+            .build();
 
     TriggeredInAppMessage testTriggered =
         new TriggeredInAppMessage(BANNER_TEST_MESSAGE_MODEL, ON_FOREGROUND_EVENT_NAME);
     FetchEligibleCampaignsResponse response =
-            FetchEligibleCampaignsResponse.newBuilder()
-                .setExpirationEpochTimestampMillis(FUTURE)
-                .addMessages(testMessageContent)
-                .build();
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(testMessageContent)
+            .build();
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(response);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);

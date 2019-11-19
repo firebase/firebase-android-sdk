@@ -37,8 +37,7 @@ public class TestDeviceHelperTest {
   private static final CampaignProto.ThickContent.Builder thickContentBuilder =
       CampaignProto.ThickContent.newBuilder()
           .setContent(MessagesProto.Content.getDefaultInstance());
-  private static final CampaignProto.ThickContent thickContent =
-      (ThickContent) thickContentBuilder.build();
+  private static final CampaignProto.ThickContent thickContent = thickContentBuilder.build();
   private static final FetchEligibleCampaignsResponse.Builder campaignsResponseBuilder =
       FetchEligibleCampaignsResponse.newBuilder();
   private static final FetchEligibleCampaignsResponse campaignsResponse =
@@ -70,9 +69,9 @@ public class TestDeviceHelperTest {
 
     CampaignProto.ThickContent randomContent = ThickContent.newBuilder(thickContent).build();
     FetchEligibleCampaignsResponse response =
-            FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
-                .addMessages(randomContent)
-                .build();
+        FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
+            .addMessages(randomContent)
+            .build();
 
     assertThat(testDeviceHelper.isAppInstallFresh()).isTrue();
     for (int i = 0; i < TestDeviceHelper.MAX_FETCH_COUNT - 1; i++) {
@@ -95,9 +94,9 @@ public class TestDeviceHelperTest {
     CampaignProto.ThickContent testContent =
         ThickContent.newBuilder(thickContent).setIsTestCampaign(true).build();
     FetchEligibleCampaignsResponse response =
-            FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
-                .addMessages(testContent)
-                .build();
+        FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
+            .addMessages(testContent)
+            .build();
 
     assertThat(testDeviceHelper.isDeviceInTestMode()).isFalse();
     testDeviceHelper.processCampaignFetch(response);
