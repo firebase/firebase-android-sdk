@@ -143,7 +143,6 @@ dependencies {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
     testImplementation 'io.grpc:grpc-testing:1.21.0'
-    testImplementation 'joda-time:joda-time:2.9.2'
     testImplementation 'com.google.guava:guava:27.1-android'
 
     androidTestImplementation 'junit:junit:4.12'
@@ -154,7 +153,6 @@ dependencies {
     androidTestImplementation 'io.grpc:grpc-testing:1.21.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
-    androidTestImplementation 'joda-time:joda-time:2.9.2'
 
     androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.24'
 }
