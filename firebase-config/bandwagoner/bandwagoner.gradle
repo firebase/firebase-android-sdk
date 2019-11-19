@@ -53,6 +53,7 @@ android {
 
 firebaseTestLab {
     device 'model=walleye,version=26,locale=en,orientation=portrait'
+    device 'model=walleye,version=17,locale=en,orientation=portrait'
 
 }
 
