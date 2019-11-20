@@ -27,6 +27,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LocalViewChanges;
 import com.google.firebase.firestore.local.LocalWriteResult;
@@ -191,9 +192,22 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   private ViewSnapshot initializeViewAndComputeSnapshot(Query query, int targetId) {
     QueryResult queryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
 
+    SyncState currentTargetSyncState = SyncState.NONE;
+    TargetChange synthesizedCurrentChange = null;
+
+    // If there are already queries mapped to the target id, create a synthesized target change to
+    // apply the sync state from those queries to the new query.
+    if (this.queriesByTarget.get(targetId) != null) {
+      Query mirrorQuery = this.queriesByTarget.get(targetId).get(0);
+      currentTargetSyncState = this.queryViewsByQuery.get(mirrorQuery).getView().getSyncState();
+      synthesizedCurrentChange =
+          TargetChange.createSynthesizedTargetChangeForCurrentChange(
+              currentTargetSyncState == SyncState.SYNCED);
+    }
+
     View view = new View(query, queryResult.getRemoteKeys());
     View.DocumentChanges viewDocChanges = view.computeDocChanges(queryResult.getDocuments());
-    ViewChange viewChange = view.applyChanges(viewDocChanges);
+    ViewChange viewChange = view.applyChanges(viewDocChanges, synthesizedCurrentChange);
     hardAssert(
         view.getLimboDocuments().size() == 0,
         "View returned limbo docs before target ack from the server");
