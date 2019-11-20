@@ -17,7 +17,9 @@ package com.google.firebase.database;
 // Server values
 
 import androidx.annotation.NonNull;
+
 import com.google.firebase.database.core.ServerValues;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,11 +32,49 @@ public class ServerValue {
    * milliseconds) by the Firebase Database servers.
    */
   @NonNull
-  public static final Map<String, String> TIMESTAMP = createServerValuePlaceholder("timestamp");
+  public static final Map<String, String> TIMESTAMP = createScalarServerValuePlaceholder("timestamp");
 
-  private static Map<String, String> createServerValuePlaceholder(String key) {
+  /**
+   * Adds the given delta to the ref's current value.
+   *
+   * This must be an long or a double value. If the ref is not an integer or double, or if the ref
+   * does not yet exist, the transformation will set the ref to the given value. If either of the
+   * given value or the current field value are doubles, both values will be interpreted as doubles.
+   * Double arithmetic and representation of double values follow IEEE 754 semantics. If there is
+   * positive/negative integer overflow, the field is resolved to a double.
+   * @param delta the amount to modify the ref's current value atomically.
+   * @return a placeholder value for modifying a ref atomically server-side.
+   */
+  static final Map<String, Map<String, Object>> increment(long delta) {
+    return createParameterizedServerValuePlaceholder("increment", delta);
+  }
+
+  /**
+   * Adds the given delta to the ref's current value.
+   *
+   * This must be an long or a double value. If the ref is not an integer or double, or if the ref
+   * does not yet exist, the transformation will set the ref to the given value. If either of the
+   * given value or the current field value are doubles, both values will be interpreted as doubles.
+   * Double arithmetic and representation of double values follow IEEE 754 semantics. If there is
+   * positive/negative integer overflow, the field is resolved to a double.
+   * @param delta the amount to modify the ref's current value atomically.
+   * @return a placeholder value for modifying a ref atomically server-side.
+   */
+  static final Map<String, Map<String, Object>> increment(double delta) {
+    return createParameterizedServerValuePlaceholder("increment", delta);
+  }
+
+  private static Map<String, String> createScalarServerValuePlaceholder(String key) {
     Map<String, String> result = new HashMap<String, String>();
     result.put(ServerValues.NAME_SUBKEY_SERVERVALUE, key);
+    return Collections.unmodifiableMap(result);
+  }
+
+  private static Map<String, Map<String, Object>> createParameterizedServerValuePlaceholder(String name, Object value) {
+    Map<String, Object> op = new HashMap<>();
+    op.put(name, value);
+    Map<String, Map<String, Object>> result = new HashMap<>();
+    result.put(ServerValues.NAME_SUBKEY_SERVERVALUE, Collections.unmodifiableMap(op));
     return Collections.unmodifiableMap(result);
   }
 }

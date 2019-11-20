@@ -15,6 +15,7 @@
 package com.google.firebase.database;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -23,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import androidx.test.runner.AndroidJUnit4;
+
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoManager;
@@ -36,12 +38,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -2295,7 +2299,7 @@ public class DataTest {
   }
 
   @Test
-  public void testServerValuesSetWithPriorityRemoteEvents()
+  public void testServerTimestampSetWithPriorityRemoteEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -2352,7 +2356,7 @@ public class DataTest {
   }
 
   @Test
-  public void testServerValuesSetPriorityRemoteEvents()
+  public void testServerTimestampSetPriorityRemoteEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -2416,7 +2420,7 @@ public class DataTest {
   }
 
   @Test
-  public void testServerValuesUpdateRemoteEvents()
+  public void testServerTimestampUpdateRemoteEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -2484,7 +2488,7 @@ public class DataTest {
   }
 
   @Test
-  public void testServerValuesSetWithPriorityLocalEvents()
+  public void testServerTimestampSetWithPriorityLocalEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
@@ -2540,7 +2544,7 @@ public class DataTest {
   }
 
   @Test
-  public void testServerValuesSetPriorityLocalEvents()
+  public void testServerTimestampSetPriorityLocalEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
@@ -2603,7 +2607,7 @@ public class DataTest {
   }
 
   @Test
-  public void testServerValuesUpdateLocalEvents()
+  public void testServerTimestampUpdateLocalEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
@@ -2669,7 +2673,7 @@ public class DataTest {
   }
 
   @Test
-  public void testServerValuesTransactionLocalEvents()
+  public void testServerTimestampTransactionLocalEvents()
       throws TestFailure, TimeoutException, DatabaseException, InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(1);
     DatabaseReference writer = refs.get(0);
@@ -2738,6 +2742,186 @@ public class DataTest {
     assertEquals(snap2.getValue().getClass(), Long.class);
     assert (Math.abs(System.currentTimeMillis() - Long.parseLong(snap2.getValue().toString()))
         < 2000);
+  }
+
+  @Test
+  public void testServerIncrementOverwritesExistingData() throws DatabaseException, TimeoutException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    List<Object> foundValues = new ArrayList<>();
+    // Note: all numeric values will be long, so they must be cast before being inserted.
+    List<Object> expectedValues = new ArrayList<>();
+
+    // Phaser is the closest built-in to a bidrectional latch. We could use a semaphore with a fixed
+    // number of permits, but the test would be fragile since the permit count isn't closely related
+    // to the test cases.
+    final Phaser latch = new Phaser(0);
+
+    // Going offline ensures that local events get queued up before server events
+    ref.getDatabase().goOffline();
+
+    ValueEventListener listener = ref.addValueEventListener(new ValueEventListener() {
+      @Override
+      public void onDataChange(DataSnapshot snapshot) {
+          foundValues.add(snapshot.getValue());
+          latch.arrive();
+        }
+
+      @Override
+      public void onCancelled(DatabaseError error) {}
+    });
+
+    try {
+      // null + incr
+      latch.register();
+      ref.setValue(ServerValue.increment(1));
+      expectedValues.add((long) 1);
+
+      // number + incr
+      latch.bulkRegister(2);
+      ref.setValue(5);
+      ref.setValue(ServerValue.increment(1));
+      expectedValues.add((long) 5);
+      expectedValues.add((long) 6);
+
+      // string + incr
+      latch.bulkRegister(2);
+      ref.setValue("hello");
+      ref.setValue(ServerValue.increment(1));
+      expectedValues.add("hello");
+      expectedValues.add((long) 1);
+
+      // object + incr
+      latch.bulkRegister(2);
+      Map<String, String> obj = new HashMap<>();
+      obj.put("hello", "world");
+      ref.setValue(obj);
+      ref.setValue(ServerValue.increment(1));
+      expectedValues.add(obj);
+      expectedValues.add((long) 1);
+
+      latch.awaitAdvanceInterruptibly(0, IntegrationTestValues.getTimeout(), MILLISECONDS);
+      assertEquals(expectedValues, foundValues);
+    } finally {
+      ref.removeEventListener(listener);
+      ref.getDatabase().goOnline();
+    }
+  }
+
+  @Test
+  public void testServerIncrementPriority() throws DatabaseException, TimeoutException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    List<Object> foundPriorities = new ArrayList<>();
+    // Note: all numeric values will be long or double, so they must be cast before being inserted.
+    List<Object> expectedPriorities = new ArrayList<>();
+
+    // Phaser is the closest built-in to a bidrectional latch. We could use a semaphore with a fixed
+    // number of permits, but the test would be fragile since the permit count isn't closely related
+    // to the test cases.
+    final Phaser latch = new Phaser(0);
+
+    // Going offline ensures that local events get queued up before server events
+    ref.getDatabase().goOffline();
+
+    ValueEventListener listener = ref.addValueEventListener(new ValueEventListener() {
+      @Override
+      public void onDataChange(DataSnapshot snapshot) {
+        foundPriorities.add(snapshot.getPriority());
+        latch.arrive();
+      }
+
+      @Override
+      public void onCancelled(DatabaseError error) {}
+    });
+
+    try {
+      // null + increment
+      latch.register();
+      ref.setValue(0, ServerValue.increment(1));
+      // numeric priorities are always doubles
+      expectedPriorities.add(1.0);
+
+      // long + double
+      latch.register();
+      ref.setValue(0, ServerValue.increment(1.5));
+      expectedPriorities.add(2.5);
+
+      latch.awaitAdvanceInterruptibly(0, IntegrationTestValues.getTimeout(), MILLISECONDS);
+
+      // Checking types first makes failures much more obvious
+      assertEquals(expectedPriorities, foundPriorities);
+    } finally {
+      ref.removeEventListener(listener);
+      ref.getDatabase().goOnline();
+    }
+  }
+
+  @Test
+  public void testServerIncrementOverflowAndTypeCoercion() throws DatabaseException, TimeoutException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    List<Object> foundValues = new ArrayList<>();
+    // Note: all numeric values will be long or double, so they must be cast before being inserted.
+    List<Object> expectedValues = new ArrayList<>();
+
+    // Phaser is the closest built-in to a bidrectional latch. We could use a semaphore with a fixed
+    // number of permits, but the test would be fragile since the permit count isn't closely related
+    // to the test cases.
+    final Phaser latch = new Phaser(0);
+
+    // Going offline ensures that local events get queued up before server events
+    ref.getDatabase().goOffline();
+
+    ValueEventListener listener = ref.addValueEventListener(new ValueEventListener() {
+      @Override
+      public void onDataChange(DataSnapshot snapshot) {
+        foundValues.add(snapshot.getValue());
+        latch.arrive();
+      }
+
+      @Override
+      public void onCancelled(DatabaseError error) {}
+    });
+
+    try {
+      // long + double = double
+      latch.bulkRegister(2);
+      ref.setValue(1);
+      ref.setValue(ServerValue.increment(1.5));
+      expectedValues.add((long) 1);
+      expectedValues.add(2.5);
+
+      // double + long = double
+      latch.bulkRegister(2);
+      ref.setValue(1.5);
+      ref.setValue(ServerValue.increment(1));
+      expectedValues.add(1.5);
+      expectedValues.add(2.5);
+
+      // long overflow = double
+      latch.bulkRegister(2);
+      ref.setValue(Long.MAX_VALUE - 1);
+      ref.setValue(ServerValue.increment(2));
+      expectedValues.add(Long.MAX_VALUE - 1);
+      expectedValues.add((double)Long.MAX_VALUE + 1.0);
+
+
+      // long underflow = double
+      latch.bulkRegister(2);
+      ref.setValue(Long.MIN_VALUE + 1);
+      ref.setValue(ServerValue.increment(-2));
+      expectedValues.add(Long.MIN_VALUE + 1);
+      expectedValues.add((double)Long.MIN_VALUE - 1.0);
+
+      latch.awaitAdvanceInterruptibly(0, IntegrationTestValues.getTimeout(), MILLISECONDS);
+
+      // Checking types first makes failures much more obvious
+      List<Class> expectedTypes = expectedValues.stream().map(Object::getClass).collect(toList());
+      List<Class> foundTypes = foundValues.stream().map(Object::getClass).collect(toList());
+      assertEquals(expectedTypes, foundTypes);
+      assertEquals(expectedValues, foundValues);
+    } finally {
+      ref.removeEventListener(listener);
+      ref.getDatabase().goOnline();
+    }
   }
 
   @Test
@@ -3027,7 +3211,7 @@ public class DataTest {
   }
 
   @Test
-  public void testLocalServerValuesEventuallyButNotImmediatelyMatchServer()
+  public void testLocalServerTimestampEventuallyButNotImmediatelyMatchServer()
       throws DatabaseException, InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);

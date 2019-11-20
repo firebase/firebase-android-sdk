@@ -242,14 +242,17 @@ public class SyncTree {
             boolean needToReevaluate = pendingWriteTree.removeWrite(writeId);
             if (write.isVisible()) {
               if (!revert) {
+                ArrayList<Long> excludeThis = new ArrayList<>();
+                excludeThis.add(write.getWriteId());
+                Node existing = calcCompleteEventCache(write.getPath(), excludeThis);
                 Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
                 if (write.isOverwrite()) {
                   Node resolvedNode =
-                      ServerValues.resolveDeferredValueSnapshot(write.getOverwrite(), serverValues);
+                      ServerValues.resolveDeferredValueSnapshot(write.getOverwrite(), existing, serverValues);
                   persistenceManager.applyUserWriteToServerCache(write.getPath(), resolvedNode);
                 } else {
                   CompoundWrite resolvedMerge =
-                      ServerValues.resolveDeferredValueMerge(write.getMerge(), serverValues);
+                      ServerValues.resolveDeferredValueMerge(write.getMerge(), existing, serverValues);
                   persistenceManager.applyUserWriteToServerCache(write.getPath(), resolvedMerge);
                 }
               }
