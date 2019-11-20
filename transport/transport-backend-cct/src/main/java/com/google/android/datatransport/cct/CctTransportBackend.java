@@ -34,6 +34,7 @@ import com.google.android.datatransport.cct.proto.NetworkConnectionInfo;
 import com.google.android.datatransport.cct.proto.NetworkConnectionInfo.MobileSubtype;
 import com.google.android.datatransport.cct.proto.NetworkConnectionInfo.NetworkType;
 import com.google.android.datatransport.cct.proto.QosTierConfiguration;
+import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
@@ -198,28 +199,34 @@ final class CctTransportBackend implements TransportBackend {
       }
 
       for (EventInternal eventInternal : entry.getValue()) {
-        Encoding encoding = eventInternal.getEncodedPayload().getEncoding();
-        if (!encoding.equals(Encoding.of("proto"))) {
+        EncodedPayload encodedPayload = eventInternal.getEncodedPayload();
+        Encoding encoding = encodedPayload.getEncoding();
+
+        LogEvent.Builder event = LogEvent.newBuilder();
+        if (encoding.equals(Encoding.of("proto"))) {
+          event.setSourceExtension(ByteString.copyFrom(encodedPayload.getBytes()));
+        } else if (encoding.equals(Encoding.of("json"))) {
+          event.setSourceExtensionJsonProto3Bytes(ByteString.copyFrom(encodedPayload.getBytes()));
+        } else {
           Logging.w(LOG_TAG, "Received event of unsupported encoding %s. Skipping...", encoding);
           continue;
         }
 
-        LogEvent.Builder event =
-            LogEvent.newBuilder()
-                .setEventTimeMs(eventInternal.getEventMillis())
-                .setEventUptimeMs(eventInternal.getUptimeMillis())
-                .setTimezoneOffsetSeconds(eventInternal.getLong(KEY_TIMEZONE_OFFSET))
-                .setSourceExtension(ByteString.copyFrom(eventInternal.getPayload()))
-                .setNetworkConnectionInfo(
-                    NetworkConnectionInfo.newBuilder()
-                        .setNetworkTypeValue(eventInternal.getInteger(KEY_NETWORK_TYPE))
-                        .setMobileSubtypeValue(eventInternal.getInteger(KEY_MOBILE_SUBTYPE)));
+        event
+            .setEventTimeMs(eventInternal.getEventMillis())
+            .setEventUptimeMs(eventInternal.getUptimeMillis())
+            .setTimezoneOffsetSeconds(eventInternal.getLong(KEY_TIMEZONE_OFFSET))
+            .setNetworkConnectionInfo(
+                NetworkConnectionInfo.newBuilder()
+                    .setNetworkTypeValue(eventInternal.getInteger(KEY_NETWORK_TYPE))
+                    .setMobileSubtypeValue(eventInternal.getInteger(KEY_MOBILE_SUBTYPE)));
+
         if (eventInternal.getCode() != null) {
           event.setEventCode(eventInternal.getCode());
         }
         requestBuilder.addLogEvent(event);
       }
-      batchedRequestBuilder.addLogRequest(requestBuilder.build());
+      batchedRequestBuilder.addLogRequest(requestBuilder);
     }
     return batchedRequestBuilder.build();
   }
@@ -259,7 +266,7 @@ final class CctTransportBackend implements TransportBackend {
       Logging.i(LOG_TAG, "Content-Type: " + connection.getHeaderField("Content-Type"));
       Logging.i(LOG_TAG, "Content-Encoding: " + connection.getHeaderField("Content-Encoding"));
 
-      if (responseCode == 302 || responseCode == 301) {
+      if (responseCode == 302 || responseCode == 301 || responseCode == 307) {
         String redirect = connection.getHeaderField("Location");
         return new HttpResponse(responseCode, new URL(redirect), 0);
       }

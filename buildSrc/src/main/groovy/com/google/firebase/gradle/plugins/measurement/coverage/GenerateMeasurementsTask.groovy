@@ -24,14 +24,14 @@ import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 
-public class GenerateMeasurementsTask extends DefaultTask {
+class GenerateMeasurementsTask extends DefaultTask {
 
     @OutputFile
     File reportFile
 
-    XmlSlurper parser
+    private XmlSlurper parser
 
-    String coverageTaskName
+    private String coverageTaskName
 
     GenerateMeasurementsTask() {
         parser = new XmlSlurper()

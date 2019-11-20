@@ -1,0 +1,46 @@
+// Signature format: 2.0
+package com.google.firebase.encoders {
+
+  public interface DataEncoder {
+    method public void encode(@NonNull Object, @NonNull Writer) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public String encode(@NonNull Object) throws com.google.firebase.encoders.EncodingException;
+  }
+
+  public final class EncodingException {
+    ctor public EncodingException(@NonNull String);
+    ctor public EncodingException(@NonNull String, @NonNull Exception);
+  }
+
+  public interface ObjectEncoder<T> {
+  }
+
+  public interface ObjectEncoderContext {
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, @Nullable Object) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, double) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, int) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, boolean) throws com.google.firebase.encoders.EncodingException;
+  }
+
+  public interface ValueEncoder<T> {
+  }
+
+  public interface ValueEncoderContext {
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@Nullable String) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(double) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(int) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(boolean) throws com.google.firebase.encoders.EncodingException;
+  }
+
+}
+
+package com.google.firebase.encoders.json {
+
+  public final class JsonDataEncoderBuilder {
+    ctor public JsonDataEncoderBuilder();
+    method @NonNull public com.google.firebase.encoders.DataEncoder build();
+    method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ObjectEncoder<T>);
+    method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ValueEncoder<T>);
+  }
+
+}
+
