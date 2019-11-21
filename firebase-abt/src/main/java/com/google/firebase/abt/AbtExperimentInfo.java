@@ -14,7 +14,10 @@
 
 package com.google.firebase.abt;
 
+import android.text.TextUtils;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.abt.FirebaseABTesting.OriginService;
+import com.google.firebase.analytics.connector.AnalyticsConnector.ConditionalUserProperty;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -31,7 +34,8 @@ import java.util.Map;
  *
  * <p>The experiment info is expected to be in a {@code {@link Map}<String, String>} format. All
  * such maps must contain all the keys in {@link #ALL_REQUIRED_KEYS}; if a key is missing, an {@link
- * AbtException} will be thrown. Any keys not defined in {@link #ALL_REQUIRED_KEYS} will be ignored.
+ * AbtException} will be thrown. Any keys not defined in {@link #ALL_REQUIRED_KEYS} will be
+ * ignored.
  *
  * <p>Changes in the values returned by the ABT server and client SDKs must be reflected here
  *
@@ -44,7 +48,8 @@ public class AbtExperimentInfo {
    *
    * <p>An experiment id is unique within a Firebase project and is assigned by the ABT service.
    */
-  @VisibleForTesting static final String EXPERIMENT_ID_KEY = "experimentId";
+  @VisibleForTesting
+  static final String EXPERIMENT_ID_KEY = "experimentId";
 
   /**
    * The variant id key.
@@ -52,7 +57,8 @@ public class AbtExperimentInfo {
    * <p>A variant id determines which variant of the experiment an App instance belongs to and is
    * assigned by the ABT service.
    */
-  @VisibleForTesting static final String VARIANT_ID_KEY = "variantId";
+  @VisibleForTesting
+  static final String VARIANT_ID_KEY = "variantId";
   /**
    * The trigger event key.
    *
@@ -60,7 +66,8 @@ public class AbtExperimentInfo {
    *
    * <p>The occurrence of a trigger event activates the experiment for an App instance.
    */
-  @VisibleForTesting static final String TRIGGER_EVENT_KEY = "triggerEvent";
+  @VisibleForTesting
+  static final String TRIGGER_EVENT_KEY = "triggerEvent";
 
   /**
    * The experiment start time key.
@@ -68,7 +75,8 @@ public class AbtExperimentInfo {
    * <p>The experiment start time is the point in time when the experiment was started in the
    * Firebase console. The start time must be in an ISO 8601 compliant format.
    */
-  @VisibleForTesting static final String EXPERIMENT_START_TIME_KEY = "experimentStartTime";
+  @VisibleForTesting
+  static final String EXPERIMENT_START_TIME_KEY = "experimentStartTime";
 
   /**
    * The trigger timeout key.
@@ -76,7 +84,8 @@ public class AbtExperimentInfo {
    * <p>A trigger timeout defines how long an experiment can run in an App instance without being
    * triggered. The timeout must be in milliseconds and convertible into a {@code long}.
    */
-  @VisibleForTesting static final String TRIGGER_TIMEOUT_KEY = "triggerTimeoutMillis";
+  @VisibleForTesting
+  static final String TRIGGER_TIMEOUT_KEY = "triggerTimeoutMillis";
 
   /**
    * The time to live key.
@@ -84,42 +93,66 @@ public class AbtExperimentInfo {
    * <p>A time to live defines how long an experiment can run in an App instance. The time must be
    * in milliseconds and convertible into a {@code long}.
    */
-  @VisibleForTesting static final String TIME_TO_LIVE_KEY = "timeToLiveMillis";
+  @VisibleForTesting
+  static final String TIME_TO_LIVE_KEY = "timeToLiveMillis";
 
-  /** The set of all keys required by the ABT SDK to define an experiment. */
+  /**
+   * The set of all keys required by the ABT SDK to define an experiment.
+   */
   private static final String[] ALL_REQUIRED_KEYS = {
-    EXPERIMENT_ID_KEY,
-    EXPERIMENT_START_TIME_KEY,
-    TIME_TO_LIVE_KEY,
-    TRIGGER_TIMEOUT_KEY,
-    VARIANT_ID_KEY,
+      EXPERIMENT_ID_KEY,
+      EXPERIMENT_START_TIME_KEY,
+      TIME_TO_LIVE_KEY,
+      TRIGGER_TIMEOUT_KEY,
+      VARIANT_ID_KEY,
   };
 
   /**
    * The String format of a protobuf Timestamp; the format is ISO 8601 compliant.
    *
-   * <p>The protobuf Timestamp field gets converted to an ISO 8601 string when returned as JSON. For
-   * example, the Firebase Remote Config backend sends experiment start time as a Timestamp field,
-   * which gets converted to an ISO 8601 string when sent as JSON.
+   * <p>The protobuf Timestamp field gets converted to an ISO 8601 string when returned as JSON.
+   * For example, the Firebase Remote Config backend sends experiment start time as a Timestamp
+   * field, which gets converted to an ISO 8601 string when sent as JSON.
    */
   @VisibleForTesting
   static final DateFormat protoTimestampStringParser =
       new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
 
-  /** The experiment id as defined by the ABT backend. */
+  /**
+   * The experiment id as defined by the ABT backend.
+   */
   private final String experimentId;
-  /** The id of the variant of this experiment the current App instance has been assigned to. */
+
+  /**
+   * The id of the variant of this experiment the current App instance has been assigned to.
+   */
   private final String variantId;
-  /** The name of the event that will trigger the activation of this experiment. */
+
+  /**
+   * The name of the event that will trigger the activation of this experiment.
+   *
+   * <p>  Trigger event name is an empty string if the trigger event is absent.
+   */
   private final String triggerEventName;
-  /** The start time of this experiment. */
+
+  /**
+   * The start time of this experiment.
+   */
   private final Date experimentStartTime;
-  /** The amount of time, in milliseconds, before the trigger for this experiment expires. */
+
+  /**
+   * The amount of time, in milliseconds, before the trigger for this experiment expires.
+   */
   private final long triggerTimeoutInMillis;
-  /** The amount of time, in milliseconds, before the experiment expires for this App instance. */
+
+  /**
+   * The amount of time, in milliseconds, before the experiment expires for this App instance.
+   */
   private final long timeToLiveInMillis;
 
-  /** Creates an instance of {@link AbtExperimentInfo} with all the required keys. */
+  /**
+   * Creates an instance of {@link AbtExperimentInfo} with all the required keys.
+   */
   @VisibleForTesting
   AbtExperimentInfo(
       String experimentId,
@@ -142,12 +175,12 @@ public class AbtExperimentInfo {
    * of {@link AbtExperimentInfo}.
    *
    * @param experimentInfoMap A {@link Map} that contains all the keys specified in {@link
-   *     #ALL_REQUIRED_KEYS}. The values of each key must be convertible to the appropriate type,
-   *     e.g., the value for {@link #EXPERIMENT_START_TIME_KEY} must be an ISO 8601 Date string.
+   * #ALL_REQUIRED_KEYS}. The values of each key must be convertible to the appropriate type, e.g.,
+   * the value for {@link #EXPERIMENT_START_TIME_KEY} must be an ISO 8601 Date string.
    * @return An {@link AbtExperimentInfo} with the values of the experiment in {@code
-   *     experimentInfoMap}.
+   * experimentInfoMap}.
    * @throws AbtException If one of the keys is missing, or any of the values cannot be converted to
-   *     their appropriate type.
+   * their appropriate type.
    */
   static AbtExperimentInfo fromMap(Map<String, String> experimentInfoMap) throws AbtException {
 
@@ -178,32 +211,44 @@ public class AbtExperimentInfo {
     }
   }
 
-  /** Returns the id of this experiment. */
+  /**
+   * Returns the id of this experiment.
+   */
   String getExperimentId() {
     return experimentId;
   }
 
-  /** Returns the id of the variant this App instance got assigned to. */
+  /**
+   * Returns the id of the variant this App instance got assigned to.
+   */
   String getVariantId() {
     return variantId;
   }
 
-  /** Returns the name of the event that will trigger the activation of this experiment. */
+  /**
+   * Returns the name of the event that will trigger the activation of this experiment.
+   */
   String getTriggerEventName() {
     return triggerEventName;
   }
 
-  /** Returns the time the experiment was started, in millis since epoch. */
+  /**
+   * Returns the time the experiment was started, in millis since epoch.
+   */
   long getStartTimeInMillisSinceEpoch() {
     return experimentStartTime.getTime();
   }
 
-  /** Returns the amount of time before the trigger event expires for this experiment. */
+  /**
+   * Returns the amount of time before the trigger event expires for this experiment.
+   */
   long getTriggerTimeoutInMillis() {
     return triggerTimeoutInMillis;
   }
 
-  /** Returns the amount of time before the experiment expires in this App instance. */
+  /**
+   * Returns the amount of time before the experiment expires in this App instance.
+   */
   long getTimeToLiveInMillis() {
     return timeToLiveInMillis;
   }
@@ -231,8 +276,7 @@ public class AbtExperimentInfo {
   }
 
   /**
-   * Used for testing {@code FirebaseABTesting#replaceAllExperiments(List)} without leaking the
-   * implementation details of this class.
+   * Returns a {@link Map<String, String>} representing the specified {@link AbtExperimentInfo}.
    */
   @VisibleForTesting
   Map<String, String> toStringMap() {
@@ -248,5 +292,56 @@ public class AbtExperimentInfo {
     experimentInfoMap.put(TIME_TO_LIVE_KEY, Long.toString(timeToLiveInMillis));
 
     return experimentInfoMap;
+  }
+
+  /**
+   * Returns the {@link ConditionalUserProperty} created from the specified {@link
+   * AbtExperimentInfo}.
+   */
+  ConditionalUserProperty toConditionalUserProperty(@OriginService String originService) {
+    ConditionalUserProperty conditionalUserProperty = new ConditionalUserProperty();
+
+    conditionalUserProperty.origin = originService;
+    conditionalUserProperty.creationTimestamp = getStartTimeInMillisSinceEpoch();
+    conditionalUserProperty.name = experimentId;
+    conditionalUserProperty.value = variantId;
+
+    // For a conditional user property to be immediately activated/triggered, its trigger
+    // event needs to be null, not just an empty string.
+    conditionalUserProperty.triggerEventName =
+        TextUtils.isEmpty(triggerEventName)
+            ? null
+            : triggerEventName;
+    conditionalUserProperty.triggerTimeout = triggerTimeoutInMillis;
+    conditionalUserProperty.timeToLive = timeToLiveInMillis;
+
+    return conditionalUserProperty;
+  }
+
+  /**
+   * Returns the {@link AbtExperimentInfo} created from the specified {@link
+   * ConditionalUserProperty}.
+   *
+   * @param conditionalUserProperty A {@link ConditionalUserProperty} that contains an ABT
+   * experiment's information.
+   * @return the converted {@link AbtExperimentInfo} from {@param conditionalUserProperty}.
+   */
+  static AbtExperimentInfo fromConditionalUserProperty(
+      ConditionalUserProperty conditionalUserProperty) {
+
+    // Trigger event defaults to empty string if absent.
+    String triggerEventName = "";
+    if (conditionalUserProperty.triggerEventName != null) {
+      triggerEventName = conditionalUserProperty.triggerEventName;
+    }
+
+    return new AbtExperimentInfo(
+        conditionalUserProperty.name,
+        String.valueOf(conditionalUserProperty.value),
+        triggerEventName,
+        new Date(conditionalUserProperty.creationTimestamp),
+        conditionalUserProperty.triggerTimeout,
+        conditionalUserProperty.timeToLive
+    );
   }
 }
