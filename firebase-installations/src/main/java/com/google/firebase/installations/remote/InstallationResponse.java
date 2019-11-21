@@ -17,7 +17,6 @@ package com.google.firebase.installations.remote;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
-import com.google.firebase.installations.InstallationTokenResult;
 
 @AutoValue
 public abstract class InstallationResponse {
@@ -39,7 +38,7 @@ public abstract class InstallationResponse {
   public abstract String getRefreshToken();
 
   @Nullable
-  public abstract InstallationTokenResult getAuthToken();
+  public abstract TokenResult getAuthToken();
 
   @Nullable
   public abstract ResponseCode getResponseCode();
@@ -65,7 +64,7 @@ public abstract class InstallationResponse {
     public abstract Builder setRefreshToken(@NonNull String value);
 
     @NonNull
-    public abstract Builder setAuthToken(@NonNull InstallationTokenResult value);
+    public abstract Builder setAuthToken(@NonNull TokenResult value);
 
     @NonNull
     public abstract Builder setResponseCode(@NonNull ResponseCode value);

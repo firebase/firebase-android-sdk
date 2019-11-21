@@ -88,7 +88,7 @@ package com.google.firebase.installations.remote {
   public abstract class InstallationResponse {
     ctor public InstallationResponse();
     method @NonNull public static com.google.firebase.installations.remote.InstallationResponse.Builder builder();
-    method @Nullable public abstract InstallationTokenResult getAuthToken();
+    method @Nullable public abstract com.google.firebase.installations.remote.TokenResult getAuthToken();
     method @Nullable public abstract String getFid();
     method @Nullable public abstract String getRefreshToken();
     method @Nullable public abstract com.google.firebase.installations.remote.InstallationResponse.ResponseCode getResponseCode();
@@ -99,7 +99,7 @@ package com.google.firebase.installations.remote {
   public abstract static class InstallationResponse.Builder {
     ctor public InstallationResponse.Builder();
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse build();
-    method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setAuthToken(@NonNull InstallationTokenResult);
+    method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setAuthToken(@NonNull com.google.firebase.installations.remote.TokenResult);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setFid(@NonNull String);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setRefreshToken(@NonNull String);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setResponseCode(@NonNull com.google.firebase.installations.remote.InstallationResponse.ResponseCode);

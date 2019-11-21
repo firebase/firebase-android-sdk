@@ -26,7 +26,6 @@ import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseException;
-import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -270,7 +269,7 @@ public class FirebaseInstallationServiceClient {
   // Read the response from the createFirebaseInstallation API.
   private InstallationResponse readCreateResponse(HttpsURLConnection conn) throws IOException {
     JsonReader reader = new JsonReader(new InputStreamReader(conn.getInputStream(), UTF_8));
-    InstallationTokenResult.Builder installationTokenResult = InstallationTokenResult.builder();
+    TokenResult.Builder tokenResult = TokenResult.builder();
     InstallationResponse.Builder builder = InstallationResponse.builder();
     reader.beginObject();
     while (reader.hasNext()) {
@@ -286,15 +285,15 @@ public class FirebaseInstallationServiceClient {
         while (reader.hasNext()) {
           String key = reader.nextName();
           if (key.equals("token")) {
-            installationTokenResult.setToken(reader.nextString());
+            tokenResult.setToken(reader.nextString());
           } else if (key.equals("expiresIn")) {
-            installationTokenResult.setTokenExpirationTimestamp(
+            tokenResult.setTokenExpirationTimestamp(
                 parseTokenExpirationTimestamp(reader.nextString()));
           } else {
             reader.skipValue();
           }
         }
-        builder.setAuthToken(installationTokenResult.build());
+        builder.setAuthToken(tokenResult.build());
         reader.endObject();
       } else {
         reader.skipValue();

@@ -54,10 +54,9 @@ public final class FisAndroidTestConstants {
           .setFid(TEST_FID_1)
           .setRefreshToken(TEST_REFRESH_TOKEN)
           .setAuthToken(
-              InstallationTokenResult.builder()
+              TokenResult.builder()
                   .setToken(TEST_AUTH_TOKEN)
                   .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                  .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
                   .build())
           .setResponseCode(ResponseCode.OK)
           .build();
@@ -68,10 +67,9 @@ public final class FisAndroidTestConstants {
           .setFid(TEST_INSTANCE_ID_1)
           .setRefreshToken(TEST_REFRESH_TOKEN)
           .setAuthToken(
-              InstallationTokenResult.builder()
+              TokenResult.builder()
                   .setToken(TEST_AUTH_TOKEN)
                   .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                  .setTokenCreationTimestamp(TEST_CREATION_TIMESTAMP_1)
                   .build())
           .setResponseCode(ResponseCode.OK)
           .build();
