@@ -101,6 +101,10 @@ public class View {
     mutatedKeys = DocumentKey.emptyKeySet();
   }
 
+  public SyncState getSyncState() {
+    return this.syncState;
+  }
+
   /**
    * Iterates over a set of doc changes, applies the query limit, and computes what the new results
    * should be, what the changes were, and whether we may need to go back to the local cache for
