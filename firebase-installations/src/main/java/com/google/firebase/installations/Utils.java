@@ -56,7 +56,7 @@ class Utils {
     return persistedInstallationEntry.isRegistered()
         && persistedInstallationEntry.getTokenCreationEpochInSecs()
                 + persistedInstallationEntry.getExpiresInSecs()
-            > currentTimeInSecs() + AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS;
+            < currentTimeInSecs() + AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS;
   }
 
   /** Returns current time in seconds. */

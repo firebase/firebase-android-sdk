@@ -17,6 +17,7 @@ package com.google.firebase.installations {
   }
 
   public enum FirebaseInstallationsException.Status {
+    enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status AUTHENTICATION_ERROR;
     enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status CLIENT_ERROR;
     enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status SDK_INTERNAL_ERROR;
   }
@@ -81,13 +82,13 @@ package com.google.firebase.installations.remote {
     ctor public FirebaseInstallationServiceClient(@NonNull Context);
     method @NonNull public com.google.firebase.installations.remote.InstallationResponse createFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
     method @NonNull public void deleteFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
-    method @NonNull public InstallationTokenResult generateAuthToken(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
+    method @NonNull public com.google.firebase.installations.remote.TokenResult generateAuthToken(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
   }
 
   public abstract class InstallationResponse {
     ctor public InstallationResponse();
     method @NonNull public static com.google.firebase.installations.remote.InstallationResponse.Builder builder();
-    method @Nullable public abstract InstallationTokenResult getAuthToken();
+    method @Nullable public abstract com.google.firebase.installations.remote.TokenResult getAuthToken();
     method @Nullable public abstract String getFid();
     method @Nullable public abstract String getRefreshToken();
     method @Nullable public abstract com.google.firebase.installations.remote.InstallationResponse.ResponseCode getResponseCode();
@@ -98,7 +99,7 @@ package com.google.firebase.installations.remote {
   public abstract static class InstallationResponse.Builder {
     ctor public InstallationResponse.Builder();
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse build();
-    method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setAuthToken(@NonNull InstallationTokenResult);
+    method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setAuthToken(@NonNull com.google.firebase.installations.remote.TokenResult);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setFid(@NonNull String);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setRefreshToken(@NonNull String);
     method @NonNull public abstract com.google.firebase.installations.remote.InstallationResponse.Builder setResponseCode(@NonNull com.google.firebase.installations.remote.InstallationResponse.ResponseCode);
@@ -108,6 +109,30 @@ package com.google.firebase.installations.remote {
   public enum InstallationResponse.ResponseCode {
     enum_constant public static final com.google.firebase.installations.remote.InstallationResponse.ResponseCode OK;
     enum_constant public static final com.google.firebase.installations.remote.InstallationResponse.ResponseCode SERVER_ERROR;
+  }
+
+  public abstract class TokenResult {
+    ctor public TokenResult();
+    method @NonNull public static com.google.firebase.installations.remote.TokenResult.Builder builder();
+    method @Nullable public abstract com.google.firebase.installations.remote.TokenResult.ResponseCode getResponseCode();
+    method @Nullable public abstract String getToken();
+    method @NonNull public abstract long getTokenExpirationTimestamp();
+    method public boolean isSuccessful();
+    method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder toBuilder();
+  }
+
+  public abstract static class TokenResult.Builder {
+    ctor public TokenResult.Builder();
+    method @NonNull public abstract com.google.firebase.installations.remote.TokenResult build();
+    method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder setResponseCode(@NonNull com.google.firebase.installations.remote.TokenResult.ResponseCode);
+    method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder setToken(@NonNull String);
+    method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder setTokenExpirationTimestamp(long);
+  }
+
+  public enum TokenResult.ResponseCode {
+    enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode FID_ERROR;
+    enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode OK;
+    enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode REFRESH_TOKEN_ERROR;
   }
 
 }

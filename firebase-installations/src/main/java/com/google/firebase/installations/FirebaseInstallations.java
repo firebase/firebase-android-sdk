@@ -31,6 +31,7 @@ import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
+import com.google.firebase.installations.remote.TokenResult;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -261,13 +262,26 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         }
       }
 
+      TokenResult tokenResult = null;
       // Refresh Auth token if needed
       if (needRefresh) {
-        fetchAuthTokenFromServer(persistedInstallationEntry);
+        tokenResult = fetchAuthTokenFromServer(persistedInstallationEntry);
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
         synchronized (lock) {
           shouldRefreshAuthToken = false;
         }
+      }
+
+      // If tokenResult is not null and is not successful, it was cleared due to authentication
+      // error during auth token generation.
+      if (tokenResult != null && !tokenResult.isSuccessful()) {
+        triggerOnException(
+            persistedInstallationEntry,
+            new FirebaseInstallationsException(
+                "Failed to generate auth token for this Firebase Installation. Call getId() "
+                    + "to recreate a new Fid and a valid auth token.",
+                FirebaseInstallationsException.Status.AUTHENTICATION_ERROR));
+        return;
       }
 
       triggerOnStateReached(persistedInstallationEntry);
@@ -345,28 +359,31 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /** Calls the FIS servers to generate an auth token for this Firebase installation. */
-  private InstallationTokenResult fetchAuthTokenFromServer(
+  private TokenResult fetchAuthTokenFromServer(
       PersistedInstallationEntry persistedInstallationEntry) throws FirebaseInstallationsException {
     try {
       long creationTime = utils.currentTimeInSecs();
-      InstallationTokenResult tokenResult =
+      TokenResult tokenResult =
           serviceClient.generateAuthToken(
               /*apiKey= */ firebaseApp.getOptions().getApiKey(),
               /*fid= */ persistedInstallationEntry.getFirebaseInstallationId(),
               /*projectID= */ firebaseApp.getOptions().getProjectId(),
               /*refreshToken= */ persistedInstallationEntry.getRefreshToken());
 
-      persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-          PersistedInstallationEntry.builder()
-              .setFirebaseInstallationId(persistedInstallationEntry.getFirebaseInstallationId())
-              .setRegistrationStatus(RegistrationStatus.REGISTERED)
-              .setAuthToken(tokenResult.getToken())
-              .setRefreshToken(persistedInstallationEntry.getRefreshToken())
-              .setExpiresInSecs(tokenResult.getTokenExpirationTimestamp())
-              .setTokenCreationEpochInSecs(creationTime)
-              .build());
-
+      if (tokenResult.isSuccessful()) {
+        persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+            persistedInstallationEntry
+                .toBuilder()
+                .setRegistrationStatus(RegistrationStatus.REGISTERED)
+                .setAuthToken(tokenResult.getToken())
+                .setExpiresInSecs(tokenResult.getTokenExpirationTimestamp())
+                .setTokenCreationEpochInSecs(creationTime)
+                .build());
+      } else {
+        persistedInstallation.clear();
+      }
       return tokenResult;
+
     } catch (FirebaseException exception) {
       throw new FirebaseInstallationsException(
           "Failed to generate auth token for a Firebase Installation.",

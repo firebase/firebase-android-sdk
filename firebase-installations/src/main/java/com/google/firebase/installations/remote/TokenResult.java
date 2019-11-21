@@ -18,27 +18,31 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
+/** This class represents a set of values describing a FIS Auth Token Result. */
 @AutoValue
-public abstract class InstallationResponse {
+public abstract class TokenResult {
 
   public enum ResponseCode {
     // Returned on success
     OK,
-    // An error occurred on the server while processing this request(temporary)
-    SERVER_ERROR
+    // Auth token cannot be generated for this FID in the request. Because it is not
+    // registered/found on the FIS server. Recreate a new fid to fetch a valid auth token.
+    FID_ERROR,
+    // Refresh token in this request in not accepted by the FIS server. Either it has been blocked
+    // or changed. Recreate a new fid to fetch a valid auth token.
+    REFRESH_TOKEN_ERROR,
   }
 
-  @Nullable
-  public abstract String getUri();
+  public boolean isSuccessful() {
+    return getResponseCode() == ResponseCode.OK;
+  }
 
+  /** A new FIS Auth-Token, created for this Firebase Installation. */
   @Nullable
-  public abstract String getFid();
-
-  @Nullable
-  public abstract String getRefreshToken();
-
-  @Nullable
-  public abstract TokenResult getAuthToken();
+  public abstract String getToken();
+  /** The timestamp, before the auth-token expires for this Firebase Installation. */
+  @NonNull
+  public abstract long getTokenExpirationTimestamp();
 
   @Nullable
   public abstract ResponseCode getResponseCode();
@@ -48,28 +52,22 @@ public abstract class InstallationResponse {
 
   /** Returns a default Builder object to create an InstallationResponse object */
   @NonNull
-  public static InstallationResponse.Builder builder() {
-    return new AutoValue_InstallationResponse.Builder();
+  public static TokenResult.Builder builder() {
+    return new AutoValue_TokenResult.Builder().setTokenExpirationTimestamp(0);
   }
 
   @AutoValue.Builder
   public abstract static class Builder {
     @NonNull
-    public abstract Builder setUri(@NonNull String value);
+    public abstract Builder setToken(@NonNull String value);
 
     @NonNull
-    public abstract Builder setFid(@NonNull String value);
-
-    @NonNull
-    public abstract Builder setRefreshToken(@NonNull String value);
-
-    @NonNull
-    public abstract Builder setAuthToken(@NonNull TokenResult value);
+    public abstract Builder setTokenExpirationTimestamp(long value);
 
     @NonNull
     public abstract Builder setResponseCode(@NonNull ResponseCode value);
 
     @NonNull
-    public abstract InstallationResponse build();
+    public abstract TokenResult build();
   }
 }

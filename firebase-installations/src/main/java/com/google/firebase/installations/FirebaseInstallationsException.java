@@ -19,12 +19,13 @@ import com.google.firebase.FirebaseException;
 
 /** The class for all Exceptions thrown by {@link FirebaseInstallations}. */
 public class FirebaseInstallationsException extends FirebaseException {
-
-  // TODO(ankitagj): Improve clear exception handling.
+  // TODO(ankitagj): Improve exception handling and java doc
   public enum Status {
     SDK_INTERNAL_ERROR,
 
-    CLIENT_ERROR
+    CLIENT_ERROR,
+
+    AUTHENTICATION_ERROR
   }
 
   @NonNull private final Status status;
