@@ -35,30 +35,34 @@ public class ServerValue {
   public static final Map<String, String> TIMESTAMP = createScalarServerValuePlaceholder("timestamp");
 
   /**
-   * Adds the given delta to the ref's current value.
+   * Adds the given delta to the current value at a location.
    *
-   * This must be an long or a double value. If the ref is not an integer or double, or if the ref
-   * does not yet exist, the transformation will set the ref to the given value. If either of the
-   * given value or the current field value are doubles, both values will be interpreted as doubles.
-   * Double arithmetic and representation of double values follow IEEE 754 semantics. If there is
-   * positive/negative integer overflow, the field is resolved to a double.
-   * @param delta the amount to modify the ref's current value atomically.
-   * @return a placeholder value for modifying a ref atomically server-side.
+   * The delta must be an long or a double value. If the current value is not an integer or
+   * double, or if the data does not yet exist, the transformation will set the data
+   * to the delta value. If either of the delta value or the existing data
+   * are doubles, both values will be interpreted as doubles. Double arithmetic
+   * and representation of double values follow IEEE 754 semantics. If there is
+   * positive/negative integer overflow, the sum is calculated as a  a double.
+   *
+   * @param delta the amount to modify the current value atomically.
+   * @return a placeholder value for modifying data atomically server-side.
    */
   static final Map<String, Map<String, Object>> increment(long delta) {
     return createParameterizedServerValuePlaceholder("increment", delta);
   }
 
   /**
-   * Adds the given delta to the ref's current value.
+   * Adds the given delta to the current value at a location.
    *
-   * This must be an long or a double value. If the ref is not an integer or double, or if the ref
-   * does not yet exist, the transformation will set the ref to the given value. If either of the
-   * given value or the current field value are doubles, both values will be interpreted as doubles.
-   * Double arithmetic and representation of double values follow IEEE 754 semantics. If there is
-   * positive/negative integer overflow, the field is resolved to a double.
-   * @param delta the amount to modify the ref's current value atomically.
-   * @return a placeholder value for modifying a ref atomically server-side.
+   * The delta must be an long or a double value. If the current value is not an integer or
+   * double, or if the data does not yet exist, the transformation will set the data
+   * to the delta value. If either of the delta value or the existing data
+   * are doubles, both values will be interpreted as doubles. Double arithmetic
+   * and representation of double values follow IEEE 754 semantics. If there is
+   * positive/negative integer overflow, the sum is calculated as a  a double.
+   *
+   * @param delta the amount to modify the current value atomically.
+   * @return a placeholder value for modifying data atomically server-side.
    */
   static final Map<String, Map<String, Object>> increment(double delta) {
     return createParameterizedServerValuePlaceholder("increment", delta);
