@@ -1,4 +1,8 @@
-# Unreleased (21.3.0)
+# Unreleased (21.3.1)
+- [feature] Added `Query.limitToLast(n: number)`, which returns the last `n`
+  documents as the result.
+
+# 21.3.0
 - [feature] Added `Query.whereIn()` and `Query.whereArrayContainsAny()` query
   operators. `Query.whereIn()` finds documents where a specified field’s value
   is IN a specified array. `Query.whereArrayContainsAny()` finds documents
