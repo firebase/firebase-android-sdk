@@ -2757,12 +2757,18 @@ public class DataTest {
     // Going offline ensures that local events get queued up before server events
     IntegrationTestHelpers.goOffline(cfg);
 
+    // Phaser is the closest built-in to a bidrectional latch. We could use a semaphore with a fixed
+    // number of permits, but the test would be fragile since the permit count isn't closely related
+    // to the test cases.
+    final Phaser latch = new Phaser(0);
+
     ValueEventListener listener =
         ref.addValueEventListener(
             new ValueEventListener() {
               @Override
               public void onDataChange(DataSnapshot snapshot) {
                 foundValues.add(snapshot.getValue());
+                latch.arrive();
               }
 
               @Override
@@ -2771,29 +2777,33 @@ public class DataTest {
 
     try {
       // null + incr
+      latch.register();
       ref.setValue(ServerValue.increment(1));
       expectedValues.add((long) 1);
 
       // number + incr
+      latch.bulkRegister(2);
       ref.setValue(5);
       ref.setValue(ServerValue.increment(1));
       expectedValues.add((long) 5);
       expectedValues.add((long) 6);
 
       // string + incr
+      latch.bulkRegister(2);
       ref.setValue("hello");
       ref.setValue(ServerValue.increment(1));
       expectedValues.add("hello");
       expectedValues.add((long) 1);
 
       // object + incr
+      latch.bulkRegister(2);
       Map<String, Object> obj = new MapBuilder().put("hello", "world").build();
       ref.setValue(obj);
       ref.setValue(ServerValue.increment(1));
       expectedValues.add(obj);
       expectedValues.add((long) 1);
 
-      IntegrationTestHelpers.waitForQueue(ref);
+      latch.awaitAdvanceInterruptibly(0, IntegrationTestValues.getTimeout(), MILLISECONDS);
       assertEquals(expectedValues, foundValues);
     } finally {
       ref.removeEventListener(listener);
@@ -2813,9 +2823,10 @@ public class DataTest {
     // Going offline ensures that local events get queued up before server events
     IntegrationTestHelpers.goOffline(cfg);
 
-    // Phaser can be used as a bidirectional latch. We need this because
-    // IntegrationTestHelpers.waitForQueue doesn't handle priority changes.
-    Phaser latch = new Phaser(0);
+    // Phaser is the closest built-in to a bidrectional latch. We could use a semaphore with a fixed
+    // number of permits, but the test would be fragile since the permit count isn't closely related
+    // to the test cases.
+    final Phaser latch = new Phaser(0);
 
     ValueEventListener listener =
         ref.addValueEventListener(
@@ -2863,12 +2874,17 @@ public class DataTest {
     // Going offline ensures that local events get queued up before server events
     IntegrationTestHelpers.goOffline(cfg);
 
+    // Phaser can be used as a bidirectional latch. We need this because
+    // IntegrationTestHelpers.waitForQueue doesn't handle priority changes.
+    Phaser latch = new Phaser(0);
+
     ValueEventListener listener =
         ref.addValueEventListener(
             new ValueEventListener() {
               @Override
               public void onDataChange(DataSnapshot snapshot) {
                 foundValues.add(snapshot.getValue());
+                latch.arrive();
               }
 
               @Override
@@ -2877,30 +2893,34 @@ public class DataTest {
 
     try {
       // long + double = double
+      latch.bulkRegister(2);
       ref.setValue(1);
       ref.setValue(ServerValue.increment(1.5));
       expectedValues.add((long) 1);
       expectedValues.add(2.5);
 
       // double + long = double
+      latch.bulkRegister(2);
       ref.setValue(1.5);
       ref.setValue(ServerValue.increment(1));
       expectedValues.add(1.5);
       expectedValues.add(2.5);
 
       // long overflow = double
+      latch.bulkRegister(2);
       ref.setValue(Long.MAX_VALUE - 1);
       ref.setValue(ServerValue.increment(2));
       expectedValues.add(Long.MAX_VALUE - 1);
       expectedValues.add((double) Long.MAX_VALUE + 1.0);
 
       // long underflow = double
+      latch.bulkRegister(2);
       ref.setValue(Long.MIN_VALUE + 1);
       ref.setValue(ServerValue.increment(-2));
       expectedValues.add(Long.MIN_VALUE + 1);
       expectedValues.add((double) Long.MIN_VALUE - 1.0);
 
-      IntegrationTestHelpers.waitForQueue(ref);
+      latch.awaitAdvanceInterruptibly(0, IntegrationTestValues.getTimeout(), MILLISECONDS);
 
       // Checking types first makes failures much more obvious
       List<Class> expectedTypes = expectedValues.stream().map(Object::getClass).collect(toList());
