@@ -262,18 +262,19 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         }
       }
 
+      TokenResult tokenResult = null;
       // Refresh Auth token if needed
       if (needRefresh) {
-        fetchAuthTokenFromServer(persistedInstallationEntry);
+        tokenResult = fetchAuthTokenFromServer(persistedInstallationEntry);
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
         synchronized (lock) {
           shouldRefreshAuthToken = false;
         }
       }
 
-      // If persisted installation entry is in NOT_GENERATED state, it was cleared due to
-      // authentication error during auth token generation.
-      if (persistedInstallationEntry.isNotGenerated()) {
+      // If tokenResult is not null and is in REFRESH_TOKEN_ERROR or FID_ERROR state, it was cleared
+      // due to authentication error during auth token generation.
+      if (tokenResult != null && tokenResult.isAuthTokenErrored()) {
         triggerOnException(
             persistedInstallationEntry,
             new FirebaseInstallationsException(
@@ -358,8 +359,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /** Calls the FIS servers to generate an auth token for this Firebase installation. */
-  private void fetchAuthTokenFromServer(PersistedInstallationEntry persistedInstallationEntry)
-      throws FirebaseInstallationsException {
+  private TokenResult fetchAuthTokenFromServer(
+      PersistedInstallationEntry persistedInstallationEntry) throws FirebaseInstallationsException {
     try {
       long creationTime = utils.currentTimeInSecs();
       TokenResult tokenResult =
@@ -368,11 +369,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               /*fid= */ persistedInstallationEntry.getFirebaseInstallationId(),
               /*projectID= */ firebaseApp.getOptions().getProjectId(),
               /*refreshToken= */ persistedInstallationEntry.getRefreshToken());
-
-      if (tokenResult.isAuthTokenErrored()) {
-        persistedInstallation.clear();
-        return;
-      }
 
       if (tokenResult.isSuccessful()) {
         persistedInstallation.insertOrUpdatePersistedInstallationEntry(
@@ -383,8 +379,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
                 .setExpiresInSecs(tokenResult.getTokenExpirationTimestamp())
                 .setTokenCreationEpochInSecs(creationTime)
                 .build());
-        return;
+      } else {
+        persistedInstallation.clear();
       }
+      return tokenResult;
 
     } catch (FirebaseException exception) {
       throw new FirebaseInstallationsException(
