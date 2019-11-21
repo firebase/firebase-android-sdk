@@ -369,6 +369,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
               /*projectID= */ firebaseApp.getOptions().getProjectId(),
               /*refreshToken= */ persistedInstallationEntry.getRefreshToken());
 
+      if (tokenResult.isAuthTokenErrored()) {
+        persistedInstallation.clear();
+        return;
+      }
+
       if (tokenResult.isSuccessful()) {
         persistedInstallation.insertOrUpdatePersistedInstallationEntry(
             persistedInstallationEntry
@@ -378,8 +383,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
                 .setExpiresInSecs(tokenResult.getTokenExpirationTimestamp())
                 .setTokenCreationEpochInSecs(creationTime)
                 .build());
-      } else if (tokenResult.isErrored()) {
-        persistedInstallation.clear();
+        return;
       }
 
     } catch (FirebaseException exception) {

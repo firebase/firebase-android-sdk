@@ -37,7 +37,7 @@ public abstract class TokenResult {
     return getResponseCode() == ResponseCode.OK;
   }
 
-  public boolean isErrored() {
+  public boolean isAuthTokenErrored() {
     return getResponseCode() == ResponseCode.FID_ERROR
         || getResponseCode() == ResponseCode.REFRESH_TOKEN_ERROR;
   }
