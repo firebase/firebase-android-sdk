@@ -20,7 +20,7 @@ import com.google.firebase.installations.remote.InstallationResponse.ResponseCod
 
 public final class FisAndroidTestConstants {
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
-  /** Invalid FID. */
+  // Invalid FID.
   public static final String INVALID_TEST_FID = "invalid";
 
   public static final String TEST_PROJECT_ID = "777777777777";
