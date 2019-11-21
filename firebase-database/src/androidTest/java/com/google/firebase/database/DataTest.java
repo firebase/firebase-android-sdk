@@ -24,10 +24,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import androidx.test.runner.AndroidJUnit4;
-
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoManager;
+import com.google.firebase.database.core.ServerValues;
 import com.google.firebase.database.core.view.Event;
 import com.google.firebase.database.future.ReadFuture;
 import com.google.firebase.database.future.WriteFuture;
@@ -45,7 +45,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -1262,7 +1261,9 @@ public class DataTest {
             new MapBuilder().put("/a", "t").put("a/b", "t").build(),
             new MapBuilder().put("/a/b", "t").put("a", "t").build(),
             new MapBuilder().put("/a/b", "t").put("/a/b/.priority", 1.0).build(),
-            new MapBuilder().put("/a/b/.sv", "timestamp").build(),
+            new MapBuilder()
+                .put("/a/b/" + ServerValues.NAME_SUBKEY_SERVERVALUE, ServerValues.NAME_OP_TIMESTAMP)
+                .build(),
             new MapBuilder().put("/a/b/.value", "t").build(),
             new MapBuilder().put("/a/b/.priority", new MapBuilder().put("x", "y").build()).build());
     for (Map<String, Object> badUpdate : badUpdates) {
@@ -2745,93 +2746,89 @@ public class DataTest {
   }
 
   @Test
-  public void testServerIncrementOverwritesExistingData() throws DatabaseException, TimeoutException, InterruptedException {
-    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+  public void testServerIncrementOverwritesExistingData()
+      throws DatabaseException, TimeoutException, InterruptedException {
+    DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
+    DatabaseReference ref = IntegrationTestHelpers.rootWithConfig(cfg);
     List<Object> foundValues = new ArrayList<>();
     // Note: all numeric values will be long, so they must be cast before being inserted.
     List<Object> expectedValues = new ArrayList<>();
 
-    // Phaser is the closest built-in to a bidrectional latch. We could use a semaphore with a fixed
-    // number of permits, but the test would be fragile since the permit count isn't closely related
-    // to the test cases.
-    final Phaser latch = new Phaser(0);
-
     // Going offline ensures that local events get queued up before server events
-    ref.getDatabase().goOffline();
+    IntegrationTestHelpers.goOffline(cfg);
 
-    ValueEventListener listener = ref.addValueEventListener(new ValueEventListener() {
-      @Override
-      public void onDataChange(DataSnapshot snapshot) {
-          foundValues.add(snapshot.getValue());
-          latch.arrive();
-        }
+    ValueEventListener listener =
+        ref.addValueEventListener(
+            new ValueEventListener() {
+              @Override
+              public void onDataChange(DataSnapshot snapshot) {
+                foundValues.add(snapshot.getValue());
+              }
 
-      @Override
-      public void onCancelled(DatabaseError error) {}
-    });
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
 
     try {
       // null + incr
-      latch.register();
       ref.setValue(ServerValue.increment(1));
       expectedValues.add((long) 1);
 
       // number + incr
-      latch.bulkRegister(2);
       ref.setValue(5);
       ref.setValue(ServerValue.increment(1));
       expectedValues.add((long) 5);
       expectedValues.add((long) 6);
 
       // string + incr
-      latch.bulkRegister(2);
       ref.setValue("hello");
       ref.setValue(ServerValue.increment(1));
       expectedValues.add("hello");
       expectedValues.add((long) 1);
 
       // object + incr
-      latch.bulkRegister(2);
-      Map<String, String> obj = new HashMap<>();
-      obj.put("hello", "world");
+      Map<String, Object> obj = new MapBuilder().put("hello", "world").build();
       ref.setValue(obj);
       ref.setValue(ServerValue.increment(1));
       expectedValues.add(obj);
       expectedValues.add((long) 1);
 
-      latch.awaitAdvanceInterruptibly(0, IntegrationTestValues.getTimeout(), MILLISECONDS);
+      IntegrationTestHelpers.waitForQueue(ref);
       assertEquals(expectedValues, foundValues);
     } finally {
       ref.removeEventListener(listener);
-      ref.getDatabase().goOnline();
+      IntegrationTestHelpers.goOnline(cfg);
     }
   }
 
   @Test
-  public void testServerIncrementPriority() throws DatabaseException, TimeoutException, InterruptedException {
-    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+  public void testServerIncrementPriority()
+      throws DatabaseException, TimeoutException, InterruptedException {
+    DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
+    DatabaseReference ref = IntegrationTestHelpers.rootWithConfig(cfg);
     List<Object> foundPriorities = new ArrayList<>();
     // Note: all numeric values will be long or double, so they must be cast before being inserted.
     List<Object> expectedPriorities = new ArrayList<>();
 
-    // Phaser is the closest built-in to a bidrectional latch. We could use a semaphore with a fixed
-    // number of permits, but the test would be fragile since the permit count isn't closely related
-    // to the test cases.
-    final Phaser latch = new Phaser(0);
-
     // Going offline ensures that local events get queued up before server events
-    ref.getDatabase().goOffline();
+    IntegrationTestHelpers.goOffline(cfg);
 
-    ValueEventListener listener = ref.addValueEventListener(new ValueEventListener() {
-      @Override
-      public void onDataChange(DataSnapshot snapshot) {
-        foundPriorities.add(snapshot.getPriority());
-        latch.arrive();
-      }
+    // Phaser can be used as a bidirectional latch. We need this because
+    // IntegrationTestHelpers.waitForQueue doesn't handle priority changes.
+    Phaser latch = new Phaser(0);
 
-      @Override
-      public void onCancelled(DatabaseError error) {}
-    });
+    ValueEventListener listener =
+        ref.addValueEventListener(
+            new ValueEventListener() {
+              @Override
+              public void onDataChange(DataSnapshot snapshot) {
+                foundPriorities.add(snapshot.getPriority());
+                latch.arrive();
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
 
     try {
       // null + increment
@@ -2845,73 +2842,65 @@ public class DataTest {
       ref.setValue(0, ServerValue.increment(1.5));
       expectedPriorities.add(2.5);
 
-      latch.awaitAdvanceInterruptibly(0, IntegrationTestValues.getTimeout(), MILLISECONDS);
-
       // Checking types first makes failures much more obvious
+      latch.awaitAdvanceInterruptibly(0, IntegrationTestValues.getTimeout(), MILLISECONDS);
       assertEquals(expectedPriorities, foundPriorities);
     } finally {
       ref.removeEventListener(listener);
-      ref.getDatabase().goOnline();
+      IntegrationTestHelpers.goOnline(cfg);
     }
   }
 
   @Test
-  public void testServerIncrementOverflowAndTypeCoercion() throws DatabaseException, TimeoutException, InterruptedException {
-    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+  public void testServerIncrementOverflowAndTypeCoercion()
+      throws DatabaseException, TimeoutException, InterruptedException {
+    DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
+    DatabaseReference ref = IntegrationTestHelpers.rootWithConfig(cfg);
     List<Object> foundValues = new ArrayList<>();
     // Note: all numeric values will be long or double, so they must be cast before being inserted.
     List<Object> expectedValues = new ArrayList<>();
 
-    // Phaser is the closest built-in to a bidrectional latch. We could use a semaphore with a fixed
-    // number of permits, but the test would be fragile since the permit count isn't closely related
-    // to the test cases.
-    final Phaser latch = new Phaser(0);
-
     // Going offline ensures that local events get queued up before server events
-    ref.getDatabase().goOffline();
+    IntegrationTestHelpers.goOffline(cfg);
 
-    ValueEventListener listener = ref.addValueEventListener(new ValueEventListener() {
-      @Override
-      public void onDataChange(DataSnapshot snapshot) {
-        foundValues.add(snapshot.getValue());
-        latch.arrive();
-      }
+    ValueEventListener listener =
+        ref.addValueEventListener(
+            new ValueEventListener() {
+              @Override
+              public void onDataChange(DataSnapshot snapshot) {
+                foundValues.add(snapshot.getValue());
+              }
 
-      @Override
-      public void onCancelled(DatabaseError error) {}
-    });
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
 
     try {
       // long + double = double
-      latch.bulkRegister(2);
       ref.setValue(1);
       ref.setValue(ServerValue.increment(1.5));
       expectedValues.add((long) 1);
       expectedValues.add(2.5);
 
       // double + long = double
-      latch.bulkRegister(2);
       ref.setValue(1.5);
       ref.setValue(ServerValue.increment(1));
       expectedValues.add(1.5);
       expectedValues.add(2.5);
 
       // long overflow = double
-      latch.bulkRegister(2);
       ref.setValue(Long.MAX_VALUE - 1);
       ref.setValue(ServerValue.increment(2));
       expectedValues.add(Long.MAX_VALUE - 1);
-      expectedValues.add((double)Long.MAX_VALUE + 1.0);
-
+      expectedValues.add((double) Long.MAX_VALUE + 1.0);
 
       // long underflow = double
-      latch.bulkRegister(2);
       ref.setValue(Long.MIN_VALUE + 1);
       ref.setValue(ServerValue.increment(-2));
       expectedValues.add(Long.MIN_VALUE + 1);
-      expectedValues.add((double)Long.MIN_VALUE - 1.0);
+      expectedValues.add((double) Long.MIN_VALUE - 1.0);
 
-      latch.awaitAdvanceInterruptibly(0, IntegrationTestValues.getTimeout(), MILLISECONDS);
+      IntegrationTestHelpers.waitForQueue(ref);
 
       // Checking types first makes failures much more obvious
       List<Class> expectedTypes = expectedValues.stream().map(Object::getClass).collect(toList());
@@ -2920,7 +2909,7 @@ public class DataTest {
       assertEquals(expectedValues, foundValues);
     } finally {
       ref.removeEventListener(listener);
-      ref.getDatabase().goOnline();
+      IntegrationTestHelpers.goOnline(cfg);
     }
   }
 

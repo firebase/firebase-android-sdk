@@ -435,7 +435,8 @@ public class Repo implements PersistentConnection.Delegate {
 
     Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
     Node existing = serverSyncTree.calcCompleteEventCache(path, new ArrayList<>());
-    Node newValue = ServerValues.resolveDeferredValueSnapshot(newValueUnresolved, existing, serverValues);
+    Node newValue =
+        ServerValues.resolveDeferredValueSnapshot(newValueUnresolved, existing, serverValues);
 
     final long writeId = this.getNextWriteId();
     List<? extends Event> events =
@@ -483,7 +484,8 @@ public class Repo implements PersistentConnection.Delegate {
     // Start with our existing data and merge each child into it.
     Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
     Node existing = serverSyncTree.calcCompleteEventCache(path, new ArrayList<>());
-    CompoundWrite resolved = ServerValues.resolveDeferredValueMerge(updates, existing, serverValues);
+    CompoundWrite resolved =
+        ServerValues.resolveDeferredValueMerge(updates, existing, serverValues);
 
     final long writeId = this.getNextWriteId();
     List<? extends Event> events =
@@ -680,7 +682,7 @@ public class Repo implements PersistentConnection.Delegate {
           public void visitTree(Path prefixPath, Node node) {
             Node existing = serverSyncTree.calcCompleteEventCache(prefixPath, new ArrayList<>());
             Node resolvedNode =
-                    ServerValues.resolveDeferredValueSnapshot(node, existing, serverValues);
+                ServerValues.resolveDeferredValueSnapshot(node, existing, serverValues);
             events.addAll(serverSyncTree.applyServerOverwrite(prefixPath, resolvedNode));
             Path affectedPath = abortTransactions(prefixPath, DatabaseError.OVERRIDDEN_BY_SET);
             rerunTransactions(affectedPath);
@@ -870,7 +872,9 @@ public class Repo implements PersistentConnection.Delegate {
 
       Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
       Node newNodeUnresolved = result.getNode();
-      Node newNode = ServerValues.resolveDeferredValueSnapshot(newNodeUnresolved, transaction.currentInputSnapshot, serverValues);
+      Node newNode =
+          ServerValues.resolveDeferredValueSnapshot(
+              newNodeUnresolved, transaction.currentInputSnapshot, serverValues);
 
       transaction.currentOutputSnapshotRaw = newNodeUnresolved;
       transaction.currentOutputSnapshotResolved = newNode;

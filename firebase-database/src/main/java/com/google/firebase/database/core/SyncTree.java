@@ -248,11 +248,13 @@ public class SyncTree {
                 Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
                 if (write.isOverwrite()) {
                   Node resolvedNode =
-                      ServerValues.resolveDeferredValueSnapshot(write.getOverwrite(), existing, serverValues);
+                      ServerValues.resolveDeferredValueSnapshot(
+                          write.getOverwrite(), existing, serverValues);
                   persistenceManager.applyUserWriteToServerCache(write.getPath(), resolvedNode);
                 } else {
                   CompoundWrite resolvedMerge =
-                      ServerValues.resolveDeferredValueMerge(write.getMerge(), existing, serverValues);
+                      ServerValues.resolveDeferredValueMerge(
+                          write.getMerge(), existing, serverValues);
                   persistenceManager.applyUserWriteToServerCache(write.getPath(), resolvedMerge);
                 }
               }

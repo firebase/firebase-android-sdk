@@ -17,9 +17,7 @@ package com.google.firebase.database;
 // Server values
 
 import androidx.annotation.NonNull;
-
 import com.google.firebase.database.core.ServerValues;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,40 +30,39 @@ public class ServerValue {
    * milliseconds) by the Firebase Database servers.
    */
   @NonNull
-  public static final Map<String, String> TIMESTAMP = createScalarServerValuePlaceholder("timestamp");
+  public static final Map<String, String> TIMESTAMP =
+      createScalarServerValuePlaceholder(ServerValues.NAME_OP_TIMESTAMP);
 
   /**
    * Adds the given delta to the current value at a location.
    *
-   * The delta must be an long or a double value. If the current value is not an integer or
-   * double, or if the data does not yet exist, the transformation will set the data
-   * to the delta value. If either of the delta value or the existing data
-   * are doubles, both values will be interpreted as doubles. Double arithmetic
-   * and representation of double values follow IEEE 754 semantics. If there is
-   * positive/negative integer overflow, the sum is calculated as a  a double.
+   * <p>The delta must be an long or a double value. If the current value is not an integer or
+   * double, or if the data does not yet exist, the transformation will set the data to the delta
+   * value. If either of the delta value or the existing data are doubles, both values will be
+   * interpreted as doubles. Double arithmetic and representation of double values follow IEEE 754
+   * semantics. If there is positive/negative integer overflow, the sum is calculated as a a double.
    *
    * @param delta the amount to modify the current value atomically.
    * @return a placeholder value for modifying data atomically server-side.
    */
-  static final Map<String, Map<String, Object>> increment(long delta) {
-    return createParameterizedServerValuePlaceholder("increment", delta);
+  static final Object increment(long delta) {
+    return createParameterizedServerValuePlaceholder(ServerValues.NAME_OP_INCREMENT, delta);
   }
 
   /**
    * Adds the given delta to the current value at a location.
    *
-   * The delta must be an long or a double value. If the current value is not an integer or
-   * double, or if the data does not yet exist, the transformation will set the data
-   * to the delta value. If either of the delta value or the existing data
-   * are doubles, both values will be interpreted as doubles. Double arithmetic
-   * and representation of double values follow IEEE 754 semantics. If there is
-   * positive/negative integer overflow, the sum is calculated as a  a double.
+   * <p>The delta must be an long or a double value. If the current value is not an integer or
+   * double, or if the data does not yet exist, the transformation will set the data to the delta
+   * value. If either of the delta value or the existing data are doubles, both values will be
+   * interpreted as doubles. Double arithmetic and representation of double values follow IEEE 754
+   * semantics. If there is positive/negative integer overflow, the sum is calculated as a a double.
    *
    * @param delta the amount to modify the current value atomically.
    * @return a placeholder value for modifying data atomically server-side.
    */
-  static final Map<String, Map<String, Object>> increment(double delta) {
-    return createParameterizedServerValuePlaceholder("increment", delta);
+  static final Object increment(double delta) {
+    return createParameterizedServerValuePlaceholder(ServerValues.NAME_OP_INCREMENT, delta);
   }
 
   private static Map<String, String> createScalarServerValuePlaceholder(String key) {
@@ -74,7 +71,8 @@ public class ServerValue {
     return Collections.unmodifiableMap(result);
   }
 
-  private static Map<String, Map<String, Object>> createParameterizedServerValuePlaceholder(String name, Object value) {
+  private static Map<String, Map<String, Object>> createParameterizedServerValuePlaceholder(
+      String name, Object value) {
     Map<String, Object> op = new HashMap<>();
     op.put(name, value);
     Map<String, Map<String, Object>> result = new HashMap<>();
