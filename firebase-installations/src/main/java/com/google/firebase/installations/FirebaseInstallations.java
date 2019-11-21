@@ -272,9 +272,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         }
       }
 
-      // If tokenResult is not null and is in REFRESH_TOKEN_ERROR or FID_ERROR state, it was cleared
-      // due to authentication error during auth token generation.
-      if (tokenResult != null && tokenResult.isAuthTokenErrored()) {
+      // If tokenResult is not null and is not successful, it was cleared due to authentication
+      // error during auth token generation.
+      if (tokenResult != null && !tokenResult.isSuccessful()) {
         triggerOnException(
             persistedInstallationEntry,
             new FirebaseInstallationsException(

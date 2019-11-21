@@ -117,7 +117,6 @@ package com.google.firebase.installations.remote {
     method @Nullable public abstract com.google.firebase.installations.remote.TokenResult.ResponseCode getResponseCode();
     method @Nullable public abstract String getToken();
     method @NonNull public abstract long getTokenExpirationTimestamp();
-    method public boolean isAuthTokenErrored();
     method public boolean isSuccessful();
     method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder toBuilder();
   }

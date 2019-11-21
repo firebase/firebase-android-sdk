@@ -316,7 +316,7 @@ public class FirebaseInstallationsInstrumentedTest {
     assertThat(updatedInstallationEntry).hasFid(TEST_FID_1);
     assertThat(updatedInstallationEntry).hasRegistrationStatus(RegistrationStatus.REGISTERED);
   }
-
+g
   @Test
   public void testGetId_PersistedInstallationOk_BackendError() throws Exception {
     FirebaseInstallations firebaseInstallations =

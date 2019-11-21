@@ -37,11 +37,6 @@ public abstract class TokenResult {
     return getResponseCode() == ResponseCode.OK;
   }
 
-  public boolean isAuthTokenErrored() {
-    return getResponseCode() == ResponseCode.FID_ERROR
-        || getResponseCode() == ResponseCode.REFRESH_TOKEN_ERROR;
-  }
-
   /** A new FIS Auth-Token, created for this Firebase Installation. */
   @Nullable
   public abstract String getToken();
