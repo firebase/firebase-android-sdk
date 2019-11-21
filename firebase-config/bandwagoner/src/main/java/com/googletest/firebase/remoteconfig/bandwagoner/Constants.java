@@ -21,6 +21,7 @@ package com.googletest.firebase.remoteconfig.bandwagoner;
  *
  * @author Miraziz Yusupov
  */
+// Test CI invocations.
 class Constants {
   public static final String TAG = "Bandwagoner";
 }

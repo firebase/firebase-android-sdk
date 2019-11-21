@@ -101,6 +101,8 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                 .build()
                 .find()
 
+        println "yifany --- affected projects:" + affectedProjects
+
         project.task('checkChanged') { task ->
             task.group = 'verification'
             task.description = 'Runs the check task in all changed projects.'
