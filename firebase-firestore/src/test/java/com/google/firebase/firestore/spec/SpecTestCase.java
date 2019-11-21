@@ -840,9 +840,6 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       boolean expectedHasPendingWrites = expected.optBoolean("hasPendingWrites", false);
       boolean expectedFromCache = expected.optBoolean("fromCache", false);
       assertEquals("hasPendingWrites", expectedHasPendingWrites, actual.view.hasPendingWrites());
-      if (expectedFromCache != actual.view.isFromCache()) {
-        log("some went wrong");
-      }
       assertEquals("fromCache", expectedFromCache, actual.view.isFromCache());
     }
   }
