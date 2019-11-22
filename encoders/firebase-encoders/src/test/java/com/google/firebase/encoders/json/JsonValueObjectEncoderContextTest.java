@@ -27,6 +27,7 @@ import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ValueEncoder;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.TimeZone;
 import org.junit.Assert;
@@ -143,6 +144,22 @@ public class JsonValueObjectEncoderContextTest {
                 "{\"String\":%s,\"Objects\":%s}",
                 "[\"string1\",\"string2\"]",
                 "[{\"Name\":\"innerClass\"},{\"Name\":\"innerClass\"}]"));
+  }
+
+  @Test
+  public void testEncodingBytes() throws IOException, EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> {
+          ctx.add("Bytes", "My {custom} value.".getBytes(Charset.forName("UTF-8")));
+        };
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result).isEqualTo(String.format("{\"Bytes\":%s}", "\"TXkge2N1c3RvbX0gdmFsdWUu\""));
   }
 
   @Test
