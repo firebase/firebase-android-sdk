@@ -14,6 +14,7 @@
 
 package com.google.firebase.installations;
 
+import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -52,6 +53,7 @@ import java.util.concurrent.TimeUnit;
  * </ul>
  */
 public class FirebaseInstallations implements FirebaseInstallationsApi {
+  private static final String TAG = "FirebaseInstallations";
 
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationServiceClient serviceClient;
@@ -220,21 +222,28 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   private final void doRegistration() {
+    Log.d(TAG, "doRegistration");
     try {
       PersistedInstallationEntry persistedInstallationEntry =
           persistedInstallation.readPersistedInstallationEntryValue();
+      Log.d(TAG, "status = " + persistedInstallationEntry.getRegistrationStatus());
 
       // New FID needs to be created
       if (persistedInstallationEntry.isNotGenerated()) {
+        Log.d(TAG, "need a new FID");
 
         // For a default firebase installation read the existing iid. For other custom firebase
         // installations create a new fid
         String fid = readExistingIidOrCreateFid();
+        Log.d(TAG, "using fid " + fid);
         persistFid(fid);
+        Log.d(TAG, "wrote fid to disk");
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
+        Log.d(TAG, "reread entry: " + persistedInstallationEntry);
       }
 
       if (persistedInstallationEntry.isErrored()) {
+        Log.d(TAG, "in error state, bailing");
         throw new FirebaseInstallationsException(
             persistedInstallationEntry.getFisError(),
             FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
@@ -244,57 +253,65 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
       // FID needs to be registered
       if (persistedInstallationEntry.isUnregistered()) {
-        registerAndSaveFid(persistedInstallationEntry);
-        persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
-        // Newly registered Fid will have valid auth token. No refresh required.
-        synchronized (lock) {
-          shouldRefreshAuthToken = false;
-        }
+        Log.d(TAG, "the fid is unregistered, register it now");
+        persistedInstallationEntry = registerAndSaveFid(persistedInstallationEntry);
+        Log.d(TAG, "registered the fid, entry is now " + persistedInstallationEntry);
+        // TODO(fredq): I think this is unnecessary, since we check if the token is expired next
+        // // Newly registered Fid will have valid auth token. No refresh required.
+        // synchronized (lock) {
+        //   shouldRefreshAuthToken = false;
+        // }
       }
 
       // Don't notify the listeners at this point; we might as well make ure the auth token is up
       // to date before letting them know.
 
       boolean needRefresh = utils.isAuthTokenExpired(persistedInstallationEntry);
+      Log.d(TAG, "authtoken expired: " + needRefresh);
       if (!needRefresh) {
         synchronized (lock) {
           needRefresh = shouldRefreshAuthToken;
         }
       }
 
-      TokenResult tokenResult = null;
       // Refresh Auth token if needed
       if (needRefresh) {
-        tokenResult = fetchAuthTokenFromServer(persistedInstallationEntry);
+        Log.d(TAG, "need to refresh the authtoken");
+        TokenResult tokenResult = fetchAuthTokenFromServer(persistedInstallationEntry);
+        Log.d(TAG, "fetched token: " + tokenResult);
         persistedInstallationEntry = persistedInstallation.readPersistedInstallationEntryValue();
+
+        // If tokenResult is not null and is not successful, it was cleared due to authentication
+        // error during auth token generation.
+        if (!tokenResult.isSuccessful()) {
+          Log.d(TAG, "fetched token is bad: " + tokenResult);
+          triggerOnException(
+              persistedInstallationEntry,
+              new FirebaseInstallationsException(
+                  "Failed to generate auth token for this Firebase Installation. Call getId() "
+                      + "to recreate a new Fid and a valid auth token.",
+                  FirebaseInstallationsException.Status.AUTHENTICATION_ERROR));
+          return;
+        }
+
         synchronized (lock) {
           shouldRefreshAuthToken = false;
         }
       }
 
-      // If tokenResult is not null and is not successful, it was cleared due to authentication
-      // error during auth token generation.
-      if (tokenResult != null && !tokenResult.isSuccessful()) {
-        triggerOnException(
-            persistedInstallationEntry,
-            new FirebaseInstallationsException(
-                "Failed to generate auth token for this Firebase Installation. Call getId() "
-                    + "to recreate a new Fid and a valid auth token.",
-                FirebaseInstallationsException.Status.AUTHENTICATION_ERROR));
-        return;
-      }
-
       triggerOnStateReached(persistedInstallationEntry);
+      Log.d(TAG, "finished doRegistration: " + persistedInstallationEntry);
     } catch (Exception e) {
       PersistedInstallationEntry persistedInstallationEntry =
           persistedInstallation.readPersistedInstallationEntryValue();
+      Log.d(TAG, "doRegistration failed: " + persistedInstallationEntry, e);
       PersistedInstallationEntry errorInstallationEntry =
           persistedInstallationEntry
               .toBuilder()
               .setFisError(e.getMessage())
               .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
               .build();
-      persistedInstallation.insertOrUpdatePersistedInstallationEntry(errorInstallationEntry);
+      persistedInstallation.writePreferencesToDisk(errorInstallationEntry);
       triggerOnException(errorInstallationEntry, e);
     }
   }
@@ -313,22 +330,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   private void persistFid(String fid) throws FirebaseInstallationsException {
-    boolean firstUpdateCacheResult =
-        persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-            PersistedInstallationEntry.builder()
-                .setFirebaseInstallationId(fid)
-                .setRegistrationStatus(RegistrationStatus.UNREGISTERED)
-                .build());
-
-    if (!firstUpdateCacheResult) {
-      throw new FirebaseInstallationsException(
-          "Failed to update client side cache.",
-          FirebaseInstallationsException.Status.CLIENT_ERROR);
-    }
+    persistedInstallation.writePreferencesToDisk(
+        PersistedInstallationEntry.builder()
+            .setFirebaseInstallationId(fid)
+            .setRegistrationStatus(RegistrationStatus.UNREGISTERED)
+            .build());
   }
 
   /** Registers the created Fid with FIS servers and update the shared prefs. */
-  private Void registerAndSaveFid(PersistedInstallationEntry persistedInstallationEntry)
+  private PersistedInstallationEntry registerAndSaveFid(PersistedInstallationEntry entry)
       throws FirebaseInstallationsException {
     try {
       long creationTime = utils.currentTimeInSecs();
@@ -336,58 +346,60 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       InstallationResponse installationResponse =
           serviceClient.createFirebaseInstallation(
               /*apiKey= */ firebaseApp.getOptions().getApiKey(),
-              /*fid= */ persistedInstallationEntry.getFirebaseInstallationId(),
+              /*fid= */ entry.getFirebaseInstallationId(),
               /*projectID= */ firebaseApp.getOptions().getProjectId(),
               /*appId= */ getApplicationId());
       if (installationResponse.getResponseCode() == ResponseCode.OK) {
-        persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-            PersistedInstallationEntry.builder()
-                .setFirebaseInstallationId(installationResponse.getFid())
-                .setRegistrationStatus(RegistrationStatus.REGISTERED)
-                .setAuthToken(installationResponse.getAuthToken().getToken())
-                .setRefreshToken(installationResponse.getRefreshToken())
-                .setExpiresInSecs(installationResponse.getAuthToken().getTokenExpirationTimestamp())
-                .setTokenCreationEpochInSecs(creationTime)
-                .build());
+        entry = PersistedInstallationEntry.builder()
+            .setFirebaseInstallationId(installationResponse.getFid())
+            .setRegistrationStatus(RegistrationStatus.REGISTERED)
+            .setAuthToken(installationResponse.getAuthToken().getToken())
+            .setRefreshToken(installationResponse.getRefreshToken())
+            .setExpiresInSecs(installationResponse.getAuthToken().getTokenExpirationTimestamp())
+            .setTokenCreationEpochInSecs(creationTime)
+            .build();
+        persistedInstallation.writePreferencesToDisk(entry);
       }
+      return entry;
 
-    } catch (FirebaseException exception) {
-      throw new FirebaseInstallationsException(
-          exception.getMessage(), FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+    } catch (FirebaseException e) {
+      throw new FirebaseInstallationsException("error registering fid",
+          FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR, e);
     }
-    return null;
   }
 
   /** Calls the FIS servers to generate an auth token for this Firebase installation. */
   private TokenResult fetchAuthTokenFromServer(
-      PersistedInstallationEntry persistedInstallationEntry) throws FirebaseInstallationsException {
+      PersistedInstallationEntry entry) throws FirebaseInstallationsException {
     try {
       long creationTime = utils.currentTimeInSecs();
       TokenResult tokenResult =
           serviceClient.generateAuthToken(
               /*apiKey= */ firebaseApp.getOptions().getApiKey(),
-              /*fid= */ persistedInstallationEntry.getFirebaseInstallationId(),
+              /*fid= */ entry.getFirebaseInstallationId(),
               /*projectID= */ firebaseApp.getOptions().getProjectId(),
-              /*refreshToken= */ persistedInstallationEntry.getRefreshToken());
+              /*refreshToken= */ entry.getRefreshToken());
 
       if (tokenResult.isSuccessful()) {
-        persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-            persistedInstallationEntry
-                .toBuilder()
-                .setRegistrationStatus(RegistrationStatus.REGISTERED)
-                .setAuthToken(tokenResult.getToken())
-                .setExpiresInSecs(tokenResult.getTokenExpirationTimestamp())
-                .setTokenCreationEpochInSecs(creationTime)
-                .build());
-      } else {
-        persistedInstallation.clear();
+        entry = entry
+            .toBuilder()
+            .setRegistrationStatus(RegistrationStatus.REGISTERED)
+            .setAuthToken(tokenResult.getToken())
+            .setExpiresInSecs(tokenResult.getTokenExpirationTimestamp())
+            .setTokenCreationEpochInSecs(creationTime)
+            .build();
+        persistedInstallation.writePreferencesToDisk(
+            entry);
+        // TODO(fredq): why clear if there is a network error?
+      // } else {
+      //   persistedInstallation.clear();
       }
       return tokenResult;
 
-    } catch (FirebaseException exception) {
+    } catch (FirebaseException e) {
       throw new FirebaseInstallationsException(
           "Failed to generate auth token for a Firebase Installation.",
-          FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR);
+          FirebaseInstallationsException.Status.SDK_INTERNAL_ERROR, e);
     }
   }
 
@@ -396,18 +408,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * storage.
    */
   private Void deleteFirebaseInstallationId() throws FirebaseInstallationsException {
-
-    PersistedInstallationEntry persistedInstallationEntry =
-        persistedInstallation.readPersistedInstallationEntryValue();
-
-    if (persistedInstallationEntry.isRegistered()) {
+    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+    Log.d(TAG, "deleteFirebaseInstallationId: " + entry);
+    if (entry.isRegistered()) {
       // Call the FIS servers to delete this Firebase Installation Id.
       try {
         serviceClient.deleteFirebaseInstallation(
             firebaseApp.getOptions().getApiKey(),
-            persistedInstallationEntry.getFirebaseInstallationId(),
+            entry.getFirebaseInstallationId(),
             firebaseApp.getOptions().getProjectId(),
-            persistedInstallationEntry.getRefreshToken());
+            entry.getRefreshToken());
 
       } catch (FirebaseException exception) {
         throw new FirebaseInstallationsException(

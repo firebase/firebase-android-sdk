@@ -79,7 +79,7 @@ public class PersistedInstallationTest {
   public void testUpdateAndReadPersistedInstallationEntry_successful() throws Exception {
     // Insert Persisted Installation Entry with Unregistered status in Shared Prefs
     assertTrue(
-        persistedInstallation0.insertOrUpdatePersistedInstallationEntry(
+        persistedInstallation0.writePreferencesToDisk(
             PersistedInstallationEntry.builder()
                 .setFirebaseInstallationId(TEST_FID_1)
                 .setAuthToken(TEST_AUTH_TOKEN)
@@ -101,7 +101,7 @@ public class PersistedInstallationTest {
 
     // Update Persisted Fid Entry with Registered status in Shared Prefs
     assertTrue(
-        persistedInstallation0.insertOrUpdatePersistedInstallationEntry(
+        persistedInstallation0.writePreferencesToDisk(
             PersistedInstallationEntry.builder()
                 .setFirebaseInstallationId(TEST_FID_1)
                 .setAuthToken(TEST_AUTH_TOKEN)
