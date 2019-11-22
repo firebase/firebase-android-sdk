@@ -14,6 +14,7 @@
 
 package com.google.firebase.encoders.json;
 
+import android.util.Base64;
 import android.util.JsonWriter;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -80,6 +81,14 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
+  public ObjectEncoderContext add(@NonNull String name, byte[] value)
+      throws IOException, EncodingException {
+    jsonWriter.name(name);
+    return add(value);
+  }
+
+  @NonNull
+  @Override
   public JsonValueObjectEncoderContext add(@Nullable String value)
       throws IOException, EncodingException {
     jsonWriter.value(value);
@@ -104,6 +113,13 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @Override
   public JsonValueObjectEncoderContext add(boolean value) throws IOException, EncodingException {
     jsonWriter.value(value);
+    return this;
+  }
+
+  @NonNull
+  @Override
+  public JsonValueObjectEncoderContext add(byte[] bytes) throws IOException, EncodingException {
+    jsonWriter.value(Base64.encodeToString(bytes, Base64.NO_WRAP));
     return this;
   }
 

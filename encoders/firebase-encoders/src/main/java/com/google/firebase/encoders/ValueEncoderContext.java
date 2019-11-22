@@ -42,4 +42,8 @@ public interface ValueEncoderContext {
   /** Adds {@code value} as a primitive encoded value. */
   @NonNull
   ValueEncoderContext add(boolean value) throws IOException, EncodingException;
+
+  /** Adds {@code value} as a encoded array of bytes. */
+  @NonNull
+  ValueEncoderContext add(@NonNull byte[] bytes) throws IOException, EncodingException;
 }

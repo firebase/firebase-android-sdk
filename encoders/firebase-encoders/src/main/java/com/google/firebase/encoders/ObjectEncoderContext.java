@@ -65,4 +65,9 @@ public interface ObjectEncoderContext {
   @NonNull
   ObjectEncoderContext add(@NonNull String name, boolean value)
       throws IOException, EncodingException;
+
+  /** Add an entry with {@code name} mapped to the encoded byte array of {@code value}. */
+  @NonNull
+  ObjectEncoderContext add(@NonNull String name, @NonNull byte[] value)
+      throws IOException, EncodingException;
 }
