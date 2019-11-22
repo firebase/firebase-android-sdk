@@ -14,7 +14,10 @@
 
 package com.google.firebase.abt;
 
+import android.text.TextUtils;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.abt.FirebaseABTesting.OriginService;
+import com.google.firebase.analytics.connector.AnalyticsConnector.ConditionalUserProperty;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -140,7 +143,7 @@ public class AbtExperimentInfo {
    * The amount of time, in milliseconds, before the trigger for this experiment expires.
    */
   private final long triggerTimeoutInMillis;
-  
+
   /**
    * The amount of time, in milliseconds, before the experiment expires for this App instance.
    */
@@ -289,5 +292,56 @@ public class AbtExperimentInfo {
     experimentInfoMap.put(TIME_TO_LIVE_KEY, Long.toString(timeToLiveInMillis));
 
     return experimentInfoMap;
+  }
+
+  /**
+   * Returns the {@link ConditionalUserProperty} created from the specified {@link
+   * AbtExperimentInfo}.
+   */
+  ConditionalUserProperty toConditionalUserProperty(@OriginService String originService) {
+    ConditionalUserProperty conditionalUserProperty = new ConditionalUserProperty();
+
+    conditionalUserProperty.origin = originService;
+    conditionalUserProperty.creationTimestamp = getStartTimeInMillisSinceEpoch();
+    conditionalUserProperty.name = experimentId;
+    conditionalUserProperty.value = variantId;
+
+    // For a conditional user property to be immediately activated/triggered, its trigger
+    // event needs to be null, not just an empty string.
+    conditionalUserProperty.triggerEventName =
+        TextUtils.isEmpty(triggerEventName)
+            ? null
+            : triggerEventName;
+    conditionalUserProperty.triggerTimeout = triggerTimeoutInMillis;
+    conditionalUserProperty.timeToLive = timeToLiveInMillis;
+
+    return conditionalUserProperty;
+  }
+
+  /**
+   * Returns the {@link AbtExperimentInfo} created from the specified {@link
+   * ConditionalUserProperty}.
+   *
+   * @param conditionalUserProperty A {@link ConditionalUserProperty} that contains an ABT
+   * experiment's information.
+   * @return the converted {@link AbtExperimentInfo} from {@param conditionalUserProperty}.
+   */
+  static AbtExperimentInfo fromConditionalUserProperty(
+      ConditionalUserProperty conditionalUserProperty) {
+
+    // Trigger event defaults to empty string if absent.
+    String triggerEventName = "";
+    if (conditionalUserProperty.triggerEventName != null) {
+      triggerEventName = conditionalUserProperty.triggerEventName;
+    }
+
+    return new AbtExperimentInfo(
+        conditionalUserProperty.name,
+        String.valueOf(conditionalUserProperty.value),
+        triggerEventName,
+        new Date(conditionalUserProperty.creationTimestamp),
+        conditionalUserProperty.triggerTimeout,
+        conditionalUserProperty.timeToLive
+    );
   }
 }
