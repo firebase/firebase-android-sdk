@@ -1,5 +1,5 @@
 # Unreleased (21.3.1)
-- [feature] Added `Query.limitToLast(n: number)`, which returns the last `n`
+- [feature] Added `Query.limitToLast(n: long)`, which returns the last `n`
   documents as the result.
 
 # 21.3.0
