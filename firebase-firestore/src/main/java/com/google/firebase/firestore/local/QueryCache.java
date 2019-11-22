@@ -16,17 +16,17 @@ package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
 
 /**
- * Represents cached queries received from the remote backend. This contains both a mapping between
- * queries and the documents that matched them according to the server, but also metadata about the
- * queries.
+ * Represents cached targets received from the remote backend. This contains both a mapping between
+ * targets and the documents that matched them according to the server, but also metadata about the
+ * targets.
  *
- * <p>The cache is keyed by {@link Query} and entries in the cache are {@link QueryData} instances.
+ * <p>The cache is keyed by {@link Target} and entries in the cache are {@link QueryData} instances.
  */
 interface QueryCache {
   /**
@@ -70,7 +70,7 @@ interface QueryCache {
   /**
    * Adds an entry in the cache. This entry should not already exist.
    *
-   * <p>The cache key is extracted from {@link QueryData#getQuery}.
+   * <p>The cache key is extracted from {@link QueryData#getTarget}.
    *
    * @param queryData A QueryData instance to put in the cache.
    */
@@ -79,7 +79,7 @@ interface QueryCache {
   /**
    * Replaces an entry in the cache. An entry with the same key should already exist.
    *
-   * <p>The cache key is extracted from {@link QueryData#getQuery()}.
+   * <p>The cache key is extracted from {@link QueryData#getTarget()}.
    *
    * @param queryData A QueryData to replace an existing entry in the cache.
    */
@@ -95,11 +95,11 @@ interface QueryCache {
   /**
    * Looks up a QueryData entry in the cache.
    *
-   * @param query The query corresponding to the entry to look up.
+   * @param target The target corresponding to the entry to look up.
    * @return The cached QueryData entry, or null if the cache has no entry for the query.
    */
   @Nullable
-  QueryData getQueryData(Query query);
+  QueryData getQueryData(Target target);
 
   /** Adds the given document keys to cached query results of the given target ID. */
   void addMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId);

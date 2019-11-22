@@ -574,8 +574,8 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new {@code Query} that's additionally limited to only return up to the
-   * specified number of documents.
+   * Creates and returns a new {@code Query} that only returns the first matching documents up to
+   * the specified number.
    *
    * @param limit The maximum number of items to return.
    * @return The created {@code Query}.
@@ -586,7 +586,26 @@ public class Query {
       throw new IllegalArgumentException(
           "Invalid Query. Query limit (" + limit + ") is invalid. Limit must be positive.");
     }
-    return new Query(query.limit(limit), firestore);
+    return new Query(query.limitToFirst(limit), firestore);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} that only returns the last matching documents up to the
+   * specified number.
+   *
+   * <p>You must specify at least one {@code orderBy} clause for {@code limitToLast} queries,
+   * otherwise an exception will be thrown during execution.
+   *
+   * @param limit The maximum number of items to return.
+   * @return The created {@code Query}.
+   */
+  @NonNull
+  public Query limitToLast(long limit) {
+    if (limit <= 0) {
+      throw new IllegalArgumentException(
+          "Invalid Query. Query limitToLast (" + limit + ") is invalid. Limit must be positive.");
+    }
+    return new Query(query.limitToLast(limit), firestore);
   }
 
   /**
@@ -832,6 +851,7 @@ public class Query {
    */
   @NonNull
   public Task<QuerySnapshot> get(@NonNull Source source) {
+    validateHasExplicitOrderByForLimitToLast();
     if (source == Source.CACHE) {
       return firestore
           .getClient()
@@ -1010,6 +1030,7 @@ public class Query {
       ListenOptions options,
       @Nullable Activity activity,
       EventListener<QuerySnapshot> userListener) {
+    validateHasExplicitOrderByForLimitToLast();
 
     // Convert from ViewSnapshots to QuerySnapshots.
     EventListener<ViewSnapshot> viewListener =
@@ -1033,6 +1054,13 @@ public class Query {
     return ActivityScope.bind(
         activity,
         new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener));
+  }
+
+  private void validateHasExplicitOrderByForLimitToLast() {
+    if (query.hasLimitToLast() && query.getExplicitOrderBy().isEmpty()) {
+      throw new IllegalStateException(
+          "limitToLast() queries require specifying at least one orderBy() clause");
+    }
   }
 
   @Override

@@ -479,7 +479,7 @@ public class QueryTest {
             .filter(filter("bar", ">", 2))
             .orderBy(orderBy("bar"));
 
-    Query q7a = Query.atPath(ResourcePath.fromString("foo")).limit(10);
+    Query q7a = Query.atPath(ResourcePath.fromString("foo")).limitToFirst(10);
 
     // TODO: Add test cases with{Lower,Upper}Bound once cursors are implemented.
     testEquality(
@@ -544,7 +544,7 @@ public class QueryTest {
     query = baseQuery.filter(filter("foo", "==", "bar"));
     assertFalse(query.matchesAllDocuments());
 
-    query = baseQuery.limit(1);
+    query = baseQuery.limitToFirst(1);
     assertFalse(query.matchesAllDocuments());
 
     query = baseQuery.startAt(new Bound(Collections.emptyList(), true));
