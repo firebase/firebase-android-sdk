@@ -78,8 +78,9 @@ public class IndexFreeQueryEngine implements QueryEngine {
         localDocumentsView.getDocuments(remoteKeys);
     ImmutableSortedSet<Document> previousResults = applyQuery(query, documents);
 
-    if (query.hasLimit()
-        && needsRefill(previousResults, remoteKeys, lastLimboFreeSnapshotVersion)) {
+    if ((query.hasLimitToFirst() || query.hasLimitToLast())
+        && needsRefill(
+            query.getLimitType(), previousResults, remoteKeys, lastLimboFreeSnapshotVersion)) {
       return executeFullCollectionScan(query);
     }
 
@@ -126,6 +127,7 @@ public class IndexFreeQueryEngine implements QueryEngine {
    * Determines if a limit query needs to be refilled from cache, making it ineligible for
    * index-free execution.
    *
+   * @param limitType The type of limit query for refill calculation.
    * @param sortedPreviousResults The documents that matched the query when it was last
    *     synchronized, sorted by the query's comparator.
    * @param remoteKeys The document keys that matched the query at the last snapshot.
@@ -133,6 +135,7 @@ public class IndexFreeQueryEngine implements QueryEngine {
    *     synchronized.
    */
   private boolean needsRefill(
+      Query.LimitType limitType,
       ImmutableSortedSet<Document> sortedPreviousResults,
       ImmutableSortedSet<DocumentKey> remoteKeys,
       SnapshotVersion limboFreeSnapshotVersion) {
@@ -143,18 +146,20 @@ public class IndexFreeQueryEngine implements QueryEngine {
 
     // Limit queries are not eligible for index-free query execution if there is a potential that an
     // older document from cache now sorts before a document that was previously part of the limit.
-    // This, however, can only happen if the last document of the limit sorts lower than it did when
-    // the query was last synchronized. If a document that is not the limit boundary sorts
-    // differently, the boundary of the limit itself did not change and documents from cache will
-    // continue to be "rejected" by this boundary. Therefore, we can ignore any modifications that
-    // don't affect the last document.
-    Document lastDocumentInLimit = sortedPreviousResults.getMaxEntry();
-    if (lastDocumentInLimit == null) {
+    // This, however, can only happen if the document at the edge of the limit goes out of limit. If
+    // a document that is not the limit boundary sorts differently, the boundary of the limit itself
+    // did not change and documents from cache will continue to be "rejected" by this boundary.
+    // Therefore, we can ignore any modifications that don't affect the last document.
+    Document documentAtLimitEdge =
+        limitType == Query.LimitType.LIMIT_TO_FIRST
+            ? sortedPreviousResults.getMaxEntry()
+            : sortedPreviousResults.getMinEntry();
+    if (documentAtLimitEdge == null) {
       // We don't need to refill the query if there were already no documents.
       return false;
     }
-    return lastDocumentInLimit.hasPendingWrites()
-        || lastDocumentInLimit.getVersion().compareTo(limboFreeSnapshotVersion) > 0;
+    return documentAtLimitEdge.hasPendingWrites()
+        || documentAtLimitEdge.getVersion().compareTo(limboFreeSnapshotVersion) > 0;
   }
 
   @Override

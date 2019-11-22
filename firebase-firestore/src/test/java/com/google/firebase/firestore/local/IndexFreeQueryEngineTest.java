@@ -217,7 +217,26 @@ public class IndexFreeQueryEngineTest {
 
   @Test
   public void doesNotUseInitialResultsForLimitQueryWithDocumentRemoval() throws Exception {
-    Query query = query("coll").filter(filter("matches", "==", true)).limit(1);
+    Query query = query("coll").filter(filter("matches", "==", true)).limitToFirst(1);
+
+    // While the backend would never add DocA to the set of remote keys, this allows us to easily
+    // simulate what would happen when a document no longer matches due to an out-of-band update.
+    addDocument(NON_MATCHING_DOC_A);
+    persistQueryMapping(NON_MATCHING_DOC_A.getKey());
+
+    addDocument(MATCHING_DOC_B);
+
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
+  }
+
+  @Test
+  public void doesNotUseInitialResultsForLimitToLastQueryWithDocumentRemoval() throws Exception {
+    Query query =
+        query("coll")
+            .filter(filter("matches", "==", true))
+            .orderBy(orderBy("order", "desc"))
+            .limitToLast(1);
 
     // While the backend would never add DocA to the set of remote keys, this allows us to easily
     // simulate what would happen when a document no longer matches due to an out-of-band update.
@@ -237,7 +256,27 @@ public class IndexFreeQueryEngineTest {
         query("coll")
             .filter(filter("matches", "==", true))
             .orderBy(orderBy("order", "desc"))
-            .limit(1);
+            .limitToFirst(1);
+
+    // Add a query mapping for a document that matches, but that sorts below another document due to
+    // a pending write.
+    addDocument(PENDING_MATCHING_DOC_A);
+    persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
+
+    addDocument(MATCHING_DOC_B);
+
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
+  }
+
+  @Test
+  public void doesNotUseInitialResultsForLimitToLastQueryWhenLastDocumentHasPendingWrite()
+      throws Exception {
+    Query query =
+        query("coll")
+            .filter(filter("matches", "==", true))
+            .orderBy(orderBy("order", "asc"))
+            .limitToLast(1);
 
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
@@ -257,7 +296,27 @@ public class IndexFreeQueryEngineTest {
         query("coll")
             .filter(filter("matches", "==", true))
             .orderBy(orderBy("order", "desc"))
-            .limit(1);
+            .limitToFirst(1);
+
+    // Add a query mapping for a document that matches, but that sorts below another document based
+    // due to an update that the SDK received after the query's snapshot was persisted.
+    addDocument(UPDATED_DOC_A);
+    persistQueryMapping(UPDATED_DOC_A.getKey());
+
+    addDocument(MATCHING_DOC_B);
+
+    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
+  }
+
+  @Test
+  public void doesNotUseInitialResultsForLimitToLastQueryWhenFirstDocumentHasBeenUpdatedOutOfBand()
+      throws Exception {
+    Query query =
+        query("coll")
+            .filter(filter("matches", "==", true))
+            .orderBy(orderBy("order", "asc"))
+            .limitToLast(1);
 
     // Add a query mapping for a document that matches, but that sorts below another document based
     // due to an update that the SDK received after the query's snapshot was persisted.
@@ -272,7 +331,7 @@ public class IndexFreeQueryEngineTest {
 
   @Test
   public void limitQueriesUseInitialResultsIfLastDocumentInLimitIsUnchanged() throws Exception {
-    Query query = query("coll").orderBy(orderBy("order")).limit(2);
+    Query query = query("coll").orderBy(orderBy("order")).limitToFirst(2);
 
     addDocument(doc("coll/a", 1, map("order", 1)));
     addDocument(doc("coll/b", 1, map("order", 3)));
