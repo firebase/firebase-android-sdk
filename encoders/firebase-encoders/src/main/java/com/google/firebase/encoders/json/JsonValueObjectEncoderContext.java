@@ -81,14 +81,6 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public ObjectEncoderContext add(@NonNull String name, @Nullable byte[] value)
-      throws IOException, EncodingException {
-    jsonWriter.name(name);
-    return add(value);
-  }
-
-  @NonNull
-  @Override
   public JsonValueObjectEncoderContext add(@Nullable String value)
       throws IOException, EncodingException {
     jsonWriter.value(value);
@@ -135,6 +127,12 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     }
     // TODO: Add missing primitive types.
     if (o.getClass().isArray()) {
+      // Byte[] are a special case of arrays, because they are not mapped to an array, but to a string.
+      if (o.getClass().getComponentType() == byte.class) {
+        byte[] bytes = (byte[]) o;
+        return add(bytes);
+      }
+
       jsonWriter.beginArray();
       if (o.getClass().getComponentType() == int.class) {
         int[] array = (int[]) o;
