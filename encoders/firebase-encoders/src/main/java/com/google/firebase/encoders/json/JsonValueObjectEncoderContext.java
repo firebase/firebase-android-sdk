@@ -81,7 +81,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public ObjectEncoderContext add(@NonNull String name, byte[] value)
+  public ObjectEncoderContext add(@NonNull String name, @Nullable byte[] value)
       throws IOException, EncodingException {
     jsonWriter.name(name);
     return add(value);
@@ -118,8 +118,12 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(byte[] bytes) throws IOException, EncodingException {
-    jsonWriter.value(Base64.encodeToString(bytes, Base64.NO_WRAP));
+  public JsonValueObjectEncoderContext add(@Nullable byte[] bytes) throws IOException, EncodingException {
+    if (bytes == null) {
+      jsonWriter.nullValue();
+    } else {
+      jsonWriter.value(Base64.encodeToString(bytes, Base64.NO_WRAP));
+    }
     return this;
   }
 
