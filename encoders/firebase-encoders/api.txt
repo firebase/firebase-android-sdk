@@ -18,6 +18,7 @@ package com.google.firebase.encoders {
     method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, @Nullable Object) throws com.google.firebase.encoders.EncodingException;
     method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, double) throws com.google.firebase.encoders.EncodingException;
     method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, int) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, long) throws com.google.firebase.encoders.EncodingException;
     method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, boolean) throws com.google.firebase.encoders.EncodingException;
   }
 
@@ -28,6 +29,7 @@ package com.google.firebase.encoders {
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@Nullable String) throws com.google.firebase.encoders.EncodingException;
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(double) throws com.google.firebase.encoders.EncodingException;
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(int) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(long) throws com.google.firebase.encoders.EncodingException;
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(boolean) throws com.google.firebase.encoders.EncodingException;
   }
 

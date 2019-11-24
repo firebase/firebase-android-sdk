@@ -72,6 +72,14 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
+  public ObjectEncoderContext add(@NonNull String name, long value)
+      throws IOException, EncodingException {
+    jsonWriter.name(name);
+    return add(value);
+  }
+
+  @NonNull
+  @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, boolean value)
       throws IOException, EncodingException {
     jsonWriter.name(name);
@@ -108,6 +116,13 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   }
 
   @NonNull
+  @Override
+  public JsonValueObjectEncoderContext add(long value) throws IOException, EncodingException {
+    jsonWriter.value(Long.toString(value));
+    return this;
+  }
+
+  @NonNull
   JsonValueObjectEncoderContext add(@Nullable Object o) throws IOException, EncodingException {
     if (o == null) {
       jsonWriter.nullValue();
@@ -130,6 +145,11 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
         boolean[] array = (boolean[]) o;
         for (boolean item : array) {
           jsonWriter.value(item);
+        }
+      } else if (o.getClass().getComponentType() == long.class) {
+        long[] array = (long[]) o;
+        for (long item : array) {
+          jsonWriter.value(Long.toString(item));
         }
       } else {
         Object[] array = (Object[]) o;

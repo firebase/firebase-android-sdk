@@ -62,6 +62,7 @@ public class JsonValueObjectEncoderContextTest {
               .add("Integer", 2)
               .add("Double", 2.2d)
               .add("Boolean", false)
+              .add("Long", 12L)
               .add("Null", null);
         };
 
@@ -73,7 +74,9 @@ public class JsonValueObjectEncoderContextTest {
 
     assertThat(result)
         .isEqualTo(
-            "{\"String\":\"string\",\"Integer\":2,\"Double\":2.2,\"Boolean\":false,\"Null\":null}");
+            String.format(
+                "{\"String\":%s,\"Integer\":%d,\"Double\":%s,\"Boolean\":%s,\"Long\":%s,\"Null\":%s}",
+                "\"string\"", 2, "2.2", "false", "\"12\"", "null"));
   }
 
   @Test
@@ -100,6 +103,7 @@ public class JsonValueObjectEncoderContextTest {
               .add("Integer", new int[] {1, 2})
               .add("Double", new double[] {1.1d, 2.2d})
               .add("Boolean", new boolean[] {true, false})
+              .add("Long", new long[] {10L, 20L, 30L})
               .add("Null", new String[] {null, null});
         };
 
@@ -112,8 +116,13 @@ public class JsonValueObjectEncoderContextTest {
     assertThat(result)
         .isEqualTo(
             String.format(
-                "{\"String\":%s,\"Integer\":%s,\"Double\":%s,\"Boolean\":%s,\"Null\":%s}",
-                "[\"string1\",\"string2\"]", "[1,2]", "[1.1,2.2]", "[true,false]", "[null,null]"));
+                "{\"String\":%s,\"Integer\":%s,\"Double\":%s,\"Boolean\":%s,\"Long\":%s,\"Null\":%s}",
+                "[\"string1\",\"string2\"]",
+                "[1,2]",
+                "[1.1,2.2]",
+                "[true,false]",
+                "[\"10\",\"20\",\"30\"]",
+                "[null,null]"));
   }
 
   @Test
@@ -151,6 +160,7 @@ public class JsonValueObjectEncoderContextTest {
         (o, ctx) -> {
           ctx.add("Integer", Lists.newArrayList(1, 2, 3))
               .add("Double", Lists.newArrayList(1.1, 2.2, 3.3))
+              .add("Long", Lists.newArrayList(10L, 20L, 30L))
               .add("Boolean", Lists.newArrayList(true, false));
           ;
         };
@@ -164,8 +174,8 @@ public class JsonValueObjectEncoderContextTest {
     assertThat(result)
         .isEqualTo(
             String.format(
-                "{\"Integer\":%s,\"Double\":%s,\"Boolean\":%s}",
-                "[1,2,3]", "[1.1,2.2,3.3]", "[true,false]"));
+                "{\"Integer\":%s,\"Double\":%s,\"Long\":%s,\"Boolean\":%s}",
+                "[1,2,3]", "[1.1,2.2,3.3]", "[\"10\",\"20\",\"30\"]", "[true,false]"));
   }
 
   @Test
