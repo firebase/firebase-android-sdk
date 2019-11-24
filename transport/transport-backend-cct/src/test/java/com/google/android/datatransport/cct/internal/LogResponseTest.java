@@ -43,6 +43,12 @@ public class LogResponseTest {
   }
 
   @Test
+  public void testLogRequestParsing_stringAwaitMillis() {
+    String jsonInput = "{\"next_request_wait_millis\":\"1000\"}";
+    assertThat(LogResponse.fromJson(jsonInput).getNextRequestAwaitMillis()).isEqualTo(1000);
+  }
+
+  @Test
   public void testLogRequestParsing_onlyFingerprint() {
     LogResponse expected =
         LogResponse.builder()

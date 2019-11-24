@@ -15,6 +15,8 @@
 package com.google.android.datatransport.cct.internal;
 
 import android.util.JsonReader;
+import android.util.JsonToken;
+
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.io.IOException;
@@ -58,7 +60,11 @@ public abstract class LogResponse {
       while (jsonReader.hasNext()) {
         String name = jsonReader.nextName();
         if (name.equals("next_request_wait_millis")) {
-          builder.setNextRequestAwaitMillis(jsonReader.nextLong());
+          if (jsonReader.peek() == JsonToken.STRING) {
+            builder.setNextRequestAwaitMillis(Long.parseLong(jsonReader.nextString()));
+          } else {
+            builder.setNextRequestAwaitMillis(jsonReader.nextLong());
+          }
         } else if (name.equals("qos_tier")) {
           // TODO: fix
           builder.setQosTiersOverride(QosTiersOverride.fromJsonReader(jsonReader));
