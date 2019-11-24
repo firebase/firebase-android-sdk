@@ -16,7 +16,6 @@ package com.google.android.datatransport.cct.internal;
 
 import android.util.JsonReader;
 import android.util.JsonToken;
-
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.io.IOException;
