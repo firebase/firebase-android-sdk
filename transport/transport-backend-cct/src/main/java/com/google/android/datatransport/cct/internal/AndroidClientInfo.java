@@ -57,7 +57,7 @@ public abstract class AndroidClientInfo {
   public abstract String getFingerprint();
 
   static Builder builder() {
-    return new AutoValue_AndroidClientInfo.Builder();
+    return new AutoValue_AndroidClientInfo.Builder().setSdkVersion(Integer.MIN_VALUE);
   }
 
   @AutoValue.Builder

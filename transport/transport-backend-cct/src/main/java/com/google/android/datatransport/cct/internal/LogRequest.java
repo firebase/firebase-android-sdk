@@ -42,7 +42,7 @@ public abstract class LogRequest {
   public abstract List<LogEvent> getLogEvents();
 
   static Builder builder() {
-    return new AutoValue_LogRequest.Builder();
+    return new AutoValue_LogRequest.Builder().setLogSource(Integer.MIN_VALUE);
   }
 
   @AutoValue.Builder

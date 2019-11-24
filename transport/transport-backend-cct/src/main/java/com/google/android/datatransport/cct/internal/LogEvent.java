@@ -39,6 +39,10 @@ public abstract class LogEvent {
   @Nullable
   public abstract NetworkConnectionInfo getNetworkConnectionInfo();
 
+  static Builder builder() {
+    return new AutoValue_LogEvent.Builder().setEventCode(Integer.MIN_VALUE);
+  }
+
   @AutoValue.Builder
   abstract static class Builder {
     abstract Builder setEventTimeMs(long value);

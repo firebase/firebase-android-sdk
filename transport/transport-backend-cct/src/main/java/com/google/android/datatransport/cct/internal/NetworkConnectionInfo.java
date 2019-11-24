@@ -89,6 +89,10 @@ public abstract class NetworkConnectionInfo {
   @Nullable
   public abstract MobileSubtype getMobileSubtypeValue();
 
+  static Builder builder() {
+    return new AutoValue_NetworkConnectionInfo.Builder();
+  }
+
   @AutoValue.Builder
   abstract static class Builder {
 

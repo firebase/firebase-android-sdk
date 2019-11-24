@@ -31,7 +31,8 @@ public abstract class ClientInfo {
   }
 
   /** The client type for this client. One of the enum values defined above. */
-  public abstract int getClientType();
+  @Nullable
+  public abstract ClientType getClientType();
 
   @Nullable
   public abstract AndroidClientInfo getAndroidClientInfo();
@@ -42,7 +43,7 @@ public abstract class ClientInfo {
 
   @AutoValue.Builder
   abstract static class Builder {
-    abstract Builder setClientType(int value);
+    abstract Builder setClientType(ClientType value);
 
     abstract Builder setAndroidClientInfo(AndroidClientInfo value);
 
