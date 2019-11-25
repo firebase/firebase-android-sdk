@@ -18,10 +18,10 @@ import static com.google.firebase.inappmessaging.testutil.TestData.ACTION_MODEL_
 import static com.google.firebase.inappmessaging.testutil.TestData.ACTION_MODEL_WITH_BUTTON;
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_METADATA_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.CARD_MESSAGE_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.MESSAGE_BACKGROUND_HEX_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.TITLE_MODEL;
-import static com.google.firebase.inappmessaging.testutil.TestData.DATA;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
