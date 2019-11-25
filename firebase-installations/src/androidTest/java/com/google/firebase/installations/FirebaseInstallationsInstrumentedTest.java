@@ -170,7 +170,7 @@ public class FirebaseInstallationsInstrumentedTest {
     persistedInstallation = new PersistedInstallation(firebaseApp);
 
     when(backendClientReturnsOk.createFirebaseInstallation(
-            anyString(), anyString(), anyString(), anyString()))
+            anyString(), anyString(), anyString(), anyString(), any()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
     // Mocks successful auth token generation
     when(backendClientReturnsOk.generateAuthToken(
@@ -183,7 +183,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .thenReturn(DEFAULT_PERSISTED_INSTALLATION_ENTRY);
 
     when(backendClientReturnsError.createFirebaseInstallation(
-            anyString(), anyString(), anyString(), anyString()))
+            anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenThrow(new FirebaseException("SDK Error"));
 
     when(mockUtils.createRandomFid()).thenReturn(TEST_FID_1);
@@ -197,6 +197,8 @@ public class FirebaseInstallationsInstrumentedTest {
     doThrow(new FirebaseException("Server Error"))
         .when(backendClientReturnsError)
         .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
+
+    when(mockIidStore.readToken()).thenReturn(null);
   }
 
   @After
@@ -242,7 +244,7 @@ public class FirebaseInstallationsInstrumentedTest {
     when(mockIidStore.readIid()).thenReturn(TEST_INSTANCE_ID_1);
     when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
     when(backendClientReturnsOk.createFirebaseInstallation(
-            anyString(), anyString(), anyString(), anyString()))
+            anyString(), anyString(), anyString(), anyString(), any()))
         .thenReturn(TEST_INSTALLATION_RESPONSE_WITH_IID);
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
@@ -267,7 +269,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetId_multipleCalls_sameFIDReturned() throws Exception {
     when(mockUtils.isAuthTokenExpired(REGISTERED_INSTALLATION_ENTRY)).thenReturn(/*isValid*/ false);
     when(backendClientReturnsOk.createFirebaseInstallation(
-            anyString(), anyString(), anyString(), anyString()))
+            anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
 
@@ -285,7 +287,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .that(task2.getResult())
         .isEqualTo(TEST_FID_1);
     verify(backendClientReturnsOk, times(1))
-        .createFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_APP_ID_1);
+        .createFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_APP_ID_1, null);
     PersistedInstallationEntry updatedInstallationEntry =
         persistedInstallation.readPersistedInstallationEntryValue();
     assertThat(updatedInstallationEntry).hasFid(TEST_FID_1);
@@ -347,7 +349,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetId_ServerError_UnregisteredFID() throws Exception {
     // Mocking server error on FIS createFirebaseInstallation, returns empty InstallationResponse
     when(backendClientReturnsOk.createFirebaseInstallation(
-            anyString(), anyString(), anyString(), anyString()))
+            anyString(), anyString(), anyString(), anyString(), any()))
         .thenReturn(SERVER_ERROR_INSTALLATION_RESPONSE);
 
     FirebaseInstallations firebaseInstallations = getFirebaseInstallations();
@@ -396,7 +398,8 @@ public class FirebaseInstallationsInstrumentedTest {
   @Test
   public void testGetId_fidRegistrationUncheckedException_statusUpdated() throws Exception {
     // Mocking unchecked exception on FIS createFirebaseInstallation
-    when(mockClient.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
+    when(mockClient.createFirebaseInstallation(
+            anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenAnswer(
             invocation -> {
               throw new InterruptedException();
@@ -479,7 +482,7 @@ public class FirebaseInstallationsInstrumentedTest {
         persistedInstallation.readPersistedInstallationEntryValue();
     assertThat(updatedInstallationEntry).hasAuthToken(TEST_AUTH_TOKEN_2);
     verify(backendClientReturnsOk, never())
-        .createFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_APP_ID_1);
+        .createFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_APP_ID_1, null);
     verify(backendClientReturnsOk, times(1))
         .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
@@ -586,7 +589,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .that(installationTokenResult.getToken())
         .isEqualTo(TEST_AUTH_TOKEN);
     verify(backendClientReturnsOk, times(1))
-        .createFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_APP_ID_1);
+        .createFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_APP_ID_1, null);
   }
 
   @Test

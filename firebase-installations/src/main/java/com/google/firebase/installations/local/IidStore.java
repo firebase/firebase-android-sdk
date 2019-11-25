@@ -30,6 +30,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Read existing iid only for default (first initialized) instance of this firebase application.*
@@ -38,9 +40,14 @@ public class IidStore {
   private static final String IID_SHARED_PREFS_NAME = "com.google.android.gms.appid";
   private static final String STORE_KEY_PUB = "|S||P|";
   private static final String STORE_KEY_ID = "|S|id";
+  private static final String STORE_KEY_TOKEN = "|T|";
+  private static final String DEFAULT_SCOPE = "|*";
+  private static final String JSON_TOKEN_KEY = "token";
 
   @GuardedBy("iidPrefs")
   private final SharedPreferences iidPrefs;
+
+  private final String defaultSenderId;
 
   public IidStore() {
     // Different FirebaseApp in the same Android application should have the same application
@@ -49,6 +56,7 @@ public class IidStore {
         FirebaseApp.getInstance()
             .getApplicationContext()
             .getSharedPreferences(IID_SHARED_PREFS_NAME, Context.MODE_PRIVATE);
+    defaultSenderId = getDefaultSenderId(FirebaseApp.getInstance());
   }
 
   @Nullable
@@ -131,5 +139,56 @@ public class IidStore {
       Log.w(TAG, "Invalid key stored " + e);
     }
     return null;
+  }
+
+  private static String getDefaultSenderId(FirebaseApp app) {
+    // Check for an explicit sender id
+    String senderId = app.getOptions().getGcmSenderId();
+    if (senderId != null) {
+      return senderId;
+    }
+    String appId = app.getOptions().getApplicationId();
+    if (!appId.startsWith("1:")) {
+      // Not v1, server should be updated to accept the full app ID now
+      return appId;
+    } else {
+      // For v1 app IDs, fall back to parsing the project ID out
+      @SuppressWarnings("StringSplitter")
+      String[] parts = appId.split(":");
+      if (parts.length < 2) {
+        return null; // Invalid format
+      }
+      String projectId = parts[1];
+      if (projectId.isEmpty()) {
+        return null; // No project ID
+      }
+      return projectId;
+    }
+  }
+
+  private String createTokenKey(@NonNull String audience) {
+    return STORE_KEY_TOKEN + audience + DEFAULT_SCOPE;
+  }
+
+  @Nullable
+  public String readToken() {
+    synchronized (iidPrefs) {
+      String token = iidPrefs.getString(createTokenKey(defaultSenderId), null);
+      if (token.isEmpty()) {
+        return null;
+      }
+
+      if (token.startsWith("{")) {
+        // Encoded as JSON
+        try {
+          JSONObject json = new JSONObject(token);
+          return json.getString(JSON_TOKEN_KEY);
+        } catch (JSONException e) {
+          return null;
+        }
+      }
+      // Legacy value, token is whole string
+      return token;
+    }
   }
 }
