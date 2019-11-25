@@ -26,24 +26,8 @@ public abstract class LogResponse {
   /** Client should wait for next_request_wait_millis before sending the next log request. */
   public abstract long getNextRequestWaitMillis();
 
-  /**
-   * Quality of Service tiers enforced by server for overriding client qos_tier setting in event
-   * logging.
-   */
-  @Nullable
-  public abstract QosTiersOverride getQosTiersOverride();
-
-  static Builder builder() {
-    return new AutoValue_LogResponse.Builder();
-  }
-
-  @AutoValue.Builder
-  abstract static class Builder {
-    abstract Builder setNextRequestAwaitMillis(long value);
-
-    abstract Builder setQosTiersOverride(QosTiersOverride value);
-
-    abstract LogResponse build();
+  static LogResponse create(long nextRequestWaitMillis) {
+    return new AutoValue_LogResponse(nextRequestWaitMillis);
   }
 
   @Nullable
@@ -53,26 +37,23 @@ public abstract class LogResponse {
     }
 
     JsonReader jsonReader = new JsonReader(new StringReader(input));
-    Builder builder = builder();
     try {
       jsonReader.beginObject();
       while (jsonReader.hasNext()) {
         String name = jsonReader.nextName();
         if (name.equals("next_request_wait_millis")) {
           if (jsonReader.peek() == JsonToken.STRING) {
-            builder.setNextRequestAwaitMillis(Long.parseLong(jsonReader.nextString()));
+            return LogResponse.create(Long.parseLong(jsonReader.nextString()));
           } else {
-            builder.setNextRequestAwaitMillis(jsonReader.nextLong());
+            return LogResponse.create(jsonReader.nextLong());
           }
-        } else if (name.equals("qos_tier")) {
-          // TODO: fix
-          builder.setQosTiersOverride(QosTiersOverride.fromJsonReader(jsonReader));
         }
       }
-      return builder.build();
+      return null;
     } catch (IOException e) {
       // This should never happen(TM)
       return null;
     }
+    // We don't need to close the reader because we are reading from a string.
   }
 }
