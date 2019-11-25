@@ -27,6 +27,6 @@ public final class BatchedLogRequestEncoder implements ObjectEncoder<BatchedLogR
   public void encode(
       @Nullable BatchedLogRequest obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
-    objectEncoderContext.add("LogRequest", obj.getLogRequests());
+    objectEncoderContext.add("logRequest", obj.getLogRequests());
   }
 }

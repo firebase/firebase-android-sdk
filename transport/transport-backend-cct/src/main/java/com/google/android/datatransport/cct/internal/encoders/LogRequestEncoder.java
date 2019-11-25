@@ -33,9 +33,9 @@ public final class LogRequestEncoder implements ObjectEncoder<LogRequest> {
       @Nullable LogRequest obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
     if (obj.getLogSourceName() != null) {
-      objectEncoderContext.add("LogSourceName", obj.getLogSourceName());
+      objectEncoderContext.add("logSourceName", obj.getLogSourceName());
     } else if (obj.getLogSource() != Integer.MIN_VALUE) {
-      objectEncoderContext.add("LogSource", obj.getLogSource());
+      objectEncoderContext.add("logSource", obj.getLogSource());
     } else {
       throw new EncodingException("Log request must have either LogSourceName or LogSource");
     }
@@ -45,14 +45,14 @@ public final class LogRequestEncoder implements ObjectEncoder<LogRequest> {
   public void encode(@Nullable LogRequest obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
     objectEncoderContext
-        .add("RequestTimeMs", obj.getRequestTimeMs())
-        .add("RequestUptimeMs", obj.getRequestUptimeMs());
+        .add("requestTimeMs", obj.getRequestTimeMs())
+        .add("requestUptimeMs", obj.getRequestUptimeMs());
     if (obj.getClientInfo() != null) {
-      objectEncoderContext.add("ClientInfo", obj.getClientInfo());
+      objectEncoderContext.add("clientInfo", obj.getClientInfo());
     }
     encodeLogSource(obj, objectEncoderContext);
     if (!obj.getLogEvents().isEmpty()) {
-      objectEncoderContext.add("LogEvents", obj.getLogEvents());
+      objectEncoderContext.add("logEvents", obj.getLogEvents());
     }
   }
 }

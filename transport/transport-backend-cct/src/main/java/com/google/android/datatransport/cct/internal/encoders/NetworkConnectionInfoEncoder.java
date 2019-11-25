@@ -28,10 +28,10 @@ public final class NetworkConnectionInfoEncoder implements ObjectEncoder<Network
       @Nullable NetworkConnectionInfo obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
     if (obj.getMobileSubtype() != null) {
-      objectEncoderContext.add("MobileSubtype", obj.getMobileSubtype().name());
+      objectEncoderContext.add("mobileSubtype", obj.getMobileSubtype().name());
     }
     if (obj.getNetworkType() != null) {
-      objectEncoderContext.add("NetworkType", obj.getNetworkType().name());
+      objectEncoderContext.add("networkType", obj.getNetworkType().name());
     }
   }
 }

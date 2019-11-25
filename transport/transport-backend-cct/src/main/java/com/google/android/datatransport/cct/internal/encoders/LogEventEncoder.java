@@ -28,21 +28,21 @@ public final class LogEventEncoder implements ObjectEncoder<LogEvent> {
   public void encode(@Nullable LogEvent obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
     objectEncoderContext
-        .add("EventTimeMs", obj.getEventTimeMs())
-        .add("EventUptimeMs", obj.getEventUptimeMs())
-        .add("TimezoneOffsetSeconds", obj.getTimezoneOffsetSeconds());
+        .add("eventTimeMs", obj.getEventTimeMs())
+        .add("eventUptimeMs", obj.getEventUptimeMs())
+        .add("timezoneOffsetSeconds", obj.getTimezoneOffsetSeconds());
     if (obj.getSourceExtension() != null) {
-      objectEncoderContext.add("SourceExtension", obj.getSourceExtension());
+      objectEncoderContext.add("sourceExtension", obj.getSourceExtension());
     }
     if (obj.getSourceExtensionJsonProto3Bytes() != null) {
       objectEncoderContext.add(
-          "SourceExtensionJsonProto3Bytes", obj.getSourceExtensionJsonProto3Bytes());
+          "sourceExtensionJsonProto3Bytes", obj.getSourceExtensionJsonProto3Bytes());
     }
     if (obj.getEventCode() != Integer.MIN_VALUE) {
-      objectEncoderContext.add("EventCode", obj.getEventCode());
+      objectEncoderContext.add("eventCode", obj.getEventCode());
     }
     if (obj.getNetworkConnectionInfo() != null) {
-      objectEncoderContext.add("NetworkConnectionInfo", obj.getNetworkConnectionInfo());
+      objectEncoderContext.add("networkConnectionInfo", obj.getNetworkConnectionInfo());
     }
   }
 }

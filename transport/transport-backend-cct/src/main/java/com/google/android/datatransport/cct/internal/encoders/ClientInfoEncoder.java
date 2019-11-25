@@ -27,10 +27,10 @@ public final class ClientInfoEncoder implements ObjectEncoder<ClientInfo> {
   public void encode(@Nullable ClientInfo obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
     if (obj.getClientType() != null) {
-      objectEncoderContext.add("ClientType", obj.getClientType().name());
+      objectEncoderContext.add("clientType", obj.getClientType().name());
     }
     if (obj.getAndroidClientInfo() != null) {
-      objectEncoderContext.add("AndroidClientInfo", obj.getAndroidClientInfo());
+      objectEncoderContext.add("androidClientInfo", obj.getAndroidClientInfo());
     }
   }
 }

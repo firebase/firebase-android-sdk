@@ -28,28 +28,28 @@ public final class AndroidClientInfoEncoder implements ObjectEncoder<AndroidClie
       @Nullable AndroidClientInfo obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
     if (obj.getSdkVersion() != Integer.MIN_VALUE) {
-      objectEncoderContext.add("SdkVersion", obj.getSdkVersion());
+      objectEncoderContext.add("sdkVersion", obj.getSdkVersion());
     }
     if (obj.getModel() != null) {
-      objectEncoderContext.add("Model", obj.getModel());
+      objectEncoderContext.add("model", obj.getModel());
     }
     if (obj.getHardware() != null) {
-      objectEncoderContext.add("Hardware", obj.getHardware());
+      objectEncoderContext.add("hardware", obj.getHardware());
     }
     if (obj.getDevice() != null) {
-      objectEncoderContext.add("Device", obj.getDevice());
+      objectEncoderContext.add("device", obj.getDevice());
     }
     if (obj.getProduct() != null) {
-      objectEncoderContext.add("Product", obj.getProduct());
+      objectEncoderContext.add("product", obj.getProduct());
     }
     if (obj.getOsBuild() != null) {
-      objectEncoderContext.add("OsBuild", obj.getOsBuild());
+      objectEncoderContext.add("osBuild", obj.getOsBuild());
     }
     if (obj.getManufacturer() != null) {
-      objectEncoderContext.add("Manufacturer", obj.getManufacturer());
+      objectEncoderContext.add("manufacturer", obj.getManufacturer());
     }
     if (obj.getFingerprint() != null) {
-      objectEncoderContext.add("Fingerprint", obj.getFingerprint());
+      objectEncoderContext.add("fingerprint", obj.getFingerprint());
     }
   }
 }
