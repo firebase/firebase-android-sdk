@@ -73,7 +73,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
   static final String API_KEY_HEADER_KEY = "X-Goog-Api-Key";
-  private static final String PROTOBUF_CONTENT_TYPE = "application/json";
+  private static final String JSON_CONTENT_TYPE = "application/json";
 
   @VisibleForTesting static final String KEY_NETWORK_TYPE = "net-type";
   @VisibleForTesting static final String KEY_MOBILE_SUBTYPE = "mobile-subtype";
@@ -255,7 +255,7 @@ final class CctTransportBackend implements TransportBackend {
     connection.setRequestProperty(
         "User-Agent", String.format("datatransport/%s android/", BuildConfig.VERSION_NAME));
     connection.setRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
-    connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, PROTOBUF_CONTENT_TYPE);
+    connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
     connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
 
     if (request.apiKey != null) {
