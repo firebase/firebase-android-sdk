@@ -31,8 +31,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay;
 import com.google.firebase.inappmessaging.model.*;
-import java.util.HashMap;
-import java.util.Map;
 import me.priyesh.chroma.ChromaDialog;
 import me.priyesh.chroma.ColorMode;
 import me.priyesh.chroma.ColorSelectListener;
