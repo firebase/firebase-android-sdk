@@ -61,6 +61,7 @@ public class JsonValueObjectEncoderContextTest {
         (o, ctx) -> {
           ctx.add("String", "string")
               .add("int", 2)
+              .add("long", 42L)
               .add("double", 2.2d)
               .add("boolean", false)
               .add("null", null);
@@ -74,7 +75,7 @@ public class JsonValueObjectEncoderContextTest {
 
     assertThat(result)
         .isEqualTo(
-            "{\"String\":\"string\",\"int\":2,\"double\":2.2,\"boolean\":false,\"null\":null}");
+            "{\"String\":\"string\",\"int\":2,\"long\":42,\"double\":2.2,\"boolean\":false,\"null\":null}");
   }
 
   @Test
