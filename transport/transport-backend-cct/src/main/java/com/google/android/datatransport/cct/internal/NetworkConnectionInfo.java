@@ -47,6 +47,10 @@ public abstract class NetworkConnectionInfo {
     NetworkType(int value) {
       this.value = value;
     }
+
+    public int getValue() {
+      return value;
+    }
   }
 
   public enum MobileSubtype {
@@ -80,6 +84,10 @@ public abstract class NetworkConnectionInfo {
 
     MobileSubtype(int value) {
       this.value = value;
+    }
+
+    public int getValue() {
+      return value;
     }
   }
 

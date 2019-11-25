@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.cct.internal;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.util.List;
@@ -41,7 +42,8 @@ public abstract class LogRequest {
   @Nullable
   public abstract List<LogEvent> getLogEvents();
 
-  static Builder builder() {
+  @NonNull
+  public static Builder builder() {
     return new AutoValue_LogRequest.Builder().setLogSource(Integer.MIN_VALUE);
   }
 

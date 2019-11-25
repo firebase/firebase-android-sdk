@@ -24,16 +24,9 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.backend.cct.BuildConfig;
-import com.google.android.datatransport.cct.proto.AndroidClientInfo;
-import com.google.android.datatransport.cct.proto.BatchedLogRequest;
-import com.google.android.datatransport.cct.proto.ClientInfo;
-import com.google.android.datatransport.cct.proto.LogEvent;
-import com.google.android.datatransport.cct.proto.LogRequest;
-import com.google.android.datatransport.cct.proto.LogResponse;
-import com.google.android.datatransport.cct.proto.NetworkConnectionInfo;
-import com.google.android.datatransport.cct.proto.NetworkConnectionInfo.MobileSubtype;
-import com.google.android.datatransport.cct.proto.NetworkConnectionInfo.NetworkType;
-import com.google.android.datatransport.cct.proto.QosTierConfiguration;
+import com.google.android.datatransport.cct.internal.BatchedLogRequest;
+import com.google.android.datatransport.cct.internal.LogRequest;
+import com.google.android.datatransport.cct.internal.NetworkConnectionInfo;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
@@ -137,7 +130,7 @@ final class CctTransportBackend implements TransportBackend {
   private static int getNetTypeValue(NetworkInfo networkInfo) {
     // when the device is not connected networkInfo returned by ConnectivityManger is null.
     if (networkInfo == null) {
-      return NetworkType.NONE_VALUE;
+      return NetworkConnectionInfo.NetworkType.NONE.getValue();
     }
     return networkInfo.getType();
   }
@@ -145,13 +138,13 @@ final class CctTransportBackend implements TransportBackend {
   private static int getNetSubtypeValue(NetworkInfo networkInfo) {
     // when the device is not connected networkInfo returned by ConnectivityManger is null.
     if (networkInfo == null) {
-      return MobileSubtype.UNKNOWN_MOBILE_SUBTYPE_VALUE;
+      return NetworkConnectionInfo.MobileSubtype.UNKNOWN_MOBILE_SUBTYPE.getValue();
     }
     int subtype = networkInfo.getSubtype();
     if (subtype == -1) {
-      return MobileSubtype.COMBINED_VALUE;
+      return NetworkConnectionInfo.MobileSubtype.COMBINED.getValue();
     }
-    return MobileSubtype.forNumber(subtype) != null ? subtype : 0;
+    return NetworkConnectionInfo.MobileSubtype.forNumber(subtype) != null ? subtype : 0;
   }
 
   private BatchedLogRequest getRequestBody(BackendRequest backendRequest) {
@@ -167,7 +160,7 @@ final class CctTransportBackend implements TransportBackend {
         eventInternalMap.get(key).add(eventInternal);
       }
     }
-    BatchedLogRequest.Builder batchedRequestBuilder = BatchedLogRequest.newBuilder();
+    BatchedLogRequest.Builder batchedRequestBuilder = BatchedLogRequest.builder();
     for (Map.Entry<String, List<EventInternal>> entry : eventInternalMap.entrySet()) {
       EventInternal firstEvent = entry.getValue().get(0);
       LogRequest.Builder requestBuilder =
