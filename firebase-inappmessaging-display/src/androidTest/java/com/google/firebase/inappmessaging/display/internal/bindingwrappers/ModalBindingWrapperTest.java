@@ -16,6 +16,7 @@ package com.google.firebase.inappmessaging.display.internal.bindingwrappers;
 
 import static com.google.firebase.inappmessaging.testutil.TestData.ACTION_MODEL_WITH_BUTTON;
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_METADATA_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.MESSAGE_BACKGROUND_HEX_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.MODAL_MESSAGE_MODEL;
@@ -145,7 +146,7 @@ public class ModalBindingWrapperTest {
             .setImageData(IMAGE_DATA)
             .setTitle(TITLE_MODEL)
             .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
 
     modalBindingWrapper =
         new ModalBindingWrapper(modalPortraitLayoutConfig, layoutInflater, message);
@@ -168,7 +169,7 @@ public class ModalBindingWrapperTest {
             .setAction(ACTION_MODEL_WITH_BUTTON)
             .setTitle(TITLE_MODEL)
             .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
 
     modalBindingWrapper =
         new ModalBindingWrapper(modalPortraitLayoutConfig, layoutInflater, message);
@@ -190,7 +191,7 @@ public class ModalBindingWrapperTest {
             .setImageData(IMAGE_DATA)
             .setTitle(TITLE_MODEL)
             .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
 
     modalBindingWrapper =
         new ModalBindingWrapper(modalPortraitLayoutConfig, layoutInflater, message);
