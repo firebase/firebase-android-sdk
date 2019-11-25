@@ -12,21 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.cct.internal.encoders;
+package com.google.android.datatransport.cct.internal;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.datatransport.cct.internal.BatchedLogRequest;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import java.io.IOException;
 
-public final class BatchedLogRequestEncoder implements ObjectEncoder<BatchedLogRequest> {
+public final class ClientInfoEncoder implements ObjectEncoder<AutoValue_ClientInfo> {
   @Override
   public void encode(
-      @Nullable BatchedLogRequest obj, @NonNull ObjectEncoderContext objectEncoderContext)
+      @Nullable AutoValue_ClientInfo obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
-    objectEncoderContext.add("logRequest", obj.getLogRequests());
+    if (obj.getClientType() != null) {
+      objectEncoderContext.add("clientType", obj.getClientType().name());
+    }
+    if (obj.getAndroidClientInfo() != null) {
+      objectEncoderContext.add("androidClientInfo", obj.getAndroidClientInfo());
+    }
   }
 }

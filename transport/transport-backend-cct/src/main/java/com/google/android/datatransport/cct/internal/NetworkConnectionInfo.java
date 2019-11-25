@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.cct.internal;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
@@ -50,6 +51,52 @@ public abstract class NetworkConnectionInfo {
 
     public int getValue() {
       return value;
+    }
+
+    @Nullable
+    public static NetworkType forNumber(int value) {
+      switch (value) {
+        case 0:
+          return MOBILE;
+        case 1:
+          return WIFI;
+        case 2:
+          return MOBILE_MMS;
+        case 3:
+          return MOBILE_SUPL;
+        case 4:
+          return MOBILE_DUN;
+        case 5:
+          return MOBILE_HIPRI;
+        case 6:
+          return WIMAX;
+        case 7:
+          return BLUETOOTH;
+        case 8:
+          return DUMMY;
+        case 9:
+          return ETHERNET;
+        case 10:
+          return MOBILE_FOTA;
+        case 11:
+          return MOBILE_IMS;
+        case 12:
+          return MOBILE_CBS;
+        case 13:
+          return WIFI_P2P;
+        case 14:
+          return MOBILE_IA;
+        case 15:
+          return MOBILE_EMERGENCY;
+        case 16:
+          return PROXY;
+        case 17:
+          return VPN;
+        case -1:
+          return NONE;
+        default:
+          return null;
+      }
     }
   }
 
@@ -89,6 +136,56 @@ public abstract class NetworkConnectionInfo {
     public int getValue() {
       return value;
     }
+
+    @Nullable
+    public static MobileSubtype forNumber(int value) {
+      switch (value) {
+        case 0:
+          return UNKNOWN_MOBILE_SUBTYPE;
+        case 1:
+          return GPRS;
+        case 2:
+          return EDGE;
+        case 3:
+          return UMTS;
+        case 4:
+          return CDMA;
+        case 5:
+          return EVDO_0;
+        case 6:
+          return EVDO_A;
+        case 7:
+          return RTT;
+        case 8:
+          return HSDPA;
+        case 9:
+          return HSUPA;
+        case 10:
+          return HSPA;
+        case 11:
+          return IDEN;
+        case 12:
+          return EVDO_B;
+        case 13:
+          return LTE;
+        case 14:
+          return EHRPD;
+        case 15:
+          return HSPAP;
+        case 16:
+          return GSM;
+        case 17:
+          return TD_SCDMA;
+        case 18:
+          return IWLAN;
+        case 19:
+          return LTE_CA;
+        case 100:
+          return COMBINED;
+        default:
+          return null;
+      }
+    }
   }
 
   @Nullable
@@ -97,17 +194,21 @@ public abstract class NetworkConnectionInfo {
   @Nullable
   public abstract MobileSubtype getMobileSubtype();
 
-  static Builder builder() {
+  @NonNull
+  public static Builder builder() {
     return new AutoValue_NetworkConnectionInfo.Builder();
   }
 
   @AutoValue.Builder
-  abstract static class Builder {
+  public abstract static class Builder {
 
-    abstract Builder setNetworkType(NetworkType value);
+    @NonNull
+    public abstract Builder setNetworkType(@Nullable NetworkType value);
 
-    abstract Builder setMobileSubtype(MobileSubtype value);
+    @NonNull
+    public abstract Builder setMobileSubtype(@Nullable MobileSubtype value);
 
-    abstract NetworkConnectionInfo build();
+    @NonNull
+    public abstract NetworkConnectionInfo build();
   }
 }

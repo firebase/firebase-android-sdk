@@ -23,7 +23,8 @@ public abstract class BatchedLogRequest {
   @NonNull
   public abstract List<LogRequest> getLogRequests();
 
-  static BatchedLogRequest create(List<LogRequest> logRequests) {
+  @NonNull
+  public static BatchedLogRequest create(@NonNull List<LogRequest> logRequests) {
     return new AutoValue_BatchedLogRequest(logRequests);
   }
 }

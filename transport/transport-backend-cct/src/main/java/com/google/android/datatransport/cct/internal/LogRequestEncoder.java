@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.cct.internal.encoders;
+package com.google.android.datatransport.cct.internal;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.datatransport.cct.internal.LogRequest;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import java.io.IOException;
 
-public final class LogRequestEncoder implements ObjectEncoder<LogRequest> {
+public final class LogRequestEncoder implements ObjectEncoder<AutoValue_LogRequest> {
 
   /**
    * Encodes the log source into the context.
@@ -30,7 +29,7 @@ public final class LogRequestEncoder implements ObjectEncoder<LogRequest> {
    * @throws EncodingException if neither LogSourceName or LogSource is set.
    */
   private void encodeLogSource(
-      @Nullable LogRequest obj, @NonNull ObjectEncoderContext objectEncoderContext)
+      @Nullable AutoValue_LogRequest obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
     if (obj.getLogSourceName() != null) {
       objectEncoderContext.add("logSourceName", obj.getLogSourceName());
@@ -42,7 +41,8 @@ public final class LogRequestEncoder implements ObjectEncoder<LogRequest> {
   }
 
   @Override
-  public void encode(@Nullable LogRequest obj, @NonNull ObjectEncoderContext objectEncoderContext)
+  public void encode(
+      @Nullable AutoValue_LogRequest obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
     objectEncoderContext
         .add("requestTimeMs", obj.getRequestTimeMs())
@@ -52,7 +52,7 @@ public final class LogRequestEncoder implements ObjectEncoder<LogRequest> {
     }
     encodeLogSource(obj, objectEncoderContext);
     if (!obj.getLogEvents().isEmpty()) {
-      objectEncoderContext.add("logEvents", obj.getLogEvents());
+      objectEncoderContext.add("logEvent", obj.getLogEvents());
     }
   }
 }

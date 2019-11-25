@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.cct.internal;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
@@ -37,16 +38,20 @@ public abstract class ClientInfo {
   @Nullable
   public abstract AndroidClientInfo getAndroidClientInfo();
 
-  static Builder builder() {
+  @NonNull
+  public static Builder builder() {
     return new AutoValue_ClientInfo.Builder();
   }
 
   @AutoValue.Builder
-  abstract static class Builder {
-    abstract Builder setClientType(ClientType value);
+  public abstract static class Builder {
+    @NonNull
+    public abstract Builder setClientType(@Nullable ClientType value);
 
-    abstract Builder setAndroidClientInfo(AndroidClientInfo value);
+    @NonNull
+    public abstract Builder setAndroidClientInfo(@Nullable AndroidClientInfo value);
 
-    abstract ClientInfo build();
+    @NonNull
+    public abstract ClientInfo build();
   }
 }

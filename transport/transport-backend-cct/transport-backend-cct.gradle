@@ -25,23 +25,12 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.4.0'
-    }
-    plugins {
-        javalite {
-            // The codegen for lite comes as a separate artifact
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
-        }
+        artifact = 'com.google.protobuf:protoc:3.10.1'
     }
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                // In most cases you don't need the full Java output
-                // if you use the lite output.
-                remove java
-            }
-            task.plugins {
-                javalite {}
+                java { }
             }
         }
     }
@@ -65,16 +54,18 @@ dependencies {
     implementation project(':transport:transport-api')
     implementation project(':transport:transport-runtime')
     implementation project(':encoders:firebase-encoders')
-    implementation 'com.google.protobuf:protobuf-lite:3.0.1'
     implementation 'androidx.annotation:annotation:1.1.0'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
 
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
 
+    testImplementation 'com.google.protobuf:protobuf-java:3.10.0'
+    testImplementation 'com.google.protobuf:protobuf-java-util:3.10.0'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
     testImplementation("com.github.tomakehurst:wiremock-jre8:2.21.0") {
         //Allows us to use the Android version of Apache httpclient instead
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'

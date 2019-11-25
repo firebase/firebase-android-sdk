@@ -16,11 +16,9 @@ package com.google.android.datatransport.cct.internal;
 
 import android.util.JsonReader;
 import android.util.JsonToken;
-import android.util.MalformedJsonException;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.auto.value.AutoValue;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
 
@@ -36,11 +34,7 @@ public abstract class LogResponse {
   }
 
   @Nullable
-  public static LogResponse fromJson(@Nullable Reader reader) throws IOException {
-    if (reader == null) {
-      return null;
-    }
-
+  public static LogResponse fromJson(@NonNull Reader reader) throws IOException {
     JsonReader jsonReader = new JsonReader(reader);
     try {
       jsonReader.beginObject();
@@ -53,11 +47,9 @@ public abstract class LogResponse {
             return LogResponse.create(jsonReader.nextLong());
           }
         }
+        jsonReader.skipValue();
       }
-      return null;
-    } catch (MalformedJsonException | EOFException e) {
-      Logging.e(LOG_TAG, "Couldn't parse json response from backend.", e);
-      return null;
+      throw new IOException("Response is missing nextRequestWaitMillis field.");
     } finally {
       jsonReader.close();
     }

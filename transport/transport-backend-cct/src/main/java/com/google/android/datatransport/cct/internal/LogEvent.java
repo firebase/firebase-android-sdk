@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.cct.internal;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
@@ -39,26 +40,35 @@ public abstract class LogEvent {
   @Nullable
   public abstract NetworkConnectionInfo getNetworkConnectionInfo();
 
-  static Builder builder() {
+  @NonNull
+  public static Builder builder() {
     return new AutoValue_LogEvent.Builder().setEventCode(Integer.MIN_VALUE);
   }
 
   @AutoValue.Builder
-  abstract static class Builder {
-    abstract Builder setEventTimeMs(long value);
+  public abstract static class Builder {
+    @NonNull
+    public abstract Builder setEventTimeMs(long value);
 
-    abstract Builder setEventCode(int value);
+    @NonNull
+    public abstract Builder setEventCode(int value);
 
-    abstract Builder setEventUptimeMs(long value);
+    @NonNull
+    public abstract Builder setEventUptimeMs(long value);
 
-    abstract Builder setSourceExtension(byte[] value);
+    @NonNull
+    public abstract Builder setSourceExtension(@Nullable byte[] value);
 
-    abstract Builder setSourceExtensionJsonProto3Bytes(byte[] value);
+    @NonNull
+    public abstract Builder setSourceExtensionJsonProto3Bytes(@Nullable byte[] value);
 
-    abstract Builder setTimezoneOffsetSeconds(long value);
+    @NonNull
+    public abstract Builder setTimezoneOffsetSeconds(long value);
 
-    abstract Builder setNetworkConnectionInfo(NetworkConnectionInfo value);
+    @NonNull
+    public abstract Builder setNetworkConnectionInfo(@Nullable NetworkConnectionInfo value);
 
-    abstract LogEvent build();
+    @NonNull
+    public abstract LogEvent build();
   }
 }

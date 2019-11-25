@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.cct.internal.encoders;
+package com.google.android.datatransport.cct.internal;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.datatransport.cct.internal.LogEvent;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import java.io.IOException;
 
-public final class LogEventEncoder implements ObjectEncoder<LogEvent> {
+public final class LogEventEncoder implements ObjectEncoder<AutoValue_LogEvent> {
 
   @Override
-  public void encode(@Nullable LogEvent obj, @NonNull ObjectEncoderContext objectEncoderContext)
+  public void encode(
+      @Nullable AutoValue_LogEvent obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
     objectEncoderContext
         .add("eventTimeMs", obj.getEventTimeMs())

@@ -42,25 +42,38 @@ public abstract class LogRequest {
   @Nullable
   public abstract List<LogEvent> getLogEvents();
 
+  @Nullable
+  public abstract QosTier getQosTier();
+
   @NonNull
   public static Builder builder() {
     return new AutoValue_LogRequest.Builder().setLogSource(Integer.MIN_VALUE);
   }
 
   @AutoValue.Builder
-  abstract static class Builder {
-    abstract Builder setRequestTimeMs(long value);
+  public abstract static class Builder {
+    @NonNull
+    public abstract Builder setRequestTimeMs(long value);
 
-    abstract Builder setRequestUptimeMs(long value);
+    @NonNull
+    public abstract Builder setRequestUptimeMs(long value);
 
-    abstract Builder setClientInfo(ClientInfo value);
+    @NonNull
+    public abstract Builder setClientInfo(@Nullable ClientInfo value);
 
-    abstract Builder setLogSource(int value);
+    @NonNull
+    public abstract Builder setLogSource(int value);
 
-    abstract Builder setLogSourceName(String value);
+    @NonNull
+    public abstract Builder setLogSourceName(@Nullable String value);
 
-    abstract Builder setLogEvents(List<LogEvent> value);
+    @NonNull
+    public abstract Builder setLogEvents(@Nullable List<LogEvent> value);
 
-    abstract LogRequest build();
+    @NonNull
+    public abstract Builder setQosTier(@Nullable QosTier value);
+
+    @NonNull
+    public abstract LogRequest build();
   }
 }

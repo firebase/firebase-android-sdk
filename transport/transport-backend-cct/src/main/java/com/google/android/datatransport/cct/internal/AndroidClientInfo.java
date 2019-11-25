@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.cct.internal;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
@@ -56,29 +57,39 @@ public abstract class AndroidClientInfo {
   @Nullable
   public abstract String getFingerprint();
 
-  static Builder builder() {
+  @NonNull
+  public static Builder builder() {
     return new AutoValue_AndroidClientInfo.Builder().setSdkVersion(Integer.MIN_VALUE);
   }
 
   @AutoValue.Builder
-  abstract static class Builder {
+  public abstract static class Builder {
 
-    abstract Builder setSdkVersion(int value);
+    @NonNull
+    public abstract Builder setSdkVersion(int value);
 
-    abstract Builder setModel(@Nullable String value);
+    @NonNull
+    public abstract Builder setModel(@Nullable String value);
 
-    abstract Builder setHardware(@Nullable String value);
+    @NonNull
+    public abstract Builder setHardware(@Nullable String value);
 
-    abstract Builder setDevice(@Nullable String value);
+    @NonNull
+    public abstract Builder setDevice(@Nullable String value);
 
-    abstract Builder setProduct(@Nullable String value);
+    @NonNull
+    public abstract Builder setProduct(@Nullable String value);
 
-    abstract Builder setOsBuild(@Nullable String value);
+    @NonNull
+    public abstract Builder setOsBuild(@Nullable String value);
 
-    abstract Builder setManufacturer(@Nullable String value);
+    @NonNull
+    public abstract Builder setManufacturer(@Nullable String value);
 
-    abstract Builder setFingerprint(@Nullable String value);
+    @NonNull
+    public abstract Builder setFingerprint(@Nullable String value);
 
-    abstract AndroidClientInfo build();
+    @NonNull
+    public abstract AndroidClientInfo build();
   }
 }

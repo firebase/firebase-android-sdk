@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.android.datatransport.cct.internal.encoders;
+package com.google.android.datatransport.cct.internal;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.datatransport.cct.internal.AndroidClientInfo;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import java.io.IOException;
 
-public final class AndroidClientInfoEncoder implements ObjectEncoder<AndroidClientInfo> {
+public final class AndroidClientInfoEncoder implements ObjectEncoder<AutoValue_AndroidClientInfo> {
   @Override
   public void encode(
-      @Nullable AndroidClientInfo obj, @NonNull ObjectEncoderContext objectEncoderContext)
+      @Nullable AutoValue_AndroidClientInfo obj, @NonNull ObjectEncoderContext objectEncoderContext)
       throws EncodingException, IOException {
     if (obj.getSdkVersion() != Integer.MIN_VALUE) {
       objectEncoderContext.add("sdkVersion", obj.getSdkVersion());
