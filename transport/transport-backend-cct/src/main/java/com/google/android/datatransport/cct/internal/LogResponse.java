@@ -19,10 +19,13 @@ import android.util.JsonToken;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.io.IOException;
-import java.io.StringReader;
+import com.google.android.datatransport.runtime.logging.Logging;
+import java.io.Reader;
 
 @AutoValue
 public abstract class LogResponse {
+  private static final String LOG_TAG = "LogResponseInternal";
+
   /** Client should wait for next_request_wait_millis before sending the next log request. */
   public abstract long getNextRequestWaitMillis();
 
@@ -31,17 +34,17 @@ public abstract class LogResponse {
   }
 
   @Nullable
-  public static LogResponse fromJson(@Nullable String input) {
-    if (input == null) {
+  public static LogResponse fromJson(@Nullable Reader reader) throws IOException {
+    if (reader == null) {
       return null;
     }
 
-    JsonReader jsonReader = new JsonReader(new StringReader(input));
+    JsonReader jsonReader = new JsonReader(reader);
     try {
       jsonReader.beginObject();
       while (jsonReader.hasNext()) {
         String name = jsonReader.nextName();
-        if (name.equals("next_request_wait_millis")) {
+        if (name.equals("nextRequestWaitMillis")) {
           if (jsonReader.peek() == JsonToken.STRING) {
             return LogResponse.create(Long.parseLong(jsonReader.nextString()));
           } else {
@@ -50,10 +53,11 @@ public abstract class LogResponse {
         }
       }
       return null;
-    } catch (IOException e) {
-      // This should never happen(TM)
+    } catch (IllegalStateException e) {
+      Logging.e(LOG_TAG, "Couldn't parse json response from backend.", e);
       return null;
+    } finally {
+      jsonReader.close();
     }
-    // We don't need to close the reader because we are reading from a string.
   }
 }

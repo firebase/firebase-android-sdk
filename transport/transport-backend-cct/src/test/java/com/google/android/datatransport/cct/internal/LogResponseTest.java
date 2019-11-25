@@ -16,6 +16,11 @@ package com.google.android.datatransport.cct.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.StringReader;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -24,24 +29,33 @@ import org.robolectric.RobolectricTestRunner;
 public class LogResponseTest {
 
   @Test
-  public void testLogRequestParsing_null() {
+  public void testLogRequestParsing_null() throws IOException {
     assertThat(LogResponse.fromJson(null)).isNull();
   }
 
   @Test
-  public void testLogRequestParsing_emptyJson() {
-    assertThat(LogResponse.fromJson("")).isNull();
+  public void testLogRequestParsing_emptyJson() throws IOException {
+    Assert.assertThrows(EOFException.class,
+            () -> LogResponse.fromJson(new StringReader("")));
   }
 
   @Test
-  public void testLogRequestParsing_onlyAwaitMillis() {
-    String jsonInput = "{\"next_request_wait_millis\":1000}";
-    assertThat(LogResponse.fromJson(jsonInput).getNextRequestWaitMillis()).isEqualTo(1000);
+  public void testLogRequestParsing_onlyAwaitMillis() throws IOException {
+    String jsonInput = "{\"nextRequestWaitMillis\":1000}";
+    assertThat(LogResponse.fromJson(new StringReader(jsonInput)).getNextRequestWaitMillis())
+        .isEqualTo(1000);
   }
 
   @Test
-  public void testLogRequestParsing_stringAwaitMillis() {
-    String jsonInput = "{\"next_request_wait_millis\":\"1000\"}";
-    assertThat(LogResponse.fromJson(jsonInput).getNextRequestWaitMillis()).isEqualTo(1000);
+  public void testLogRequestParsing_stringAwaitMillis() throws IOException {
+    String jsonInput = "{\"nextRequestWaitMillis\":\"1000\"}";
+    assertThat(LogResponse.fromJson(new StringReader(jsonInput)).getNextRequestWaitMillis())
+        .isEqualTo(1000);
+  }
+
+  @Test
+  public void testLogRequestParsing_invalidJson() throws IOException {
+    String jsonInput = "{\"nextRequestWaitMillis\":";
+    assertThat(LogResponse.fromJson(new StringReader(jsonInput))).isNull();
   }
 }
