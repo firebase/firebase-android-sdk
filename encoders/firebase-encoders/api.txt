@@ -29,6 +29,7 @@ package com.google.firebase.encoders {
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(double) throws com.google.firebase.encoders.EncodingException;
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(int) throws com.google.firebase.encoders.EncodingException;
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(boolean) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@NonNull byte[]) throws com.google.firebase.encoders.EncodingException;
   }
 
 }

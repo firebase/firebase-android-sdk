@@ -14,6 +14,7 @@
 
 package com.google.firebase.encoders.json;
 
+import android.util.Base64;
 import android.util.JsonWriter;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -108,6 +109,18 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   }
 
   @NonNull
+  @Override
+  public JsonValueObjectEncoderContext add(@Nullable byte[] bytes)
+      throws IOException, EncodingException {
+    if (bytes == null) {
+      jsonWriter.nullValue();
+    } else {
+      jsonWriter.value(Base64.encodeToString(bytes, Base64.NO_WRAP));
+    }
+    return this;
+  }
+
+  @NonNull
   JsonValueObjectEncoderContext add(@Nullable Object o) throws IOException, EncodingException {
     if (o == null) {
       jsonWriter.nullValue();
@@ -115,6 +128,13 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     }
     // TODO: Add missing primitive types.
     if (o.getClass().isArray()) {
+      // Byte[] are a special case of arrays, because they are not mapped to an array, but to a
+      // string.
+      if (o.getClass().getComponentType() == byte.class) {
+        byte[] bytes = (byte[]) o;
+        return add(bytes);
+      }
+
       jsonWriter.beginArray();
       if (o.getClass().getComponentType() == int.class) {
         int[] array = (int[]) o;
