@@ -14,7 +14,6 @@
 
 package com.google.firebase.inappmessaging.testutil;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.firebase.inappmessaging.model.Action;
 import com.google.firebase.inappmessaging.model.BannerMessage;
 import com.google.firebase.inappmessaging.model.Button;
@@ -24,6 +23,8 @@ import com.google.firebase.inappmessaging.model.ImageData;
 import com.google.firebase.inappmessaging.model.ImageOnlyMessage;
 import com.google.firebase.inappmessaging.model.ModalMessage;
 import com.google.firebase.inappmessaging.model.Text;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TestData {
   // ************************* METADATA *************************
@@ -40,7 +41,11 @@ public class TestData {
       new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE);
   public static final CampaignMetadata TEST_CAMPAIGN_METADATA_MODEL =
       new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_TEST_MESSAGE);
-  public static final ImmutableMap<String, String> DATA = ImmutableMap.of("up", "dog");
+  public static final Map<String, String> DATA = new HashMap<>();
+
+  static {
+    DATA.put("up", "dog");
+  }
 
   // ************************* TITLE *************************
   public static final String TITLE_TEXT_STRING = "title";

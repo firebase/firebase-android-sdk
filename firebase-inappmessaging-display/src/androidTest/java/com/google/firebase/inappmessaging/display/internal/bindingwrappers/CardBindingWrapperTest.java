@@ -21,6 +21,7 @@ import static com.google.firebase.inappmessaging.testutil.TestData.CARD_MESSAGE_
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.MESSAGE_BACKGROUND_HEX_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.TITLE_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.DATA;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
@@ -171,7 +172,7 @@ public class CardBindingWrapperTest {
             .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
             .setTitle(TITLE_MODEL)
             .setPortraitImageData(IMAGE_DATA)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
 
     cardBindingWrapper = new CardBindingWrapper(cardPortraitLayoutConfig, layoutInflater, message);
 
@@ -195,7 +196,7 @@ public class CardBindingWrapperTest {
             .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
             .setTitle(TITLE_MODEL)
             .setPortraitImageData(IMAGE_DATA)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
 
     cardBindingWrapper = new CardBindingWrapper(cardPortraitLayoutConfig, layoutInflater, message);
 
@@ -220,7 +221,7 @@ public class CardBindingWrapperTest {
             .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
             .setTitle(TITLE_MODEL)
             .setPortraitImageData(IMAGE_DATA)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
 
     cardBindingWrapper = new CardBindingWrapper(cardPortraitLayoutConfig, layoutInflater, message);
 
