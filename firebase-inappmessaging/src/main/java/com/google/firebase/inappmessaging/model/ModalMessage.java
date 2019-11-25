@@ -16,6 +16,7 @@ package com.google.firebase.inappmessaging.model;
 
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 /** Encapsulates a Firebase In App Modal Message. */
@@ -81,8 +82,9 @@ public class ModalMessage extends InAppMessage {
       @Nullable Text body,
       @Nullable ImageData imageData,
       @Nullable Action action,
-      @NonNull String backgroundHexColor) {
-    super(campaignMetadata, MessageType.MODAL);
+      @NonNull String backgroundHexColor,
+      @Nullable Map<String, String> data) {
+    super(campaignMetadata, MessageType.MODAL, data);
     this.title = title;
     this.body = body;
     this.imageData = imageData;
@@ -171,7 +173,8 @@ public class ModalMessage extends InAppMessage {
       return this;
     }
 
-    public ModalMessage build(CampaignMetadata campaignMetadata) {
+    public ModalMessage build(
+        CampaignMetadata campaignMetadata, @Nullable Map<String, String> data) {
       if (title == null) {
         throw new IllegalArgumentException("Modal model must have a title");
       }
@@ -183,7 +186,8 @@ public class ModalMessage extends InAppMessage {
       }
 
       // We know backgroundColor is not null here because isEmpty checks for null.
-      return new ModalMessage(campaignMetadata, title, body, imageData, action, backgroundHexColor);
+      return new ModalMessage(
+          campaignMetadata, title, body, imageData, action, backgroundHexColor, data);
     }
   }
 }

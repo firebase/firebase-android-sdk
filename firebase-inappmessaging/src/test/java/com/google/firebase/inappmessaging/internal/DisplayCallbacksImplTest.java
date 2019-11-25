@@ -23,6 +23,7 @@ import static com.google.firebase.inappmessaging.testutil.TestData.BANNER_MESSAG
 import static com.google.firebase.inappmessaging.testutil.TestData.BANNER_TEST_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_ID_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_NAME_STRING;
+import static com.google.firebase.inappmessaging.testutil.TestData.DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.INSTANCE_ID;
 import static com.google.firebase.inappmessaging.testutil.TestData.INSTANCE_TOKEN;
@@ -390,8 +391,8 @@ public class DisplayCallbacksImplTest {
             .setPrimaryAction(ACTION_MODEL_WITH_BUTTON)
             .setSecondaryAction(ACTION_MODEL_WITHOUT_URL)
             .build(
-                new CampaignMetadata(
-                    CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE));
+                new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE),
+                DATA);
 
     displayCallbacksImpl =
         displayCallbacksFactory.generateDisplayCallback(cardMessage, ANALYTICS_EVENT_NAME);
@@ -412,8 +413,8 @@ public class DisplayCallbacksImplTest {
             .setPrimaryAction(ACTION_MODEL_WITH_BUTTON)
             .setSecondaryAction(ACTION_MODEL_WITH_BUTTON)
             .build(
-                new CampaignMetadata(
-                    CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE));
+                new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE),
+                DATA);
 
     displayCallbacksImpl =
         displayCallbacksFactory.generateDisplayCallback(cardMessage, ANALYTICS_EVENT_NAME);
