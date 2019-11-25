@@ -16,9 +16,6 @@ package com.google.android.datatransport.cct.internal;
 
 import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.util.List;
 
 @AutoValue
@@ -28,9 +25,5 @@ public abstract class BatchedLogRequest {
 
   static BatchedLogRequest create(List<LogRequest> logRequests) {
     return new AutoValue_BatchedLogRequest(logRequests);
-  }
-
-  public void writeTo(@NonNull OutputStream stream) throws IOException {
-    stream.write("hello".getBytes(Charset.forName("UTF-8")));
   }
 }
