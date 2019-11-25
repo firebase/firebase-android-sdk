@@ -53,15 +53,11 @@ public final class JsonDataEncoderBuilder {
   }
 
   private static final ValueEncoder<String> STRING_ENCODER = (o, ctx) -> ctx.add(o);
-  private static final ValueEncoder<Integer> INTEGER_ENCODER = (o, ctx) -> ctx.add(o);
-  private static final ValueEncoder<Double> DOUBLE_ENCODER = (o, ctx) -> ctx.add(o);
   private static final ValueEncoder<Boolean> BOOLEAN_ENCODER = (o, ctx) -> ctx.add(o);
   private static final TimestampEncoder TIMESTAMP_ENCODER = new TimestampEncoder();
 
   public JsonDataEncoderBuilder() {
     registerEncoder(String.class, STRING_ENCODER);
-    registerEncoder(Integer.class, INTEGER_ENCODER);
-    registerEncoder(Double.class, DOUBLE_ENCODER);
     registerEncoder(Boolean.class, BOOLEAN_ENCODER);
     registerEncoder(Date.class, TIMESTAMP_ENCODER);
   }
