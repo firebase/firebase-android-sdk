@@ -16,10 +16,12 @@ package com.google.android.datatransport.cct.internal;
 
 import android.util.JsonReader;
 import android.util.JsonToken;
+import android.util.MalformedJsonException;
 import androidx.annotation.Nullable;
-import com.google.auto.value.AutoValue;
-import java.io.IOException;
 import com.google.android.datatransport.runtime.logging.Logging;
+import com.google.auto.value.AutoValue;
+import java.io.EOFException;
+import java.io.IOException;
 import java.io.Reader;
 
 @AutoValue
@@ -53,7 +55,7 @@ public abstract class LogResponse {
         }
       }
       return null;
-    } catch (IllegalStateException e) {
+    } catch (MalformedJsonException | EOFException e) {
       Logging.e(LOG_TAG, "Couldn't parse json response from backend.", e);
       return null;
     } finally {

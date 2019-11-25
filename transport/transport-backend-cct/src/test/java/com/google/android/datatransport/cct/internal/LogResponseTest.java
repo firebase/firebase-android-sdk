@@ -16,11 +16,8 @@ package com.google.android.datatransport.cct.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringReader;
-
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -35,8 +32,7 @@ public class LogResponseTest {
 
   @Test
   public void testLogRequestParsing_emptyJson() throws IOException {
-    Assert.assertThrows(EOFException.class,
-            () -> LogResponse.fromJson(new StringReader("")));
+    assertThat(LogResponse.fromJson(new StringReader(""))).isNull();
   }
 
   @Test
@@ -54,8 +50,14 @@ public class LogResponseTest {
   }
 
   @Test
-  public void testLogRequestParsing_invalidJson() throws IOException {
+  public void testLogRequestParsing_invalidJsonIncomplete() throws IOException {
     String jsonInput = "{\"nextRequestWaitMillis\":";
+    assertThat(LogResponse.fromJson(new StringReader(jsonInput))).isNull();
+  }
+
+  @Test
+  public void testLogRequestParsing_invalidJsonInvalid() throws IOException {
+    String jsonInput = "{\"nextRequestWaitMillis\":}";
     assertThat(LogResponse.fromJson(new StringReader(jsonInput))).isNull();
   }
 }
