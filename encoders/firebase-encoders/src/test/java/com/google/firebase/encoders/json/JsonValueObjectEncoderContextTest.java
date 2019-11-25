@@ -20,6 +20,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.Lists;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.EncodingException;
@@ -52,6 +53,15 @@ public class JsonValueObjectEncoderContextTest {
 
   static class InnerDummyClass {
     static InnerDummyClass INSTANCE = new InnerDummyClass();
+  }
+
+  @AutoValue
+  public abstract static class MyAutoClass {
+    public abstract String getMyString();
+
+    static MyAutoClass create(String myString) {
+      return new AutoValue_JsonValueObjectEncoderContextTest_MyAutoClass(myString);
+    }
   }
 
   @Test
@@ -256,6 +266,31 @@ public class JsonValueObjectEncoderContextTest {
         String.format("{\"String\":\"string\",\"Null\":null,\"InnerObject\":%s}", innerObject);
 
     assertThat(result).isEqualTo(outerObject);
+  }
+
+  @Test
+  public void testEncodingAutoValue_MatchingAbstractEncoder()
+      throws IOException, EncodingException {
+    ObjectEncoder<MyAutoClass> objectEncoder =
+        (o, ctx) -> {
+          ctx.add("String", o.getMyString());
+        };
+
+    MyAutoClass instance = MyAutoClass.create("Text");
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(MyAutoClass.class, objectEncoder)
+            .build()
+            .encode(instance);
+
+    assertThat(result).isEqualTo("{\"String\":\"Text\"}");
+  }
+
+  @Test
+  public void testEncodingAutoValue_MissingAbstractEncoder() throws IOException, EncodingException {
+    Assert.assertThrows(
+        EncodingException.class,
+        () -> new JsonDataEncoderBuilder().build().encode(MyAutoClass.create("Text")));
   }
 
   @Test

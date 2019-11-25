@@ -156,14 +156,23 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       objectEncoder.encode(o, this);
       jsonWriter.endObject();
       return this;
+      // Check for AutoValue concrete class. The encoder for the abstract class will work for it.
+    } else if (o.getClass().getSimpleName().startsWith("AutoValue_")
+        && objectEncoders.get(o.getClass().getSuperclass()) != null) {
+      objectEncoders.put(o.getClass(), objectEncoders.get(o.getClass().getSuperclass()));
+      return add(o);
     }
     @SuppressWarnings("unchecked") // safe because get the encoder by checking the object's type.
     ValueEncoder<Object> valueEncoder = (ValueEncoder<Object>) valueEncoders.get(o.getClass());
     if (valueEncoder != null) {
       valueEncoder.encode(o, this);
       return this;
+      // Check for AutoValue concrete class. The encoder for the abstract class will work for it.
+    } else if (o.getClass().getSimpleName().startsWith("AutoValue_")
+        && valueEncoders.get(o.getClass().getSuperclass()) != null) {
+      valueEncoders.put(o.getClass(), valueEncoders.get(o.getClass().getSuperclass()));
+      return add(o);
     }
-
     throw new EncodingException(
         "Couldn't find encoder for type " + o.getClass().getCanonicalName());
   }
