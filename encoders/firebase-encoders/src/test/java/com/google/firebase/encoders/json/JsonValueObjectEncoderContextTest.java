@@ -60,10 +60,11 @@ public class JsonValueObjectEncoderContextTest {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("String", "string")
-              .add("Integer", 2)
-              .add("Double", 2.2d)
-              .add("Boolean", false)
-              .add("Null", null);
+              .add("int", 2)
+              .add("long", 42L)
+              .add("double", 2.2d)
+              .add("boolean", false)
+              .add("null", null);
         };
 
     String result =
@@ -74,7 +75,7 @@ public class JsonValueObjectEncoderContextTest {
 
     assertThat(result)
         .isEqualTo(
-            "{\"String\":\"string\",\"Integer\":2,\"Double\":2.2,\"Boolean\":false,\"Null\":null}");
+            "{\"String\":\"string\",\"int\":2,\"long\":42,\"double\":2.2,\"boolean\":false,\"null\":null}");
   }
 
   @Test
@@ -98,10 +99,11 @@ public class JsonValueObjectEncoderContextTest {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("String", new String[] {"string1", "string2"})
-              .add("Integer", new int[] {1, 2})
-              .add("Double", new double[] {1.1d, 2.2d})
-              .add("Boolean", new boolean[] {true, false})
-              .add("Null", new String[] {null, null});
+              .add("int", new int[] {1, 2})
+              .add("long", new long[] {3L, 4L})
+              .add("double", new double[] {1.1d, 2.2d})
+              .add("boolean", new boolean[] {true, false})
+              .add("null", new String[] {null, null});
         };
 
     String result =
@@ -113,8 +115,64 @@ public class JsonValueObjectEncoderContextTest {
     assertThat(result)
         .isEqualTo(
             String.format(
-                "{\"String\":%s,\"Integer\":%s,\"Double\":%s,\"Boolean\":%s,\"Null\":%s}",
-                "[\"string1\",\"string2\"]", "[1,2]", "[1.1,2.2]", "[true,false]", "[null,null]"));
+                "{\"String\":%s,\"int\":%s,\"long\":%s,\"double\":%s,\"boolean\":%s,\"null\":%s}",
+                "[\"string1\",\"string2\"]",
+                "[1,2]",
+                "[3,4]",
+                "[1.1,2.2]",
+                "[true,false]",
+                "[null,null]"));
+  }
+
+  @Test
+  public void testEncodingNumbers() throws EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> ctx.add("Number", new Number[] {1, 2473946328429347632L, 0.0d});
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result).isEqualTo(String.format("{\"Number\":%s}", "[1,2473946328429347632,0.0]"));
+  }
+
+  @Test
+  public void testEncodingLongs() throws EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> ctx.add("long", new long[] {1L, 2473946328429347632L});
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result).isEqualTo(String.format("{\"long\":%s}", "[1,2473946328429347632]"));
+  }
+
+  enum MyEnum {
+    VALUE_1,
+    VALUE_2
+  }
+
+  @Test
+  public void testEncodingEnum_withNoCustomEncoder() throws EncodingException {
+    String result =
+        new JsonDataEncoderBuilder().build().encode(new MyEnum[] {MyEnum.VALUE_1, MyEnum.VALUE_2});
+    assertThat(result).isEqualTo("[\"VALUE_1\",\"VALUE_2\"]");
+  }
+
+  @Test
+  public void testEncodingEnum_withCustomEncoder() throws EncodingException {
+    ValueEncoder<MyEnum> encoder = (o, ctx) -> ctx.add(o.name().toLowerCase());
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(MyEnum.class, encoder)
+            .build()
+            .encode(new MyEnum[] {MyEnum.VALUE_1, MyEnum.VALUE_2});
+    assertThat(result).isEqualTo("[\"value_1\",\"value_2\"]");
   }
 
   @Test
