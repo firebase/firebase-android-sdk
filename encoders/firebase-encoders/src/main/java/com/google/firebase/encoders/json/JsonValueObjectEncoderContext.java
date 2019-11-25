@@ -73,6 +73,14 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
+  public JsonValueObjectEncoderContext add(@NonNull String name, long value)
+      throws IOException, EncodingException {
+    jsonWriter.name(name);
+    return add(value);
+  }
+
+  @NonNull
+  @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, boolean value)
       throws IOException, EncodingException {
     jsonWriter.name(name);
@@ -103,6 +111,13 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
+  public JsonValueObjectEncoderContext add(long value) throws IOException, EncodingException {
+    jsonWriter.value(value);
+    return this;
+  }
+
+  @NonNull
+  @Override
   public JsonValueObjectEncoderContext add(boolean value) throws IOException, EncodingException {
     jsonWriter.value(value);
     return this;
@@ -126,34 +141,42 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       jsonWriter.nullValue();
       return this;
     }
-    // TODO: Add missing primitive types.
+    if (o instanceof Number) {
+      jsonWriter.value((Number) o);
+      return this;
+    }
+
     if (o.getClass().isArray()) {
       // Byte[] are a special case of arrays, because they are not mapped to an array, but to a
       // string.
-      if (o.getClass().getComponentType() == byte.class) {
-        byte[] bytes = (byte[]) o;
-        return add(bytes);
+      if (o instanceof byte[]) {
+        return add((byte[]) o);
       }
 
       jsonWriter.beginArray();
-      if (o.getClass().getComponentType() == int.class) {
-        int[] array = (int[]) o;
-        for (int item : array) {
+      if (o instanceof int[]) {
+        for (int item : (int[]) o) {
           jsonWriter.value(item);
         }
-      } else if (o.getClass().getComponentType() == double.class) {
-        double[] array = (double[]) o;
-        for (double item : array) {
+      } else if (o instanceof long[]) {
+        for (long item : (long[]) o) {
+          add(item);
+        }
+      } else if (o instanceof double[]) {
+        for (double item : (double[]) o) {
           jsonWriter.value(item);
         }
-      } else if (o.getClass().getComponentType() == boolean.class) {
-        boolean[] array = (boolean[]) o;
-        for (boolean item : array) {
+      } else if (o instanceof boolean[]) {
+        for (boolean item : (boolean[]) o) {
           jsonWriter.value(item);
         }
+      } else if (o instanceof Number[]) {
+        for (Number item : (Number[]) o) {
+          add(item);
+        }
+
       } else {
-        Object[] array = (Object[]) o;
-        for (Object item : array) {
+        for (Object item : (Object[]) o) {
           add(item);
         }
       }
@@ -181,6 +204,12 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     ValueEncoder<Object> valueEncoder = (ValueEncoder<Object>) valueEncoders.get(o.getClass());
     if (valueEncoder != null) {
       valueEncoder.encode(o, this);
+      return this;
+    }
+
+    // Process enum last if it does not have a custom encoder registered.
+    if (o instanceof Enum) {
+      add(((Enum) o).name());
       return this;
     }
 
