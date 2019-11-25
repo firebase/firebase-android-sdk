@@ -36,7 +36,7 @@ public class LogRequestTest {
   public void testBuildNetworkConnectionInfo_networkTypeOnly() {
     assertThat(
             NetworkConnectionInfo.builder()
-                .setNetworkTypeValue(NetworkConnectionInfo.NetworkType.MOBILE)
+                .setNetworkType(NetworkConnectionInfo.NetworkType.MOBILE)
                 .build())
         .isInstanceOf(NetworkConnectionInfo.class);
   }
@@ -45,7 +45,7 @@ public class LogRequestTest {
   public void testBuildNetworkConnectionInfo_mobileSubtypeOnly() {
     assertThat(
             NetworkConnectionInfo.builder()
-                .setMobileSubtypeValue(NetworkConnectionInfo.MobileSubtype.COMBINED)
+                .setMobileSubtype(NetworkConnectionInfo.MobileSubtype.COMBINED)
                 .build())
         .isInstanceOf(NetworkConnectionInfo.class);
   }

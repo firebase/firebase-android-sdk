@@ -20,7 +20,7 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class NetworkConnectionInfo {
 
-  enum NetworkType {
+  public enum NetworkType {
     MOBILE(0),
     WIFI(1),
     MOBILE_MMS(2),
@@ -49,7 +49,7 @@ public abstract class NetworkConnectionInfo {
     }
   }
 
-  enum MobileSubtype {
+  public enum MobileSubtype {
     UNKNOWN_MOBILE_SUBTYPE(0),
     GPRS(1),
     EDGE(2),
@@ -84,10 +84,10 @@ public abstract class NetworkConnectionInfo {
   }
 
   @Nullable
-  public abstract NetworkType getNetworkTypeValue();
+  public abstract NetworkType getNetworkType();
 
   @Nullable
-  public abstract MobileSubtype getMobileSubtypeValue();
+  public abstract MobileSubtype getMobileSubtype();
 
   static Builder builder() {
     return new AutoValue_NetworkConnectionInfo.Builder();
@@ -96,9 +96,9 @@ public abstract class NetworkConnectionInfo {
   @AutoValue.Builder
   abstract static class Builder {
 
-    abstract Builder setNetworkTypeValue(NetworkType value);
+    abstract Builder setNetworkType(NetworkType value);
 
-    abstract Builder setMobileSubtypeValue(MobileSubtype value);
+    abstract Builder setMobileSubtype(MobileSubtype value);
 
     abstract NetworkConnectionInfo build();
   }

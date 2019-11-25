@@ -19,7 +19,7 @@ import com.google.auto.value.AutoValue;
 
 @AutoValue
 public abstract class ClientInfo {
-  enum ClientType {
+  public enum ClientType {
     UNKNOWN(0),
     ANDROID(4);
 
