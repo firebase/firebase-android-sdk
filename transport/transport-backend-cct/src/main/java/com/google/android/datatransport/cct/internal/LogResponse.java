@@ -24,7 +24,7 @@ import java.io.StringReader;
 @AutoValue
 public abstract class LogResponse {
   /** Client should wait for next_request_wait_millis before sending the next log request. */
-  public abstract long getNextRequestAwaitMillis();
+  public abstract long getNextRequestWaitMillis();
 
   /**
    * Quality of Service tiers enforced by server for overriding client qos_tier setting in event
