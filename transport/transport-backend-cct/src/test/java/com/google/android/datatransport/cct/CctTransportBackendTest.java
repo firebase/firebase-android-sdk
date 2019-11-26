@@ -17,29 +17,24 @@ package com.google.android.datatransport.cct;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.google.android.datatransport.cct.CctTransportBackend.getTzOffset;
-import static com.google.android.datatransport.cct.ProtoMatchers.protoMatcher;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.backend.cct.BuildConfig;
-import com.google.android.datatransport.cct.ProtoMatchers.PredicateMatcher;
-import com.google.android.datatransport.cct.proto.BatchedLogRequest;
-import com.google.android.datatransport.cct.proto.LogEvent;
-import com.google.android.datatransport.cct.proto.LogRequest;
-import com.google.android.datatransport.cct.proto.LogResponse;
-import com.google.android.datatransport.cct.proto.NetworkConnectionInfo;
+import com.google.android.datatransport.cct.internal.NetworkConnectionInfo;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
@@ -68,24 +63,13 @@ public class CctTransportBackendTest {
   private static final long INITIAL_UPTIME = 10L;
   private static final ByteString PAYLOAD =
       ByteString.copyFrom("TelemetryData".getBytes(Charset.defaultCharset()));
+  private static final String PAYLOAD_BYTE64 = "VGVsZW1ldHJ5RGF0YQ==";
   private static final String JSON_PAYLOAD = "{\"hello\": false}";
+  private static final String JSON_PAYLOAD_BYTE64 = "eyJoZWxsbyI6IGZhbHNlfQ==";
   private static final int CODE = 5;
   private static final String TEST_NAME = "hello";
   private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
   private static final Encoding JSON_ENCODING = Encoding.of("json");
-
-  private static final PredicateMatcher<Request, BatchedLogRequest> batchRequestMatcher =
-      protoMatcher(BatchedLogRequest.class);
-  private static final PredicateMatcher<Request, LogRequest> firstLogRequestMatcher =
-      batchRequestMatcher.zoom(b -> b.getLogRequest(0));
-  private static final PredicateMatcher<Request, LogRequest> secondLogRequestMatcher =
-      batchRequestMatcher.zoom(b -> b.getLogRequest(1));
-
-  private static final PredicateMatcher<Request, LogEvent> firstLogEventMatcher =
-      firstLogRequestMatcher.zoom(b -> b.getLogEvent(0));
-
-  private static final PredicateMatcher<Request, LogEvent> secondLogEventMatcher =
-      firstLogRequestMatcher.zoom(b -> b.getLogEvent(1));
 
   private static final String TEST_ENDPOINT = "http://localhost:8999/api";
   private static final String API_KEY = "api_key";
@@ -135,12 +119,8 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
-                    .withBody(
-                        LogResponse.newBuilder()
-                            .setNextRequestWaitMillis(3)
-                            .build()
-                            .toByteArray())));
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
     BackendRequest backendRequest = getCCTBackendRequest();
     wallClock.tick();
     uptimeClock.tick();
@@ -157,32 +137,55 @@ public class CctTransportBackendTest {
             .withHeader(
                 "User-Agent",
                 equalTo(String.format("datatransport/%s android/", BuildConfig.VERSION_NAME)))
-            .withHeader("Content-Type", equalTo("application/x-protobuf"))
-            .andMatching(batchRequestMatcher.test(batch -> batch.getLogRequestCount() == 1))
-            .andMatching(
-                firstLogRequestMatcher
-                    .test(r -> r.getRequestTimeMs() == wallClock.getTime())
-                    .test(r -> r.getRequestUptimeMs() == uptimeClock.getTime())
-                    .test(r -> r.getLogEventCount() == 1))
-            .andMatching(
-                firstLogEventMatcher
-                    .test(e -> e.getEventTimeMs() == INITIAL_WALL_TIME)
-                    .test(e -> e.getEventUptimeMs() == INITIAL_UPTIME)
-                    .test(e -> e.getSourceExtension().equals(PAYLOAD))
-                    .test(e -> e.getTimezoneOffsetSeconds() == getTzOffset())
-                    .test(
-                        e ->
-                            e.getNetworkConnectionInfo()
-                                .equals(
-                                    NetworkConnectionInfo.newBuilder()
-                                        .setNetworkTypeValue(activeNetworkInfo.getType())
-                                        .setMobileSubtypeValue(activeNetworkInfo.getSubtype())
-                                        .build())))
-            .andMatching(firstLogEventMatcher.test(e -> e.getEventCode() == 0))
-            .andMatching(
-                secondLogEventMatcher
-                    .test(e -> e.getEventCode() == 5)
-                    .test(e -> e.getSourceExtensionJsonProto3().equals(JSON_PAYLOAD))));
+            .withHeader("Content-Type", equalTo("application/json"))
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest.size() == 1)]"))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].requestTimeMs == %s)]", wallClock.getTime())))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].requestUptimeMs == %s)]", uptimeClock.getTime())))
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent.size() == 2)]"))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].eventTimeMs == \"%s\")]",
+                        INITIAL_WALL_TIME)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].eventUptimeMs == \"%s\")]",
+                        INITIAL_UPTIME)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].sourceExtension == \"%s\")]",
+                        PAYLOAD_BYTE64)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].timezoneOffsetSeconds == \"%s\")]",
+                        getTzOffset())))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].networkConnectionInfo.networkType == \"%s\")]",
+                        NetworkConnectionInfo.NetworkType.forNumber(activeNetworkInfo.getType()))))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].networkConnectionInfo.mobileSubtype == \"%s\")]",
+                        NetworkConnectionInfo.MobileSubtype.forNumber(
+                            activeNetworkInfo.getSubtype()))))
+            .withRequestBody(notMatching("$[?(@.logRequest[0].logEvent[0].eventCode)]"))
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent[1].eventCode == 5)]"))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[1].sourceExtensionJsonProto3 == \"%s\")]",
+                        JSON_PAYLOAD_BYTE64))));
 
     assertEquals(BackendResponse.ok(3), response);
   }
@@ -194,12 +197,8 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
-                    .withBody(
-                        LogResponse.newBuilder()
-                            .setNextRequestWaitMillis(3)
-                            .build()
-                            .toByteArray())));
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
     wallClock.tick();
     uptimeClock.tick();
 
@@ -219,12 +218,8 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
-                    .withBody(
-                        LogResponse.newBuilder()
-                            .setNextRequestWaitMillis(3)
-                            .build()
-                            .toByteArray())));
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
     wallClock.tick();
     uptimeClock.tick();
 
@@ -245,12 +240,8 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
-                    .withBody(
-                        LogResponse.newBuilder()
-                            .setNextRequestWaitMillis(3)
-                            .build()
-                            .toByteArray())));
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
     wallClock.tick();
     uptimeClock.tick();
 
@@ -295,12 +286,8 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
-                    .withBody(
-                        LogResponse.newBuilder()
-                            .setNextRequestWaitMillis(3)
-                            .build()
-                            .toByteArray())));
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
     wallClock.tick();
     uptimeClock.tick();
 
@@ -314,7 +301,7 @@ public class CctTransportBackendTest {
     BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+            .withHeader("Content-Type", equalTo("application/json")));
     assertEquals(BackendResponse.transientError(), response);
   }
 
@@ -324,7 +311,7 @@ public class CctTransportBackendTest {
     BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+            .withHeader("Content-Type", equalTo("application/json")));
     assertEquals(BackendResponse.transientError(), response);
   }
 
@@ -335,12 +322,12 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
                     .withBody("{\"status\":\"Error\",\"message\":\"Endpoint not found\"}")));
     BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+            .withHeader("Content-Type", equalTo("application/json")));
     assertEquals(BackendResponse.transientError(), response);
   }
 
@@ -350,7 +337,7 @@ public class CctTransportBackendTest {
     BackendResponse response = BACKEND.send(getCCTBackendRequest());
     verify(
         postRequestedFor(urlEqualTo("/api"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+            .withHeader("Content-Type", equalTo("application/json")));
     assertEquals(BackendResponse.fatalError(), response);
   }
 
@@ -379,9 +366,9 @@ public class CctTransportBackendTest {
                 .build());
 
     assertThat(result.get(CctTransportBackend.KEY_NETWORK_TYPE))
-        .isEqualTo(String.valueOf(NetworkConnectionInfo.NetworkType.MOBILE_VALUE));
+        .isEqualTo(String.valueOf(NetworkConnectionInfo.NetworkType.MOBILE.getValue()));
     assertThat(result.get(CctTransportBackend.KEY_MOBILE_SUBTYPE))
-        .isEqualTo(String.valueOf(NetworkConnectionInfo.MobileSubtype.EDGE_VALUE));
+        .isEqualTo(String.valueOf(NetworkConnectionInfo.MobileSubtype.EDGE.getValue()));
   }
 
   @Test
@@ -400,10 +387,10 @@ public class CctTransportBackendTest {
                 .build());
 
     assertThat(result.get(CctTransportBackend.KEY_NETWORK_TYPE))
-        .isEqualTo(String.valueOf(NetworkConnectionInfo.NetworkType.NONE_VALUE));
+        .isEqualTo(String.valueOf(NetworkConnectionInfo.NetworkType.NONE.getValue()));
     assertThat(result.get(CctTransportBackend.KEY_MOBILE_SUBTYPE))
         .isEqualTo(
-            String.valueOf(NetworkConnectionInfo.MobileSubtype.UNKNOWN_MOBILE_SUBTYPE_VALUE));
+            String.valueOf(NetworkConnectionInfo.MobileSubtype.UNKNOWN_MOBILE_SUBTYPE.getValue()));
   }
 
   @Test
@@ -417,12 +404,8 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
-                    .withBody(
-                        LogResponse.newBuilder()
-                            .setNextRequestWaitMillis(3)
-                            .build()
-                            .toByteArray())));
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
     BackendRequest backendRequest = getCCTBackendRequest();
     wallClock.tick();
     uptimeClock.tick();
@@ -431,11 +414,11 @@ public class CctTransportBackendTest {
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+            .withHeader("Content-Type", equalTo("application/json")));
 
     verify(
         postRequestedFor(urlEqualTo("/api/hello"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+            .withHeader("Content-Type", equalTo("application/json")));
 
     assertEquals(BackendResponse.ok(3), response);
   }
@@ -451,12 +434,8 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
-                    .withBody(
-                        LogResponse.newBuilder()
-                            .setNextRequestWaitMillis(3)
-                            .build()
-                            .toByteArray())));
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
     BackendRequest backendRequest = getCCTBackendRequest();
     wallClock.tick();
     uptimeClock.tick();
@@ -465,11 +444,11 @@ public class CctTransportBackendTest {
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+            .withHeader("Content-Type", equalTo("application/json")));
 
     verify(
         postRequestedFor(urlEqualTo("/api/hello"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+            .withHeader("Content-Type", equalTo("application/json")));
 
     assertEquals(BackendResponse.ok(3), response);
   }
@@ -493,12 +472,12 @@ public class CctTransportBackendTest {
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+            .withHeader("Content-Type", equalTo("application/json")));
 
     verify(
         4,
         postRequestedFor(urlEqualTo("/api/hello"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf")));
+            .withHeader("Content-Type", equalTo("application/json")));
 
     assertEquals(BackendResponse.fatalError(), response);
   }
@@ -507,8 +486,7 @@ public class CctTransportBackendTest {
   public void send_CompressedResponseIsUncompressed() throws IOException {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output);
-    gzipOutputStream.write(
-        LogResponse.newBuilder().setNextRequestWaitMillis(3).build().toByteArray());
+    gzipOutputStream.write("{\"nextRequestWaitMillis\":3}".getBytes(Charset.forName("UTF-8")));
     gzipOutputStream.close();
 
     stubFor(
@@ -516,7 +494,7 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
                     .withHeader("Content-Encoding", "gzip")
                     .withBody(output.toByteArray())));
 
@@ -528,7 +506,7 @@ public class CctTransportBackendTest {
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf"))
+            .withHeader("Content-Type", equalTo("application/json"))
             .withHeader("Content-Encoding", equalTo("gzip")));
 
     assertEquals(BackendResponse.ok(3), response);
@@ -538,8 +516,7 @@ public class CctTransportBackendTest {
   public void send_whenLogSourceIsSetByName_shouldSetItToProperField() throws IOException {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output);
-    gzipOutputStream.write(
-        LogResponse.newBuilder().setNextRequestWaitMillis(3).build().toByteArray());
+    gzipOutputStream.write("{\"nextRequestWaitMillis\":3}".getBytes(Charset.forName("UTF-8")));
     gzipOutputStream.close();
 
     stubFor(
@@ -547,7 +524,7 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;hello=world")
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
                     .withHeader("Content-Encoding", "gzip")
                     .withBody(output.toByteArray())));
 
@@ -581,12 +558,13 @@ public class CctTransportBackendTest {
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf"))
+            .withHeader("Content-Type", equalTo("application/json"))
             .withHeader("Content-Encoding", equalTo("gzip"))
-            .andMatching(batchRequestMatcher.test(batch -> batch.getLogRequestCount() == 2))
-            .andMatching(firstLogRequestMatcher.test(r -> r.getLogSource() == 3))
-            .andMatching(
-                secondLogRequestMatcher.test(r -> TEST_NAME.equals(r.getLogSourceName()))));
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest.size() == 2)]"))
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logSource == 3)]"))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format("$[?(@.logRequest[1].logSourceName == \"%s\")]", TEST_NAME))));
 
     assertEquals(BackendResponse.ok(3), response);
   }
@@ -598,12 +576,8 @@ public class CctTransportBackendTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/x-protobuf;charset=UTF8;")
-                    .withBody(
-                        LogResponse.newBuilder()
-                            .setNextRequestWaitMillis(3)
-                            .build()
-                            .toByteArray())));
+                    .withHeader("Content-Type", "application/json;charset=UTF8;")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
 
     BackendRequest backendRequest =
         BackendRequest.builder()
@@ -636,13 +610,15 @@ public class CctTransportBackendTest {
 
     verify(
         postRequestedFor(urlEqualTo("/api"))
-            .withHeader("Content-Type", equalTo("application/x-protobuf"))
+            .withHeader("Content-Type", equalTo("application/json"))
             .withHeader("Content-Encoding", equalTo("gzip"))
-            .andMatching(batchRequestMatcher.test(batch -> batch.getLogRequestCount() == 2))
-            .andMatching(firstLogRequestMatcher.test(r -> r.getLogSource() == 3))
-            .andMatching(firstLogRequestMatcher.test(r -> r.getLogEventCount() == 0))
-            .andMatching(secondLogRequestMatcher.test(r -> TEST_NAME.equals(r.getLogSourceName())))
-            .andMatching(secondLogRequestMatcher.test(r -> r.getLogEventCount() == 1)));
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest.size() == 2)]"))
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logSource == 3)]"))
+            .withRequestBody(notMatching("$[?(@.logRequest[0].logEvent)]"))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format("$[?(@.logRequest[1].logSourceName == \"%s\")]", TEST_NAME)))
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest[1].logEvent.size() == 1)]")));
 
     assertEquals(BackendResponse.ok(3), response);
   }
