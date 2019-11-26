@@ -36,7 +36,7 @@ public final class LogEventEncoder implements ObjectEncoder<AutoValue_LogEvent> 
     }
     if (obj.getSourceExtensionJsonProto3Bytes() != null) {
       objectEncoderContext.add(
-          "sourceExtensionJsonProto3Bytes", obj.getSourceExtensionJsonProto3Bytes());
+          "sourceExtensionJsonProto3", obj.getSourceExtensionJsonProto3Bytes());
     }
     if (obj.getEventCode() != Integer.MIN_VALUE) {
       objectEncoderContext.add("eventCode", obj.getEventCode());

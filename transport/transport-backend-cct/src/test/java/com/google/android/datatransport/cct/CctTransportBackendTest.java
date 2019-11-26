@@ -24,13 +24,16 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.google.android.datatransport.cct.CctTransportBackend.getTzOffset;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 
+import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.internal.NetworkConnectionInfo;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
@@ -60,7 +63,9 @@ public class CctTransportBackendTest {
   private static final long INITIAL_UPTIME = 10L;
   private static final ByteString PAYLOAD =
       ByteString.copyFrom("TelemetryData".getBytes(Charset.defaultCharset()));
+  private static final String PAYLOAD_BYTE64 = "VGVsZW1ldHJ5RGF0YQ==";
   private static final String JSON_PAYLOAD = "{\"hello\": false}";
+  private static final String JSON_PAYLOAD_BYTE64 = "eyJoZWxsbyI6IGZhbHNlfQ==";
   private static final int CODE = 5;
   private static final String TEST_NAME = "hello";
   private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
@@ -107,64 +112,88 @@ public class CctTransportBackendTest {
         .build();
   }
 
-  //  @Test
-  //  public void testCCTSuccessLoggingRequest() {
-  //    stubFor(
-  //        post(urlEqualTo("/api"))
-  //            .willReturn(
-  //                aResponse()
-  //                    .withStatus(200)
-  //                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
-  //                    .withBody("{\"nextRequestWaitMillis\":3}")));
-  //    BackendRequest backendRequest = getCCTBackendRequest();
-  //    wallClock.tick();
-  //    uptimeClock.tick();
-  //
-  //    BackendResponse response = BACKEND.send(backendRequest);
-  //
-  //    ConnectivityManager connectivityManager =
-  //        (ConnectivityManager)
-  //            RuntimeEnvironment.application.getSystemService(Context.CONNECTIVITY_SERVICE);
-  //    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-  //
-  //    verify(
-  //        postRequestedFor(urlEqualTo("/api"))
-  //            .withHeader(
-  //                "User-Agent",
-  //                equalTo(String.format("datatransport/%s android/", BuildConfig.VERSION_NAME)))
-  //            .withHeader("Content-Type", equalTo("application/json"))
-  //            .andMatching(batchRequestMatcher.test(batch -> batch.getLogRequestCount() == 1))
-  //            .andMatching(
-  //                firstLogRequestMatcher
-  //                    .test(r -> r.getRequestTimeMs() == wallClock.getTime())
-  //                    .test(r -> r.getRequestUptimeMs() == uptimeClock.getTime())
-  //                    .test(r -> r.getLogEventCount() == 1))
-  //            .andMatching(
-  //                firstLogEventMatcher
-  //                    .test(e -> e.getEventTimeMs() == INITIAL_WALL_TIME)
-  //                    .test(e -> e.getEventUptimeMs() == INITIAL_UPTIME)
-  //                    .test(e -> e.getSourceExtension().equals(PAYLOAD))
-  //                    .test(e -> e.getTimezoneOffsetSeconds() == getTzOffset())
-  //                    .test(
-  //                        e ->
-  //                            e.getNetworkConnectionInfo()
-  //                                .equals(
-  //                                    NetworkConnectionInfo.builder()
-  //                                        .setNetworkType(
-  //                                            NetworkConnectionInfo.NetworkType.forNumber(
-  //                                                activeNetworkInfo.getType()))
-  //                                        .setMobileSubtype(
-  //                                            NetworkConnectionInfo.MobileSubtype.forNumber(
-  //                                                activeNetworkInfo.getSubtype()))
-  //                                        .build())))
-  //            .andMatching(firstLogEventMatcher.test(e -> e.getEventCode() == 0))
-  //            .andMatching(
-  //                secondLogEventMatcher
-  //                    .test(e -> e.getEventCode() == 5)
-  //                    .test(e -> e.getSourceExtensionJsonProto3().equals(JSON_PAYLOAD))));
-  //
-  //    assertEquals(BackendResponse.ok(3), response);
-  //  }
+  @Test
+  public void testCCTSuccessLoggingRequest() {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
+    BackendRequest backendRequest = getCCTBackendRequest();
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    ConnectivityManager connectivityManager =
+        (ConnectivityManager)
+            RuntimeEnvironment.application.getSystemService(Context.CONNECTIVITY_SERVICE);
+    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader(
+                "User-Agent",
+                equalTo(String.format("datatransport/%s android/", BuildConfig.VERSION_NAME)))
+            .withHeader("Content-Type", equalTo("application/json"))
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest.size() == 1)]"))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].requestTimeMs == %s)]", wallClock.getTime())))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].requestUptimeMs == %s)]", uptimeClock.getTime())))
+            //    .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent.size() == 2)]"))
+            //                      .test(r -> r.getLogEventCount() == 1))
+
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].eventTimeMs == \"%s\")]",
+                        INITIAL_WALL_TIME)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].eventUptimeMs == \"%s\")]",
+                        INITIAL_UPTIME)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].sourceExtension == \"%s\")]",
+                        PAYLOAD_BYTE64)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].timezoneOffsetSeconds == \"%s\")]",
+                        getTzOffset())))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].networkConnectionInfo.networkType == \"%s\")]",
+                        NetworkConnectionInfo.NetworkType.forNumber(activeNetworkInfo.getType()))))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[0].networkConnectionInfo.mobileSubtype == \"%s\")]",
+                        NetworkConnectionInfo.MobileSubtype.forNumber(
+                            activeNetworkInfo.getSubtype()))))
+            // .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent[0].eventCode ==
+            // 0)]"))
+
+            //              .andMatching(firstLogEventMatcher.test(e -> e.getEventCode() == 0))
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent[1].eventCode == 5)]"))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[1].sourceExtensionJsonProto3 == \"%s\")]",
+                        JSON_PAYLOAD_BYTE64))));
+
+    assertEquals(BackendResponse.ok(3), response);
+  }
 
   @Test
   public void testLegacyFlgSuccessLoggingRequest_containsAPIKey() {
