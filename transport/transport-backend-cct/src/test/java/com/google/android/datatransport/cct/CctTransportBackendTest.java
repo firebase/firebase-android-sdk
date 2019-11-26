@@ -179,7 +179,7 @@ public class CctTransportBackendTest {
                         "$[?(@.logRequest[0].logEvent[0].networkConnectionInfo.mobileSubtype == \"%s\")]",
                         NetworkConnectionInfo.MobileSubtype.forNumber(
                             activeNetworkInfo.getSubtype()))))
-            .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent[0].eventCode == 0)]"))
+            .withRequestBody(notMatching("$[?(@.logRequest[0].logEvent[0].eventCode)]"))
             .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent[1].eventCode == 5)]"))
             .withRequestBody(
                 matchingJsonPath(
