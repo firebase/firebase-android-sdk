@@ -197,9 +197,9 @@ final class CctTransportBackend implements TransportBackend {
 
       // set log source to either its numeric value or its name.
       try {
-        requestBuilder.setLogSource(Integer.valueOf(entry.getKey()));
+        requestBuilder.setSource(Integer.valueOf(entry.getKey()));
       } catch (NumberFormatException ex) {
-        requestBuilder.setLogSourceName(entry.getKey());
+        requestBuilder.setSource(entry.getKey());
       }
 
       List<LogEvent> logEvents = new ArrayList<>();

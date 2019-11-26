@@ -62,10 +62,20 @@ public abstract class LogRequest {
     public abstract Builder setClientInfo(@Nullable ClientInfo value);
 
     @NonNull
-    public abstract Builder setLogSource(int value);
+    abstract Builder setLogSource(int value);
 
     @NonNull
-    public abstract Builder setLogSourceName(@Nullable String value);
+    abstract Builder setLogSourceName(@Nullable String value);
+
+    @NonNull
+    public Builder setSource(int value) {
+      return setLogSource(value);
+    }
+
+    @NonNull
+    public Builder setSource(@NonNull String value) {
+      return setLogSourceName(value);
+    }
 
     @NonNull
     public abstract Builder setLogEvents(@Nullable List<LogEvent> value);

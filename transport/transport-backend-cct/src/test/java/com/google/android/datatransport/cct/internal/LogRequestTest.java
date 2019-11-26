@@ -174,7 +174,7 @@ public class LogRequestTest {
                         .setAndroidClientInfo(
                             AndroidClientInfo.builder().setDevice("device").build())
                         .build())
-                .setLogSourceName("logSource")
+                .setSource("logSource")
                 .setLogEvents(events)
                 .build())
         .isInstanceOf(LogRequest.class);
