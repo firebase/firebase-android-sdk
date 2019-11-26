@@ -72,6 +72,7 @@ public abstract class LogRequest {
       return setLogSource(value);
     }
 
+    // TODO: enforce this at builder level.
     @NonNull
     public Builder setSource(@NonNull String value) {
       return setLogSourceName(value);
