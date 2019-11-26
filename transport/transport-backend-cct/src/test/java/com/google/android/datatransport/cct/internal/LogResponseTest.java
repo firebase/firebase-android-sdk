@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.io.IOException;
 import java.io.StringReader;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -26,13 +27,8 @@ import org.robolectric.RobolectricTestRunner;
 public class LogResponseTest {
 
   @Test
-  public void testLogRequestParsing_null() throws IOException {
-    assertThat(LogResponse.fromJson(null)).isNull();
-  }
-
-  @Test
   public void testLogRequestParsing_emptyJson() throws IOException {
-    assertThat(LogResponse.fromJson(new StringReader(""))).isNull();
+    Assert.assertThrows(IOException.class, () -> LogResponse.fromJson(new StringReader("")));
   }
 
   @Test
@@ -50,14 +46,28 @@ public class LogResponseTest {
   }
 
   @Test
-  public void testLogRequestParsing_invalidJsonIncomplete() throws IOException {
-    String jsonInput = "{\"nextRequestWaitMillis\":";
-    assertThat(LogResponse.fromJson(new StringReader(jsonInput))).isNull();
+  public void testLogRequestParsing_invalidJsonObjectIncomplete() throws IOException {
+    Assert.assertThrows(
+        IOException.class,
+        () -> LogResponse.fromJson(new StringReader("{\"nextRequestWaitMillis\":")));
+  }
+
+  @Test
+  public void testLogRequestParsing_invalidJsonObjectNotClosed() throws IOException {
+    Assert.assertThrows(IOException.class, () -> LogResponse.fromJson(new StringReader("{")));
+  }
+
+  @Test
+  public void testLogRequestParsing_invalidJsonObjectNotOpen() throws IOException {
+    Assert.assertThrows(
+        IOException.class,
+        () -> LogResponse.fromJson(new StringReader("\"nextRequestWaitMillis\":3}")));
   }
 
   @Test
   public void testLogRequestParsing_invalidJsonInvalid() throws IOException {
-    String jsonInput = "{\"nextRequestWaitMillis\":}";
-    assertThat(LogResponse.fromJson(new StringReader(jsonInput))).isNull();
+    Assert.assertThrows(
+        IOException.class,
+        () -> LogResponse.fromJson(new StringReader("{\"nextRequestWaitMillis\":}")));
   }
 }

@@ -29,7 +29,8 @@ public final class CCTDestination implements EncodedDestination {
   static final String DESTINATION_NAME = "cct";
 
   static final String DEFAULT_END_POINT =
-      StringMerger.mergeStrings("hts/frbslgiggolai.o/0clgbth", "tp:/ieaeogn.ogepscmvc/o/ac");
+      StringMerger.mergeStrings(
+          "hts/frbslgiggolai.o/0clgbthfra=snpoo", "tp:/ieaeogn.ogepscmvc/o/ac?omtjo_rt3");
   static final String LEGACY_END_POINT =
       StringMerger.mergeStrings(
           "hts/frbslgigp.ogepscmv/ieo/eaybtho", "tp:/ieaeogn-agolai.o/1frlglgc/aclg");
