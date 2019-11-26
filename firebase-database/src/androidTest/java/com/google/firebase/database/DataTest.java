@@ -2923,11 +2923,11 @@ public class DataTest {
 
       // Checking types first makes failures much more obvious
       List<Class> expectedTypes = new ArrayList<>();
-      for (Object o: expectedValues) {
+      for (Object o : expectedValues) {
         expectedTypes.add(o.getClass());
       }
       List<Class> foundTypes = new ArrayList<>();
-      for (Object o: foundValues) {
+      for (Object o : foundValues) {
         foundTypes.add(o.getClass());
       }
       assertEquals(expectedTypes, foundTypes);
