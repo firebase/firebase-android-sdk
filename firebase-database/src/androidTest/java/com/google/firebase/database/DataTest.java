@@ -15,7 +15,6 @@
 package com.google.firebase.database;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -2923,8 +2922,14 @@ public class DataTest {
       latch.awaitAdvanceInterruptibly(0, IntegrationTestValues.getTimeout(), MILLISECONDS);
 
       // Checking types first makes failures much more obvious
-      List<Class> expectedTypes = expectedValues.stream().map(Object::getClass).collect(toList());
-      List<Class> foundTypes = foundValues.stream().map(Object::getClass).collect(toList());
+      List<Class> expectedTypes = new ArrayList<>();
+      for (Object o: expectedValues) {
+        expectedTypes.add(o.getClass());
+      }
+      List<Class> foundTypes = new ArrayList<>();
+      for (Object o: foundValues) {
+        foundTypes.add(o.getClass());
+      }
       assertEquals(expectedTypes, foundTypes);
       assertEquals(expectedValues, foundValues);
     } finally {
