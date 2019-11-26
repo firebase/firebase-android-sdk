@@ -15,6 +15,7 @@
 package com.google.firebase.encoders.json;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -24,13 +25,13 @@ import com.google.common.collect.Lists;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
+import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.ValueEncoder;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.TimeZone;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -336,7 +337,7 @@ public class JsonValueObjectEncoderContextTest {
   @Test
   public void testMissingEncoder() throws IOException, EncodingException {
     DataEncoder dataEncoder = new JsonDataEncoderBuilder().build();
-    Assert.assertThrows(EncodingException.class, () -> dataEncoder.encode(DummyClass.INSTANCE));
+    assertThrows(EncodingException.class, () -> dataEncoder.encode(DummyClass.INSTANCE));
   }
 
   @Test
@@ -345,12 +346,50 @@ public class JsonValueObjectEncoderContextTest {
     Writer mockWriter = mock(Writer.class);
     doThrow(IOException.class).when(mockWriter).write(any(String.class));
 
-    Assert.assertThrows(
+    assertThrows(
         IOException.class,
         () ->
             new JsonDataEncoderBuilder()
                 .registerEncoder(DummyClass.class, objectEncoder)
                 .build()
                 .encode(DummyClass.INSTANCE, mockWriter));
+  }
+
+  @Test
+  public void testNested_whenUsedCorrectly_shouldProduceNestedJson() throws EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> {
+          ctx.add("name", "value");
+          ctx.nested("nested1").add("key1", "value1");
+          ctx.add("after1", true);
+          ctx.nested("nested2").add("key2", "value2");
+          ctx.add("after2", true);
+        };
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result)
+        .isEqualTo(
+            "{\"name\":\"value\",\"nested1\":{\"key1\":\"value1\"},"
+                + "\"after1\":true,\"nested2\":{\"key2\":\"value2\"},\"after2\":true}");
+  }
+
+  @Test
+  public void testNested_whenUsedAfterParent_shouldThrow() {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> {
+          ObjectEncoderContext nested = ctx.nested("nested1");
+          ctx.add("after1", true);
+          nested.add("hello", "world");
+        };
+
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder().registerEncoder(DummyClass.class, objectEncoder).build();
+
+    assertThrows(IllegalStateException.class, () -> encoder.encode(DummyClass.INSTANCE));
   }
 }

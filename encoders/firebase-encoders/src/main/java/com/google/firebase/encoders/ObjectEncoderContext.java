@@ -68,4 +68,28 @@ public interface ObjectEncoderContext {
   @NonNull
   ObjectEncoderContext add(@NonNull String name, boolean value)
       throws IOException, EncodingException;
+
+  /**
+   * Begin a nested JSON object.
+   *
+   * <p>Unlike {@code add()} methods, this method returns a new "child" context that's used to
+   * populate the nested JSON object. This context can only be used until the parent context is
+   * mutated by calls to {@code add()} or {@code nested()}, violating this will result in a {@link
+   * IllegalStateException}.
+   *
+   * <p>Nesting can be arbitrarily deep.
+   *
+   * <p>Example:
+   *
+   * <pre>{@code
+   * ctx.add("key", "value");
+   * ObjectEncoderContext nested = ctx.nested("nested");
+   * nested.add("key", "value");
+   *
+   * // After this call the above nested context is invalid.
+   * ctx.add("anotherKey", 1);
+   * }</pre>
+   */
+  @NonNull
+  ObjectEncoderContext nested(@NonNull String name) throws IOException;
 }
