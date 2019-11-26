@@ -27,6 +27,8 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class LogRequestTest {
 
+  private static byte[] EMPTY_BYTE_ARRAY = new byte[] {};
+
   @Test
   public void testBuildNetworkConnectionInfo_empty() {
     assertThat(NetworkConnectionInfo.builder().build()).isInstanceOf(NetworkConnectionInfo.class);
@@ -52,54 +54,50 @@ public class LogRequestTest {
 
   @Test
   public void testBuildLogEvent_missingFields() {
-    Assert.assertThrows(IllegalStateException.class, () -> LogEvent.builder().build());
     Assert.assertThrows(
-        IllegalStateException.class, () -> LogEvent.builder().setEventTimeMs(4500).build());
+        IllegalStateException.class, () -> LogEvent.jsonBuilder(EMPTY_BYTE_ARRAY).build());
     Assert.assertThrows(
         IllegalStateException.class,
-        () -> LogEvent.builder().setEventTimeMs(4500).setEventUptimeMs(10000).build());
-  }
-
-  @Test
-  public void testBuildLogEvent_minFields() {
-    assertThat(
-            LogEvent.builder()
+        () -> LogEvent.protoBuilder(EMPTY_BYTE_ARRAY).setEventTimeMs(4500).build());
+    Assert.assertThrows(
+        IllegalStateException.class,
+        () ->
+            LogEvent.jsonBuilder(EMPTY_BYTE_ARRAY)
                 .setEventTimeMs(4500)
                 .setEventUptimeMs(10000)
-                .setTimezoneOffsetSeconds(29L)
-                .build())
-        .isInstanceOf(LogEvent.class);
+                .build());
   }
 
   @Test
   public void testBuildLogEvent_withSourceExtension() {
-    assertThat(
-            LogEvent.builder()
-                .setEventTimeMs(4500)
-                .setEventUptimeMs(10000)
-                .setTimezoneOffsetSeconds(29L)
-                .setSourceExtension("mySourceExtension".getBytes(Charset.forName("UTF-8")))
-                .build())
-        .isInstanceOf(LogEvent.class);
+    byte[] sourceExtension = "mySourceExtension".getBytes(Charset.forName("UTF-8"));
+    LogEvent event =
+        LogEvent.protoBuilder(sourceExtension)
+            .setEventTimeMs(4500)
+            .setEventUptimeMs(10000)
+            .setTimezoneOffsetSeconds(29L)
+            .build();
+    assertThat(event.getSourceExtensionJsonProto3Bytes()).isNull();
+    assertThat(event.getSourceExtension()).isEqualTo(sourceExtension);
   }
 
   @Test
   public void testBuildLogEvent_withJsonSourceExtension() {
-    assertThat(
-            LogEvent.builder()
-                .setEventTimeMs(4500)
-                .setEventUptimeMs(10000)
-                .setTimezoneOffsetSeconds(29L)
-                .setSourceExtensionJsonProto3Bytes(
-                    "myJsonExtension".getBytes(Charset.forName("UTF-8")))
-                .build())
-        .isInstanceOf(LogEvent.class);
+    byte[] sourceExtension = "myJsonExtension".getBytes(Charset.forName("UTF-8"));
+    LogEvent event =
+        LogEvent.jsonBuilder(sourceExtension)
+            .setEventTimeMs(4500)
+            .setEventUptimeMs(10000)
+            .setTimezoneOffsetSeconds(29L)
+            .build();
+    assertThat(event.getSourceExtension()).isNull();
+    assertThat(event.getSourceExtensionJsonProto3Bytes()).isEqualTo(sourceExtension);
   }
 
   @Test
   public void testBuildLogEvent_withNetworkConnectionInfo() {
     assertThat(
-            LogEvent.builder()
+            LogEvent.jsonBuilder(EMPTY_BYTE_ARRAY)
                 .setEventTimeMs(4500)
                 .setEventUptimeMs(10000)
                 .setTimezoneOffsetSeconds(29L)
@@ -161,7 +159,7 @@ public class LogRequestTest {
   public void testBuildLogRequest_complete() {
     List<LogEvent> events = new ArrayList<>();
     events.add(
-        LogEvent.builder()
+        LogEvent.protoBuilder(EMPTY_BYTE_ARRAY)
             .setEventTimeMs(100L)
             .setEventUptimeMs(4000L)
             .setTimezoneOffsetSeconds(0)

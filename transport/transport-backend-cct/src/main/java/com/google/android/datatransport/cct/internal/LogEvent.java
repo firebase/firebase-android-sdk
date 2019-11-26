@@ -41,7 +41,16 @@ public abstract class LogEvent {
   public abstract NetworkConnectionInfo getNetworkConnectionInfo();
 
   @NonNull
-  public static Builder builder() {
+  public static Builder protoBuilder(@NonNull byte[] sourceExtension) {
+    return builder().setSourceExtension(sourceExtension);
+  }
+
+  @NonNull
+  public static Builder jsonBuilder(@NonNull byte[] sourceJsonExtension) {
+    return builder().setSourceExtensionJsonProto3Bytes(sourceJsonExtension);
+  }
+
+  private static Builder builder() {
     return new AutoValue_LogEvent.Builder().setEventCode(Integer.MIN_VALUE);
   }
 
@@ -57,10 +66,10 @@ public abstract class LogEvent {
     public abstract Builder setEventUptimeMs(long value);
 
     @NonNull
-    public abstract Builder setSourceExtension(@Nullable byte[] value);
+    abstract Builder setSourceExtension(@Nullable byte[] value);
 
     @NonNull
-    public abstract Builder setSourceExtensionJsonProto3Bytes(@Nullable byte[] value);
+    abstract Builder setSourceExtensionJsonProto3Bytes(@Nullable byte[] value);
 
     @NonNull
     public abstract Builder setTimezoneOffsetSeconds(long value);

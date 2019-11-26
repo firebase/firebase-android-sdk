@@ -207,11 +207,11 @@ final class CctTransportBackend implements TransportBackend {
         EncodedPayload encodedPayload = eventInternal.getEncodedPayload();
         Encoding encoding = encodedPayload.getEncoding();
 
-        LogEvent.Builder event = LogEvent.builder();
+        LogEvent.Builder event;
         if (encoding.equals(Encoding.of("proto"))) {
-          event.setSourceExtension(encodedPayload.getBytes());
+          event = LogEvent.protoBuilder(encodedPayload.getBytes());
         } else if (encoding.equals(Encoding.of("json"))) {
-          event.setSourceExtensionJsonProto3Bytes(encodedPayload.getBytes());
+          event = LogEvent.jsonBuilder(encodedPayload.getBytes());
         } else {
           Logging.w(LOG_TAG, "Received event of unsupported encoding %s. Skipping...", encoding);
           continue;
