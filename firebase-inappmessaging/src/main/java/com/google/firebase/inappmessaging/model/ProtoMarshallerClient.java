@@ -18,7 +18,9 @@ import android.text.TextUtils;
 import com.google.common.base.Preconditions;
 import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.firebase.inappmessaging.internal.Logging;
+import java.util.Map;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -207,7 +209,8 @@ public class ProtoMarshallerClient {
       @Nonnull MessagesProto.Content in,
       String campaignId,
       String campaignName,
-      boolean isTestMessage) {
+      boolean isTestMessage,
+      @Nullable Map<String, String> data) {
     Preconditions.checkNotNull(in, "FirebaseInAppMessaging content cannot be null.");
     Logging.logd("Decoding message: " + in.toString());
     CampaignMetadata campaignMetadata =
@@ -215,19 +218,20 @@ public class ProtoMarshallerClient {
 
     switch (in.getMessageDetailsCase()) {
       case BANNER:
-        return from(in.getBanner()).build(campaignMetadata);
+        return from(in.getBanner()).build(campaignMetadata, data);
       case IMAGE_ONLY:
-        return from(in.getImageOnly()).build(campaignMetadata);
+        return from(in.getImageOnly()).build(campaignMetadata, data);
       case MODAL:
-        return from(in.getModal()).build(campaignMetadata);
+        return from(in.getModal()).build(campaignMetadata, data);
       case CARD:
-        return from(in.getCard()).build(campaignMetadata);
+        return from(in.getCard()).build(campaignMetadata, data);
 
       default:
         // If the template is unsupported, then we return an unsupported message
         return new InAppMessage(
             new CampaignMetadata(campaignId, campaignName, isTestMessage),
-            MessageType.UNSUPPORTED) {
+            MessageType.UNSUPPORTED,
+            data) {
           @Override
           public Action getAction() {
             return null;

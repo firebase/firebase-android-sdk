@@ -59,7 +59,7 @@ message ThickContent {
 
   // condition to trigger the FIAM
   repeated .firebase.inappmessaging.TriggeringCondition triggering_conditions =
-      5;
+    5;
 
   // old conversion_event = 6 field is deprecated.
   reserved 6;
@@ -67,6 +67,10 @@ message ThickContent {
   // if true, it's a campaign that's to be tested on client side. otherwise, it
   // it's a regular message to be rendered.
   bool is_test_campaign = 7;
+
+  // [optional] user-defined data bundle. This data is meant for the developer
+  // to use in the SDK at runtime when a campaign is displayed.
+  map<string, string> data_bundle = 8;
 }
 
 message VanillaCampaignPayload {
