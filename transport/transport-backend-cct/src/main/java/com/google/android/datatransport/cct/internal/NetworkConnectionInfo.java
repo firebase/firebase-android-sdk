@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.cct.internal;
 
+import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
@@ -43,7 +44,31 @@ public abstract class NetworkConnectionInfo {
 
     NONE(-1);
 
+    private static final SparseArray<NetworkType> valueMap = new SparseArray<>();
+
     private final int value;
+
+    static {
+      valueMap.put(0, MOBILE);
+      valueMap.put(1, WIFI);
+      valueMap.put(2, MOBILE_MMS);
+      valueMap.put(3, MOBILE_SUPL);
+      valueMap.put(4, MOBILE_DUN);
+      valueMap.put(5, MOBILE_HIPRI);
+      valueMap.put(6, WIMAX);
+      valueMap.put(7, BLUETOOTH);
+      valueMap.put(8, DUMMY);
+      valueMap.put(9, ETHERNET);
+      valueMap.put(10, MOBILE_FOTA);
+      valueMap.put(11, MOBILE_IMS);
+      valueMap.put(12, MOBILE_CBS);
+      valueMap.put(13, WIFI_P2P);
+      valueMap.put(14, MOBILE_IA);
+      valueMap.put(15, MOBILE_EMERGENCY);
+      valueMap.put(16, PROXY);
+      valueMap.put(17, VPN);
+      valueMap.put(-1, NONE);
+    }
 
     NetworkType(int value) {
       this.value = value;
@@ -55,48 +80,7 @@ public abstract class NetworkConnectionInfo {
 
     @Nullable
     public static NetworkType forNumber(int value) {
-      switch (value) {
-        case 0:
-          return MOBILE;
-        case 1:
-          return WIFI;
-        case 2:
-          return MOBILE_MMS;
-        case 3:
-          return MOBILE_SUPL;
-        case 4:
-          return MOBILE_DUN;
-        case 5:
-          return MOBILE_HIPRI;
-        case 6:
-          return WIMAX;
-        case 7:
-          return BLUETOOTH;
-        case 8:
-          return DUMMY;
-        case 9:
-          return ETHERNET;
-        case 10:
-          return MOBILE_FOTA;
-        case 11:
-          return MOBILE_IMS;
-        case 12:
-          return MOBILE_CBS;
-        case 13:
-          return WIFI_P2P;
-        case 14:
-          return MOBILE_IA;
-        case 15:
-          return MOBILE_EMERGENCY;
-        case 16:
-          return PROXY;
-        case 17:
-          return VPN;
-        case -1:
-          return NONE;
-        default:
-          return null;
-      }
+      return valueMap.get(value);
     }
   }
 
@@ -127,7 +111,32 @@ public abstract class NetworkConnectionInfo {
     // a varint for enums, but the value 100 only takes up 1 byte.
     COMBINED(100);
 
+    private static final SparseArray<MobileSubtype> valueMap = new SparseArray<>();
+
     private final int value;
+
+    static {
+      valueMap.put(0, UNKNOWN_MOBILE_SUBTYPE);
+      valueMap.put(1, GPRS);
+      valueMap.put(2, EDGE);
+      valueMap.put(3, UMTS);
+      valueMap.put(4, CDMA);
+      valueMap.put(5, EVDO_0);
+      valueMap.put(6, EVDO_A);
+      valueMap.put(7, RTT);
+      valueMap.put(8, HSDPA);
+      valueMap.put(9, HSUPA);
+      valueMap.put(10, HSPA);
+      valueMap.put(11, IDEN);
+      valueMap.put(12, EVDO_B);
+      valueMap.put(13, LTE);
+      valueMap.put(14, EHRPD);
+      valueMap.put(15, HSPAP);
+      valueMap.put(16, GSM);
+      valueMap.put(17, TD_SCDMA);
+      valueMap.put(18, IWLAN);
+      valueMap.put(19, LTE_CA);
+    }
 
     MobileSubtype(int value) {
       this.value = value;
@@ -139,52 +148,7 @@ public abstract class NetworkConnectionInfo {
 
     @Nullable
     public static MobileSubtype forNumber(int value) {
-      switch (value) {
-        case 0:
-          return UNKNOWN_MOBILE_SUBTYPE;
-        case 1:
-          return GPRS;
-        case 2:
-          return EDGE;
-        case 3:
-          return UMTS;
-        case 4:
-          return CDMA;
-        case 5:
-          return EVDO_0;
-        case 6:
-          return EVDO_A;
-        case 7:
-          return RTT;
-        case 8:
-          return HSDPA;
-        case 9:
-          return HSUPA;
-        case 10:
-          return HSPA;
-        case 11:
-          return IDEN;
-        case 12:
-          return EVDO_B;
-        case 13:
-          return LTE;
-        case 14:
-          return EHRPD;
-        case 15:
-          return HSPAP;
-        case 16:
-          return GSM;
-        case 17:
-          return TD_SCDMA;
-        case 18:
-          return IWLAN;
-        case 19:
-          return LTE_CA;
-        case 100:
-          return COMBINED;
-        default:
-          return null;
-      }
+      return valueMap.get(value);
     }
   }
 
