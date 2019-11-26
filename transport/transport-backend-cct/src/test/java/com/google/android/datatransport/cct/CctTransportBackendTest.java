@@ -147,9 +147,7 @@ public class CctTransportBackendTest {
                 matchingJsonPath(
                     String.format(
                         "$[?(@.logRequest[0].requestUptimeMs == %s)]", uptimeClock.getTime())))
-            //    .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent.size() == 2)]"))
-            //                      .test(r -> r.getLogEventCount() == 1))
-
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent.size() == 2)]"))
             .withRequestBody(
                 matchingJsonPath(
                     String.format(
@@ -181,10 +179,7 @@ public class CctTransportBackendTest {
                         "$[?(@.logRequest[0].logEvent[0].networkConnectionInfo.mobileSubtype == \"%s\")]",
                         NetworkConnectionInfo.MobileSubtype.forNumber(
                             activeNetworkInfo.getSubtype()))))
-            // .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent[0].eventCode ==
-            // 0)]"))
-
-            //              .andMatching(firstLogEventMatcher.test(e -> e.getEventCode() == 0))
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent[0].eventCode == 0)]"))
             .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent[1].eventCode == 5)]"))
             .withRequestBody(
                 matchingJsonPath(

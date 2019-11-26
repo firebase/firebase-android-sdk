@@ -42,7 +42,7 @@ public abstract class LogEvent {
 
   @NonNull
   public static Builder builder() {
-    return new AutoValue_LogEvent.Builder().setEventCode(Integer.MIN_VALUE);
+    return new AutoValue_LogEvent.Builder().setEventCode(0);
   }
 
   @AutoValue.Builder
