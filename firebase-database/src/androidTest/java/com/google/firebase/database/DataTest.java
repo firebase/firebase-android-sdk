@@ -15,14 +15,16 @@
 package com.google.firebase.database;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoManager;
@@ -712,7 +714,7 @@ public class DataTest {
                   try {
                     ref.child("two").removeValue();
                   } catch (DatabaseException e) {
-                    fail("Should not fail");
+                    throw new AssertionError("Should not fail", e);
                   }
                 }
                 return events.size() == 2;
@@ -2350,9 +2352,8 @@ public class DataTest {
     assertEquals(snap.getPriority().getClass(), Double.class);
     assertEquals(snap.getPriority(), snap.child("b").getPriority());
     assertEquals(snap.child("a").getValue(), snap.child("b").getValue());
-    assert (Math.abs(
-            System.currentTimeMillis() - Long.parseLong(snap.child("a").getValue().toString()))
-        < 2000);
+    Long drift = System.currentTimeMillis() - Long.parseLong(snap.child("a").getValue().toString());
+    assertThat(Math.abs(drift), lessThan(2000l));
   }
 
   @Test
@@ -2416,7 +2417,8 @@ public class DataTest {
 
     IntegrationTestHelpers.waitFor(valSemaphore);
 
-    assert (Math.abs(System.currentTimeMillis() - priority.get()) < 2000);
+    long drift = System.currentTimeMillis() - priority.get();
+    assertThat(Math.abs(drift), lessThan(2000l));
   }
 
   @Test
@@ -2482,9 +2484,9 @@ public class DataTest {
     DataSnapshot snap = readerEventRecord.getSnapshot();
     assertEquals(snap.child("a/b/c").getValue().getClass(), Long.class);
     assertEquals(snap.child("a/b/d").getValue().getClass(), Long.class);
-    assert (Math.abs(
-            System.currentTimeMillis() - Long.parseLong(snap.child("a/b/c").getValue().toString()))
-        < 2000);
+    long drift =
+        System.currentTimeMillis() - Long.parseLong(snap.child("a/b/c").getValue().toString());
+    assertThat(Math.abs(drift), lessThan(2000l));
   }
 
   @Test
@@ -2538,9 +2540,8 @@ public class DataTest {
     assertEquals(snap.getPriority().getClass(), Double.class);
     assertEquals(snap.getPriority(), snap.child("b").getPriority());
     assertEquals(snap.child("a").getValue(), snap.child("b").getValue());
-    assert (Math.abs(
-            System.currentTimeMillis() - Long.parseLong(snap.child("a").getValue().toString()))
-        < 2000);
+    long drift = System.currentTimeMillis() - Long.parseLong(snap.child("a").getValue().toString());
+    assertThat(Math.abs(drift), lessThan(2000l));
   }
 
   @Test
@@ -2603,7 +2604,8 @@ public class DataTest {
 
     IntegrationTestHelpers.waitFor(valSemaphore);
 
-    assert (Math.abs(System.currentTimeMillis() - priority.get()) < 2000);
+    long drift = System.currentTimeMillis() - priority.get();
+    assertThat(Math.abs(drift), lessThan(2000l));
   }
 
   @Test
@@ -2667,9 +2669,9 @@ public class DataTest {
     DataSnapshot snap = readerEventRecord.getSnapshot();
     assertEquals(snap.child("a/b/c").getValue().getClass(), Long.class);
     assertEquals(snap.child("a/b/d").getValue().getClass(), Long.class);
-    assert (Math.abs(
-            System.currentTimeMillis() - Long.parseLong(snap.child("a/b/c").getValue().toString()))
-        < 2000);
+    long drift =
+        System.currentTimeMillis() - Long.parseLong(snap.child("a/b/c").getValue().toString());
+    assertThat(Math.abs(drift), lessThan(2000l));
   }
 
   @Test
@@ -2714,7 +2716,7 @@ public class DataTest {
             try {
               currentData.setValue(ServerValue.TIMESTAMP);
             } catch (DatabaseException e) {
-              fail("Should not fail");
+              throw new AssertionError("Should not fail", e);
             }
             return Transaction.success(currentData);
           }
@@ -2734,14 +2736,14 @@ public class DataTest {
     EventRecord writerEventRecord = writerFuture.timedGet().get(1);
     DataSnapshot snap1 = writerEventRecord.getSnapshot();
     assertEquals(snap1.getValue().getClass(), Long.class);
-    assert (Math.abs(System.currentTimeMillis() - Long.parseLong(snap1.getValue().toString()))
-        < 2000);
+    long drift = System.currentTimeMillis() - Long.parseLong(snap1.getValue().toString());
+    assertThat(Math.abs(drift), lessThan(2000l));
 
     EventRecord readerEventRecord = readerFuture.timedGet().get(1);
     DataSnapshot snap2 = readerEventRecord.getSnapshot();
     assertEquals(snap2.getValue().getClass(), Long.class);
-    assert (Math.abs(System.currentTimeMillis() - Long.parseLong(snap2.getValue().toString()))
-        < 2000);
+    drift = System.currentTimeMillis() - Long.parseLong(snap2.getValue().toString());
+    assertThat(Math.abs(drift), lessThan(2000l));
   }
 
   @Test

@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class QueryParams {
+public final class QueryParams {
   public static final QueryParams DEFAULT_PARAMS = new QueryParams();
 
   private static final String INDEX_START_VALUE = "sp";

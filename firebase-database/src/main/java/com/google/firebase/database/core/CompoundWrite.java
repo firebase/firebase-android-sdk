@@ -31,7 +31,7 @@ import java.util.Map;
  * is only allowed to be one write modifying that path. Any write to an existing path or shadowing
  * an existing path will modify that existing write to reflect the write added.
  */
-public class CompoundWrite implements Iterable<Map.Entry<Path, Node>> {
+public final class CompoundWrite implements Iterable<Map.Entry<Path, Node>> {
   private static final CompoundWrite EMPTY = new CompoundWrite(new ImmutableTree<Node>(null));
 
   private final ImmutableTree<Node> writeTree;

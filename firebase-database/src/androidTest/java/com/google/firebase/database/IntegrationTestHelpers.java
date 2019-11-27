@@ -300,7 +300,7 @@ public class IntegrationTestHelpers {
         Map<String, Object> data = new ObjectMapper().readValue(response, t);
         testSecret = (String) ((List) data.get("secrets")).get(0);
       } catch (Throwable e) {
-        fail("Could not get test secret.");
+        throw new AssertionError("Could not get test secret. ", e);
       }
     }
     return testSecret;
