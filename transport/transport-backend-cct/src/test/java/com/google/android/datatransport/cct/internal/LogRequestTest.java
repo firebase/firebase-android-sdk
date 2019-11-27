@@ -15,7 +15,13 @@
 package com.google.android.datatransport.cct.internal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 
+import com.google.android.datatransport.cct.proto.BatchedLogRequest;
+import com.google.firebase.encoders.EncodingException;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -178,5 +184,84 @@ public class LogRequestTest {
                 .setLogEvents(events)
                 .build())
         .isInstanceOf(LogRequest.class);
+  }
+
+  @Test
+  public void testLogRequest_jsontToProto()
+      throws EncodingException, InvalidProtocolBufferException {
+    List<LogEvent> events = new ArrayList<>();
+    events.add(
+        LogEvent.protoBuilder(EMPTY_BYTE_ARRAY)
+            .setEventTimeMs(100L)
+            .setEventUptimeMs(4000L)
+            .setTimezoneOffsetSeconds(123)
+            .setNetworkConnectionInfo(
+                NetworkConnectionInfo.builder()
+                    .setMobileSubtype(NetworkConnectionInfo.MobileSubtype.EDGE)
+                    .setNetworkType(NetworkConnectionInfo.NetworkType.BLUETOOTH)
+                    .build())
+            .build());
+    LogRequest request =
+        LogRequest.builder()
+            .setRequestUptimeMs(1000L)
+            .setRequestTimeMs(4300L)
+            .setClientInfo(
+                ClientInfo.builder()
+                    .setClientType(ClientInfo.ClientType.ANDROID)
+                    .setAndroidClientInfo(AndroidClientInfo.builder().setDevice("device").build())
+                    .build())
+            .setSource("logSource")
+            .setLogEvents(events)
+            .build();
+    List<LogRequest> requests = new ArrayList<>();
+    requests.add(request);
+
+    com.google.android.datatransport.cct.internal.BatchedLogRequest batchedLogRequest =
+        com.google.android.datatransport.cct.internal.BatchedLogRequest.create(requests);
+
+    String json = JsonBatchedLogRequestEncoder.createJsonEncoder().encode(batchedLogRequest);
+
+    BatchedLogRequest.Builder protoLogRequestBuilder = BatchedLogRequest.newBuilder();
+    JsonFormat.parser().merge(json, protoLogRequestBuilder);
+    BatchedLogRequest parsedProtoBatchedLogRequest = protoLogRequestBuilder.build();
+
+    BatchedLogRequest expectedProto =
+        BatchedLogRequest.newBuilder()
+            .addLogRequest(
+                com.google.android.datatransport.cct.proto.LogRequest.newBuilder()
+                    .setRequestUptimeMs(1000L)
+                    .setRequestTimeMs(4300L)
+                    .setLogSourceName("logSource")
+                    .setClientInfo(
+                        com.google.android.datatransport.cct.proto.ClientInfo.newBuilder()
+                            .setClientType(
+                                com.google.android.datatransport.cct.proto.ClientInfo.ClientType
+                                    .ANDROID)
+                            .setAndroidClientInfo(
+                                com.google.android.datatransport.cct.proto.AndroidClientInfo
+                                    .newBuilder()
+                                    .setDevice("device")
+                                    .build())
+                            .build())
+                    .addLogEvent(
+                        com.google.android.datatransport.cct.proto.LogEvent.newBuilder()
+                            .setSourceExtension(ByteString.EMPTY)
+                            .setEventUptimeMs(4000L)
+                            .setEventTimeMs(100L)
+                            .setTimezoneOffsetSeconds(123L)
+                            .setNetworkConnectionInfo(
+                                com.google.android.datatransport.cct.proto.NetworkConnectionInfo
+                                    .newBuilder()
+                                    .setMobileSubtype(
+                                        com.google.android.datatransport.cct.proto
+                                            .NetworkConnectionInfo.MobileSubtype.EDGE)
+                                    .setNetworkType(
+                                        com.google.android.datatransport.cct.proto
+                                            .NetworkConnectionInfo.NetworkType.BLUETOOTH)
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThat(expectedProto).isEqualTo(parsedProtoBatchedLogRequest);
   }
 }
