@@ -65,7 +65,7 @@ public class CctTransportBackendTest {
       ByteString.copyFrom("TelemetryData".getBytes(Charset.defaultCharset()));
   private static final String PAYLOAD_BYTE64 = "VGVsZW1ldHJ5RGF0YQ==";
   private static final String JSON_PAYLOAD = "{\"hello\": false}";
-  private static final String JSON_PAYLOAD_BYTE64 = "eyJoZWxsbyI6IGZhbHNlfQ==";
+  private static final String JSON_PAYLOAD_ESCAPED = "{\\\"hello\\\": false}";
   private static final int CODE = 5;
   private static final String TEST_NAME = "hello";
   private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
@@ -185,7 +185,7 @@ public class CctTransportBackendTest {
                 matchingJsonPath(
                     String.format(
                         "$[?(@.logRequest[0].logEvent[1].sourceExtensionJsonProto3 == \"%s\")]",
-                        JSON_PAYLOAD_BYTE64))));
+                        JSON_PAYLOAD_ESCAPED))));
 
     assertEquals(BackendResponse.ok(3), response);
   }

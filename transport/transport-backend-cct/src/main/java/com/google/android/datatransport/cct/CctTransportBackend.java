@@ -53,6 +53,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -211,7 +212,8 @@ final class CctTransportBackend implements TransportBackend {
         if (encoding.equals(Encoding.of("proto"))) {
           event = LogEvent.protoBuilder(encodedPayload.getBytes());
         } else if (encoding.equals(Encoding.of("json"))) {
-          event = LogEvent.jsonBuilder(encodedPayload.getBytes());
+          event =
+              LogEvent.jsonBuilder(new String(encodedPayload.getBytes(), Charset.forName("UTF-8")));
         } else {
           Logging.w(LOG_TAG, "Received event of unsupported encoding %s. Skipping...", encoding);
           continue;
