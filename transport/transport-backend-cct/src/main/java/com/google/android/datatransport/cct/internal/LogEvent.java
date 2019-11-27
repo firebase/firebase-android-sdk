@@ -33,7 +33,7 @@ public abstract class LogEvent {
 
   @SuppressWarnings("mutable")
   @Nullable
-  public abstract byte[] getSourceExtensionJsonProto3Bytes();
+  public abstract String getSourceExtensionJsonProto3Bytes();
 
   public abstract long getTimezoneOffsetSeconds();
 
@@ -46,7 +46,7 @@ public abstract class LogEvent {
   }
 
   @NonNull
-  public static Builder jsonBuilder(@NonNull byte[] sourceJsonExtension) {
+  public static Builder jsonBuilder(@NonNull String sourceJsonExtension) {
     return builder().setSourceExtensionJsonProto3Bytes(sourceJsonExtension);
   }
 
@@ -69,7 +69,7 @@ public abstract class LogEvent {
     abstract Builder setSourceExtension(@Nullable byte[] value);
 
     @NonNull
-    abstract Builder setSourceExtensionJsonProto3Bytes(@Nullable byte[] value);
+    abstract Builder setSourceExtensionJsonProto3Bytes(@Nullable String value);
 
     @NonNull
     public abstract Builder setTimezoneOffsetSeconds(long value);

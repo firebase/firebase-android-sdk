@@ -60,18 +60,13 @@ public class LogRequestTest {
 
   @Test
   public void testBuildLogEvent_missingFields() {
-    Assert.assertThrows(
-        IllegalStateException.class, () -> LogEvent.jsonBuilder(EMPTY_BYTE_ARRAY).build());
+    Assert.assertThrows(IllegalStateException.class, () -> LogEvent.jsonBuilder("").build());
     Assert.assertThrows(
         IllegalStateException.class,
         () -> LogEvent.protoBuilder(EMPTY_BYTE_ARRAY).setEventTimeMs(4500).build());
     Assert.assertThrows(
         IllegalStateException.class,
-        () ->
-            LogEvent.jsonBuilder(EMPTY_BYTE_ARRAY)
-                .setEventTimeMs(4500)
-                .setEventUptimeMs(10000)
-                .build());
+        () -> LogEvent.jsonBuilder("").setEventTimeMs(4500).setEventUptimeMs(10000).build());
   }
 
   @Test
@@ -89,21 +84,20 @@ public class LogRequestTest {
 
   @Test
   public void testBuildLogEvent_withJsonSourceExtension() {
-    byte[] sourceExtension = "myJsonExtension".getBytes(Charset.forName("UTF-8"));
     LogEvent event =
-        LogEvent.jsonBuilder(sourceExtension)
+        LogEvent.jsonBuilder("myJsonExtension")
             .setEventTimeMs(4500)
             .setEventUptimeMs(10000)
             .setTimezoneOffsetSeconds(29L)
             .build();
     assertThat(event.getSourceExtension()).isNull();
-    assertThat(event.getSourceExtensionJsonProto3Bytes()).isEqualTo(sourceExtension);
+    assertThat(event.getSourceExtensionJsonProto3Bytes()).isEqualTo("myJsonExtension");
   }
 
   @Test
   public void testBuildLogEvent_withNetworkConnectionInfo() {
     assertThat(
-            LogEvent.jsonBuilder(EMPTY_BYTE_ARRAY)
+            LogEvent.jsonBuilder("")
                 .setEventTimeMs(4500)
                 .setEventUptimeMs(10000)
                 .setTimezoneOffsetSeconds(29L)
@@ -262,6 +256,6 @@ public class LogRequestTest {
                             .build())
                     .build())
             .build();
-    assertThat(expectedProto).isEqualTo(parsedProtoBatchedLogRequest);
+    assertThat(parsedProtoBatchedLogRequest).isEqualTo(expectedProto);
   }
 }
