@@ -63,7 +63,7 @@ dependencies {
     // It should not matter for released artifacts.
     implementation project(":firebase-common")
 
-    implementation('com.google.firebase:firebase-iid:18.0.0') {
+    implementation('com.google.firebase:firebase-iid:20.0.1') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
 
