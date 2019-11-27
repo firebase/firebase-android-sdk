@@ -288,7 +288,7 @@ public class TestUtil {
   }
 
   public static QueryData queryData(int targetId, QueryPurpose queryPurpose, String path) {
-    return new QueryData(query(path), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
+    return new QueryData(query(path).toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
   }
 
   public static ImmutableSortedMap<DocumentKey, MaybeDocument> docUpdates(MaybeDocument... docs) {
@@ -350,7 +350,7 @@ public class TestUtil {
     Map<Integer, QueryData> listenMap = new HashMap<>();
     for (Integer targetId : targets) {
       QueryData queryData =
-          new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN);
+          new QueryData(query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN);
       listenMap.put(targetId, queryData);
     }
     return listenMap;
@@ -366,7 +366,8 @@ public class TestUtil {
     Map<Integer, QueryData> listenMap = new HashMap<>();
     for (Integer targetId : targets) {
       QueryData queryData =
-          new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LIMBO_RESOLUTION);
+          new QueryData(
+              query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LIMBO_RESOLUTION);
       listenMap.put(targetId, queryData);
     }
     return listenMap;

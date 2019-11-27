@@ -30,11 +30,53 @@ public class ServerValue {
    * milliseconds) by the Firebase Database servers.
    */
   @NonNull
-  public static final Map<String, String> TIMESTAMP = createServerValuePlaceholder("timestamp");
+  public static final Map<String, String> TIMESTAMP =
+      createScalarServerValuePlaceholder(ServerValues.NAME_OP_TIMESTAMP);
 
-  private static Map<String, String> createServerValuePlaceholder(String key) {
+  /**
+   * Adds the given delta to the current value at a location.
+   *
+   * <p>The delta must be an long or a double value. If the current value is not an integer or
+   * double, or if the data does not yet exist, the transformation will set the data to the delta
+   * value. If either of the delta value or the existing data are doubles, both values will be
+   * interpreted as doubles. Double arithmetic and representation of double values follow IEEE 754
+   * semantics. If there is positive/negative integer overflow, the sum is calculated as a a double.
+   *
+   * @param delta the amount to modify the current value atomically.
+   * @return a placeholder value for modifying data atomically server-side.
+   */
+  static final Object increment(long delta) {
+    return createParameterizedServerValuePlaceholder(ServerValues.NAME_OP_INCREMENT, delta);
+  }
+
+  /**
+   * Adds the given delta to the current value at a location.
+   *
+   * <p>The delta must be an long or a double value. If the current value is not an integer or
+   * double, or if the data does not yet exist, the transformation will set the data to the delta
+   * value. If either of the delta value or the existing data are doubles, both values will be
+   * interpreted as doubles. Double arithmetic and representation of double values follow IEEE 754
+   * semantics. If there is positive/negative integer overflow, the sum is calculated as a a double.
+   *
+   * @param delta the amount to modify the current value atomically.
+   * @return a placeholder value for modifying data atomically server-side.
+   */
+  static final Object increment(double delta) {
+    return createParameterizedServerValuePlaceholder(ServerValues.NAME_OP_INCREMENT, delta);
+  }
+
+  private static Map<String, String> createScalarServerValuePlaceholder(String key) {
     Map<String, String> result = new HashMap<String, String>();
     result.put(ServerValues.NAME_SUBKEY_SERVERVALUE, key);
+    return Collections.unmodifiableMap(result);
+  }
+
+  private static Map<String, Map<String, Object>> createParameterizedServerValuePlaceholder(
+      String name, Object value) {
+    Map<String, Object> op = new HashMap<>();
+    op.put(name, value);
+    Map<String, Map<String, Object>> result = new HashMap<>();
+    result.put(ServerValues.NAME_SUBKEY_SERVERVALUE, Collections.unmodifiableMap(op));
     return Collections.unmodifiableMap(result);
   }
 }

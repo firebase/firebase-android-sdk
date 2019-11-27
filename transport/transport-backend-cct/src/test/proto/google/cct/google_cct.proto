@@ -26,11 +26,11 @@ message LogEvent {
 
     int64 event_uptime_ms = 17;
 
-    bytes source_extension = 6;
+    oneof ext {
+        bytes source_extension = 6;
 
-    string source_extension_js = 8;
-
-    string source_extension_json = 13;
+        string source_extension_json_proto3 = 29;
+    }
 
     sint64 timezone_offset_seconds = 15;
 

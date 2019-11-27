@@ -15,6 +15,7 @@
 package com.google.firebase.inappmessaging.model;
 
 import androidx.annotation.Nullable;
+import java.util.Map;
 
 /** Encapsulates a Firebase In App Message. */
 public abstract class InAppMessage {
@@ -30,6 +31,7 @@ public abstract class InAppMessage {
   @Deprecated Boolean isTestMessage;
   MessageType messageType;
   CampaignMetadata campaignMetadata;
+  @Nullable private Map<String, String> data;
 
   /** @hide */
   @Deprecated
@@ -44,7 +46,8 @@ public abstract class InAppMessage {
       String campaignId,
       String campaignName,
       Boolean isTestMessage,
-      MessageType messageType) {
+      MessageType messageType,
+      Map<String, String> data) {
     this.title = title;
     this.body = body;
     this.imageUrl = imageUrl;
@@ -56,12 +59,15 @@ public abstract class InAppMessage {
     this.isTestMessage = isTestMessage;
     this.messageType = messageType;
     this.campaignMetadata = new CampaignMetadata(campaignId, campaignName, isTestMessage);
+    this.data = data;
   }
 
   /** @hide */
-  public InAppMessage(CampaignMetadata campaignMetadata, MessageType messageType) {
+  public InAppMessage(
+      CampaignMetadata campaignMetadata, MessageType messageType, Map<String, String> data) {
     this.campaignMetadata = campaignMetadata;
     this.messageType = messageType;
+    this.data = data;
   }
 
   /** Deprecated - Use the message specific methods instead. */
@@ -144,5 +150,10 @@ public abstract class InAppMessage {
   @Nullable
   public CampaignMetadata getCampaignMetadata() {
     return campaignMetadata;
+  }
+
+  @Nullable
+  public Map<String, String> getData() {
+    return data;
   }
 }

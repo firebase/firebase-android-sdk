@@ -99,12 +99,11 @@ public class InAppMessageStreamManager {
   }
 
   private static boolean hasFiamTrigger(TriggeringCondition tc, String event) {
-    return tc.getFiamTrigger() != null && tc.getFiamTrigger().toString().equals(event);
+    return tc.getFiamTrigger().toString().equals(event);
   }
 
   private static boolean hasAnalyticsTrigger(TriggeringCondition tc, String event) {
-    return tc.getContextualTrigger() != null
-        && tc.getContextualTrigger().getName().toString().equals(event);
+    return tc.getEvent().getName().equals(event);
   }
 
   private static boolean isActive(Clock clock, VanillaCampaignPayload vanillaPayload) {
@@ -129,8 +128,7 @@ public class InAppMessageStreamManager {
   }
 
   public static boolean isAppForegroundEvent(TriggeringCondition event) {
-    return event.getFiamTrigger() != null
-        && event.getFiamTrigger().toString().equals(ON_FOREGROUND);
+    return event.getFiamTrigger().toString().equals(ON_FOREGROUND);
   }
 
   public static boolean isAppForegroundEvent(String event) {
@@ -307,7 +305,8 @@ public class InAppMessageStreamManager {
             thickContent.getContent(),
             thickContent.getVanillaPayload().getCampaignId(),
             thickContent.getVanillaPayload().getCampaignName(),
-            thickContent.getIsTestCampaign());
+            thickContent.getIsTestCampaign(),
+            thickContent.getDataBundleMap());
     if (inAppMessage.getMessageType().equals(MessageType.UNSUPPORTED)) {
       return Maybe.empty();
     }

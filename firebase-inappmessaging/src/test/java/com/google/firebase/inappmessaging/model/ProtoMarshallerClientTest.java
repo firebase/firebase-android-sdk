@@ -22,6 +22,7 @@ import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_ID_S
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_METADATA_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_NAME_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.CARD_MESSAGE_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_URL_STRING;
@@ -40,6 +41,9 @@ import static com.google.firebase.inappmessaging.testutil.TestProtos.SECONDARY_A
 import static com.google.firebase.inappmessaging.testutil.TestProtos.TITLE_PROTO;
 
 import com.google.firebase.inappmessaging.MessagesProto;
+import com.google.firebase.inappmessaging.MessagesProto.Content;
+import java.util.Map;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -103,7 +107,7 @@ public class ProtoMarshallerClientTest {
         BannerMessage.builder()
             .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
             .setTitle(TITLE_MODEL)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
     InAppMessage actual = decode(minimumBanner);
     assertThat(actual).isEqualTo(expected);
   }
@@ -177,7 +181,7 @@ public class ProtoMarshallerClientTest {
         ModalMessage.builder()
             .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
             .setTitle(TITLE_MODEL)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
     InAppMessage actual = decode(minimumModal);
     assertThat(actual).isEqualTo(expected);
   }
@@ -222,7 +226,7 @@ public class ProtoMarshallerClientTest {
             .build();
 
     ImageOnlyMessage expected =
-        ImageOnlyMessage.builder().setImageData(IMAGE_DATA).build(CAMPAIGN_METADATA_MODEL);
+        ImageOnlyMessage.builder().setImageData(IMAGE_DATA).build(CAMPAIGN_METADATA_MODEL, DATA);
     InAppMessage actual = decode(minimumImageOnly);
     assertThat(actual).isEqualTo(expected);
   }
@@ -345,7 +349,7 @@ public class ProtoMarshallerClientTest {
   @Test
   public void card_withMinimumAttributes_createsInAppMessage() {
     MessagesProto.Content minimumCard =
-        MessagesProto.Content.newBuilder()
+        Content.newBuilder()
             .setCard(
                 MessagesProto.CardMessage.newBuilder()
                     .setPrimaryActionButton(BUTTON_PROTO)
@@ -360,9 +364,57 @@ public class ProtoMarshallerClientTest {
             .setPrimaryAction(ACTION_MODEL_WITHOUT_URL)
             .setPortraitImageData(IMAGE_DATA)
             .setTitle(TITLE_MODEL)
-            .build(CAMPAIGN_METADATA_MODEL);
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
     InAppMessage actual = decode(minimumCard);
     assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void cardPropagatesDataBundle() {
+    MessagesProto.Content minimumCard =
+        Content.newBuilder()
+            .setCard(
+                MessagesProto.CardMessage.newBuilder()
+                    .setPrimaryActionButton(BUTTON_PROTO)
+                    .setTitle(TITLE_PROTO)
+                    .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+                    .setPortraitImageUrl(IMAGE_URL_STRING))
+            .build();
+
+    CardMessage expected =
+        CardMessage.builder()
+            .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+            .setPrimaryAction(ACTION_MODEL_WITHOUT_URL)
+            .setPortraitImageData(IMAGE_DATA)
+            .setTitle(TITLE_MODEL)
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
+    InAppMessage actual = decode(minimumCard, DATA);
+    assertThat(actual.getData()).isEqualTo(DATA);
+    assertThat(expected.getData()).isEqualTo(DATA);
+  }
+
+  @Test
+  public void cardPropagatesNullDataBundle() {
+    MessagesProto.Content minimumCard =
+        Content.newBuilder()
+            .setCard(
+                MessagesProto.CardMessage.newBuilder()
+                    .setPrimaryActionButton(BUTTON_PROTO)
+                    .setTitle(TITLE_PROTO)
+                    .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+                    .setPortraitImageUrl(IMAGE_URL_STRING))
+            .build();
+
+    CardMessage expected =
+        CardMessage.builder()
+            .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+            .setPrimaryAction(ACTION_MODEL_WITHOUT_URL)
+            .setPortraitImageData(IMAGE_DATA)
+            .setTitle(TITLE_MODEL)
+            .build(CAMPAIGN_METADATA_MODEL, null);
+    InAppMessage actual = decode(minimumCard, null);
+    Assert.assertNull(actual.getData());
+    Assert.assertNull(expected.getData());
   }
 
   // ************************* DECODING *************************
@@ -386,6 +438,11 @@ public class ProtoMarshallerClientTest {
 
   private static InAppMessage decode(MessagesProto.Content message) {
     return ProtoMarshallerClient.decode(
-        message, CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE);
+        message, CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE, DATA);
+  }
+
+  private static InAppMessage decode(MessagesProto.Content message, Map<String, String> data) {
+    return ProtoMarshallerClient.decode(
+        message, CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE, data);
   }
 }

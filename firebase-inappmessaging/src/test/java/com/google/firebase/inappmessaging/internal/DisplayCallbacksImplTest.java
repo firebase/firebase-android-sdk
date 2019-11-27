@@ -23,6 +23,7 @@ import static com.google.firebase.inappmessaging.testutil.TestData.BANNER_MESSAG
 import static com.google.firebase.inappmessaging.testutil.TestData.BANNER_TEST_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_ID_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_NAME_STRING;
+import static com.google.firebase.inappmessaging.testutil.TestData.DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.INSTANCE_ID;
 import static com.google.firebase.inappmessaging.testutil.TestData.INSTANCE_TOKEN;
@@ -44,7 +45,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.inappmessaging.CommonTypesProto.ContextualTrigger;
+import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
@@ -94,8 +95,7 @@ public class DisplayCallbacksImplTest {
   private static final String LIMITER_KEY = "LIMITER_KEY";
 
   private static final TriggeringCondition.Builder onAnalyticsEvent =
-      TriggeringCondition.newBuilder()
-          .setContextualTrigger(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT_NAME));
+      TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
   private static final TriggeringCondition onForeground =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
 
@@ -391,8 +391,8 @@ public class DisplayCallbacksImplTest {
             .setPrimaryAction(ACTION_MODEL_WITH_BUTTON)
             .setSecondaryAction(ACTION_MODEL_WITHOUT_URL)
             .build(
-                new CampaignMetadata(
-                    CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE));
+                new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE),
+                DATA);
 
     displayCallbacksImpl =
         displayCallbacksFactory.generateDisplayCallback(cardMessage, ANALYTICS_EVENT_NAME);
@@ -413,8 +413,8 @@ public class DisplayCallbacksImplTest {
             .setPrimaryAction(ACTION_MODEL_WITH_BUTTON)
             .setSecondaryAction(ACTION_MODEL_WITH_BUTTON)
             .build(
-                new CampaignMetadata(
-                    CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE));
+                new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE),
+                DATA);
 
     displayCallbacksImpl =
         displayCallbacksFactory.generateDisplayCallback(cardMessage, ANALYTICS_EVENT_NAME);

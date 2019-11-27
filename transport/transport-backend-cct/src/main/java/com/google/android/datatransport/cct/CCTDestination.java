@@ -19,7 +19,9 @@ import androidx.annotation.Nullable;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.runtime.EncodedDestination;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -27,7 +29,8 @@ public final class CCTDestination implements EncodedDestination {
   static final String DESTINATION_NAME = "cct";
 
   static final String DEFAULT_END_POINT =
-      StringMerger.mergeStrings("hts/frbslgiggolai.o/0clgbth", "tp:/ieaeogn.ogepscmvc/o/ac");
+      StringMerger.mergeStrings(
+          "hts/frbslgiggolai.o/0clgbthfra=snpoo", "tp:/ieaeogn.ogepscmvc/o/ac?omtjo_rt3");
   static final String LEGACY_END_POINT =
       StringMerger.mergeStrings(
           "hts/frbslgigp.ogepscmv/ieo/eaybtho", "tp:/ieaeogn-agolai.o/1frlglgc/aclg");
@@ -36,6 +39,10 @@ public final class CCTDestination implements EncodedDestination {
       StringMerger.mergeStrings("AzSCki82AwsLzKd5O8zo", "IayckHiZRO1EFl1aGoK");
   private static final String EXTRAS_VERSION_MARKER = "1$";
   private static final String EXTRAS_DELIMITER = "\\";
+
+  private static final Set<Encoding> SUPPORTED_ENCODINGS =
+      Collections.unmodifiableSet(
+          new HashSet<>(Arrays.asList(Encoding.of("proto"), Encoding.of("json"))));
 
   public static final CCTDestination INSTANCE = new CCTDestination(DEFAULT_END_POINT, null);
   public static final CCTDestination LEGACY_INSTANCE =
@@ -63,7 +70,7 @@ public final class CCTDestination implements EncodedDestination {
 
   @Override
   public Set<Encoding> getSupportedEncodings() {
-    return Collections.singleton(Encoding.of("proto"));
+    return SUPPORTED_ENCODINGS;
   }
 
   @Nullable

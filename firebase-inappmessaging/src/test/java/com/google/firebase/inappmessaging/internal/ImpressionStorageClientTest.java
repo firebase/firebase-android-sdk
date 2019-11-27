@@ -129,7 +129,7 @@ public class ImpressionStorageClientTest {
         impressionStorageClient.getAllImpressions().toFlowable().test();
 
     assertThat(
-            ((CampaignImpressionList) (getPlainValues(subscriber).get(0)))
+            ((CampaignImpressionList) getPlainValues(subscriber).get(0))
                 .getAlreadySeenCampaignsList())
         .containsExactly(campaignImpression);
   }

@@ -25,6 +25,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetIdGenerator;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -123,8 +124,8 @@ public final class LocalStore {
   /** Maps a targetId to data about its query. */
   private final SparseArray<QueryData> queryDataByTarget;
 
-  /** Maps a query to its targetID. */
-  private final Map<Query, Integer> targetIdByQuery;
+  /** Maps a target to its targetID. */
+  private final Map<Target, Integer> targetIdByTarget;
 
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
@@ -147,7 +148,7 @@ public final class LocalStore {
     persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
 
     queryDataByTarget = new SparseArray<>();
-    targetIdByQuery = new HashMap<>();
+    targetIdByTarget = new HashMap<>();
   }
 
   public void start() {
@@ -521,13 +522,16 @@ public final class LocalStore {
   }
 
   /**
-   * Assigns the given query an internal ID so that its results can be pinned so they don't get
+   * Assigns the given target an internal ID so that its results can be pinned so they don't get
    * GC'd. A query must be allocated in the local store before the store can be used to manage its
    * view.
+   *
+   * <p>Allocating an already allocated target will return the existing @{code QueryData} for that
+   * target.
    */
-  public QueryData allocateQuery(Query query) {
+  public QueryData allocateTarget(Target target) {
     int targetId;
-    QueryData cached = queryCache.getQueryData(query);
+    QueryData cached = queryCache.getQueryData(target);
     if (cached != null) {
       // This query has been listened to previously, so reuse the previous targetID.
       // TODO: freshen last accessed date?
@@ -535,12 +539,12 @@ public final class LocalStore {
     } else {
       final AllocateQueryHolder holder = new AllocateQueryHolder();
       persistence.runTransaction(
-          "Allocate query",
+          "Allocate target",
           () -> {
             holder.targetId = targetIdGenerator.nextId();
             holder.cached =
                 new QueryData(
-                    query,
+                    target,
                     holder.targetId,
                     persistence.getReferenceDelegate().getCurrentSequenceNumber(),
                     QueryPurpose.LISTEN);
@@ -550,13 +554,10 @@ public final class LocalStore {
       cached = holder.cached;
     }
 
-    // Sanity check to ensure that even when resuming a query it's not currently active.
-    hardAssert(
-        queryDataByTarget.get(targetId) == null,
-        "Tried to allocate an already allocated query: %s",
-        query);
-    queryDataByTarget.put(targetId, cached);
-    targetIdByQuery.put(query, targetId);
+    if (queryDataByTarget.get(targetId) == null) {
+      queryDataByTarget.put(targetId, cached);
+      targetIdByTarget.put(target, targetId);
+    }
     return cached;
   }
 
@@ -566,12 +567,12 @@ public final class LocalStore {
    */
   @VisibleForTesting
   @Nullable
-  QueryData getQueryData(Query query) {
-    Integer targetId = targetIdByQuery.get(query);
+  QueryData getQueryData(Target target) {
+    Integer targetId = targetIdByTarget.get(target);
     if (targetId != null) {
       return queryDataByTarget.get(targetId);
     }
-    return queryCache.getQueryData(query);
+    return queryCache.getQueryData(target);
   }
 
   /** Mutable state for the transaction in allocateQuery. */
@@ -580,14 +581,17 @@ public final class LocalStore {
     int targetId;
   }
 
-  /** Unpin all the documents associated with the given query. */
-  public void releaseQuery(Query query) {
+  /**
+   * Unpin all the documents associated with the given target.
+   *
+   * <p>Releasing a non-existing target is an error.
+   */
+  public void releaseTarget(int targetId) {
     persistence.runTransaction(
-        "Release query",
+        "Release target",
         () -> {
-          Integer targetId = targetIdByQuery.get(query);
-          hardAssert(targetId != null, "Tried to release nonexistent query: %s", query);
           QueryData queryData = queryDataByTarget.get(targetId);
+          hardAssert(queryData != null, "Tried to release nonexistent target: %s", targetId);
 
           // References for documents sent via Watch are automatically removed when we delete a
           // query's target data from the reference delegate. Since this does not remove references
@@ -602,7 +606,7 @@ public final class LocalStore {
           // Note: This also updates the query cache
           persistence.getReferenceDelegate().removeTarget(queryData);
           queryDataByTarget.remove(targetId);
-          targetIdByQuery.remove(query);
+          targetIdByTarget.remove(queryData.getTarget());
         });
   }
 
@@ -614,7 +618,7 @@ public final class LocalStore {
    *     query execution.
    */
   public QueryResult executeQuery(Query query, boolean usePreviousResults) {
-    QueryData queryData = getQueryData(query);
+    QueryData queryData = getQueryData(query.toTarget());
     SnapshotVersion lastLimboFreeSnapshotVersion = SnapshotVersion.NONE;
     ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
 

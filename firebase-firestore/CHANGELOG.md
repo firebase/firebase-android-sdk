@@ -1,9 +1,17 @@
-# Unreleased
+# Unreleased (21.3.1)
+- [feature] Added `Query.limitToLast(n: long)`, which returns the last `n`
+  documents as the result.
+
+# 21.3.0
 - [feature] Added `Query.whereIn()` and `Query.whereArrayContainsAny()` query
   operators. `Query.whereIn()` finds documents where a specified field’s value
   is IN a specified array. `Query.whereArrayContainsAny()` finds documents
   where a specified field is an array and contains ANY element of a specified
   array.
+- [changed] Improved the performance of repeatedly executed queries. Recently
+  executed queries should see dramatic improvements. This benefit is reduced
+  if changes accumulate while the query is inactive. Queries that use the
+  `limit()` API may not always benefit, depending on the accumulated changes.
 
 # 21.2.1
 - [fixed] Fixed an issue where Android API level 19 and earlier devices would

@@ -102,7 +102,7 @@ public abstract class LruGarbageCollectorTestCase {
     int targetId = ++previousTargetId;
     long sequenceNumber = persistence.getReferenceDelegate().getCurrentSequenceNumber();
     Query query = query("path" + targetId);
-    return new QueryData(query, targetId, sequenceNumber, QueryPurpose.LISTEN);
+    return new QueryData(query.toTarget(), targetId, sequenceNumber, QueryPurpose.LISTEN);
   }
 
   private void updateTargetInTransaction(QueryData queryData) {

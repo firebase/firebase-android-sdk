@@ -22,6 +22,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Task
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.TaskAction
 
@@ -34,7 +35,7 @@ import org.gradle.api.tasks.TaskAction
  * property, {@code database_config} for connecting to the database. The format of this file is
  * dictated by the uploader tool.
  */
-public class UploadMeasurementsTask extends DefaultTask {
+class UploadMeasurementsTask extends DefaultTask {
 
     /**
      * The URL of the uploader tool.
@@ -83,6 +84,7 @@ public class UploadMeasurementsTask extends DefaultTask {
         }
     }
 
+    @Internal
     def getUploaderUrl() {
         return new URL(uploader)
     }
