@@ -78,7 +78,7 @@ public class LogRequestTest {
             .setEventUptimeMs(10000)
             .setTimezoneOffsetSeconds(29L)
             .build();
-    assertThat(event.getSourceExtensionJsonProto3Bytes()).isNull();
+    assertThat(event.getSourceExtensionJsonProto3()).isNull();
     assertThat(event.getSourceExtension()).isEqualTo(sourceExtension);
   }
 
@@ -91,7 +91,7 @@ public class LogRequestTest {
             .setTimezoneOffsetSeconds(29L)
             .build();
     assertThat(event.getSourceExtension()).isNull();
-    assertThat(event.getSourceExtensionJsonProto3Bytes()).isEqualTo("myJsonExtension");
+    assertThat(event.getSourceExtensionJsonProto3()).isEqualTo("myJsonExtension");
   }
 
   @Test
