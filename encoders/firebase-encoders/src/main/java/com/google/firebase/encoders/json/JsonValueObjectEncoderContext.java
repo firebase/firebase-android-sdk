@@ -192,6 +192,25 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       jsonWriter.endArray();
       return this;
     }
+    if (o instanceof Map) {
+      @SuppressWarnings("unchecked")
+      Map<Object, Object> map = (Map<Object, Object>) o;
+      jsonWriter.beginObject();
+      for (Map.Entry<Object, Object> entry : map.entrySet()) {
+        Object key = entry.getKey();
+        try {
+          add((String) key, entry.getValue());
+        } catch (ClassCastException ex) {
+          throw new EncodingException(
+              String.format(
+                  "Only String keys are currently supported in maps, got %s of type %s instead.",
+                  key, key.getClass()),
+              ex);
+        }
+      }
+      jsonWriter.endObject();
+      return this;
+    }
     @SuppressWarnings("unchecked") // safe because get the encoder by checking the object's type.
     ObjectEncoder<Object> objectEncoder = (ObjectEncoder<Object>) objectEncoders.get(o.getClass());
     if (objectEncoder != null) {

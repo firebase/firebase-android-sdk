@@ -15,6 +15,7 @@
 package com.google.firebase.encoders.json;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -29,8 +30,8 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.TimeZone;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -205,6 +206,38 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
+  public void testEncodingMap_withStringKey_shouldSucceed() throws EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> {
+          ctx.add("map", Collections.singletonMap("key", true));
+        };
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result).isEqualTo(String.format("{\"map\":%s}", "{\"key\":true}"));
+  }
+
+  @Test
+  public void testEncodingMap_withNonStringKey_shouldFail() {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> {
+          ctx.add("map", Collections.singletonMap(1L, true));
+        };
+
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder().registerEncoder(DummyClass.class, objectEncoder).build();
+
+    assertThrows(
+        "Only String keys are currently supported in maps",
+        EncodingException.class,
+        () -> encoder.encode(DummyClass.INSTANCE));
+  }
+
+  @Test
   public void testEncodingBytes() throws IOException, EncodingException {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
@@ -336,7 +369,7 @@ public class JsonValueObjectEncoderContextTest {
   @Test
   public void testMissingEncoder() throws IOException, EncodingException {
     DataEncoder dataEncoder = new JsonDataEncoderBuilder().build();
-    Assert.assertThrows(EncodingException.class, () -> dataEncoder.encode(DummyClass.INSTANCE));
+    assertThrows(EncodingException.class, () -> dataEncoder.encode(DummyClass.INSTANCE));
   }
 
   @Test
@@ -345,7 +378,7 @@ public class JsonValueObjectEncoderContextTest {
     Writer mockWriter = mock(Writer.class);
     doThrow(IOException.class).when(mockWriter).write(any(String.class));
 
-    Assert.assertThrows(
+    assertThrows(
         IOException.class,
         () ->
             new JsonDataEncoderBuilder()
