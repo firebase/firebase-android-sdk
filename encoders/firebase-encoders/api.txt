@@ -20,6 +20,7 @@ package com.google.firebase.encoders {
     method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, int) throws com.google.firebase.encoders.EncodingException;
     method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, long) throws com.google.firebase.encoders.EncodingException;
     method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, boolean) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext nested(@NonNull String);
   }
 
   public interface ValueEncoder<T> {
