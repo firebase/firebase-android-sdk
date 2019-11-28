@@ -232,7 +232,7 @@ public class JsonValueObjectEncoderContextTest {
         new JsonDataEncoderBuilder().registerEncoder(DummyClass.class, objectEncoder).build();
 
     assertThrows(
-        "Map keys must be of type String",
+        "Only String keys are currently supported in maps",
         EncodingException.class,
         () -> encoder.encode(DummyClass.INSTANCE));
   }
