@@ -203,7 +203,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
         } catch (ClassCastException ex) {
           throw new EncodingException(
               String.format(
-                  "Map keys must be of type String, got %s of type %s instead.",
+                  "Only String keys are currently supported in maps, got %s of type %s instead.",
                   key, key.getClass()),
               ex);
         }
