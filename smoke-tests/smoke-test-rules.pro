@@ -1,4 +1,3 @@
--optimizationpasses 3
 -keepattributes SourceFile, LineNumberTable, *Annotation*
 
 -keep @org.junit.runner.RunWith class *
