@@ -21,6 +21,8 @@ import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ValueEncoder;
 import com.google.firebase.encoders.ValueEncoderContext;
+import com.google.firebase.encoders.config.Configurator;
+import com.google.firebase.encoders.config.EncoderConfig;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -32,7 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
-public final class JsonDataEncoderBuilder {
+public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncoderBuilder> {
 
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders = new HashMap<>();
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders = new HashMap<>();
@@ -63,8 +65,9 @@ public final class JsonDataEncoderBuilder {
   }
 
   @NonNull
+  @Override
   public <T> JsonDataEncoderBuilder registerEncoder(
-      @NonNull Class<T> clazz, @NonNull ObjectEncoder<T> objectEncoder) {
+      @NonNull Class<T> clazz, @NonNull ObjectEncoder<? super T> objectEncoder) {
     if (objectEncoders.containsKey(clazz)) {
       throw new IllegalArgumentException("Encoder already registered for " + clazz.getName());
     }
@@ -73,12 +76,19 @@ public final class JsonDataEncoderBuilder {
   }
 
   @NonNull
+  @Override
   public <T> JsonDataEncoderBuilder registerEncoder(
-      @NonNull Class<T> clazz, @NonNull ValueEncoder<T> encoder) {
+      @NonNull Class<T> clazz, @NonNull ValueEncoder<? super T> encoder) {
     if (valueEncoders.containsKey(clazz)) {
       throw new IllegalArgumentException("Encoder already registered for " + clazz.getName());
     }
     valueEncoders.put(clazz, encoder);
+    return this;
+  }
+
+  @NonNull
+  public JsonDataEncoderBuilder configureWith(@NonNull Configurator config) {
+    config.configure(this);
     return this;
   }
 
