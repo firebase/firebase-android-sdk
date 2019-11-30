@@ -70,7 +70,7 @@ public class JsonValueObjectEncoderContextTest {
         };
 
     String result =
-        new JsonDataEncoderBuilder()
+        new com.google.firebase.encoders.json.JsonDataEncoderBuilder()
             .registerEncoder(DummyClass.class, objectEncoder)
             .build()
             .encode(DummyClass.INSTANCE);
