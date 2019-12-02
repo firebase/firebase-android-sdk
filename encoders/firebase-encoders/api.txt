@@ -36,13 +36,27 @@ package com.google.firebase.encoders {
 
 }
 
+package com.google.firebase.encoders.config {
+
+  public interface Configurator {
+    method public void configure(@NonNull com.google.firebase.encoders.config.EncoderConfig<?>);
+  }
+
+  public interface EncoderConfig<T extends com.google.firebase.encoders.config.EncoderConfig<T>> {
+    method @NonNull public <U> T registerEncoder(@NonNull Class<U>, @NonNull com.google.firebase.encoders.ObjectEncoder<? super U>);
+    method @NonNull public <U> T registerEncoder(@NonNull Class<U>, @NonNull com.google.firebase.encoders.ValueEncoder<? super U>);
+  }
+
+}
+
 package com.google.firebase.encoders.json {
 
-  public final class JsonDataEncoderBuilder {
+  public final class JsonDataEncoderBuilder implements com.google.firebase.encoders.config.EncoderConfig<com.google.firebase.encoders.json.JsonDataEncoderBuilder> {
     ctor public JsonDataEncoderBuilder();
     method @NonNull public com.google.firebase.encoders.DataEncoder build();
-    method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ObjectEncoder<T>);
-    method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ValueEncoder<T>);
+    method @NonNull public com.google.firebase.encoders.json.JsonDataEncoderBuilder configureWith(@NonNull com.google.firebase.encoders.config.Configurator);
+    method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ObjectEncoder<? super T>);
+    method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ValueEncoder<? super T>);
   }
 
 }
