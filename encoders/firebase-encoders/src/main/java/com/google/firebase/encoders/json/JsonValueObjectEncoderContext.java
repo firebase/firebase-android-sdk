@@ -257,6 +257,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
           "Parent context used since this context was created. Cannot use this context anymore.");
     }
     if (childContext != null) {
+      childContext.maybeUnNest();
       childContext.active = false;
       childContext = null;
       jsonWriter.endObject();

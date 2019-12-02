@@ -379,6 +379,26 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
+  public void testTwiceNested_whenUsedCorrectly_shouldProduceNestedJson() throws EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> {
+          ctx.add("name", "value");
+          ctx.nested("nested1").add("key1", "value1").nested("nested2");
+          ctx.add("after1", true);
+        };
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result)
+        .isEqualTo(
+            "{\"name\":\"value\",\"nested1\":{\"key1\":\"value1\",\"nested2\":{}},\"after1\":true}");
+  }
+
+  @Test
   public void testNested_whenUsedAfterParent_shouldThrow() {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
