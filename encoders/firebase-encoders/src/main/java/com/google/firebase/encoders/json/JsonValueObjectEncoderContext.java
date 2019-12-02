@@ -30,6 +30,8 @@ import java.util.Map;
 
 final class JsonValueObjectEncoderContext implements ObjectEncoderContext, ValueEncoderContext {
 
+  private JsonValueObjectEncoderContext childContext = null;
+  private boolean active = true;
   private final JsonWriter jsonWriter;
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders;
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders;
@@ -43,10 +45,17 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     this.valueEncoders = valueEncoders;
   }
 
+  private JsonValueObjectEncoderContext(JsonValueObjectEncoderContext anotherContext) {
+    this.jsonWriter = anotherContext.jsonWriter;
+    this.objectEncoders = anotherContext.objectEncoders;
+    this.valueEncoders = anotherContext.valueEncoders;
+  }
+
   @NonNull
   @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, @Nullable Object o)
       throws IOException, EncodingException {
+    maybeUnNest();
     jsonWriter.name(name);
     if (o == null) {
       jsonWriter.nullValue();
@@ -59,6 +68,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, double value)
       throws IOException, EncodingException {
+    maybeUnNest();
     jsonWriter.name(name);
     return add(value);
   }
@@ -67,6 +77,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, int value)
       throws IOException, EncodingException {
+    maybeUnNest();
     jsonWriter.name(name);
     return add(value);
   }
@@ -75,6 +86,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, long value)
       throws IOException, EncodingException {
+    maybeUnNest();
     jsonWriter.name(name);
     return add(value);
   }
@@ -83,14 +95,26 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, boolean value)
       throws IOException, EncodingException {
+    maybeUnNest();
     jsonWriter.name(name);
     return add(value);
   }
 
   @NonNull
   @Override
+  public ObjectEncoderContext nested(@NonNull String name) throws IOException {
+    maybeUnNest();
+    childContext = new JsonValueObjectEncoderContext(this);
+    jsonWriter.name(name);
+    jsonWriter.beginObject();
+    return childContext;
+  }
+
+  @NonNull
+  @Override
   public JsonValueObjectEncoderContext add(@Nullable String value)
       throws IOException, EncodingException {
+    maybeUnNest();
     jsonWriter.value(value);
     return this;
   }
@@ -98,6 +122,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @NonNull
   @Override
   public JsonValueObjectEncoderContext add(double value) throws IOException, EncodingException {
+    maybeUnNest();
     jsonWriter.value(value);
     return this;
   }
@@ -105,6 +130,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @NonNull
   @Override
   public JsonValueObjectEncoderContext add(int value) throws IOException, EncodingException {
+    maybeUnNest();
     jsonWriter.value(value);
     return this;
   }
@@ -112,6 +138,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @NonNull
   @Override
   public JsonValueObjectEncoderContext add(long value) throws IOException, EncodingException {
+    maybeUnNest();
     jsonWriter.value(value);
     return this;
   }
@@ -119,6 +146,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @NonNull
   @Override
   public JsonValueObjectEncoderContext add(boolean value) throws IOException, EncodingException {
+    maybeUnNest();
     jsonWriter.value(value);
     return this;
   }
@@ -127,6 +155,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @Override
   public JsonValueObjectEncoderContext add(@Nullable byte[] bytes)
       throws IOException, EncodingException {
+    maybeUnNest();
     if (bytes == null) {
       jsonWriter.nullValue();
     } else {
@@ -237,6 +266,20 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   }
 
   void close() throws IOException {
+    maybeUnNest();
     jsonWriter.flush();
+  }
+
+  private void maybeUnNest() throws IOException {
+    if (!active) {
+      throw new IllegalStateException(
+          "Parent context used since this context was created. Cannot use this context anymore.");
+    }
+    if (childContext != null) {
+      childContext.maybeUnNest();
+      childContext.active = false;
+      childContext = null;
+      jsonWriter.endObject();
+    }
   }
 }
