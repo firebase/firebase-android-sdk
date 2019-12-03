@@ -941,7 +941,7 @@ public class Query {
    * Starts listening to this query with the given options.
    *
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
-   *     Query.getMetadata()} changed) should trigger snapshot events.
+   *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */
@@ -956,7 +956,7 @@ public class Query {
    *
    * @param executor The executor to use to call the listener.
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
-   *     Query.getMetadata()} changed) should trigger snapshot events.
+   *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */
@@ -978,7 +978,7 @@ public class Query {
    *
    * @param activity The activity to scope the listener to.
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
-   *     Query.getMetadata()} changed) should trigger snapshot events.
+   *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */
