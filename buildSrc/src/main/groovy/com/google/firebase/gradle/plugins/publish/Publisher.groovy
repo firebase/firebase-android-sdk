@@ -71,10 +71,18 @@ class Publisher {
     private static void processDependencies(Project project, Node pom) {
         def deps = getDependencyTypes(project)
 
+        def exportedDeps = project.configurations
+                .getByName(FirebaseLibraryExtension.FIREBASE_LIBRARY_EXPORTS)
+                .dependencies.collect { "$it.group:$it.name" as String }
+
+
         pom.dependencies.dependency.each {
+            def qualifiedName = "${it.groupId.text()}:${it.artifactId.text()}" as String
+
             // remove multidex as it is supposed to be added by final applications and is needed for
             // some libraries only for instrumentation tests to build.
-            if (it.groupId.text() in ['com.android.support', 'androidx.multidex'] && it.artifactId.text() == 'multidex') {
+            // remove "exported" deps as they are vendored in.
+            if (qualifiedName in ['com.android.support:multidex', 'androidx.multidex:multidex'] + exportedDeps) {
                 it.parent().remove(it)
             }
             it.appendNode('type', [:], deps["${it.groupId.text()}:${it.artifactId.text()}"])
@@ -106,7 +114,9 @@ class Publisher {
         if (d instanceof ProjectDependency) {
             // we currently only support aar libraries to be produced in this repository
             def library = getFirebaseLibrary(d.dependencyProject)
-            return [("${library.groupId.get()}:${library.artifactId.get()}" as String): 'aar']
+            if (library != null) {
+                return [("${library.groupId.get()}:${library.artifactId.get()}" as String): 'aar']
+            }
         }
         String path = config.find {
             it.absolutePath.matches(".*\\Q$d.group/$d.name/$d.version/\\E[a-zA-Z0-9]+/\\Q$d.name-$d.version.\\E[aj]ar")
@@ -120,7 +130,7 @@ class Publisher {
     }
 
     private static FirebaseLibraryExtension getFirebaseLibrary(Project project) {
-        return project.extensions.getByType(FirebaseLibraryExtension.class);
+        return project.extensions.findByType(FirebaseLibraryExtension.class);
     }
 
 }

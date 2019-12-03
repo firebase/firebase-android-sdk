@@ -16,7 +16,6 @@ package com.google.firebase.gradle.plugins;
 
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.AndroidSourceSet;
-import com.android.build.gradle.api.LibraryVariant;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
@@ -27,10 +26,10 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -83,6 +82,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                     .getKotlinOptions()
                     .setFreeCompilerArgs(
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
+    registerExportsConfiguration(project, android);
   }
 
   private static void setupApiInformationAnalysis(Project project, LibraryExtension android) {
@@ -170,5 +170,17 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     String fullyQualifiedProjectPath = project.getPath().replaceAll(":", "-");
 
     return project.getRootProject().getName() + fullyQualifiedProjectPath;
+  }
+
+  /** Exports configuration vendors a given "java-library" into the sdk */
+  private void registerExportsConfiguration(Project project, LibraryExtension android) {
+    Configuration config =
+        project
+            .getConfigurations()
+            .create(
+                FirebaseLibraryExtension.FIREBASE_LIBRARY_EXPORTS,
+                c -> project.getConfigurations().getByName("api").extendsFrom(c));
+
+    android.registerTransform(new VendorTransform(project.getLogger(), config));
   }
 }

@@ -30,6 +30,7 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.publish.maven.MavenPom;
 
 public class FirebaseLibraryExtension {
+  public static final String FIREBASE_LIBRARY_EXPORTS = "firebaseLibraryExports";
   private final Project project;
   private final Set<FirebaseLibraryExtension> librariesToCoRelease = new HashSet<>();
 
@@ -147,5 +148,19 @@ public class FirebaseLibraryExtension {
 
   public void staticAnalysis(Action<FirebaseStaticAnalysis> action) {
     action.execute(staticAnalysis);
+  }
+
+  /** Registers a java-library project to be vendored into the current firebaseLibrary. */
+  public void exports(Project depProject) {
+    project.getDependencies().add(FIREBASE_LIBRARY_EXPORTS, depProject);
+
+    depProject
+        .getConfigurations()
+        .all(
+            c -> {
+              if (c.getName().equals("implementation")) {
+                project.getDependencies().add("api", c);
+              }
+            });
   }
 }

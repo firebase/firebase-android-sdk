@@ -15,79 +15,24 @@
 package com.google.firebase.gradle.plugins.publish
 
 import com.google.firebase.gradle.plugins.publish.Publisher.Mode
-import groovy.text.SimpleTemplateEngine
+import org.apache.commons.io.IOUtils
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
+
 class PublishingPluginSpec extends Specification {
-
-    static class Project {
-        static final String BUILD_TEMPLATE = '''
-        plugins {
-            id 'firebase-library'
-        }
-        group = '${group}'
-        version = '${version}'
-        <% if (latestReleasedVersion) println "ext.latestReleasedVersion = $latestReleasedVersion" %>
-        firebaseLibrary {
-          <% if (releaseWith != null) println "releaseWith project(':$releaseWith.name')" %>
-          <% if (customizePom != null) println "customizePom {$customizePom}" %>
-        }
-        android.compileSdkVersion = 26
-
-        repositories {
-            google()
-            jcenter()
-	    }
-        dependencies {
-            <%dependencies.each { println "implementation project(':$it.name')" } %>
-            <%externalDependencies.each { println "implementation '$it'" } %>
-        }
-        '''
-        String name
-        String group = 'com.example'
-        String version = 'undefined'
-        String latestReleasedVersion = ''
-        Set<Project> projectDependencies = []
-        Set<String> externalDependencies = []
-        Project releaseWith = null
-        String customizePom = null
-
-        String generateBuildFile() {
-            def text = new SimpleTemplateEngine().createTemplate(BUILD_TEMPLATE).make([
-                    name: name,
-                    group: group,
-                    version: version,
-                    dependencies: projectDependencies,
-                    externalDependencies: externalDependencies,
-                    releaseWith: releaseWith,
-                    latestReleasedVersion: latestReleasedVersion,
-                    customizePom: customizePom,
-            ])
-
-            return text
-        }
-
-        Optional<File> getPublishedPom(String rootFolder) {
-            def v = releaseWith == null ? version : releaseWith.version
-            def poms = new FileNameFinder().getFileNames(rootFolder,
-                    "${group.replaceAll('\\.', '/')}/${name}/${v}*/*.pom")
-
-            if(poms.empty) {
-                return Optional.empty()
-            }
-            return Optional.of(new File(poms[0]))
-        }
-    }
 
     @Rule TemporaryFolder testProjectDir = new TemporaryFolder()
     File rootBuildFile
     File rootSettingsFile
 
-    List<Project> subprojects = []
+    List<FirebaseLibraryProject> subprojects = []
 
     final String rootProject = """
         buildscript {
@@ -109,8 +54,14 @@ class PublishingPluginSpec extends Specification {
     """
 
     def "Publishing dependent projects succeeds"() {
-        Project project1 = new Project(name: 'childProject1', version: '1.0')
-        Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1], customizePom: """
+        FirebaseLibraryProject project1 = new FirebaseLibraryProject(
+                name: 'childProject1',
+                version: '1.0')
+        FirebaseLibraryProject project2 = new FirebaseLibraryProject(
+                name: 'childProject2',
+                version: '0.9',
+                projectDependencies: ['implementation': [project1]],
+                customizePom: """
 licenses {
   license {
     name = 'Hello'
@@ -145,8 +96,13 @@ licenses {
     }
 
     def "Publish with unreleased dependency"() {
-        Project project1 = new Project(name: 'childProject1', version: '1.0')
-        Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1])
+        FirebaseLibraryProject project1 = new FirebaseLibraryProject(
+                name: 'childProject1',
+                version: '1.0')
+        FirebaseLibraryProject project2 = new FirebaseLibraryProject(
+                name: 'childProject2',
+                version: '0.9',
+                projectDependencies: ['implementation': [project1]])
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
@@ -157,8 +113,14 @@ licenses {
     }
 
     def "Publish with released dependency"() {
-        Project project1 = new Project(name: 'childProject1', version: '1.0', latestReleasedVersion: '0.8')
-        Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1])
+        FirebaseLibraryProject project1 = new FirebaseLibraryProject(
+                name: 'childProject1',
+                version: '1.0',
+                latestReleasedVersion: '0.8')
+        FirebaseLibraryProject project2 = new FirebaseLibraryProject(
+                name: 'childProject2',
+                version: '0.9',
+                projectDependencies: ['implementation': [project1]])
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
@@ -181,8 +143,13 @@ licenses {
     }
 
     def "Publish all dependent snapshot projects succeeds"() {
-        Project project1 = new Project(name: 'childProject1', version: '1.0')
-        Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1])
+        FirebaseLibraryProject project1 = new FirebaseLibraryProject(
+                name: 'childProject1',
+                version: '1.0')
+        FirebaseLibraryProject project2 = new FirebaseLibraryProject(
+                name: 'childProject2',
+                version: '0.9',
+                projectDependencies: ['implementation': [project1]])
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
@@ -207,8 +174,14 @@ licenses {
     }
 
     def "Publish snapshots with released dependency"() {
-        Project project1 = new Project(name: 'childProject1', version: '1.0', latestReleasedVersion: '0.8')
-        Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1])
+        FirebaseLibraryProject project1 = new FirebaseLibraryProject(
+                name: 'childProject1',
+                version: '1.0',
+                latestReleasedVersion: '0.8')
+        FirebaseLibraryProject project2 = new FirebaseLibraryProject(
+                name: 'childProject2',
+                version: '0.9',
+                projectDependencies: ['implementation': [project1]])
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
@@ -231,8 +204,14 @@ licenses {
     }
 
     def "Publish project should also publish coreleased projects"() {
-        Project project1 = new Project(name: 'childProject1', version: '1.0')
-        Project project2 = new Project(name: 'childProject2', version: '0.9', projectDependencies: [project1], releaseWith: project1)
+        FirebaseLibraryProject project1 = new FirebaseLibraryProject(
+                name: 'childProject1',
+                version: '1.0')
+        FirebaseLibraryProject project2 = new FirebaseLibraryProject(
+                name: 'childProject2',
+                version: '0.9',
+                projectDependencies: ['implementation': [project1]],
+                releaseWith: project1)
 
         when: "publishFirebase invoked"
         subprojectsDefined(project1, project2)
@@ -257,15 +236,20 @@ licenses {
     }
 
     def "Publish project should correctly set dependency types"() {
-        Project project1 = new Project(name: 'childProject1', version: '1.0', latestReleasedVersion: '0.8')
-        Project project2 = new Project(
+        FirebaseLibraryProject project1 = new FirebaseLibraryProject(
+                name: 'childProject1',
+                version: '1.0',
+                latestReleasedVersion: '0.8')
+        FirebaseLibraryProject project2 = new FirebaseLibraryProject(
                 name: 'childProject2',
                 version: '0.9',
-                projectDependencies: [project1],
+                projectDependencies: ['implementation': [project1]],
                 externalDependencies: [
+                    'implementation': [
                         'com.google.dagger:dagger:2.22',
                         'com.google.dagger:dagger-android-support:2.22',
                         'com.android.support:multidex:1.0.3'
+                    ]
                 ])
 
         when: "publishFirebase invoked"
@@ -278,7 +262,6 @@ licenses {
         assert pom2.isPresent()
 
         and: 'versions and dependency types are valid'
-
         def xml2 = new XmlSlurper().parseText(pom2.get().text)
         xml2.version == project2.version
         def dependencies = xml2.dependencies.dependency.collect {
@@ -292,6 +275,51 @@ licenses {
 
     }
 
+    def "Publish with exported java-lib should vendor it into aar"() {
+        JavaLibraryProject javaProject = new JavaLibraryProject(
+                name: 'java-lib',
+                externalDependencies: ['implementation': ['com.google.dagger:dagger:2.22']],
+                classNames: ['com.example.JavaClass']
+        )
+        FirebaseLibraryProject firebaseProject = new FirebaseLibraryProject(
+                name: 'firebase-lib',
+                projectDependencies: [
+                        'firebaseLibrary.exports': [javaProject]
+                ],
+                classNames: ['com.example.AndroidClass']
+        )
+
+        when: "publishFirebase invoked"
+        subprojectsDefined(javaProject, firebaseProject)
+        def result = publish(Mode.RELEASE, firebaseProject)
+
+
+        then: 'poms exist'
+        def pom = firebaseProject.getPublishedPom("$testProjectDir.root/build/m2repository")
+        pom.isPresent()
+
+        and: 'versions and dependency types are valid'
+        def xml = new XmlSlurper().parseText(pom.get().text)
+        xml.version == firebaseProject.version
+        def dependencies = xml.dependencies.dependency.collect {
+            "${it.groupId.text()}:${it.artifactId.text()}:${it.version.text()}:${it.type.text()}:${it.scope.text()}"
+        } as Set<String>
+        dependencies == ['com.google.dagger:dagger:2.22:jar:compile'] as Set<String>
+
+        and: 'aar is present'
+        def aar = firebaseProject.getPublishedAar("$testProjectDir.root/build/m2repository")
+        aar.isPresent()
+
+        and: 'classes.jar contains java-lib classes'
+        def aarFile = aar.get()
+        def entries = zipEntries(aarFile.getInputStream(aarFile.getEntry('classes.jar')))
+        entries == [
+                'com/example/JavaClass.class',
+                'com/example/AndroidClass.class',
+                'com/example/BuildConfig.class'
+        ] as Set<String>
+    }
+
     private BuildResult build(String... args) {
         GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
@@ -300,21 +328,38 @@ licenses {
                 .build()
     }
 
-    private BuildResult publish(Mode mode, Project... projects) {
+    private BuildResult publish(Mode mode, FirebaseLibraryProject... projects) {
         def projectsArg = "-PprojectsToPublish=${projects.collect { it.name }.join(',')}"
         def modeArg = "-PpublishMode=$mode"
         build(projectsArg, modeArg, 'firebasePublish')
     }
 
-    private include(Project project) {
+    private include(HasBuild project) {
         testProjectDir.newFolder(project.name, 'src', 'main')
         testProjectDir.newFile("${project.name}/build.gradle") << project.generateBuildFile()
         testProjectDir.newFile("${project.name}/src/main/AndroidManifest.xml") << MANIFEST
+        project.classNames.each {
+            def path = it.replace('.', '/')
+            def (pkg, className) = packageAndClassName(it)
+            testProjectDir.newFolder(project.name, 'src', 'main', 'java', *pkg.split('\\.')).mkdirs()
+            testProjectDir.newFile("${project.name}/src/main/java/${path}.java") << """
+package $pkg;
+public class $className {}
+"""
+        }
 
         subprojects.add(project)
     }
 
-    private void subprojectsDefined(Project... projects) {
+    def packageAndClassName(String qualifiedName) {
+        int p=qualifiedName.lastIndexOf(".")
+        if (p == -1) {
+            return ['', qualifiedName]
+        }
+        return [qualifiedName.substring(0, p), qualifiedName.substring(p+1)]
+    }
+
+    private void subprojectsDefined(HasBuild... projects) {
         rootBuildFile  = testProjectDir.newFile('build.gradle')
         rootSettingsFile = testProjectDir.newFile('settings.gradle')
 
@@ -326,5 +371,22 @@ licenses {
 
     private String generateSettingsGradle() {
         return subprojects.collect { "include ':$it.name'" }.join('\n')
+    }
+
+    private static Set<String> zipEntries(InputStream zip) {
+        ByteArrayOutputStream classesJar = new ByteArrayOutputStream()
+        IOUtils.copy(zip, classesJar)
+
+        Set<String> entries = []
+
+        ZipInputStream zipInput = new ZipInputStream(new ByteArrayInputStream(classesJar.toByteArray()))
+        ZipEntry currentEntry = zipInput.nextEntry
+        while(currentEntry != null) {
+            if (!currentEntry.directory) {
+                entries.add(currentEntry.name)
+            }
+            currentEntry = zipInput.nextEntry
+        }
+        return entries
     }
 }
