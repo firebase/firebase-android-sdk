@@ -32,7 +32,9 @@ import java.util.Locale;
  * <p>In particular, when the client is trying to connect to the backend, we allow up to
  * MAX_WATCH_STREAM_FAILURES within ONLINE_STATE_TIMEOUT_MS for a connection to succeed. If we have
  * too many failures or the timeout elapses, then we set the OnlineState to OFFLINE, and the client
- * will behave as if it is offline (get() calls will return cached data, etc.).
+ * will behave as if it is offline (get() calls will return cached data, etc.). The client will
+ * continue to attempt reconnecting, restarting the underlying connection every
+ * CONNECTIVITY_ATTEMPT_TIMEOUT_MS.
  */
 class OnlineStateTracker {
 
@@ -149,7 +151,7 @@ class OnlineStateTracker {
       hardAssert(this.onlineStateTimer == null, "onlineStateTimer must be null");
     } else {
       watchStreamFailures++;
-      clearConnectivityAttemptTimer();
+      clearTimers();
       if (watchStreamFailures >= MAX_WATCH_STREAM_FAILURES) {
         logClientOfflineWarningIfNecessary(
             String.format(
@@ -169,7 +171,7 @@ class OnlineStateTracker {
    * it must not be used in place of handleWatchStreamStart() and handleWatchStreamFailure().
    */
   void updateState(OnlineState newState) {
-    clearConnectivityAttemptTimer();
+    clearTimers();
     watchStreamFailures = 0;
 
     if (newState == OnlineState.ONLINE) {
@@ -205,8 +207,8 @@ class OnlineStateTracker {
     }
   }
 
-  /** Clears the connectivity attempt timer that has been passed in. */
-  private void clearConnectivityAttemptTimer() {
+  /** Clears the OnlineStateTimer and the passed in ConnectivityAttemptTimer. */
+  private void clearTimers() {
     if (connectivityAttemptTimer != null) {
       connectivityAttemptTimer.cancel();
       connectivityAttemptTimer = null;
@@ -217,7 +219,7 @@ class OnlineStateTracker {
     }
   }
 
-  /** Set the connectivity attempt timer to track. */
+  /** Sets the connectivity attempt timer to track. */
   void setConnectivityAttemptTimer(DelayedTask connectivityAttemptTimer) {
     this.connectivityAttemptTimer = connectivityAttemptTimer;
   }
