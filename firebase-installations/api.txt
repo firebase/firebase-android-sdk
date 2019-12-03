@@ -3,10 +3,10 @@ package com.google.firebase.installations {
 
   public class FirebaseInstallations {
     method @NonNull public Task<Void> delete();
-    method @NonNull public Task<InstallationTokenResult> getAuthToken(int);
     method @NonNull public Task<String> getId();
     method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance();
     method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance(@NonNull FirebaseApp);
+    method @NonNull public Task<InstallationTokenResult> getToken(int);
   }
 
   public class FirebaseInstallationsException {
