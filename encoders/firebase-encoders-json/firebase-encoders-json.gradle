@@ -19,6 +19,7 @@ plugins {
 firebaseLibrary {
     publishSources = true
     publishJavadoc = false
+    exports project(':encoders:firebase-encoders')
 }
 
 android {
