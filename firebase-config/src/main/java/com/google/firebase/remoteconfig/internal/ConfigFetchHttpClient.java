@@ -310,7 +310,7 @@ public class ConfigFetchHttpClient {
     requestBodyMap.put(PACKAGE_NAME, context.getPackageName());
     requestBodyMap.put(SDK_VERSION, BuildConfig.VERSION_NAME);
 
-    requestBodyMap.put(ANALYTICS_USER_PROPERTIES, analyticsUserProperties);
+    requestBodyMap.put(ANALYTICS_USER_PROPERTIES, new JSONObject(analyticsUserProperties));
 
     return new JSONObject(requestBodyMap);
   }

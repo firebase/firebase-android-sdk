@@ -23,6 +23,8 @@ import com.google.firebase.inappmessaging.model.ImageData;
 import com.google.firebase.inappmessaging.model.ImageOnlyMessage;
 import com.google.firebase.inappmessaging.model.ModalMessage;
 import com.google.firebase.inappmessaging.model.Text;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TestData {
   // ************************* METADATA *************************
@@ -39,6 +41,11 @@ public class TestData {
       new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE);
   public static final CampaignMetadata TEST_CAMPAIGN_METADATA_MODEL =
       new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_TEST_MESSAGE);
+  public static final Map<String, String> DATA = new HashMap<>();
+
+  static {
+    DATA.put("up", "dog");
+  }
 
   // ************************* TITLE *************************
   public static final String TITLE_TEXT_STRING = "title";
@@ -91,7 +98,7 @@ public class TestData {
           .setBody(BODY_MODEL)
           .setTitle(TITLE_MODEL)
           .setImageData(IMAGE_DATA)
-          .build(CAMPAIGN_METADATA_MODEL);
+          .build(CAMPAIGN_METADATA_MODEL, DATA);
 
   public static final BannerMessage BANNER_MESSAGE_NO_ACTION_MODEL =
       BannerMessage.builder()
@@ -99,7 +106,7 @@ public class TestData {
           .setBody(BODY_MODEL)
           .setTitle(TITLE_MODEL)
           .setImageData(IMAGE_DATA)
-          .build(CAMPAIGN_METADATA_MODEL);
+          .build(CAMPAIGN_METADATA_MODEL, DATA);
 
   public static final BannerMessage BANNER_TEST_MESSAGE_MODEL =
       BannerMessage.builder()
@@ -108,7 +115,7 @@ public class TestData {
           .setBody(BODY_MODEL)
           .setTitle(TITLE_MODEL)
           .setImageData(IMAGE_DATA)
-          .build(TEST_CAMPAIGN_METADATA_MODEL);
+          .build(TEST_CAMPAIGN_METADATA_MODEL, DATA);
 
   // ************************* MODAL *************************
   public static final ModalMessage MODAL_MESSAGE_MODEL =
@@ -118,7 +125,7 @@ public class TestData {
           .setBody(BODY_MODEL)
           .setTitle(TITLE_MODEL)
           .setImageData(IMAGE_DATA)
-          .build(CAMPAIGN_METADATA_MODEL);
+          .build(CAMPAIGN_METADATA_MODEL, DATA);
 
   // ************************* CARD *************************
   public static final CardMessage CARD_MESSAGE_MODEL =
@@ -130,7 +137,7 @@ public class TestData {
           .setSecondaryAction(ACTION_MODEL_WITHOUT_URL)
           .setPortraitImageData(IMAGE_DATA)
           .setLandscapeImageData(LANDSCAPE_IMAGE_DATA)
-          .build(CAMPAIGN_METADATA_MODEL);
+          .build(CAMPAIGN_METADATA_MODEL, DATA);
 
   public static final CardMessage CARD_MESSAGE_WITHOUT_ACTIONS =
       CardMessage.builder()
@@ -140,17 +147,17 @@ public class TestData {
           .setPrimaryAction(ACTION_MODEL_WITHOUT_URL)
           .setPortraitImageData(IMAGE_DATA)
           .setLandscapeImageData(LANDSCAPE_IMAGE_DATA)
-          .build(CAMPAIGN_METADATA_MODEL);
+          .build(CAMPAIGN_METADATA_MODEL, DATA);
 
   // ************************* IMAGE *************************
   public static final ImageOnlyMessage IMAGE_MESSAGE_MODEL =
       ImageOnlyMessage.builder()
           .setAction(ACTION_MODEL_WITHOUT_BUTTON)
           .setImageData(IMAGE_DATA)
-          .build(CAMPAIGN_METADATA_MODEL);
+          .build(CAMPAIGN_METADATA_MODEL, DATA);
 
   public static final ImageOnlyMessage IMAGE_MESSAGE_MODEL_WITHOUT_ACTION =
-      ImageOnlyMessage.builder().setImageData(IMAGE_DATA).build(CAMPAIGN_METADATA_MODEL);
+      ImageOnlyMessage.builder().setImageData(IMAGE_DATA).build(CAMPAIGN_METADATA_MODEL, DATA);
 
   // ************************* HELPERS *************************
   public static BannerMessage createBannerMessageCustomMetadata(CampaignMetadata metadata) {
@@ -160,6 +167,6 @@ public class TestData {
         .setBody(BODY_MODEL)
         .setTitle(TITLE_MODEL)
         .setImageData(IMAGE_DATA)
-        .build(metadata);
+        .build(metadata, DATA);
   }
 }

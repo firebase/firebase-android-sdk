@@ -209,7 +209,7 @@ public final class LocalSerializerTest {
 
     QueryData queryData =
         new QueryData(
-            query,
+            query.toTarget(),
             targetId,
             sequenceNumber,
             QueryPurpose.LISTEN,
@@ -219,7 +219,7 @@ public final class LocalSerializerTest {
 
     // Let the RPC serializer test various permutations of query serialization.
     com.google.firestore.v1.Target.QueryTarget queryTarget =
-        remoteSerializer.encodeQueryTarget(query);
+        remoteSerializer.encodeQueryTarget(query.toTarget());
 
     com.google.firebase.firestore.proto.Target expected =
         com.google.firebase.firestore.proto.Target.newBuilder()

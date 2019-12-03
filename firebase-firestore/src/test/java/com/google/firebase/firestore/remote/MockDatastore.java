@@ -88,7 +88,7 @@ public class MockDatastore extends Datastore {
       String resumeToken = Util.toDebugString(queryData.getResumeToken());
       SpecTestCase.log(
           "      watchQuery("
-              + queryData.getQuery()
+              + queryData.getTarget()
               + ", "
               + queryData.getTargetId()
               + ", "

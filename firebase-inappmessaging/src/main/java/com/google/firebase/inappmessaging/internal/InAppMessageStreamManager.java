@@ -305,7 +305,8 @@ public class InAppMessageStreamManager {
             thickContent.getContent(),
             thickContent.getVanillaPayload().getCampaignId(),
             thickContent.getVanillaPayload().getCampaignName(),
-            thickContent.getIsTestCampaign());
+            thickContent.getIsTestCampaign(),
+            thickContent.getDataBundleMap());
     if (inAppMessage.getMessageType().equals(MessageType.UNSUPPORTED)) {
       return Maybe.empty();
     }

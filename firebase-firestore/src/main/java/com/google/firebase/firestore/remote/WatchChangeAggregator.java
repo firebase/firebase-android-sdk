@@ -20,7 +20,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.model.Document;
@@ -176,14 +176,14 @@ public class WatchChangeAggregator {
 
     QueryData queryData = queryDataForActiveTarget(targetId);
     if (queryData != null) {
-      Query query = queryData.getQuery();
-      if (query.isDocumentQuery()) {
+      Target target = queryData.getTarget();
+      if (target.isDocumentQuery()) {
         if (expectedCount == 0) {
           // The existence filter told us the document does not exist. We deduce that this document
           // does not exist and apply a deleted document to our updates. Without applying this
           // deleted document there might be another query that will raise this document as part of
           // a snapshot  until it is resolved, essentially exposing inconsistency between queries.
-          DocumentKey key = DocumentKey.fromPath(query.getPath());
+          DocumentKey key = DocumentKey.fromPath(target.getPath());
           removeDocumentFromTarget(
               targetId,
               key,
@@ -217,12 +217,12 @@ public class WatchChangeAggregator {
 
       QueryData queryData = queryDataForActiveTarget(targetId);
       if (queryData != null) {
-        if (targetState.isCurrent() && queryData.getQuery().isDocumentQuery()) {
+        if (targetState.isCurrent() && queryData.getTarget().isDocumentQuery()) {
           // Document queries for document that don't exist can produce an empty result set. To
           // update our local cache, we synthesize a document delete if we have not previously
           // received the document. This resolves the limbo state of the document, removing it from
           // limboDocumentRefs.
-          DocumentKey key = DocumentKey.fromPath(queryData.getQuery().getPath());
+          DocumentKey key = DocumentKey.fromPath(queryData.getTarget().getPath());
           if (pendingDocumentUpdates.get(key) == null && !targetContainsDocument(targetId, key)) {
             removeDocumentFromTarget(
                 targetId,

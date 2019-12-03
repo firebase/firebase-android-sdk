@@ -17,6 +17,7 @@ package com.google.firebase.inappmessaging.model;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.Map;
 
 /** Encapsulates a Firebase In App Card Message. */
 public class CardMessage extends InAppMessage {
@@ -100,8 +101,9 @@ public class CardMessage extends InAppMessage {
       @Nullable ImageData landscapeImageData,
       @NonNull String backgroundHexColor,
       @NonNull Action primaryAction,
-      @Nullable Action secondaryAction) {
-    super(campaignMetadata, MessageType.CARD);
+      @Nullable Action secondaryAction,
+      @Nullable Map<String, String> data) {
+    super(campaignMetadata, MessageType.CARD, data);
     this.title = title;
     this.body = body;
     this.portraitImageData = portraitImageData;
@@ -239,7 +241,8 @@ public class CardMessage extends InAppMessage {
       return this;
     }
 
-    public CardMessage build(CampaignMetadata campaignMetadata) {
+    public CardMessage build(
+        CampaignMetadata campaignMetadata, @Nullable Map<String, String> data) {
       if (primaryAction == null) {
         throw new IllegalArgumentException("Card model must have a primary action");
       }
@@ -269,7 +272,8 @@ public class CardMessage extends InAppMessage {
           landscapeImageData,
           backgroundHexColor,
           primaryAction,
-          secondaryAction);
+          secondaryAction,
+          data);
     }
   }
 }

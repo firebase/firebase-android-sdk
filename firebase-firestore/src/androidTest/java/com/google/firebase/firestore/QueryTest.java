@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -78,6 +79,78 @@ public class QueryTest {
     QuerySnapshot set = waitFor(query.get());
     List<Map<String, Object>> data = querySnapshotToValues(set);
     assertEquals(asList(map("k", "d", "sort", 2L), map("k", "c", "sort", 1L)), data);
+  }
+
+  @Test
+  public void testLimitToLastMustAlsoHaveExplicitOrderBy() {
+    CollectionReference collection = testCollectionWithDocs(map());
+
+    Query query = collection.limitToLast(2);
+    expectError(
+        () -> waitFor(query.get()),
+        "limitToLast() queries require specifying at least one orderBy() clause");
+  }
+
+  // Two queries that mapped to the same target ID are referred to as
+  // "mirror queries". An example for a mirror query is a limitToLast()
+  // query and a limit() query that share the same backend Target ID.
+  // Since limitToLast() queries are sent to the backend with a modified
+  // orderBy() clause, they can map to the same target representation as
+  // limit() query, even if both queries appear separate to the user.
+  @Test
+  public void testListenUnlistenRelistenSequenceOfMirrorQueries() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a", "sort", 0),
+                "b", map("k", "b", "sort", 1),
+                "c", map("k", "c", "sort", 1),
+                "d", map("k", "d", "sort", 2)));
+
+    // Setup `limit` query.
+    Query limit = collection.limit(2).orderBy("sort", Direction.ASCENDING);
+    EventAccumulator<QuerySnapshot> limitAccumulator = new EventAccumulator<>();
+    ListenerRegistration limitRegistration = limit.addSnapshotListener(limitAccumulator.listener());
+
+    // Setup mirroring `limitToLast` query.
+    Query limitToLast = collection.limitToLast(2).orderBy("sort", Direction.DESCENDING);
+    EventAccumulator<QuerySnapshot> limitToLastAccumulator = new EventAccumulator<>();
+    ListenerRegistration limitToLastRegistration =
+        limitToLast.addSnapshotListener(limitToLastAccumulator.listener());
+
+    // Verify both query get expected result.
+    List<Map<String, Object>> data = querySnapshotToValues(limitAccumulator.await());
+    assertEquals(asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)), data);
+    data = querySnapshotToValues(limitToLastAccumulator.await());
+    assertEquals(asList(map("k", "b", "sort", 1L), map("k", "a", "sort", 0L)), data);
+
+    // Unlisten then re-listen limit query.
+    limitRegistration.remove();
+    limit.addSnapshotListener(limitAccumulator.listener());
+
+    // Verify `limit` query still works.
+    data = querySnapshotToValues(limitAccumulator.await());
+    assertEquals(asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)), data);
+
+    // Add a document that would change the result set.
+    waitFor(collection.add(map("k", "e", "sort", -1)));
+
+    // Verify both query get expected result.
+    data = querySnapshotToValues(limitAccumulator.await());
+    assertEquals(asList(map("k", "e", "sort", -1L), map("k", "a", "sort", 0L)), data);
+    data = querySnapshotToValues(limitToLastAccumulator.await());
+    assertEquals(asList(map("k", "a", "sort", 0L), map("k", "e", "sort", -1L)), data);
+
+    // Unlisten to limitToLast, update a doc, then relisten to limitToLast
+    limitToLastRegistration.remove();
+    waitFor(collection.document("a").update(map("k", "a", "sort", -2)));
+    limitToLast.addSnapshotListener(limitToLastAccumulator.listener());
+
+    // Verify both query get expected result.
+    data = querySnapshotToValues(limitAccumulator.await());
+    assertEquals(asList(map("k", "a", "sort", -2L), map("k", "e", "sort", -1L)), data);
+    data = querySnapshotToValues(limitToLastAccumulator.await());
+    assertEquals(asList(map("k", "e", "sort", -1L), map("k", "a", "sort", -2L)), data);
   }
 
   @Test
