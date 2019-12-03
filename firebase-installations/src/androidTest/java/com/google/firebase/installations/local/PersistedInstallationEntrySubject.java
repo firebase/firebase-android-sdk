@@ -63,7 +63,7 @@ public final class PersistedInstallationEntrySubject extends Subject {
   }
 
   public void hasAuthToken(String authToken) {
-    check("getAuthToken()").that(actual.getAuthToken()).isEqualTo(authToken);
+    check("getToken()").that(actual.getAuthToken()).isEqualTo(authToken);
   }
 
   public void hasRefreshToken(String refreshToken) {
