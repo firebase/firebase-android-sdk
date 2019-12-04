@@ -87,6 +87,8 @@ public final class GetterFactory {
     TypeMirror returnType = resolveTypeArguments(ownerType, element.getReturnType());
     String getterExpression = element.toString();
 
+    // Fail to compile if Maps with non-string keys are used, if/when we add support for such maps
+    // we should delete this.
     TypeMirror map = types.erasure(elements.getTypeElement("java.util.Map").asType());
     if (types.isAssignable(returnType, map)) {
       TypeMirror keyType = ((DeclaredType) returnType).getTypeArguments().get(0);
