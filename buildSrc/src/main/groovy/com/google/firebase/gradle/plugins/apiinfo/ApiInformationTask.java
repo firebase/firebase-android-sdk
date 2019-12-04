@@ -14,110 +14,116 @@
 
 package com.google.firebase.gradle.plugins.apiinfo;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.gradle.api.DefaultTask;
-import org.gradle.api.GradleException;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.TaskAction;
-
+import com.android.build.gradle.api.AndroidSourceSet;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.TaskAction;
 
 /**
-    Task generates the api diff of the current source code against the api.txt file stored
-    alongside the project's src directory.
+ * Task generates the api diff of the current source code against the api.txt file stored alongside
+ * the project's src directory.
  */
 public abstract class ApiInformationTask extends DefaultTask {
 
-    @Input
-    abstract String getMetalavaJarPath();
+  @Input
+  abstract String getMetalavaJarPath();
 
-    @InputFile
-    abstract File getApiTxt();
+  @InputFile
+  abstract File getApiTxt();
 
-    @InputFiles
-    abstract List<File> getSourcePath();
+  abstract AndroidSourceSet getSourceSet();
 
-    @OutputFile
-    abstract File getBaselineFile();
+  @OutputFile
+  abstract File getBaselineFile();
 
-    @OutputFile
-    abstract File getOutputApiFile();
+  @OutputFile
+  abstract File getOutputApiFile();
 
-    @Input
-    abstract boolean getUpdateBaseline();
+  @Input
+  abstract boolean getUpdateBaseline();
 
-    @OutputFile
-    abstract File getOutputFile();
+  @OutputFile
+  abstract File getOutputFile();
 
-    public abstract void setSourcePath(List<File> value);
+  public abstract void setSourceSet(AndroidSourceSet value);
 
-    public abstract void setBaselineFile(File value);
+  public abstract void setBaselineFile(File value);
 
-    public abstract void setUpdateBaseline(boolean value);
+  public abstract void setUpdateBaseline(boolean value);
 
-    public abstract void setMetalavaJarPath(String value);
+  public abstract void setMetalavaJarPath(String value);
 
-    public abstract void setApiTxt(File value);
+  public abstract void setApiTxt(File value);
 
-    public abstract void setOutputApiFile(File value);
+  public abstract void setOutputApiFile(File value);
 
-    public abstract void setOutputFile(File value);
+  public abstract void setOutputFile(File value);
 
-
-    @TaskAction
-    void execute() {
-        String sourcePath = getSourcePath().stream().map(File::getAbsolutePath).collect(Collectors.joining(":"));
-        File outputFileDir = getOutputFile().getParentFile();
-        if(!outputFileDir.exists()) {
-            outputFileDir.mkdirs();
-        }
-
-        // Generate api.txt file and store it in the  build directory.
-        getProject().javaexec(spec-> {
-            spec.setMain("-jar");
-            spec.setArgs(Arrays.asList(
-                getMetalavaJarPath(),
-                "--source-path", sourcePath,
-                "--api", getOutputApiFile().getAbsolutePath(),
-                "--format=v2"
-            ));
-            spec.setIgnoreExitValue(true);
-        });
-        getProject().javaexec(spec-> {
-            spec.setMain("-jar");
-            List<String> args = new ArrayList<>(Arrays.asList(
-                getMetalavaJarPath(),
-                "--source-files", getOutputApiFile().getAbsolutePath(),
-                "--check-compatibility:api:current", getApiTxt().getAbsolutePath(),
-                "--format=v2",
-                "--no-color",
-                "--delete-empty-baselines"
-            ));
-            if(getUpdateBaseline()) {
-                args.addAll(Arrays.asList("--update-baseline", getBaselineFile().getAbsolutePath()));
-            } else if(getBaselineFile().exists()) {
-                args.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
-            }
-            spec.setArgs(args);
-            spec.setIgnoreExitValue(true);
-            try {
-                spec.setStandardOutput(new FileOutputStream(getOutputFile()));
-            } catch (FileNotFoundException e) {
-                throw new GradleException("Unable to run the command", e);
-            }
-        });
-
+  @TaskAction
+  void execute() {
+    String sourcePath =
+        getSourceSet().getJava().getSrcDirs().stream()
+            .filter(File::exists)
+            .map(File::getAbsolutePath)
+            .collect(Collectors.joining(":"));
+    File outputFileDir = getOutputFile().getParentFile();
+    if (!outputFileDir.exists()) {
+      outputFileDir.mkdirs();
     }
 
+    // Generate api.txt file and store it in the  build directory.
+    getProject()
+        .javaexec(
+            spec -> {
+              spec.setMain("-jar");
+              spec.setArgs(
+                  Arrays.asList(
+                      getMetalavaJarPath(),
+                      "--source-path",
+                      sourcePath,
+                      "--api",
+                      getOutputApiFile().getAbsolutePath(),
+                      "--format=v2"));
+              spec.setIgnoreExitValue(true);
+            });
+    getProject()
+        .javaexec(
+            spec -> {
+              spec.setMain("-jar");
+              List<String> args =
+                  new ArrayList<>(
+                      Arrays.asList(
+                          getMetalavaJarPath(),
+                          "--source-files",
+                          getOutputApiFile().getAbsolutePath(),
+                          "--check-compatibility:api:current",
+                          getApiTxt().getAbsolutePath(),
+                          "--format=v2",
+                          "--no-color",
+                          "--delete-empty-baselines"));
+              if (getUpdateBaseline()) {
+                args.addAll(
+                    Arrays.asList("--update-baseline", getBaselineFile().getAbsolutePath()));
+              } else if (getBaselineFile().exists()) {
+                args.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
+              }
+              spec.setArgs(args);
+              spec.setIgnoreExitValue(true);
+              try {
+                spec.setStandardOutput(new FileOutputStream(getOutputFile()));
+              } catch (FileNotFoundException e) {
+                throw new GradleException("Unable to run the command", e);
+              }
+            });
+  }
 }
