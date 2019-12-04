@@ -19,7 +19,9 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,7 +34,14 @@ public class FirebaseInstallationsRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseInstallationsApi.class)
             .add(Dependency.required(FirebaseApp.class))
-            .factory(c -> new FirebaseInstallations(c.get(FirebaseApp.class)))
+            .add(Dependency.required(HeartBeatInfo.class))
+            .add(Dependency.required(UserAgentPublisher.class))
+            .factory(
+                c ->
+                    new FirebaseInstallations(
+                        c.get(FirebaseApp.class),
+                        c.get(UserAgentPublisher.class),
+                        c.get(HeartBeatInfo.class)))
             .build(),
         LibraryVersionComponent.create("fire-installations", BuildConfig.VERSION_NAME));
   }
