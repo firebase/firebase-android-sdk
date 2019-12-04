@@ -72,7 +72,7 @@ task codecov(type: Exec) {
     environment "CI_BUILD_ID", "$build"
     environment "CI_JOB_ID", "$job"
 
-    commandLine 'bash', '-c', 'bash <(curl -s https://codecov.io/bash)'
+    commandLine 'bash', '/opt/codecov/uploader.sh'
 }
 
 // TODO(yifany@): Uploads coverage reports to coveralls.
