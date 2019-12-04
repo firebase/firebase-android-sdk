@@ -30,6 +30,7 @@ import java.lang.annotation.Target;
  * @Encodable
  * public class MyType {
  *   public String getField() { return "hello"; }
+ *   public boolean isConditional() { return false; }
  * }
  *
  * DataEncoder encoder = new JsonDataEncoderBuilder()
