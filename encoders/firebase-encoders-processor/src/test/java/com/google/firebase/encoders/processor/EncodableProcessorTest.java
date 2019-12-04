@@ -14,9 +14,11 @@
 
 package com.google.firebase.encoders.processor;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.testing.compile.CompilationSubject.assertThat;
 import static com.google.testing.compile.Compiler.javac;
 
+import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import org.junit.Test;
@@ -196,5 +198,85 @@ public class EncodableProcessorTest {
         .generatedSourceFile("AutoWithOptionalEncoder")
         .contentsAsUtf8String()
         .contains("\"hello\", value.getOptional().orElse(null)");
+  }
+
+  @Test
+  public void compile_withAutoValueInSamePackage_shouldRegisterGeneratedSubclass() {
+    Compilation result =
+        javac()
+            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "Foo",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "import com.google.auto.value.AutoValue;",
+                    "@Encodable @AutoValue public abstract class Foo {",
+                    "public abstract String getField();",
+                    "}"));
+
+    assertThat(result)
+        .generatedSourceFile("AutoFooEncoder")
+        .contentsAsUtf8String()
+        .contains("cfg.registerEncoder(AutoValue_Foo.class");
+  }
+
+  @Test
+  public void compile_withAutoValueInDifferentPackage_shouldRegisterGeneratedSubclass() {
+    Compilation result =
+        javac()
+            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "com.example.Foo",
+                    "package com.example;",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "@Encodable public class Foo {",
+                    "public com.example.sub.Member getField() { return null; }",
+                    "}"),
+                JavaFileObjects.forSourceLines(
+                    "com.example.sub.Member",
+                    "package com.example.sub;",
+                    "import com.google.auto.value.AutoValue;",
+                    "@AutoValue public abstract class Member {",
+                    "public abstract String getField();",
+                    "}"));
+
+    assertThat(result).succeededWithoutWarnings();
+    assertThat(result)
+        .generatedSourceFile("com/example/AutoFooEncoder")
+        .contentsAsUtf8String()
+        .contains(
+            "cfg.registerEncoder("
+                + "com.example.sub.EncodableComExampleFooMemberAutoValueSupport.TYPE,"
+                + " MemberEncoder.INSTANCE)");
+    assertThat(result)
+        .generatedSourceFile("com/example/sub/EncodableComExampleFooMemberAutoValueSupport")
+        .contentsAsUtf8String()
+        .contains("Class<? extends Member> TYPE = AutoValue_Member.class");
+  }
+
+  @Test
+  public void packageNameToCamelCase_withDefaultPackage_shouldReturnEmptyString() {
+    assertThat(EncodableProcessor.packageNameToCamelCase("")).isEqualTo("");
+  }
+
+  @Test
+  public void packageNameToCamelCase_withValidPackage_shouldSuccessfullyReturn() {
+    assertThat(EncodableProcessor.packageNameToCamelCase("com.example")).isEqualTo("ComExample");
+  }
+
+  @Test
+  public void packageNameToCamelCase_withInvalidPackage_shouldSuccessfullyReturn() {
+    assertThat(EncodableProcessor.packageNameToCamelCase("com.example.")).isEqualTo("ComExample");
+  }
+
+  @Test
+  public void packageNameToCamelCase_withInvalidPackage2_shouldSuccessfullyReturn() {
+    assertThat(EncodableProcessor.packageNameToCamelCase(".example")).isEqualTo("Example");
+  }
+
+  @Test
+  public void packageNameToCamelCase_withSubPackageOfOneChar_shouldSuccessfullyReturn() {
+    assertThat(EncodableProcessor.packageNameToCamelCase("com.example.a")).isEqualTo("ComExampleA");
   }
 }

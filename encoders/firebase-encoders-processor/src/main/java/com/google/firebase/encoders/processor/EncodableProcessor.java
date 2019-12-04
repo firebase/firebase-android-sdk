@@ -14,7 +14,9 @@
 
 package com.google.firebase.encoders.processor;
 
+import androidx.annotation.VisibleForTesting;
 import com.google.auto.service.AutoService;
+import com.google.auto.value.AutoValue;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.processor.getters.Getter;
 import com.google.firebase.encoders.processor.getters.GetterFactory;
@@ -28,9 +30,11 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -56,7 +60,6 @@ public class EncodableProcessor extends AbstractProcessor {
   private Elements elements;
   private Types types;
   private GetterFactory getterFactory;
-  private TypeTraversal traversal;
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnvironment) {
@@ -120,6 +123,8 @@ public class EncodableProcessor extends AbstractProcessor {
             .addModifiers(Modifier.PUBLIC)
             .addAnnotation(Override.class);
 
+    Map<String, TypeSpec> autoValueSupportClasses = new HashMap<>();
+
     for (Encoder encoder : encoders) {
       encoderBuilder.addType(encoder.code());
 
@@ -127,6 +132,16 @@ public class EncodableProcessor extends AbstractProcessor {
           "cfg.registerEncoder($T.class, $N.INSTANCE);\n",
           types.erasure(encoder.type()),
           encoder.code());
+      autoValueSupport(
+              Names.packageName(element),
+              element.getSimpleName().toString(),
+              encoder,
+              configureMethod)
+          .ifPresent(
+              spec -> {
+                String packageName = Names.packageName(types.asElement(encoder.type()));
+                autoValueSupportClasses.put(packageName, spec);
+              });
     }
     encoderBuilder.addMethod(configureMethod.build());
 
@@ -134,9 +149,88 @@ public class EncodableProcessor extends AbstractProcessor {
 
     try {
       file.writeTo(processingEnv.getFiler());
+      for (Map.Entry<String, TypeSpec> autoValue : autoValueSupportClasses.entrySet()) {
+        JavaFile.builder(autoValue.getKey(), autoValue.getValue())
+            .build()
+            .writeTo(processingEnv.getFiler());
+      }
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
+  }
+
+  private Optional<TypeSpec> autoValueSupport(
+      String rootPackageName,
+      String containingClassName,
+      Encoder encoder,
+      MethodSpec.Builder configureMethod) {
+    Element element = types.asElement(encoder.type());
+    AutoValue autoValue = element.getAnnotation(AutoValue.class);
+    if (autoValue == null) {
+      return Optional.empty();
+    }
+    String typePackageName = Names.packageName(element);
+
+    if (rootPackageName.equals(typePackageName)) {
+      configureMethod.addCode(
+          "cfg.registerEncoder(AutoValue_$T.class, $N.INSTANCE);\n",
+          types.erasure(encoder.type()),
+          encoder.code());
+      return Optional.empty();
+    }
+
+    // the generated class has a rather long name but provides uniqueness guarantees.
+    TypeSpec supportClass =
+        TypeSpec.classBuilder(
+                String.format(
+                    "Encodable%s%s%sAutoValueSupport",
+                    packageNameToCamelCase(rootPackageName),
+                    containingClassName,
+                    element.getSimpleName()))
+            .addModifiers(Modifier.FINAL, Modifier.PUBLIC)
+            .addField(
+                FieldSpec.builder(
+                        ParameterizedTypeName.get(
+                            ClassName.get(Class.class),
+                            WildcardTypeName.subtypeOf(ClassName.get(encoder.type()))),
+                        "TYPE",
+                        Modifier.PUBLIC,
+                        Modifier.STATIC,
+                        Modifier.FINAL)
+                    .initializer("AutoValue_$T.class", encoder.type())
+                    .build())
+            .build();
+
+    String packageName = Names.packageName(types.asElement(encoder.type()));
+    configureMethod.addCode(
+        "cfg.registerEncoder($L.$N.TYPE, $N.INSTANCE);\n",
+        packageName,
+        supportClass,
+        encoder.code());
+
+    return Optional.of(supportClass);
+  }
+
+  @VisibleForTesting
+  static String packageNameToCamelCase(String packageName) {
+    if (packageName.isEmpty()) {
+      return packageName;
+    }
+    packageName = Character.toUpperCase(packageName.charAt(0)) + packageName.substring(1);
+
+    int dotIndex = packageName.indexOf('.');
+    while (dotIndex > -1) {
+      String prefix = packageName.substring(0, dotIndex);
+      String suffix = "";
+      if (dotIndex < packageName.length() - 1) {
+        suffix =
+            Character.toUpperCase(packageName.charAt(dotIndex + 1))
+                + (dotIndex < packageName.length() - 2 ? packageName.substring(dotIndex + 2) : "");
+      }
+      packageName = prefix + suffix;
+      dotIndex = packageName.indexOf('.');
+    }
+    return packageName;
   }
 
   class GetterVisitor implements TypeVisitor<Encoder> {
