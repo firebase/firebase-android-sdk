@@ -256,6 +256,86 @@ public class EncodableProcessorTest {
   }
 
   @Test
+  public void compile_withListOfCustomType_shouldRegisterEncoderForThatType() {
+    Compilation result =
+        javac()
+            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "TypeWithList",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "import java.util.List;",
+                    "@Encodable class TypeWithList {",
+                    "public List<Member> getMember() { return null; }",
+                    "}"),
+                JavaFileObjects.forSourceLines("Member", "class Member {}"));
+
+    assertThat(result)
+        .generatedSourceFile("AutoTypeWithListEncoder")
+        .hasSourceEquivalentTo(JavaFileObjects.forResource("ExpectedTypeWithListEncoder.java"));
+  }
+
+  @Test
+  public void compile_withSetOfSetOfCustomType_shouldRegisterEncoderForThatType() {
+    Compilation result =
+        javac()
+            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "TypeWithList",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "import java.util.Set;",
+                    "@Encodable class TypeWithList {",
+                    "public Set<Set<Member>> getMember() { return null; }",
+                    "}"),
+                JavaFileObjects.forSourceLines("Member", "class Member {}"));
+
+    assertThat(result)
+        .generatedSourceFile("AutoTypeWithListEncoder")
+        .hasSourceEquivalentTo(JavaFileObjects.forResource("ExpectedTypeWithListEncoder.java"));
+  }
+
+  @Test
+  public void compile_withMapOfListOfCustomType_shouldRegisterEncoderForThatType() {
+    Compilation result =
+        javac()
+            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "TypeWithList",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "import java.util.List;",
+                    "import java.util.Map;",
+                    "@Encodable class TypeWithList {",
+                    "public Map<String, List<Member>> getMember() { return null; }",
+                    "}"),
+                JavaFileObjects.forSourceLines("Member", "class Member {}"));
+
+    assertThat(result)
+        .generatedSourceFile("AutoTypeWithListEncoder")
+        .hasSourceEquivalentTo(JavaFileObjects.forResource("ExpectedTypeWithListEncoder.java"));
+  }
+
+  @Test
+  public void compile_withEnum_shouldNotGenerateEnumEncoder() {
+    Compilation result =
+        javac()
+            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "TypeWithEnum",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "@Encodable class TypeWithEnum {",
+                    "public MyEnum getEnum() { return null; }",
+                    "}"),
+                JavaFileObjects.forSourceLines("MyEnum", "enum MyEnum {VALUE;}"));
+    assertThat(result)
+        .generatedSourceFile("AutoTypeWithEnumEncoder")
+        .contentsAsUtf8String()
+        .doesNotContain("cfg.registerEncoder(MyEnum.class");
+  }
+
+  @Test
   public void packageNameToCamelCase_withDefaultPackage_shouldReturnEmptyString() {
     assertThat(EncodableProcessor.packageNameToCamelCase("")).isEqualTo("");
   }
