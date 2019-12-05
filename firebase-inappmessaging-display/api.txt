@@ -3,7 +3,8 @@ package com.google.firebase.inappmessaging.display {
 
   public class FirebaseInAppMessagingDisplay {
     method public void displayMessage(InAppMessage, FirebaseInAppMessagingDisplayCallbacks);
-    method public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInstance();
+    method @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInstance();
   }
 
 }
+
