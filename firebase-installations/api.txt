@@ -3,10 +3,10 @@ package com.google.firebase.installations {
 
   public class FirebaseInstallations {
     method @NonNull public Task<Void> delete();
-    method @NonNull public Task<InstallationTokenResult> getAuthToken(int);
     method @NonNull public Task<String> getId();
     method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance();
     method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance(@NonNull FirebaseApp);
+    method @NonNull public Task<InstallationTokenResult> getToken(int);
   }
 
   public class FirebaseInstallationsException {
@@ -92,7 +92,7 @@ package com.google.firebase.installations.local {
 package com.google.firebase.installations.remote {
 
   public class FirebaseInstallationServiceClient {
-    ctor public FirebaseInstallationServiceClient(@NonNull Context);
+    ctor public FirebaseInstallationServiceClient(@NonNull Context, @Nullable UserAgentPublisher, @Nullable HeartBeatInfo);
     method @NonNull public com.google.firebase.installations.remote.InstallationResponse createFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
     method @NonNull public void deleteFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
     method @NonNull public com.google.firebase.installations.remote.TokenResult generateAuthToken(@NonNull String, @NonNull String, @NonNull String, @NonNull String);

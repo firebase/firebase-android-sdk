@@ -16,6 +16,7 @@ package com.google.firebase.installations;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
@@ -24,6 +25,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
@@ -35,6 +37,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -74,11 +77,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
 
   /** package private constructor. */
-  FirebaseInstallations(FirebaseApp firebaseApp) {
+  FirebaseInstallations(
+      FirebaseApp firebaseApp,
+      @Nullable UserAgentPublisher publisher,
+      @Nullable HeartBeatInfo heartbeatInfo) {
     this(
         new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>()),
         firebaseApp,
-        new FirebaseInstallationServiceClient(firebaseApp.getApplicationContext()),
+        new FirebaseInstallationServiceClient(
+            firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
         new PersistedInstallation(firebaseApp),
         new Utils(Calendar.getInstance()),
         new IidStore(),
@@ -160,7 +167,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   @NonNull
   @Override
-  public Task<InstallationTokenResult> getAuthToken(@AuthTokenOption int authTokenOption) {
+  public Task<InstallationTokenResult> getToken(@AuthTokenOption int authTokenOption) {
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
     if (authTokenOption == FORCE_REFRESH) {
       executor.execute(this::doGetAuthTokenForceRefresh);

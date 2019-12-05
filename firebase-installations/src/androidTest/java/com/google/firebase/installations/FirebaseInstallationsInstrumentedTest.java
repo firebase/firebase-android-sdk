@@ -514,7 +514,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
     // Check that the token has been refreshed
     assertWithMessage("auth token is not what is expected after the refresh")
-        .that(Tasks.await(firebaseInstallations.getAuthToken(
+        .that(Tasks.await(firebaseInstallations.getToken(
             FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH)).getToken())
         .isEqualTo(TEST_AUTH_TOKEN_2);
 
@@ -529,7 +529,7 @@ public class FirebaseInstallationsInstrumentedTest {
     when(mockBackend.createFirebaseInstallation(
         anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
-    Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
+    Tasks.await(firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
 
     PersistedInstallationEntry entryValue =
         persistedInstallation.readPersistedInstallationEntryValue();
@@ -545,8 +545,7 @@ public class FirebaseInstallationsInstrumentedTest {
             TEST_AUTH_TOKEN, TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     InstallationTokenResult installationTokenResult =
-        Tasks.await(
-            firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
+        Tasks.await(firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
 
     assertWithMessage("Persisted Auth Token doesn't match")
         .that(installationTokenResult.getToken())
@@ -568,8 +567,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .thenReturn(TEST_TOKEN_RESULT);
 
     InstallationTokenResult installationTokenResult =
-        Tasks.await(
-            firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
+        Tasks.await(firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
 
     assertWithMessage("Persisted Auth Token doesn't match")
         .that(installationTokenResult.getToken())
@@ -577,8 +575,8 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   @Test
-  public void testGetAuthToken_unregisteredFid_fetchedNewTokenFromFIS() throws Exception {
-    // Update local storage with a unregistered installation entry to validate that getAuthToken
+  public void testGetToken_unregisteredFid_fetchedNewTokenFromFIS() throws Exception {
+    // Update local storage with a unregistered installation entry to validate that getToken
     // calls getId to ensure FID registration and returns a valid auth token.
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(PersistedInstallationEntry.INSTANCE
         .withUnregisteredFid(TEST_FID_1));
@@ -586,8 +584,7 @@ public class FirebaseInstallationsInstrumentedTest {
         .thenReturn(TEST_INSTALLATION_RESPONSE);
 
     InstallationTokenResult installationTokenResult =
-        Tasks.await(
-            firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
+        Tasks.await(firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
 
     assertWithMessage("Persisted Auth Token doesn't match")
         .that(installationTokenResult.getToken())
@@ -608,7 +605,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
     // Expect exception
     try {
-      Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH));
+      Tasks.await(firebaseInstallations.getToken(FirebaseInstallationsApi.FORCE_REFRESH));
       fail("the getAuthToken() call should have failed due to Auth Error.");
     } catch (ExecutionException expected) {
       assertWithMessage("Exception class doesn't match")
@@ -641,7 +638,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
     // Make the forced getAuthToken call, which should fail.
     try {
-      Tasks.await(firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH));
+      Tasks.await(firebaseInstallations.getToken(FirebaseInstallationsApi.FORCE_REFRESH));
       fail("getAuthToken() succeeded but should have failed due to the BAD_CONFIG error "
           + "returned by the network call.");
     } catch (ExecutionException expected) {
@@ -673,11 +670,11 @@ public class FirebaseInstallationsInstrumentedTest {
     // expire the authtoken by advancing the clock
     fakeCalendar.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
 
-    // Call getAuthToken multiple times with DO_NOT_FORCE_REFRESH option
+    // Call getToken multiple times with DO_NOT_FORCE_REFRESH option
     Task<InstallationTokenResult> task1 =
-        firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+        firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
     Task<InstallationTokenResult> task2 =
-        firebaseInstallations.getAuthToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+        firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
 
     Tasks.await(Tasks.whenAllComplete(task1, task2));
 
@@ -701,7 +698,7 @@ public class FirebaseInstallationsInstrumentedTest {
             TEST_AUTH_TOKEN, TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     // Use a mock ServiceClient for network calls with delay(500ms) to ensure first task is not
-    // completed before the second task starts. Hence, we can test multiple calls to getAuthToken()
+    // completed before the second task starts. Hence, we can test multiple calls to getToken()
     // and verify one task waits for another task to complete.
 
     doAnswer(
@@ -725,11 +722,11 @@ public class FirebaseInstallationsInstrumentedTest {
         .when(mockBackend)
         .generateAuthToken(anyString(), anyString(), anyString(), anyString());
 
-    // Call getAuthToken multiple times with FORCE_REFRESH option.
+    // Call getToken multiple times with FORCE_REFRESH option.
     Task<InstallationTokenResult> task1 =
-        firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH);
+        firebaseInstallations.getToken(FirebaseInstallationsApi.FORCE_REFRESH);
     Task<InstallationTokenResult> task2 =
-        firebaseInstallations.getAuthToken(FirebaseInstallationsApi.FORCE_REFRESH);
+        firebaseInstallations.getToken(FirebaseInstallationsApi.FORCE_REFRESH);
     Tasks.await(Tasks.whenAllComplete(task1, task2));
 
     // As we cannot ensure which task got executed first, verifying with both expected values

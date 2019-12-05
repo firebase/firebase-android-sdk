@@ -39,7 +39,7 @@ public interface FirebaseInstallationsApi {
   int DO_NOT_FORCE_REFRESH = 0;
   /**
    * AuthToken is forcefully refreshed on calling the {@link
-   * FirebaseInstallationsApi#getAuthToken(int)}.
+   * FirebaseInstallationsApi#getToken(int)}.
    */
   int FORCE_REFRESH = 1;
 
@@ -50,7 +50,7 @@ public interface FirebaseInstallationsApi {
   Task<String> getId();
 
   /** Async function that returns a auth token(public key) of this Firebase app installation. */
-  Task<InstallationTokenResult> getAuthToken(@AuthTokenOption int authTokenOption);
+  Task<InstallationTokenResult> getToken(@AuthTokenOption int authTokenOption);
 
   /**
    * Async function that deletes this Firebase app installation from Firebase backend. This call
