@@ -77,5 +77,4 @@ public final class FisAndroidTestConstants {
           .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
           .setResponseCode(TokenResult.ResponseCode.OK)
           .build();
-
 }

@@ -23,8 +23,8 @@ public class FirebaseInstallationsException extends FirebaseException {
     OK,
 
     /**
-     * Indicates that the caller is misconfigured, usually with a bad or misconfigured API Key
-     * or Project.
+     * Indicates that the caller is misconfigured, usually with a bad or misconfigured API Key or
+     * Project.
      */
     BAD_CONFIG,
   }

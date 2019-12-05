@@ -22,8 +22,7 @@ class GetAuthTokenListener implements StateListener {
   private final TaskCompletionSource<InstallationTokenResult> resultTaskCompletionSource;
 
   public GetAuthTokenListener(
-      Utils utils,
-      TaskCompletionSource<InstallationTokenResult> resultTaskCompletionSource) {
+      Utils utils, TaskCompletionSource<InstallationTokenResult> resultTaskCompletionSource) {
     this.utils = utils;
     this.resultTaskCompletionSource = resultTaskCompletionSource;
   }

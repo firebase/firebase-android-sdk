@@ -24,20 +24,20 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
-import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.TokenResult;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -247,13 +247,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /**
    * Logic for handling get id and the two forms of get auth token. This handles all the work,
-   * including creating a new FID if one hasn't been generated yet and making the network
-   * calls to create an installation and to retrieve a new auth token. Also contains the
-   * error handling for when the server says that credentials are bad and that a new Fid
-   * needs to be generated.
-   * @param forceRefresh true if this is for a getAuthToken call and if the caller wants
-   * to fetch a new auth token from the server even if an unexpired auth token exists
-   * on the client.
+   * including creating a new FID if one hasn't been generated yet and making the network calls to
+   * create an installation and to retrieve a new auth token. Also contains the error handling for
+   * when the server says that credentials are bad and that a new Fid needs to be generated.
+   *
+   * @param forceRefresh true if this is for a getAuthToken call and if the caller wants to fetch a
+   *     new auth token from the server even if an unexpired auth token exists on the client.
    */
   private final void doRegistrationInternal(boolean forceRefresh) {
     PersistedInstallationEntry prefs = persistedInstallation.readPersistedInstallationEntryValue();
@@ -306,17 +305,17 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /**
-   * Generate a new FID, either from an existing IID or generated randomly.
-   * If an IID exists and this is the first time a FID has been generated for this
-   * installation, the IID will be used as the FID. If the FID is ever cleared then
-   * the next time a FID is generated the IID is ignored and a FID is generated
-   * randomly.
-   * <p>
-   * This method ensures that only one thread in one process will run this code at a
-   * time, so that two different processes or threads don't create two different FIDs.
+   * Generate a new FID, either from an existing IID or generated randomly. If an IID exists and
+   * this is the first time a FID has been generated for this installation, the IID will be used as
+   * the FID. If the FID is ever cleared then the next time a FID is generated the IID is ignored
+   * and a FID is generated randomly.
+   *
+   * <p>This method ensures that only one thread in one process will run this code at a time, so
+   * that two different processes or threads don't create two different FIDs.
+   *
    * @param prefs takes the current state of the prefs
    * @return a new version of the prefs that includes the new FID. These prefs will have already
-   * been persisted.
+   *     been persisted.
    */
   private PersistedInstallationEntry generateAndPersistFidProcessSafe(
       PersistedInstallationEntry prefs) {
@@ -326,22 +325,21 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         // Only one single thread from one single process can execute this block
         // at any given time.
         String fid = readExistingIidOrCreateFid(prefs);
-        prefs = persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-            prefs.withUnregisteredFid(fid));
+        prefs =
+            persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+                prefs.withUnregisteredFid(fid));
         return prefs;
       }
     } finally {
-        releaseCrossProcessLock(fileLock);
+      releaseCrossProcessLock(fileLock);
     }
   }
 
-  /**
-   * Use file locking to acquire a lock that will also block other processes.
-   */
+  /** Use file locking to acquire a lock that will also block other processes. */
   private FileLock getCrossProcessLock() {
     try {
-      File file = new File(firebaseApp.getApplicationContext().getFilesDir(),
-          LOCKFILE_NAME_GENERATE_FID);
+      File file =
+          new File(firebaseApp.getApplicationContext().getFilesDir(), LOCKFILE_NAME_GENERATE_FID);
       FileChannel channel = new RandomAccessFile(file, "rw").getChannel();
       // Use the file channel to create a lock on the file.
       // This method blocks until it can retrieve the lock.
@@ -351,9 +349,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
   }
 
-  /**
-   * Release a previously acquired lock.
-   */
+  /** Release a previously acquired lock. */
   private void releaseCrossProcessLock(FileLock fileLock) {
     try {
       fileLock.release();
@@ -385,7 +381,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             /*projectID= */ firebaseApp.getOptions().getProjectId(),
             /*appId= */ getApplicationId());
 
-    switch(response.getResponseCode()) {
+    switch (response.getResponseCode()) {
       case OK:
         return prefs.withRegisteredFid(
             response.getFid(),
@@ -394,7 +390,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             response.getAuthToken().getToken(),
             response.getAuthToken().getTokenExpirationTimestamp());
       case BAD_CONFIG:
-          return prefs.withFisError("BAD CONFIG");
+        return prefs.withFisError("BAD CONFIG");
       default:
         throw new IOException();
     }
@@ -415,7 +411,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             /*projectID= */ firebaseApp.getOptions().getProjectId(),
             /*refreshToken= */ prefs.getRefreshToken());
 
-    switch(tokenResult.getResponseCode()) {
+    switch (tokenResult.getResponseCode()) {
       case OK:
         return prefs.withAuthToken(
             tokenResult.getToken(),
@@ -449,8 +445,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
       } catch (FirebaseException exception) {
         throw new FirebaseInstallationsException(
-            "Failed to delete a Firebase Installation.",
-            Status.BAD_CONFIG);
+            "Failed to delete a Firebase Installation.", Status.BAD_CONFIG);
       }
     }
 

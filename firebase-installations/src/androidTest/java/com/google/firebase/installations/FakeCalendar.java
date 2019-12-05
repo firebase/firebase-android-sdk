@@ -36,24 +36,16 @@ public class FakeCalendar extends Calendar {
   }
 
   @Override
-  protected void computeTime() {
-
-  }
+  protected void computeTime() {}
 
   @Override
-  protected void computeFields() {
-
-  }
+  protected void computeFields() {}
 
   @Override
-  public void add(int i, int i1) {
-
-  }
+  public void add(int i, int i1) {}
 
   @Override
-  public void roll(int i, boolean b) {
-
-  }
+  public void roll(int i, boolean b) {}
 
   @Override
   public int getMinimum(int i) {

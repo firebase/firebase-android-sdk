@@ -66,12 +66,12 @@ public class RandomFidGenerator {
    */
   private static String encodeFidBase64UrlSafe(byte[] rawValue) {
     return new String(
-        android.util.Base64.encode(
-            rawValue,
-            android.util.Base64.URL_SAFE
-                | android.util.Base64.NO_PADDING
-                | android.util.Base64.NO_WRAP),
-        Charset.defaultCharset())
+            android.util.Base64.encode(
+                rawValue,
+                android.util.Base64.URL_SAFE
+                    | android.util.Base64.NO_PADDING
+                    | android.util.Base64.NO_WRAP),
+            Charset.defaultCharset())
         .substring(0, FID_LENGTH);
   }
 

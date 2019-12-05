@@ -148,17 +148,18 @@ public class FirebaseInstallationsInstrumentedTest {
 
   /**
    * Check the id generation process when there is no network. There are three cases:
-   *  - no iid -> generate a new fid
-   *  - iid present -> make that iid into a fid
-   *  - fid generated -> return that fid
+   *
+   * <ul>
+   *   <li>no iid -> generate a new fid
+   *   <li>iid present -> make that iid into a fid
+   *   <li>fid generated -> return that fid
+   * </ul>
    */
   @Test
   public void testGetId_noNetwork_noIid() throws Exception {
-    when(mockBackend.createFirebaseInstallation(
-        anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
         .thenThrow(new IOException());
-    when(mockBackend.generateAuthToken(
-        anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
         .thenThrow(new IOException());
     when(mockIidStore.readIid()).thenReturn(null);
 
@@ -185,11 +186,9 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetId_noNetwork_iidPresent() throws Exception {
-    when(mockBackend.createFirebaseInstallation(
-        anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
         .thenThrow(new IOException());
-    when(mockBackend.generateAuthToken(
-        anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
         .thenThrow(new IOException());
     when(mockIidStore.readIid()).thenReturn(TEST_INSTANCE_ID_1);
 
@@ -216,15 +215,13 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetId_noNetwork_fidAlreadyGenerated() throws Exception {
-    when(mockBackend.createFirebaseInstallation(
-        anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
         .thenThrow(new IOException());
-    when(mockBackend.generateAuthToken(
-        anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
         .thenThrow(new IOException());
 
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(PersistedInstallationEntry.INSTANCE
-        .withUnregisteredFid("generatedFid"));
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withUnregisteredFid("generatedFid"));
 
     // Do the actual getId() call under test. Confirm that it returns the already generated FID.
     // Confirm both that it returns the expected ID, as does reading the prefs from storage.
@@ -248,8 +245,8 @@ public class FirebaseInstallationsInstrumentedTest {
    */
   @Test
   public void testGetId_ValidIdAndToken_NoBackendCalls() throws Exception {
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(PersistedInstallationEntry.INSTANCE
-        .withRegisteredFid(
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
             TEST_FID_1,
             TEST_REFRESH_TOKEN,
             utils.currentTimeInSecs(),
@@ -277,16 +274,16 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   /**
-   * Checks that if we have an unregistered fid that the fid gets registered with the backend
-   * and no other calls are made.
+   * Checks that if we have an unregistered fid that the fid gets registered with the backend and no
+   * other calls are made.
    */
   @Test
   public void testGetId_UnRegisteredId_IssueCreateIdCall() throws Exception {
-    when(mockBackend
-        .createFirebaseInstallation(anyString(), matches(TEST_FID_1), anyString(), anyString()))
+    when(mockBackend.createFirebaseInstallation(
+            anyString(), matches(TEST_FID_1), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(PersistedInstallationEntry.INSTANCE
-        .withUnregisteredFid(TEST_FID_1));
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withUnregisteredFid(TEST_FID_1));
 
     // No exception, means success.
     assertWithMessage("getId Task failed.")
@@ -314,8 +311,7 @@ public class FirebaseInstallationsInstrumentedTest {
   @Test
   public void testGetId_migrateIid_successful() throws Exception {
     when(mockIidStore.readIid()).thenReturn(TEST_INSTANCE_ID_1);
-    when(mockBackend.createFirebaseInstallation(
-            anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE_WITH_IID);
 
     // Do the actual getId() call under test.
@@ -341,8 +337,7 @@ public class FirebaseInstallationsInstrumentedTest {
   @Test
   public void testGetId_multipleCalls_sameFIDReturned() throws Exception {
     when(mockIidStore.readIid()).thenReturn(null);
-    when(mockBackend.createFirebaseInstallation(
-            anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
 
     // Call getId multiple times
@@ -367,16 +362,15 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   /**
-   * Checks that if the server rejects a FID during registration the SDK will use the
-   * fid in the response as the new fid.
+   * Checks that if the server rejects a FID during registration the SDK will use the fid in the
+   * response as the new fid.
    */
   @Test
   public void testGetId_unregistered_replacesFidWithResponse() throws Exception {
     // Update local storage with installation entry that has invalid fid.
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withUnregisteredFid("tobereplaced"));
-    when(mockBackend
-        .createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
 
     // The first call will return the existing FID, "tobereplaced"
@@ -394,14 +388,14 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   /**
-   * A registration that fails with a SERVER_ERROR will cause the FID to be put into the
-   * error state.
+   * A registration that fails with a SERVER_ERROR will cause the FID to be put into the error
+   * state.
    */
   @Test
   public void testGetId_ServerError_UnregisteredFID() throws Exception {
     // start with an unregistered fid
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(PersistedInstallationEntry.INSTANCE
-        .withUnregisteredFid(TEST_FID_1));
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withUnregisteredFid(TEST_FID_1));
 
     // have the server return a server error for the registration
     when(mockBackend.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
@@ -425,8 +419,8 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   /**
-   * A registration that fails with an IOException will not cause the FID to be put into the
-   * error state.
+   * A registration that fails with an IOException will not cause the FID to be put into the error
+   * state.
    */
   @Test
   public void testGetId_fidRegistrationUncheckedException_statusUpdated() throws Exception {
@@ -457,9 +451,11 @@ public class FirebaseInstallationsInstrumentedTest {
     // Start with a registered FID
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
-            TEST_FID_1, TEST_REFRESH_TOKEN,
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
             utils.currentTimeInSecs(),
-            TEST_AUTH_TOKEN, TEST_TOKEN_EXPIRATION_TIMESTAMP));
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     // Move the time forward by the token expiration time.
     fakeCalendar.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
@@ -483,21 +479,22 @@ public class FirebaseInstallationsInstrumentedTest {
   }
 
   /**
-   * The FID is successfully registered but the token is expired. A getId will cause the token
-   * to be refreshed in the background.
+   * The FID is successfully registered but the token is expired. A getId will cause the token to be
+   * refreshed in the background.
    */
   @Test
   public void testGetId_expiredAuthToken_refreshesAuthToken() throws Exception {
     // Start with a registered FID
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
-            TEST_FID_1, TEST_REFRESH_TOKEN,
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
             utils.currentTimeInSecs(),
-            TEST_AUTH_TOKEN, TEST_TOKEN_EXPIRATION_TIMESTAMP));
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     // Make the server generateAuthToken() call return a refreshed token
-    when(mockBackend.generateAuthToken(
-        anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_TOKEN_RESULT);
 
     // Move the time forward by the token expiration time.
@@ -514,8 +511,10 @@ public class FirebaseInstallationsInstrumentedTest {
 
     // Check that the token has been refreshed
     assertWithMessage("auth token is not what is expected after the refresh")
-        .that(Tasks.await(firebaseInstallations.getToken(
-            FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH)).getToken())
+        .that(
+            Tasks.await(
+                    firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH))
+                .getToken())
         .isEqualTo(TEST_AUTH_TOKEN_2);
 
     verify(mockBackend, never())
@@ -526,8 +525,7 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetAuthToken_fidDoesNotExist_successful() throws Exception {
-    when(mockBackend.createFirebaseInstallation(
-        anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
     Tasks.await(firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
 
@@ -540,9 +538,11 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetAuthToken_fidExists_successful() throws Exception {
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
-            TEST_FID_1, TEST_REFRESH_TOKEN,
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
             utils.currentTimeInSecs(),
-            TEST_AUTH_TOKEN, TEST_TOKEN_EXPIRATION_TIMESTAMP));
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     InstallationTokenResult installationTokenResult =
         Tasks.await(firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH));
@@ -578,8 +578,8 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testGetToken_unregisteredFid_fetchedNewTokenFromFIS() throws Exception {
     // Update local storage with a unregistered installation entry to validate that getToken
     // calls getId to ensure FID registration and returns a valid auth token.
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(PersistedInstallationEntry.INSTANCE
-        .withUnregisteredFid(TEST_FID_1));
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withUnregisteredFid(TEST_FID_1));
     when(mockBackend.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
 
@@ -593,13 +593,16 @@ public class FirebaseInstallationsInstrumentedTest {
 
   @Test
   public void testGetAuthToken_authError_persistedInstallationCleared() throws Exception {
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(PersistedInstallationEntry.INSTANCE
-        .withRegisteredFid(TEST_FID_1, TEST_REFRESH_TOKEN, utils.currentTimeInSecs(),
-            TEST_AUTH_TOKEN, TEST_TOKEN_EXPIRATION_TIMESTAMP));
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
+            utils.currentTimeInSecs(),
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     // Mocks error during auth token generation
-    when(mockBackend.generateAuthToken(
-            anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(
             TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build());
 
@@ -626,21 +629,23 @@ public class FirebaseInstallationsInstrumentedTest {
     // start the test with a registered FID
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
-            TEST_FID_1, TEST_REFRESH_TOKEN,
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
             utils.currentTimeInSecs(),
-            TEST_AUTH_TOKEN, TEST_TOKEN_EXPIRATION_TIMESTAMP));
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     // have the backend fail when generateAuthToken is invoked.
-    when(mockBackend.generateAuthToken(
-            anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(TokenResult.builder()
-            .setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build());
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(
+            TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build());
 
     // Make the forced getAuthToken call, which should fail.
     try {
       Tasks.await(firebaseInstallations.getToken(FirebaseInstallationsApi.FORCE_REFRESH));
-      fail("getAuthToken() succeeded but should have failed due to the BAD_CONFIG error "
-          + "returned by the network call.");
+      fail(
+          "getAuthToken() succeeded but should have failed due to the BAD_CONFIG error "
+              + "returned by the network call.");
     } catch (ExecutionException expected) {
       assertWithMessage("Exception class doesn't match")
           .that(expected)
@@ -658,13 +663,14 @@ public class FirebaseInstallationsInstrumentedTest {
     // start with a valid fid and authtoken
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
-            TEST_FID_1, TEST_REFRESH_TOKEN,
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
             utils.currentTimeInSecs(),
-            TEST_AUTH_TOKEN, TEST_TOKEN_EXPIRATION_TIMESTAMP));
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     // Make the server generateAuthToken() call return a refreshed token
-    when(mockBackend.generateAuthToken(
-        anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_TOKEN_RESULT);
 
     // expire the authtoken by advancing the clock
@@ -693,9 +699,11 @@ public class FirebaseInstallationsInstrumentedTest {
     // start with a valid fid and authtoken
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
-            TEST_FID_1, TEST_REFRESH_TOKEN,
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
             utils.currentTimeInSecs(),
-            TEST_AUTH_TOKEN, TEST_TOKEN_EXPIRATION_TIMESTAMP));
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     // Use a mock ServiceClient for network calls with delay(500ms) to ensure first task is not
     // completed before the second task starts. Hence, we can test multiple calls to getToken()
@@ -747,8 +755,7 @@ public class FirebaseInstallationsInstrumentedTest {
   public void testDelete_registeredFID_successful() throws Exception {
     // Update local storage with a registered installation entry
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(REGISTERED_INSTALLATION_ENTRY);
-    when(mockBackend.createFirebaseInstallation(
-        anyString(), anyString(), anyString(), anyString()))
+    when(mockBackend.createFirebaseInstallation(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
 
     Tasks.await(firebaseInstallations.delete());

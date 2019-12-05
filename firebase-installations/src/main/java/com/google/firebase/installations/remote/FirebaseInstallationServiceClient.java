@@ -27,10 +27,10 @@ import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseException;
-import com.google.firebase.installations.FirebaseInstallationsException;
-import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
+import com.google.firebase.installations.FirebaseInstallationsException;
+import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.BufferedReader;
@@ -101,11 +101,13 @@ public class FirebaseInstallationServiceClient {
    * @param projectID Project Id
    * @param appId the identifier of a Firebase application
    * @return {@link InstallationResponse} generated from the response body
-   *    400: return response with status BAD_CONFIG
-   *    403: return response with status BAD_CONFIG
-   *    403: return response with status BAD_CONFIG
-   *    429: throw IOException
-   *    500: throw IOException
+   *     <ul>
+   *       <li>400: return response with status BAD_CONFIG
+   *       <li>403: return response with status BAD_CONFIG
+   *       <li>403: return response with status BAD_CONFIG
+   *       <li>429: throw IOException
+   *       <li>500: throw IOException
+   *     </ul>
    */
   @NonNull
   public InstallationResponse createFirebaseInstallation(
@@ -207,8 +209,8 @@ public class FirebaseInstallationServiceClient {
         continue;
       }
 
-      throw new FirebaseInstallationsException("bad config while trying to delete FID",
-          Status.BAD_CONFIG);
+      throw new FirebaseInstallationsException(
+          "bad config while trying to delete FID", Status.BAD_CONFIG);
     }
 
     throw new IOException();
@@ -222,12 +224,14 @@ public class FirebaseInstallationServiceClient {
    * @param fid Firebase Installation Identifier
    * @param projectID Project Id
    * @param refreshToken a token used to authenticate FIS requests
-   *    400: return response with status BAD_CONFIG
-   *    401: return response with status INVALID_AUTH
-   *    403: return response with status BAD_CONFIG
-   *    404: return response with status INVALID_AUTH
-   *    429: throw IOException
-   *    500: throw IOException
+   *     <ul>
+   *       <li>400: return response with status BAD_CONFIG
+   *       <li>401: return response with status INVALID_AUTH
+   *       <li>403: return response with status BAD_CONFIG
+   *       <li>404: return response with status INVALID_AUTH
+   *       <li>429: throw IOException
+   *       <li>500: throw IOException
+   *     </ul>
    */
   @NonNull
   public TokenResult generateAuthToken(
@@ -259,8 +263,7 @@ public class FirebaseInstallationServiceClient {
       }
 
       if (httpResponseCode == 401 || httpResponseCode == 404) {
-        return TokenResult.builder()
-            .setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
+        return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
       }
 
       if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
