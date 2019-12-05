@@ -79,6 +79,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
   public <T> JsonDataEncoderBuilder registerEncoder(
       @NonNull Class<T> clazz, @NonNull ValueEncoder<? super T> encoder) {
     valueEncoders.put(clazz, encoder);
+    // Remove it from the other map if present.
     objectEncoders.remove(clazz);
     return this;
   }
