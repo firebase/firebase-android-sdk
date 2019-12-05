@@ -38,8 +38,8 @@ package com.google.firebase.installations.local {
   public class PersistedInstallation {
     ctor public PersistedInstallation(@NonNull FirebaseApp);
     method public void clearForTesting();
+    method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry insertOrUpdatePersistedInstallationEntry(@NonNull com.google.firebase.installations.local.PersistedInstallationEntry);
     method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry readPersistedInstallationEntryValue();
-    method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry writePreferencesToDisk(@NonNull com.google.firebase.installations.local.PersistedInstallationEntry);
   }
 
   public enum PersistedInstallation.RegistrationStatus {
