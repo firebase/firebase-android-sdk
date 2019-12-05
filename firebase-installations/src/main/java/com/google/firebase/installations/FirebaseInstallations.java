@@ -16,6 +16,7 @@ package com.google.firebase.installations;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.DefaultClock;
@@ -24,6 +25,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
@@ -32,6 +34,7 @@ import com.google.firebase.installations.remote.FirebaseInstallationServiceClien
 import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import com.google.firebase.installations.remote.TokenResult;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -68,11 +71,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final List<StateListener> listeners = new ArrayList<>();
 
   /** package private constructor. */
-  FirebaseInstallations(FirebaseApp firebaseApp) {
+  FirebaseInstallations(
+      FirebaseApp firebaseApp,
+      @Nullable UserAgentPublisher publisher,
+      @Nullable HeartBeatInfo heartbeatInfo) {
     this(
         new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>()),
         firebaseApp,
-        new FirebaseInstallationServiceClient(firebaseApp.getApplicationContext()),
+        new FirebaseInstallationServiceClient(
+            firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
         new PersistedInstallation(firebaseApp),
         new Utils(DefaultClock.getInstance()),
         new IidStore());

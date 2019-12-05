@@ -22,11 +22,15 @@ import android.content.pm.PackageManager;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -55,6 +59,12 @@ public class FirebaseInstallationServiceClient {
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
 
+  /** Heartbeat tag for firebase installations. */
+  private static final String FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG = "fire-installations-id";
+
+  private static final String HEART_BEAT_HEADER = "x-firebase-client-log-type";
+  private static final String USER_AGENT_HEADER = "x-firebase-client";
+
   private static final String INTERNAL_SERVER_ERROR_MESSAGE = "There was an internal server error.";
   private static final String NETWORK_ERROR_MESSAGE = "The server returned an unexpected error: %s";
 
@@ -72,9 +82,16 @@ public class FirebaseInstallationServiceClient {
   static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
 
   private final Context context;
+  private final UserAgentPublisher userAgentPublisher;
+  private final HeartBeatInfo heartbeatInfo;
 
-  public FirebaseInstallationServiceClient(@NonNull Context context) {
+  public FirebaseInstallationServiceClient(
+      @NonNull Context context,
+      @Nullable UserAgentPublisher publisher,
+      @Nullable HeartBeatInfo heartBeatInfo) {
     this.context = context;
+    this.userAgentPublisher = publisher;
+    this.heartbeatInfo = heartBeatInfo;
   }
 
   /**
@@ -261,6 +278,14 @@ public class FirebaseInstallationServiceClient {
     httpsURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
     httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
     httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+    if (heartbeatInfo != null && userAgentPublisher != null) {
+      HeartBeat heartbeat = heartbeatInfo.getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
+      if (heartbeat != HeartBeat.NONE) {
+        httpsURLConnection.addRequestProperty(USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
+        httpsURLConnection.addRequestProperty(
+            HEART_BEAT_HEADER, Integer.toString(heartbeat.getCode()));
+      }
+    }
     httpsURLConnection.addRequestProperty(
         X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
     return httpsURLConnection;
