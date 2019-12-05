@@ -56,3 +56,9 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:2.25.0'
 
 }
+
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Werror"
+    }
+}
