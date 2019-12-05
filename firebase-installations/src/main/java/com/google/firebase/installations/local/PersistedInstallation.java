@@ -14,20 +14,13 @@
 
 package com.google.firebase.installations.local;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -36,15 +29,18 @@ import org.json.JSONObject;
  * Installation API.
  */
 public class PersistedInstallation {
-
   private final File dataFile;
-  @NonNull
-  private final FirebaseApp firebaseApp;
+  @NonNull private final FirebaseApp firebaseApp;
 
   // Registration Status of each persisted fid entry
   // NOTE: never change the ordinal of the enum values because the enum values are stored in shared
   // prefs as their ordinal numbers.
   public enum RegistrationStatus {
+    /**
+     * {@link PersistedInstallationEntry} legacy registration status. Next state: UNREGISTERED - A
+     * new FID is created and persisted locally before registering with FIS servers.
+     */
+    ATTEMPT_MIGRATION,
     /**
      * {@link PersistedInstallationEntry} default registration status. Next state: UNREGISTERED - A
      * new FID is created and persisted locally before registering with FIS servers.
@@ -79,24 +75,16 @@ public class PersistedInstallation {
   private static final String PERSISTED_STATUS_KEY = "Status";
   private static final String FIS_ERROR_KEY = "FisError";
 
-  private static final List<String> FID_PREF_KEYS =
-      Arrays.asList(
-          FIREBASE_INSTALLATION_ID_KEY,
-          AUTH_TOKEN_KEY,
-          REFRESH_TOKEN_KEY,
-          TOKEN_CREATION_TIME_IN_SECONDS_KEY,
-          EXPIRES_IN_SECONDS_KEY,
-          PERSISTED_STATUS_KEY,
-          FIS_ERROR_KEY);
-
   private final String persistenceKey;
 
   public PersistedInstallation(@NonNull FirebaseApp firebaseApp) {
     // Different FirebaseApp in the same Android application should have the same application
     // context and same dir path
     persistenceKey = firebaseApp.getPersistenceKey();
-    dataFile = new File(firebaseApp.getApplicationContext().getFilesDir(),
-        SETTINGS_FILE_NAME + "." + persistenceKey + ".json");
+    dataFile =
+        new File(
+            firebaseApp.getApplicationContext().getFilesDir(),
+            SETTINGS_FILE_NAME + "." + persistenceKey + ".json");
     this.firebaseApp = firebaseApp;
   }
 
@@ -104,27 +92,25 @@ public class PersistedInstallation {
   public PersistedInstallationEntry readPersistedInstallationEntryValue() {
     JSONObject json = readJSONFromFile();
 
-    String fid = json.optString(getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY), null);
-    int status = json.optInt(getSharedPreferencesKey(PERSISTED_STATUS_KEY), -1);
-    String authToken = json.optString(getSharedPreferencesKey(AUTH_TOKEN_KEY), null);
-    String refreshToken = json.optString(getSharedPreferencesKey(REFRESH_TOKEN_KEY), null);
-    long tokenCreationTime =
-        json.optLong(getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY), 0);
-    long expiresIn = json.optLong(getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), 0);
-    String fisError = json.optString(getSharedPreferencesKey(FIS_ERROR_KEY), null);
+    String fid = json.optString(FIREBASE_INSTALLATION_ID_KEY, null);
+    int status = json.optInt(PERSISTED_STATUS_KEY, RegistrationStatus.ATTEMPT_MIGRATION.ordinal());
+    String authToken = json.optString(AUTH_TOKEN_KEY, null);
+    String refreshToken = json.optString(REFRESH_TOKEN_KEY, null);
+    long tokenCreationTime = json.optLong(TOKEN_CREATION_TIME_IN_SECONDS_KEY, 0);
+    long expiresIn = json.optLong(EXPIRES_IN_SECONDS_KEY, 0);
+    String fisError = json.optString(FIS_ERROR_KEY, null);
 
-    if (fid == null || !(status >= 0 && status < RegistrationStatus.values().length)) {
-      return PersistedInstallationEntry.builder().build();
-    }
-    return PersistedInstallationEntry.builder()
-        .setFirebaseInstallationId(fid)
-        .setRegistrationStatus(RegistrationStatus.values()[status])
-        .setAuthToken(authToken)
-        .setRefreshToken(refreshToken)
-        .setTokenCreationEpochInSecs(tokenCreationTime)
-        .setExpiresInSecs(expiresIn)
-        .setFisError(fisError)
-        .build();
+    PersistedInstallationEntry prefs =
+        PersistedInstallationEntry.builder()
+            .setFirebaseInstallationId(fid)
+            .setRegistrationStatus(RegistrationStatus.values()[status])
+            .setAuthToken(authToken)
+            .setRefreshToken(refreshToken)
+            .setTokenCreationEpochInSecs(tokenCreationTime)
+            .setExpiresInSecs(expiresIn)
+            .setFisError(fisError)
+            .build();
+    return prefs;
   }
 
   private JSONObject readJSONFromFile() {
@@ -144,50 +130,51 @@ public class PersistedInstallation {
     }
   }
 
-  private void writeJSONToFile(JSONObject prefs) throws IOException {
-    File tmpFile = File.createTempFile(SETTINGS_FILE_NAME, "tmp",
-        firebaseApp.getApplicationContext().getFilesDir());
-
-    FileOutputStream fos = new FileOutputStream(tmpFile);
-    fos.write(prefs.toString().getBytes());
-    fos.close();
-    tmpFile.renameTo(dataFile);
-  }
-
-  public void writePreferencesToDisk(@NonNull PersistedInstallationEntry entryValue) {
-    try {
-      JSONObject json = new JSONObject();
-      json.put(
-          getSharedPreferencesKey(FIREBASE_INSTALLATION_ID_KEY),
-          entryValue.getFirebaseInstallationId());
-      json.put(
-          getSharedPreferencesKey(PERSISTED_STATUS_KEY),
-          entryValue.getRegistrationStatus().ordinal());
-      json.put(getSharedPreferencesKey(AUTH_TOKEN_KEY), entryValue.getAuthToken());
-      json.put(getSharedPreferencesKey(REFRESH_TOKEN_KEY), entryValue.getRefreshToken());
-      json.put(
-          getSharedPreferencesKey(TOKEN_CREATION_TIME_IN_SECONDS_KEY),
-          entryValue.getTokenCreationEpochInSecs());
-      json.put(
-          getSharedPreferencesKey(EXPIRES_IN_SECONDS_KEY), entryValue.getExpiresInSecs());
-      json.put(getSharedPreferencesKey(FIS_ERROR_KEY), entryValue.getFisError());
-      writeJSONToFile(json);
-    } catch (JSONException | IOException e) {
-      // ignore
-    }
-  }
-
   /**
-   * Sets the state to NOT_GENERATED.
+   * Write the prefs to a JSON object, serialize them into a JSON string and write the bytes to a
+   * temp file. After writing and closing the temp file, rename it over to the actual
+   * SETTINGS_FILE_NAME.
    */
-  public void clear() {
-    writePreferencesToDisk(
-        PersistedInstallationEntry.builder()
-            .setRegistrationStatus(RegistrationStatus.NOT_GENERATED)
-            .build());
+  @NonNull
+  public PersistedInstallationEntry insertOrUpdatePersistedInstallationEntry(
+      @NonNull PersistedInstallationEntry prefs) {
+    try {
+      // Write the prefs into a JSON object
+      JSONObject json = new JSONObject();
+      json.put(FIREBASE_INSTALLATION_ID_KEY, prefs.getFirebaseInstallationId());
+      json.put(PERSISTED_STATUS_KEY, prefs.getRegistrationStatus().ordinal());
+      json.put(AUTH_TOKEN_KEY, prefs.getAuthToken());
+      json.put(REFRESH_TOKEN_KEY, prefs.getRefreshToken());
+      json.put(TOKEN_CREATION_TIME_IN_SECONDS_KEY, prefs.getTokenCreationEpochInSecs());
+      json.put(EXPIRES_IN_SECONDS_KEY, prefs.getExpiresInSecs());
+      json.put(FIS_ERROR_KEY, prefs.getFisError());
+      File tmpFile =
+          File.createTempFile(
+              SETTINGS_FILE_NAME, "tmp", firebaseApp.getApplicationContext().getFilesDir());
+
+      // Werialize the JSON object into a string and write the bytes to a temp file
+      FileOutputStream fos = new FileOutputStream(tmpFile);
+      fos.write(json.toString().getBytes("UTF-8"));
+      fos.close();
+
+      // Snapshot the temp file to the actual file
+      if (!tmpFile.renameTo(dataFile)) {
+        throw new IOException("unable to rename the tmpfile to " + SETTINGS_FILE_NAME);
+      }
+    } catch (JSONException | IOException e) {
+      // This should only happen when the storage is full or the system is corrupted.
+      // There isn't a lot we can do when this happens, other than crash the process. It is a
+      // bit nicer to eat the error and hope that the user clears some storage space on their
+      // device.
+    }
+
+    // Return the prefs that were written to make it easy for the caller to use them in a
+    // future step (e.g. for chaining calls).
+    return prefs;
   }
 
-  private String getSharedPreferencesKey(String key) {
-    return String.format("%s|%s", persistenceKey, key);
+  /** Sets the state to ATTEMPT_MIGRATION. */
+  public void clearForTesting() {
+    dataFile.delete();
   }
 }

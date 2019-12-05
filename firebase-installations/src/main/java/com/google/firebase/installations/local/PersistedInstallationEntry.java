@@ -17,6 +17,7 @@ package com.google.firebase.installations.local;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
+import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
 
 /**
  * This class represents a persisted fid entry in {@link PersistedInstallation}, which contains a
@@ -44,6 +45,9 @@ public abstract class PersistedInstallationEntry {
   @Nullable
   public abstract String getFisError();
 
+  @NonNull
+  public static PersistedInstallationEntry INSTANCE = PersistedInstallationEntry.builder().build();
+
   public boolean isRegistered() {
     return getRegistrationStatus() == PersistedInstallation.RegistrationStatus.REGISTERED;
   }
@@ -57,7 +61,65 @@ public abstract class PersistedInstallationEntry {
   }
 
   public boolean isNotGenerated() {
-    return getRegistrationStatus() == PersistedInstallation.RegistrationStatus.NOT_GENERATED;
+    return getRegistrationStatus() == PersistedInstallation.RegistrationStatus.NOT_GENERATED
+        || getRegistrationStatus() == RegistrationStatus.ATTEMPT_MIGRATION;
+  }
+
+  public boolean shouldAttemptMigration() {
+    return getRegistrationStatus() == RegistrationStatus.ATTEMPT_MIGRATION;
+  }
+
+  @NonNull
+  public PersistedInstallationEntry withUnregisteredFid(@NonNull String fid) {
+    return toBuilder()
+        .setFirebaseInstallationId(fid)
+        .setRegistrationStatus(RegistrationStatus.UNREGISTERED)
+        .build();
+  }
+
+  @NonNull
+  public PersistedInstallationEntry withRegisteredFid(
+      @NonNull String fid,
+      @NonNull String refreshToken,
+      long creationTime,
+      @Nullable String authToken,
+      long authTokenExpiration) {
+    return toBuilder()
+        .setFirebaseInstallationId(fid)
+        .setRegistrationStatus(RegistrationStatus.REGISTERED)
+        .setAuthToken(authToken)
+        .setRefreshToken(refreshToken)
+        .setExpiresInSecs(authTokenExpiration)
+        .setTokenCreationEpochInSecs(creationTime)
+        .build();
+  }
+
+  @NonNull
+  public PersistedInstallationEntry withFisError(@NonNull String message) {
+    return toBuilder()
+        .setFisError(message)
+        .setRegistrationStatus(RegistrationStatus.REGISTER_ERROR)
+        .build();
+  }
+
+  @NonNull
+  public PersistedInstallationEntry withNoGeneratedFid() {
+    return toBuilder().setRegistrationStatus(RegistrationStatus.NOT_GENERATED).build();
+  }
+
+  @NonNull
+  public PersistedInstallationEntry withAuthToken(
+      @NonNull String authToken, long authTokenExpiration, long creationTime) {
+    return toBuilder()
+        .setAuthToken(authToken)
+        .setExpiresInSecs(authTokenExpiration)
+        .setTokenCreationEpochInSecs(creationTime)
+        .build();
+  }
+
+  @NonNull
+  public PersistedInstallationEntry withClearedAuthToken() {
+    return toBuilder().setAuthToken(null).build();
   }
 
   @NonNull
@@ -68,7 +130,7 @@ public abstract class PersistedInstallationEntry {
   public static PersistedInstallationEntry.Builder builder() {
     return new AutoValue_PersistedInstallationEntry.Builder()
         .setTokenCreationEpochInSecs(0)
-        .setRegistrationStatus(PersistedInstallation.RegistrationStatus.NOT_GENERATED)
+        .setRegistrationStatus(RegistrationStatus.ATTEMPT_MIGRATION)
         .setExpiresInSecs(0);
   }
 

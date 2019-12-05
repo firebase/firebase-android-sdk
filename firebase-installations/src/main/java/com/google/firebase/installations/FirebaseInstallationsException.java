@@ -19,13 +19,14 @@ import com.google.firebase.FirebaseException;
 
 /** The class for all Exceptions thrown by {@link FirebaseInstallations}. */
 public class FirebaseInstallationsException extends FirebaseException {
-  // TODO(ankitagj): Improve exception handling and java doc
   public enum Status {
-    SDK_INTERNAL_ERROR,
+    OK,
 
-    CLIENT_ERROR,
-
-    AUTHENTICATION_ERROR
+    /**
+     * Indicates that the caller is misconfigured, usually with a bad or misconfigured API Key
+     * or Project.
+     */
+    BAD_CONFIG,
   }
 
   @NonNull private final Status status;

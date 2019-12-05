@@ -17,9 +17,13 @@ package com.google.firebase.installations {
   }
 
   public enum FirebaseInstallationsException.Status {
-    enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status AUTHENTICATION_ERROR;
-    enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status CLIENT_ERROR;
-    enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status SDK_INTERNAL_ERROR;
+    enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status BAD_CONFIG;
+    enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status OK;
+  }
+
+  public class RandomFidGenerator {
+    ctor public RandomFidGenerator();
+    method @NonNull public String createRandomFid();
   }
 
 }
@@ -33,12 +37,13 @@ package com.google.firebase.installations.local {
 
   public class PersistedInstallation {
     ctor public PersistedInstallation(@NonNull FirebaseApp);
-    method @NonNull public boolean clear();
-    method @NonNull public boolean insertOrUpdatePersistedInstallationEntry(@NonNull com.google.firebase.installations.local.PersistedInstallationEntry);
+    method public void clearForTesting();
     method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry readPersistedInstallationEntryValue();
+    method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry writePreferencesToDisk(@NonNull com.google.firebase.installations.local.PersistedInstallationEntry);
   }
 
   public enum PersistedInstallation.RegistrationStatus {
+    enum_constant public static final com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus ATTEMPT_MIGRATION;
     enum_constant public static final com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus NOT_GENERATED;
     enum_constant public static final com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus REGISTERED;
     enum_constant public static final com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus REGISTER_ERROR;
@@ -59,7 +64,15 @@ package com.google.firebase.installations.local {
     method public boolean isNotGenerated();
     method public boolean isRegistered();
     method public boolean isUnregistered();
+    method public boolean shouldAttemptMigration();
     method @NonNull public abstract com.google.firebase.installations.local.PersistedInstallationEntry.Builder toBuilder();
+    method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry withAuthToken(@NonNull String, long, long);
+    method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry withClearedAuthToken();
+    method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry withFisError(@NonNull String);
+    method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry withNoGeneratedFid();
+    method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry withRegisteredFid(@NonNull String, @NonNull String, long, @Nullable String, long);
+    method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry withUnregisteredFid(@NonNull String);
+    field @NonNull public static com.google.firebase.installations.local.PersistedInstallationEntry INSTANCE;
   }
 
   public abstract static class PersistedInstallationEntry.Builder {
@@ -107,8 +120,8 @@ package com.google.firebase.installations.remote {
   }
 
   public enum InstallationResponse.ResponseCode {
+    enum_constant public static final com.google.firebase.installations.remote.InstallationResponse.ResponseCode BAD_CONFIG;
     enum_constant public static final com.google.firebase.installations.remote.InstallationResponse.ResponseCode OK;
-    enum_constant public static final com.google.firebase.installations.remote.InstallationResponse.ResponseCode SERVER_ERROR;
   }
 
   public abstract class TokenResult {
@@ -117,7 +130,6 @@ package com.google.firebase.installations.remote {
     method @Nullable public abstract com.google.firebase.installations.remote.TokenResult.ResponseCode getResponseCode();
     method @Nullable public abstract String getToken();
     method @NonNull public abstract long getTokenExpirationTimestamp();
-    method public boolean isSuccessful();
     method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder toBuilder();
   }
 
@@ -130,9 +142,9 @@ package com.google.firebase.installations.remote {
   }
 
   public enum TokenResult.ResponseCode {
-    enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode FID_ERROR;
+    enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode AUTH_ERROR;
+    enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode BAD_CONFIG;
     enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode OK;
-    enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode REFRESH_TOKEN_ERROR;
   }
 
 }

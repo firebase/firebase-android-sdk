@@ -26,6 +26,8 @@ import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.installations.FirebaseInstallationsException;
+import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -85,57 +87,58 @@ public class FirebaseInstallationServiceClient {
    * @param projectID Project Id
    * @param appId the identifier of a Firebase application
    * @return {@link InstallationResponse} generated from the response body
+   *    400: return response with status BAD_CONFIG
+   *    403: return response with status BAD_CONFIG
+   *    403: return response with status BAD_CONFIG
+   *    429: throw IOException
+   *    500: throw IOException
    */
   @NonNull
   public InstallationResponse createFirebaseInstallation(
       @NonNull String apiKey, @NonNull String fid, @NonNull String projectID, @NonNull String appId)
-      throws FirebaseException {
+      throws IOException {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
-    try {
-      int retryCount = 0;
-      URL url =
-          new URL(
-              String.format(
-                  "https://%s/%s/%s?key=%s",
-                  FIREBASE_INSTALLATIONS_API_DOMAIN,
-                  FIREBASE_INSTALLATIONS_API_VERSION,
-                  resourceName,
-                  apiKey));
-      while (retryCount <= MAX_RETRIES) {
-        HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
-        httpsURLConnection.setRequestMethod("POST");
-        httpsURLConnection.setDoOutput(true);
+    int retryCount = 0;
+    URL url =
+        new URL(
+            String.format(
+                "https://%s/%s/%s?key=%s",
+                FIREBASE_INSTALLATIONS_API_DOMAIN,
+                FIREBASE_INSTALLATIONS_API_VERSION,
+                resourceName,
+                apiKey));
+    while (retryCount <= MAX_RETRIES) {
+      HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
+      httpsURLConnection.setRequestMethod("POST");
+      httpsURLConnection.setDoOutput(true);
 
-        GZIPOutputStream gzipOutputStream =
-            new GZIPOutputStream(httpsURLConnection.getOutputStream());
-        try {
-          gzipOutputStream.write(
-              buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
-        } catch (JSONException e) {
-          throw new IllegalStateException(e);
-        } finally {
-          gzipOutputStream.close();
-        }
-
-        int httpResponseCode = httpsURLConnection.getResponseCode();
-
-        if (httpResponseCode == 200) {
-          return readCreateResponse(httpsURLConnection);
-        }
-        // Usually the FIS server recovers from errors: retry one time before giving up.
-        if (httpResponseCode >= 500 && httpResponseCode < 600) {
-          retryCount++;
-          continue;
-        }
-
-        // Unrecoverable server response or unknown error
-        throw new FirebaseException(readErrorResponse(httpsURLConnection));
+      GZIPOutputStream gzipOutputStream =
+          new GZIPOutputStream(httpsURLConnection.getOutputStream());
+      try {
+        gzipOutputStream.write(
+            buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
+      } catch (JSONException e) {
+        throw new IllegalStateException(e);
+      } finally {
+        gzipOutputStream.close();
       }
-      // Return empty installation response with SERVER_ERROR response code after max retries
-      return InstallationResponse.builder().setResponseCode(ResponseCode.SERVER_ERROR).build();
-    } catch (IOException e) {
-      throw new FirebaseException(String.format(NETWORK_ERROR_MESSAGE, e.getMessage()));
+
+      int httpResponseCode = httpsURLConnection.getResponseCode();
+
+      if (httpResponseCode == 200) {
+        return readCreateResponse(httpsURLConnection);
+      }
+
+      if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+        retryCount++;
+        continue;
+      }
+
+      // Return empty installation response with BAD_CONFIG response code after max retries
+      return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
     }
+
+    throw new IOException();
   }
 
   private static JSONObject buildCreateFirebaseInstallationRequestBody(String fid, String appId)
@@ -162,32 +165,39 @@ public class FirebaseInstallationServiceClient {
       @NonNull String fid,
       @NonNull String projectID,
       @NonNull String refreshToken)
-      throws FirebaseException {
+      throws FirebaseException, IOException {
     String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
-    try {
-      URL url =
-          new URL(
-              String.format(
-                  "https://%s/%s/%s?key=%s",
-                  FIREBASE_INSTALLATIONS_API_DOMAIN,
-                  FIREBASE_INSTALLATIONS_API_VERSION,
-                  resourceName,
-                  apiKey));
+    URL url =
+        new URL(
+            String.format(
+                "https://%s/%s/%s?key=%s",
+                FIREBASE_INSTALLATIONS_API_DOMAIN,
+                FIREBASE_INSTALLATIONS_API_VERSION,
+                resourceName,
+                apiKey));
 
+    int retryCount = 0;
+    while (retryCount <= MAX_RETRIES) {
       HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
       httpsURLConnection.setRequestMethod("DELETE");
       httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
       int httpResponseCode = httpsURLConnection.getResponseCode();
-      switch (httpResponseCode) {
-        case 200:
-          return;
-        default:
-          throw new FirebaseException(readErrorResponse(httpsURLConnection));
+
+      if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
+        return;
       }
-    } catch (IOException e) {
-      throw new FirebaseException(String.format(NETWORK_ERROR_MESSAGE, e.getMessage()));
+
+      if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+        retryCount++;
+        continue;
+      }
+
+      throw new FirebaseInstallationsException("bad config while trying to delete FID",
+          Status.BAD_CONFIG);
     }
+
+    throw new IOException();
   }
 
   /**
@@ -198,6 +208,12 @@ public class FirebaseInstallationServiceClient {
    * @param fid Firebase Installation Identifier
    * @param projectID Project Id
    * @param refreshToken a token used to authenticate FIS requests
+   *    400: return response with status BAD_CONFIG
+   *    401: return response with status INVALID_AUTH
+   *    403: return response with status BAD_CONFIG
+   *    404: return response with status INVALID_AUTH
+   *    429: throw IOException
+   *    500: throw IOException
    */
   @NonNull
   public TokenResult generateAuthToken(
@@ -205,53 +221,42 @@ public class FirebaseInstallationServiceClient {
       @NonNull String fid,
       @NonNull String projectID,
       @NonNull String refreshToken)
-      throws FirebaseException {
+      throws IOException {
     String resourceName =
         String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
-    try {
-      int retryCount = 0;
-      URL url =
-          new URL(
-              String.format(
-                  "https://%s/%s/%s?key=%s",
-                  FIREBASE_INSTALLATIONS_API_DOMAIN,
-                  FIREBASE_INSTALLATIONS_API_VERSION,
-                  resourceName,
-                  apiKey));
-      while (retryCount <= MAX_RETRIES) {
-        HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
-        httpsURLConnection.setRequestMethod("POST");
-        httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
+    int retryCount = 0;
+    URL url =
+        new URL(
+            String.format(
+                "https://%s/%s/%s?key=%s",
+                FIREBASE_INSTALLATIONS_API_DOMAIN,
+                FIREBASE_INSTALLATIONS_API_VERSION,
+                resourceName,
+                apiKey));
+    while (retryCount <= MAX_RETRIES) {
+      HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
+      httpsURLConnection.setRequestMethod("POST");
+      httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
-        int httpResponseCode = httpsURLConnection.getResponseCode();
+      int httpResponseCode = httpsURLConnection.getResponseCode();
 
-        if (httpResponseCode == 200) {
-          return readGenerateAuthTokenResponse(httpsURLConnection);
-        }
-
-        if (httpResponseCode == 401) {
-          return TokenResult.builder()
-              .setResponseCode(TokenResult.ResponseCode.REFRESH_TOKEN_ERROR)
-              .build();
-        }
-
-        if (httpResponseCode == 404) {
-          return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.FID_ERROR).build();
-        }
-
-        // Usually the FIS server recovers from errors: retry one time before giving up.
-        if (httpResponseCode >= 500 && httpResponseCode < 600) {
-          retryCount++;
-          continue;
-        }
-
-        // Unrecoverable server response or unknown error
-        throw new FirebaseException(readErrorResponse(httpsURLConnection));
+      if (httpResponseCode == 200) {
+        return readGenerateAuthTokenResponse(httpsURLConnection);
       }
-      throw new FirebaseException(INTERNAL_SERVER_ERROR_MESSAGE);
-    } catch (IOException e) {
-      throw new FirebaseException(String.format(NETWORK_ERROR_MESSAGE, e.getMessage()));
+
+      if (httpResponseCode == 401 || httpResponseCode == 404) {
+        return TokenResult.builder()
+            .setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
+      }
+
+      if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+        retryCount++;
+        continue;
+      }
+
+      return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
     }
+    throw new IOException();
   }
 
   private HttpsURLConnection openHttpsURLConnection(URL url) throws IOException {

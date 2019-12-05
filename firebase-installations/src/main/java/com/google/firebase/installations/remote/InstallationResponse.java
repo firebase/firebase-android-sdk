@@ -24,8 +24,9 @@ public abstract class InstallationResponse {
   public enum ResponseCode {
     // Returned on success
     OK,
-    // An error occurred on the server while processing this request(temporary)
-    SERVER_ERROR
+    // The request is invalid. Do not try again without fixing the request. Usually means
+    // a bad or misconfigured API Key or project is being used.
+    BAD_CONFIG,
   }
 
   @Nullable

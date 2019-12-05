@@ -21,8 +21,6 @@ import com.google.firebase.installations.remote.TokenResult;
 
 public final class FisAndroidTestConstants {
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
-  // Invalid FID.
-  public static final String INVALID_TEST_FID = "invalid";
 
   public static final String TEST_PROJECT_ID = "777777777777";
 
@@ -38,8 +36,7 @@ public final class FisAndroidTestConstants {
   public static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
   public static final String TEST_APP_ID_2 = "1:987654321:android:abcdef";
 
-  public static final long TEST_TOKEN_EXPIRATION_TIMESTAMP = 1000L;
-  public static final long TEST_TOKEN_EXPIRATION_TIMESTAMP_2 = 2000L;
+  public static final long TEST_TOKEN_EXPIRATION_TIMESTAMP = 4000L;
 
   public static final long TEST_CREATION_TIMESTAMP_1 = 2000L;
   public static final long TEST_CREATION_TIMESTAMP_2 = 2L;
@@ -81,6 +78,4 @@ public final class FisAndroidTestConstants {
           .setResponseCode(TokenResult.ResponseCode.OK)
           .build();
 
-  public static final InstallationResponse SERVER_ERROR_INSTALLATION_RESPONSE =
-      InstallationResponse.builder().setResponseCode(ResponseCode.SERVER_ERROR).build();
 }

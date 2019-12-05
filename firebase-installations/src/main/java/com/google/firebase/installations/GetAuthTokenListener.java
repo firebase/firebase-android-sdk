@@ -22,18 +22,17 @@ class GetAuthTokenListener implements StateListener {
   private final TaskCompletionSource<InstallationTokenResult> resultTaskCompletionSource;
 
   public GetAuthTokenListener(
-      Utils utils, TaskCompletionSource<InstallationTokenResult> resultTaskCompletionSource) {
+      Utils utils,
+      TaskCompletionSource<InstallationTokenResult> resultTaskCompletionSource) {
     this.utils = utils;
     this.resultTaskCompletionSource = resultTaskCompletionSource;
   }
 
   @Override
-  public boolean onStateReached(
-      PersistedInstallationEntry persistedInstallationEntry, boolean shouldRefreshAuthToken) {
+  public boolean onStateReached(PersistedInstallationEntry persistedInstallationEntry) {
     // AuthTokenListener state is reached when FID is registered and has a valid auth token
     if (persistedInstallationEntry.isRegistered()
-        && !utils.isAuthTokenExpired(persistedInstallationEntry)
-        && !shouldRefreshAuthToken) {
+        && !utils.isAuthTokenExpired(persistedInstallationEntry)) {
       resultTaskCompletionSource.setResult(
           InstallationTokenResult.builder()
               .setToken(persistedInstallationEntry.getAuthToken())
@@ -48,7 +47,9 @@ class GetAuthTokenListener implements StateListener {
   @Override
   public boolean onException(
       PersistedInstallationEntry persistedInstallationEntry, Exception exception) {
-    if (persistedInstallationEntry.isErrored() || persistedInstallationEntry.isNotGenerated()) {
+    if (persistedInstallationEntry.isErrored()
+        || persistedInstallationEntry.isNotGenerated()
+        || persistedInstallationEntry.isUnregistered()) {
       resultTaskCompletionSource.trySetException(exception);
       return true;
     }
