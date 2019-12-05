@@ -60,7 +60,7 @@ public class FirebaseInstallationServiceClient {
   private static final String GZIP_CONTENT_ENCODING = "gzip";
 
   /** Heartbeat tag for firebase installations. */
-  private static final String FIREBASE_IID_HEARTBEAT_TAG = "fire-iid";
+  private static final String FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG = "fire-installations-id";
 
   private static final String HEART_BEAT_HEADER = "x-firebase-client-log-type";
   private static final String USER_AGENT_HEADER = "x-firebase-client";
@@ -279,7 +279,7 @@ public class FirebaseInstallationServiceClient {
     httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
     httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
     if (heartbeatInfo != null && userAgentPublisher != null) {
-      HeartBeat heartbeat = heartbeatInfo.getHeartBeatCode(FIREBASE_IID_HEARTBEAT_TAG);
+      HeartBeat heartbeat = heartbeatInfo.getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
       if (heartbeat != HeartBeat.NONE) {
         httpsURLConnection.addRequestProperty(USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
         httpsURLConnection.addRequestProperty(
