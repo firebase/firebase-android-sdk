@@ -58,6 +58,43 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
+  public void testRegisterOverride() throws IOException, EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> {
+          ctx.add("Inner", InnerDummyClass.INSTANCE);
+        };
+    ObjectEncoder<InnerDummyClass> innerObjectEncoder =
+        (o, ctx) -> {
+          ctx.add("Name", "innerClass");
+        };
+    ValueEncoder<InnerDummyClass> innerValueEncoder =
+        (o, ctx) -> {
+          ctx.add(1234);
+        };
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .registerEncoder(InnerDummyClass.class, innerObjectEncoder)
+            .registerEncoder(InnerDummyClass.class, innerValueEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result).isEqualTo("{\"Inner\":1234}");
+
+    // Invert the logic
+    result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .registerEncoder(InnerDummyClass.class, innerValueEncoder)
+            .registerEncoder(InnerDummyClass.class, innerObjectEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result).isEqualTo("{\"Inner\":{\"Name\":\"innerClass\"}}");
+  }
+
+  @Test
   public void testEncodingPrimitiveTypes() throws IOException, EncodingException {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {

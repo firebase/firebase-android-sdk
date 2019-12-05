@@ -68,10 +68,9 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
   @Override
   public <T> JsonDataEncoderBuilder registerEncoder(
       @NonNull Class<T> clazz, @NonNull ObjectEncoder<? super T> objectEncoder) {
-    if (objectEncoders.containsKey(clazz)) {
-      throw new IllegalArgumentException("Encoder already registered for " + clazz.getName());
-    }
     objectEncoders.put(clazz, objectEncoder);
+    // Remove it from the other map if present.
+    valueEncoders.remove(clazz);
     return this;
   }
 
@@ -79,10 +78,9 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
   @Override
   public <T> JsonDataEncoderBuilder registerEncoder(
       @NonNull Class<T> clazz, @NonNull ValueEncoder<? super T> encoder) {
-    if (valueEncoders.containsKey(clazz)) {
-      throw new IllegalArgumentException("Encoder already registered for " + clazz.getName());
-    }
     valueEncoders.put(clazz, encoder);
+    // Remove it from the other map if present.
+    objectEncoders.remove(clazz);
     return this;
   }
 

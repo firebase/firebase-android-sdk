@@ -37,6 +37,20 @@ package com.google.firebase.encoders {
 
 }
 
+package com.google.firebase.encoders.annotations {
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Encodable {
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface Encodable.Field {
+    method public abstract String name() default "";
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface Encodable.Ignore {
+  }
+
+}
+
 package com.google.firebase.encoders.config {
 
   public interface Configurator {
