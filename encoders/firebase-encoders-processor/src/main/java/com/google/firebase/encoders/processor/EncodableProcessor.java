@@ -30,12 +30,14 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
@@ -254,9 +256,7 @@ public class EncodableProcessor extends AbstractProcessor {
 
       Set<TypeMirror> result = new LinkedHashSet<>();
       for (Getter getter : getterFactory.allGetters((DeclaredType) type)) {
-        if (shouldCreateEncoderFor(getter.getUnderlyingType())) {
-          result.add(getter.getUnderlyingType());
-        }
+        result.addAll(getTypesToVisit(getter.getUnderlyingType()));
         methodBuilder.addCode("ctx.add($S, value.$L);\n", getter.name(), getter.expression());
       }
 
@@ -279,21 +279,30 @@ public class EncodableProcessor extends AbstractProcessor {
       return VisitResult.of(result, Encoder.create(types.erasure(type), encoder));
     }
 
-    private boolean shouldCreateEncoderFor(TypeMirror type) {
-      if (type.getKind().isPrimitive()) {
-        return false;
+    private Set<TypeMirror> getTypesToVisit(TypeMirror type) {
+      TypeMirror date = elements.getTypeElement("java.util.Date").asType();
+      TypeMirror enumType = types.erasure(elements.getTypeElement("java.lang.Enum").asType());
+      if (type.getKind().isPrimitive()
+          || types.isAssignable(type, date)
+          || types.isAssignable(type, enumType)
+          || "java.lang".equals(Names.packageName(types.asElement(type)))) {
+        return Collections.emptySet();
       }
+      if (!(type instanceof DeclaredType)) {
+        return Collections.emptySet();
+      }
+
+      DeclaredType dType = (DeclaredType) type;
+
       TypeMirror collection =
           types.erasure(elements.getTypeElement("java.util.Collection").asType());
       TypeMirror map = types.erasure(elements.getTypeElement("java.util.Map").asType());
-      TypeMirror date = elements.getTypeElement("java.util.Date").asType();
-      if (types.isAssignable(type, collection)
-          || types.isAssignable(type, map)
-          || types.isAssignable(type, date)
-          || "java.lang".equals(Names.packageName(types.asElement(type)))) {
-        return false;
+      if (types.isAssignable(dType, collection) || types.isAssignable(dType, map)) {
+        return dType.getTypeArguments().stream()
+            .flatMap(t -> getTypesToVisit(t).stream())
+            .collect(Collectors.toSet());
       }
-      return true;
+      return Collections.singleton(type);
     }
   }
 }
