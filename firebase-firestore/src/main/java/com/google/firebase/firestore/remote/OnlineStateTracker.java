@@ -32,9 +32,7 @@ import java.util.Locale;
  * <p>In particular, when the client is trying to connect to the backend, we allow up to
  * MAX_WATCH_STREAM_FAILURES within ONLINE_STATE_TIMEOUT_MS for a connection to succeed. If we have
  * too many failures or the timeout elapses, then we set the OnlineState to OFFLINE, and the client
- * will behave as if it is offline (get() calls will return cached data, etc.). The client will
- * continue to attempt reconnecting, restarting the underlying connection every
- * CONNECTIVITY_ATTEMPT_TIMEOUT_MS.
+ * will behave as if it is offline (get() calls will return cached data, etc.).
  */
 class OnlineStateTracker {
 
@@ -58,11 +56,6 @@ class OnlineStateTracker {
   // to OFFLINE rather than waiting indefinitely.
   private static final int ONLINE_STATE_TIMEOUT_MS = 10 * 1000;
 
-  // This timeout is also used when attempting to establish a connection. If a connection attempt
-  // does not succeed in time, we close the stream and restart the connection, rather than having
-  // it hang indefinitely.
-  static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
-
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "OnlineStateTracker";
 
@@ -72,10 +65,6 @@ class OnlineStateTracker {
   // A count of consecutive failures to open the stream. If it reaches the maximum defined by
   // MAX_WATCH_STREAM_FAILURES, we'll revert to OnlineState.OFFLINE.
   private int watchStreamFailures;
-
-  // A timer that elapses after CONNECTIVTY_ATTEMPT_TIMEOUT_MS, at which point we close the
-  // stream, reset the underlying connection, and try connecting again.
-  private DelayedTask connectivityAttemptTimer;
 
   // A timer that elapses after ONLINE_STATE_TIMEOUT_MS, at which point we transition from
   // OnlineState.UNKNOWN to OFFLINE without waiting for the stream to actually fail
@@ -129,8 +118,6 @@ class OnlineStateTracker {
                 // even though we are already marked OFFLINE but this is non-harmful.
               });
     }
-    hardAssert(
-        connectivityAttemptTimer == null, "connectivityAttemptTimer shouldn't be started yet");
   }
 
   /**
@@ -147,17 +134,16 @@ class OnlineStateTracker {
       // To get to OnlineState.ONLINE, updateState() must have been called which would have reset
       // our heuristics.
       hardAssert(this.watchStreamFailures == 0, "watchStreamFailures must be 0");
-      hardAssert(this.connectivityAttemptTimer == null, "connectivityAttemptTimer must be null");
       hardAssert(this.onlineStateTimer == null, "onlineStateTimer must be null");
     } else {
       watchStreamFailures++;
-      clearTimers();
       if (watchStreamFailures >= MAX_WATCH_STREAM_FAILURES) {
+        clearOnlineStateTimer();
         logClientOfflineWarningIfNecessary(
             String.format(
                 Locale.ENGLISH,
-                "Backend didn't respond within %d seconds. Most recent error: %s\n",
-                CONNECTIVITY_ATTEMPT_TIMEOUT_MS / 1000,
+                "BCHEN: Backend didn't respond within %d seconds. Most recent error: %s\n",
+                ONLINE_STATE_TIMEOUT_MS / 1000,
                 status));
         setAndBroadcastState(OnlineState.OFFLINE);
       }
@@ -171,7 +157,7 @@ class OnlineStateTracker {
    * it must not be used in place of handleWatchStreamStart() and handleWatchStreamFailure().
    */
   void updateState(OnlineState newState) {
-    clearTimers();
+    clearOnlineStateTimer();
     watchStreamFailures = 0;
 
     if (newState == OnlineState.ONLINE) {
@@ -184,6 +170,7 @@ class OnlineStateTracker {
   }
 
   private void setAndBroadcastState(OnlineState newState) {
+    Logger.debug("OST", "BCHEN: setting state to: " + newState);
     if (newState != state) {
       state = newState;
       onlineStateCallback.handleOnlineStateChange(newState);
@@ -193,7 +180,7 @@ class OnlineStateTracker {
   private void logClientOfflineWarningIfNecessary(String reason) {
     String message =
         String.format(
-            "Could not reach Cloud Firestore backend. %s\n"
+            "BCHEN: Could not reach Cloud Firestore backend. %s\n"
                 + "This typically indicates that your device does not have a healthy Internet "
                 + "connection at the moment. The client will operate in offline mode until it is "
                 + "able to successfully connect to the backend.",
@@ -207,20 +194,10 @@ class OnlineStateTracker {
     }
   }
 
-  /** Clears the OnlineStateTimer and the passed in ConnectivityAttemptTimer. */
-  private void clearTimers() {
-    if (connectivityAttemptTimer != null) {
-      connectivityAttemptTimer.cancel();
-      connectivityAttemptTimer = null;
-    }
+  private void clearOnlineStateTimer() {
     if (onlineStateTimer != null) {
       onlineStateTimer.cancel();
       onlineStateTimer = null;
     }
-  }
-
-  /** Sets the connectivity attempt timer to track. */
-  void setConnectivityAttemptTimer(DelayedTask connectivityAttemptTimer) {
-    this.connectivityAttemptTimer = connectivityAttemptTimer;
   }
 }

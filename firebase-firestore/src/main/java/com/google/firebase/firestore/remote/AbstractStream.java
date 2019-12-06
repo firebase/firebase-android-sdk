@@ -391,12 +391,6 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     }
   }
 
-  /** Called when the connectivity attempt timer runs out. */
-  void handleConnectionAttemptTimeout() {
-    // We want to force a new connection on the next connection attempt whenever we fail to connect.
-    close(State.Error, Status.UNAVAILABLE, true);
-  }
-
   /** Called when GRPC closes the stream, which should always be due to some error. */
   @VisibleForTesting
   void handleServerClose(Status status) {

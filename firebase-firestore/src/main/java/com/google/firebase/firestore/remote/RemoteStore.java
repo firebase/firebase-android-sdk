@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.remote;
 
-import static com.google.firebase.firestore.remote.OnlineStateTracker.CONNECTIVITY_ATTEMPT_TIMEOUT_MS;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
@@ -36,8 +35,6 @@ import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChan
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
-import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
@@ -132,8 +129,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final WriteStream writeStream;
   @Nullable private WatchChangeAggregator watchChangeAggregator;
 
-  private final AsyncQueue workerQueue;
-
   /**
    * A list of up to MAX_PENDING_WRITES writes that we have fetched from the LocalStore via
    * fillWritePipeline() and have or will send to the write stream.
@@ -160,12 +155,11 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     this.localStore = localStore;
     this.datastore = datastore;
     this.connectivityMonitor = connectivityMonitor;
-    this.workerQueue = workerQueue;
 
     listenTargets = new HashMap<>();
     writePipeline = new ArrayDeque<>();
     onlineStateTracker =
-        new OnlineStateTracker(this.workerQueue, remoteStoreCallback::handleOnlineStateChange);
+        new OnlineStateTracker(workerQueue, remoteStoreCallback::handleOnlineStateChange);
 
     // Create new streams (but note they're not started yet).
     watchStream =
@@ -226,11 +220,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 }
               });
         });
-  }
-
-  /** Marks that we should start checking for online state. */
-  public void attemptReconnect() {
-    watchStream.handleConnectionAttemptTimeout();
   }
 
   /** Re-enables the network. Only to be called as the counterpart to disableNetwork(). */
@@ -423,19 +412,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     watchChangeAggregator = new WatchChangeAggregator(this);
     watchStream.start();
     onlineStateTracker.handleWatchStreamStart();
-
-    DelayedTask connectivityAttemptTimer =
-        workerQueue.enqueueAfterDelay(
-            TimerId.CONNECTIVITY_ATTEMPT_TIMER,
-            CONNECTIVITY_ATTEMPT_TIMEOUT_MS,
-            () -> {
-              // If the network has been explicitly disabled, make sure we don't accidentally
-              // re-enable it.
-              if (canUseNetwork()) {
-                attemptReconnect();
-              }
-            });
-    onlineStateTracker.setConnectivityAttemptTimer(connectivityAttemptTimer);
   }
 
   private void handleWatchStreamOpen() {

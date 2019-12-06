@@ -23,6 +23,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
@@ -30,6 +31,7 @@ import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.CallCredentials;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
+import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
@@ -49,6 +51,10 @@ public class GrpcCallProvider {
   private final AsyncQueue asyncQueue;
 
   private CallOptions callOptions;
+
+  // A timer that elapses after CONNECTIVTY_ATTEMPT_TIMEOUT_MS, at which point we close the
+  // stream, reset the underlying connection, and try connecting again.
+  private DelayedTask connectivityAttemptTimer;
 
   /**
    * Helper function to globally override the channel that RPCs use. Useful for testing when you
@@ -207,6 +213,53 @@ public class GrpcCallProvider {
           "Interrupted while shutting down the gRPC Managed Channel");
       // Preserve interrupt status
       Thread.currentThread().interrupt();
+    }
+  }
+
+  /**
+   * Sets the connectivity attempt timer to track. Existing timers must complete or be cancelled
+   * before a new timer can be set.
+   */
+  void setConnectivityAttemptTimer(DelayedTask connectivityAttemptTimer) {
+    Logger.debug("GRPCCallProvider", "BCHEN: setting connectivity attempt timer");
+    // If an existing timer is already running, we want to continue using that one.
+    if (this.connectivityAttemptTimer != null) {
+      Logger.debug("GrpcCall", "BCHEN: timer set already");
+      connectivityAttemptTimer.cancel();
+    } else {
+      try {
+        ManagedChannel channel = this.channelTask.getResult();
+        if (channel != null) {
+          this.connectivityAttemptTimer = connectivityAttemptTimer;
+          listenToConnectivityState(channel);
+        }
+      } catch (IllegalStateException e) {
+        // When the ManagedChannel is first initialized, channelTask could still be running.
+        connectivityAttemptTimer.cancel();
+      }
+    }
+  }
+
+  /**
+   * Cancels the connectivityStateTimer if the new state indicates grpc is online. Otherwise, we
+   * reset the listener for the next state change.
+   */
+  private void listenToConnectivityState(ManagedChannel channel) {
+    ConnectivityState newState = channel.getState(false);
+    Logger.debug("GRPCCallProvider", "BCHEN: new state change: " + newState);
+    // Check that the new state is online, then cancel timer.
+    if (newState == ConnectivityState.READY) {
+      clearConnectivityTimer();
+    } else {
+      channel.notifyWhenStateChanged(newState, () -> listenToConnectivityState(channel));
+    }
+  }
+
+  /** Clears the connectivity timer if it exists. */
+  void clearConnectivityTimer() {
+    if (connectivityAttemptTimer != null) {
+      connectivityAttemptTimer.cancel();
+      connectivityAttemptTimer = null;
     }
   }
 }
