@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore;
+package com.google.firebase.encoders.processor;
 
-/**
- * Indicates whether metadata-only changes (that is, only {@code DocumentSnapshot.getMetadata()} or
- * {@code QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
- */
-public enum MetadataChanges {
-  EXCLUDE,
-  INCLUDE
+import javax.lang.model.type.TypeMirror;
+
+/** Handles type traversal. */
+public interface TypeVisitor<T> {
+  VisitResult<T> visit(TypeMirror type);
 }

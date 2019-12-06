@@ -14,13 +14,12 @@
 
 package com.google.firebase.gradle.plugins.apiinfo;
 
+import com.android.build.gradle.api.AndroidSourceSet;
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.stream.Collectors;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
@@ -30,10 +29,9 @@ public abstract class GenerateStubsTask extends DefaultTask {
 
   public abstract void setMetalavaJarPath(String path);
 
-  @InputFiles
-  public abstract Collection<File> getSourceDirs();
+  public abstract AndroidSourceSet getSourceSet();
 
-  public abstract void setSourceDirs(Collection<File> dirs);
+  public abstract void setSourceSet(AndroidSourceSet sourceSet);
 
   @OutputDirectory
   public abstract File getOutputDir();
@@ -43,7 +41,10 @@ public abstract class GenerateStubsTask extends DefaultTask {
   @TaskAction
   public void run() {
     String sourcePath =
-        getSourceDirs().stream().map(File::getAbsolutePath).collect(Collectors.joining(":"));
+        getSourceSet().getJava().getSrcDirs().stream()
+            .filter(File::exists)
+            .map(File::getAbsolutePath)
+            .collect(Collectors.joining(":"));
 
     getProject()
         .javaexec(

@@ -39,6 +39,10 @@ android {
             includeAndroidResources = true
         }
     }
+
+    sourceSets.main.java {
+        srcDir 'src/json/java'
+    }
 }
 
 dependencies {
@@ -51,4 +55,8 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
 
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Werror"
 }
