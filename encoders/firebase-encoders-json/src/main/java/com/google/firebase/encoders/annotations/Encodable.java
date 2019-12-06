@@ -45,11 +45,15 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 public @interface Encodable {
 
-  /** Specifies a custom field name for a given property of a type. */
+  /** Field configuration. */
   @Target(ElementType.METHOD)
   @Retention(RetentionPolicy.CLASS)
   @interface Field {
+    /** Specifies a custom field name for a given property of a type. */
     String name() default "";
+
+    /** Mark a field to be decoded inline in the parent context not nested under its own key. */
+    boolean inline() default false;
   }
 
   /** Indicates the code generator to ignore a given property of a type. */

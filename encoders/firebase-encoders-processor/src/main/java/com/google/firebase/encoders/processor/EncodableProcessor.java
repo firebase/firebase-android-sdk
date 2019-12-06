@@ -257,7 +257,11 @@ public class EncodableProcessor extends AbstractProcessor {
       Set<TypeMirror> result = new LinkedHashSet<>();
       for (Getter getter : getterFactory.allGetters((DeclaredType) type)) {
         result.addAll(getTypesToVisit(getter.getUnderlyingType()));
-        methodBuilder.addCode("ctx.add($S, value.$L);\n", getter.name(), getter.expression());
+        if (getter.inline()) {
+          methodBuilder.addCode("ctx.inline(value.$L);\n", getter.expression());
+        } else {
+          methodBuilder.addCode("ctx.add($S, value.$L);\n", getter.name(), getter.expression());
+        }
       }
 
       ClassName className =

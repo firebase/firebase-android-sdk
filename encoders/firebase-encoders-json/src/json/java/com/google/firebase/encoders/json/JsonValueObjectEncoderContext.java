@@ -61,7 +61,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       jsonWriter.nullValue();
       return this;
     }
-    return add(o);
+    return add(o, false);
   }
 
   @NonNull
@@ -98,6 +98,12 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     maybeUnNest();
     jsonWriter.name(name);
     return add(value);
+  }
+
+  @NonNull
+  @Override
+  public ObjectEncoderContext inline(@Nullable Object value) throws IOException, EncodingException {
+    return add(value, true);
   }
 
   @NonNull
@@ -165,7 +171,12 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   }
 
   @NonNull
-  JsonValueObjectEncoderContext add(@Nullable Object o) throws IOException, EncodingException {
+  JsonValueObjectEncoderContext add(@Nullable Object o, boolean inline)
+      throws IOException, EncodingException {
+    if (inline && cannotBeInline(o)) {
+      throw new EncodingException(
+          String.format("%s cannot be encoded inline", o == null ? null : o.getClass()));
+    }
     if (o == null) {
       jsonWriter.nullValue();
       return this;
@@ -201,12 +212,12 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
         }
       } else if (o instanceof Number[]) {
         for (Number item : (Number[]) o) {
-          add(item);
+          add(item, false);
         }
 
       } else {
         for (Object item : (Object[]) o) {
-          add(item);
+          add(item, false);
         }
       }
       jsonWriter.endArray();
@@ -216,7 +227,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       Collection collection = (Collection) o;
       jsonWriter.beginArray();
       for (Object elem : collection) {
-        add(elem);
+        add(elem, false);
       }
       jsonWriter.endArray();
       return this;
@@ -243,9 +254,9 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     @SuppressWarnings("unchecked") // safe because get the encoder by checking the object's type.
     ObjectEncoder<Object> objectEncoder = (ObjectEncoder<Object>) objectEncoders.get(o.getClass());
     if (objectEncoder != null) {
-      jsonWriter.beginObject();
+      if (!inline) jsonWriter.beginObject();
       objectEncoder.encode(o, this);
-      jsonWriter.endObject();
+      if (!inline) jsonWriter.endObject();
       return this;
     }
     @SuppressWarnings("unchecked") // safe because get the encoder by checking the object's type.
@@ -263,6 +274,13 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
     throw new EncodingException(
         "Couldn't find encoder for type " + o.getClass().getCanonicalName());
+  }
+
+  private boolean cannotBeInline(Object value) {
+    if (value != null && (objectEncoders.containsKey(value.getClass()) || value instanceof Map)) {
+      return false;
+    }
+    return true;
   }
 
   void close() throws IOException {
