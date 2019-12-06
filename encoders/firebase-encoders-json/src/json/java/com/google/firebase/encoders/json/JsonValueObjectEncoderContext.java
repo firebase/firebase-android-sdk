@@ -26,6 +26,7 @@ import com.google.firebase.encoders.ValueEncoderContext;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 
 final class JsonValueObjectEncoderContext implements ObjectEncoderContext, ValueEncoderContext {
@@ -35,20 +36,24 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   private final JsonWriter jsonWriter;
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders;
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders;
+  private final ObjectEncoder<Object> fallbackEncoder;
 
   JsonValueObjectEncoderContext(
       @NonNull Writer writer,
       @NonNull Map<Class<?>, ObjectEncoder<?>> objectEncoders,
-      @NonNull Map<Class<?>, ValueEncoder<?>> valueEncoders) {
+      @NonNull Map<Class<?>, ValueEncoder<?>> valueEncoders,
+      ObjectEncoder<Object> fallbackEncoder) {
     this.jsonWriter = new JsonWriter(writer);
     this.objectEncoders = objectEncoders;
     this.valueEncoders = valueEncoders;
+    this.fallbackEncoder = fallbackEncoder;
   }
 
   private JsonValueObjectEncoderContext(JsonValueObjectEncoderContext anotherContext) {
     this.jsonWriter = anotherContext.jsonWriter;
     this.objectEncoders = anotherContext.objectEncoders;
     this.valueEncoders = anotherContext.valueEncoders;
+    this.fallbackEncoder = anotherContext.fallbackEncoder;
   }
 
   @NonNull
@@ -254,10 +259,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     @SuppressWarnings("unchecked") // safe because get the encoder by checking the object's type.
     ObjectEncoder<Object> objectEncoder = (ObjectEncoder<Object>) objectEncoders.get(o.getClass());
     if (objectEncoder != null) {
-      if (!inline) jsonWriter.beginObject();
-      objectEncoder.encode(o, this);
-      if (!inline) jsonWriter.endObject();
-      return this;
+      return doEncode(objectEncoder, o, inline);
     }
     @SuppressWarnings("unchecked") // safe because get the encoder by checking the object's type.
     ValueEncoder<Object> valueEncoder = (ValueEncoder<Object>) valueEncoders.get(o.getClass());
@@ -272,15 +274,24 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       return this;
     }
 
-    throw new EncodingException(
-        "Couldn't find encoder for type " + o.getClass().getCanonicalName());
+    return doEncode(fallbackEncoder, o, inline);
+  }
+
+  JsonValueObjectEncoderContext doEncode(ObjectEncoder<Object> encoder, Object o, boolean inline)
+      throws IOException, EncodingException {
+    if (!inline) jsonWriter.beginObject();
+    encoder.encode(o, this);
+    if (!inline) jsonWriter.endObject();
+    return this;
   }
 
   private boolean cannotBeInline(Object value) {
-    if (value != null && (objectEncoders.containsKey(value.getClass()) || value instanceof Map)) {
-      return false;
-    }
-    return true;
+    return value == null
+        || value.getClass().isArray()
+        || value instanceof Collection
+        || value instanceof Date
+        || value instanceof Enum
+        || value instanceof Number;
   }
 
   void close() throws IOException {
