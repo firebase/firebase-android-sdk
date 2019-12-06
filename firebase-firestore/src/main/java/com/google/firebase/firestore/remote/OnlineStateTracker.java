@@ -97,6 +97,7 @@ class OnlineStateTracker {
   void handleWatchStreamStart() {
     if (watchStreamFailures == 0) {
       setAndBroadcastState(OnlineState.UNKNOWN);
+
       hardAssert(onlineStateTimer == null, "onlineStateTimer shouldn't be started yet");
       onlineStateTimer =
           workerQueue.enqueueAfterDelay(
@@ -142,7 +143,7 @@ class OnlineStateTracker {
         logClientOfflineWarningIfNecessary(
             String.format(
                 Locale.ENGLISH,
-                "BCHEN: Backend didn't respond within %d seconds. Most recent error: %s\n",
+                "Backend didn't respond within %d seconds. Most recent error: %s\n",
                 ONLINE_STATE_TIMEOUT_MS / 1000,
                 status));
         setAndBroadcastState(OnlineState.OFFLINE);
@@ -170,7 +171,6 @@ class OnlineStateTracker {
   }
 
   private void setAndBroadcastState(OnlineState newState) {
-    Logger.debug("OST", "BCHEN: setting state to: " + newState);
     if (newState != state) {
       state = newState;
       onlineStateCallback.handleOnlineStateChange(newState);
@@ -180,7 +180,7 @@ class OnlineStateTracker {
   private void logClientOfflineWarningIfNecessary(String reason) {
     String message =
         String.format(
-            "BCHEN: Could not reach Cloud Firestore backend. %s\n"
+            "Could not reach Cloud Firestore backend. %s\n"
                 + "This typically indicates that your device does not have a healthy Internet "
                 + "connection at the moment. The client will operate in offline mode until it is "
                 + "able to successfully connect to the backend.",

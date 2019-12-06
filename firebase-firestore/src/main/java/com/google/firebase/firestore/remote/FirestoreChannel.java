@@ -28,7 +28,6 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
-import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.ClientCall;
 import io.grpc.ForwardingClientCall;
@@ -115,7 +114,6 @@ class FirestoreChannel {
    */
   <ReqT, RespT> ClientCall<ReqT, RespT> runBidiStreamingRpc(
       MethodDescriptor<ReqT, RespT> method, IncomingStreamObserver<RespT> observer) {
-    Logger.debug("FC", "BCHEN: runBidiStreamingRpc");
     ClientCall<ReqT, RespT>[] call = (ClientCall<ReqT, RespT>[]) new ClientCall[] {null};
 
     Task<ClientCall<ReqT, RespT>> clientCall = callProvider.createClientCall(method);
@@ -178,7 +176,6 @@ class FirestoreChannel {
             CONNECTIVITY_ATTEMPT_TIMEOUT_MS,
             () -> {
               // Reset the underlying connection and restart the stream.
-              Logger.debug("FirestoreChannel", "BCHEN: restarting the stream");
               callProvider.clearConnectivityTimer();
               markChannelIdle();
               runBidiStreamingRpc(method, observer);

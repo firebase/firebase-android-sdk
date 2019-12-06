@@ -221,10 +221,8 @@ public class GrpcCallProvider {
    * before a new timer can be set.
    */
   void setConnectivityAttemptTimer(DelayedTask connectivityAttemptTimer) {
-    Logger.debug("GRPCCallProvider", "BCHEN: setting connectivity attempt timer");
     // If an existing timer is already running, we want to continue using that one.
     if (this.connectivityAttemptTimer != null) {
-      Logger.debug("GrpcCall", "BCHEN: timer set already");
       connectivityAttemptTimer.cancel();
     } else {
       try {
@@ -246,7 +244,6 @@ public class GrpcCallProvider {
    */
   private void listenToConnectivityState(ManagedChannel channel) {
     ConnectivityState newState = channel.getState(false);
-    Logger.debug("GRPCCallProvider", "BCHEN: new state change: " + newState);
     // Check that the new state is online, then cancel timer.
     if (newState == ConnectivityState.READY) {
       clearConnectivityTimer();
