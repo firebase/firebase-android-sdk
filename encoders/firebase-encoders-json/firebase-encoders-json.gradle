@@ -57,8 +57,6 @@ dependencies {
 
 }
 
-gradle.projectsEvaluated {
-    tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Werror"
-    }
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Werror"
 }
