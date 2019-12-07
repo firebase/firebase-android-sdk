@@ -255,14 +255,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *     new auth token from the server even if an unexpired auth token exists on the client.
    */
   private final void doRegistrationInternal(boolean forceRefresh) {
-    PersistedInstallationEntry prefs = persistedInstallation.readPersistedInstallationEntryValue();
-
-    // Check if a new FID needs to be created
-    if (prefs.isNotGenerated()) {
-      // For a default firebase installation read the existing iid. For other custom firebase
-      // installations create a new fid
-      prefs = generateAndPersistFidProcessSafe(prefs);
-    }
+    PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
 
     // Since the caller wants to force an authtoken refresh remove the authtoken from the
     // prefs we are working with, so the following steps know a new token is required.
@@ -305,31 +298,38 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /**
-   * Generate a new FID, either from an existing IID or generated randomly. If an IID exists and
-   * this is the first time a FID has been generated for this installation, the IID will be used as
-   * the FID. If the FID is ever cleared then the next time a FID is generated the IID is ignored
-   * and a FID is generated randomly.
+   * Loads the prefs, generating a new ID if necessary. This operation is made cross-process and
+   * cross-thread safe by wrapping all the processing first in a java synchronization block and
+   * wrapping that in a cross-process lock created using FileLocks.
+   * <p>
+   * If a FID does not yet exist it generate a new FID, either from an existing IID or generated
+   * randomly. If an IID exists and this is the first time a FID has been generated for this
+   * installation, the IID will be used as the FID. If the FID is ever cleared then the next
+   * time a FID is generated the IID is ignored and a FID is generated randomly.
    *
-   * <p>This method ensures that only one thread in one process will run this code at a time, so
-   * that two different processes or threads don't create two different FIDs.
-   *
-   * @param prefs takes the current state of the prefs
    * @return a new version of the prefs that includes the new FID. These prefs will have already
    *     been persisted.
    */
-  private PersistedInstallationEntry generateAndPersistFidProcessSafe(
-      PersistedInstallationEntry prefs) {
+  private PersistedInstallationEntry getPrefsWithGeneratedIdMultiProcessSafe() {
     FileLock fileLock = getCrossProcessLock();
     try {
       synchronized (lockGenerateFid) {
-        // Only one single thread from one single process can execute this block
-        // at any given time.
-        String fid = readExistingIidOrCreateFid(prefs);
-        prefs =
-            persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-                prefs.withUnregisteredFid(fid));
+        PersistedInstallationEntry prefs =
+            persistedInstallation.readPersistedInstallationEntryValue();
+        // Check if a new FID needs to be created
+        if (prefs.isNotGenerated()) {
+          // For a default firebase installation read the existing iid. For other custom firebase
+          // installations create a new fid
+
+          // Only one single thread from one single process can execute this block
+          // at any given time.
+          String fid = readExistingIidOrCreateFid(prefs);
+          prefs = persistedInstallation
+              .insertOrUpdatePersistedInstallationEntry(prefs.withUnregisteredFid(fid));
+        }
         return prefs;
       }
+
     } finally {
       releaseCrossProcessLock(fileLock);
     }
