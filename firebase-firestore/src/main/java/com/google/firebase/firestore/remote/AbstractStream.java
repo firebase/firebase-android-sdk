@@ -174,8 +174,11 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   /** The time a stream stays open after it is marked idle. */
   private static final long IDLE_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(1);
 
-  /** Maximum backoff time when reconnecting. */
-  private static final long RECONNECT_BACKOFF_MAX_DELAY_MS = TimeUnit.SECONDS.toMillis(10);
+  /**
+   * Maximum backoff time when reconnecting when we know the connection is failed on the
+   * client-side.
+   */
+  private static final long DNS_FAILURE_BACKOFF_MAX_DELAY_MS = TimeUnit.SECONDS.toMillis(10);
 
   @Nullable private DelayedTask idleTimer;
 
@@ -309,9 +312,8 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
       // these cases, we need to use a new connection for the next connection attempt, which is
       // done by marking the underlying channel as idle.
       if (forceNewConnection
-          || status.getCause() instanceof java.net.ConnectException
           || status.getCause() instanceof java.net.UnknownHostException) {
-        backoff.setTemporaryMaxDelay(RECONNECT_BACKOFF_MAX_DELAY_MS);
+        backoff.setTemporaryMaxDelay(DNS_FAILURE_BACKOFF_MAX_DELAY_MS);
         firestoreChannel.markChannelIdle();
       }
     }

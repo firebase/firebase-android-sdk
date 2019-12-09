@@ -76,9 +76,8 @@ public class AsyncQueue {
      */
     RETRY_TRANSACTION,
     /**
-     * A timer used in RemoteStore to monitor when a connection attempt is unsuccessful and retry
-     * accordingly. While `ONLINE_STATE_TIMEOUT` is used to transition from UNKNOWN to OFFLINE,
-     * `CONNECTIVITY_ATTEMPT_TIMER` is used for tracking and retrying connectivity attempts.
+     * A timer used to monitor when a connection attempt in gRPC is unsuccessful and retry
+     * accordingly.
      */
     CONNECTIVITY_ATTEMPT_TIMER
   }

@@ -28,6 +28,7 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
+import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.ClientCall;
 import io.grpc.ForwardingClientCall;
@@ -175,10 +176,13 @@ class FirestoreChannel {
             TimerId.CONNECTIVITY_ATTEMPT_TIMER,
             CONNECTIVITY_ATTEMPT_TIMEOUT_MS,
             () -> {
+              Logger.debug("FC", "Restarting the underlying stream");
               // Reset the underlying connection and restart the stream.
               callProvider.clearConnectivityTimer();
               markChannelIdle();
-              runBidiStreamingRpc(method, observer);
+              // Terminate the original RPC.
+              call[0].halfClose();
+              observer.onClose(Status.UNAVAILABLE);
             });
     callProvider.setConnectivityAttemptTimer(connectivityAttemptTimer);
 

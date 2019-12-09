@@ -245,10 +245,12 @@ public class GrpcCallProvider {
   private void listenToConnectivityState(ManagedChannel channel) {
     ConnectivityState newState = channel.getState(false);
     // Check that the new state is online, then cancel timer.
+    Logger.debug("GCP", "BCHEN: current state: " + newState);
     if (newState == ConnectivityState.READY) {
       clearConnectivityTimer();
     } else {
-      channel.notifyWhenStateChanged(newState, () -> listenToConnectivityState(channel));
+      channel.notifyWhenStateChanged(
+          newState, () -> asyncQueue.enqueueAndForget(() -> listenToConnectivityState(channel)));
     }
   }
 

@@ -171,6 +171,7 @@ class OnlineStateTracker {
   }
 
   private void setAndBroadcastState(OnlineState newState) {
+    Logger.debug("OST", "BCHEN: state set to: " + newState);
     if (newState != state) {
       state = newState;
       onlineStateCallback.handleOnlineStateChange(newState);
