@@ -20,8 +20,6 @@ import com.google.firebase.FirebaseException;
 /** The class for all Exceptions thrown by {@link FirebaseInstallations}. */
 public class FirebaseInstallationsException extends FirebaseException {
   public enum Status {
-    OK,
-
     /**
      * Indicates that the caller is misconfigured, usually with a bad or misconfigured API Key or
      * Project.

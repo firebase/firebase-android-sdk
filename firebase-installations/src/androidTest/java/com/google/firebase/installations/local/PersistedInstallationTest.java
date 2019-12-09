@@ -76,7 +76,7 @@ public class PersistedInstallationTest {
 
   @Test
   public void testUpdateAndReadPersistedInstallationEntry_successful() throws Exception {
-    // Insert Persisted Installation Entry with Unregistered status in Shared Prefs
+    // Write the Persisted Installation Entry with Unregistered status to storage.
     persistedInstallation0.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.builder()
             .setFirebaseInstallationId(TEST_FID_1)
@@ -97,7 +97,7 @@ public class PersistedInstallationTest {
     assertThat(entryValue).hasTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP);
     assertThat(entryValue).hasCreationTimestamp(TEST_CREATION_TIMESTAMP_1);
 
-    // Update Persisted Fid Entry with Registered status in Shared Prefs
+    // Write the Persisted Fid Entry with Registered status to storage.
     persistedInstallation0.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.builder()
             .setFirebaseInstallationId(TEST_FID_1)

@@ -110,7 +110,7 @@ public class FirebaseInstallationsInstrumentedTest {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
     executor = new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-    fakeCalendar = new FakeCalendar();
+    fakeCalendar = new FakeCalendar(5000000L);
     firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),

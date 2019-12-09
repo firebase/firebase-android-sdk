@@ -33,8 +33,8 @@ public class PersistedInstallation {
   @NonNull private final FirebaseApp firebaseApp;
 
   // Registration Status of each persisted fid entry
-  // NOTE: never change the ordinal of the enum values because the enum values are stored in shared
-  // prefs as their ordinal numbers.
+  // NOTE: never change the ordinal of the enum values because the enum values are written to
+  // local storage as their ordinal numbers.
   public enum RegistrationStatus {
     /**
      * {@link PersistedInstallationEntry} legacy registration status. Next state: UNREGISTERED - A
@@ -65,8 +65,7 @@ public class PersistedInstallation {
     REGISTER_ERROR,
   }
 
-  private static final String SETTINGS_FILE_NAME = "PersistedInstallation";
-
+  private static final String SETTINGS_FILE_NAME_PREFIX = "PersistedInstallation";
   private static final String FIREBASE_INSTALLATION_ID_KEY = "Fid";
   private static final String AUTH_TOKEN_KEY = "AuthToken";
   private static final String REFRESH_TOKEN_KEY = "RefreshToken";
@@ -75,16 +74,13 @@ public class PersistedInstallation {
   private static final String PERSISTED_STATUS_KEY = "Status";
   private static final String FIS_ERROR_KEY = "FisError";
 
-  private final String persistenceKey;
-
   public PersistedInstallation(@NonNull FirebaseApp firebaseApp) {
     // Different FirebaseApp in the same Android application should have the same application
     // context and same dir path
-    persistenceKey = firebaseApp.getPersistenceKey();
     dataFile =
         new File(
             firebaseApp.getApplicationContext().getFilesDir(),
-            SETTINGS_FILE_NAME + "." + persistenceKey + ".json");
+            SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
     this.firebaseApp = firebaseApp;
   }
 
@@ -148,9 +144,8 @@ public class PersistedInstallation {
       json.put(TOKEN_CREATION_TIME_IN_SECONDS_KEY, prefs.getTokenCreationEpochInSecs());
       json.put(EXPIRES_IN_SECONDS_KEY, prefs.getExpiresInSecs());
       json.put(FIS_ERROR_KEY, prefs.getFisError());
-      File tmpFile =
-          File.createTempFile(
-              SETTINGS_FILE_NAME, "tmp", firebaseApp.getApplicationContext().getFilesDir());
+      File tmpFile = File.createTempFile(SETTINGS_FILE_NAME_PREFIX,
+          "tmp", firebaseApp.getApplicationContext().getFilesDir());
 
       // Werialize the JSON object into a string and write the bytes to a temp file
       FileOutputStream fos = new FileOutputStream(tmpFile);
@@ -159,7 +154,7 @@ public class PersistedInstallation {
 
       // Snapshot the temp file to the actual file
       if (!tmpFile.renameTo(dataFile)) {
-        throw new IOException("unable to rename the tmpfile to " + SETTINGS_FILE_NAME);
+        throw new IOException("unable to rename the tmpfile to " + SETTINGS_FILE_NAME_PREFIX);
       }
     } catch (JSONException | IOException e) {
       // This should only happen when the storage is full or the system is corrupted.

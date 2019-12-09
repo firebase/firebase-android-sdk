@@ -19,8 +19,8 @@ import java.util.Calendar;
 public class FakeCalendar extends Calendar {
   private long timeInMillis;
 
-  public FakeCalendar() {
-    timeInMillis = 5000000;
+  public FakeCalendar(long initialTimeInMillis) {
+    timeInMillis = initialTimeInMillis;
   }
 
   public long getTimeInMillis() {
