@@ -14,12 +14,17 @@
 
 package com.google.firebase.database.tubesock;
 
+import static java.util.logging.Level.WARNING;
+
 import com.google.firebase.database.IntegrationTestHelpers;
 import java.net.URI;
 import java.util.concurrent.Semaphore;
+import java.util.logging.Logger;
 
 /** This test is just a quick smoke test to make sure we can connect to a wss endpoint. */
 public class FirebaseClient {
+
+  private static Logger LOGGER = Logger.getLogger(FirebaseClient.class.getName());
 
   private WebSocket client;
   private Semaphore semaphore;
@@ -43,7 +48,7 @@ public class FirebaseClient {
 
     @Override
     public void onError(WebSocketException e) {
-      e.printStackTrace();
+      LOGGER.log(WARNING, "unexpected error", e);
     }
 
     @Override
@@ -66,7 +71,7 @@ public class FirebaseClient {
     try {
       new FirebaseClient().start();
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      LOGGER.log(WARNING, "unexpected error", e);
     }
   }
 }

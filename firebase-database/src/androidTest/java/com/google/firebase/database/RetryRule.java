@@ -25,6 +25,7 @@ public class RetryRule implements TestRule {
     this.retryCount = retryCount;
   }
 
+  @Override
   public Statement apply(final Statement base, Description description) {
     return new Statement() {
       @Override

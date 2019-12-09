@@ -19,7 +19,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.core.view.Event;
 import com.google.firebase.database.future.ReadFuture;
 import com.google.firebase.database.future.WriteFuture;
@@ -170,10 +170,9 @@ public class OrderTest {
     DatabaseReference reader = refs.get(1);
 
     for (int i = 0; i < 9; ++i) {
-      writer.push().setValue(i, 111111111111111111111111111111.0 / Math.pow(10, i));
+      writer.push().setValue(i, Float.MAX_VALUE / Math.pow(10, i));
     }
-    new WriteFuture(writer.push(), 9, 111111111111111111111111111111.0 / Math.pow(10, 9))
-        .timedGet();
+    new WriteFuture(writer.push(), 9, Float.MAX_VALUE / Math.pow(10, 9)).timedGet();
 
     DataSnapshot snap = IntegrationTestHelpers.getSnap(writer);
     long i = 9;

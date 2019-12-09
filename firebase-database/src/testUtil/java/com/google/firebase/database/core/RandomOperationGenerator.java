@@ -41,9 +41,9 @@ import com.google.firebase.database.snapshot.PathIndex;
 import com.google.firebase.database.snapshot.PriorityIndex;
 import com.google.firebase.database.snapshot.PriorityUtilities;
 import com.google.firebase.database.snapshot.StringNode;
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
@@ -100,9 +100,9 @@ public class RandomOperationGenerator {
     this.random = new Random(seed);
     this.seed = seed;
     this.currentServerState = getRandomNode(0, MAX_DEPTH);
-    this.outstandingWrites = new LinkedList<WriteOp>();
-    this.outstandingListens = new LinkedList<QuerySpec>();
-    this.outstandingUnlistens = new LinkedList<QuerySpec>();
+    this.outstandingWrites = new ArrayDeque<>();
+    this.outstandingListens = new ArrayDeque<>();
+    this.outstandingUnlistens = new ArrayDeque<>();
     this.writeTree = new WriteTree();
   }
 
