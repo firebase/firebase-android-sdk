@@ -83,6 +83,8 @@ public class FirebaseFunctions {
     this.region = Preconditions.checkNotNull(region);
 
     maybeInstallProviders(context);
+
+    System.out.println('Test, test, test.');
   }
 
   /**
