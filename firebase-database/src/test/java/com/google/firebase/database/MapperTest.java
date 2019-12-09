@@ -37,7 +37,7 @@ import org.robolectric.annotation.Config;
 @org.junit.runner.RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class MapperTest {
-  private static final double EPISLON = 0.00025f;
+  private static final double EPSILON = 0.00025f;
 
   private static class StringBean {
     private String value;
@@ -949,14 +949,14 @@ public class MapperTest {
   @Test
   public void primitiveDeserializeDouble() {
     DoubleBean beanDouble = deserialize("{'value': 1.1}", DoubleBean.class);
-    assertEquals(1.1, beanDouble.value, EPISLON);
+    assertEquals(1.1, beanDouble.value, EPSILON);
 
     // Int
     DoubleBean beanInt = deserialize("{'value': 1}", DoubleBean.class);
-    assertEquals(1, beanInt.value, EPISLON);
+    assertEquals(1, beanInt.value, EPSILON);
     // Long
     DoubleBean beanLong = deserialize("{'value': 1234567890123}", DoubleBean.class);
-    assertEquals(1234567890123L, beanLong.value, EPISLON);
+    assertEquals(1234567890123L, beanLong.value, EPSILON);
 
     // Boolean
     try {
@@ -976,14 +976,14 @@ public class MapperTest {
   @Test
   public void primitiveDeserializeFloat() {
     FloatBean beanFloat = deserialize("{'value': 1.1}", FloatBean.class);
-    assertEquals(1.1, beanFloat.value, EPISLON);
+    assertEquals(1.1, beanFloat.value, EPSILON);
 
     // Int
     FloatBean beanInt = deserialize("{'value': 1}", FloatBean.class);
-    assertEquals(1, beanInt.value, EPISLON);
+    assertEquals(1, beanInt.value, EPSILON);
     // Long
     FloatBean beanLong = deserialize("{'value': 1234567890123}", FloatBean.class);
-    assertEquals(Long.valueOf(1234567890123L).floatValue(), beanLong.value, EPISLON);
+    assertEquals(Long.valueOf(1234567890123L).floatValue(), beanLong.value, EPSILON);
 
     // Boolean
     try {

@@ -2352,7 +2352,7 @@ public class DataTest {
     assertEquals(snap.getPriority().getClass(), Double.class);
     assertEquals(snap.getPriority(), snap.child("b").getPriority());
     assertEquals(snap.child("a").getValue(), snap.child("b").getValue());
-    Long drift = System.currentTimeMillis() - Long.parseLong(snap.child("a").getValue().toString());
+    long drift = System.currentTimeMillis() - Long.parseLong(snap.child("a").getValue().toString());
     assertThat(Math.abs(drift), lessThan(2000l));
   }
 
