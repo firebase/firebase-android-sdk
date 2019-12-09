@@ -14,7 +14,7 @@
 
 package com.google.firebase.database.core;
 
-public class Tag {
+public final class Tag {
   private final long tagNumber;
 
   public Tag(long tagNumber) {

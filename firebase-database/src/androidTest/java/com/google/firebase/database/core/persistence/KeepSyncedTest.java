@@ -16,7 +16,7 @@ package com.google.firebase.database.core.persistence;
 
 import static org.junit.Assert.assertEquals;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.EventRecord;
 import com.google.firebase.database.IntegrationTestHelpers;
@@ -57,12 +57,10 @@ public class KeepSyncedTest {
 
     new ReadFuture(
             query,
-            new ReadFuture.CompletionCondition() {
-              public boolean isComplete(List<EventRecord> events) {
-                assertEquals(1, events.size());
-                assertEquals(value, events.get(0).getSnapshot().getValue());
-                return true;
-              }
+            (List<EventRecord> events) -> {
+              assertEquals(1, events.size());
+              assertEquals(value, events.get(0).getSnapshot().getValue());
+              return true;
             })
         .timedGet();
 
@@ -89,13 +87,11 @@ public class KeepSyncedTest {
     ReadFuture readFuture =
         new ReadFuture(
             query,
-            new ReadFuture.CompletionCondition() {
-              public boolean isComplete(List<EventRecord> events) {
-                // We expect this to get called with the next value, not the old value.
-                assertEquals(1, events.size());
-                assertEquals(nextValue, events.get(0).getSnapshot().getValue());
-                return true;
-              }
+            (List<EventRecord> events) -> {
+              // We expect this to get called with the next value, not the old value.
+              assertEquals(1, events.size());
+              assertEquals(nextValue, events.get(0).getSnapshot().getValue());
+              return true;
             });
 
     // By now, if we had it synced we should have gotten an event with the wrong value
@@ -166,14 +162,7 @@ public class KeepSyncedTest {
     assertIsKeptSynced(ref);
 
     // This will add and remove a listener.
-    new ReadFuture(
-            ref,
-            new ReadFuture.CompletionCondition() {
-              public boolean isComplete(List<EventRecord> events) {
-                return true;
-              }
-            })
-        .timedGet();
+    new ReadFuture(ref, (List<EventRecord> events) -> true).timedGet();
 
     assertIsKeptSynced(ref);
 

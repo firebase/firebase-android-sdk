@@ -17,7 +17,7 @@ package com.google.firebase.database.core.utilities;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoInfo;
 
-public class ParsedUrl {
+public final class ParsedUrl {
 
   public RepoInfo repoInfo;
   public Path path;
@@ -31,5 +31,12 @@ public class ParsedUrl {
 
     if (!repoInfo.equals(parsedUrl.repoInfo)) return false;
     return path.equals(parsedUrl.path);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = repoInfo.hashCode();
+    result = 31 * result + path.hashCode();
+    return result;
   }
 }

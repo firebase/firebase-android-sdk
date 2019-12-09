@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.DatabaseReference.CompletionListener;
 import com.google.firebase.database.core.AuthTokenProvider;
 import com.google.firebase.database.core.DatabaseConfig;
@@ -40,8 +40,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import junit.framework.Assert;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -68,7 +68,7 @@ public class TransactionTest {
                 try {
                   currentData.setValue(42);
                 } catch (DatabaseException e) {
-                  fail("Should not fail");
+                  throw new AssertionError("Should not fail", e);
                 }
                 return Transaction.success(currentData);
               }
@@ -100,7 +100,7 @@ public class TransactionTest {
             try {
               currentData.setValue(42);
             } catch (DatabaseException e) {
-              fail("Should not throw");
+              throw new AssertionError("Should not fail", e);
             }
             return Transaction.success(currentData);
           }
@@ -127,7 +127,7 @@ public class TransactionTest {
             try {
               currentData.setValue(42);
             } catch (DatabaseException e) {
-              fail("Should not fail");
+              throw new AssertionError("Should not fail", e);
             }
             return Transaction.success(currentData);
           }
@@ -137,7 +137,6 @@ public class TransactionTest {
             if (error != null || !committed) {
               fail("Transaction should succeed");
             } else {
-              assertTrue(committed);
               assertEquals(42L, currentData.getValue());
               semaphore.release(1);
             }
@@ -271,7 +270,7 @@ public class TransactionTest {
             try {
               currentData.setValue(42);
             } catch (DatabaseException e) {
-              fail("Should not fail");
+              throw new AssertionError("Should not fail", e);
             }
             return Transaction.success(currentData);
           }
@@ -449,8 +448,8 @@ public class TransactionTest {
     final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     final Semaphore semaphore = new Semaphore(0);
-    final List<DataSnapshot> nodeSnaps = new ArrayList<DataSnapshot>();
-    final List<DataSnapshot> nodeFooSnaps = new ArrayList<DataSnapshot>();
+    final List<DataSnapshot> nodeSnaps = new ArrayList<>();
+    final List<DataSnapshot> nodeFooSnaps = new ArrayList<>();
     final AtomicBoolean firstDone = new AtomicBoolean(false);
     final AtomicBoolean secondDone = new AtomicBoolean(false);
     final AtomicInteger thirdRunCount = new AtomicInteger(0);
@@ -568,6 +567,7 @@ public class TransactionTest {
 
     // Note that the set actually raises two events, one overlaid on top of the original transaction
     // value, and a second one with the re-run value from the third transaction
+    assertEquals(nodeFooSnaps.size(), 4); // three transactions with one redo
   }
 
   @Test
@@ -1090,7 +1090,7 @@ public class TransactionTest {
               assertTrue(committed);
               completeSemaphore.release(1);
             } catch (InterruptedException e) {
-              fail("Should not throw");
+              throw new AssertionError("Should not throw", e);
             }
           }
         },

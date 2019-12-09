@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.utilities.Utilities;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;

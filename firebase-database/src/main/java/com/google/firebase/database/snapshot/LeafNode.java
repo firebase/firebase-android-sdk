@@ -165,7 +165,7 @@ public abstract class LeafNode<T extends LeafNode> implements Node {
 
   private static int compareLongDoubleNodes(LongNode longNode, DoubleNode doubleNode) {
     Double longDoubleValue = Double.valueOf((Long) longNode.getValue());
-    return (longDoubleValue).compareTo((Double) doubleNode.getValue());
+    return longDoubleValue.compareTo((Double) doubleNode.getValue());
   }
 
   @Override

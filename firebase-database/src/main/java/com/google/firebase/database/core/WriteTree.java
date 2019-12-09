@@ -233,7 +233,7 @@ public class WriteTree {
                 @Override
                 public boolean evaluate(UserWriteRecord write) {
                   return (write.isVisible() || includeHiddenWrites)
-                      && (!writeIdsToExclude.contains(write.getWriteId()))
+                      && !writeIdsToExclude.contains(write.getWriteId())
                       && (write.getPath().contains(treePath) || treePath.contains(write.getPath()));
                 }
               };
