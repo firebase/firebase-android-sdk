@@ -84,7 +84,7 @@ public class FirebaseFunctions {
 
     maybeInstallProviders(context);
 
-    System.out.println('Test, test, test.');
+    System.out.println("Test, test, test.");
   }
 
   /**
