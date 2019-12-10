@@ -140,11 +140,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                   task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
                   task.setSourceSet(mainSourceSet);
                   task.setBaselineFile(project.file("baseline.txt"));
-                  if (project.hasProperty("updateBaseline")) {
-                    task.setUpdateBaseline(project.hasProperty("updateBaseline"));
-                  } else {
-                    task.setUpdateBaseline(false);
-                  }
+                  task.setUpdateBaseline(project.hasProperty("updateBaseline"));
                   task.dependsOn("getMetalavaJar");
                 });
 
