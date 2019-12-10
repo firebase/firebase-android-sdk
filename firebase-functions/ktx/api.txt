@@ -1,0 +1,13 @@
+// Signature format: 2.0
+package com.google.firebase.functions.ktx {
+
+  public final class FunctionsKt {
+    ctor public FunctionsKt();
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.ktx.Firebase, @NonNull String region);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String region);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getFunctions(@NonNull com.google.firebase.ktx.Firebase);
+  }
+
+}
+
