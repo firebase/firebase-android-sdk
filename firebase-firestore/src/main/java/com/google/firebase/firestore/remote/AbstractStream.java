@@ -175,8 +175,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   private static final long IDLE_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(1);
 
   /**
-   * Maximum backoff time when reconnecting when we know the connection is failed on the
-   * client-side.
+   * Maximum backoff time for reconnecting when we know the connection is failed on the client-side.
    */
   private static final long DNS_FAILURE_BACKOFF_MAX_DELAY_MS = TimeUnit.SECONDS.toMillis(10);
 
@@ -269,9 +268,8 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
    *
    * @param finalState the intended state of the stream after closing.
    * @param status the status to emit to the listener.
-   * @param forceNewConnection whether to use a new connection the next time we open the stream
    */
-  protected void close(State finalState, Status status, boolean forceNewConnection) {
+  protected void close(State finalState, Status status) {
     hardAssert(isStarted(), "Only started streams should be closed.");
     hardAssert(
         finalState == State.Error || status.equals(Status.OK),
@@ -308,12 +306,10 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
       // just expired.
       firestoreChannel.invalidateToken();
     } else if (code == Code.UNAVAILABLE) {
-      // These exceptions are thrown when the gRPC stream is closed with an connection error. For
-      // these cases, we need to use a new connection for the next connection attempt, which is
-      // done by marking the underlying channel as idle.
-      if (forceNewConnection || status.getCause() instanceof java.net.UnknownHostException) {
+      // This exception is thrown when the gRPC connection fails on the client side, To shorten
+      // reconnect time, we can use a shorter max delay when reconnecting.
+      if (status.getCause() instanceof java.net.UnknownHostException) {
         backoff.setTemporaryMaxDelay(DNS_FAILURE_BACKOFF_MAX_DELAY_MS);
-        firestoreChannel.markChannelIdle();
       }
     }
 
@@ -344,10 +340,6 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
 
     // Notify the listener that the stream closed.
     listener.onClose(status);
-  }
-
-  protected void close(State finalState, Status status) {
-    close(finalState, status, false);
   }
 
   /**

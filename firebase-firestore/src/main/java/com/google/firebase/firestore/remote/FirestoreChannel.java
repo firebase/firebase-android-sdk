@@ -93,15 +93,6 @@ class FirestoreChannel {
   }
 
   /**
-   * Marks the underlying gRPC channel as idle. This allows on-going RPCs to continue, but the next
-   * RPC on the channel will trigger the creation of a new connection. This method is primarily used
-   * to reset the underlying connection.
-   */
-  public void markChannelIdle() {
-    this.callProvider.markChannelIdle();
-  }
-
-  /**
    * Creates and starts a new bi-directional streaming RPC. The stream cannot accept message before
    * the observer's `onOpen()` callback is invoked.
    */
