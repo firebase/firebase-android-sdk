@@ -24,7 +24,6 @@ import static com.google.firebase.installations.FisAndroidTestConstants.TEST_FID
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_REFRESH_TOKEN;
 import static com.google.firebase.installations.FisAndroidTestConstants.TEST_TOKEN_EXPIRATION_TIMESTAMP;
 import static com.google.firebase.installations.local.PersistedInstallationEntrySubject.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
@@ -62,9 +61,9 @@ public class PersistedInstallationTest {
   }
 
   @After
-  public void cleanUp() throws Exception {
-    persistedInstallation0.clear();
-    persistedInstallation1.clear();
+  public void cleanUp() {
+    persistedInstallation0.clearForTesting();
+    persistedInstallation1.clearForTesting();
   }
 
   @Test
@@ -77,17 +76,16 @@ public class PersistedInstallationTest {
 
   @Test
   public void testUpdateAndReadPersistedInstallationEntry_successful() throws Exception {
-    // Insert Persisted Installation Entry with Unregistered status in Shared Prefs
-    assertTrue(
-        persistedInstallation0.insertOrUpdatePersistedInstallationEntry(
-            PersistedInstallationEntry.builder()
-                .setFirebaseInstallationId(TEST_FID_1)
-                .setAuthToken(TEST_AUTH_TOKEN)
-                .setRefreshToken(TEST_REFRESH_TOKEN)
-                .setRegistrationStatus(PersistedInstallation.RegistrationStatus.UNREGISTERED)
-                .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_1)
-                .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                .build()));
+    // Write the Persisted Installation Entry with Unregistered status to storage.
+    persistedInstallation0.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.builder()
+            .setFirebaseInstallationId(TEST_FID_1)
+            .setAuthToken(TEST_AUTH_TOKEN)
+            .setRefreshToken(TEST_REFRESH_TOKEN)
+            .setRegistrationStatus(PersistedInstallation.RegistrationStatus.UNREGISTERED)
+            .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_1)
+            .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+            .build());
     PersistedInstallationEntry entryValue =
         persistedInstallation0.readPersistedInstallationEntryValue();
 
@@ -99,17 +97,16 @@ public class PersistedInstallationTest {
     assertThat(entryValue).hasTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP);
     assertThat(entryValue).hasCreationTimestamp(TEST_CREATION_TIMESTAMP_1);
 
-    // Update Persisted Fid Entry with Registered status in Shared Prefs
-    assertTrue(
-        persistedInstallation0.insertOrUpdatePersistedInstallationEntry(
-            PersistedInstallationEntry.builder()
-                .setFirebaseInstallationId(TEST_FID_1)
-                .setAuthToken(TEST_AUTH_TOKEN)
-                .setRefreshToken(TEST_REFRESH_TOKEN)
-                .setRegistrationStatus(PersistedInstallation.RegistrationStatus.REGISTERED)
-                .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_2)
-                .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                .build()));
+    // Write the Persisted Fid Entry with Registered status to storage.
+    persistedInstallation0.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.builder()
+            .setFirebaseInstallationId(TEST_FID_1)
+            .setAuthToken(TEST_AUTH_TOKEN)
+            .setRefreshToken(TEST_REFRESH_TOKEN)
+            .setRegistrationStatus(PersistedInstallation.RegistrationStatus.REGISTERED)
+            .setTokenCreationEpochInSecs(TEST_CREATION_TIMESTAMP_2)
+            .setExpiresInSecs(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+            .build());
     entryValue = persistedInstallation0.readPersistedInstallationEntryValue();
 
     // Validate update was successful

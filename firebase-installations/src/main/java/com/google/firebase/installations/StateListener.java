@@ -21,8 +21,7 @@ interface StateListener {
    * Returns {@code true} if the defined {@link PersistedInstallationEntry} state is reached, {@code
    * false} otherwise.
    */
-  boolean onStateReached(
-      PersistedInstallationEntry persistedInstallationEntry, boolean shouldRefreshAuthToken);
+  boolean onStateReached(PersistedInstallationEntry persistedInstallationEntry);
 
   /**
    * Returns {@code true} if an exception is thrown while registering a Firebase Installation,

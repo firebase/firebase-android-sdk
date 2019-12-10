@@ -27,14 +27,10 @@ public abstract class TokenResult {
     OK,
     // Auth token cannot be generated for this FID in the request. Because it is not
     // registered/found on the FIS server. Recreate a new fid to fetch a valid auth token.
-    FID_ERROR,
+    BAD_CONFIG,
     // Refresh token in this request in not accepted by the FIS server. Either it has been blocked
     // or changed. Recreate a new fid to fetch a valid auth token.
-    REFRESH_TOKEN_ERROR,
-  }
-
-  public boolean isSuccessful() {
-    return getResponseCode() == ResponseCode.OK;
+    AUTH_ERROR,
   }
 
   /** A new FIS Auth-Token, created for this Firebase Installation. */
