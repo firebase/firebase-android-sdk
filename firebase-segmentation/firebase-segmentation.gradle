@@ -16,10 +16,6 @@ plugins {
     id 'firebase-library'
 }
 
-firebaseLibrary {
-    testLab.enabled = true
-}
-
 android {
     compileSdkVersion project.targetSdkVersion
 
