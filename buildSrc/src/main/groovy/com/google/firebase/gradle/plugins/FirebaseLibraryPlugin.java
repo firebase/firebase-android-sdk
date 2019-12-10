@@ -27,6 +27,9 @@ import java.io.File;
 import java.nio.file.Paths;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.attributes.Attribute;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.tasks.TaskProvider;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
 public class FirebaseLibraryPlugin implements Plugin<Project> {
@@ -101,55 +104,80 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
             task -> {
               task.setOutputFile(metalavaOutputJarFile);
             });
-    project
-        .getTasks()
-        .register(
-            "apiInformation",
-            ApiInformationTask.class,
-            task -> {
-              task.setApiTxt(project.file("api.txt"));
-              task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-              task.setSourceSet(mainSourceSet);
-              task.setOutputFile(outputFile);
-              task.setBaselineFile(project.file("baseline.txt"));
-              task.setOutputApiFile(outputApiFile);
-              if (project.hasProperty("updateBaseline")) {
-                task.setUpdateBaseline(true);
-              } else {
-                task.setUpdateBaseline(false);
+    File apiTxt =
+        project.file("api.txt").exists()
+            ? project.file("api.txt")
+            : project.file(project.getRootDir() + "/empty-api.txt");
+    TaskProvider<ApiInformationTask> apiInfo =
+        project
+            .getTasks()
+            .register(
+                "apiInformation",
+                ApiInformationTask.class,
+                task -> {
+                  task.setApiTxt(apiTxt);
+                  task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
+                  task.setSourceSet(mainSourceSet);
+                  task.setOutputFile(outputFile);
+                  task.setBaselineFile(project.file("baseline.txt"));
+                  task.setOutputApiFile(outputApiFile);
+                  if (project.hasProperty("updateBaseline")) {
+                    task.setUpdateBaseline(true);
+                  } else {
+                    task.setUpdateBaseline(false);
+                  }
+                  task.dependsOn("getMetalavaJar");
+                });
+
+    TaskProvider<GenerateApiTxtFileTask> generateApiTxt =
+        project
+            .getTasks()
+            .register(
+                "generateApiTxtFile",
+                GenerateApiTxtFileTask.class,
+                task -> {
+                  task.setApiTxt(project.file("api.txt"));
+                  task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
+                  task.setSourceSet(mainSourceSet);
+                  task.setBaselineFile(project.file("baseline.txt"));
+                  task.setUpdateBaseline(project.hasProperty("updateBaseline"));
+                  task.dependsOn("getMetalavaJar");
+                });
+
+    TaskProvider<GenerateStubsTask> docStubs =
+        project
+            .getTasks()
+            .register(
+                "docStubs",
+                GenerateStubsTask.class,
+                task -> {
+                  task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
+                  task.setOutputDir(new File(project.getBuildDir(), "doc-stubs"));
+                  task.dependsOn("getMetalavaJar");
+
+                  task.setSourceSet(mainSourceSet);
+                });
+
+    android
+        .getLibraryVariants()
+        .all(
+            v -> {
+              if (v.getName().equals("release")) {
+                FileCollection jars =
+                    v.getCompileConfiguration()
+                        .getIncoming()
+                        .artifactView(
+                            config ->
+                                config.attributes(
+                                    container ->
+                                        container.attribute(
+                                            Attribute.of("artifactType", String.class), "jar")))
+                        .getArtifacts()
+                        .getArtifactFiles();
+                apiInfo.configure(t -> t.setClassPath(jars));
+                generateApiTxt.configure(t -> t.setClassPath(jars));
+                docStubs.configure(t -> t.setClassPath(jars));
               }
-              task.dependsOn("getMetalavaJar");
-            });
-
-    project
-        .getTasks()
-        .register(
-            "generateApiTxtFile",
-            GenerateApiTxtFileTask.class,
-            task -> {
-              task.setApiTxt(project.file("api.txt"));
-              task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-              task.setSourceSet(mainSourceSet);
-              task.setBaselineFile(project.file("baseline.txt"));
-              if (project.hasProperty("updateBaseline")) {
-                task.setUpdateBaseline(true);
-              } else {
-                task.setUpdateBaseline(false);
-              }
-              task.dependsOn("getMetalavaJar");
-            });
-
-    project
-        .getTasks()
-        .register(
-            "docStubs",
-            GenerateStubsTask.class,
-            task -> {
-              task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-              task.setOutputDir(new File(project.getBuildDir(), "doc-stubs"));
-              task.dependsOn("getMetalavaJar");
-
-              task.setSourceSet(mainSourceSet);
             });
   }
 

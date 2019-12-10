@@ -1,0 +1,13 @@
+// Signature format: 2.0
+package com.google.firebase.remoteconfig.ktx {
+
+  public final class RemoteConfigKt {
+    ctor public RemoteConfigKt();
+    method @NonNull public static operator com.google.firebase.remoteconfig.FirebaseRemoteConfigValue get(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfig, @NonNull String key);
+    method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig getRemoteConfig(@NonNull com.google.firebase.ktx.Firebase);
+    method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig remoteConfig(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings remoteConfigSettings(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder,kotlin.Unit> init);
+  }
+
+}
+

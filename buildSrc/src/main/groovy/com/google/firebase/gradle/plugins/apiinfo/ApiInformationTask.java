@@ -15,6 +15,8 @@
 package com.google.firebase.gradle.plugins.apiinfo;
 
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.google.firebase.gradle.plugins.SdkUtil;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -22,10 +24,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
@@ -43,6 +51,9 @@ public abstract class ApiInformationTask extends DefaultTask {
 
   abstract AndroidSourceSet getSourceSet();
 
+  @InputFiles
+  abstract FileCollection getClassPath();
+
   @OutputFile
   abstract File getBaselineFile();
 
@@ -56,6 +67,8 @@ public abstract class ApiInformationTask extends DefaultTask {
   abstract File getOutputFile();
 
   public abstract void setSourceSet(AndroidSourceSet value);
+
+  public abstract void setClassPath(FileCollection value);
 
   public abstract void setBaselineFile(File value);
 
@@ -76,6 +89,19 @@ public abstract class ApiInformationTask extends DefaultTask {
             .filter(File::exists)
             .map(File::getAbsolutePath)
             .collect(Collectors.joining(":"));
+    if (sourcePath.isEmpty()) {
+      getLogger()
+          .warn(
+              "Project {} has no sources in main source set, skipping...", getProject().getPath());
+      return;
+    }
+
+    String classPath =
+        Stream.concat(
+                getClassPath().getFiles().stream(), Stream.of(SdkUtil.getAndroidJar(getProject())))
+            .map(File::getAbsolutePath)
+            .collect(Collectors.joining(":"));
+
     File outputFileDir = getOutputFile().getParentFile();
     if (!outputFileDir.exists()) {
       outputFileDir.mkdirs();
@@ -89,8 +115,11 @@ public abstract class ApiInformationTask extends DefaultTask {
               spec.setArgs(
                   Arrays.asList(
                       getMetalavaJarPath(),
+                      "--no-banner",
                       "--source-path",
                       sourcePath,
+                      "--classpath",
+                      classPath,
                       "--api",
                       getOutputApiFile().getAbsolutePath(),
                       "--format=v2"));
@@ -104,13 +133,13 @@ public abstract class ApiInformationTask extends DefaultTask {
                   new ArrayList<>(
                       Arrays.asList(
                           getMetalavaJarPath(),
+                          "--no-banner",
                           "--source-files",
                           getOutputApiFile().getAbsolutePath(),
                           "--check-compatibility:api:current",
                           getApiTxt().getAbsolutePath(),
                           "--format=v2",
-                          "--no-color",
-                          "--delete-empty-baselines"));
+                          "--no-color"));
               if (getUpdateBaseline()) {
                 args.addAll(
                     Arrays.asList("--update-baseline", getBaselineFile().getAbsolutePath()));
