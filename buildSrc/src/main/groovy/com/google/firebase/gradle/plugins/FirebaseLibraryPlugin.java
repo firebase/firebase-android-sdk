@@ -141,7 +141,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                   task.setSourceSet(mainSourceSet);
                   task.setBaselineFile(project.file("baseline.txt"));
                   if (project.hasProperty("updateBaseline")) {
-                    task.setUpdateBaseline(true);
+                    task.setUpdateBaseline(project.hasProperty("updateBaseline"));
                   } else {
                     task.setUpdateBaseline(false);
                   }
