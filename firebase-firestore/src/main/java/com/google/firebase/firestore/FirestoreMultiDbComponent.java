@@ -21,6 +21,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseAppLifecycleListener;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,14 +38,17 @@ class FirestoreMultiDbComponent
   private final FirebaseApp app;
   private final Context context;
   private final InternalAuthProvider authProvider;
+  private final GrpcMetadataProvider metadataProvider;
 
   FirestoreMultiDbComponent(
       @NonNull Context context,
       @NonNull FirebaseApp app,
-      @Nullable InternalAuthProvider authProvider) {
+      @Nullable InternalAuthProvider authProvider,
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = context;
     this.app = app;
     this.authProvider = authProvider;
+    this.metadataProvider = metadataProvider;
     this.app.addLifecycleEventListener(this);
   }
 
@@ -53,7 +57,9 @@ class FirestoreMultiDbComponent
   synchronized FirebaseFirestore get(@NonNull String databaseId) {
     FirebaseFirestore firestore = instances.get(databaseId);
     if (firestore == null) {
-      firestore = FirebaseFirestore.newInstance(context, app, authProvider, databaseId, this);
+      firestore =
+          FirebaseFirestore.newInstance(
+              context, app, authProvider, databaseId, this, metadataProvider);
       instances.put(databaseId, firestore);
     }
     return firestore;
@@ -75,7 +81,7 @@ class FirestoreMultiDbComponent
   public synchronized void onDeleted(String firebaseAppName, FirebaseOptions options) {
     // Shuts down all database instances and remove them from registry map when App is deleted.
     for (Map.Entry<String, FirebaseFirestore> entry : instances.entrySet()) {
-      entry.getValue().shutdownInternal();
+      entry.getValue().terminateInternal();
       instances.remove(entry.getKey());
     }
   }

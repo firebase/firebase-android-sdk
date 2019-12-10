@@ -17,14 +17,16 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
-              "query": {
-                "path": "collection",
-                "filters": [],
-                "orderBys": []
-              },
+              "queries": [
+                {
+                  "path": "collection",
+                  "filters": [],
+                  "orderBys": []
+                }
+              ],
               "resumeToken": ""
             }
           }
@@ -44,7 +46,7 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {}
         }
       },
@@ -57,14 +59,16 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
-              "query": {
-                "path": "collection",
-                "filters": [],
-                "orderBys": []
-              },
+              "queries": [
+                {
+                  "path": "collection",
+                  "filters": [],
+                  "orderBys": []
+                }
+              ],
               "resumeToken": ""
             }
           }
@@ -149,7 +153,7 @@
           "version": 1001,
           "targetIds": []
         },
-        "expect": [
+        "expectedSnapshotEvents": [
           {
             "query": {
               "path": "collection",
@@ -195,14 +199,16 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
-              "query": {
-                "path": "collection",
-                "filters": [],
-                "orderBys": []
-              },
+              "queries": [
+                {
+                  "path": "collection",
+                  "filters": [],
+                  "orderBys": []
+                }
+              ],
               "resumeToken": ""
             }
           }
@@ -222,7 +228,7 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {}
         }
       },
@@ -235,14 +241,16 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
-              "query": {
-                "path": "collection",
-                "filters": [],
-                "orderBys": []
-              },
+              "queries": [
+                {
+                  "path": "collection",
+                  "filters": [],
+                  "orderBys": []
+                }
+              ],
               "resumeToken": ""
             }
           }
@@ -257,7 +265,7 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {}
         }
       },
@@ -270,14 +278,16 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
-              "query": {
-                "path": "collection",
-                "filters": [],
-                "orderBys": []
-              },
+              "queries": [
+                {
+                  "path": "collection",
+                  "filters": [],
+                  "orderBys": []
+                }
+              ],
               "resumeToken": ""
             }
           }
@@ -292,7 +302,7 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {}
         }
       },
@@ -305,14 +315,16 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
-              "query": {
-                "path": "collection",
-                "filters": [],
-                "orderBys": []
-              },
+              "queries": [
+                {
+                  "path": "collection",
+                  "filters": [],
+                  "orderBys": []
+                }
+              ],
               "resumeToken": ""
             }
           }
@@ -489,7 +501,7 @@
           "version": 1001,
           "targetIds": []
         },
-        "expect": [
+        "expectedSnapshotEvents": [
           {
             "query": {
               "path": "collection",
@@ -535,14 +547,16 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
-              "query": {
-                "path": "collection",
-                "filters": [],
-                "orderBys": []
-              },
+              "queries": [
+                {
+                  "path": "collection",
+                  "filters": [],
+                  "orderBys": []
+                }
+              ],
               "resumeToken": ""
             }
           }
@@ -556,7 +570,7 @@
           },
           "runBackoffTimer": true
         },
-        "expect": [
+        "expectedSnapshotEvents": [
           {
             "query": {
               "path": "collection",
@@ -607,7 +621,7 @@
           "version": 1001,
           "targetIds": []
         },
-        "expect": [
+        "expectedSnapshotEvents": [
           {
             "query": {
               "path": "collection",
@@ -656,14 +670,16 @@
             "orderBys": []
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
-              "query": {
-                "path": "collection",
-                "filters": [],
-                "orderBys": []
-              },
+              "queries": [
+                {
+                  "path": "collection",
+                  "filters": [],
+                  "orderBys": []
+                }
+              ],
               "resumeToken": ""
             }
           }
@@ -677,7 +693,7 @@
           },
           "runBackoffTimer": false
         },
-        "expect": [
+        "expectedSnapshotEvents": [
           {
             "query": {
               "path": "collection",
@@ -689,20 +705,22 @@
             "hasPendingWrites": false
           }
         ],
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {}
         }
       },
       {
         "changeUser": "abc",
-        "stateExpect": {
+        "expectedState": {
           "activeTargets": {
             "2": {
-              "query": {
-                "path": "collection",
-                "filters": [],
-                "orderBys": []
-              },
+              "queries": [
+                {
+                  "path": "collection",
+                  "filters": [],
+                  "orderBys": []
+                }
+              ],
               "resumeToken": ""
             }
           }

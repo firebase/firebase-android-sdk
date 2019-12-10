@@ -29,11 +29,11 @@ class ApkSizeTableBuilder {
           throw new IllegalStateException("No sizes added")
         }
 
-        def table = "|--------------------        APK Sizes        ------------------|\n"
-        table +=    "|---    project    ---|--  build type   --|--  size in bytes  --|\n"
+        def table = "|-------------------------        APK Sizes        -----------------------|\n"
+        table +=    "|--------    project    --------|--  build type   --|--  size in bytes  --|\n"
 
         table += sdkSizes.collect {
-            sprintf("|%-21s|%-19s|%-21s|", it.get(0), it.get(1), it.get(2))
+            sprintf("|%-31s|%-19s|%,21d|", it.get(0), it.get(1), it.get(2))
         }.join("\n")
 
         return table

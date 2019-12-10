@@ -1,4 +1,50 @@
-# Unreleased
+# Unreleased (21.3.1)
+- [feature] Added `Query.limitToLast(n: long)`, which returns the last `n`
+  documents as the result.
+
+# 21.3.0
+- [feature] Added `Query.whereIn()` and `Query.whereArrayContainsAny()` query
+  operators. `Query.whereIn()` finds documents where a specified field’s value
+  is IN a specified array. `Query.whereArrayContainsAny()` finds documents
+  where a specified field is an array and contains ANY element of a specified
+  array.
+- [changed] Improved the performance of repeatedly executed queries. Recently
+  executed queries should see dramatic improvements. This benefit is reduced
+  if changes accumulate while the query is inactive. Queries that use the
+  `limit()` API may not always benefit, depending on the accumulated changes.
+
+# 21.2.1
+- [fixed] Fixed an issue where Android API level 19 and earlier devices would
+  crash when unable to connect to Firestore (#904).
+- [fixed] Fixed a race condition in Documents where access to getData and
+  getField on the same document in different threads could cause a
+  NullPointerException.
+- [fixed] Fix a race condition that could cause a `NullPointerException` during
+  client initialization.
+
+# 21.2.0
+- [feature] Added an `addSnapshotsInSyncListener()` method to 
+  `FirebaseFirestore`that notifies you when all your snapshot listeners are
+  in sync with each other.
+
+# 21.1.2
+- [fixed] Fixed a crash that could occur when a large number of documents were
+  removed during garbage collection of the persistence cache.
+
+# 21.1.1
+- [fixed] Addressed a regression in 21.1.0 that caused the crash: "Cannot add
+  document to the RemoteDocumentCache with a read time of zero".
+
+# 21.1.0
+- [feature] Added a `terminate()` method to `FirebaseFirestore` which
+  terminates the instance, releasing any held resources. Once it completes, you
+  can optionally call `clearPersistence()` to wipe persisted Firestore data from
+  disk.
+- [feature] Added a `waitForPendingWrites()` method to `FirebaseFirestore`
+  which allows users to wait on a promise that resolves when all pending writes
+  are acknowledged by the Firestore backend.
+- [changed] Transactions now perform exponential backoff before retrying. This
+  means transactions on highly contended documents are more likely to succeed.
 
 # 21.0.0
 - [changed] Transactions are now more flexible. Some sequences of operations

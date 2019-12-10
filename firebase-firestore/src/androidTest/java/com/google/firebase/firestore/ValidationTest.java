@@ -401,6 +401,12 @@ public class ValidationTest {
     expectError(
         () -> collection.limit(-1),
         "Invalid Query. Query limit (-1) is invalid. Limit must be positive.");
+    expectError(
+        () -> collection.limitToLast(0),
+        "Invalid Query. Query limitToLast (0) is invalid. Limit must be positive.");
+    expectError(
+        () -> collection.limitToLast(-1),
+        "Invalid Query. Query limitToLast (-1) is invalid. Limit must be positive.");
   }
 
   @Test

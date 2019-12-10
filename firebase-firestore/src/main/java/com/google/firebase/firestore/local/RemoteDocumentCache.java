@@ -20,6 +20,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
 
 /**
@@ -30,9 +31,6 @@ import java.util.Map;
  * instances (indicating that the document is known to not exist).
  */
 interface RemoteDocumentCache {
-  /** The tag used by the StatsCollector. */
-  String STATS_TAG = "remote_documents";
-
   /**
    * Adds or replaces an entry in the cache.
    *
@@ -40,8 +38,9 @@ interface RemoteDocumentCache {
    * for the key, it will be replaced.
    *
    * @param maybeDocument A Document or NoDocument to put in the cache.
+   * @param readTime The time at which the document was read or committed.
    */
-  void add(MaybeDocument maybeDocument);
+  void add(MaybeDocument maybeDocument, SnapshotVersion readTime);
 
   /** Removes the cached entry for the given key (no-op if no entry exists). */
   void remove(DocumentKey documentKey);
@@ -73,7 +72,10 @@ interface RemoteDocumentCache {
    * <p>Cached NoDocument entries have no bearing on query results.
    *
    * @param query The query to match documents against.
+   * @param sinceReadTime If not set to SnapshotVersion.MIN, return only documents that have been
+   *     read since this snapshot version (exclusive).
    * @return The set of matching documents.
    */
-  ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(Query query);
+  ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+      Query query, SnapshotVersion sinceReadTime);
 }

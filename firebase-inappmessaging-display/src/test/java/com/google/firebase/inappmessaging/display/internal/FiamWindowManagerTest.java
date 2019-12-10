@@ -15,6 +15,7 @@
 package com.google.firebase.inappmessaging.display.internal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -28,8 +29,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import com.google.firebase.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
 import com.google.firebase.inappmessaging.display.internal.bindingwrappers.ImageBindingWrapper;
-import com.google.firebase.inappmessaging.model.InAppMessage;
-import com.google.firebase.inappmessaging.model.MessageType;
+import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,12 +44,6 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21, qualifiers = "port")
 public class FiamWindowManagerTest {
-  private static final String IMAGE_URL = "https://www.imgur.com";
-  private static final String CAMPAIGN_ID = "campaign_id";
-  private static final String CAMPAIGN_NAME = "campaign_name";
-  private static final String ACTION_URL = "https://www.google.com";
-  private static final InAppMessage.Action ACTION =
-      InAppMessage.Action.builder().setActionUrl(ACTION_URL).build();
   private static final Context appContext = RuntimeEnvironment.application.getApplicationContext();
   private static final int WINDOW_GRAVITY = Gravity.CENTER;
   private static final InAppMessageLayoutConfig inappMessageLayoutConfig =
@@ -67,16 +61,6 @@ public class FiamWindowManagerTest {
           .setAutoDismiss(false)
           .build();
 
-  private static final InAppMessage IN_APP_MESSAGE =
-      InAppMessage.builder()
-          .setCampaignId(CAMPAIGN_ID)
-          .setIsTestMessage(false)
-          .setCampaignName(CAMPAIGN_NAME)
-          .setAction(ACTION)
-          .setMessageType(MessageType.IMAGE_ONLY)
-          .setImageUrl(IMAGE_URL)
-          .build();
-
   private FiamWindowManager fiamWindowManager;
   private TestActivity activity;
   private BindingWrapper bindingWrapper;
@@ -92,8 +76,8 @@ public class FiamWindowManagerTest {
 
     LayoutInflater inflater = LayoutInflater.from(appContext);
     bindingWrapper =
-        spy(new ImageBindingWrapper(inappMessageLayoutConfig, inflater, IN_APP_MESSAGE));
-    bindingWrapper.inflate(null, null);
+        spy(new ImageBindingWrapper(inappMessageLayoutConfig, inflater, IMAGE_MESSAGE_MODEL));
+    bindingWrapper.inflate(new HashMap<>(), null);
 
     windowManager = spy((WindowManager) activity.getSystemService(Context.WINDOW_SERVICE));
     activity.setWindowManager(windowManager);

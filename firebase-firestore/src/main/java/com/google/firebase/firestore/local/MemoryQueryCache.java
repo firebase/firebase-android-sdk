@@ -17,7 +17,7 @@ package com.google.firebase.firestore.local;
 import android.util.SparseArray;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
@@ -26,13 +26,13 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * An implementation of the QueryCache protocol that merely keeps queries in memory, suitable for
+ * An implementation of the QueryCache protocol that merely keeps targets in memory, suitable for
  * online only clients with persistence disabled.
  */
 final class MemoryQueryCache implements QueryCache {
 
-  /** Maps a query to the data about that query. */
-  private final Map<Query, QueryData> queries = new HashMap<>();
+  /** Maps a target to the data about that target. */
+  private final Map<Target, QueryData> targets = new HashMap<>();
 
   /** A ordered bidirectional mapping between documents and the remote target IDs. */
   private final ReferenceSet references = new ReferenceSet();
@@ -58,12 +58,12 @@ final class MemoryQueryCache implements QueryCache {
 
   @Override
   public long getTargetCount() {
-    return queries.size();
+    return targets.size();
   }
 
   @Override
   public void forEachTarget(Consumer<QueryData> consumer) {
-    for (QueryData queryData : queries.values()) {
+    for (QueryData queryData : targets.values()) {
       consumer.accept(queryData);
     }
   }
@@ -87,7 +87,7 @@ final class MemoryQueryCache implements QueryCache {
 
   @Override
   public void addQueryData(QueryData queryData) {
-    queries.put(queryData.getQuery(), queryData);
+    targets.put(queryData.getTarget(), queryData);
     int targetId = queryData.getTargetId();
     if (targetId > highestTargetId) {
       highestTargetId = targetId;
@@ -105,7 +105,7 @@ final class MemoryQueryCache implements QueryCache {
 
   @Override
   public void removeQueryData(QueryData queryData) {
-    queries.remove(queryData.getQuery());
+    targets.remove(queryData.getTarget());
     references.removeReferencesForId(queryData.getTargetId());
   }
 
@@ -117,8 +117,9 @@ final class MemoryQueryCache implements QueryCache {
    */
   int removeQueries(long upperBound, SparseArray<?> activeTargetIds) {
     int removed = 0;
-    for (Iterator<Map.Entry<Query, QueryData>> it = queries.entrySet().iterator(); it.hasNext(); ) {
-      Map.Entry<Query, QueryData> entry = it.next();
+    for (Iterator<Map.Entry<Target, QueryData>> it = targets.entrySet().iterator();
+        it.hasNext(); ) {
+      Map.Entry<Target, QueryData> entry = it.next();
       int targetId = entry.getValue().getTargetId();
       long sequenceNumber = entry.getValue().getSequenceNumber();
       if (sequenceNumber <= upperBound && activeTargetIds.get(targetId) == null) {
@@ -132,8 +133,8 @@ final class MemoryQueryCache implements QueryCache {
 
   @Nullable
   @Override
-  public QueryData getQueryData(Query query) {
-    return queries.get(query);
+  public QueryData getQueryData(Target target) {
+    return targets.get(target);
   }
 
   // Reference tracking
@@ -172,7 +173,7 @@ final class MemoryQueryCache implements QueryCache {
 
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
-    for (Map.Entry<Query, QueryData> entry : queries.entrySet()) {
+    for (Map.Entry<Target, QueryData> entry : targets.entrySet()) {
       count += serializer.encodeQueryData(entry.getValue()).getSerializedSize();
     }
     return count;

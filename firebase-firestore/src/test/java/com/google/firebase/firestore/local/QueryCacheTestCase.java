@@ -72,7 +72,7 @@ public abstract class QueryCacheTestCase {
 
   @Test
   public void testReadQueryNotInCache() {
-    assertNull(queryCache.getQueryData(query("rooms")));
+    assertNull(queryCache.getQueryData(query("rooms").toTarget()));
   }
 
   @Test
@@ -80,9 +80,9 @@ public abstract class QueryCacheTestCase {
     QueryData queryData = newQueryData(query("rooms"), 1, 1);
     addQueryData(queryData);
 
-    QueryData result = queryCache.getQueryData(query("rooms"));
+    QueryData result = queryCache.getQueryData(query("rooms").toTarget());
     assertNotNull(result);
-    assertEquals(queryData.getQuery(), result.getQuery());
+    assertEquals(queryData.getTarget(), result.getTarget());
     assertEquals(queryData.getTargetId(), result.getTargetId());
     assertEquals(queryData.getResumeToken(), result.getResumeToken());
   }
@@ -99,24 +99,24 @@ public abstract class QueryCacheTestCase {
     addQueryData(data1);
 
     // Using the other query should not return the query cache entry despite equal canonicalIDs.
-    assertNull(queryCache.getQueryData(q2));
-    assertEquals(data1, queryCache.getQueryData(q1));
+    assertNull(queryCache.getQueryData(q2.toTarget()));
+    assertEquals(data1, queryCache.getQueryData(q1.toTarget()));
 
     QueryData data2 = newQueryData(q2, 2, 1);
     addQueryData(data2);
     assertEquals(2, queryCache.getTargetCount());
 
-    assertEquals(data1, queryCache.getQueryData(q1));
-    assertEquals(data2, queryCache.getQueryData(q2));
+    assertEquals(data1, queryCache.getQueryData(q1.toTarget()));
+    assertEquals(data2, queryCache.getQueryData(q2.toTarget()));
 
     removeQueryData(data1);
-    assertNull(queryCache.getQueryData(q1));
-    assertEquals(data2, queryCache.getQueryData(q2));
+    assertNull(queryCache.getQueryData(q1.toTarget()));
+    assertEquals(data2, queryCache.getQueryData(q2.toTarget()));
     assertEquals(1, queryCache.getTargetCount());
 
     removeQueryData(data2);
-    assertNull(queryCache.getQueryData(q1));
-    assertNull(queryCache.getQueryData(q2));
+    assertNull(queryCache.getQueryData(q1.toTarget()));
+    assertNull(queryCache.getQueryData(q2.toTarget()));
     assertEquals(0, queryCache.getTargetCount());
   }
 
@@ -128,7 +128,7 @@ public abstract class QueryCacheTestCase {
     QueryData queryData2 = newQueryData(query("rooms"), 1, 2);
     addQueryData(queryData2);
 
-    QueryData result = queryCache.getQueryData(query("rooms"));
+    QueryData result = queryCache.getQueryData(query("rooms").toTarget());
 
     // There's no assertArrayNotEquals
     assertThat(queryData2.getResumeToken(), not(equalTo(queryData1.getResumeToken())));
@@ -145,14 +145,14 @@ public abstract class QueryCacheTestCase {
 
     removeQueryData(queryData1);
 
-    QueryData result = queryCache.getQueryData(query("rooms"));
+    QueryData result = queryCache.getQueryData(query("rooms").toTarget());
     assertNull(result);
   }
 
   @Test
   public void testRemoveNonExistentQuery() {
     // no-op, but make sure it doesn't throw.
-    assertDoesNotThrow(() -> queryCache.getQueryData(query("rooms")));
+    assertDoesNotThrow(() -> queryCache.getQueryData(query("rooms").toTarget()));
   }
 
   @Test
@@ -240,9 +240,9 @@ public abstract class QueryCacheTestCase {
     Query halls = query("halls");
     Query garages = query("garages");
 
-    QueryData query1 = new QueryData(rooms, 1, 10, QueryPurpose.LISTEN);
+    QueryData query1 = new QueryData(rooms.toTarget(), 1, 10, QueryPurpose.LISTEN);
     addQueryData(query1);
-    QueryData query2 = new QueryData(halls, 2, 20, QueryPurpose.LISTEN);
+    QueryData query2 = new QueryData(halls.toTarget(), 2, 20, QueryPurpose.LISTEN);
     addQueryData(query2);
     assertEquals(20, queryCache.getHighestListenSequenceNumber());
 
@@ -250,7 +250,7 @@ public abstract class QueryCacheTestCase {
     removeQueryData(query2);
     assertEquals(20, queryCache.getHighestListenSequenceNumber());
 
-    QueryData query3 = new QueryData(garages, 42, 100, QueryPurpose.LISTEN);
+    QueryData query3 = new QueryData(garages.toTarget(), 42, 100, QueryPurpose.LISTEN);
     addQueryData(query3);
     assertEquals(100, queryCache.getHighestListenSequenceNumber());
 
@@ -264,7 +264,7 @@ public abstract class QueryCacheTestCase {
   public void testHighestTargetId() {
     assertEquals(0, queryCache.getHighestTargetId());
 
-    QueryData query1 = new QueryData(query("rooms"), 1, 10, QueryPurpose.LISTEN);
+    QueryData query1 = new QueryData(query("rooms").toTarget(), 1, 10, QueryPurpose.LISTEN);
     addQueryData(query1);
 
     DocumentKey key1 = key("rooms/bar");
@@ -272,7 +272,7 @@ public abstract class QueryCacheTestCase {
     addMatchingKey(key1, 1);
     addMatchingKey(key2, 1);
 
-    QueryData query2 = new QueryData(query("halls"), 2, 20, QueryPurpose.LISTEN);
+    QueryData query2 = new QueryData(query("halls").toTarget(), 2, 20, QueryPurpose.LISTEN);
     addQueryData(query2);
     DocumentKey key3 = key("halls/foo");
     addMatchingKey(key3, 2);
@@ -283,7 +283,7 @@ public abstract class QueryCacheTestCase {
     assertEquals(2, queryCache.getHighestTargetId());
 
     // A query with an empty result set still counts.
-    QueryData query3 = new QueryData(query("garages"), 42, 100, QueryPurpose.LISTEN);
+    QueryData query3 = new QueryData(query("garages").toTarget(), 42, 100, QueryPurpose.LISTEN);
     addQueryData(query3);
     assertEquals(42, queryCache.getHighestTargetId());
 
@@ -324,10 +324,11 @@ public abstract class QueryCacheTestCase {
   private QueryData newQueryData(Query query, int targetId, long version) {
     long sequenceNumber = ++previousSequenceNumber;
     return new QueryData(
-        query,
+        query.toTarget(),
         targetId,
         sequenceNumber,
         QueryPurpose.LISTEN,
+        version(version),
         version(version),
         resumeToken(version));
   }

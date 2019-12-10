@@ -22,7 +22,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Function;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -31,12 +30,15 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
+import com.google.firebase.firestore.local.IndexFreeQueryEngine;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LruDelegate;
 import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
+import com.google.firebase.firestore.local.QueryEngine;
+import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -47,13 +49,13 @@ import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
 import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.Datastore;
+import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import io.grpc.Status;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -75,6 +77,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
+  private final GrpcMetadataProvider metadataProvider;
 
   // LRU-related
   @Nullable private LruGarbageCollector.Scheduler lruScheduler;
@@ -84,26 +87,15 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
       DatabaseInfo databaseInfo,
       FirebaseFirestoreSettings settings,
       CredentialsProvider credentialsProvider,
-      final AsyncQueue asyncQueue) {
+      final AsyncQueue asyncQueue,
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.credentialsProvider = credentialsProvider;
     this.asyncQueue = asyncQueue;
+    this.metadataProvider = metadataProvider;
 
     TaskCompletionSource<User> firstUser = new TaskCompletionSource<>();
     final AtomicBoolean initialized = new AtomicBoolean(false);
-    credentialsProvider.setChangeListener(
-        (User user) -> {
-          if (initialized.compareAndSet(false, true)) {
-            hardAssert(!firstUser.getTask().isComplete(), "Already fulfilled first user task");
-            firstUser.setResult(user);
-          } else {
-            asyncQueue.enqueueAndForget(
-                () -> {
-                  Logger.debug(LOG_TAG, "Credential changed. Current user: %s", user.getUid());
-                  syncEngine.handleCredentialChange(user);
-                });
-          }
-        });
 
     // Defer initialization until we get the current user from the changeListener. This is
     // guaranteed to be synchronously dispatched onto our worker queue, so we will be initialized
@@ -122,20 +114,35 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
             throw new RuntimeException(e);
           }
         });
+
+    credentialsProvider.setChangeListener(
+        (User user) -> {
+          if (initialized.compareAndSet(false, true)) {
+            hardAssert(!firstUser.getTask().isComplete(), "Already fulfilled first user task");
+            firstUser.setResult(user);
+          } else {
+            asyncQueue.enqueueAndForget(
+                () -> {
+                  hardAssert(syncEngine != null, "SyncEngine not yet initialized");
+                  Logger.debug(LOG_TAG, "Credential changed. Current user: %s", user.getUid());
+                  syncEngine.handleCredentialChange(user);
+                });
+          }
+        });
   }
 
   public Task<Void> disableNetwork() {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     return asyncQueue.enqueue(() -> remoteStore.disableNetwork());
   }
 
   public Task<Void> enableNetwork() {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     return asyncQueue.enqueue(() -> remoteStore.enableNetwork());
   }
 
-  /** Shuts down this client, cancels all writes / listeners, and releases all resources. */
-  public Task<Void> shutdown() {
+  /** Terminates this client, cancels all writes / listeners, and releases all resources. */
+  public Task<Void> terminate() {
     credentialsProvider.removeChangeListener();
     return asyncQueue.enqueueAndInitiateShutdown(
         () -> {
@@ -147,17 +154,17 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
         });
   }
 
-  /** Returns true if this client has been shutdown. */
-  public boolean isShutdown() {
-    // Technically, the asyncQueue is still running, but only accepting tasks related to shutdown
-    // or supposed to be run after shutdown. It is effectively shut down to the eyes of users.
+  /** Returns true if this client has been terminated. */
+  public boolean isTerminated() {
+    // Technically, the asyncQueue is still running, but only accepting tasks related to terminating
+    // or supposed to be run after terminate(). It is effectively terminated to the eyes of users.
     return this.asyncQueue.isShuttingDown();
   }
 
   /** Starts listening to a query. */
   public QueryListener listen(
       Query query, ListenOptions options, EventListener<ViewSnapshot> listener) {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     QueryListener queryListener = new QueryListener(query, options, listener);
     asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
     return queryListener;
@@ -165,12 +172,16 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   /** Stops listening to a query previously listened to. */
   public void stopListening(QueryListener listener) {
-    this.verifyNotShutdown();
+    // Checks for terminate but does not raise error, allowing it to be a no-op if client is already
+    // terminated.
+    if (this.isTerminated()) {
+      return;
+    }
     asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(listener));
   }
 
   public Task<Document> getDocumentFromLocalCache(DocumentKey docKey) {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     return asyncQueue
         .enqueue(() -> localStore.readDocument(docKey))
         .continueWith(
@@ -192,36 +203,41 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   }
 
   public Task<ViewSnapshot> getDocumentsFromLocalCache(Query query) {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     return asyncQueue.enqueue(
         () -> {
-          ImmutableSortedMap<DocumentKey, Document> docs = localStore.executeQuery(query);
-
-          View view =
-              new View(
-                  query,
-                  new ImmutableSortedSet<DocumentKey>(
-                      Collections.emptyList(), DocumentKey::compareTo));
-          View.DocumentChanges viewDocChanges = view.computeDocChanges(docs);
+          QueryResult queryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
+          View view = new View(query, queryResult.getRemoteKeys());
+          View.DocumentChanges viewDocChanges = view.computeDocChanges(queryResult.getDocuments());
           return view.applyChanges(viewDocChanges).getSnapshot();
         });
   }
 
   /** Writes mutations. The returned task will be notified when it's written to the backend. */
   public Task<Void> write(final List<Mutation> mutations) {
-    this.verifyNotShutdown();
+    this.verifyNotTerminated();
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(() -> syncEngine.writeMutations(mutations, source));
     return source.getTask();
   }
 
-  /** Tries to execute the transaction in updateFunction up to retries times. */
-  public <TResult> Task<TResult> transaction(
-      Function<Transaction, Task<TResult>> updateFunction, int retries) {
-    this.verifyNotShutdown();
+  /** Tries to execute the transaction in updateFunction. */
+  public <TResult> Task<TResult> transaction(Function<Transaction, Task<TResult>> updateFunction) {
+    this.verifyNotTerminated();
     return AsyncQueue.callTask(
-        asyncQueue.getExecutor(),
-        () -> syncEngine.transaction(asyncQueue, updateFunction, retries));
+        asyncQueue.getExecutor(), () -> syncEngine.transaction(asyncQueue, updateFunction));
+  }
+
+  /**
+   * Returns a task resolves when all the pending writes at the time when this method is called
+   * received server acknowledgement. An acknowledgement can be either acceptance or rejections.
+   */
+  public Task<Void> waitForPendingWrites() {
+    this.verifyNotTerminated();
+
+    final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+    asyncQueue.enqueueAndForget(() -> syncEngine.registerPendingWritesTask(source));
+    return source.getTask();
   }
 
   private void initialize(Context context, User user, boolean usePersistence, long cacheSizeBytes) {
@@ -251,13 +267,15 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     }
 
     persistence.start();
-    localStore = new LocalStore(persistence, user);
+    QueryEngine queryEngine = new IndexFreeQueryEngine();
+    localStore = new LocalStore(persistence, queryEngine, user);
     if (gc != null) {
       lruScheduler = gc.newScheduler(asyncQueue, localStore);
       lruScheduler.start();
     }
 
-    Datastore datastore = new Datastore(databaseInfo, asyncQueue, credentialsProvider, context);
+    Datastore datastore =
+        new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, metadataProvider);
     ConnectivityMonitor connectivityMonitor = new AndroidConnectivityMonitor(context);
     remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue, connectivityMonitor);
 
@@ -270,9 +288,21 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     remoteStore.start();
   }
 
-  private void verifyNotShutdown() {
-    if (this.isShutdown()) {
-      throw new IllegalStateException("The client has already been shutdown");
+  public void addSnapshotsInSyncListener(EventListener<Void> listener) {
+    verifyNotTerminated();
+    asyncQueue.enqueueAndForget(() -> eventManager.addSnapshotsInSyncListener(listener));
+  }
+
+  public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
+    if (isTerminated()) {
+      return;
+    }
+    eventManager.removeSnapshotsInSyncListener(listener);
+  }
+
+  private void verifyNotTerminated() {
+    if (this.isTerminated()) {
+      throw new IllegalStateException("The client has already been terminated");
     }
   }
 

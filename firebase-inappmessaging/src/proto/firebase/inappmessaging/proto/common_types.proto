@@ -1,0 +1,192 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package firebase.inappmessaging;
+
+option java_package = "com.google.firebase.inappmessaging";
+option java_outer_classname = "CommonTypesProto";
+
+import "firebase/inappmessaging/proto/messages.proto";
+import "google/type/timeofday.proto";
+import "google/type/date.proto";
+
+// this file defines a number of proto types that are shared between external
+// (api) and internal (server side) inapp messaging data models. They are used
+// to build the both the API and internal Campaign proto type
+
+// Timezone-supported time - used for the start/end times of campaigns.
+message CampaignTime {
+  // The date.
+  google.type.Date date = 1;
+
+  // The time of day.
+  google.type.TimeOfDay time = 2;
+
+  // [optional] The time zone.
+  // Time zone in Olson ID format, e.g., "America/Los_Angeles", or, if the
+  // timezone is unspecified, we use the recipient device's timezone.
+  string time_zone = 3;
+}
+
+// Triggering condition for determing when the campaign will be shown to
+// targeted users. Can be either a FiamTrigger, or a Scion Event
+message TriggeringCondition {
+  oneof condition {
+    Trigger fiam_trigger = 1;
+    Event event = 2;
+  }
+}
+
+message Event {
+  // Triggers that represent the context for the in app message
+  repeated TriggerParam trigger_params = 1;
+
+  // The event name. Event name length will be limited to something short like
+  // 24 or 32 chars. The exact max length limit is TBD.
+  string name = 2;
+
+  // UTC client time when the transaction happened in millis.
+  int64 timestamp_millis = 3;
+
+  // UTC client time when the transaction happened in millis.
+  int64 previous_timestamp_millis = 4;
+
+  // Events without timestamps will be grouped together by set of params and
+  // will be reported with occurrence count. This is lossless client side
+  // aggregation to pack the data in more compact form. Events with different
+  // set of params will be logged with different EventParam message.
+  int32 count = 5;
+}
+
+message TriggerParam {
+  // The name of the trigger param. The max size of the event name is TBD but it
+  // will be constrained to 24 or 32 chars.
+  string name = 1 ;
+
+  string string_value = 2 ;
+
+  int64 int_value = 3 ;
+
+  float float_value = 4;
+
+  double double_value = 5;
+}
+
+// User-specified events that can activate a campaign for an app instance.
+// Note, this just controls eligibility. Client-side evaluation of rate limits
+// will determine whether or not the message is actually displayed in the app.
+// If the app is already in the foreground when a campaign is started, the
+// in-app message will not be displayed until the app is re-opened.
+enum Trigger {
+  UNKNOWN_TRIGGER = 0;
+  // App is launched.
+  APP_LAUNCH = 1;
+  // App has already launched and is brought into the foreground.
+  ON_FOREGROUND = 2;
+}
+
+// Priority of the campaign.
+// Used to select the most important messages amongst a set of eligible ones.
+message Priority {
+  // Priority value can range from 1-10, with 1 being the highest priority.
+  int32 value = 1;
+}
+
+// Minimal identifying information on a conversion event for an app.
+message ScionConversionEvent {
+  // Name of the event, e.g. "in_app_purchase".
+  string name = 1;
+}
+
+// A variant of an experimental campaign.
+// Contains information about the variant as well as the variant's message.
+message ExperimentVariant {
+  // [required] Variant's index in the ExperimentDefinition.variants list.
+  int32 index = 1;
+
+  // [required] Content associated with the variant.
+  Content content = 2;
+}
+
+// Possible states of a campaign.
+// Campaign can either be created as 'DRAFT' or directly created as 'PUBLISHED'.
+// Valid state transitions:
+//   DRAFT -> PUBLISHED
+//   PUBLISHED -> STOPPED
+//   {DRAFT, PUBLISHED, STOPPED} -> DELETED
+enum CampaignState {
+  UNKNOWN_CAMPAIGN_STATE = 0;
+  // Created but not eligible to be served to users.
+  // All fields are mutable.
+  DRAFT = 1;
+  // Eligible to be served to users. Campaign is active if published and the
+  // current time is between the start and end times.
+  // Only `state` field is mutable.
+  PUBLISHED = 2;
+  // Manually stopped by the user.
+  // No fields are mutable.
+  STOPPED = 3;
+  // Soft delete state for the campaign. These campaigns will not be served to
+  // clients
+  DELETED = 4;
+}
+
+// Possible states of an experimental campaign.
+// Valid state transitions:
+//   RUNNING -> STOPPED
+//   RUNNING -> ROLLED_OUT (no stop needed)
+//   STOPPED -> ROLLED_OUT
+// An experiment may be considered complete in either the stopped or rolled out
+// states.
+enum ExperimentalCampaignState {
+  UNKNOWN_EXPERIMENTAL_CAMPAIGN_STATE = 0;
+  // Experiments with testing devices that have not been started.
+  EXPERIMENT_DRAFT = 1;
+  // Eligible to be served to users. Campaign is active if running and the
+  // current time is between the start and end times.
+  EXPERIMENT_RUNNING = 2;
+  // Experiment manually stopped by the user.
+  EXPERIMENT_STOPPED = 3;
+  // Rolled out, i.e., promoted to a 'vanilla' campaign. An experimental
+  // campaign can only be rolled out once.
+  EXPERIMENT_ROLLED_OUT = 4;
+}
+
+// Analytics summary of a campaign for a single day
+message DailyAnalyticsSummary {
+  // Epoch timestamp of the day for which this summary is calculated. Based on
+  // Google timezone.
+  int64 start_of_day_millis = 1;
+
+  // [optional] Aggregated impressions of the campaign
+  int32 impressions = 2;
+
+  // [optional] Aggregated clicks on the campaign
+  int32 clicks = 3;
+
+  // [optional] Aggregated errors seen while displaying the campaign
+  int32 errors = 4;
+}
+
+// Conversions summary of a campaign for a single day
+message DailyConversionSummary {
+  // Epoch timestamp of the day for which this summary is calculated. Based on
+  // Google timezone.
+  int64 start_of_day_millis = 1;
+
+  // [optional] Aggregated conversions of the campaign
+  int32 conversions = 2;
+}

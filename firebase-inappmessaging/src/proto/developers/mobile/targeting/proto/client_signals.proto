@@ -1,0 +1,69 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package developers.mobile.targeting.proto;
+
+option java_package = "com.google.developers.mobile.targeting.proto";
+option java_outer_classname = "ClientSignalsProto";
+
+
+// A set of signals which are collected on the client and are included in
+// requests
+//
+// NOTE: These will eventually not be needed in the request when we have an App
+// Checkin service which will upload these signals periodically.
+message ClientSignals {
+
+  // Optional.
+  // The App version.
+  // Android - versionName
+  // iOS - CFBundleVersion
+  string app_version = 1;
+
+  // Optional.
+  // The Platform Version of the device.
+  // Android - The API level.
+  // iOS - A version of the format "X.Y.Z".
+  string platform_version = 2;
+
+  // Optional.
+  // Device language in the BCP47 format.
+  // For example "en-US". This is case-insensitive.
+  // Android - Locale.getDefault()
+  // iOS -
+  string language_code = 3;
+
+  // Optional.
+  // Time zone in Olson ID format (eg: "America/Los_Angeles").  Case-sensitive.
+  // Android - TimeZone.getDefault().getID()
+  // iOS - NSTimeZone.name
+  string time_zone = 4;
+}
+
+// The claim of the App Instance performing the fetch.
+message AppInstanceClaim {
+  // Optional (but highly recommended).
+  string app_instance_id = 1;
+
+  // Required.
+  // The Instance Id Token of the App Instance.
+  // This is created for the scope "*".
+  string app_instance_token = 2;
+
+  // Required.
+  // The firebase app id
+  string gmp_app_id = 3;
+}

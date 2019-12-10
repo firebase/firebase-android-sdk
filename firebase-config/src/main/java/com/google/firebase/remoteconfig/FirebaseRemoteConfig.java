@@ -544,7 +544,12 @@ public class FirebaseRemoteConfig {
     // Fetch values from the server are in the Map<String, String> format, so match that here.
     Map<String, String> defaultsStringMap = new HashMap<>();
     for (Map.Entry<String, Object> defaultsEntry : defaults.entrySet()) {
-      defaultsStringMap.put(defaultsEntry.getKey(), defaultsEntry.getValue().toString());
+      Object value = defaultsEntry.getValue();
+      if (value instanceof byte[]) {
+        defaultsStringMap.put(defaultsEntry.getKey(), new String((byte[]) value));
+      } else {
+        defaultsStringMap.put(defaultsEntry.getKey(), value.toString());
+      }
     }
 
     setDefaultsWithStringsMap(defaultsStringMap);
@@ -571,7 +576,12 @@ public class FirebaseRemoteConfig {
     // Fetch values from the server are in the Map<String, String> format, so match that here.
     Map<String, String> defaultsStringMap = new HashMap<>();
     for (Map.Entry<String, Object> defaultsEntry : defaults.entrySet()) {
-      defaultsStringMap.put(defaultsEntry.getKey(), defaultsEntry.getValue().toString());
+      Object value = defaultsEntry.getValue();
+      if (value instanceof byte[]) {
+        defaultsStringMap.put(defaultsEntry.getKey(), new String((byte[]) value));
+      } else {
+        defaultsStringMap.put(defaultsEntry.getKey(), value.toString());
+      }
     }
 
     return setDefaultsWithStringsMapAsync(defaultsStringMap);
@@ -582,7 +592,9 @@ public class FirebaseRemoteConfig {
    *
    * @param resourceId Id for the XML resource, which should be in your application's {@code
    *     res/xml} folder.
+   * @deprecated Use {@link #setDefaultsAsync} instead.
    */
+  @Deprecated
   public void setDefaults(@XmlRes int resourceId) {
     Map<String, String> xmlDefaults = DefaultsXmlParser.getDefaultsFromXml(context, resourceId);
     setDefaultsWithStringsMap(xmlDefaults);

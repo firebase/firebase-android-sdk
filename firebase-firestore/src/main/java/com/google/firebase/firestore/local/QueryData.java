@@ -16,61 +16,103 @@ package com.google.firebase.firestore.local;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.WatchStream;
 import com.google.protobuf.ByteString;
 
-/** An immutable set of metadata that the store will need to keep track of for each query. */
+/** An immutable set of metadata that the store will need to keep track of for each target. */
 public final class QueryData {
-  private final Query query;
+  private final Target target;
   private final int targetId;
   private final long sequenceNumber;
   private final QueryPurpose purpose;
   private final SnapshotVersion snapshotVersion;
+  private final SnapshotVersion lastLimboFreeSnapshotVersion;
   private final ByteString resumeToken;
 
   /**
    * Creates a new QueryData with the given values.
    *
-   * @param query The query being listened to.
-   * @param targetId The target to which the query corresponds, assigned by the LocalStore for user
-   *     queries or the SyncEngine for limbo queries.
-   * @param purpose The purpose of the query.
+   * @param target The target being listened to.
+   * @param targetId The target id to which the target corresponds, assigned by the LocalStore for
+   *     user queries or the SyncEngine for limbo queries.
+   * @param sequenceNumber The sequence number, denoting the last time this target was used.
+   * @param purpose The purpose of the target.
    * @param snapshotVersion The latest snapshot version seen for this target.
-   * @param resumeToken An opaque, server-assigned token that allows watching a query to be resumed
-   *     after disconnecting without retransmitting all the data that matches the query. The resume
+   * @param lastLimboFreeSnapshotVersion The maximum snapshot version at which the associated target
+   *     view contained no limbo documents.
+   * @param resumeToken An opaque, server-assigned token that allows watching a target to be resumed
+   *     after disconnecting without retransmitting all the data that matches the target. The resume
    *     token essentially identifies a point in time from which the server should resume sending
-   *     results.
    */
-  public QueryData(
-      Query query,
+  QueryData(
+      Target target,
       int targetId,
       long sequenceNumber,
       QueryPurpose purpose,
       SnapshotVersion snapshotVersion,
+      SnapshotVersion lastLimboFreeSnapshotVersion,
       ByteString resumeToken) {
-    this.query = checkNotNull(query);
+    this.target = checkNotNull(target);
     this.targetId = targetId;
     this.sequenceNumber = sequenceNumber;
+    this.lastLimboFreeSnapshotVersion = lastLimboFreeSnapshotVersion;
     this.purpose = purpose;
     this.snapshotVersion = checkNotNull(snapshotVersion);
     this.resumeToken = checkNotNull(resumeToken);
   }
 
   /** Convenience constructor for use when creating a QueryData for the first time. */
-  public QueryData(Query query, int targetId, long sequenceNumber, QueryPurpose purpose) {
+  public QueryData(Target target, int targetId, long sequenceNumber, QueryPurpose purpose) {
     this(
-        query,
+        target,
         targetId,
         sequenceNumber,
         purpose,
         SnapshotVersion.NONE,
+        SnapshotVersion.NONE,
         WatchStream.EMPTY_RESUME_TOKEN);
   }
 
-  public Query getQuery() {
-    return query;
+  /** Creates a new target data instance with an updated sequence number. */
+  public QueryData withSequenceNumber(long sequenceNumber) {
+    return new QueryData(
+        target,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
+  }
+
+  /** Creates a new target data instance with an updated resume token and snapshot version. */
+  public QueryData withResumeToken(ByteString resumeToken, SnapshotVersion snapshotVersion) {
+    return new QueryData(
+        target,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
+  }
+
+  /** Creates a new target data instance with an updated last limbo free snapshot version number. */
+  public QueryData withLastLimboFreeSnapshotVersion(SnapshotVersion lastLimboFreeSnapshotVersion) {
+    return new QueryData(
+        target,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken);
+  }
+
+  public Target getTarget() {
+    return target;
   }
 
   public int getTargetId() {
@@ -93,6 +135,13 @@ public final class QueryData {
     return resumeToken;
   }
 
+  /**
+   * Returns the last snapshot version for which the associated view contained no limbo documents.
+   */
+  public SnapshotVersion getLastLimboFreeSnapshotVersion() {
+    return lastLimboFreeSnapshotVersion;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -103,21 +152,23 @@ public final class QueryData {
     }
 
     QueryData queryData = (QueryData) o;
-    return query.equals(queryData.query)
+    return target.equals(queryData.target)
         && targetId == queryData.targetId
         && sequenceNumber == queryData.sequenceNumber
         && purpose.equals(queryData.purpose)
         && snapshotVersion.equals(queryData.snapshotVersion)
+        && lastLimboFreeSnapshotVersion.equals(queryData.lastLimboFreeSnapshotVersion)
         && resumeToken.equals(queryData.resumeToken);
   }
 
   @Override
   public int hashCode() {
-    int result = query.hashCode();
+    int result = target.hashCode();
     result = 31 * result + targetId;
     result = 31 * result + (int) sequenceNumber;
     result = 31 * result + purpose.hashCode();
     result = 31 * result + snapshotVersion.hashCode();
+    result = 31 * result + lastLimboFreeSnapshotVersion.hashCode();
     result = 31 * result + resumeToken.hashCode();
     return result;
   }
@@ -125,8 +176,8 @@ public final class QueryData {
   @Override
   public String toString() {
     return "QueryData{"
-        + "query="
-        + query
+        + "target="
+        + target
         + ", targetId="
         + targetId
         + ", sequenceNumber="
@@ -135,14 +186,10 @@ public final class QueryData {
         + purpose
         + ", snapshotVersion="
         + snapshotVersion
+        + ", lastLimboFreeSnapshotVersion="
+        + lastLimboFreeSnapshotVersion
         + ", resumeToken="
         + resumeToken
         + '}';
-  }
-
-  /** Creates a new query data instance with an updated snapshot version and resume token. */
-  public QueryData copy(
-      SnapshotVersion snapshotVersion, ByteString resumeToken, long sequenceNumber) {
-    return new QueryData(query, targetId, sequenceNumber, purpose, snapshotVersion, resumeToken);
   }
 }

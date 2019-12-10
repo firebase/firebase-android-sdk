@@ -198,7 +198,7 @@ public class ViewTest {
 
   @Test
   public void testRemovesDocumentsForQueryWithLimit() {
-    Query query = messageQuery().limit(2);
+    Query query = messageQuery().limitToFirst(2);
     View view = new View(query, DocumentKey.emptyKeySet());
 
     Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
@@ -225,7 +225,7 @@ public class ViewTest {
 
   @Test
   public void testDoesNotReportChangesForDocumentBeyondLimit() {
-    Query query = messageQuery().orderBy(orderBy("num")).limit(2);
+    Query query = messageQuery().orderBy(orderBy("num")).limitToFirst(2);
     View view = new View(query, DocumentKey.emptyKeySet());
 
     Document doc1 = doc("rooms/eros/messages/1", 0, map("num", 1));
@@ -302,6 +302,32 @@ public class ViewTest {
   }
 
   @Test
+  public void testViewsWithLimboDocumentsAreMarkedFromCache() {
+    Query query = messageQuery();
+    View view = new View(query, DocumentKey.emptyKeySet());
+    Document doc1 = doc("rooms/eros/messages/0", 0, map());
+    Document doc2 = doc("rooms/eros/messages/1", 0, map());
+
+    // Doc1 is contained in the local view, but we are not yet CURRENT so it is expected that the
+    // backend hasn't told us about all documents yet.
+    ViewChange change = applyChanges(view, doc1);
+    assertTrue(change.getSnapshot().isFromCache());
+
+    // Add doc2 to generate a snapshot. Doc1 is still missing.
+    View.DocumentChanges viewDocChanges = view.computeDocChanges(docUpdates(doc2));
+    change =
+        view.applyChanges(
+            viewDocChanges, targetChange(ByteString.EMPTY, true, asList(doc2), null, null));
+    assertTrue(change.getSnapshot().isFromCache()); // We are CURRENT but doc1 is in limbo.
+
+    // Add doc1 to the backend's result set.
+    change =
+        view.applyChanges(
+            viewDocChanges, targetChange(ByteString.EMPTY, true, asList(doc1), null, null));
+    assertFalse(change.getSnapshot().isFromCache());
+  }
+
+  @Test
   public void testResumingQueryCreatesNoLimbos() {
     Query query = messageQuery();
     Document doc1 = doc("rooms/eros/messages/0", 0, map());
@@ -319,7 +345,7 @@ public class ViewTest {
 
   @Test
   public void testReturnsNeedsRefillOnDeleteInLimitQuery() {
-    Query query = messageQuery().limit(2);
+    Query query = messageQuery().limitToFirst(2);
     Document doc1 = doc("rooms/eros/messages/0", 0, map());
     Document doc2 = doc("rooms/eros/messages/1", 0, map());
     View view = new View(query, DocumentKey.emptyKeySet());
@@ -346,7 +372,7 @@ public class ViewTest {
 
   @Test
   public void testReturnsNeedsRefillOnReorderInLimitQuery() {
-    Query query = messageQuery().orderBy(orderBy("order")).limit(2);
+    Query query = messageQuery().orderBy(orderBy("order")).limitToFirst(2);
     Document doc1 = doc("rooms/eros/messages/0", 0, map("order", 1));
     Document doc2 = doc("rooms/eros/messages/1", 0, map("order", 2));
     Document doc3 = doc("rooms/eros/messages/2", 0, map("order", 3));
@@ -375,7 +401,7 @@ public class ViewTest {
 
   @Test
   public void testDoesNotNeedRefillOnReorderWithinLimit() {
-    Query query = messageQuery().orderBy(orderBy("order")).limit(3);
+    Query query = messageQuery().orderBy(orderBy("order")).limitToFirst(3);
     Document doc1 = doc("rooms/eros/messages/0", 0, map("order", 1));
     Document doc2 = doc("rooms/eros/messages/1", 0, map("order", 2));
     Document doc3 = doc("rooms/eros/messages/2", 0, map("order", 3));
@@ -401,7 +427,7 @@ public class ViewTest {
 
   @Test
   public void testDoesNotNeedRefillOnReorderAfterLimitQuery() {
-    Query query = messageQuery().orderBy(orderBy("order")).limit(3);
+    Query query = messageQuery().orderBy(orderBy("order")).limitToFirst(3);
     Document doc1 = doc("rooms/eros/messages/0", 0, map("order", 1));
     Document doc2 = doc("rooms/eros/messages/1", 0, map("order", 2));
     Document doc3 = doc("rooms/eros/messages/2", 0, map("order", 3));
@@ -427,7 +453,7 @@ public class ViewTest {
 
   @Test
   public void testDoesNotNeedRefillForAdditionAfterTheLimit() {
-    Query query = messageQuery().limit(2);
+    Query query = messageQuery().limitToFirst(2);
     Document doc1 = doc("rooms/eros/messages/0", 0, map());
     Document doc2 = doc("rooms/eros/messages/1", 0, map());
     View view = new View(query, DocumentKey.emptyKeySet());
@@ -449,7 +475,7 @@ public class ViewTest {
 
   @Test
   public void testDoesNotNeedRefillForDeletionsWhenNotNearTheLimit() {
-    Query query = messageQuery().limit(20);
+    Query query = messageQuery().limitToFirst(20);
     Document doc1 = doc("rooms/eros/messages/0", 0, map());
     Document doc2 = doc("rooms/eros/messages/1", 0, map());
     View view = new View(query, DocumentKey.emptyKeySet());
@@ -470,7 +496,7 @@ public class ViewTest {
 
   @Test
   public void testHandlesApplyingIrrelevantDocs() {
-    Query query = messageQuery().limit(2);
+    Query query = messageQuery().limitToFirst(2);
     Document doc1 = doc("rooms/eros/messages/0", 0, map());
     Document doc2 = doc("rooms/eros/messages/1", 0, map());
     View view = new View(query, DocumentKey.emptyKeySet());
@@ -510,7 +536,7 @@ public class ViewTest {
 
   @Test
   public void testRemovesKeysFromMutatedDocumentKeysWhenNewDocDoesNotHaveChanges() {
-    Query query = messageQuery().limit(2);
+    Query query = messageQuery().limitToFirst(2);
     Document doc1 = doc("rooms/eros/messages/0", 0, map());
     Document doc2 = doc("rooms/eros/messages/1", 0, map(), Document.DocumentState.LOCAL_MUTATIONS);
     View view = new View(query, DocumentKey.emptyKeySet());
@@ -529,7 +555,7 @@ public class ViewTest {
 
   @Test
   public void testRemembersLocalMutationsFromPreviousSnapshot() {
-    Query query = messageQuery().limit(2);
+    Query query = messageQuery().limitToFirst(2);
     Document doc1 = doc("rooms/eros/messages/0", 0, map());
     Document doc2 = doc("rooms/eros/messages/1", 0, map(), Document.DocumentState.LOCAL_MUTATIONS);
     View view = new View(query, DocumentKey.emptyKeySet());
@@ -546,7 +572,7 @@ public class ViewTest {
 
   @Test
   public void testRemembersLocalMutationsFromPreviousCallToComputeChanges() {
-    Query query = messageQuery().limit(2);
+    Query query = messageQuery().limitToFirst(2);
     Document doc1 = doc("rooms/eros/messages/0", 0, map());
     Document doc2 = doc("rooms/eros/messages/1", 0, map(), Document.DocumentState.LOCAL_MUTATIONS);
     View view = new View(query, DocumentKey.emptyKeySet());

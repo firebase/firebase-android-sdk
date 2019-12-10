@@ -41,7 +41,7 @@ public class ApkSizeJsonBuilderTest {
     def prColumns = prTable.getJSONArray("column_names")
     def prMeasurements = prTable.getJSONArray("replace_measurements")
 
-    assertEquals("Bad table name", "PullRequests", prTable.getString("table_name"))
+    assertEquals("Bad table name", "AndroidPullRequests", prTable.getString("table_name"))
     assertEquals("Bad column name", "pull_request_id", prColumns.getString(0))
     assertEquals("Bad pull request number", 117, prMeasurements.getJSONArray(0).getInt(0))
     assertEquals("Too many columns", 1, prColumns.length())
@@ -59,7 +59,7 @@ public class ApkSizeJsonBuilderTest {
     def asColumns = asTable.getJSONArray("column_names")
     def asMeasurements = asTable.getJSONArray("replace_measurements")
 
-    assertEquals("Bad table name", "ApkSizes", asTable.getString("table_name"))
+    assertEquals("Bad table name", "AndroidApkSizes", asTable.getString("table_name"))
     assertEquals("Bad column name", "pull_request_id", asColumns.getString(0))
     assertEquals("Bad column name", "sdk_id", asColumns.getString(1))
     assertEquals("Bad column name", "apk_size", asColumns.getString(2))
@@ -84,7 +84,7 @@ public class ApkSizeJsonBuilderTest {
     def asMeasurements = asTable.getJSONArray("replace_measurements")
 
     // The table itself.
-    assertEquals("Bad table name", "ApkSizes", asTable.getString("table_name"))
+    assertEquals("Bad table name", "AndroidApkSizes", asTable.getString("table_name"))
     assertEquals("Bad column name", "pull_request_id", asColumns.getString(0))
     assertEquals("Bad column name", "sdk_id", asColumns.getString(1))
     assertEquals("Bad column name", "apk_size", asColumns.getString(2))

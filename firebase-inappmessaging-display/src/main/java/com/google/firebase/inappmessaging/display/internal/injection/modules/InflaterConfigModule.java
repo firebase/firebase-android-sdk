@@ -33,9 +33,17 @@ import dagger.multibindings.StringKey;
 @Module
 public class InflaterConfigModule {
 
-  private int DISABLED_BG_FLAG =
+  // visible for testing
+  public static int DISABLED_BG_FLAG =
       WindowManager.LayoutParams.FLAG_DIM_BEHIND
           | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+          | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+          | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
+
+  public static int DISMISSIBLE_DIALOG_FLAG =
+      WindowManager.LayoutParams.FLAG_DIM_BEHIND
+          | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+          | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
           | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
           | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
 
@@ -49,6 +57,8 @@ public class InflaterConfigModule {
       switch (type) {
         case MODAL:
           return LayoutConfigKey.MODAL_PORTRAIT;
+        case CARD:
+          return LayoutConfigKey.CARD_PORTRAIT;
         case IMAGE_ONLY:
           return LayoutConfigKey.IMAGE_ONLY_PORTRAIT;
         case BANNER:
@@ -60,6 +70,8 @@ public class InflaterConfigModule {
       switch (type) {
         case MODAL:
           return LayoutConfigKey.MODAL_LANDSCAPE;
+        case CARD:
+          return LayoutConfigKey.CARD_LANDSCAPE;
         case IMAGE_ONLY:
           return LayoutConfigKey.IMAGE_ONLY_LANDSCAPE;
         case BANNER:
@@ -80,10 +92,11 @@ public class InflaterConfigModule {
     return displayMetrics;
   }
 
+  // visible for testing
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.IMAGE_ONLY_PORTRAIT)
-  InAppMessageLayoutConfig providesPortraitImageLayoutConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesPortraitImageLayoutConfig(DisplayMetrics displayMetrics) {
     return InAppMessageLayoutConfig.builder()
         .setMaxDialogHeightPx((int) (0.9f * displayMetrics.heightPixels))
         .setMaxDialogWidthPx((int) (0.9f * displayMetrics.widthPixels))
@@ -99,10 +112,12 @@ public class InflaterConfigModule {
         .build();
   }
 
+  // visible for testing
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.IMAGE_ONLY_LANDSCAPE)
-  InAppMessageLayoutConfig providesLandscapeImageLayoutConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesLandscapeImageLayoutConfig(
+      DisplayMetrics displayMetrics) {
     return InAppMessageLayoutConfig.builder()
         .setMaxDialogHeightPx((int) (0.9f * displayMetrics.heightPixels))
         .setMaxDialogWidthPx((int) (0.9f * displayMetrics.widthPixels))
@@ -118,10 +133,11 @@ public class InflaterConfigModule {
         .build();
   }
 
+  // visible for testing
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.MODAL_LANDSCAPE)
-  InAppMessageLayoutConfig providesModalLandscapeConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesModalLandscapeConfig(DisplayMetrics displayMetrics) {
     return InAppMessageLayoutConfig.builder()
         .setMaxDialogHeightPx((int) (0.8 * displayMetrics.heightPixels))
         .setMaxDialogWidthPx(displayMetrics.widthPixels)
@@ -139,10 +155,11 @@ public class InflaterConfigModule {
         .build();
   }
 
+  // visible for testing
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.MODAL_PORTRAIT)
-  InAppMessageLayoutConfig providesModalPortraitConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesModalPortraitConfig(DisplayMetrics displayMetrics) {
     return InAppMessageLayoutConfig.builder()
         .setMaxDialogHeightPx((int) (0.8 * displayMetrics.heightPixels))
         .setMaxDialogWidthPx((int) (0.7f * displayMetrics.widthPixels))
@@ -160,10 +177,54 @@ public class InflaterConfigModule {
         .build();
   }
 
+  // visible for testing
+  @Provides
+  @IntoMap
+  @StringKey(LayoutConfigKey.CARD_LANDSCAPE)
+  public InAppMessageLayoutConfig providesCardLandscapeConfig(DisplayMetrics displayMetrics) {
+    return InAppMessageLayoutConfig.builder()
+        .setMaxDialogHeightPx((int) (0.8 * displayMetrics.heightPixels))
+        .setMaxDialogWidthPx(displayMetrics.widthPixels)
+        .setMaxImageHeightWeight(1f) // entire dialog height
+        .setMaxImageWidthWeight(0.5f)
+        .setViewWindowGravity(Gravity.CENTER)
+        .setWindowFlag(DISMISSIBLE_DIALOG_FLAG)
+        .setWindowWidth(ViewGroup.LayoutParams.WRAP_CONTENT)
+        .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
+        .setBackgroundEnabled(false)
+        .setAnimate(false)
+        .setAutoDismiss(false)
+        .build();
+  }
+
+  // visible for testing
+  @Provides
+  @IntoMap
+  @StringKey(LayoutConfigKey.CARD_PORTRAIT)
+  public InAppMessageLayoutConfig providesCardPortraitConfig(DisplayMetrics displayMetrics) {
+    return InAppMessageLayoutConfig.builder()
+        .setMaxDialogHeightPx((int) (0.8 * displayMetrics.heightPixels))
+        .setMaxDialogWidthPx((int) (0.7f * displayMetrics.widthPixels))
+        .setMaxImageHeightWeight(0.6f)
+        .setMaxImageWidthWeight(1f) // entire dialog width
+        .setMaxBodyHeightWeight(0.1f)
+        .setMaxBodyWidthWeight(0.9f) // entire dialog width
+        .setViewWindowGravity(Gravity.CENTER)
+        .setWindowFlag(DISMISSIBLE_DIALOG_FLAG)
+        .setWindowWidth(ViewGroup.LayoutParams.WRAP_CONTENT)
+        .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
+        .setBackgroundEnabled(false)
+        .setAnimate(false)
+        .setAutoDismiss(false)
+        .build();
+  }
+
+  // visible for testing
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.BANNER_PORTRAIT)
-  InAppMessageLayoutConfig providesBannerPortraitLayoutConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesBannerPortraitLayoutConfig(
+      DisplayMetrics displayMetrics) {
     return InAppMessageLayoutConfig.builder()
         .setMaxImageHeightWeight(0.3f)
         .setMaxImageWidthWeight(0.3f)
@@ -179,10 +240,12 @@ public class InflaterConfigModule {
         .build();
   }
 
+  // visible for testing
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.BANNER_LANDSCAPE)
-  InAppMessageLayoutConfig providesBannerLandscapeLayoutConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesBannerLandscapeLayoutConfig(
+      DisplayMetrics displayMetrics) {
     return InAppMessageLayoutConfig.builder()
         .setMaxImageHeightWeight(0.3f)
         .setMaxImageWidthWeight(0.3f)

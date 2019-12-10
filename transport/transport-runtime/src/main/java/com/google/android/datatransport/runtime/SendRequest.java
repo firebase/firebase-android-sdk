@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime;
 
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transformer;
 import com.google.auto.value.AutoValue;
@@ -27,6 +28,8 @@ abstract class SendRequest {
   abstract Event<?> getEvent();
 
   abstract Transformer<?, byte[]> getTransformer();
+
+  public abstract Encoding getEncoding();
 
   public byte[] getPayload() {
     return ((Transformer<Object, byte[]>) getTransformer()).apply(getEvent().getPayload());
@@ -46,10 +49,14 @@ abstract class SendRequest {
 
     abstract Builder setTransformer(Transformer<?, byte[]> transformer);
 
+    abstract Builder setEncoding(Encoding encoding);
+
     public abstract SendRequest build();
 
-    public <T> Builder setEvent(Event<T> event, Transformer<T, byte[]> transformer) {
+    public <T> Builder setEvent(
+        Event<T> event, Encoding encoding, Transformer<T, byte[]> transformer) {
       setEvent(event);
+      setEncoding(encoding);
       setTransformer(transformer);
       return this;
     }

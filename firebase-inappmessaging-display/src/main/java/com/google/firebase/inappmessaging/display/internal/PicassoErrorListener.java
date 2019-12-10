@@ -25,7 +25,6 @@ import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.model.InAppMessage;
-import com.squareup.picasso.Downloader;
 import com.squareup.picasso.Picasso;
 import java.io.IOException;
 import javax.inject.Inject;
@@ -48,9 +47,7 @@ public class PicassoErrorListener implements Picasso.Listener {
   @Override
   public void onImageLoadFailed(Picasso picasso, Uri uri, Exception exception) {
     if (inAppMessage != null && displayCallbacks != null) {
-      if (exception instanceof Downloader.ResponseException) {
-        displayCallbacks.displayErrorEncountered(InAppMessagingErrorReason.IMAGE_FETCH_ERROR);
-      } else if (exception instanceof IOException
+      if (exception instanceof IOException
           && exception.getLocalizedMessage().contains("Failed to decode")) {
         displayCallbacks.displayErrorEncountered(
             InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);

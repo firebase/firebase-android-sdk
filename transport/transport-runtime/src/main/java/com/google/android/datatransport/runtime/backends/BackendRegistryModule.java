@@ -14,24 +14,11 @@
 
 package com.google.android.datatransport.runtime.backends;
 
-import android.content.Context;
-import com.google.android.datatransport.runtime.time.Clock;
-import com.google.android.datatransport.runtime.time.Monotonic;
-import com.google.android.datatransport.runtime.time.WallTime;
 import dagger.Binds;
 import dagger.Module;
-import dagger.Provides;
-import javax.inject.Singleton;
 
 @Module
 public abstract class BackendRegistryModule {
   @Binds
   abstract BackendRegistry backendRegistry(MetadataBackendRegistry registry);
-
-  @Provides
-  @Singleton
-  static CreationContext creationContext(
-      Context applicationContext, @WallTime Clock wallClock, @Monotonic Clock monotonicClock) {
-    return CreationContext.create(applicationContext, wallClock, monotonicClock);
-  }
 }

@@ -15,20 +15,16 @@
 package com.google.firebase.storage.network;
 
 import android.net.Uri;
-import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 
 /** Queries the current status of a resumable upload session. */
 public class ResumableUploadQueryRequest extends ResumableNetworkRequest {
-  private final String uploadURL;
+  private final Uri uploadURL;
 
   public ResumableUploadQueryRequest(
-      @NonNull Uri gsUri, @NonNull FirebaseApp app, @NonNull String uploadURL) {
+      @NonNull Uri gsUri, @NonNull FirebaseApp app, @NonNull Uri uploadURL) {
     super(gsUri, app);
-    if (TextUtils.isEmpty(uploadURL)) {
-      super.mException = new IllegalArgumentException("uploadURL is null or empty");
-    }
     this.uploadURL = uploadURL;
 
     super.setCustomHeader(PROTOCOL, "resumable");
@@ -43,7 +39,7 @@ public class ResumableUploadQueryRequest extends ResumableNetworkRequest {
 
   @NonNull
   @Override
-  protected String getURL() {
+  protected Uri getURL() {
     return uploadURL;
   }
 }

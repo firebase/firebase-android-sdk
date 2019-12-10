@@ -195,7 +195,19 @@ public final class UserDataConverter {
 
   /** Parse a "query value" (e.g. value in a where filter or a value in a cursor bound). */
   public FieldValue parseQueryValue(Object input) {
-    ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Argument);
+    return parseQueryValue(input, false);
+  }
+
+  /**
+   * Parse a "query value" (e.g. value in a where filter or a value in a cursor bound).
+   *
+   * @param allowArrays Whether the query value is an array that may directly contain additional
+   *     arrays (e.g. the operand of a `whereIn` query).
+   */
+  public FieldValue parseQueryValue(Object input, boolean allowArrays) {
+    ParseAccumulator accumulator =
+        new ParseAccumulator(
+            allowArrays ? UserData.Source.ArrayArgument : UserData.Source.Argument);
 
     @Nullable FieldValue parsed = convertAndParseFieldData(input, accumulator.rootContext());
     hardAssert(parsed != null, "Parsed data should not be null.");
@@ -266,7 +278,10 @@ public final class UserDataConverter {
 
       if (input instanceof List) {
         // TODO: Include the path containing the array in the error message.
-        if (context.isArrayElement()) {
+        // In the case of IN queries, the parsed data is an array (representing the set of values
+        // to be included for the IN query) that may directly contain additional arrays (each
+        // representing an individual field value), so we disable this validation.
+        if (context.isArrayElement() && context.getDataSource() != UserData.Source.ArrayArgument) {
           throw context.createError("Nested arrays are not supported");
         }
         return parseList((List<?>) input, context);

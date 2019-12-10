@@ -14,10 +14,10 @@
 
 package com.google.firebase.firestore.spec;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.ViewSnapshot;
-import javax.annotation.Nullable;
 
 /** Object that contains exactly one of either a view snapshot or an error for the given query. */
 public class QueryEvent {

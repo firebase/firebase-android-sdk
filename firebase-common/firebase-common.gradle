@@ -55,14 +55,22 @@ android {
             includeAndroidResources = true
         }
     }
+    lintOptions {
+        baseline file("lint-baseline.xml")
+    }
 }
 
 dependencies {
+    // TODO(vkryachko): have sdks depend on components directly once components are released.
+    api project(':firebase-components')
     implementation 'com.google.android.gms:play-services-basement:17.0.0'
     implementation "com.google.android.gms:play-services-tasks:17.0.0"
 
     api 'com.google.auto.value:auto-value-annotations:1.6.5'
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+
+    // needed for Kotlin detection to compile, but not necessarily present at runtime.
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation 'androidx.test.ext:junit:1.1.1'

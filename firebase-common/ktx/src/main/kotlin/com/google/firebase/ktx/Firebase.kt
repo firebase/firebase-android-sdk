@@ -57,7 +57,6 @@ internal const val LIBRARY_NAME: String = "fire-core-ktx"
 class FirebaseCommonKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> {
         return listOf(
-                LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
-                LibraryVersionComponent.create("kotlin", BuildConfig.KOTLIN_VERSION))
+                LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
     }
 }

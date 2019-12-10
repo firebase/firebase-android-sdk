@@ -104,7 +104,7 @@ class ApkSizeTestProject extends ExternalResource {
         task upload(type: UploadMeasurementsTask) {
             dependsOn generate
 
-            reportFile = file("test-report-file.json")
+            reportFiles = files("test-report-file.json")
             uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
         }
     """
@@ -121,9 +121,14 @@ class ApkSizeTestProject extends ExternalResource {
         public class A {}
     """
 
-    private static final String SDK_MAP = """horseshoe-aggressive:2
+    private static final String SDK_MAP = """
+        horseshoe-aggressive:2
         vanilla-aggressive:1
-        furball-aggressive:3"""
+        furball-aggressive:3
+        horseshoe-release:4
+        vanilla-release:5
+        furball-release:6
+    """.trim()
 
     private final TemporaryFolder projectDirectory = new TemporaryFolder()
 

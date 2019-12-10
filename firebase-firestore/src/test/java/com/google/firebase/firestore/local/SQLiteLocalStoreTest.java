@@ -14,17 +14,36 @@
 
 package com.google.firebase.firestore.local;
 
+import java.util.Arrays;
+import java.util.Collection;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
+import org.robolectric.ParameterizedRobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(ParameterizedRobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
+  private QueryEngine queryEngine;
+
+  @ParameterizedRobolectricTestRunner.Parameters(name = "QueryEngine = {0}")
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[] {new SimpleQueryEngine()}, new Object[] {new IndexFreeQueryEngine()});
+  }
+
+  public SQLiteLocalStoreTest(QueryEngine queryEngine) {
+    this.queryEngine = queryEngine;
+  }
+
+  @Override
+  QueryEngine getQueryEngine() {
+    return this.queryEngine;
+  }
+
   @Override
   Persistence getPersistence() {
-    return PersistenceTestHelpers.createSQLitePersistence(statsCollector);
+    return PersistenceTestHelpers.createSQLitePersistence();
   }
 
   @Override

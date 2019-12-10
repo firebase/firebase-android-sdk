@@ -323,13 +323,16 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   // Watch Stream
 
-  /** Listens to the target identified by the given QueryData. */
+  /**
+   * Listens to the target identified by the given QueryData.
+   *
+   * <p>It is a no-op if the target of the given query data is already being listened to.
+   */
   public void listen(QueryData queryData) {
     Integer targetId = queryData.getTargetId();
-    hardAssert(
-        !listenTargets.containsKey(targetId),
-        "listen called with duplicate target ID: %d",
-        targetId);
+    if (listenTargets.containsKey(targetId)) {
+      return;
+    }
 
     listenTargets.put(targetId, queryData);
 
@@ -347,6 +350,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   /**
    * Stops listening to the target with the given target ID.
+   *
+   * <p>It is an error if the given target id is not being listened to.
    *
    * <p>If this is called with the last active targetId, the watch stream enters idle mode and will
    * be torn down after one minute of inactivity.
@@ -478,7 +483,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     }
   }
 
-  private boolean canUseNetwork() {
+  public boolean canUseNetwork() {
     // PORTING NOTE: This method exists mostly because web also has to take into account primary
     // vs. secondary state.
     return networkEnabled;
@@ -504,9 +509,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         // A watched target might have been removed already.
         if (queryData != null) {
           this.listenTargets.put(
-              targetId,
-              queryData.copy(
-                  snapshotVersion, targetChange.getResumeToken(), queryData.getSequenceNumber()));
+              targetId, queryData.withResumeToken(targetChange.getResumeToken(), snapshotVersion));
         }
       }
     }
@@ -519,9 +522,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       if (queryData != null) {
         // Clear the resume token for the query, since we're in a known mismatch state.
         this.listenTargets.put(
-            targetId,
-            queryData.copy(
-                queryData.getSnapshotVersion(), ByteString.EMPTY, queryData.getSequenceNumber()));
+            targetId, queryData.withResumeToken(ByteString.EMPTY, queryData.getSnapshotVersion()));
 
         // Cause a hard reset by unwatching and rewatching immediately, but deliberately don't send
         // a resume token so that we get a full update.
@@ -533,7 +534,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         // reconnect).
         QueryData requestQueryData =
             new QueryData(
-                queryData.getQuery(),
+                queryData.getTarget(),
                 targetId,
                 queryData.getSequenceNumber(),
                 QueryPurpose.EXISTENCE_FILTER_MISMATCH);

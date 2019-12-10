@@ -14,11 +14,14 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
+import static android.util.Base64.*;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
 
 /** The service responsible for uploading information to the backend. */
 public class AlarmManagerSchedulerBroadcastReceiver extends BroadcastReceiver {
@@ -26,15 +29,23 @@ public class AlarmManagerSchedulerBroadcastReceiver extends BroadcastReceiver {
   @Override
   public void onReceive(Context context, Intent intent) {
     String backendName = intent.getData().getQueryParameter(AlarmManagerScheduler.BACKEND_NAME);
+    String extras = intent.getData().getQueryParameter(AlarmManagerScheduler.EXTRAS);
     int priority =
         Integer.valueOf(intent.getData().getQueryParameter(AlarmManagerScheduler.EVENT_PRIORITY));
     int attemptNumber = intent.getExtras().getInt(AlarmManagerScheduler.ATTEMPT_NUMBER);
     TransportRuntime.initialize(context);
+
+    TransportContext.Builder transportContext =
+        TransportContext.builder()
+            .setBackendName(backendName)
+            .setPriority(PriorityMapping.valueOf(priority));
+
+    if (extras != null) {
+      transportContext.setExtras(decode(extras, DEFAULT));
+    }
+
     TransportRuntime.getInstance()
         .getUploader()
-        .upload(
-            TransportContext.builder().setBackendName(backendName).setPriority(priority).build(),
-            attemptNumber,
-            () -> {});
+        .upload(transportContext.build(), attemptNumber, () -> {});
   }
 }

@@ -20,12 +20,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import androidx.annotation.Keep;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.firebase.database.core.utilities.encoding.CustomClassMapper;
-import java.util.ArrayList;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,10 +37,16 @@ import org.robolectric.annotation.Config;
 @org.junit.runner.RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class MapperTest {
-  private static final double EPISLON = 0.00001f;
+  private static final double EPSILON = 0.00025f;
 
   private static class StringBean {
     private String value;
+
+    public StringBean() {}
+
+    public StringBean(String value) {
+      this.value = value;
+    }
 
     public String getValue() {
       return value;
@@ -628,6 +635,22 @@ public class MapperTest {
     }
   }
 
+  private static class MultiBoundedMapBean<T extends String & Serializable> {
+    private Map<String, T> values;
+
+    public Map<String, T> getValues() {
+      return values;
+    }
+  }
+
+  private static class MultiBoundedMapHolderBean {
+    private MultiBoundedMapBean<String> map;
+
+    public MultiBoundedMapBean<String> getMap() {
+      return map;
+    }
+  }
+
   private static class StaticFieldBean {
     public static String value1 = "static-value";
     public String value2;
@@ -646,7 +669,7 @@ public class MapperTest {
     }
   }
 
-  private static enum Enum {
+  private static enum SimpleEnum {
     Foo,
     Bar;
   }
@@ -655,7 +678,7 @@ public class MapperTest {
     One("one"),
     Two("two");
 
-    private String value;
+    private final String value;
 
     ComplexEnum(String value) {
       this.value = value;
@@ -664,24 +687,20 @@ public class MapperTest {
     public String getValue() {
       return this.value;
     }
-
-    public void setValue(String value) {
-      this.value = value;
-    }
   }
 
   private static class EnumBean {
-    public Enum enumField;
+    public SimpleEnum enumField;
 
-    private Enum enumValue;
+    private SimpleEnum enumValue;
 
     public ComplexEnum complexEnum;
 
-    public Enum getEnumValue() {
+    public SimpleEnum getEnumValue() {
       return this.enumValue;
     }
 
-    public void setEnumValue(Enum enumValue) {
+    public void setEnumValue(SimpleEnum enumValue) {
       this.enumValue = enumValue;
     }
   }
@@ -930,14 +949,14 @@ public class MapperTest {
   @Test
   public void primitiveDeserializeDouble() {
     DoubleBean beanDouble = deserialize("{'value': 1.1}", DoubleBean.class);
-    assertEquals(1.1, beanDouble.value, EPISLON);
+    assertEquals(1.1, beanDouble.value, EPSILON);
 
     // Int
     DoubleBean beanInt = deserialize("{'value': 1}", DoubleBean.class);
-    assertEquals(1, beanInt.value, EPISLON);
+    assertEquals(1, beanInt.value, EPSILON);
     // Long
     DoubleBean beanLong = deserialize("{'value': 1234567890123}", DoubleBean.class);
-    assertEquals(1234567890123L, beanLong.value, EPISLON);
+    assertEquals(1234567890123L, beanLong.value, EPSILON);
 
     // Boolean
     try {
@@ -957,14 +976,14 @@ public class MapperTest {
   @Test
   public void primitiveDeserializeFloat() {
     FloatBean beanFloat = deserialize("{'value': 1.1}", FloatBean.class);
-    assertEquals(1.1, beanFloat.value, EPISLON);
+    assertEquals(1.1, beanFloat.value, EPSILON);
 
     // Int
     FloatBean beanInt = deserialize("{'value': 1}", FloatBean.class);
-    assertEquals(1, beanInt.value, EPISLON);
+    assertEquals(1, beanInt.value, EPSILON);
     // Long
     FloatBean beanLong = deserialize("{'value': 1234567890123}", FloatBean.class);
-    assertEquals(Long.valueOf(1234567890123L).floatValue(), beanLong.value, EPISLON);
+    assertEquals(Long.valueOf(1234567890123L).floatValue(), beanLong.value, EPSILON);
 
     // Boolean
     try {
@@ -1226,8 +1245,7 @@ public class MapperTest {
 
   @Test
   public void serializeStringBean() {
-    StringBean bean = new StringBean();
-    bean.value = "foo";
+    StringBean bean = new StringBean("foo");
     assertJson("{'value': 'foo'}", serialize(bean));
   }
 
@@ -1348,8 +1366,7 @@ public class MapperTest {
   @Test
   public void recursiveSerializingWorks() {
     RecursiveBean bean = new RecursiveBean();
-    bean.bean = new StringBean();
-    bean.bean.value = "foo";
+    bean.bean = new StringBean("foo");
     assertJson("{'bean': {'value': 'foo'}}", serialize(bean));
   }
 
@@ -1363,54 +1380,28 @@ public class MapperTest {
   @Test
   public void serializingMapsWorks() {
     MapBean bean = new MapBean();
-    bean.values =
-        new HashMap<String, String>() {
-          {
-            put("foo", "bar");
-          }
-        };
+    bean.values = ImmutableMap.of("foo", "bar");
     assertJson("{'values': {'foo': 'bar'}}", serialize(bean));
   }
 
   @Test
   public void serializeListOfBeansWorks() {
     RecursiveListBean bean = new RecursiveListBean();
-    bean.values =
-        new ArrayList<StringBean>() {
-          {
-            StringBean bean = new StringBean();
-            bean.value = "foo";
-            add(bean);
-          }
-        };
+    bean.values = ImmutableList.of(new StringBean("foo"));
     assertJson("{'values': [{'value': 'foo'}]}", serialize(bean));
   }
 
   @Test
   public void serializeMapOfBeansWorks() {
     RecursiveMapBean bean = new RecursiveMapBean();
-    bean.values =
-        new HashMap<String, StringBean>() {
-          {
-            StringBean bean = new StringBean();
-            bean.value = "foo";
-            put("key", bean);
-          }
-        };
+    bean.values = ImmutableMap.of("key", new StringBean("foo"));
     assertJson("{'values': {'key': {'value': 'foo'}}}", serialize(bean));
   }
 
   @Test(expected = DatabaseException.class)
   public void beanMapsMustHaveStringKeysForSerializing() {
     IllegalKeyMapBean bean = new IllegalKeyMapBean();
-    bean.values =
-        new HashMap<Integer, StringBean>() {
-          {
-            StringBean bean = new StringBean();
-            bean.value = "foo";
-            put(1, bean);
-          }
-        };
+    bean.values = ImmutableMap.of(1, new StringBean("foo"));
     serialize(bean);
   }
 
@@ -1763,6 +1754,33 @@ public class MapperTest {
     assertEquals("foo", bean.value);
   }
 
+  @Test
+  public void usingWildcardInGenericTypeIndicatorIsAllowed() {
+    Map<String, String> fooMap = Collections.singletonMap("foo", "bar");
+    assertEquals(
+        fooMap,
+        CustomClassMapper.convertToCustomClass(
+            fooMap, new GenericTypeIndicator<Map<String, ? extends String>>() {}));
+  }
+
+  @Test(expected = DatabaseException.class)
+  public void usingLowerBoundWildcardsIsForbidden() {
+    Map<String, String> fooMap = Collections.singletonMap("foo", "bar");
+    CustomClassMapper.convertToCustomClass(
+        fooMap, new GenericTypeIndicator<Map<String, ? super String>>() {});
+  }
+
+  @Test
+  public void multiBoundedWildcardsUsesTheFirst() {
+    Map<String, Object> source =
+        Collections.singletonMap(
+            "map", Collections.singletonMap("values", Collections.singletonMap("foo", "bar")));
+    MultiBoundedMapHolderBean bean =
+        CustomClassMapper.convertToCustomClass(source, MultiBoundedMapHolderBean.class);
+    Map<String, String> expected = Collections.singletonMap("foo", "bar");
+    assertEquals(expected, bean.map.values);
+  }
+
   @Test(expected = DatabaseException.class)
   public void unknownTypeParametersNotSupported() {
     deserialize("{'value': 'foo'}", new GenericTypeIndicatorSubclass<GenericBean<?>>() {});
@@ -1849,9 +1867,9 @@ public class MapperTest {
   @Test
   public void enumsAreSerialized() {
     EnumBean bean = new EnumBean();
-    bean.enumField = Enum.Bar;
+    bean.enumField = SimpleEnum.Bar;
     bean.complexEnum = ComplexEnum.One;
-    bean.setEnumValue(Enum.Foo);
+    bean.setEnumValue(SimpleEnum.Foo);
 
     assertJson("{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}", serialize(bean));
   }
@@ -1860,8 +1878,8 @@ public class MapperTest {
   public void enumsAreParsed() {
     String json = "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}";
     EnumBean bean = deserialize(json, EnumBean.class);
-    assertEquals(bean.enumField, Enum.Bar);
-    assertEquals(bean.enumValue, Enum.Foo);
+    assertEquals(bean.enumField, SimpleEnum.Bar);
+    assertEquals(bean.enumValue, SimpleEnum.Foo);
     assertEquals(bean.complexEnum, ComplexEnum.One);
   }
 
