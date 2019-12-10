@@ -12,7 +12,7 @@ package com.google.firebase.database {
   public class DataSnapshot {
     method @NonNull public com.google.firebase.database.DataSnapshot child(@NonNull String);
     method public boolean exists();
-    method @NonNull public Iterable<DataSnapshot> getChildren();
+    method @NonNull public Iterable<com.google.firebase.database.DataSnapshot> getChildren();
     method public long getChildrenCount();
     method @Nullable public String getKey();
     method @Nullable public Object getPriority();
@@ -23,7 +23,6 @@ package com.google.firebase.database {
     method @Nullable public <T> T getValue(@NonNull com.google.firebase.database.GenericTypeIndicator<T>);
     method public boolean hasChild(@NonNull String);
     method public boolean hasChildren();
-    method public String toString();
   }
 
   public class DatabaseError {
@@ -32,7 +31,6 @@ package com.google.firebase.database {
     method @NonNull public String getDetails();
     method @NonNull public String getMessage();
     method @NonNull public com.google.firebase.database.DatabaseException toException();
-    method public String toString();
     field public static final int DATA_STALE = -1; // 0xffffffff
     field public static final int DISCONNECTED = -4; // 0xfffffffc
     field public static final int EXPIRED_TOKEN = -6; // 0xfffffffa
@@ -48,41 +46,38 @@ package com.google.firebase.database {
     field public static final int WRITE_CANCELED = -25; // 0xffffffe7
   }
 
-  public class DatabaseException {
+  public class DatabaseException extends java.lang.RuntimeException {
   }
 
   public class DatabaseReference extends com.google.firebase.database.Query {
     method @NonNull public com.google.firebase.database.DatabaseReference child(@NonNull String);
-    method public boolean equals(Object);
     method @NonNull public com.google.firebase.database.FirebaseDatabase getDatabase();
     method @Nullable public String getKey();
     method @Nullable public com.google.firebase.database.DatabaseReference getParent();
     method @NonNull public com.google.firebase.database.DatabaseReference getRoot();
     method public static void goOffline();
     method public static void goOnline();
-    method public int hashCode();
     method @NonNull public com.google.firebase.database.OnDisconnect onDisconnect();
     method @NonNull public com.google.firebase.database.DatabaseReference push();
-    method @NonNull public com.google.android.gms.tasks.Task<Void> removeValue();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> removeValue();
     method public void removeValue(@Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
     method public void runTransaction(@NonNull com.google.firebase.database.Transaction.Handler);
     method public void runTransaction(@NonNull com.google.firebase.database.Transaction.Handler, boolean);
-    method @NonNull public com.google.android.gms.tasks.Task<Void> setPriority(@Nullable Object);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setPriority(@Nullable Object);
     method public void setPriority(@Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
-    method @NonNull public com.google.android.gms.tasks.Task<Void> setValue(@Nullable Object);
-    method @NonNull public com.google.android.gms.tasks.Task<Void> setValue(@Nullable Object, @Nullable Object);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setValue(@Nullable Object);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setValue(@Nullable Object, @Nullable Object);
     method public void setValue(@Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
     method public void setValue(@Nullable Object, @Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
-    method public String toString();
-    method @NonNull public com.google.android.gms.tasks.Task<Void> updateChildren(@NonNull Map<String,Object>);
-    method public void updateChildren(@NonNull Map<String,Object>, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> updateChildren(@NonNull java.util.Map<java.lang.String,java.lang.Object>);
+    method public void updateChildren(@NonNull java.util.Map<java.lang.String,java.lang.Object>, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
   }
 
   public static interface DatabaseReference.CompletionListener {
     method public void onComplete(@Nullable com.google.firebase.database.DatabaseError, @NonNull com.google.firebase.database.DatabaseReference);
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Exclude {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface Exclude {
   }
 
   public class FirebaseDatabase {
@@ -107,7 +102,7 @@ package com.google.firebase.database {
     ctor public GenericTypeIndicator();
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface IgnoreExtraProperties {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE}) public @interface IgnoreExtraProperties {
   }
 
   public interface Logger {
@@ -123,8 +118,7 @@ package com.google.firebase.database {
 
   public class MutableData {
     method @NonNull public com.google.firebase.database.MutableData child(@NonNull String);
-    method public boolean equals(Object);
-    method @NonNull public Iterable<MutableData> getChildren();
+    method @NonNull public Iterable<com.google.firebase.database.MutableData> getChildren();
     method public long getChildrenCount();
     method @Nullable public String getKey();
     method @Nullable public Object getPriority();
@@ -135,26 +129,25 @@ package com.google.firebase.database {
     method public boolean hasChildren();
     method public void setPriority(@Nullable Object);
     method public void setValue(@Nullable Object) throws com.google.firebase.database.DatabaseException;
-    method public String toString();
   }
 
   public class OnDisconnect {
-    method @NonNull public com.google.android.gms.tasks.Task<Void> cancel();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> cancel();
     method public void cancel(@NonNull com.google.firebase.database.DatabaseReference.CompletionListener);
-    method @NonNull public com.google.android.gms.tasks.Task<Void> removeValue();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> removeValue();
     method public void removeValue(@Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
-    method @NonNull public com.google.android.gms.tasks.Task<Void> setValue(@Nullable Object);
-    method @NonNull public com.google.android.gms.tasks.Task<Void> setValue(@Nullable Object, @Nullable String);
-    method @NonNull public com.google.android.gms.tasks.Task<Void> setValue(@Nullable Object, double);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setValue(@Nullable Object);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setValue(@Nullable Object, @Nullable String);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setValue(@Nullable Object, double);
     method public void setValue(@Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
     method public void setValue(@Nullable Object, @Nullable String, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
     method public void setValue(@Nullable Object, double, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
-    method public void setValue(@Nullable Object, @Nullable Map, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
-    method @NonNull public com.google.android.gms.tasks.Task<Void> updateChildren(@NonNull Map<String,Object>);
-    method public void updateChildren(@NonNull Map<String,Object>, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method public void setValue(@Nullable Object, @Nullable java.util.Map, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> updateChildren(@NonNull java.util.Map<java.lang.String,java.lang.Object>);
+    method public void updateChildren(@NonNull java.util.Map<java.lang.String,java.lang.Object>, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface PropertyName {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface PropertyName {
     method public abstract String value();
   }
 
@@ -194,10 +187,10 @@ package com.google.firebase.database {
 
   public class ServerValue {
     ctor public ServerValue();
-    field @NonNull public static final Map<String,String> TIMESTAMP;
+    field @NonNull public static final java.util.Map<java.lang.String,java.lang.String> TIMESTAMP;
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ThrowOnExtraProperties {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE}) public @interface ThrowOnExtraProperties {
   }
 
   public class Transaction {

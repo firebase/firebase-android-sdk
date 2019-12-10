@@ -39,8 +39,8 @@ package com.google.firebase.functions {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call(@Nullable Object);
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call();
     method public long getTimeout();
-    method public void setTimeout(long, @NonNull TimeUnit);
-    method @NonNull public com.google.firebase.functions.HttpsCallableReference withTimeout(long, @NonNull TimeUnit);
+    method public void setTimeout(long, @NonNull java.util.concurrent.TimeUnit);
+    method @NonNull public com.google.firebase.functions.HttpsCallableReference withTimeout(long, @NonNull java.util.concurrent.TimeUnit);
   }
 
   public class HttpsCallableResult {

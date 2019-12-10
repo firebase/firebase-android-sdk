@@ -10,9 +10,9 @@ package com.google.firebase.ktx {
     method @NonNull public static com.google.firebase.FirebaseApp app(@NonNull com.google.firebase.ktx.Firebase, @NonNull String name);
     method @NonNull public static com.google.firebase.FirebaseApp getApp(@NonNull com.google.firebase.ktx.Firebase);
     method @NonNull public static com.google.firebase.FirebaseOptions getOptions(@NonNull com.google.firebase.ktx.Firebase);
-    method @Nullable public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull error.NonExistentClass context);
-    method @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull error.NonExistentClass context, @NonNull com.google.firebase.FirebaseOptions options);
-    method @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull error.NonExistentClass context, @NonNull com.google.firebase.FirebaseOptions options, @NonNull String name);
+    method @Nullable public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context);
+    method @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options);
+    method @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options, @NonNull String name);
   }
 
 }

@@ -15,11 +15,15 @@
 package com.google.firebase.gradle.plugins.apiinfo;
 
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.google.firebase.gradle.plugins.SdkUtil;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
@@ -71,6 +75,11 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
               "Project {} has no sources in main source set, skipping...", getProject().getPath());
       return;
     }
+    String classPath =
+        Stream.concat(
+                getClassPath().getFiles().stream(), Stream.of(SdkUtil.getAndroidJar(getProject())))
+            .map(File::getAbsolutePath)
+            .collect(Collectors.joining(":"));
     List<String> args =
         new ArrayList<>(
             Arrays.asList(
@@ -79,7 +88,7 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
                 "--source-path",
                 sourcePath,
                 "--classpath",
-                getClassPath().getAsPath(),
+                    classPath,
                 "--api",
                 getApiTxt().getAbsolutePath(),
                 "--format=v2"));

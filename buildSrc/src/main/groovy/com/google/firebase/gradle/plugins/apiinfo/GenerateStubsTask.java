@@ -15,9 +15,13 @@
 package com.google.firebase.gradle.plugins.apiinfo;
 
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.google.firebase.gradle.plugins.SdkUtil;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
@@ -53,6 +57,12 @@ public abstract class GenerateStubsTask extends DefaultTask {
             .map(File::getAbsolutePath)
             .collect(Collectors.joining(":"));
 
+    String classPath =
+        Stream.concat(
+                getClassPath().getFiles().stream(), Stream.of(SdkUtil.getAndroidJar(getProject())))
+            .map(File::getAbsolutePath)
+            .collect(Collectors.joining(":"));
+
     getProject()
         .javaexec(
             spec -> {
@@ -64,7 +74,7 @@ public abstract class GenerateStubsTask extends DefaultTask {
                       "--source-path",
                       sourcePath,
                       "--classpath",
-                      getClassPath().getAsPath(),
+                      classPath,
                       "--include-annotations",
                       "--doc-stubs",
                       getOutputDir().getAbsolutePath()));
