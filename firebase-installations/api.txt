@@ -1,15 +1,15 @@
 // Signature format: 2.0
 package com.google.firebase.installations {
 
-  public class FirebaseInstallations {
-    method @NonNull public Task<Void> delete();
-    method @NonNull public Task<String> getId();
+  public class FirebaseInstallations implements com.google.firebase.installations.FirebaseInstallationsApi {
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> delete();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.String> getId();
     method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance();
-    method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance(@NonNull FirebaseApp);
-    method @NonNull public Task<InstallationTokenResult> getToken(int);
+    method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.installations.InstallationTokenResult> getToken(@com.google.firebase.installations.FirebaseInstallationsApi.AuthTokenOption int);
   }
 
-  public class FirebaseInstallationsException {
+  public class FirebaseInstallationsException extends com.google.firebase.FirebaseException {
     ctor public FirebaseInstallationsException(@NonNull com.google.firebase.installations.FirebaseInstallationsException.Status);
     ctor public FirebaseInstallationsException(@NonNull String, @NonNull com.google.firebase.installations.FirebaseInstallationsException.Status);
     ctor public FirebaseInstallationsException(@NonNull String, @NonNull com.google.firebase.installations.FirebaseInstallationsException.Status, @NonNull Throwable);
@@ -35,7 +35,7 @@ package com.google.firebase.installations.local {
   }
 
   public class PersistedInstallation {
-    ctor public PersistedInstallation(@NonNull FirebaseApp);
+    ctor public PersistedInstallation(@NonNull com.google.firebase.FirebaseApp);
     method public void clearForTesting();
     method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry insertOrUpdatePersistedInstallationEntry(@NonNull com.google.firebase.installations.local.PersistedInstallationEntry);
     method @NonNull public com.google.firebase.installations.local.PersistedInstallationEntry readPersistedInstallationEntryValue();
@@ -91,10 +91,10 @@ package com.google.firebase.installations.local {
 package com.google.firebase.installations.remote {
 
   public class FirebaseInstallationServiceClient {
-    ctor public FirebaseInstallationServiceClient(@NonNull Context, @Nullable UserAgentPublisher, @Nullable HeartBeatInfo);
-    method @NonNull public com.google.firebase.installations.remote.InstallationResponse createFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
-    method @NonNull public void deleteFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
-    method @NonNull public com.google.firebase.installations.remote.TokenResult generateAuthToken(@NonNull String, @NonNull String, @NonNull String, @NonNull String);
+    ctor public FirebaseInstallationServiceClient(@NonNull android.content.Context, @Nullable com.google.firebase.platforminfo.UserAgentPublisher, @Nullable com.google.firebase.heartbeatinfo.HeartBeatInfo);
+    method @NonNull public com.google.firebase.installations.remote.InstallationResponse createFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws java.io.IOException;
+    method @NonNull public void deleteFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws com.google.firebase.FirebaseException, java.io.IOException;
+    method @NonNull public com.google.firebase.installations.remote.TokenResult generateAuthToken(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws java.io.IOException;
   }
 
   public abstract class InstallationResponse {
