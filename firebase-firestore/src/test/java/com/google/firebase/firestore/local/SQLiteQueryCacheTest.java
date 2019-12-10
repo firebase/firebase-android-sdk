@@ -49,7 +49,7 @@ public final class SQLiteQueryCacheTest extends QueryCacheTestCase {
 
     Query query = query("rooms");
     QueryData queryData =
-        new QueryData(query, targetId, originalSequenceNumber, QueryPurpose.LISTEN);
+        new QueryData(query.toTarget(), targetId, originalSequenceNumber, QueryPurpose.LISTEN);
     db1.runTransaction(
         "add query data",
         () -> {

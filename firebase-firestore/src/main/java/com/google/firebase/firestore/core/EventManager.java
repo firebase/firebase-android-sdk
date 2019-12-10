@@ -14,13 +14,18 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.core.SyncEngine.SyncEngineCallback;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * EventManager is responsible for mapping queries to query event listeners. It handles "fan-out."
@@ -54,6 +59,8 @@ public final class EventManager implements SyncEngineCallback {
 
   private final Map<Query, QueryListenersInfo> queries;
 
+  private final Set<EventListener<Void>> snapshotsInSyncListeners = new HashSet<>();
+
   private OnlineState onlineState = OnlineState.UNKNOWN;
 
   public EventManager(SyncEngine syncEngine) {
@@ -81,10 +88,16 @@ public final class EventManager implements SyncEngineCallback {
 
     queryInfo.listeners.add(queryListener);
 
-    queryListener.onOnlineStateChanged(onlineState);
+    // Run global snapshot listeners if a consistent snapshot has been emitted.
+    boolean raisedEvent = queryListener.onOnlineStateChanged(onlineState);
+    hardAssert(
+        !raisedEvent, "onOnlineStateChanged() shouldn't raise an event for brand-new listeners.");
 
     if (queryInfo.viewSnapshot != null) {
-      queryListener.onViewSnapshot(queryInfo.viewSnapshot);
+      raisedEvent = queryListener.onViewSnapshot(queryInfo.viewSnapshot);
+      if (raisedEvent) {
+        raiseSnapshotsInSyncEvent();
+      }
     }
 
     if (firstListen) {
@@ -93,14 +106,13 @@ public final class EventManager implements SyncEngineCallback {
     return queryInfo.targetId;
   }
 
-  /** Removes a previously added listener and returns true if the listener was found. */
-  public boolean removeQueryListener(QueryListener listener) {
+  /** Removes a previously added listener. It's a no-op if the listener is not found. */
+  public void removeQueryListener(QueryListener listener) {
     Query query = listener.getQuery();
     QueryListenersInfo queryInfo = queries.get(query);
     boolean lastListen = false;
-    boolean found = false;
     if (queryInfo != null) {
-      found = queryInfo.listeners.remove(listener);
+      queryInfo.listeners.remove(listener);
       lastListen = queryInfo.listeners.isEmpty();
     }
 
@@ -108,21 +120,41 @@ public final class EventManager implements SyncEngineCallback {
       queries.remove(query);
       syncEngine.stopListening(query);
     }
+  }
 
-    return found;
+  public void addSnapshotsInSyncListener(EventListener<Void> listener) {
+    snapshotsInSyncListeners.add(listener);
+    listener.onEvent(null, null);
+  }
+
+  public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
+    snapshotsInSyncListeners.remove(listener);
+  }
+
+  /** Call all global snapshot listeners that have been set. */
+  private void raiseSnapshotsInSyncEvent() {
+    for (EventListener<Void> listener : snapshotsInSyncListeners) {
+      listener.onEvent(null, null);
+    }
   }
 
   @Override
   public void onViewSnapshots(List<ViewSnapshot> snapshotList) {
+    boolean raisedEvent = false;
     for (ViewSnapshot viewSnapshot : snapshotList) {
       Query query = viewSnapshot.getQuery();
       QueryListenersInfo info = queries.get(query);
       if (info != null) {
         for (QueryListener listener : info.listeners) {
-          listener.onViewSnapshot(viewSnapshot);
+          if (listener.onViewSnapshot(viewSnapshot)) {
+            raisedEvent = true;
+          }
         }
         info.viewSnapshot = viewSnapshot;
       }
+    }
+    if (raisedEvent) {
+      raiseSnapshotsInSyncEvent();
     }
   }
 
@@ -139,11 +171,17 @@ public final class EventManager implements SyncEngineCallback {
 
   @Override
   public void handleOnlineStateChange(OnlineState onlineState) {
+    boolean raisedEvent = false;
     this.onlineState = onlineState;
     for (QueryListenersInfo info : queries.values()) {
       for (QueryListener listener : info.listeners) {
-        listener.onOnlineStateChanged(onlineState);
+        if (listener.onOnlineStateChanged(onlineState)) {
+          raisedEvent = true;
+        }
       }
+    }
+    if (raisedEvent) {
+      raiseSnapshotsInSyncEvent();
     }
   }
 }

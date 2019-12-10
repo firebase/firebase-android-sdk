@@ -1,0 +1,158 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+plugins {
+    id 'firebase-library'
+    id 'com.google.protobuf'
+}
+
+firebaseLibrary {
+    testLab.enabled = true
+}
+
+protobuf {
+    // Configure the protoc executable
+    protoc {
+        // Download from repositories
+        artifact = 'com.google.protobuf:protoc:3.4.0'
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.21.0'
+        }
+        javalite {
+            // The codegen for lite comes as a separate artifact
+            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                // In most cases you don't need the full Java output
+                // if you use the lite output.
+                remove java
+            }
+            task.plugins {
+                grpc {
+                    option 'lite'
+                }
+                javalite {}
+            }
+        }
+    }
+}
+
+android {
+    adbOptions {
+        timeOutInMs 60 * 1000
+    }
+
+    compileSdkVersion project.targetSdkVersion
+    defaultConfig {
+      minSdkVersion 16
+      targetSdkVersion project.targetSdkVersion
+      multiDexEnabled true
+      versionName version
+      testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    sourceSets {
+        main {
+            java {
+            }
+            proto {
+                srcDir 'src/proto'
+            }
+        }
+        androidTest {
+            java {
+                srcDir 'src/testUtil'
+                srcDir 'src/testData'
+            }
+        }
+        test {
+            java {
+                srcDir 'src/testUtil'
+                srcDir 'src/testData'
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+        // Neccesary for Dagger
+        incremental = false
+    }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+}
+
+configurations.all {
+    if(it.name.contains('AndroidTestRuntimeClasspath')) {
+        it.resolutionStrategy {
+            force 'org.checkerframework:checker-compat-qual:2.5.5'
+            force 'com.google.guava:guava:27.0.1-android'
+        }
+    }
+}
+
+dependencies {
+    implementation project(':firebase-abt')
+    implementation project(':firebase-common')
+    implementation project(':protolite-well-known-types')
+    implementation project(':transport:transport-api')
+    implementation project(':firebase-datatransport')
+
+    implementation 'io.grpc:grpc-stub:1.21.0'
+    implementation 'io.grpc:grpc-protobuf-lite:1.21.0'
+    implementation 'io.grpc:grpc-okhttp:1.21.0'
+    implementation 'com.google.dagger:dagger:2.24'
+    implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
+    implementation 'com.google.auto.value:auto-value-annotations:1.6.5'
+    implementation ('com.google.firebase:firebase-iid:20.0.1') {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
+
+    implementation('com.google.firebase:firebase-measurement-connector:18.0.0') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+    }
+
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.24'
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
+    annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
+
+    testImplementation 'org.mockito:mockito-core:1.10.19'
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'androidx.test:runner:1.2.0'
+    testImplementation ('org.robolectric:robolectric:4.2') {
+        exclude group: 'com.google.protobuf', module: 'protobuf-java'
+    }
+    testImplementation 'io.grpc:grpc-testing:1.21.0'
+    testImplementation 'com.google.guava:guava:27.1-android'
+
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation 'org.awaitility:awaitility:3.1.0'
+    androidTestImplementation 'io.grpc:grpc-testing:1.21.0'
+    androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
+    androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
+
+    androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.24'
+}

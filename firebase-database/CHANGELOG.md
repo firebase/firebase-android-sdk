@@ -1,3 +1,12 @@
+# 19.2.0
+- [changed] Added support for type wildcards in GenericTypeIndicator, expanding
+  our custom class serialization to include classes with wildcard generics
+  (#792).
+
+# 19.1.1
+- [fixed] Fixed a crash that occurred when we attempted to start a network
+  connection during app shutdown (#672).
+
 # 19.1.0
 - [feature] Added support for the Firebase Database Emulator. To connect to
   the emulator, specify "http://<emulatorHost>/?ns=<projectId>" as your
@@ -22,6 +31,6 @@
 - [internal] Removed ``@PublicApi` annotations as they are no longer enforced
   and have no semantic meaning.
 
-# 16.0.6  
+# 16.0.6
 - [fixed] Fixed an issue that could cause a NullPointerException during the
   initial handshake with the Firebase backend (#119).

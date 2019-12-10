@@ -25,9 +25,6 @@ import java.util.List;
 
 /** A queue of mutations to apply to the remote store. */
 interface MutationQueue {
-  /** The tag used by the StatsCollector. */
-  String STATS_TAG = "mutations";
-
   /**
    * Starts the mutation queue, performing any initial reads that might be required to establish
    * invariants, etc.
@@ -72,6 +69,12 @@ interface MutationQueue {
    */
   @Nullable
   MutationBatch getNextMutationBatchAfterBatchId(int batchId);
+
+  /**
+   * @return The largest (latest) batch id in mutation queue for the current user that is pending
+   *     server response, {@link MutationBatch#UNKNOWN} if the queue is empty.
+   */
+  int getHighestUnacknowledgedBatchId();
 
   /** Returns all mutation batches in the mutation queue. */
   // TODO: PERF: Current consumer only needs mutated keys; if we can provide that

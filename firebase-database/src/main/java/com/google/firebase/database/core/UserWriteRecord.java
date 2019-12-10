@@ -16,7 +16,7 @@ package com.google.firebase.database.core;
 
 import com.google.firebase.database.snapshot.Node;
 
-public class UserWriteRecord {
+public final class UserWriteRecord {
 
   private final long writeId;
   private final Path path;
@@ -88,7 +88,7 @@ public class UserWriteRecord {
     if (!(this.writeId == record.writeId)) {
       return false;
     }
-    if (!(this.path.equals(record.path))) {
+    if (!this.path.equals(record.path)) {
       return false;
     }
     if (!(this.visible == record.visible)) {

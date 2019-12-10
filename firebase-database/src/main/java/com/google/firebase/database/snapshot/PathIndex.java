@@ -16,7 +16,7 @@ package com.google.firebase.database.snapshot;
 
 import com.google.firebase.database.core.Path;
 
-public class PathIndex extends Index {
+public final class PathIndex extends Index {
 
   private final Path indexPath;
 

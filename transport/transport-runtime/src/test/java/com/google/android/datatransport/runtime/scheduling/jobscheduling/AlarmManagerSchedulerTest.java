@@ -28,10 +28,15 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Base64;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
+import com.google.android.datatransport.runtime.time.Clock;
+import com.google.android.datatransport.runtime.time.TestClock;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
+import java.nio.charset.Charset;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -43,6 +48,7 @@ import org.robolectric.annotation.Config;
 public class AlarmManagerSchedulerTest {
   private static final long TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
   private static final long THIRTY_SECONDS = 30 * 1000;
+  private static final long INITIAL_TIMESTAMP = 10000000;
 
   private static final TransportContext TRANSPORT_CONTEXT =
       TransportContext.builder().setBackendName("backend1").build();
@@ -54,8 +60,9 @@ public class AlarmManagerSchedulerTest {
   private final AlarmManager alarmManager =
       spy((AlarmManager) context.getSystemService(Context.ALARM_SERVICE));
   private final SchedulerConfig config = SchedulerConfig.getDefault(() -> 1);
+  private final Clock testClock = new TestClock(INITIAL_TIMESTAMP);
   private final AlarmManagerScheduler scheduler =
-      new AlarmManagerScheduler(context, store, alarmManager, config);
+      new AlarmManagerScheduler(context, store, alarmManager, testClock, config);
 
   private Intent getIntent(TransportContext transportContext) {
     Uri.Builder intentDataBuilder = new Uri.Builder();
@@ -63,7 +70,13 @@ public class AlarmManagerSchedulerTest {
         AlarmManagerScheduler.BACKEND_NAME, transportContext.getBackendName());
     intentDataBuilder.appendQueryParameter(
         AlarmManagerScheduler.EVENT_PRIORITY,
-        String.valueOf(transportContext.getPriority().ordinal()));
+        String.valueOf(PriorityMapping.toInt(transportContext.getPriority())));
+
+    if (transportContext.getExtras() != null) {
+      intentDataBuilder.appendQueryParameter(
+          AlarmManagerScheduler.EXTRAS,
+          Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
+    }
 
     Intent intent = new Intent(context, AlarmManagerSchedulerBroadcastReceiver.class);
     intent.setData(intentDataBuilder.build());
@@ -78,7 +91,8 @@ public class AlarmManagerSchedulerTest {
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
     assertThat(scheduler.isJobServiceOn(intent)).isTrue();
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-    verify(alarmManager, times(1)).set(eq(AlarmManager.ELAPSED_REALTIME), eq(999999L), any());
+    verify(alarmManager, times(1))
+        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(INITIAL_TIMESTAMP + 999999L), any());
   }
 
   @Test
@@ -89,7 +103,10 @@ public class AlarmManagerSchedulerTest {
     assertThat(scheduler.isJobServiceOn(intent)).isTrue();
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
     verify(alarmManager, times(1))
-        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(THIRTY_SECONDS), any()); // 2^0*DELTA
+        .set(
+            eq(AlarmManager.ELAPSED_REALTIME),
+            eq(INITIAL_TIMESTAMP + THIRTY_SECONDS),
+            any()); // 2^0*DELTA
   }
 
   @Test
@@ -100,7 +117,10 @@ public class AlarmManagerSchedulerTest {
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
     assertThat(scheduler.isJobServiceOn(intent)).isTrue();
     verify(alarmManager, times(1))
-        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(THIRTY_SECONDS), any()); // 2^0*DELTA
+        .set(
+            eq(AlarmManager.ELAPSED_REALTIME),
+            eq(INITIAL_TIMESTAMP + THIRTY_SECONDS),
+            any()); // 2^0*DELTA
   }
 
   @Test
@@ -125,6 +145,19 @@ public class AlarmManagerSchedulerTest {
   }
 
   @Test
+  public void schedule_whenExtrasEvailable_transmitsExtras() {
+    TransportContext transportContext =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
+    Intent intent = getIntent(transportContext);
+    assertThat(scheduler.isJobServiceOn(intent)).isFalse();
+    scheduler.schedule(transportContext, 1);
+    assertThat(scheduler.isJobServiceOn(intent)).isTrue();
+  }
+
+  @Test
   public void schedule_smallWaitTImeFirstAttempt_multiplePriorities() {
     Intent intent1 = getIntent(TRANSPORT_CONTEXT);
     Intent intent2 = getIntent(UNMETERED_TRANSPORT_CONTEXT);
@@ -135,10 +168,16 @@ public class AlarmManagerSchedulerTest {
 
     assertThat(scheduler.isJobServiceOn(intent1)).isTrue();
     verify(alarmManager, times(1))
-        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(THIRTY_SECONDS), any()); // 2^0*DELTA
+        .set(
+            eq(AlarmManager.ELAPSED_REALTIME),
+            eq(INITIAL_TIMESTAMP + THIRTY_SECONDS),
+            any()); // 2^0*DELTA
 
     assertThat(scheduler.isJobServiceOn(intent2)).isTrue();
     verify(alarmManager, times(1))
-        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(TWENTY_FOUR_HOURS), any()); // 2^0*DELTA
+        .set(
+            eq(AlarmManager.ELAPSED_REALTIME),
+            eq(INITIAL_TIMESTAMP + TWENTY_FOUR_HOURS),
+            any()); // 2^0*DELTA
   }
 }

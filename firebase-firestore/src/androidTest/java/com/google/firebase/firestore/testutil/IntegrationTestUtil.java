@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.AccessHelper;
 import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.CollectionReference;
@@ -36,11 +37,13 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import java.util.ArrayList;
@@ -52,6 +55,31 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+class MockCredentialsProvider extends EmptyCredentialsProvider {
+
+  private static MockCredentialsProvider instance;
+  private Listener<User> listener;
+
+  public static MockCredentialsProvider instance() {
+    if (MockCredentialsProvider.instance == null) {
+      MockCredentialsProvider.instance = new MockCredentialsProvider();
+    }
+    return MockCredentialsProvider.instance;
+  }
+
+  private MockCredentialsProvider() {}
+
+  @Override
+  public void setChangeListener(Listener<User> changeListener) {
+    super.setChangeListener(changeListener);
+    this.listener = changeListener;
+  }
+
+  public void changeUserTo(User user) {
+    listener.onValue(user);
+  }
+}
 
 /** A set of helper methods for tests */
 public class IntegrationTestUtil {
@@ -82,6 +110,13 @@ public class IntegrationTestUtil {
 
   private static boolean strictModeEnabled = false;
   private static boolean backendPrimed = false;
+
+  // FirebaseOptions needed to create a test FirebaseApp.
+  private static final FirebaseOptions OPTIONS =
+      new FirebaseOptions.Builder()
+          .setApplicationId(":123:android:123ab")
+          .setProjectId(provider.projectId())
+          .build();
 
   public static FirestoreProvider provider() {
     return provider;
@@ -126,7 +161,11 @@ public class IntegrationTestUtil {
   }
 
   public static FirebaseApp testFirebaseApp() {
-    return FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext());
+    try {
+      return FirebaseApp.getInstance(FirebaseApp.DEFAULT_APP_NAME);
+    } catch (IllegalStateException e) {
+      return FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), OPTIONS);
+    }
   }
 
   /** Initializes a new Firestore instance that uses the default project. */
@@ -239,7 +278,7 @@ public class IntegrationTestUtil {
             context,
             databaseId,
             persistenceKey,
-            new EmptyCredentialsProvider(),
+            MockCredentialsProvider.instance(),
             asyncQueue,
             /*firebaseApp=*/ null,
             /*instanceRegistry=*/ (dbId) -> {});
@@ -253,7 +292,7 @@ public class IntegrationTestUtil {
   public static void tearDown() {
     try {
       for (FirebaseFirestore firestore : firestoreStatus.keySet()) {
-        Task<Void> result = AccessHelper.shutdown(firestore);
+        Task<Void> result = firestore.terminate();
         waitFor(result);
       }
     } finally {
@@ -408,5 +447,9 @@ public class IntegrationTestUtil {
 
   public static boolean isRunningAgainstEmulator() {
     return CONNECT_TO_EMULATOR;
+  }
+
+  public static void testChangeUserTo(User user) {
+    MockCredentialsProvider.instance().changeUserTo(user);
   }
 }

@@ -22,6 +22,8 @@ android {
     lintOptions {
         abortOnError false
     }
+    testBuildType 'release'
+
     defaultConfig {
         applicationId "com.googletest.firebase.remoteconfig.bandwagoner"
         minSdkVersion 16
@@ -41,6 +43,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig debug.signingConfig
         }
     }
 
@@ -53,7 +56,6 @@ android {
 
 firebaseTestLab {
     device 'model=walleye,version=26,locale=en,orientation=portrait'
-
 }
 
 dependencies {
@@ -63,7 +65,7 @@ dependencies {
     // It should not matter for released artifacts.
     implementation project(":firebase-common")
 
-    implementation('com.google.firebase:firebase-iid:18.0.0') {
+    implementation('com.google.firebase:firebase-iid:20.0.1') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
 

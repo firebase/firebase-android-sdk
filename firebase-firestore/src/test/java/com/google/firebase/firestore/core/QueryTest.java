@@ -31,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -478,7 +479,7 @@ public class QueryTest {
             .filter(filter("bar", ">", 2))
             .orderBy(orderBy("bar"));
 
-    Query q7a = Query.atPath(ResourcePath.fromString("foo")).limit(10);
+    Query q7a = Query.atPath(ResourcePath.fromString("foo")).limitToFirst(10);
 
     // TODO: Add test cases with{Lower,Upper}Bound once cursors are implemented.
     testEquality(
@@ -527,5 +528,29 @@ public class QueryTest {
     assertEquals(
         asList(orderBy("foo", "desc"), orderBy("bar", "asc"), orderBy(KEY_FIELD_NAME, "asc")),
         baseQuery.orderBy(orderBy("foo", "desc")).orderBy(orderBy("bar", "asc")).getOrderBy());
+  }
+
+  @Test
+  public void testMatchesAllDocuments() {
+    Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
+    assertTrue(baseQuery.matchesAllDocuments());
+
+    Query query = baseQuery.orderBy(orderBy("__name__"));
+    assertTrue(query.matchesAllDocuments());
+
+    query = baseQuery.orderBy(orderBy("foo"));
+    assertFalse(query.matchesAllDocuments());
+
+    query = baseQuery.filter(filter("foo", "==", "bar"));
+    assertFalse(query.matchesAllDocuments());
+
+    query = baseQuery.limitToFirst(1);
+    assertFalse(query.matchesAllDocuments());
+
+    query = baseQuery.startAt(new Bound(Collections.emptyList(), true));
+    assertFalse(query.matchesAllDocuments());
+
+    query = baseQuery.endAt(new Bound(Collections.emptyList(), true));
+    assertFalse(query.matchesAllDocuments());
   }
 }

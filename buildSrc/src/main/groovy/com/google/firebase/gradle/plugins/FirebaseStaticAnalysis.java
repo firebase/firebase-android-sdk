@@ -14,45 +14,15 @@
 
 package com.google.firebase.gradle.plugins;
 
-import com.google.common.collect.ImmutableSet;
-
-import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 public class FirebaseStaticAnalysis {
   public Set<String> errorproneCheckProjects;
   public Set<String> androidLintCheckProjects;
 
-
-  private boolean disableKotlinInteropLint;
-
-  private final Set<Runnable> kotlinInteropLintDisabledSubscribers = new HashSet<>();
-
-  public FirebaseStaticAnalysis() {
-    this(ImmutableSet.of(":tools:errorprone"), ImmutableSet.of(":tools:lint"));
-  }
-
-  public FirebaseStaticAnalysis(Set<String> errorproneCheckProjects, Set<String> androidLintCheckProjects) {
+  public FirebaseStaticAnalysis(
+      Set<String> errorproneCheckProjects, Set<String> androidLintCheckProjects) {
     this.errorproneCheckProjects = errorproneCheckProjects;
     this.androidLintCheckProjects = androidLintCheckProjects;
-  }
-
-  /** Indicates whether Kotlin Interop Lint checks are enabled for public APIs of the library. */
-  public void disableKotlinInteropLint() {
-    if (disableKotlinInteropLint) {
-      return;
-    }
-    disableKotlinInteropLint = true;
-    for (Runnable subscription : kotlinInteropLintDisabledSubscribers) {
-      subscription.run();
-    }
-  }
-
-  void subscribeToKotlinInteropLintDisabled(Runnable subscription) {
-    this.kotlinInteropLintDisabledSubscribers.add(subscription);
-    if (disableKotlinInteropLint) {
-      subscription.run();
-    }
   }
 }

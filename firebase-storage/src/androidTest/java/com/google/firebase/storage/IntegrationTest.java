@@ -51,6 +51,8 @@ public class IntegrationTest {
 
   private final String randomPrefix = UUID.randomUUID().toString();
 
+  private final String unicodePrefix = "prefix/\\%:😊 ";
+
   @Before
   public void before() throws ExecutionException, InterruptedException {
     if (storageClient == null) {
@@ -60,6 +62,7 @@ public class IntegrationTest {
       Tasks.await(getReference("metadata.dat").putBytes(new byte[0]));
       Tasks.await(getReference("download.dat").putBytes(new byte[LARGE_FILE_SIZE_BYTES]));
       Tasks.await(getReference("prefix/empty.dat").putBytes(new byte[0]));
+      Tasks.await(getReference(unicodePrefix + "/empty.dat").putBytes(new byte[0]));
     }
   }
 
@@ -73,6 +76,15 @@ public class IntegrationTest {
     assertThat(tempFile.exists()).isTrue();
     assertThat(tempFile.length()).isEqualTo(LARGE_FILE_SIZE_BYTES);
     assertThat(fileTask.getBytesTransferred()).isEqualTo(LARGE_FILE_SIZE_BYTES);
+  }
+
+  @Test
+  public void downloadUnicodeFile() throws ExecutionException, InterruptedException, IOException {
+    File tempFile = new File(Environment.getExternalStorageDirectory(), "empty.dat");
+
+    Tasks.await(getReference(unicodePrefix + "/empty.dat").getFile(tempFile));
+
+    assertThat(tempFile.exists()).isTrue();
   }
 
   @Test
@@ -134,7 +146,7 @@ public class IntegrationTest {
 
   @Test
   public void pagedListFiles() throws ExecutionException, InterruptedException {
-    Task<ListResult> listTask = storageClient.getReference(randomPrefix).list(2);
+    Task<ListResult> listTask = getReference().list(2);
     ListResult listResult = Tasks.await(listTask);
 
     assertThat(listResult.getItems())
@@ -142,7 +154,7 @@ public class IntegrationTest {
     assertThat(listResult.getPrefixes()).isEmpty();
     assertThat(listResult.getPageToken()).isNotEmpty();
 
-    listTask = storageClient.getReference(randomPrefix).list(2, listResult.getPageToken());
+    listTask = getReference().list(2, listResult.getPageToken());
     listResult = Tasks.await(listTask);
 
     assertThat(listResult.getItems()).isEmpty();
@@ -152,13 +164,31 @@ public class IntegrationTest {
 
   @Test
   public void listAllFiles() throws ExecutionException, InterruptedException {
-    Task<ListResult> listTask = storageClient.getReference(randomPrefix).listAll();
+    Task<ListResult> listTask = getReference().listAll();
     ListResult listResult = Tasks.await(listTask);
 
     assertThat(listResult.getPrefixes()).containsExactly(getReference("prefix"));
     assertThat(listResult.getItems())
         .containsExactly(getReference("metadata.dat"), getReference("download.dat"));
     assertThat(listResult.getPageToken()).isNull();
+  }
+
+  @Test
+  public void listUnicodeFiles() throws ExecutionException, InterruptedException {
+    Task<ListResult> listTask = getReference("prefix").listAll();
+    ListResult listResult = Tasks.await(listTask);
+
+    assertThat(listResult.getPrefixes()).containsExactly(getReference(unicodePrefix));
+
+    listTask = getReference(unicodePrefix).listAll();
+    listResult = Tasks.await(listTask);
+
+    assertThat(listResult.getItems()).containsExactly(getReference(unicodePrefix + "/empty.dat"));
+  }
+
+  @NonNull
+  private StorageReference getReference() {
+    return storageClient.getReference(randomPrefix);
   }
 
   @NonNull

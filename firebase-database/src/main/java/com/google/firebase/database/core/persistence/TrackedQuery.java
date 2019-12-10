@@ -16,7 +16,7 @@ package com.google.firebase.database.core.persistence;
 
 import com.google.firebase.database.core.view.QuerySpec;
 
-public class TrackedQuery {
+public final class TrackedQuery {
   public final long id;
   public final QuerySpec querySpec;
   public final long lastUse;

@@ -104,6 +104,18 @@ public class ListTest {
   }
 
   @Test
+  public void listFailure() throws InterruptedException {
+    MockConnectionFactory factory =
+        NetworkLayerMock.ensureNetworkMock("listSinglePageFailed", false);
+    Task<StringBuilder> task = TestCommandHelper.listFiles(/* pageSize= */ 10, /* pageCount= */ 1);
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("listSinglePageFailed", task.getResult().toString());
+  }
+
+  @Test
   public void listAll() throws InterruptedException {
     MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("listAll", true);
     Task<StringBuilder> task = TestCommandHelper.listAllFiles();
@@ -112,5 +124,16 @@ public class ListTest {
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("listAll", task.getResult().toString());
+  }
+
+  @Test
+  public void listAllWithFailure() throws InterruptedException {
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("listAllFailed", false);
+    Task<StringBuilder> task = TestCommandHelper.listAllFiles();
+
+    TestUtil.await(task);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("listAllFailed", task.getResult().toString());
   }
 }

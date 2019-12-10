@@ -22,11 +22,12 @@ import static org.junit.Assert.fail;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,7 +100,7 @@ public class DeepEquals {
   }
 
   private static boolean deepEquals(Object a, Object b, Set visited) {
-    LinkedList<DualKey> stack = new LinkedList<DualKey>();
+    Deque<DualKey> stack = new ArrayDeque<>();
     stack.addFirst(new DualKey(a, b));
 
     while (!stack.isEmpty()) {
@@ -261,8 +262,7 @@ public class DeepEquals {
    * @return boolean false if the Collections are not the same length, otherwise place collection
    *     items on Stack to be further compared.
    */
-  private static boolean compareOrdered(
-      DualKey dualKey, LinkedList<DualKey> stack, Collection visited) {
+  private static boolean compareOrdered(DualKey dualKey, Deque<DualKey> stack, Collection visited) {
     Collection col1 = (Collection) dualKey.key1;
     Collection col2 = (Collection) dualKey.key2;
     if (col1.size() != col2.size()) {
@@ -345,12 +345,12 @@ public class DeepEquals {
 
   public static int deepHashCode(Object obj) {
     Set visited = new HashSet();
-    LinkedList<Object> stack = new LinkedList<Object>();
-    stack.addFirst(obj);
+    List<Object> stack = new ArrayList<>();
+    stack.add(0, obj);
     int hash = 0;
 
     while (!stack.isEmpty()) {
-      obj = stack.removeFirst();
+      obj = stack.remove(0);
       if (obj == null || visited.contains(obj)) {
         continue;
       }
@@ -360,7 +360,7 @@ public class DeepEquals {
       if (obj.getClass().isArray()) {
         int len = Array.getLength(obj);
         for (int i = 0; i < len; i++) {
-          stack.addFirst(Array.get(obj, i));
+          stack.add(0, Array.get(obj, i));
         }
         continue;
       }
@@ -384,7 +384,7 @@ public class DeepEquals {
       Collection<Field> fields = getDeepDeclaredFields(obj.getClass());
       for (Field field : fields) {
         try {
-          stack.addFirst(field.get(obj));
+          stack.add(0, field.get(obj));
         } catch (Exception ignored) { //
         }
       }

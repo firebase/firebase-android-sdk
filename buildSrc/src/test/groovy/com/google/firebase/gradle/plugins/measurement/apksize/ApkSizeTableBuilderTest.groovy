@@ -25,19 +25,20 @@ import org.junit.runners.JUnit4
 public class ApkSizeTableBuilderTest {
 
   private static final String HEADER =
-      "|--------------------        APK Sizes        ------------------|\n" +
-      "|---    project    ---|--  build type   --|--  size in bytes  --|\n"
+      "|-------------------------        APK Sizes        -----------------------|\n" +
+      "|--------    project    --------|--  build type   --|--  size in bytes  --|\n"
 
   @Test(expected = IllegalStateException.class)
   public void toTableString_throwsWhenZeroAdded() {
     def builder = new ApkSizeTableBuilder()
     builder.toTableString()
+    assertEquals("", builder.toTableString())
   }
 
   @Test
   public void toTableString_withOneMeasurement() {
     def expected = HEADER +
-        "|firebase foo         |debug              |255000               |"
+        "|firebase foo                   |debug              |              255,000|"
 
     def builder = new ApkSizeTableBuilder()
     builder.addApkSize("firebase foo", "debug", 255000)
@@ -48,9 +49,9 @@ public class ApkSizeTableBuilderTest {
   @Test
   public void toTableString_withThreeMeasurements() {
     def expected = HEADER +
-        "|firebase foo         |debug              |255000               |\n" +
-        "|google loo           |release            |4000                 |\n" +
-        "|Appy Snap App        |Snappy             |781000               |"
+        "|firebase foo                   |debug              |              255,000|\n" +
+        "|google loo                     |release            |                4,000|\n" +
+        "|Appy Snap App                  |Snappy             |              781,000|"
 
     def builder = new ApkSizeTableBuilder()
     builder.addApkSize("firebase foo", "debug", 255000)

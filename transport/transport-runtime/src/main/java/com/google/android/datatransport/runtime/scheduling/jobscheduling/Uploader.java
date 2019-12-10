@@ -23,6 +23,7 @@ import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
@@ -36,6 +37,8 @@ import javax.inject.Inject;
 
 /** Handles upload of all the events corresponding to a backend. */
 public class Uploader {
+
+  private static final String LOG_TAG = "Uploader";
 
   private final Context context;
   private final BackendRegistry backendRegistry;
@@ -94,19 +97,34 @@ public class Uploader {
 
   void logAndUpdateState(TransportContext transportContext, int attemptNumber) {
     TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
-    List<EventInternal> eventInternals = new ArrayList<>();
+
     Iterable<PersistedEvent> persistedEvents =
         guard.runCriticalSection(() -> eventStore.loadBatch(transportContext));
 
-    // Donot make a call to the backend if the list is empty.
+    // Do not make a call to the backend if the list is empty.
     if (!persistedEvents.iterator().hasNext()) {
       return;
     }
-    // Load all the backends to an iterable of event internals.
-    for (PersistedEvent persistedEvent : persistedEvents) {
-      eventInternals.add(persistedEvent.getEvent());
+
+    BackendResponse response;
+    if (backend == null) {
+      Logging.d(
+          LOG_TAG, "Unknown backend for %s, deleting event batch for it...", transportContext);
+      response = BackendResponse.fatalError();
+    } else {
+      List<EventInternal> eventInternals = new ArrayList<>();
+
+      for (PersistedEvent persistedEvent : persistedEvents) {
+        eventInternals.add(persistedEvent.getEvent());
+      }
+      response =
+          backend.send(
+              BackendRequest.builder()
+                  .setEvents(eventInternals)
+                  .setExtras(transportContext.getExtras())
+                  .build());
     }
-    BackendResponse response = backend.send(BackendRequest.create(eventInternals));
+
     guard.runCriticalSection(
         () -> {
           if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {

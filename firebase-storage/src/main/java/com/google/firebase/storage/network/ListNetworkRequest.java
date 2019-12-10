@@ -19,9 +19,8 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /** A network request that lists folder contents within gcs. */
 public class ListNetworkRequest extends NetworkRequest {
@@ -46,40 +45,35 @@ public class ListNetworkRequest extends NetworkRequest {
 
   @Override
   @NonNull
-  protected String getURL() {
-    return sNetworkRequestUrl + "/b/" + mGsUri.getAuthority() + "/o";
+  protected Uri getURL() {
+    return Uri.parse(sNetworkRequestUrl + "/b/" + mGsUri.getAuthority() + "/o");
   }
 
   @Override
-  @Nullable
-  protected String getQueryParameters() throws UnsupportedEncodingException {
-    List<String> keys = new ArrayList<>();
-    List<String> values = new ArrayList<>();
+  @NonNull
+  protected Map<String, String> getQueryParameters() {
+    Map<String, String> headers = new HashMap<>();
 
     String prefix = getPathWithoutBucket();
-    if (!TextUtils.isEmpty(prefix)) {
-      keys.add("prefix");
-      values.add(prefix + "/");
+    if (!prefix.isEmpty()) {
+      headers.put("prefix", prefix + "/");
     }
 
     // Firebase Storage uses file system semantics and treats slashes as separators. GCS's List API
     // does not prescribe a separator, and hence we need to provide a slash as the delimiter.
-    keys.add("delimiter");
-    values.add("/");
+    headers.put("delimiter", "/");
 
     // We don't set the `maxPageSize` for listAll() as this allows Firebase Storage to return
     // fewer items per page. This removes the need to backfill results if Firebase Storage filters
     // objects that are considered invalid (such as items with two consecutive slashes).
     if (maxPageSize != null) {
-      keys.add("maxResults");
-      values.add(Integer.toString(maxPageSize));
+      headers.put("maxResults", Integer.toString(maxPageSize));
     }
 
     if (!TextUtils.isEmpty(nextPageToken)) {
-      keys.add("pageToken");
-      values.add(nextPageToken);
+      headers.put("pageToken", nextPageToken);
     }
 
-    return getPostDataString(keys, values, true);
+    return headers;
   }
 }

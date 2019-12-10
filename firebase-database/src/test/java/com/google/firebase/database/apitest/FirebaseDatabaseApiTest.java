@@ -14,6 +14,7 @@
 
 package com.google.firebase.database.apitest;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static org.junit.Assert.assertEquals;
 
 import com.google.firebase.FirebaseApp;
@@ -22,7 +23,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 @RunWith(RobolectricTestRunner.class)
 public final class FirebaseDatabaseApiTest {
@@ -59,7 +59,7 @@ public final class FirebaseDatabaseApiTest {
 
   private static FirebaseApp appForDatabaseUrl(String url, String name) {
     return FirebaseApp.initializeApp(
-        RuntimeEnvironment.application.getApplicationContext(),
+        getApplicationContext(),
         new FirebaseOptions.Builder()
             .setApplicationId("appid")
             .setApiKey("apikey")

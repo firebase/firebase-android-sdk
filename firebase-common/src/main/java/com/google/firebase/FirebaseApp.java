@@ -40,12 +40,15 @@ import com.google.android.gms.common.util.PlatformVersion;
 import com.google.android.gms.common.util.ProcessUtils;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentDiscovery;
+import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
+import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
+import com.google.firebase.platforminfo.KotlinDetector;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -100,6 +103,7 @@ public class FirebaseApp {
 
   private static final String FIREBASE_ANDROID = "fire-android";
   private static final String FIREBASE_COMMON = "fire-core";
+  private static final String KOTLIN = "kotlin";
 
   private final Context applicationContext;
   private final String name;
@@ -396,7 +400,10 @@ public class FirebaseApp {
     this.options = Preconditions.checkNotNull(options);
 
     List<ComponentRegistrar> registrars =
-        ComponentDiscovery.forContext(applicationContext).discover();
+        ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
+            .discover();
+
+    String kotlinVersion = KotlinDetector.detectVersion();
     componentRuntime =
         new ComponentRuntime(
             UI_EXECUTOR,
@@ -406,7 +413,10 @@ public class FirebaseApp {
             Component.of(options, FirebaseOptions.class),
             LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
             LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
-            DefaultUserAgentPublisher.component());
+            kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null,
+            DefaultUserAgentPublisher.component(),
+            DefaultHeartBeatInfo.component());
+
     dataCollectionConfigStorage =
         new Lazy<>(
             () ->

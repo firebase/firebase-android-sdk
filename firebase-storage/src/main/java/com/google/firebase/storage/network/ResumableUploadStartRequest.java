@@ -19,10 +19,8 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.storage.internal.Slashes;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import org.json.JSONObject;
 
 /** Starts a resumable upload session with GCS. */
@@ -48,8 +46,12 @@ public class ResumableUploadStartRequest extends ResumableNetworkRequest {
 
   @Override
   @NonNull
-  protected String getURL() {
-    return sUploadUrl + mGsUri.getAuthority() + "/o";
+  protected Uri getURL() {
+    Uri.Builder uriBuilder = sNetworkRequestUrl.buildUpon();
+    uriBuilder.appendPath("b");
+    uriBuilder.appendPath(mGsUri.getAuthority());
+    uriBuilder.appendPath("o");
+    return uriBuilder.build();
   }
 
   @Override
@@ -60,16 +62,11 @@ public class ResumableUploadStartRequest extends ResumableNetworkRequest {
 
   @Override
   @NonNull
-  protected String getQueryParameters() throws UnsupportedEncodingException {
-    List<String> keys = new ArrayList<>();
-    List<String> values = new ArrayList<>();
-
-    String pathWithoutBucket = getPathWithoutBucket();
-    keys.add("name");
-    values.add(pathWithoutBucket != null ? Slashes.unSlashize(pathWithoutBucket) : "");
-    keys.add("uploadType");
-    values.add("resumable");
-    return getPostDataString(keys, values, false);
+  protected Map<String, String> getQueryParameters() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("name", getPathWithoutBucket());
+    headers.put("uploadType", "resumable");
+    return headers;
   }
 
   @Override

@@ -17,6 +17,7 @@ package com.google.firebase.datatransport;
 import android.content.Context;
 import androidx.annotation.Keep;
 import com.google.android.datatransport.TransportFactory;
+import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
@@ -34,7 +35,7 @@ public class TransportRegistrar implements ComponentRegistrar {
             .factory(
                 c -> {
                   TransportRuntime.initialize(c.get(Context.class));
-                  return TransportRuntime.getInstance().newFactory("cct");
+                  return TransportRuntime.getInstance().newFactory(CCTDestination.LEGACY_INSTANCE);
                 })
             .build());
   }

@@ -16,6 +16,7 @@ package com.google.firebase.firestore.remote;
 
 import android.content.Context;
 import android.os.Build;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -32,7 +33,6 @@ import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
 import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.Status;
-import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -87,12 +87,15 @@ public class Datastore {
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
       CredentialsProvider credentialsProvider,
-      Context context) {
+      Context context,
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
 
-    channel = new FirestoreChannel(workerQueue, context, credentialsProvider, databaseInfo);
+    channel =
+        new FirestoreChannel(
+            workerQueue, context, credentialsProvider, databaseInfo, metadataProvider);
   }
 
   void shutdown() {
@@ -237,14 +240,20 @@ public class Datastore {
    *
    * <p>This error is non-recoverable and must be addressed by the app developer.
    */
-  public static boolean isSslHandshakeError(Status status) {
+  public static boolean isMissingSslCiphers(Status status) {
     Status.Code code = status.getCode();
     Throwable t = status.getCause();
 
+    // Check for the presence of a cipher error in the event of an SSLHandshakeException. This is
+    // the special case of SSLHandshakeException that contains the cipher error.
+    boolean hasCipherError = false;
+    if (t instanceof SSLHandshakeException && t.getMessage().contains("no ciphers available")) {
+      hasCipherError = true;
+    }
+
     return Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
         && code.equals(Status.Code.UNAVAILABLE)
-        && (t instanceof SSLHandshakeException
-            || (t instanceof ConnectException && t.getMessage().contains("EHOSTUNREACH")));
+        && hasCipherError;
   }
 
   /**

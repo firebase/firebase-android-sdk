@@ -49,25 +49,32 @@ public final class LocalViewChanges {
       }
     }
 
-    return new LocalViewChanges(targetId, addedKeys, removedKeys);
+    return new LocalViewChanges(targetId, snapshot.isFromCache(), addedKeys, removedKeys);
   }
 
   private final int targetId;
+  private final boolean fromCache;
 
   private final ImmutableSortedSet<DocumentKey> added;
   private final ImmutableSortedSet<DocumentKey> removed;
 
   public LocalViewChanges(
       int targetId,
+      boolean fromCache,
       ImmutableSortedSet<DocumentKey> added,
       ImmutableSortedSet<DocumentKey> removed) {
     this.targetId = targetId;
+    this.fromCache = fromCache;
     this.added = added;
     this.removed = removed;
   }
 
   public int getTargetId() {
     return targetId;
+  }
+
+  public boolean isFromCache() {
+    return fromCache;
   }
 
   public ImmutableSortedSet<DocumentKey> getAdded() {
