@@ -269,7 +269,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
    * @param finalState the intended state of the stream after closing.
    * @param status the status to emit to the listener.
    */
-  protected void close(State finalState, Status status) {
+  private void close(State finalState, Status status) {
     hardAssert(isStarted(), "Only started streams should be closed.");
     hardAssert(
         finalState == State.Error || status.equals(Status.OK),
