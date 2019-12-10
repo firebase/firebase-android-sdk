@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.content.Context;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -53,13 +55,11 @@ public class GrpcCallProvider {
 
   private CallOptions callOptions;
 
-  // A timer that elapses after CONNECTIVTY_ATTEMPT_TIMEOUT_MS, at which point we restart the
-  // channel and try connecting again.
-  private DelayedTask connectivityAttemptTimer;
-
   // This timeout is used when attempting to establish a connection in gRPC. If a connection attempt
-  // does not succeed in time, we restart the channel, rather than having it hang indefinitely.
+  // does not succeed in CONNECTIVITY_ATTEMPT_TIMEOUT_MS, we restart the channel and try
+  // reconnecting again, rather than waiting up to 2+ minutes for gRPC to timeout.
   private static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
+  private DelayedTask connectivityAttemptTimer;
 
   private final Context context;
   private final DatabaseInfo databaseInfo;
@@ -201,24 +201,27 @@ public class GrpcCallProvider {
     }
   }
 
-  /**
-   * Cancels the connectivityStateTimer if the new state indicates gRPC is online. Starts the timer
-   * if the new state indicates gRPC is connecting.
-   */
   private void onConnectivityStateChange(ManagedChannel channel) {
-    ConnectivityState newState = channel.getState(false);
+    ConnectivityState newState = channel.getState(true);
+    Logger.debug(LOG_TAG, "Current gRPC connectivity state: " + newState);
     // Check that the new state is online, then cancel timer.
-    if (newState == ConnectivityState.READY) {
-      clearConnectivityTimer();
-    } else if (newState == ConnectivityState.CONNECTING) {
+    if (newState == ConnectivityState.CONNECTING) {
+      Logger.debug(LOG_TAG, "Setting the connectivityAttemptTimer");
+      hardAssert(
+          connectivityAttemptTimer == null,
+          "connectivityAttemptTimer should be null when setting a new timer.");
       connectivityAttemptTimer =
           asyncQueue.enqueueAfterDelay(
               TimerId.CONNECTIVITY_ATTEMPT_TIMER,
               CONNECTIVITY_ATTEMPT_TIMEOUT_MS,
               () -> {
+                Logger.debug(LOG_TAG, "connectivityAttemptTimer elapsed. Resetting the channel.");
                 clearConnectivityTimer();
                 resetChannel(channel);
               });
+    } else {
+      // Clear the timer otherwise, so we don't end up with multiple connectivityAttemptTimers.
+      clearConnectivityTimer();
     }
     // Re-listen for next state change.
     channel.notifyWhenStateChanged(
@@ -226,10 +229,10 @@ public class GrpcCallProvider {
   }
 
   /**
-   * Shuts down and re-initializes the channel.
+   * Shuts down and reinitializes the channel.
    *
    * <p>This is used when the connectivity attempt timer elapses and we need to reset the gRPC
-   * channel to re-establish connectivity.
+   * channel to reestablish connectivity.
    */
   private void resetChannel(ManagedChannel channel) {
     asyncQueue.enqueueAndForget(
@@ -256,6 +259,7 @@ public class GrpcCallProvider {
                       // right thread.
                       .withExecutor(asyncQueue.getExecutor());
               callOptions = firestoreStub.getCallOptions();
+              Logger.debug(LOG_TAG, "Channel successfully reset.");
               return channel;
             });
   }
@@ -263,6 +267,7 @@ public class GrpcCallProvider {
   /** Clears the connectivity timer if it exists. */
   private void clearConnectivityTimer() {
     if (connectivityAttemptTimer != null) {
+      Logger.debug(LOG_TAG, "Clearing the connectivityAttemptTimer");
       connectivityAttemptTimer.cancel();
       connectivityAttemptTimer = null;
     }

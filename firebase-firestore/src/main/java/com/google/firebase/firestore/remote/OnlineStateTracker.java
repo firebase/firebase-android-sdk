@@ -143,8 +143,8 @@ class OnlineStateTracker {
         logClientOfflineWarningIfNecessary(
             String.format(
                 Locale.ENGLISH,
-                "Backend didn't respond within %d seconds. Most recent error: %s\n",
-                ONLINE_STATE_TIMEOUT_MS / 1000,
+                "Connection failed %d times. Most recent error: %s",
+                MAX_WATCH_STREAM_FAILURES,
                 status));
         setAndBroadcastState(OnlineState.OFFLINE);
       }
