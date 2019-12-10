@@ -144,8 +144,9 @@ public class PersistedInstallation {
       json.put(TOKEN_CREATION_TIME_IN_SECONDS_KEY, prefs.getTokenCreationEpochInSecs());
       json.put(EXPIRES_IN_SECONDS_KEY, prefs.getExpiresInSecs());
       json.put(FIS_ERROR_KEY, prefs.getFisError());
-      File tmpFile = File.createTempFile(SETTINGS_FILE_NAME_PREFIX,
-          "tmp", firebaseApp.getApplicationContext().getFilesDir());
+      File tmpFile =
+          File.createTempFile(
+              SETTINGS_FILE_NAME_PREFIX, "tmp", firebaseApp.getApplicationContext().getFilesDir());
 
       // Werialize the JSON object into a string and write the bytes to a temp file
       FileOutputStream fos = new FileOutputStream(tmpFile);

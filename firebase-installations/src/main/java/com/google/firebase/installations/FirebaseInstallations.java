@@ -301,11 +301,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * Loads the prefs, generating a new ID if necessary. This operation is made cross-process and
    * cross-thread safe by wrapping all the processing first in a java synchronization block and
    * wrapping that in a cross-process lock created using FileLocks.
-   * <p>
-   * If a FID does not yet exist it generate a new FID, either from an existing IID or generated
+   *
+   * <p>If a FID does not yet exist it generate a new FID, either from an existing IID or generated
    * randomly. If an IID exists and this is the first time a FID has been generated for this
-   * installation, the IID will be used as the FID. If the FID is ever cleared then the next
-   * time a FID is generated the IID is ignored and a FID is generated randomly.
+   * installation, the IID will be used as the FID. If the FID is ever cleared then the next time a
+   * FID is generated the IID is ignored and a FID is generated randomly.
    *
    * @return a new version of the prefs that includes the new FID. These prefs will have already
    *     been persisted.
@@ -324,8 +324,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           // Only one single thread from one single process can execute this block
           // at any given time.
           String fid = readExistingIidOrCreateFid(prefs);
-          prefs = persistedInstallation
-              .insertOrUpdatePersistedInstallationEntry(prefs.withUnregisteredFid(fid));
+          prefs =
+              persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+                  prefs.withUnregisteredFid(fid));
         }
         return prefs;
       }
