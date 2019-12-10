@@ -219,7 +219,6 @@ public class GrpcCallProvider {
   private void onConnectivityStateChange(ManagedChannel channel) {
     ConnectivityState newState = channel.getState(false);
     // Check that the new state is online, then cancel timer.
-    Logger.debug("GCP", "BCHEN: current state: " + newState);
     if (newState == ConnectivityState.READY) {
       clearConnectivityTimer();
     } else if (newState == ConnectivityState.CONNECTING) {
@@ -228,7 +227,6 @@ public class GrpcCallProvider {
               TimerId.CONNECTIVITY_ATTEMPT_TIMER,
               CONNECTIVITY_ATTEMPT_TIMEOUT_MS,
               () -> {
-                Logger.debug("FC", "BCHEN: Restarting the underlying stream");
                 clearConnectivityTimer();
                 resetChannel(channel);
               });
@@ -247,14 +245,12 @@ public class GrpcCallProvider {
   private void resetChannel(ManagedChannel channel) {
     asyncQueue.enqueueAndForget(
         () -> {
-          Logger.debug("GCP", "BCHEN: shutting down the channel");
           channel.shutdownNow();
           initChannelTask();
         });
   }
 
   private void initChannelTask() {
-    Logger.debug("GCP", "BCHEN: initializing channel task");
     // We execute network initialization on a separate thread to not block operations that depend on
     // the AsyncQueue.
     this.channelTask =
@@ -278,7 +274,6 @@ public class GrpcCallProvider {
   /** Clears the connectivity timer if it exists. */
   private void clearConnectivityTimer() {
     if (connectivityAttemptTimer != null) {
-      Logger.debug("GCP", "BCHEN: Clearing connectivity timer");
       connectivityAttemptTimer.cancel();
       connectivityAttemptTimer = null;
     }
