@@ -27,7 +27,6 @@ import java.io.File;
 import java.nio.file.Paths;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.ArtifactView;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.TaskProvider;
@@ -119,26 +118,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                   task.setApiTxt(apiTxt);
                   task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
                   task.setSourceSet(mainSourceSet);
-                  android
-                      .getLibraryVariants()
-                      .all(
-                          v -> {
-                            if (v.getName().equals("release")) {
-                              ArtifactView artifactView =
-                                  v.getCompileConfiguration()
-                                      .getIncoming()
-                                      .artifactView(
-                                          config ->
-                                              config.attributes(
-                                                  container ->
-                                                      container.attribute(
-                                                          Attribute.of(
-                                                              "artifactType", String.class),
-                                                          "jar")));
-                              task.setClassPath(artifactView.getArtifacts().getArtifactFiles());
-                            }
-                          });
-
                   task.setOutputFile(outputFile);
                   task.setBaselineFile(project.file("baseline.txt"));
                   task.setOutputApiFile(outputApiFile);
