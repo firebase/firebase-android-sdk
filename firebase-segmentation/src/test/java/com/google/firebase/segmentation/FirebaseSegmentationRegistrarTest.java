@@ -20,6 +20,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -32,6 +33,8 @@ public class FirebaseSegmentationRegistrarTest {
     FirebaseApp.clearInstancesForTest();
   }
 
+  // TODO(rgowman:b/123870630): Enable test.
+  @Ignore
   @Test
   public void getFirebaseInstallationsInstance() {
     FirebaseApp defaultApp =
