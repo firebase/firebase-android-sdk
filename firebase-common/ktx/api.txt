@@ -1,0 +1,19 @@
+// Signature format: 2.0
+package com.google.firebase.ktx {
+
+  public final class Firebase {
+    field public static final com.google.firebase.ktx.Firebase INSTANCE;
+  }
+
+  public final class FirebaseKt {
+    ctor public FirebaseKt();
+    method @NonNull public static com.google.firebase.FirebaseApp app(@NonNull com.google.firebase.ktx.Firebase, @NonNull String name);
+    method @NonNull public static com.google.firebase.FirebaseApp getApp(@NonNull com.google.firebase.ktx.Firebase);
+    method @NonNull public static com.google.firebase.FirebaseOptions getOptions(@NonNull com.google.firebase.ktx.Firebase);
+    method @Nullable public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context);
+    method @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options);
+    method @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options, @NonNull String name);
+  }
+
+}
+

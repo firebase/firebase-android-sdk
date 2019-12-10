@@ -2,35 +2,35 @@
 package com.google.firebase.remoteconfig {
 
   public class FirebaseRemoteConfig {
-    method @NonNull public Task<Boolean> activate();
-    method @Deprecated public boolean activateFetched();
-    method @NonNull public Task<FirebaseRemoteConfigInfo> ensureInitialized();
-    method @NonNull public Task<Void> fetch();
-    method @NonNull public Task<Void> fetch(long);
-    method @NonNull public Task<Boolean> fetchAndActivate();
-    method @NonNull public Map<String,FirebaseRemoteConfigValue> getAll();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> activate();
+    method @Deprecated @WorkerThread public boolean activateFetched();
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo> ensureInitialized();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> fetch();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> fetch(long);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> fetchAndActivate();
+    method @NonNull public java.util.Map<java.lang.String,com.google.firebase.remoteconfig.FirebaseRemoteConfigValue> getAll();
     method public boolean getBoolean(@NonNull String);
-    method @NonNull public byte[] getByteArray(@NonNull String);
+    method @Deprecated @NonNull public byte[] getByteArray(@NonNull String);
     method public double getDouble(@NonNull String);
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo getInfo();
     method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig getInstance();
-    method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig getInstance(@NonNull FirebaseApp);
-    method @NonNull public Set<String> getKeysByPrefix(@NonNull String);
+    method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig getInstance(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public java.util.Set<java.lang.String> getKeysByPrefix(@NonNull String);
     method public long getLong(@NonNull String);
     method @NonNull public String getString(@NonNull String);
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigValue getValue(@NonNull String);
-    method @NonNull public Task<Void> reset();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> reset();
     method @Deprecated public void setConfigSettings(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings);
-    method @NonNull public Task<Void> setConfigSettingsAsync(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings);
-    method @Deprecated public void setDefaults(@NonNull Map<String,Object>);
-    method @Deprecated public void setDefaults(int);
-    method @NonNull public Task<Void> setDefaultsAsync(@NonNull Map<String,Object>);
-    method @NonNull public Task<Void> setDefaultsAsync(int);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setConfigSettingsAsync(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings);
+    method @Deprecated public void setDefaults(@NonNull java.util.Map<java.lang.String,java.lang.Object>);
+    method @Deprecated public void setDefaults(@XmlRes int);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setDefaultsAsync(@NonNull java.util.Map<java.lang.String,java.lang.Object>);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setDefaultsAsync(@XmlRes int);
     field public static final boolean DEFAULT_VALUE_FOR_BOOLEAN = false;
     field public static final byte[] DEFAULT_VALUE_FOR_BYTE_ARRAY;
     field public static final double DEFAULT_VALUE_FOR_DOUBLE = 0.0;
     field public static final long DEFAULT_VALUE_FOR_LONG = 0L; // 0x0L
-    field public static final String DEFAULT_VALUE_FOR_STRING;
+    field public static final String DEFAULT_VALUE_FOR_STRING = "";
     field public static final int LAST_FETCH_STATUS_FAILURE = 1; // 0x1
     field public static final int LAST_FETCH_STATUS_NO_FETCH_YET = 0; // 0x0
     field public static final int LAST_FETCH_STATUS_SUCCESS = -1; // 0xffffffff
@@ -45,7 +45,7 @@ package com.google.firebase.remoteconfig {
     ctor public FirebaseRemoteConfigClientException(@NonNull String, @Nullable Throwable);
   }
 
-  public class FirebaseRemoteConfigException {
+  public class FirebaseRemoteConfigException extends com.google.firebase.FirebaseException {
     ctor public FirebaseRemoteConfigException(@NonNull String);
     ctor public FirebaseRemoteConfigException(@NonNull String, @Nullable Throwable);
   }
@@ -85,15 +85,15 @@ package com.google.firebase.remoteconfig {
     method public long getFetchTimeoutInSeconds();
     method public long getMinimumFetchIntervalInSeconds();
     method @Deprecated @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder setDeveloperModeEnabled(boolean);
-    method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder setFetchTimeoutInSeconds(long);
+    method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder setFetchTimeoutInSeconds(long) throws java.lang.IllegalArgumentException;
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder setMinimumFetchIntervalInSeconds(long);
   }
 
   public interface FirebaseRemoteConfigValue {
-    method public boolean asBoolean();
+    method public boolean asBoolean() throws java.lang.IllegalArgumentException;
     method @NonNull public byte[] asByteArray();
-    method public double asDouble();
-    method public long asLong();
+    method public double asDouble() throws java.lang.IllegalArgumentException;
+    method public long asLong() throws java.lang.IllegalArgumentException;
     method @NonNull public String asString();
     method public int getSource();
   }
