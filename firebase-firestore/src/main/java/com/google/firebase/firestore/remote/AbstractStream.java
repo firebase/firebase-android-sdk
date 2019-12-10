@@ -311,8 +311,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
       // These exceptions are thrown when the gRPC stream is closed with an connection error. For
       // these cases, we need to use a new connection for the next connection attempt, which is
       // done by marking the underlying channel as idle.
-      if (forceNewConnection
-          || status.getCause() instanceof java.net.UnknownHostException) {
+      if (forceNewConnection || status.getCause() instanceof java.net.UnknownHostException) {
         backoff.setTemporaryMaxDelay(DNS_FAILURE_BACKOFF_MAX_DELAY_MS);
         firestoreChannel.markChannelIdle();
       }

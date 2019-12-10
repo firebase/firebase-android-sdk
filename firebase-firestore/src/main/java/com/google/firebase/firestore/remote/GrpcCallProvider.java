@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
+import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
@@ -47,14 +48,22 @@ public class GrpcCallProvider {
 
   private static Supplier<ManagedChannelBuilder<?>> overrideChannelBuilderSupplier;
 
-  private final Task<ManagedChannel> channelTask;
+  private Task<ManagedChannel> channelTask;
   private final AsyncQueue asyncQueue;
 
   private CallOptions callOptions;
 
-  // A timer that elapses after CONNECTIVTY_ATTEMPT_TIMEOUT_MS, at which point we close the
-  // stream, reset the underlying connection, and try connecting again.
+  // A timer that elapses after CONNECTIVTY_ATTEMPT_TIMEOUT_MS, at which point we restart the
+  // channel and try connecting again.
   private DelayedTask connectivityAttemptTimer;
+
+  // This timeout is used when attempting to establish a connection in gRPC. If a connection attempt
+  // does not succeed in time, we restart the channel, rather than having it hang indefinitely.
+  private static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
+
+  private final Context context;
+  private final DatabaseInfo databaseInfo;
+  private final CallCredentials firestoreHeaders;
 
   /**
    * Helper function to globally override the channel that RPCs use. Useful for testing when you
@@ -75,24 +84,11 @@ public class GrpcCallProvider {
       DatabaseInfo databaseInfo,
       CallCredentials firestoreHeaders) {
     this.asyncQueue = asyncQueue;
+    this.context = context;
+    this.databaseInfo = databaseInfo;
+    this.firestoreHeaders = firestoreHeaders;
 
-    // We execute network initialization on a separate thread to not block operations that depend on
-    // the AsyncQueue.
-    this.channelTask =
-        Tasks.call(
-            Executors.BACKGROUND_EXECUTOR,
-            () -> {
-              ManagedChannel channel = initChannel(context, databaseInfo);
-              FirestoreGrpc.FirestoreStub firestoreStub =
-                  FirestoreGrpc.newStub(channel)
-                      .withCallCredentials(firestoreHeaders)
-                      // Ensure all callbacks are issued on the worker queue. If this call is
-                      // removed, all calls need to be audited to make sure they are executed on the
-                      // right thread.
-                      .withExecutor(asyncQueue.getExecutor());
-              callOptions = firestoreStub.getCallOptions();
-              return channel;
-            });
+    initChannelTask();
   }
 
   /**
@@ -217,46 +213,72 @@ public class GrpcCallProvider {
   }
 
   /**
-   * Sets the connectivity attempt timer to track. Existing timers must complete or be cancelled
-   * before a new timer can be set.
+   * Cancels the connectivityStateTimer if the new state indicates gRPC is online. Starts the timer
+   * if the new state indicates gRPC is connecting.
    */
-  void setConnectivityAttemptTimer(DelayedTask connectivityAttemptTimer) {
-    // If an existing timer is already running, we want to continue using that one.
-    if (this.connectivityAttemptTimer != null) {
-      connectivityAttemptTimer.cancel();
-    } else {
-      try {
-        ManagedChannel channel = this.channelTask.getResult();
-        if (channel != null) {
-          this.connectivityAttemptTimer = connectivityAttemptTimer;
-          listenToConnectivityState(channel);
-        }
-      } catch (IllegalStateException e) {
-        // When the ManagedChannel is first initialized, channelTask could still be running.
-        connectivityAttemptTimer.cancel();
-      }
-    }
-  }
-
-  /**
-   * Cancels the connectivityStateTimer if the new state indicates grpc is online. Otherwise, we
-   * reset the listener for the next state change.
-   */
-  private void listenToConnectivityState(ManagedChannel channel) {
+  private void onConnectivityStateChange(ManagedChannel channel) {
     ConnectivityState newState = channel.getState(false);
     // Check that the new state is online, then cancel timer.
     Logger.debug("GCP", "BCHEN: current state: " + newState);
     if (newState == ConnectivityState.READY) {
       clearConnectivityTimer();
-    } else {
-      channel.notifyWhenStateChanged(
-          newState, () -> asyncQueue.enqueueAndForget(() -> listenToConnectivityState(channel)));
+    } else if (newState == ConnectivityState.CONNECTING) {
+      connectivityAttemptTimer =
+          asyncQueue.enqueueAfterDelay(
+              TimerId.CONNECTIVITY_ATTEMPT_TIMER,
+              CONNECTIVITY_ATTEMPT_TIMEOUT_MS,
+              () -> {
+                Logger.debug("FC", "BCHEN: Restarting the underlying stream");
+                clearConnectivityTimer();
+                resetChannel(channel);
+              });
     }
+    // Re-listen for next state change.
+    channel.notifyWhenStateChanged(
+        newState, () -> asyncQueue.enqueueAndForget(() -> onConnectivityStateChange(channel)));
+  }
+
+  /**
+   * Shuts down and re-initializes the channel.
+   *
+   * <p>This is used when the connectivity attempt timer elapses and we need to reset the gRPC
+   * channel to re-establish connectivity.
+   */
+  private void resetChannel(ManagedChannel channel) {
+    asyncQueue.enqueueAndForget(
+        () -> {
+          Logger.debug("GCP", "BCHEN: shutting down the channel");
+          channel.shutdownNow();
+          initChannelTask();
+        });
+  }
+
+  private void initChannelTask() {
+    Logger.debug("GCP", "BCHEN: initializing channel task");
+    // We execute network initialization on a separate thread to not block operations that depend on
+    // the AsyncQueue.
+    this.channelTask =
+        Tasks.call(
+            Executors.BACKGROUND_EXECUTOR,
+            () -> {
+              ManagedChannel channel = initChannel(context, databaseInfo);
+              onConnectivityStateChange(channel);
+              FirestoreGrpc.FirestoreStub firestoreStub =
+                  FirestoreGrpc.newStub(channel)
+                      .withCallCredentials(firestoreHeaders)
+                      // Ensure all callbacks are issued on the worker queue. If this call is
+                      // removed, all calls need to be audited to make sure they are executed on the
+                      // right thread.
+                      .withExecutor(asyncQueue.getExecutor());
+              callOptions = firestoreStub.getCallOptions();
+              return channel;
+            });
   }
 
   /** Clears the connectivity timer if it exists. */
-  void clearConnectivityTimer() {
+  private void clearConnectivityTimer() {
     if (connectivityAttemptTimer != null) {
+      Logger.debug("GCP", "BCHEN: Clearing connectivity timer");
       connectivityAttemptTimer.cancel();
       connectivityAttemptTimer = null;
     }

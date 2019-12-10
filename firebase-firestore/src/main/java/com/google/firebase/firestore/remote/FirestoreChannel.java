@@ -26,9 +26,6 @@ import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
-import com.google.firebase.firestore.util.AsyncQueue.TimerId;
-import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.ClientCall;
 import io.grpc.ForwardingClientCall;
@@ -55,11 +52,6 @@ class FirestoreChannel {
   // version of grpc.
   private static final String X_GOOG_API_CLIENT_VALUE =
       "gl-java/ fire/" + BuildConfig.VERSION_NAME + " grpc/";
-
-  // This timeout is used when attempting to establish a connection. If a connection attempt
-  // does not succeed in time, we close the stream and restart the connection, rather than having
-  // it hang indefinitely.
-  private static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
 
   /** The async worker queue that is used to dispatch events. */
   private final AsyncQueue asyncQueue;
@@ -170,21 +162,6 @@ class FirestoreChannel {
           // accepted by our onMessage() handler above.
           call[0].request(1);
         });
-
-    DelayedTask connectivityAttemptTimer =
-        asyncQueue.enqueueAfterDelay(
-            TimerId.CONNECTIVITY_ATTEMPT_TIMER,
-            CONNECTIVITY_ATTEMPT_TIMEOUT_MS,
-            () -> {
-              Logger.debug("FC", "Restarting the underlying stream");
-              // Reset the underlying connection and restart the stream.
-              callProvider.clearConnectivityTimer();
-              markChannelIdle();
-              // Terminate the original RPC.
-              call[0].halfClose();
-              observer.onClose(Status.UNAVAILABLE);
-            });
-    callProvider.setConnectivityAttemptTimer(connectivityAttemptTimer);
 
     return new ForwardingClientCall<ReqT, RespT>() {
       @Override
