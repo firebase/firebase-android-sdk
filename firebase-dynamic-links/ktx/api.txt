@@ -1,0 +1,22 @@
+// Signature format: 2.0
+package com.google.firebase.dynamiclinks.ktx {
+
+  public final class FirebaseDynamicLinksKt {
+    ctor public FirebaseDynamicLinksKt();
+    method @NonNull public static void androidParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.Builder, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.AndroidParameters.Builder,kotlin.Unit> init);
+    method @NonNull public static void androidParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.Builder, @NonNull String packageName, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.AndroidParameters.Builder,kotlin.Unit> init);
+    method @NonNull public static com.google.firebase.dynamiclinks.DynamicLink dynamicLink(@NonNull com.google.firebase.dynamiclinks.FirebaseDynamicLinks, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.Builder,kotlin.Unit> init);
+    method @NonNull public static com.google.firebase.dynamiclinks.FirebaseDynamicLinks dynamicLinks(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method @NonNull public static com.google.firebase.dynamiclinks.FirebaseDynamicLinks getDynamicLinks(@NonNull com.google.firebase.ktx.Firebase);
+    method @NonNull public static void googleAnalyticsParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.Builder, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.GoogleAnalyticsParameters.Builder,kotlin.Unit> init);
+    method @NonNull public static void googleAnalyticsParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.Builder, @NonNull String source, @NonNull String medium, @NonNull String campaign, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.GoogleAnalyticsParameters.Builder,kotlin.Unit> init);
+    method @NonNull public static void iosParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.Builder, @NonNull String bundleId, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.IosParameters.Builder,kotlin.Unit> init);
+    method @NonNull public static void itunesConnectAnalyticsParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.Builder, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.ItunesConnectAnalyticsParameters.Builder,kotlin.Unit> init);
+    method @NonNull public static void navigationInfoParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.Builder, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.NavigationInfoParameters.Builder,kotlin.Unit> init);
+    method @NonNull public static com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.ShortDynamicLink> shortLinkAsync(@NonNull com.google.firebase.dynamiclinks.FirebaseDynamicLinks, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.Builder,kotlin.Unit> init);
+    method @NonNull public static com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.ShortDynamicLink> shortLinkAsync(@NonNull com.google.firebase.dynamiclinks.FirebaseDynamicLinks, int suffix, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.Builder,kotlin.Unit> init);
+    method @NonNull public static void socialMetaTagParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.Builder, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dynamiclinks.DynamicLink.SocialMetaTagParameters.Builder,kotlin.Unit> init);
+  }
+
+}
+

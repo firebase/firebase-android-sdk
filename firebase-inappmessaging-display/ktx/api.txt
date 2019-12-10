@@ -1,0 +1,10 @@
+// Signature format: 2.0
+package com.google.firebase.inappmessaging.display.ktx {
+
+  public final class InAppMessagingDisplayKt {
+    ctor public InAppMessagingDisplayKt();
+    method @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInAppMessagingDisplay(@NonNull com.google.firebase.ktx.Firebase);
+  }
+
+}
+

@@ -15,13 +15,19 @@
 package com.google.firebase.gradle.plugins.apiinfo;
 
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.google.firebase.gradle.plugins.SdkUtil;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.gradle.api.DefaultTask;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
@@ -35,6 +41,9 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
 
   abstract AndroidSourceSet getSourceSet();
 
+  @InputFiles
+  public abstract FileCollection getClassPath();
+
   @OutputFile
   abstract File getBaselineFile();
 
@@ -42,6 +51,8 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
   abstract boolean getUpdateBaseline();
 
   public abstract void setSourceSet(AndroidSourceSet value);
+
+  public abstract void setClassPath(FileCollection value);
 
   public abstract void setBaselineFile(File value);
 
@@ -58,16 +69,29 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
             .filter(File::exists)
             .map(File::getAbsolutePath)
             .collect(Collectors.joining(":"));
+    if (sourcePath.isEmpty()) {
+      getLogger()
+          .warn(
+              "Project {} has no sources in main source set, skipping...", getProject().getPath());
+      return;
+    }
+    String classPath =
+        Stream.concat(
+                getClassPath().getFiles().stream(), Stream.of(SdkUtil.getAndroidJar(getProject())))
+            .map(File::getAbsolutePath)
+            .collect(Collectors.joining(":"));
     List<String> args =
         new ArrayList<>(
             Arrays.asList(
                 getMetalavaJarPath(),
+                "--no-banner",
                 "--source-path",
                 sourcePath,
+                "--classpath",
+                    classPath,
                 "--api",
                 getApiTxt().getAbsolutePath(),
-                "--format=v2",
-                "--delete-empty-baselines"));
+                "--format=v2"));
 
     if (getUpdateBaseline()) {
       args.addAll(Arrays.asList("--update-baseline", getBaselineFile().getAbsolutePath()));
