@@ -63,18 +63,18 @@ package com.google.firebase.database {
     method public int hashCode();
     method @NonNull public com.google.firebase.database.OnDisconnect onDisconnect();
     method @NonNull public com.google.firebase.database.DatabaseReference push();
-    method @NonNull public Task<Void> removeValue();
+    method @NonNull public com.google.android.gms.tasks.Task<Void> removeValue();
     method public void removeValue(@Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
     method public void runTransaction(@NonNull com.google.firebase.database.Transaction.Handler);
     method public void runTransaction(@NonNull com.google.firebase.database.Transaction.Handler, boolean);
-    method @NonNull public Task<Void> setPriority(@Nullable Object);
+    method @NonNull public com.google.android.gms.tasks.Task<Void> setPriority(@Nullable Object);
     method public void setPriority(@Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
-    method @NonNull public Task<Void> setValue(@Nullable Object);
-    method @NonNull public Task<Void> setValue(@Nullable Object, @Nullable Object);
+    method @NonNull public com.google.android.gms.tasks.Task<Void> setValue(@Nullable Object);
+    method @NonNull public com.google.android.gms.tasks.Task<Void> setValue(@Nullable Object, @Nullable Object);
     method public void setValue(@Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
     method public void setValue(@Nullable Object, @Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
     method public String toString();
-    method @NonNull public Task<Void> updateChildren(@NonNull Map<String,Object>);
+    method @NonNull public com.google.android.gms.tasks.Task<Void> updateChildren(@NonNull Map<String,Object>);
     method public void updateChildren(@NonNull Map<String,Object>, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
   }
 
@@ -86,11 +86,11 @@ package com.google.firebase.database {
   }
 
   public class FirebaseDatabase {
-    method @NonNull public FirebaseApp getApp();
+    method @NonNull public com.google.firebase.FirebaseApp getApp();
     method @NonNull public static com.google.firebase.database.FirebaseDatabase getInstance();
     method @NonNull public static com.google.firebase.database.FirebaseDatabase getInstance(@NonNull String);
-    method @NonNull public static com.google.firebase.database.FirebaseDatabase getInstance(@NonNull FirebaseApp);
-    method @NonNull public static com.google.firebase.database.FirebaseDatabase getInstance(@NonNull FirebaseApp, @NonNull String);
+    method @NonNull public static com.google.firebase.database.FirebaseDatabase getInstance(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public static com.google.firebase.database.FirebaseDatabase getInstance(@NonNull com.google.firebase.FirebaseApp, @NonNull String);
     method @NonNull public com.google.firebase.database.DatabaseReference getReference();
     method @NonNull public com.google.firebase.database.DatabaseReference getReference(@NonNull String);
     method @NonNull public com.google.firebase.database.DatabaseReference getReferenceFromUrl(@NonNull String);
@@ -139,18 +139,18 @@ package com.google.firebase.database {
   }
 
   public class OnDisconnect {
-    method @NonNull public Task<Void> cancel();
+    method @NonNull public com.google.android.gms.tasks.Task<Void> cancel();
     method public void cancel(@NonNull com.google.firebase.database.DatabaseReference.CompletionListener);
-    method @NonNull public Task<Void> removeValue();
+    method @NonNull public com.google.android.gms.tasks.Task<Void> removeValue();
     method public void removeValue(@Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
-    method @NonNull public Task<Void> setValue(@Nullable Object);
-    method @NonNull public Task<Void> setValue(@Nullable Object, @Nullable String);
-    method @NonNull public Task<Void> setValue(@Nullable Object, double);
+    method @NonNull public com.google.android.gms.tasks.Task<Void> setValue(@Nullable Object);
+    method @NonNull public com.google.android.gms.tasks.Task<Void> setValue(@Nullable Object, @Nullable String);
+    method @NonNull public com.google.android.gms.tasks.Task<Void> setValue(@Nullable Object, double);
     method public void setValue(@Nullable Object, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
     method public void setValue(@Nullable Object, @Nullable String, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
     method public void setValue(@Nullable Object, double, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
     method public void setValue(@Nullable Object, @Nullable Map, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
-    method @NonNull public Task<Void> updateChildren(@NonNull Map<String,Object>);
+    method @NonNull public com.google.android.gms.tasks.Task<Void> updateChildren(@NonNull Map<String,Object>);
     method public void updateChildren(@NonNull Map<String,Object>, @Nullable com.google.firebase.database.DatabaseReference.CompletionListener);
   }
 

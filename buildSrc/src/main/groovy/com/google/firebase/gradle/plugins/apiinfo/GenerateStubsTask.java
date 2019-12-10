@@ -19,7 +19,9 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
@@ -31,7 +33,12 @@ public abstract class GenerateStubsTask extends DefaultTask {
 
   public abstract AndroidSourceSet getSourceSet();
 
+  @InputFiles
+  public abstract FileCollection getClassPath();
+
   public abstract void setSourceSet(AndroidSourceSet sourceSet);
+
+  public abstract void setClassPath(FileCollection value);
 
   @OutputDirectory
   public abstract File getOutputDir();
@@ -56,6 +63,8 @@ public abstract class GenerateStubsTask extends DefaultTask {
                       "--quiet",
                       "--source-path",
                       sourcePath,
+                      "--classpath",
+                      getClassPath().getAsPath(),
                       "--include-annotations",
                       "--doc-stubs",
                       getOutputDir().getAbsolutePath()));

@@ -18,7 +18,7 @@ package com.google.firebase {
     field @NonNull public static final String DEFAULT_APP_NAME;
   }
 
-  public class FirebaseNetworkException {
+  public class FirebaseNetworkException extends com.google.firebase.FirebaseException {
     ctor public FirebaseNetworkException(@NonNull String);
   }
 
@@ -47,7 +47,7 @@ package com.google.firebase {
     method @NonNull public com.google.firebase.FirebaseOptions.Builder setStorageBucket(@Nullable String);
   }
 
-  public class FirebaseTooManyRequestsException {
+  public class FirebaseTooManyRequestsException extends com.google.firebase.FirebaseException {
     ctor public FirebaseTooManyRequestsException(@NonNull String);
   }
 

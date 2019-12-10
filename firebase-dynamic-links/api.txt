@@ -20,8 +20,8 @@ package com.google.firebase.dynamiclinks {
 
   public static final class DynamicLink.Builder {
     method @NonNull public com.google.firebase.dynamiclinks.DynamicLink buildDynamicLink();
-    method @NonNull public Task<ShortDynamicLink> buildShortDynamicLink();
-    method @NonNull public Task<ShortDynamicLink> buildShortDynamicLink(@com.google.firebase.dynamiclinks.ShortDynamicLink.Suffix int);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.ShortDynamicLink> buildShortDynamicLink();
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.ShortDynamicLink> buildShortDynamicLink(@com.google.firebase.dynamiclinks.ShortDynamicLink.Suffix int);
     method @NonNull public String getDomainUriPrefix();
     method @NonNull public Uri getLink();
     method @NonNull public Uri getLongLink();
@@ -116,10 +116,10 @@ package com.google.firebase.dynamiclinks {
   public abstract class FirebaseDynamicLinks {
     ctor public FirebaseDynamicLinks();
     method @NonNull public abstract com.google.firebase.dynamiclinks.DynamicLink.Builder createDynamicLink();
-    method @NonNull public abstract Task<PendingDynamicLinkData> getDynamicLink(@NonNull Intent);
-    method @NonNull public abstract Task<PendingDynamicLinkData> getDynamicLink(@NonNull Uri);
+    method @NonNull public abstract com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.PendingDynamicLinkData> getDynamicLink(@NonNull Intent);
+    method @NonNull public abstract com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.PendingDynamicLinkData> getDynamicLink(@NonNull Uri);
     method @NonNull public static com.google.firebase.dynamiclinks.FirebaseDynamicLinks getInstance();
-    method @NonNull public static com.google.firebase.dynamiclinks.FirebaseDynamicLinks getInstance(@NonNull FirebaseApp);
+    method @NonNull public static com.google.firebase.dynamiclinks.FirebaseDynamicLinks getInstance(@NonNull com.google.firebase.FirebaseApp);
   }
 
   public class PendingDynamicLinkData {
@@ -136,7 +136,7 @@ package com.google.firebase.dynamiclinks {
     method @NonNull public List<? extends Warning> getWarnings();
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface ShortDynamicLink.Suffix {
+  @IntDef({com.google.firebase.dynamiclinks.ShortDynamicLink.Suffix.UNGUESSABLE, com.google.firebase.dynamiclinks.ShortDynamicLink.Suffix.SHORT}) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface ShortDynamicLink.Suffix {
     field public static final int SHORT = 2; // 0x2
     field public static final int UNGUESSABLE = 1; // 0x1
   }

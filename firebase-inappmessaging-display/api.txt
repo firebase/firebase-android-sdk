@@ -1,9 +1,9 @@
 // Signature format: 2.0
 package com.google.firebase.inappmessaging.display {
 
-  public class FirebaseInAppMessagingDisplay {
-    method public void displayMessage(InAppMessage, FirebaseInAppMessagingDisplayCallbacks);
-    method @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInstance();
+  @Keep public class FirebaseInAppMessagingDisplay implements com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay {
+    method public void displayMessage(com.google.firebase.inappmessaging.model.InAppMessage, com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks);
+    method @NonNull @Keep public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInstance();
   }
 
 }

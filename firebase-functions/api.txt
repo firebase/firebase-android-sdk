@@ -3,14 +3,14 @@ package com.google.firebase.functions {
 
   public class FirebaseFunctions {
     method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull FirebaseApp, @NonNull String);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull FirebaseApp);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp, @NonNull String);
+    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull String);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance();
     method public void useFunctionsEmulator(@NonNull String);
   }
 
-  public class FirebaseFunctionsException {
+  public class FirebaseFunctionsException extends com.google.firebase.FirebaseException {
     method @NonNull public com.google.firebase.functions.FirebaseFunctionsException.Code getCode();
     method @Nullable public Object getDetails();
   }
@@ -36,8 +36,8 @@ package com.google.firebase.functions {
   }
 
   public class HttpsCallableReference {
-    method @NonNull public Task<HttpsCallableResult> call(@Nullable Object);
-    method @NonNull public Task<HttpsCallableResult> call();
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call(@Nullable Object);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call();
     method public long getTimeout();
     method public void setTimeout(long, @NonNull TimeUnit);
     method @NonNull public com.google.firebase.functions.HttpsCallableReference withTimeout(long, @NonNull TimeUnit);
