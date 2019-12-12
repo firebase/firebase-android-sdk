@@ -58,6 +58,7 @@ public class GrpcCallProvider {
   // This timeout is used when attempting to establish a connection in gRPC. If a connection attempt
   // does not succeed in CONNECTIVITY_ATTEMPT_TIMEOUT_MS, we restart the channel and try
   // reconnecting again, rather than waiting up to 2+ minutes for gRPC to timeout.
+  // More details about usage can be found in GrpcCallProvider.onConnectivityStateChanged().
   private static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
   private DelayedTask connectivityAttemptTimer;
 
@@ -201,6 +202,21 @@ public class GrpcCallProvider {
     }
   }
 
+  /**
+   * Monitors the connectivity state of the gRPC channel and resets the channel when gRPC fails to
+   * connect.
+   *
+   * <p>We currently cannot configure timeouts in connection attempts for gRPC
+   * (https://github.com/grpc/grpc-java/issues/1943), and until they support doing so, the gRPC
+   * connection can stay open for up to 2+ minutes before shutting down.
+   *
+   * <p>We start a timer when the channel enters ConnectivityState.CONNECTING. If the timer elapses,
+   * we reset the channel by shutting it down and reinitializing the channelTask. Changes to the
+   * connectivity state will clear the timer and start a new one-time listener for the next
+   * ConnectivityState change.
+   *
+   * @param channel The channel to monitor the connectivity state of.
+   */
   private void onConnectivityStateChange(ManagedChannel channel) {
     ConnectivityState newState = channel.getState(true);
     Logger.debug(LOG_TAG, "Current gRPC connectivity state: " + newState);
@@ -216,24 +232,18 @@ public class GrpcCallProvider {
               CONNECTIVITY_ATTEMPT_TIMEOUT_MS,
               () -> {
                 Logger.debug(LOG_TAG, "connectivityAttemptTimer elapsed. Resetting the channel.");
-                clearConnectivityTimer();
+                clearConnectivityAttemptTimer();
                 resetChannel(channel);
               });
     } else {
       // Clear the timer otherwise, so we don't end up with multiple connectivityAttemptTimers.
-      clearConnectivityTimer();
+      clearConnectivityAttemptTimer();
     }
     // Re-listen for next state change.
     channel.notifyWhenStateChanged(
         newState, () -> asyncQueue.enqueueAndForget(() -> onConnectivityStateChange(channel)));
   }
 
-  /**
-   * Shuts down and reinitializes the channel.
-   *
-   * <p>This is used when the connectivity attempt timer elapses and we need to reset the gRPC
-   * channel to reestablish connectivity.
-   */
   private void resetChannel(ManagedChannel channel) {
     asyncQueue.enqueueAndForget(
         () -> {
@@ -264,8 +274,7 @@ public class GrpcCallProvider {
             });
   }
 
-  /** Clears the connectivity timer if it exists. */
-  private void clearConnectivityTimer() {
+  private void clearConnectivityAttemptTimer() {
     if (connectivityAttemptTimer != null) {
       Logger.debug(LOG_TAG, "Clearing the connectivityAttemptTimer");
       connectivityAttemptTimer.cancel();

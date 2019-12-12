@@ -177,7 +177,8 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   /**
    * Maximum backoff time for reconnecting when we know the connection is failed on the client-side.
    */
-  private static final long DNS_FAILURE_BACKOFF_MAX_DELAY_MS = TimeUnit.SECONDS.toMillis(10);
+  private static final long BACKOFF_CLIENT_NETWORK_FAILURE_MAX_DELAY_MS =
+      TimeUnit.SECONDS.toMillis(10);
 
   @Nullable private DelayedTask idleTimer;
 
@@ -308,8 +309,9 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     } else if (code == Code.UNAVAILABLE) {
       // This exception is thrown when the gRPC connection fails on the client side, To shorten
       // reconnect time, we can use a shorter max delay when reconnecting.
-      if (status.getCause() instanceof java.net.UnknownHostException) {
-        backoff.setTemporaryMaxDelay(DNS_FAILURE_BACKOFF_MAX_DELAY_MS);
+      if (status.getCause() instanceof java.net.UnknownHostException
+          || status.getCause() instanceof java.net.ConnectException) {
+        backoff.setTemporaryMaxDelay(BACKOFF_CLIENT_NETWORK_FAILURE_MAX_DELAY_MS);
       }
     }
 
