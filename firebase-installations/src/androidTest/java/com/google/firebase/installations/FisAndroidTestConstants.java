@@ -33,5 +33,4 @@ public final class FisAndroidTestConstants {
 
   public static final PersistedInstallationEntry DEFAULT_PERSISTED_INSTALLATION_ENTRY =
       PersistedInstallationEntry.builder().build();
-
 }
