@@ -23,10 +23,12 @@ public class FakeCalendar extends Calendar {
     timeInMillis = initialTimeInMillis;
   }
 
+  @Override
   public long getTimeInMillis() {
     return timeInMillis;
   }
 
+  @Override
   public void setTimeInMillis(long timeInMillis) {
     this.timeInMillis = timeInMillis;
   }

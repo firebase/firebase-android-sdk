@@ -337,7 +337,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /** Use file locking to acquire a lock that will also block other processes. */
-  private FileLock getCrossProcessLock() {
+  FileLock getCrossProcessLock() {
     try {
       File file =
           new File(firebaseApp.getApplicationContext().getFilesDir(), LOCKFILE_NAME_GENERATE_FID);
@@ -351,7 +351,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /** Release a previously acquired lock. */
-  private void releaseCrossProcessLock(FileLock fileLock) {
+  void releaseCrossProcessLock(FileLock fileLock) {
     try {
       fileLock.release();
     } catch (IOException e) {
