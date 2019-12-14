@@ -45,7 +45,7 @@ public final class PersistedInstallationEntrySubject extends Subject {
 
   /**
    * Constructor for use by subclasses. If you want to create an instance of this class itself, call
-   * {@link Subject#check(String, PersistedInstallationEntry ..) check(...)}{@code .that(actual)}.
+   * {@link Subject#check(String, Object ...) check(...)}{@code .that(actual)}.
    *
    * @param metadata
    * @param actual

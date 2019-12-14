@@ -15,21 +15,11 @@
 package com.google.firebase.installations;
 
 import com.google.firebase.installations.local.PersistedInstallationEntry;
-import com.google.firebase.installations.remote.InstallationResponse;
-import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
-import com.google.firebase.installations.remote.TokenResult;
 
 public final class FisAndroidTestConstants {
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
 
-  public static final String TEST_PROJECT_ID = "777777777777";
-
   public static final String TEST_AUTH_TOKEN = "fis.auth.token";
-  public static final String TEST_AUTH_TOKEN_2 = "fis.auth.token2";
-  public static final String TEST_AUTH_TOKEN_3 = "fis.auth.token3";
-  public static final String TEST_AUTH_TOKEN_4 = "fis.auth.token4";
-
-  public static final String TEST_API_KEY = "apiKey";
 
   public static final String TEST_REFRESH_TOKEN = "1:test-refresh-token";
 
@@ -41,40 +31,6 @@ public final class FisAndroidTestConstants {
   public static final long TEST_CREATION_TIMESTAMP_1 = 2000L;
   public static final long TEST_CREATION_TIMESTAMP_2 = 2L;
 
-  public static final String TEST_INSTANCE_ID_1 = "ccccccccccc";
-
   public static final PersistedInstallationEntry DEFAULT_PERSISTED_INSTALLATION_ENTRY =
       PersistedInstallationEntry.builder().build();
-  public static final InstallationResponse TEST_INSTALLATION_RESPONSE =
-      InstallationResponse.builder()
-          .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)
-          .setFid(TEST_FID_1)
-          .setRefreshToken(TEST_REFRESH_TOKEN)
-          .setAuthToken(
-              TokenResult.builder()
-                  .setToken(TEST_AUTH_TOKEN)
-                  .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                  .build())
-          .setResponseCode(ResponseCode.OK)
-          .build();
-
-  public static final InstallationResponse TEST_INSTALLATION_RESPONSE_WITH_IID =
-      InstallationResponse.builder()
-          .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_INSTANCE_ID_1)
-          .setFid(TEST_INSTANCE_ID_1)
-          .setRefreshToken(TEST_REFRESH_TOKEN)
-          .setAuthToken(
-              TokenResult.builder()
-                  .setToken(TEST_AUTH_TOKEN)
-                  .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-                  .build())
-          .setResponseCode(ResponseCode.OK)
-          .build();
-
-  public static final TokenResult TEST_TOKEN_RESULT =
-      TokenResult.builder()
-          .setToken(TEST_AUTH_TOKEN_2)
-          .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
-          .setResponseCode(TokenResult.ResponseCode.OK)
-          .build();
 }
