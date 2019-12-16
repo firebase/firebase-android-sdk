@@ -98,7 +98,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
           throws IOException, EncodingException {
         JsonValueObjectEncoderContext encoderContext =
             new JsonValueObjectEncoderContext(writer, objectEncoders, valueEncoders);
-        encoderContext.add(o);
+        encoderContext.add(o, false);
         encoderContext.close();
       }
 
