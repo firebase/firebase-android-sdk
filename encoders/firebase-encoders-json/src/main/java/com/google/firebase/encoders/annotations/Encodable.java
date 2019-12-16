@@ -52,7 +52,11 @@ public @interface Encodable {
     /** Specifies a custom field name for a given property of a type. */
     String name() default "";
 
-    /** Mark a field to be decoded inline in the parent context not nested under its own key. */
+    /**
+     * Mark a field to be encoded inline in the parent context, instead of nested under its own key.
+     *
+     * <p>Note: if a field is inlined, its name is ignored.
+     */
     boolean inline() default false;
   }
 
