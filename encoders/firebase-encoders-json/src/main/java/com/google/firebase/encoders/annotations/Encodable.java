@@ -42,12 +42,12 @@ import java.lang.annotation.Target;
  * }<pre>
  */
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface Encodable {
 
   /** Field configuration. */
   @Target(ElementType.METHOD)
-  @Retention(RetentionPolicy.CLASS)
+  @Retention(RetentionPolicy.RUNTIME)
   @interface Field {
     /** Specifies a custom field name for a given property of a type. */
     String name() default "";
@@ -62,6 +62,6 @@ public @interface Encodable {
 
   /** Indicates the code generator to ignore a given property of a type. */
   @Target(ElementType.METHOD)
-  @Retention(RetentionPolicy.CLASS)
+  @Retention(RetentionPolicy.RUNTIME)
   @interface Ignore {}
 }
