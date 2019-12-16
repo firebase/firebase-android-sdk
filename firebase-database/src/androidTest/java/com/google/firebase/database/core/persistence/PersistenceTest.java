@@ -27,11 +27,13 @@ import static com.google.firebase.database.IntegrationTestHelpers.setForcedPersi
 import static com.google.firebase.database.IntegrationTestHelpers.waitFor;
 import static com.google.firebase.database.IntegrationTestHelpers.waitForQueue;
 import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.Matchers.lessThan;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -881,7 +883,8 @@ public class PersistenceTest {
     new WriteFuture(ref, ServerValue.TIMESTAMP).timedGet();
 
     Node node = manager.serverCache(query).getNode();
-    assertTrue(Math.abs(System.currentTimeMillis() - (Long) node.getValue()) < 1000);
+    long drift = System.currentTimeMillis() - (Long) node.getValue();
+    assertThat(Math.abs(drift), lessThan(2000l));
   }
 
   @Test
@@ -892,12 +895,11 @@ public class PersistenceTest {
     DatabaseReference ref = refWithConfig(cfg, manager).getRoot().child("foo");
     List<EventRecord> records = ReadFuture.untilCount(ref, 2).timedGet();
     // There will be two events, one local and one when the server responds
-    assertTrue(
-        Math.abs(System.currentTimeMillis() - (Long) records.get(0).getSnapshot().getValue())
-            < 1000);
-    assertTrue(
-        Math.abs(System.currentTimeMillis() - (Long) records.get(1).getSnapshot().getValue())
-            < 1000);
+    long now = System.currentTimeMillis();
+    long drift1 = (Long) records.get(0).getSnapshot().getValue() - now;
+    long drift2 = (Long) records.get(1).getSnapshot().getValue() - now;
+    assertThat(Math.abs(drift1), lessThan(2000l));
+    assertThat(Math.abs(drift2), lessThan(2000l));
   }
 
   @Test

@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class ImmutableTree<T> implements Iterable<Map.Entry<Path, T>> {
+public final class ImmutableTree<T> implements Iterable<Map.Entry<Path, T>> {
 
   private final T value;
   private final ImmutableSortedMap<ChildKey, ImmutableTree<T>> children;

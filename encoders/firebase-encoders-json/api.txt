@@ -2,11 +2,11 @@
 package com.google.firebase.encoders {
 
   public interface DataEncoder {
-    method public void encode(@NonNull Object, @NonNull Writer) throws com.google.firebase.encoders.EncodingException;
+    method public void encode(@NonNull Object, @NonNull java.io.Writer) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
     method @NonNull public String encode(@NonNull Object) throws com.google.firebase.encoders.EncodingException;
   }
 
-  public final class EncodingException {
+  public final class EncodingException extends java.lang.Exception {
     ctor public EncodingException(@NonNull String);
     ctor public EncodingException(@NonNull String, @NonNull Exception);
   }
@@ -15,38 +15,38 @@ package com.google.firebase.encoders {
   }
 
   public interface ObjectEncoderContext {
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, @Nullable Object) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, double) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, int) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, long) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, boolean) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext nested(@NonNull String);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, @Nullable Object) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, double) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, int) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, long) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, boolean) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext nested(@NonNull String) throws java.io.IOException;
   }
 
   public interface ValueEncoder<T> {
   }
 
   public interface ValueEncoderContext {
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@Nullable String) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(double) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(int) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(long) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(boolean) throws com.google.firebase.encoders.EncodingException;
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@NonNull byte[]) throws com.google.firebase.encoders.EncodingException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@Nullable String) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(double) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(int) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(long) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(boolean) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@NonNull byte[]) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
   }
 
 }
 
 package com.google.firebase.encoders.annotations {
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Encodable {
+  @java.lang.annotation.Target(java.lang.annotation.ElementType.TYPE) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Encodable {
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface Encodable.Field {
+  @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface Encodable.Field {
     method public abstract String name() default "";
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface Encodable.Ignore {
+  @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface Encodable.Ignore {
   }
 
 }
