@@ -12,18 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.encoders;
+package com.google.firebase.encoders.reflective;
 
 import androidx.annotation.NonNull;
-import java.io.IOException;
+import com.google.firebase.encoders.ObjectEncoder;
 
-/**
- * An {@link Encoder} takes objects and writes them in {@code EncoderContext}.
- *
- * <p>This interface should be used as base for interfaces with concrete {@code Contexts}.
- */
-interface Encoder<TValue, TContext> {
-
-  /** Encode {@code obj} using {@code TContext}. */
-  void encode(@NonNull TValue obj, @NonNull TContext context) throws EncodingException, IOException;
+interface ObjectEncoderProvider {
+  @NonNull
+  <T> ObjectEncoder<T> get(@NonNull Class<T> type);
 }

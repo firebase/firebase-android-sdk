@@ -40,15 +40,15 @@ package com.google.firebase.encoders {
 
 package com.google.firebase.encoders.annotations {
 
-  @java.lang.annotation.Target(java.lang.annotation.ElementType.TYPE) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Encodable {
+  @java.lang.annotation.Target(java.lang.annotation.ElementType.TYPE) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public @interface Encodable {
   }
 
-  @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface Encodable.Field {
+  @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface Encodable.Field {
     method public abstract boolean inline() default false;
     method public abstract String name() default "";
   }
 
-  @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface Encodable.Ignore {
+  @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface Encodable.Ignore {
   }
 
 }
@@ -74,6 +74,7 @@ package com.google.firebase.encoders.json {
     method @NonNull public com.google.firebase.encoders.json.JsonDataEncoderBuilder configureWith(@NonNull com.google.firebase.encoders.config.Configurator);
     method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ObjectEncoder<? super T>);
     method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ValueEncoder<? super T>);
+    method @NonNull public com.google.firebase.encoders.json.JsonDataEncoderBuilder registerFallbackEncoder(@NonNull com.google.firebase.encoders.ObjectEncoder<java.lang.Object>);
   }
 
 }
