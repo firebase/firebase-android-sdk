@@ -157,6 +157,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
 
                   task.setSourceSet(mainSourceSet);
                 });
+    project.getTasks().getByName("check").dependsOn(docStubs);
 
     android
         .getLibraryVariants()

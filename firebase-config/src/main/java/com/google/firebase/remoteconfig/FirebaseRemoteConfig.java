@@ -390,6 +390,7 @@ public class FirebaseRemoteConfig {
    * @param key A Firebase Remote Config parameter key.
    * @return {@code byte[]} representing the value of the Firebase Remote Config parameter with the
    *     given key.
+   * @deprecated please use {@link #getString(String)} instead
    */
   @NonNull
   @Deprecated
