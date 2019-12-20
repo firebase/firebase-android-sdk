@@ -94,7 +94,7 @@ dokka {
 
     externalDocumentationLink {
         url = new URL('https://developers.google.com/android/reference/')
-        packageListUrl = file("android-package-list").toURI().toURL()
+        packageListUrl = file('package-lists/google/package-list').toURI().toURL()
     }
 }
 
@@ -127,8 +127,15 @@ tasks.create('dokkaFirebase', DokkaAndroidTask) {
         }
     }
 
+    noAndroidSdkLink = true
+
+    externalDocumentationLink {
+        url = new URL('https://developers.android.com/reference/kotlin/')
+        packageListUrl = file('package-lists/android/package-list').toURI().toURL()
+    }
+
     externalDocumentationLink {
         url = new URL('https://developers.google.com/android/reference/')
-        packageListUrl = file("android-package-list").toURI().toURL()
+        packageListUrl = file('package-lists/google/package-list').toURI().toURL()
     }
 }
