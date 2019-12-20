@@ -45,8 +45,10 @@ public class HttpsCallableReference {
    * <ul>
    *   <li>Any primitive type, including null, int, long, float, and boolean.
    *   <li>{@link String}
-   *   <li>{@link java.util.List List&lt;?&gt;}, where the contained objects are also one of these types.
-   *   <li>{@link java.util.Map Map&lt;String, ?&gt;>}, where the values are also one of these types.
+   *   <li>{@link java.util.List List&lt;?&gt;}, where the contained objects are also one of these
+   *       types.
+   *   <li>{@link java.util.Map Map&lt;String, ?&gt;>}, where the values are also one of these
+   *       types.
    *   <li>{@link org.json.JSONArray}
    *   <li>{@link org.json.JSONObject}
    *   <li>{@link org.json.JSONObject#NULL}
@@ -56,8 +58,8 @@ public class HttpsCallableReference {
    *
    * <ul>
    *   <li>{@link java.io.IOException} - if the HTTPS request failed to connect.
-   *   <li>{@link FirebaseFunctionsException} - if the request connected, but the function returned an
-   *       error.
+   *   <li>{@link FirebaseFunctionsException} - if the request connected, but the function returned
+   *       an error.
    * </ul>
    *
    * <p>The request to the Cloud Functions backend made by this method automatically includes a

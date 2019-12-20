@@ -10,7 +10,7 @@ package com.google.firebase.remoteconfig {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> fetchAndActivate();
     method @NonNull public java.util.Map<java.lang.String,com.google.firebase.remoteconfig.FirebaseRemoteConfigValue> getAll();
     method public boolean getBoolean(@NonNull String);
-    method @Deprecated @NonNull public byte[] getByteArray(@NonNull String);
+    method @NonNull public byte[] getByteArray(@NonNull String);
     method public double getDouble(@NonNull String);
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo getInfo();
     method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig getInstance();
