@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.dokka.gradle.DokkaAndroidTask
+
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
-    id 'org.jetbrains.dokka-android' version '0.9.18'
+    id 'org.jetbrains.dokka-android'
 }
 
 android {
@@ -26,16 +28,20 @@ android {
     }
 }
 
-configurations {
-    dokkapath
-    dokkapath.description = "dokka project classpath"
+// need to exclude annotations from classpath so that kotlindoc does not have @NonNull everywhere
+configurations.all {
+    exclude group: 'androidx.annotation', module: 'annotation'
 }
 
 def ALL_SUPPORTED_PROJECTS = [
         ':firebase-common',
         ':firebase-config',
+        ':firebase-database',
+        ':firebase-dynamic-links',
         ':firebase-firestore',
         ':firebase-functions',
+        ':firebase-inappmessaging',
+        ':firebase-inappmessaging-display',
         ':firebase-storage',
 ]
 
@@ -47,6 +53,15 @@ def PROJECTS_TO_DOCUMENT = (project.findProperty('kotlindocProjects')?.split(','
 def javaDeps = PROJECTS_TO_DOCUMENT
 def kotlinDeps = javaDeps.collect {
     project("$it.path:ktx")
+}
+
+dependencies {
+    javaDeps.each {
+        compile it
+    }
+    kotlinDeps.each {
+        compile it
+    }
 }
 
 dokka {
@@ -61,13 +76,72 @@ dokka {
             path = "$p.buildDir/doc-stubs"
         }
     }
-    afterEvaluate {
-        sourceDirs = files(kotlinDeps.collect {
-            "$it.projectDir/src/main/kotlin"
-        })
+    sourceDirs = files(kotlinDeps.collect {
+        "$it.projectDir/src/main/kotlin"
+    })
+
+    android.libraryVariants.all { v ->
+        if (v.name == 'release') {
+            afterEvaluate {
+                classpath = v.runtimeConfiguration.incoming.artifactView {
+                    attributes { c ->
+                        c.attribute(Attribute.of("artifactType", String.class), "jar")
+                    }
+                }.artifacts.artifactFiles + android.bootClasspath
+            }
+        }
     }
 
     externalDocumentationLink {
-        url = new URL('https://developer.android.com/reference/kotlin')
+        url = new URL('https://developers.google.com/android/reference/')
+        packageListUrl = file('package-lists/google/package-list').toURI().toURL()
     }
+}
+
+tasks.create('dokkaFirebase', DokkaAndroidTask) {
+    moduleName = "docs/reference/kotlin"
+    outputDirectory = "$buildDir/dokka/firebase"
+    outputFormat = "dac"
+    processConfigurations = []
+
+    javaDeps.each { Project p ->
+        dependsOn "$p.path:docStubs"
+        sourceRoot {
+            path = "$p.buildDir/doc-stubs"
+        }
+    }
+    sourceDirs = files(kotlinDeps.collect {
+        "$it.projectDir/src/main/kotlin"
+    })
+
+    // populate the classpath with all transitive dependencies
+    android.libraryVariants.all { v ->
+        if (v.name == 'release') {
+            afterEvaluate {
+                classpath = v.runtimeConfiguration.incoming.artifactView {
+                    attributes { c ->
+                        c.attribute(Attribute.of("artifactType", String.class), "jar")
+                    }
+                }.artifacts.artifactFiles + android.bootClasspath
+            }
+        }
+    }
+
+    noAndroidSdkLink = true
+
+    externalDocumentationLink {
+        url = new URL('https://developers.android.com/reference/kotlin/')
+        packageListUrl = file('package-lists/android/package-list').toURI().toURL()
+    }
+
+    externalDocumentationLink {
+        url = new URL('https://developers.google.com/android/reference/')
+        packageListUrl = file('package-lists/google/package-list').toURI().toURL()
+    }
+}
+
+tasks.create('dokkaFirebaseZip', Zip) {
+    from "$buildDir/dokka/firebase/docs/reference/kotlin"
+    exclude '**/package-list'
+    destinationDirectory = project.rootProject.buildDir
 }
