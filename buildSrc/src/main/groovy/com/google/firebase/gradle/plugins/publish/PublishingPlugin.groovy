@@ -153,7 +153,7 @@ class PublishingPlugin implements Plugin<Project> {
             }
             buildMavenZip.mustRunAfter info
 
-            firebasePublish.dependsOn info, buildMavenZip
+            firebasePublish.dependsOn info, buildMavenZip, ':kotlindoc:dokkaFirebaseZip'
         }
     }
 

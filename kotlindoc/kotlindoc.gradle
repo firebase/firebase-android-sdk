@@ -139,3 +139,9 @@ tasks.create('dokkaFirebase', DokkaAndroidTask) {
         packageListUrl = file('package-lists/google/package-list').toURI().toURL()
     }
 }
+
+tasks.create('dokkaFirebaseZip', Zip) {
+    from "$buildDir/dokka/firebase/docs/reference/kotlin"
+    exclude '**/package-list'
+    destinationDirectory = project.rootProject.buildDir
+}
