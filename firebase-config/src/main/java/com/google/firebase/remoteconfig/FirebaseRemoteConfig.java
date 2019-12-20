@@ -392,6 +392,7 @@ public class FirebaseRemoteConfig {
    *     given key.
    */
   @NonNull
+  @Deprecated
   public byte[] getByteArray(@NonNull String key) {
     return getHandler.getByteArray(key);
   }
