@@ -23,6 +23,9 @@ buildscript {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven {
+            url 'https://storage.googleapis.com/android-ci/mvn/'
+        }
     }
 
     dependencies {
