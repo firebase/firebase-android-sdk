@@ -28,11 +28,6 @@ public interface FirebaseInAppMessagingDisplayCallbacks {
   @NonNull
   Task<Void> messageDismissed(@NonNull InAppMessagingDismissType dismissType);
 
-  // log when a message is tap (ie: button, in the modal view) and the action_url is followed
-  // With CardMessage, defaults to 'primary Action'
-  @Deprecated
-  // Task<Void> messageClicked();
-
   // log when a message is tap (ie: button, in the modal view)  with the Action followed
   @NonNull
   Task<Void> messageClicked(@NonNull Action action);
