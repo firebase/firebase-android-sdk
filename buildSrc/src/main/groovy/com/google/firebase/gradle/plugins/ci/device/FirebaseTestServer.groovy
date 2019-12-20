@@ -22,7 +22,7 @@ import org.gradle.api.Project
 
 
 class FirebaseTestServer extends TestServer {
-    private static final String DEFAULT_BUCKET_NAME = 'android-ci'
+    private static final String DEFAULT_BUCKET_NAME = 'ftl-results'
     final Project project
     final FirebaseTestLabExtension extension
     final Random random
@@ -65,12 +65,46 @@ class FirebaseTestServer extends TestServer {
     }
 
     private List<String> getResultUploadArgs() {
-        Optional<String> resultsBucket = Optional.ofNullable(System.getenv('FTL_RESULTS_BUCKET')).map(Environment.&expand)
-        Optional<String> resultsDir = Optional.ofNullable(System.getenv('FTL_RESULTS_DIR')).map(Environment.&expand)
+        String resultsBucket = null
+        String resultsDir = null
 
-        List<String> args = ['--results-bucket', resultsBucket.orElse(DEFAULT_BUCKET_NAME)]
-        if (resultsDir.isPresent()) {
-            args += ['--results-dir', Paths.get(resultsDir.get(), "${project.path}_${random.nextLong()}")]
+        Optional<String> resultsBucketFromEnv = Optional.ofNullable(System.getenv('FTL_RESULTS_BUCKET')).map(Environment.&expand)
+        Optional<String> resultsDirFromEnv = Optional.ofNullable(System.getenv('FTL_RESULTS_DIR')).map(Environment.&expand)
+
+        Optional<String> ci = Optional.ofNullable(System.getenv('FIREBASE_CI'))
+        Optional<String> repoOwner = Optional.ofNullable(System.getenv('REPO_OWNER'))
+        Optional<String> jobType = Optional.ofNullable(System.getenv('JOB_TYPE'))
+
+        if (resultsBucketFromEnv.isPresent()) {
+            resultsBucket = resultsBucketFromEnv.get()
+        } else {
+            if (ci.isPresent()) {
+                if (repoOwner.get().equalsIgnoreCase('firebase')) {
+                    resultsBucket = 'android-ci'
+                } else {
+                    resultsBucket = 'fireescape'
+                }
+            } else {
+                resultsBucket = DEFAULT_BUCKET_NAME
+            }
+        }
+
+        if (resultsDirFromEnv.isPresent()) {
+            resultsDir = Paths.get(resultsDir.get(), "${project.path}_${random.nextLong()}")
+        } else {
+            if (ci.isPresent()) {
+                if (jobType.get().equalsIgnoreCase('presubmit')) {
+                    // TODO(yifany): get these log locations programmatically
+                    resultsDir = Environment.expand("pr-logs/pull/$(REPO_OWNER)_$(REPO_NAME)/$(PULL_NUMBER)/$(JOB_NAME)/$(BUILD_ID)/artifacts/")
+                } else if (jobType.get().equalsIgnoreCase('postsubmit')){
+                    resultsDir = Environment.expand("logs/$(JOB_NAME)/$(BUILD_ID)/artifacts/")
+                }
+            }
+        }
+
+        List<String> args = ['--results-bucket', resultsBucket]
+        if (resultsDir) {
+            args += ['--results-dir', resultsDir]
         }
         return args
     }
