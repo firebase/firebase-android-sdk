@@ -18,6 +18,7 @@ import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import digital.wup.android_maven_publish.AndroidMavenPublishPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.UnknownProjectException
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
@@ -153,7 +154,12 @@ class PublishingPlugin implements Plugin<Project> {
             }
             buildMavenZip.mustRunAfter info
 
-            firebasePublish.dependsOn info, buildMavenZip, ':kotlindoc:dokkaFirebaseZip'
+            firebasePublish.dependsOn info, buildMavenZip
+
+            try {
+                project.project(':kotlindoc')
+                firebasePublish.dependsOn ':kotlindoc:dokkaFirebaseZip'
+            } catch(UnknownProjectException e) {}
         }
     }
 
