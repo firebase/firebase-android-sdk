@@ -22,7 +22,7 @@ import org.gradle.api.Project
 
 
 class FirebaseTestServer extends TestServer {
-    private static final String DEFAULT_BUCKET_NAME = 'android-ci'
+    private static final String DEFAULT_BUCKET_NAME = 'fireescape-ftl-test-results'
     final Project project
     final FirebaseTestLabExtension extension
     final Random random
