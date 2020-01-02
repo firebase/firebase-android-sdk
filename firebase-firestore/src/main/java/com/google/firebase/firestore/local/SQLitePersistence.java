@@ -79,7 +79,7 @@ public final class SQLitePersistence extends Persistence {
 
   private final SQLiteOpenHelper opener;
   private final LocalSerializer serializer;
-  private final SQLiteQueryCache queryCache;
+  private final SQLiteTargetCache targetCache;
   private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
@@ -115,7 +115,7 @@ public final class SQLitePersistence extends Persistence {
       LocalSerializer serializer, LruGarbageCollector.Params params, SQLiteOpenHelper openHelper) {
     this.opener = openHelper;
     this.serializer = serializer;
-    this.queryCache = new SQLiteQueryCache(this, this.serializer);
+    this.targetCache = new SQLiteTargetCache(this, this.serializer);
     this.indexManager = new SQLiteIndexManager(this);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
@@ -139,8 +139,8 @@ public final class SQLitePersistence extends Persistence {
               + " is, call setPersistenceEnabled(true)) in one of them.",
           e);
     }
-    queryCache.start();
-    referenceDelegate.start(queryCache.getHighestListenSequenceNumber());
+    targetCache.start();
+    referenceDelegate.start(targetCache.getHighestListenSequenceNumber());
   }
 
   @Override
@@ -167,8 +167,8 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  SQLiteQueryCache getQueryCache() {
-    return queryCache;
+  SQLiteTargetCache getTargetCache() {
+    return targetCache;
   }
 
   @Override

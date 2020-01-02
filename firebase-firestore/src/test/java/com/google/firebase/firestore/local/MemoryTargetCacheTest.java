@@ -20,7 +20,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public final class MemoryQueryCacheTest extends QueryCacheTestCase {
+public final class MemoryTargetCacheTest extends TargetCacheTestCase {
 
   @Override
   Persistence getPersistence() {

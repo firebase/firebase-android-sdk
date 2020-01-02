@@ -16,7 +16,7 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import com.google.firebase.firestore.local.QueryData;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
@@ -71,14 +71,14 @@ public class WatchStream
    * will be included in the request. Results that affect the query will be streamed back as
    * WatchChange messages that reference the targetID included in query.
    */
-  public void watchQuery(QueryData queryData) {
+  public void watchQuery(TargetData targetData) {
     hardAssert(isOpen(), "Watching queries requires an open stream");
     ListenRequest.Builder request =
         ListenRequest.newBuilder()
             .setDatabase(serializer.databaseName())
-            .setAddTarget(serializer.encodeTarget(queryData));
+            .setAddTarget(serializer.encodeTarget(targetData));
 
-    Map<String, String> labels = serializer.encodeListenRequestLabels(queryData);
+    Map<String, String> labels = serializer.encodeListenRequestLabels(targetData);
     if (labels != null) {
       request.putAllLabels(labels);
     }

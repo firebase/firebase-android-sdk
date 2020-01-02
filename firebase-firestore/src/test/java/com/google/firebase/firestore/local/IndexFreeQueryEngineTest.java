@@ -69,7 +69,7 @@ public class IndexFreeQueryEngineTest {
 
   private MemoryPersistence persistence;
   private MemoryRemoteDocumentCache remoteDocumentCache;
-  private QueryCache queryCache;
+  private TargetCache targetCache;
   private QueryEngine queryEngine;
 
   private @Nullable Boolean expectIndexFreeExecution;
@@ -79,7 +79,7 @@ public class IndexFreeQueryEngineTest {
     expectIndexFreeExecution = null;
 
     persistence = MemoryPersistence.createEagerGcMemoryPersistence();
-    queryCache = new MemoryQueryCache(persistence);
+    targetCache = new MemoryTargetCache(persistence);
     queryEngine = new IndexFreeQueryEngine();
 
     remoteDocumentCache = persistence.getRemoteDocumentCache();
@@ -111,7 +111,7 @@ public class IndexFreeQueryEngineTest {
           for (DocumentKey documentKey : documentKeys) {
             remoteKeys = remoteKeys.insert(documentKey);
           }
-          queryCache.addMatchingKeys(remoteKeys, TEST_TARGET_ID);
+          targetCache.addMatchingKeys(remoteKeys, TEST_TARGET_ID);
         });
   }
 
@@ -152,7 +152,7 @@ public class IndexFreeQueryEngineTest {
         queryEngine.getDocumentsMatchingQuery(
             query,
             lastLimboFreeSnapshotVersion,
-            queryCache.getMatchingKeysForTargetId(TEST_TARGET_ID));
+            targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID));
     View view =
         new View(query, new ImmutableSortedSet<>(Collections.emptyList(), DocumentKey::compareTo));
     View.DocumentChanges viewDocChanges = view.computeDocChanges(docs);

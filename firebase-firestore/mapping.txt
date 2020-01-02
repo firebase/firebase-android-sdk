@@ -1282,10 +1282,10 @@ com.google.firebase.firestore.local.LocalSerializer -> com.google.firebase.fires
     2101:2103:com.google.firebase.firestore.model.MaybeDocument decodeMaybeDocument(com.google.firebase.firestore.proto.MaybeDocument):55 -> zza
     109:116:com.google.firebase.firestore.proto.WriteBatch encodeMutationBatch(com.google.firebase.firestore.model.mutation.MutationBatch) -> zza
     121:130:com.google.firebase.firestore.model.mutation.MutationBatch decodeMutationBatch(com.google.firebase.firestore.proto.WriteBatch) -> zza
-    134:155:com.google.firebase.firestore.proto.Target encodeQueryData(com.google.firebase.firestore.local.QueryData) -> zza
+    134:155:com.google.firebase.firestore.proto.Target encodeTargetData(com.google.firebase.firestore.local.TargetData) -> zza
     2112:2112:com.google.protobuf.Timestamp com.google.firebase.firestore.remote.RemoteSerializer.encodeVersion(com.google.firebase.firestore.model.SnapshotVersion):112:112 -> zza
-    2112:2112:com.google.firebase.firestore.proto.Target encodeQueryData(com.google.firebase.firestore.local.QueryData):145 -> zza
-    159:177:com.google.firebase.firestore.local.QueryData decodeQueryData(com.google.firebase.firestore.proto.Target) -> zza
+    2112:2112:com.google.firebase.firestore.proto.Target encodeTargetData(com.google.firebase.firestore.local.TargetData):145 -> zza
+    159:177:com.google.firebase.firestore.local.TargetData decodeTargetData(com.google.firebase.firestore.proto.Target) -> zza
 com.google.firebase.firestore.local.LocalSerializer$1 -> com.google.firebase.firestore.c.zzh$1:
     int[] $SwitchMap$com$google$firebase$firestore$proto$MaybeDocument$DocumentTypeCase -> zza
     int[] $SwitchMap$com$google$firebase$firestore$proto$Target$TargetTypeCase -> zzb
@@ -1298,13 +1298,13 @@ com.google.firebase.firestore.local.LocalStore -> com.google.firebase.firestore.
     com.google.firebase.firestore.local.QueryEngine queryEngine -> zze
     com.google.firebase.firestore.local.ReferenceSet localViewReferences -> zzf
     com.google.firebase.firestore.local.GarbageCollector garbageCollector -> zzg
-    com.google.firebase.firestore.local.QueryCache queryCache -> zzh
+    com.google.firebase.firestore.local.TargetCache targetCache -> zzh
     android.util.SparseArray targetIds -> zzi
     com.google.firebase.firestore.core.TargetIdGenerator targetIdGenerator -> zzj
     java.util.List heldBatchResults -> zzk
     125:142:void <init>(com.google.firebase.firestore.local.Persistence,com.google.firebase.firestore.local.GarbageCollector,com.google.firebase.firestore.auth.User) -> <init>
     145:147:void start() -> zza
-    1176:1180:void startQueryCache():176:180 -> zza
+    1176:1180:void startTargetCache():176:180 -> zza
     1176:1180:void start():146 -> zza
     150:173:void startMutationQueue() -> zzf
     186:212:com.google.firebase.database.collection.ImmutableSortedMap handleUserChange(com.google.firebase.firestore.auth.User) -> zza
@@ -1318,7 +1318,7 @@ com.google.firebase.firestore.local.LocalStore -> com.google.firebase.firestore.
     433:440:void notifyLocalViewChanges(java.util.List) -> zzb
     449:449:com.google.firebase.firestore.model.mutation.MutationBatch getNextMutationBatch(int) -> zzb
     455:455:com.google.firebase.firestore.model.MaybeDocument readDocument(com.google.firebase.firestore.model.DocumentKey) -> zza
-    465:487:com.google.firebase.firestore.local.QueryData allocateQuery(com.google.firebase.firestore.core.Query) -> zza
+    465:487:com.google.firebase.firestore.local.TargetData allocateQuery(com.google.firebase.firestore.core.Query) -> zza
     498:519:void releaseQuery(com.google.firebase.firestore.core.Query) -> zzb
     523:523:com.google.firebase.database.collection.ImmutableSortedMap executeQuery(com.google.firebase.firestore.core.Query) -> zzc
     531:531:com.google.firebase.database.collection.ImmutableSortedSet getRemoteDocumentKeys(int) -> zzc
@@ -1388,7 +1388,7 @@ com.google.firebase.firestore.local.LocalStore$$Lambda$8 -> com.google.firebase.
     void <init>(com.google.firebase.firestore.local.LocalStore,java.util.Set) -> <init>
     void run() -> run
 com.google.firebase.firestore.local.LocalStore$AllocateQueryHolder -> com.google.firebase.firestore.c.zzi$zza:
-    com.google.firebase.firestore.local.QueryData cached -> zza
+    com.google.firebase.firestore.local.TargetData cached -> zza
     int targetId -> zzb
     491:491:void <init>() -> <init>
     491:491:void <init>(byte) -> <init>
@@ -1441,17 +1441,17 @@ com.google.firebase.firestore.local.MemoryMutationQueue -> com.google.firebase.f
     443:445:int indexOfExistingBatchId(int,java.lang.String) -> zza
 com.google.firebase.firestore.local.MemoryPersistence -> com.google.firebase.firestore.c.zzv:
     java.util.Map mutationQueues -> zzc
-    com.google.firebase.firestore.local.MemoryQueryCache queryCache -> zzd
+    com.google.firebase.firestore.local.MemoryTargetCache targetCache -> zzd
     com.google.firebase.firestore.local.MemoryRemoteDocumentCache remoteDocumentCache -> zze
     boolean started -> zzf
     26:30:void <init>() -> <init>
     34:36:void start() -> zza
     48:53:com.google.firebase.firestore.local.MutationQueue getMutationQueue(com.google.firebase.firestore.auth.User) -> zza
-    58:58:com.google.firebase.firestore.local.QueryCache getQueryCache() -> zzb
+    58:58:com.google.firebase.firestore.local.TargetCache getTargetCache() -> zzb
     63:63:com.google.firebase.firestore.local.RemoteDocumentCache getRemoteDocumentCache() -> zzc
     68:69:void runTransaction(java.lang.String,java.lang.Runnable) -> zza
     73:73:java.lang.Object runTransaction(java.lang.String,com.google.firebase.firestore.util.Supplier) -> zza
-com.google.firebase.firestore.local.MemoryQueryCache -> com.google.firebase.firestore.c.zzw:
+com.google.firebase.firestore.local.MemoryTargetCache -> com.google.firebase.firestore.c.zzw:
     java.util.Map queries -> zza
     com.google.firebase.firestore.local.ReferenceSet references -> zzb
     int highestTargetId -> zzc
@@ -1461,9 +1461,9 @@ com.google.firebase.firestore.local.MemoryQueryCache -> com.google.firebase.fire
     36:36:int getHighestTargetId() -> zzb
     41:41:com.google.firebase.firestore.model.SnapshotVersion getLastRemoteSnapshotVersion() -> zzc
     46:47:void setLastRemoteSnapshotVersion(com.google.firebase.firestore.model.SnapshotVersion) -> zza
-    53:58:void addQueryData(com.google.firebase.firestore.local.QueryData) -> zza
-    62:64:void removeQueryData(com.google.firebase.firestore.local.QueryData) -> zzb
-    69:69:com.google.firebase.firestore.local.QueryData getQueryData(com.google.firebase.firestore.core.Query) -> zza
+    53:58:void addTargetData(com.google.firebase.firestore.local.TargetData) -> zza
+    62:64:void removeTargetData(com.google.firebase.firestore.local.TargetData) -> zzb
+    69:69:com.google.firebase.firestore.local.TargetData getTargetData(com.google.firebase.firestore.core.Query) -> zza
     76:77:void addMatchingKeys(com.google.firebase.database.collection.ImmutableSortedSet,int) -> zza
     81:82:void removeMatchingKeys(com.google.firebase.database.collection.ImmutableSortedSet,int) -> zzb
     86:87:void removeMatchingKeysForTargetId(int) -> zza
@@ -1505,24 +1505,24 @@ com.google.firebase.firestore.local.Persistence -> com.google.firebase.firestore
     43:43:void <init>() -> <init>
     void start() -> zza
     com.google.firebase.firestore.local.MutationQueue getMutationQueue(com.google.firebase.firestore.auth.User) -> zza
-    com.google.firebase.firestore.local.QueryCache getQueryCache() -> zzb
+    com.google.firebase.firestore.local.TargetCache getTargetCache() -> zzb
     com.google.firebase.firestore.local.RemoteDocumentCache getRemoteDocumentCache() -> zzc
     void runTransaction(java.lang.String,java.lang.Runnable) -> zza
     java.lang.Object runTransaction(java.lang.String,com.google.firebase.firestore.util.Supplier) -> zza
     36:40:void <clinit>() -> <clinit>
-com.google.firebase.firestore.local.QueryCache -> com.google.firebase.firestore.c.zzab:
+com.google.firebase.firestore.local.TargetCache -> com.google.firebase.firestore.c.zzab:
     void start() -> zza
     int getHighestTargetId() -> zzb
     com.google.firebase.firestore.model.SnapshotVersion getLastRemoteSnapshotVersion() -> zzc
     void setLastRemoteSnapshotVersion(com.google.firebase.firestore.model.SnapshotVersion) -> zza
-    void addQueryData(com.google.firebase.firestore.local.QueryData) -> zza
-    void removeQueryData(com.google.firebase.firestore.local.QueryData) -> zzb
-    com.google.firebase.firestore.local.QueryData getQueryData(com.google.firebase.firestore.core.Query) -> zza
+    void addTargetData(com.google.firebase.firestore.local.TargetData) -> zza
+    void removeTargetData(com.google.firebase.firestore.local.TargetData) -> zzb
+    com.google.firebase.firestore.local.TargetData getTargetData(com.google.firebase.firestore.core.Query) -> zza
     void addMatchingKeys(com.google.firebase.database.collection.ImmutableSortedSet,int) -> zza
     void removeMatchingKeys(com.google.firebase.database.collection.ImmutableSortedSet,int) -> zzb
     void removeMatchingKeysForTargetId(int) -> zza
     com.google.firebase.database.collection.ImmutableSortedSet getMatchingKeysForTargetId(int) -> zzb
-com.google.firebase.firestore.local.QueryData -> com.google.firebase.firestore.c.zzac:
+com.google.firebase.firestore.local.TargetData -> com.google.firebase.firestore.c.zzac:
     com.google.firebase.firestore.core.Query query -> zza
     int targetId -> zzb
     com.google.firebase.firestore.local.QueryPurpose purpose -> zzc
@@ -1538,7 +1538,7 @@ com.google.firebase.firestore.local.QueryData -> com.google.firebase.firestore.c
     71:83:boolean equals(java.lang.Object) -> equals
     88:93:int hashCode() -> hashCode
     98:98:java.lang.String toString() -> toString
-    114:114:com.google.firebase.firestore.local.QueryData copy(com.google.firebase.firestore.model.SnapshotVersion,com.google.protobuf.ByteString) -> zza
+    114:114:com.google.firebase.firestore.local.TargetData copy(com.google.firebase.firestore.model.SnapshotVersion,com.google.protobuf.ByteString) -> zza
 com.google.firebase.firestore.local.QueryEngine -> com.google.firebase.firestore.c.zzad:
     com.google.firebase.database.collection.ImmutableSortedMap getDocumentsMatchingQuery(com.google.firebase.firestore.core.Query) -> zza
 com.google.firebase.firestore.local.QueryPurpose -> com.google.firebase.firestore.c.zzae:
@@ -1672,7 +1672,7 @@ com.google.firebase.firestore.local.SQLitePersistence -> com.google.firebase.fir
     63:67:void <init>(android.content.Context,java.lang.String,com.google.firebase.firestore.model.DatabaseId,com.google.firebase.firestore.local.LocalSerializer) -> <init>
     71:87:void start() -> zza
     99:99:com.google.firebase.firestore.local.MutationQueue getMutationQueue(com.google.firebase.firestore.auth.User) -> zza
-    104:104:com.google.firebase.firestore.local.QueryCache getQueryCache() -> zzb
+    104:104:com.google.firebase.firestore.local.TargetCache getTargetCache() -> zzb
     109:109:com.google.firebase.firestore.local.RemoteDocumentCache getRemoteDocumentCache() -> zzc
     115:124:void runTransaction(java.lang.String,java.lang.Runnable) -> zza
     129:137:java.lang.Object runTransaction(java.lang.String,com.google.firebase.firestore.util.Supplier) -> zza
@@ -1711,7 +1711,7 @@ com.google.firebase.firestore.local.SQLitePersistence$Query$$Lambda$0 -> com.goo
     android.database.Cursor newCursor(android.database.sqlite.SQLiteDatabase,android.database.sqlite.SQLiteCursorDriver,java.lang.String,android.database.sqlite.SQLiteQuery) -> newCursor
     1326:1327:android.database.Cursor com.google.firebase.firestore.local.SQLitePersistence$Query.lambda$binding$0$SQLitePersistence$Query$66ea1cc6(java.lang.Object[],android.database.sqlite.SQLiteCursorDriver,java.lang.String,android.database.sqlite.SQLiteQuery):326:327 -> newCursor
     1326:1327:android.database.Cursor newCursor(android.database.sqlite.SQLiteDatabase,android.database.sqlite.SQLiteCursorDriver,java.lang.String,android.database.sqlite.SQLiteQuery):0 -> newCursor
-com.google.firebase.firestore.local.SQLiteQueryCache -> com.google.firebase.firestore.c.zzav:
+com.google.firebase.firestore.local.SQLiteTargetCache -> com.google.firebase.firestore.c.zzav:
     com.google.firebase.firestore.local.SQLitePersistence db -> zza
     com.google.firebase.firestore.local.LocalSerializer localSerializer -> zzb
     com.google.firebase.firestore.local.GarbageCollector garbageCollector -> zzc
@@ -1723,46 +1723,46 @@ com.google.firebase.firestore.local.SQLiteQueryCache -> com.google.firebase.fire
     62:62:int getHighestTargetId() -> zzb
     67:67:com.google.firebase.firestore.model.SnapshotVersion getLastRemoteSnapshotVersion() -> zzc
     72:74:void setLastRemoteSnapshotVersion(com.google.firebase.firestore.model.SnapshotVersion) -> zza
-    78:107:void addQueryData(com.google.firebase.firestore.local.QueryData) -> zza
+    78:107:void addTargetData(com.google.firebase.firestore.local.TargetData) -> zza
     110:117:void writeMetadata() -> zzd
-    121:125:void removeQueryData(com.google.firebase.firestore.local.QueryData) -> zzb
-    133:148:com.google.firebase.firestore.local.QueryData getQueryData(com.google.firebase.firestore.core.Query) -> zza
-    157:159:com.google.firebase.firestore.local.QueryData decodeQueryData(byte[]) -> zza
+    121:125:void removeTargetData(com.google.firebase.firestore.local.TargetData) -> zzb
+    133:148:com.google.firebase.firestore.local.TargetData getTargetData(com.google.firebase.firestore.core.Query) -> zza
+    157:159:com.google.firebase.firestore.local.TargetData decodeTargetData(byte[]) -> zza
     174:181:void addMatchingKeys(com.google.firebase.database.collection.ImmutableSortedSet,int) -> zza
     186:196:void removeMatchingKeys(com.google.firebase.database.collection.ImmutableSortedSet,int) -> zzb
     200:213:void removeMatchingKeysForTargetId(int) -> zza
     217:226:com.google.firebase.database.collection.ImmutableSortedSet getMatchingKeysForTargetId(int) -> zzb
     236:237:void setGarbageCollector(com.google.firebase.firestore.local.GarbageCollector) -> zza
     241:244:boolean containsKey(com.google.firebase.firestore.model.DocumentKey) -> zza
-    206:209:void lambda$removeMatchingKeysForTargetId$2$SQLiteQueryCache(android.database.Cursor) -> zza
-    140:147:void lambda$getQueryData$1$SQLiteQueryCache(com.google.firebase.firestore.core.Query,com.google.firebase.firestore.local.SQLiteQueryCache$QueryDataHolder,android.database.Cursor) -> zza
-    41:45:void lambda$start$0$SQLiteQueryCache(android.database.Cursor) -> zzb
-com.google.firebase.firestore.local.SQLiteQueryCache$$Lambda$0 -> com.google.firebase.firestore.c.zzaw:
-    com.google.firebase.firestore.local.SQLiteQueryCache arg$1 -> zza
-    void <init>(com.google.firebase.firestore.local.SQLiteQueryCache) -> <init>
+    206:209:void lambda$removeMatchingKeysForTargetId$2$SQLiteTargetCache(android.database.Cursor) -> zza
+    140:147:void lambda$getTargetData$1$SQLiteTargetCache(com.google.firebase.firestore.core.Query,com.google.firebase.firestore.local.SQLiteTargetCache$TargetDataHolder,android.database.Cursor) -> zza
+    41:45:void lambda$start$0$SQLiteTargetCache(android.database.Cursor) -> zzb
+com.google.firebase.firestore.local.SQLiteTargetCache$$Lambda$0 -> com.google.firebase.firestore.c.zzaw:
+    com.google.firebase.firestore.local.SQLiteTargetCache arg$1 -> zza
+    void <init>(com.google.firebase.firestore.local.SQLiteTargetCache) -> <init>
     void accept(java.lang.Object) -> zza
-com.google.firebase.firestore.local.SQLiteQueryCache$$Lambda$1 -> com.google.firebase.firestore.c.zzax:
-    com.google.firebase.firestore.local.SQLiteQueryCache arg$1 -> zza
+com.google.firebase.firestore.local.SQLiteTargetCache$$Lambda$1 -> com.google.firebase.firestore.c.zzax:
+    com.google.firebase.firestore.local.SQLiteTargetCache arg$1 -> zza
     com.google.firebase.firestore.core.Query arg$2 -> zzb
-    com.google.firebase.firestore.local.SQLiteQueryCache$QueryDataHolder arg$3 -> zzc
-    void <init>(com.google.firebase.firestore.local.SQLiteQueryCache,com.google.firebase.firestore.core.Query,com.google.firebase.firestore.local.SQLiteQueryCache$QueryDataHolder) -> <init>
+    com.google.firebase.firestore.local.SQLiteTargetCache$TargetDataHolder arg$3 -> zzc
+    void <init>(com.google.firebase.firestore.local.SQLiteTargetCache,com.google.firebase.firestore.core.Query,com.google.firebase.firestore.local.SQLiteTargetCache$TargetDataHolder) -> <init>
     void accept(java.lang.Object) -> zza
-com.google.firebase.firestore.local.SQLiteQueryCache$$Lambda$2 -> com.google.firebase.firestore.c.zzay:
-    com.google.firebase.firestore.local.SQLiteQueryCache arg$1 -> zza
-    void <init>(com.google.firebase.firestore.local.SQLiteQueryCache) -> <init>
+com.google.firebase.firestore.local.SQLiteTargetCache$$Lambda$2 -> com.google.firebase.firestore.c.zzay:
+    com.google.firebase.firestore.local.SQLiteTargetCache arg$1 -> zza
+    void <init>(com.google.firebase.firestore.local.SQLiteTargetCache) -> <init>
     void accept(java.lang.Object) -> zza
-com.google.firebase.firestore.local.SQLiteQueryCache$$Lambda$3 -> com.google.firebase.firestore.c.zzaz:
-    com.google.firebase.firestore.local.SQLiteQueryCache$DocumentKeysHolder arg$1 -> zza
-    void <init>(com.google.firebase.firestore.local.SQLiteQueryCache$DocumentKeysHolder) -> <init>
+com.google.firebase.firestore.local.SQLiteTargetCache$$Lambda$3 -> com.google.firebase.firestore.c.zzaz:
+    com.google.firebase.firestore.local.SQLiteTargetCache$DocumentKeysHolder arg$1 -> zza
+    void <init>(com.google.firebase.firestore.local.SQLiteTargetCache$DocumentKeysHolder) -> <init>
     void accept(java.lang.Object) -> zza
-    1222:1225:void com.google.firebase.firestore.local.SQLiteQueryCache.lambda$getMatchingKeysForTargetId$3$SQLiteQueryCache(com.google.firebase.firestore.local.SQLiteQueryCache$DocumentKeysHolder,android.database.Cursor):222:225 -> zza
+    1222:1225:void com.google.firebase.firestore.local.SQLiteTargetCache.lambda$getMatchingKeysForTargetId$3$SQLiteTargetCache(com.google.firebase.firestore.local.SQLiteTargetCache$DocumentKeysHolder,android.database.Cursor):222:225 -> zza
     1222:1225:void accept(java.lang.Object):0 -> zza
-com.google.firebase.firestore.local.SQLiteQueryCache$DocumentKeysHolder -> com.google.firebase.firestore.c.zzav$zza:
+com.google.firebase.firestore.local.SQLiteTargetCache$DocumentKeysHolder -> com.google.firebase.firestore.c.zzav$zza:
     com.google.firebase.database.collection.ImmutableSortedSet keys -> zza
     230:231:void <init>() -> <init>
     230:230:void <init>(byte) -> <init>
-com.google.firebase.firestore.local.SQLiteQueryCache$QueryDataHolder -> com.google.firebase.firestore.c.zzav$zzb:
-    com.google.firebase.firestore.local.QueryData queryData -> zza
+com.google.firebase.firestore.local.SQLiteTargetCache$TargetDataHolder -> com.google.firebase.firestore.c.zzav$zzb:
+    com.google.firebase.firestore.local.TargetData targetData -> zza
     151:151:void <init>() -> <init>
     151:151:void <init>(byte) -> <init>
 com.google.firebase.firestore.local.SQLiteRemoteDocumentCache -> com.google.firebase.firestore.c.zzba:
@@ -1800,7 +1800,7 @@ com.google.firebase.firestore.local.SQLiteSchema -> com.google.firebase.firestor
     38:58:void runMigrations(int) -> zza
     1062:1084:void createMutationQueue():62:84 -> zza
     1062:1084:void runMigrations(int):40 -> zza
-    1088:1117:void createQueryCache():88:117 -> zza
+    1088:1117:void createTargetCache():88:117 -> zza
     1088:1117:void runMigrations(int):41 -> zza
     1121:1122:void createRemoteDocumentCache():121:122 -> zza
     1121:1122:void runMigrations(int):42 -> zza
@@ -2677,10 +2677,10 @@ com.google.firebase.firestore.remote.RemoteSerializer -> com.google.firebase.fir
     4536:4542:com.google.firebase.firestore.model.mutation.Mutation decodeMutation(com.google.firestore.v1beta1.Write):469 -> zza
     517:522:com.google.firebase.firestore.model.mutation.FieldMask decodeDocumentMask(com.google.firestore.v1beta1.DocumentMask) -> zza
     551:564:com.google.firebase.firestore.model.mutation.MutationResult decodeMutationResult(com.google.firestore.v1beta1.WriteResult,com.google.firebase.firestore.model.SnapshotVersion) -> zza
-    571:578:java.util.Map encodeListenRequestLabels(com.google.firebase.firestore.local.QueryData) -> zza
+    571:578:java.util.Map encodeListenRequestLabels(com.google.firebase.firestore.local.TargetData) -> zza
     4583:4591:java.lang.String encodeLabel(com.google.firebase.firestore.local.QueryPurpose):583:591 -> zza
-    4583:4591:java.util.Map encodeListenRequestLabels(com.google.firebase.firestore.local.QueryData):571 -> zza
-    596:608:com.google.firestore.v1beta1.Target encodeTarget(com.google.firebase.firestore.local.QueryData) -> zzb
+    4583:4591:java.util.Map encodeListenRequestLabels(com.google.firebase.firestore.local.TargetData):571 -> zza
+    596:608:com.google.firestore.v1beta1.Target encodeTarget(com.google.firebase.firestore.local.TargetData) -> zzb
     612:614:com.google.firestore.v1beta1.Target$DocumentsTarget encodeDocumentsTarget(com.google.firebase.firestore.core.Query) -> zza
     618:622:com.google.firebase.firestore.core.Query decodeDocumentsTarget(com.google.firestore.v1beta1.Target$DocumentsTarget) -> zza
     627:664:com.google.firestore.v1beta1.Target$QueryTarget encodeQueryTarget(com.google.firebase.firestore.core.Query) -> zzb
@@ -2740,8 +2740,8 @@ com.google.firebase.firestore.remote.RemoteStore -> com.google.firebase.firestor
     180:183:void disableNetwork() -> zzb
     186:199:void disableNetworkInternal() -> zzf
     231:241:void handleUserChange(com.google.firebase.firestore.auth.User) -> zza
-    247:260:void listen(com.google.firebase.firestore.local.QueryData) -> zza
-    263:265:void sendWatchRequest(com.google.firebase.firestore.local.QueryData) -> zzb
+    247:260:void listen(com.google.firebase.firestore.local.TargetData) -> zza
+    263:265:void sendWatchRequest(com.google.firebase.firestore.local.TargetData) -> zzb
     274:285:void stopListening(int) -> zza
     288:290:void sendUnwatchRequest(int) -> zzb
     293:296:void recordPendingTargetRequest(int) -> zzc
@@ -2955,9 +2955,9 @@ com.google.firebase.firestore.remote.WatchStream -> com.google.firebase.firestor
     com.google.protobuf.ByteString EMPTY_RESUME_TOKEN -> zzc
     com.google.firebase.firestore.remote.RemoteSerializer serializer -> zzd
     41:48:void <init>(com.google.firebase.firestore.util.FirestoreChannel,com.google.firebase.firestore.util.AsyncQueue,com.google.firebase.firestore.remote.RemoteSerializer) -> <init>
-    56:68:void watchQuery(com.google.firebase.firestore.local.QueryData) -> zza
+    56:68:void watchQuery(com.google.firebase.firestore.local.TargetData) -> zza
     1024:1024:boolean isOpen():24:24 -> zza
-    1024:1024:void watchQuery(com.google.firebase.firestore.local.QueryData):56 -> zza
+    1024:1024:void watchQuery(com.google.firebase.firestore.local.TargetData):56 -> zza
     72:80:void unwatchTarget(int) -> zza
     2024:2024:boolean isOpen():24:24 -> zza
     2024:2024:void unwatchTarget(int):72 -> zza
