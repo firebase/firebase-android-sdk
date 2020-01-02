@@ -22,7 +22,7 @@ import com.google.firebase.firestore.remote.WatchStream;
 import com.google.protobuf.ByteString;
 
 /** An immutable set of metadata that the store will need to keep track of for each target. */
-public final class QueryData {
+public final class TargetData {
   private final Target target;
   private final int targetId;
   private final long sequenceNumber;
@@ -32,7 +32,7 @@ public final class QueryData {
   private final ByteString resumeToken;
 
   /**
-   * Creates a new QueryData with the given values.
+   * Creates a new TargetData with the given values.
    *
    * @param target The target being listened to.
    * @param targetId The target id to which the target corresponds, assigned by the LocalStore for
@@ -46,7 +46,7 @@ public final class QueryData {
    *     after disconnecting without retransmitting all the data that matches the target. The resume
    *     token essentially identifies a point in time from which the server should resume sending
    */
-  QueryData(
+  TargetData(
       Target target,
       int targetId,
       long sequenceNumber,
@@ -63,8 +63,8 @@ public final class QueryData {
     this.resumeToken = checkNotNull(resumeToken);
   }
 
-  /** Convenience constructor for use when creating a QueryData for the first time. */
-  public QueryData(Target target, int targetId, long sequenceNumber, QueryPurpose purpose) {
+  /** Convenience constructor for use when creating a TargetData for the first time. */
+  public TargetData(Target target, int targetId, long sequenceNumber, QueryPurpose purpose) {
     this(
         target,
         targetId,
@@ -76,8 +76,8 @@ public final class QueryData {
   }
 
   /** Creates a new target data instance with an updated sequence number. */
-  public QueryData withSequenceNumber(long sequenceNumber) {
-    return new QueryData(
+  public TargetData withSequenceNumber(long sequenceNumber) {
+    return new TargetData(
         target,
         targetId,
         sequenceNumber,
@@ -88,8 +88,8 @@ public final class QueryData {
   }
 
   /** Creates a new target data instance with an updated resume token and snapshot version. */
-  public QueryData withResumeToken(ByteString resumeToken, SnapshotVersion snapshotVersion) {
-    return new QueryData(
+  public TargetData withResumeToken(ByteString resumeToken, SnapshotVersion snapshotVersion) {
+    return new TargetData(
         target,
         targetId,
         sequenceNumber,
@@ -100,8 +100,8 @@ public final class QueryData {
   }
 
   /** Creates a new target data instance with an updated last limbo free snapshot version number. */
-  public QueryData withLastLimboFreeSnapshotVersion(SnapshotVersion lastLimboFreeSnapshotVersion) {
-    return new QueryData(
+  public TargetData withLastLimboFreeSnapshotVersion(SnapshotVersion lastLimboFreeSnapshotVersion) {
+    return new TargetData(
         target,
         targetId,
         sequenceNumber,
@@ -151,14 +151,14 @@ public final class QueryData {
       return false;
     }
 
-    QueryData queryData = (QueryData) o;
-    return target.equals(queryData.target)
-        && targetId == queryData.targetId
-        && sequenceNumber == queryData.sequenceNumber
-        && purpose.equals(queryData.purpose)
-        && snapshotVersion.equals(queryData.snapshotVersion)
-        && lastLimboFreeSnapshotVersion.equals(queryData.lastLimboFreeSnapshotVersion)
-        && resumeToken.equals(queryData.resumeToken);
+    TargetData targetData = (TargetData) o;
+    return target.equals(targetData.target)
+        && targetId == targetData.targetId
+        && sequenceNumber == targetData.sequenceNumber
+        && purpose.equals(targetData.purpose)
+        && snapshotVersion.equals(targetData.snapshotVersion)
+        && lastLimboFreeSnapshotVersion.equals(targetData.lastLimboFreeSnapshotVersion)
+        && resumeToken.equals(targetData.resumeToken);
   }
 
   @Override
@@ -175,7 +175,7 @@ public final class QueryData {
 
   @Override
   public String toString() {
-    return "QueryData{"
+    return "TargetData{"
         + "target="
         + target
         + ", targetId="

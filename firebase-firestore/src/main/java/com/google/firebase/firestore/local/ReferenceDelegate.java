@@ -47,7 +47,7 @@ interface ReferenceDelegate {
    * Notify the delegate that a target was removed. The delegate may, but is not obligated to,
    * actually delete the target and associated data.
    */
-  void removeTarget(QueryData queryData);
+  void removeTarget(TargetData targetData);
 
   /** Notify the delegate that a limbo document was updated. */
   void updateLimboDocument(DocumentKey key);

@@ -26,9 +26,10 @@ import com.google.firebase.firestore.util.Consumer;
  * targets and the documents that matched them according to the server, but also metadata about the
  * targets.
  *
- * <p>The cache is keyed by {@link Target} and entries in the cache are {@link QueryData} instances.
+ * <p>The cache is keyed by {@link Target} and entries in the cache are {@link TargetData}
+ * instances.
  */
-interface QueryCache {
+interface TargetCache {
   /**
    * Returns the highest target ID of any query in the cache. Typically called during startup to
    * seed a target ID generator and avoid collisions with existing queries. If there are no queries
@@ -46,7 +47,7 @@ interface QueryCache {
   long getTargetCount();
 
   /** Call the consumer for each target in the cache. */
-  void forEachTarget(Consumer<QueryData> consumer);
+  void forEachTarget(Consumer<TargetData> consumer);
 
   /**
    * A global snapshot version representing the last consistent snapshot we received from the
@@ -70,36 +71,36 @@ interface QueryCache {
   /**
    * Adds an entry in the cache. This entry should not already exist.
    *
-   * <p>The cache key is extracted from {@link QueryData#getTarget}.
+   * <p>The cache key is extracted from {@link TargetData#getTarget}.
    *
-   * @param queryData A QueryData instance to put in the cache.
+   * @param targetData A TargetData instance to put in the cache.
    */
-  void addQueryData(QueryData queryData);
+  void addTargetData(TargetData targetData);
 
   /**
    * Replaces an entry in the cache. An entry with the same key should already exist.
    *
-   * <p>The cache key is extracted from {@link QueryData#getTarget()}.
+   * <p>The cache key is extracted from {@link TargetData#getTarget()}.
    *
-   * @param queryData A QueryData to replace an existing entry in the cache.
+   * @param targetData A TargetData to replace an existing entry in the cache.
    */
-  void updateQueryData(QueryData queryData);
+  void updateTargetData(TargetData targetData);
 
   /**
    * Removes the cached entry for the given query data. This entry should already exist in the
    * cache. This method exists in the interface for testing purposes. Production code should instead
-   * call {@link ReferenceDelegate#removeTarget(QueryData)}.
+   * call {@link ReferenceDelegate#removeTarget(TargetData)}.
    */
-  void removeQueryData(QueryData queryData);
+  void removeTargetData(TargetData targetData);
 
   /**
-   * Looks up a QueryData entry in the cache.
+   * Looks up a TargetData entry in the cache.
    *
    * @param target The target corresponding to the entry to look up.
-   * @return The cached QueryData entry, or null if the cache has no entry for the query.
+   * @return The cached TargetData entry, or null if the cache has no entry for the query.
    */
   @Nullable
-  QueryData getQueryData(Target target);
+  TargetData getTargetData(Target target);
 
   /** Adds the given document keys to cached query results of the given target ID. */
   void addMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId);
