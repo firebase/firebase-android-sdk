@@ -33,7 +33,7 @@ public final class MemoryPersistence extends Persistence {
   // layer behave as if it were actually persisting values.
   private final Map<User, MemoryMutationQueue> mutationQueues;
   private final MemoryIndexManager indexManager;
-  private final MemoryQueryCache queryCache;
+  private final MemoryTargetCache targetCache;
   private final MemoryRemoteDocumentCache remoteDocumentCache;
   private ReferenceDelegate referenceDelegate;
 
@@ -57,7 +57,7 @@ public final class MemoryPersistence extends Persistence {
   private MemoryPersistence() {
     mutationQueues = new HashMap<>();
     indexManager = new MemoryIndexManager();
-    queryCache = new MemoryQueryCache(this);
+    targetCache = new MemoryTargetCache(this);
     remoteDocumentCache = new MemoryRemoteDocumentCache(this);
   }
 
@@ -104,8 +104,8 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  MemoryQueryCache getQueryCache() {
-    return queryCache;
+  MemoryTargetCache getTargetCache() {
+    return targetCache;
   }
 
   @Override

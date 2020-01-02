@@ -55,12 +55,12 @@ class MemoryEagerReferenceDelegate implements ReferenceDelegate {
   }
 
   @Override
-  public void removeTarget(QueryData queryData) {
-    MemoryQueryCache queryCache = persistence.getQueryCache();
-    for (DocumentKey key : queryCache.getMatchingKeysForTargetId(queryData.getTargetId())) {
+  public void removeTarget(TargetData targetData) {
+    MemoryTargetCache targetCache = persistence.getTargetCache();
+    for (DocumentKey key : targetCache.getMatchingKeysForTargetId(targetData.getTargetId())) {
       orphanedDocuments.add(key);
     }
-    queryCache.removeQueryData(queryData);
+    targetCache.removeTargetData(targetData);
   }
 
   @Override
@@ -100,7 +100,7 @@ class MemoryEagerReferenceDelegate implements ReferenceDelegate {
 
   /** Returns true if the given document is referenced by anything. */
   private boolean isReferenced(DocumentKey key) {
-    if (persistence.getQueryCache().containsKey(key)) {
+    if (persistence.getTargetCache().containsKey(key)) {
       return true;
     }
 

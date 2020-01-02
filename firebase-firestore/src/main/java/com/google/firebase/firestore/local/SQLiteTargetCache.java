@@ -29,7 +29,7 @@ import com.google.firebase.firestore.util.Consumer;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 /** Cached Queries backed by SQLite. */
-final class SQLiteQueryCache implements QueryCache {
+final class SQLiteTargetCache implements TargetCache {
 
   private final SQLitePersistence db;
   private final LocalSerializer localSerializer;
@@ -39,7 +39,7 @@ final class SQLiteQueryCache implements QueryCache {
   private SnapshotVersion lastRemoteSnapshotVersion = SnapshotVersion.NONE;
   private long targetCount;
 
-  SQLiteQueryCache(SQLitePersistence db, LocalSerializer localSerializer) {
+  SQLiteTargetCache(SQLitePersistence db, LocalSerializer localSerializer) {
     this.db = db;
     this.localSerializer = localSerializer;
   }
@@ -78,9 +78,9 @@ final class SQLiteQueryCache implements QueryCache {
   }
 
   @Override
-  public void forEachTarget(Consumer<QueryData> consumer) {
+  public void forEachTarget(Consumer<TargetData> consumer) {
     db.query("SELECT target_proto FROM targets")
-        .forEach(row -> consumer.accept(decodeQueryData(row.getBlob(0))));
+        .forEach(row -> consumer.accept(decodeTargetData(row.getBlob(0))));
   }
 
   @Override
@@ -94,13 +94,13 @@ final class SQLiteQueryCache implements QueryCache {
     writeMetadata();
   }
 
-  private void saveQueryData(QueryData queryData) {
-    int targetId = queryData.getTargetId();
-    String canonicalId = queryData.getTarget().getCanonicalId();
-    Timestamp version = queryData.getSnapshotVersion().getTimestamp();
+  private void saveTargetData(TargetData targetData) {
+    int targetId = targetData.getTargetId();
+    String canonicalId = targetData.getTarget().getCanonicalId();
+    Timestamp version = targetData.getSnapshotVersion().getTimestamp();
 
     com.google.firebase.firestore.proto.Target targetProto =
-        localSerializer.encodeQueryData(queryData);
+        localSerializer.encodeTargetData(targetData);
 
     db.execute(
         "INSERT OR REPLACE INTO targets ("
@@ -116,21 +116,21 @@ final class SQLiteQueryCache implements QueryCache {
         canonicalId,
         version.getSeconds(),
         version.getNanoseconds(),
-        queryData.getResumeToken().toByteArray(),
-        queryData.getSequenceNumber(),
+        targetData.getResumeToken().toByteArray(),
+        targetData.getSequenceNumber(),
         targetProto.toByteArray());
   }
 
-  private boolean updateMetadata(QueryData queryData) {
+  private boolean updateMetadata(TargetData targetData) {
     boolean wasUpdated = false;
 
-    if (queryData.getTargetId() > highestTargetId) {
-      highestTargetId = queryData.getTargetId();
+    if (targetData.getTargetId() > highestTargetId) {
+      highestTargetId = targetData.getTargetId();
       wasUpdated = true;
     }
 
-    if (queryData.getSequenceNumber() > lastListenSequenceNumber) {
-      lastListenSequenceNumber = queryData.getSequenceNumber();
+    if (targetData.getSequenceNumber() > lastListenSequenceNumber) {
+      lastListenSequenceNumber = targetData.getSequenceNumber();
       wasUpdated = true;
     }
 
@@ -138,20 +138,20 @@ final class SQLiteQueryCache implements QueryCache {
   }
 
   @Override
-  public void addQueryData(QueryData queryData) {
-    saveQueryData(queryData);
+  public void addTargetData(TargetData targetData) {
+    saveTargetData(targetData);
     // PORTING NOTE: The query_targets index is maintained by SQLite.
 
-    updateMetadata(queryData);
+    updateMetadata(targetData);
     targetCount++;
     writeMetadata();
   }
 
   @Override
-  public void updateQueryData(QueryData queryData) {
-    saveQueryData(queryData);
+  public void updateTargetData(TargetData targetData) {
+    saveTargetData(targetData);
 
-    if (updateMetadata(queryData)) {
+    if (updateMetadata(targetData)) {
       writeMetadata();
     }
   }
@@ -175,8 +175,8 @@ final class SQLiteQueryCache implements QueryCache {
   }
 
   @Override
-  public void removeQueryData(QueryData queryData) {
-    int targetId = queryData.getTargetId();
+  public void removeTargetData(TargetData targetData) {
+    int targetId = targetData.getTargetId();
     removeTarget(targetId);
     writeMetadata();
   }
@@ -207,38 +207,38 @@ final class SQLiteQueryCache implements QueryCache {
 
   @Nullable
   @Override
-  public QueryData getQueryData(Target target) {
+  public TargetData getTargetData(Target target) {
     // Querying the targets table by canonical_id may yield more than one result because
     // canonical_id values are not required to be unique per target. This query depends on the
     // query_targets index to be efficient.
     String canonicalId = target.getCanonicalId();
-    QueryDataHolder result = new QueryDataHolder();
+    TargetDataHolder result = new TargetDataHolder();
     db.query("SELECT target_proto FROM targets WHERE canonical_id = ?")
         .binding(canonicalId)
         .forEach(
             row -> {
               // TODO: break out early if found.
-              QueryData found = decodeQueryData(row.getBlob(0));
+              TargetData found = decodeTargetData(row.getBlob(0));
 
               // After finding a potential match, check that the query is actually equal to the
               // requested query.
               if (target.equals(found.getTarget())) {
-                result.queryData = found;
+                result.targetData = found;
               }
             });
-    return result.queryData;
+    return result.targetData;
   }
 
-  private static class QueryDataHolder {
-    QueryData queryData;
+  private static class TargetDataHolder {
+    TargetData targetData;
   }
 
-  private QueryData decodeQueryData(byte[] bytes) {
+  private TargetData decodeTargetData(byte[] bytes) {
     try {
-      return localSerializer.decodeQueryData(
+      return localSerializer.decodeTargetData(
           com.google.firebase.firestore.proto.Target.parseFrom(bytes));
     } catch (InvalidProtocolBufferException e) {
-      throw fail("QueryData failed to parse: %s", e);
+      throw fail("TargetData failed to parse: %s", e);
     }
   }
 
