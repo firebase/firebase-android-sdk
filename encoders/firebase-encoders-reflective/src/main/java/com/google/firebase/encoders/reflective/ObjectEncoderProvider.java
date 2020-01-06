@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.local;
+package com.google.firebase.encoders.reflective;
 
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
+import androidx.annotation.NonNull;
+import com.google.firebase.encoders.ObjectEncoder;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE)
-public final class MemoryQueryCacheTest extends QueryCacheTestCase {
-
-  @Override
-  Persistence getPersistence() {
-    return PersistenceTestHelpers.createEagerGCMemoryPersistence();
-  }
+interface ObjectEncoderProvider {
+  @NonNull
+  <T> ObjectEncoder<T> get(@NonNull Class<T> type);
 }

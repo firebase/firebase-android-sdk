@@ -28,8 +28,8 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -651,8 +651,8 @@ public final class RemoteSerializer {
   // Queries
 
   @Nullable
-  public Map<String, String> encodeListenRequestLabels(QueryData queryData) {
-    @Nullable String value = encodeLabel(queryData.getPurpose());
+  public Map<String, String> encodeListenRequestLabels(TargetData targetData) {
+    @Nullable String value = encodeLabel(targetData.getPurpose());
     if (value == null) {
       return null;
     }
@@ -676,9 +676,9 @@ public final class RemoteSerializer {
     }
   }
 
-  public Target encodeTarget(QueryData queryData) {
+  public Target encodeTarget(TargetData targetData) {
     Target.Builder builder = Target.newBuilder();
-    com.google.firebase.firestore.core.Target target = queryData.getTarget();
+    com.google.firebase.firestore.core.Target target = targetData.getTarget();
 
     if (target.isDocumentQuery()) {
       builder.setDocuments(encodeDocumentsTarget(target));
@@ -686,8 +686,8 @@ public final class RemoteSerializer {
       builder.setQuery(encodeQueryTarget(target));
     }
 
-    builder.setTargetId(queryData.getTargetId());
-    builder.setResumeToken(queryData.getResumeToken());
+    builder.setTargetId(targetData.getTargetId());
+    builder.setResumeToken(targetData.getResumeToken());
 
     return builder.build();
   }

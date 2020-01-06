@@ -259,7 +259,7 @@ public class EncodableProcessorTest {
   public void compile_withListOfCustomType_shouldRegisterEncoderForThatType() {
     Compilation result =
         javac()
-            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .withProcessors(new EncodableProcessor())
             .compile(
                 JavaFileObjects.forSourceLines(
                     "TypeWithList",
@@ -279,7 +279,7 @@ public class EncodableProcessorTest {
   public void compile_withSetOfSetOfCustomType_shouldRegisterEncoderForThatType() {
     Compilation result =
         javac()
-            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .withProcessors(new EncodableProcessor())
             .compile(
                 JavaFileObjects.forSourceLines(
                     "TypeWithList",
@@ -299,7 +299,7 @@ public class EncodableProcessorTest {
   public void compile_withMapOfListOfCustomType_shouldRegisterEncoderForThatType() {
     Compilation result =
         javac()
-            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .withProcessors(new EncodableProcessor())
             .compile(
                 JavaFileObjects.forSourceLines(
                     "TypeWithList",
@@ -320,7 +320,7 @@ public class EncodableProcessorTest {
   public void compile_withEnum_shouldNotGenerateEnumEncoder() {
     Compilation result =
         javac()
-            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .withProcessors(new EncodableProcessor())
             .compile(
                 JavaFileObjects.forSourceLines(
                     "TypeWithEnum",
@@ -333,6 +333,28 @@ public class EncodableProcessorTest {
         .generatedSourceFile("AutoTypeWithEnumEncoder")
         .contentsAsUtf8String()
         .doesNotContain("cfg.registerEncoder(MyEnum.class");
+  }
+
+  @Test
+  public void compile_withInlineAnnotation_shouldGenerateInlineEncoder() {
+    Compilation result =
+        javac()
+            .withProcessors(new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "OuterType",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "@Encodable class OuterType {",
+                    "@Encodable.Field(inline = true)",
+                    "public Member getMember() { return null; }",
+                    "}"),
+                JavaFileObjects.forSourceLines("Member", "class Member{}"));
+
+    assertThat(result).succeededWithoutWarnings();
+    assertThat(result)
+        .generatedSourceFile("AutoOuterTypeEncoder")
+        .contentsAsUtf8String()
+        .contains("ctx.inline(value.getMember());");
   }
 
   @Test

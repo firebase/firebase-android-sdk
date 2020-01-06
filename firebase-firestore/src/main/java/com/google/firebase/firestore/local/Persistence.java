@@ -80,8 +80,8 @@ public abstract class Persistence {
    */
   abstract MutationQueue getMutationQueue(User user);
 
-  /** Creates a QueryCache representing the persisted cache of queries. */
-  abstract QueryCache getQueryCache();
+  /** Creates a TargetCache representing the persisted cache of queries. */
+  abstract TargetCache getTargetCache();
 
   /** Creates a RemoteDocumentCache representing the persisted cache of remote documents. */
   abstract RemoteDocumentCache getRemoteDocumentCache();

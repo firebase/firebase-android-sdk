@@ -26,13 +26,13 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * An implementation of the QueryCache protocol that merely keeps targets in memory, suitable for
+ * An implementation of the TargetCache protocol that merely keeps targets in memory, suitable for
  * online only clients with persistence disabled.
  */
-final class MemoryQueryCache implements QueryCache {
+final class MemoryTargetCache implements TargetCache {
 
   /** Maps a target to the data about that target. */
-  private final Map<Target, QueryData> targets = new HashMap<>();
+  private final Map<Target, TargetData> targets = new HashMap<>();
 
   /** A ordered bidirectional mapping between documents and the remote target IDs. */
   private final ReferenceSet references = new ReferenceSet();
@@ -47,7 +47,7 @@ final class MemoryQueryCache implements QueryCache {
 
   private final MemoryPersistence persistence;
 
-  MemoryQueryCache(MemoryPersistence persistence) {
+  MemoryTargetCache(MemoryPersistence persistence) {
     this.persistence = persistence;
   }
 
@@ -62,9 +62,9 @@ final class MemoryQueryCache implements QueryCache {
   }
 
   @Override
-  public void forEachTarget(Consumer<QueryData> consumer) {
-    for (QueryData queryData : targets.values()) {
-      consumer.accept(queryData);
+  public void forEachTarget(Consumer<TargetData> consumer) {
+    for (TargetData targetData : targets.values()) {
+      consumer.accept(targetData);
     }
   }
 
@@ -86,27 +86,27 @@ final class MemoryQueryCache implements QueryCache {
   // Query tracking
 
   @Override
-  public void addQueryData(QueryData queryData) {
-    targets.put(queryData.getTarget(), queryData);
-    int targetId = queryData.getTargetId();
+  public void addTargetData(TargetData targetData) {
+    targets.put(targetData.getTarget(), targetData);
+    int targetId = targetData.getTargetId();
     if (targetId > highestTargetId) {
       highestTargetId = targetId;
     }
-    if (queryData.getSequenceNumber() > highestSequenceNumber) {
-      highestSequenceNumber = queryData.getSequenceNumber();
+    if (targetData.getSequenceNumber() > highestSequenceNumber) {
+      highestSequenceNumber = targetData.getSequenceNumber();
     }
   }
 
   @Override
-  public void updateQueryData(QueryData queryData) {
+  public void updateTargetData(TargetData targetData) {
     // Memory persistence doesn't need to do anything different between add and remove.
-    addQueryData(queryData);
+    addTargetData(targetData);
   }
 
   @Override
-  public void removeQueryData(QueryData queryData) {
-    targets.remove(queryData.getTarget());
-    references.removeReferencesForId(queryData.getTargetId());
+  public void removeTargetData(TargetData targetData) {
+    targets.remove(targetData.getTarget());
+    references.removeReferencesForId(targetData.getTargetId());
   }
 
   /**
@@ -117,9 +117,9 @@ final class MemoryQueryCache implements QueryCache {
    */
   int removeQueries(long upperBound, SparseArray<?> activeTargetIds) {
     int removed = 0;
-    for (Iterator<Map.Entry<Target, QueryData>> it = targets.entrySet().iterator();
+    for (Iterator<Map.Entry<Target, TargetData>> it = targets.entrySet().iterator();
         it.hasNext(); ) {
-      Map.Entry<Target, QueryData> entry = it.next();
+      Map.Entry<Target, TargetData> entry = it.next();
       int targetId = entry.getValue().getTargetId();
       long sequenceNumber = entry.getValue().getSequenceNumber();
       if (sequenceNumber <= upperBound && activeTargetIds.get(targetId) == null) {
@@ -133,7 +133,7 @@ final class MemoryQueryCache implements QueryCache {
 
   @Nullable
   @Override
-  public QueryData getQueryData(Target target) {
+  public TargetData getTargetData(Target target) {
     return targets.get(target);
   }
 
@@ -173,8 +173,8 @@ final class MemoryQueryCache implements QueryCache {
 
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
-    for (Map.Entry<Target, QueryData> entry : targets.entrySet()) {
-      count += serializer.encodeQueryData(entry.getValue()).getSerializedSize();
+    for (Map.Entry<Target, TargetData> entry : targets.entrySet()) {
+      count += serializer.encodeTargetData(entry.getValue()).getSerializedSize();
     }
     return count;
   }

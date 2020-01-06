@@ -79,7 +79,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
   @Override
   public long getSequenceNumberCount() {
-    long targetCount = persistence.getQueryCache().getTargetCount();
+    long targetCount = persistence.getTargetCache().getTargetCount();
     long orphanedDocumentCount =
         persistence
             .query(
@@ -89,8 +89,8 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public void forEachTarget(Consumer<QueryData> consumer) {
-    persistence.getQueryCache().forEachTarget(consumer);
+  public void forEachTarget(Consumer<TargetData> consumer) {
+    persistence.getTargetCache().forEachTarget(consumer);
   }
 
   @Override
@@ -118,7 +118,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
   @Override
   public int removeTargets(long upperBound, SparseArray<?> activeTargetIds) {
-    return persistence.getQueryCache().removeQueries(upperBound, activeTargetIds);
+    return persistence.getTargetCache().removeQueries(upperBound, activeTargetIds);
   }
 
   @Override
@@ -183,9 +183,9 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public void removeTarget(QueryData queryData) {
-    QueryData updated = queryData.withSequenceNumber(getCurrentSequenceNumber());
-    persistence.getQueryCache().updateQueryData(updated);
+  public void removeTarget(TargetData targetData) {
+    TargetData updated = targetData.withSequenceNumber(getCurrentSequenceNumber());
+    persistence.getTargetCache().updateTargetData(updated);
   }
 
   @Override

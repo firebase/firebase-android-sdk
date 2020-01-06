@@ -31,10 +31,10 @@ import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LocalViewChanges;
 import com.google.firebase.firestore.local.LocalWriteResult;
-import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.ReferenceSet;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
@@ -181,12 +181,12 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     assertCallback("listen");
     hardAssert(!queryViewsByQuery.containsKey(query), "We already listen to query: %s", query);
 
-    QueryData queryData = localStore.allocateTarget(query.toTarget());
-    ViewSnapshot viewSnapshot = initializeViewAndComputeSnapshot(query, queryData.getTargetId());
+    TargetData targetData = localStore.allocateTarget(query.toTarget());
+    ViewSnapshot viewSnapshot = initializeViewAndComputeSnapshot(query, targetData.getTargetId());
     syncEngineListener.onViewSnapshots(Collections.singletonList(viewSnapshot));
 
-    remoteStore.listen(queryData);
-    return queryData.getTargetId();
+    remoteStore.listen(targetData);
+    return targetData.getTargetId();
   }
 
   private ViewSnapshot initializeViewAndComputeSnapshot(Query query, int targetId) {
@@ -610,14 +610,14 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       Logger.debug(TAG, "New document in limbo: %s", key);
       int limboTargetId = targetIdGenerator.nextId();
       Query query = Query.atPath(key.getPath());
-      QueryData queryData =
-          new QueryData(
+      TargetData targetData =
+          new TargetData(
               query.toTarget(),
               limboTargetId,
               ListenSequence.INVALID,
               QueryPurpose.LIMBO_RESOLUTION);
       limboResolutionsByTarget.put(limboTargetId, new LimboResolution(key));
-      remoteStore.listen(queryData);
+      remoteStore.listen(targetData);
       limboTargetsByKey.put(key, limboTargetId);
     }
   }

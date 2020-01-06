@@ -70,6 +70,26 @@ public interface ObjectEncoderContext {
       throws IOException, EncodingException;
 
   /**
+   * Encodes a given object inline in current context.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * ctx.add("key", "value");
+   * ctx.inline(new MyType());
+   *
+   * // produces the following object:
+   * // {
+   * //     "key": "value",
+   * //     "myTypeField1": true,
+   * //     "myTypeField2": 1
+   * // }
+   * }</pre>
+   */
+  @NonNull
+  ObjectEncoderContext inline(@Nullable Object value) throws IOException, EncodingException;
+
+  /**
    * Begin a nested JSON object.
    *
    * <p>Unlike {@code add()} methods, this method returns a new "child" context that's used to

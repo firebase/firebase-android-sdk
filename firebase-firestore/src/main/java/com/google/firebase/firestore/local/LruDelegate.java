@@ -23,8 +23,8 @@ import com.google.firebase.firestore.util.Consumer;
  */
 public interface LruDelegate {
 
-  /** Enumerates all the targets in the QueryCache. */
-  void forEachTarget(Consumer<QueryData> consumer);
+  /** Enumerates all the targets in the TargetCache. */
+  void forEachTarget(Consumer<TargetData> consumer);
 
   long getSequenceNumberCount();
 

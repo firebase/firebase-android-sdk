@@ -148,8 +148,8 @@ public class CardMessage extends InAppMessage {
   }
 
   /**
-   * Deprecated - Use getPrimaryAction() instead. Gets the primary {@link Action} associated with
-   * this message
+   * @deprecated Use getPrimaryAction() instead. Gets the primary {@link Action} associated with
+   *     this message
    */
   @Nullable
   @Deprecated
@@ -173,8 +173,8 @@ public class CardMessage extends InAppMessage {
   }
 
   /**
-   * Deprecated - Use getPortraitImageData() instead. Gets the {@link ImageData} associated with
-   * this message
+   * @deprecated Use getPortraitImageData() instead. Gets the {@link ImageData} associated with this
+   *     message
    */
   @Nullable
   @Deprecated
