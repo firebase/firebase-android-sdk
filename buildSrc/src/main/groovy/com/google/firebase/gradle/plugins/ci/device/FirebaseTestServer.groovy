@@ -22,7 +22,6 @@ import org.gradle.api.Project
 
 
 class FirebaseTestServer extends TestServer {
-    private static final String DEFAULT_BUCKET_NAME = 'android-ci'
     final Project project
     final FirebaseTestLabExtension extension
     final Random random
@@ -68,7 +67,10 @@ class FirebaseTestServer extends TestServer {
         Optional<String> resultsBucket = Optional.ofNullable(System.getenv('FTL_RESULTS_BUCKET')).map(Environment.&expand)
         Optional<String> resultsDir = Optional.ofNullable(System.getenv('FTL_RESULTS_DIR')).map(Environment.&expand)
 
-        List<String> args = ['--results-bucket', resultsBucket.orElse(DEFAULT_BUCKET_NAME)]
+        List<String> args = []
+        if (resultsBucket.isPresent()) {
+            args += ['--results-bucket', resultsBucket.get()]
+        }
         if (resultsDir.isPresent()) {
             args += ['--results-dir', Paths.get(resultsDir.get(), "${project.path}_${random.nextLong()}")]
         }
