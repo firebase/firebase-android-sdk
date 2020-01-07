@@ -180,10 +180,7 @@ public class ConfigFetchHttpClient {
               .toString()
               .getBytes("utf-8");
       setFetchRequestBody(urlConnection, requestBody);
-
-      Log.i("ConfigFetchHttpClient", "fetching with request body " + createFetchRequestBody(instanceId, instanceIdToken, analyticsUserProperties)
-              .toString());
-
+      
       urlConnection.connect();
 
       int responseCode = urlConnection.getResponseCode();
