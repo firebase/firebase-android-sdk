@@ -180,7 +180,7 @@ public class ConfigFetchHttpClient {
               .toString()
               .getBytes("utf-8");
       setFetchRequestBody(urlConnection, requestBody);
-      
+
       urlConnection.connect();
 
       int responseCode = urlConnection.getResponseCode();
