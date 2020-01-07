@@ -355,7 +355,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             /*fid= */ prefs.getFirebaseInstallationId(),
             /*projectID= */ firebaseApp.getOptions().getProjectId(),
             /*appId= */ getApplicationId(),
-            null);
+            /* migration-header= */ null);
 
     switch (response.getResponseCode()) {
       case OK:

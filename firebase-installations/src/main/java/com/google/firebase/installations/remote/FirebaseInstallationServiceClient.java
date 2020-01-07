@@ -136,7 +136,7 @@ public class FirebaseInstallationServiceClient {
       httpsURLConnection.setRequestMethod("POST");
       httpsURLConnection.setDoOutput(true);
 
-      // Set the iid token header for authenticating the iid migration to FIS.
+      // Note: Set the iid token header for authenticating the iid migration to FIS.
       if (iidToken != null) {
         httpsURLConnection.addRequestProperty(X_ANDROID_IID_MIGRATION_KEY, iidToken);
       }
