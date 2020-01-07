@@ -90,6 +90,8 @@ public class FirebaseInstallationsTest {
 
   public static final String TEST_INSTANCE_ID_1 = "ccccccccccc";
 
+  public static final String TEST_INSTANCE_ID_TOKEN_1 = "iid.token";
+
   public static final InstallationResponse TEST_INSTALLATION_RESPONSE =
       InstallationResponse.builder()
           .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)
@@ -185,6 +187,7 @@ public class FirebaseInstallationsTest {
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
         .thenThrow(new IOException());
     when(mockIidStore.readIid()).thenReturn(null);
+    when(mockIidStore.readToken()).thenReturn(null);
 
     // Do the actual getId() call under test. Confirm that it returns a generated FID and
     // and that the FID was written to storage.
@@ -210,11 +213,16 @@ public class FirebaseInstallationsTest {
   @Test
   public void testGetId_noNetwork_iidPresent() throws Exception {
     when(mockBackend.createFirebaseInstallation(
-            anyString(), anyString(), anyString(), anyString(), any()))
+            TEST_API_KEY,
+            TEST_INSTANCE_ID_1,
+            TEST_PROJECT_ID,
+            TEST_APP_ID_1,
+            TEST_INSTANCE_ID_TOKEN_1))
         .thenThrow(new IOException());
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
         .thenThrow(new IOException());
     when(mockIidStore.readIid()).thenReturn(TEST_INSTANCE_ID_1);
+    when(mockIidStore.readToken()).thenReturn(TEST_INSTANCE_ID_TOKEN_1);
 
     // Do the actual getId() call under test. Confirm that it returns a generated FID and
     // and that the FID was written to storage.
@@ -340,8 +348,9 @@ public class FirebaseInstallationsTest {
   @Test
   public void testGetId_migrateIid_successful() throws Exception {
     when(mockIidStore.readIid()).thenReturn(TEST_INSTANCE_ID_1);
+    when(mockIidStore.readToken()).thenReturn(TEST_INSTANCE_ID_TOKEN_1);
     when(mockBackend.createFirebaseInstallation(
-            anyString(), anyString(), anyString(), anyString(), any()))
+            anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_INSTALLATION_RESPONSE_WITH_IID);
 
     // Do the actual getId() call under test.
@@ -367,6 +376,7 @@ public class FirebaseInstallationsTest {
   @Test
   public void testGetId_multipleCalls_sameFIDReturned() throws Exception {
     when(mockIidStore.readIid()).thenReturn(null);
+    when(mockIidStore.readToken()).thenReturn(null);
     when(mockBackend.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString(), any()))
         .thenReturn(TEST_INSTALLATION_RESPONSE);
