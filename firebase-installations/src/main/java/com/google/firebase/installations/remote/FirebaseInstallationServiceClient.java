@@ -70,6 +70,8 @@ public class FirebaseInstallationServiceClient {
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
 
+  private static final String X_ANDROID_IID_MIGRATION_KEY = "x-goog-fis-android-iid-migration-auth";
+
   private static final int NETWORK_TIMEOUT_MILLIS = 10000;
 
   private static final Pattern EXPIRATION_TIMESTAMP_PATTERN = Pattern.compile("[0-9]+s");
@@ -87,10 +89,10 @@ public class FirebaseInstallationServiceClient {
   public FirebaseInstallationServiceClient(
       @NonNull Context context,
       @Nullable UserAgentPublisher publisher,
-      @Nullable HeartBeatInfo heartBeatInfo) {
+      @Nullable HeartBeatInfo heartbeatInfo) {
     this.context = context;
     this.userAgentPublisher = publisher;
-    this.heartbeatInfo = heartBeatInfo;
+    this.heartbeatInfo = heartbeatInfo;
   }
 
   /**
@@ -100,6 +102,8 @@ public class FirebaseInstallationServiceClient {
    * @param fid Firebase Installation Identifier
    * @param projectID Project Id
    * @param appId the identifier of a Firebase application
+   * @param iidToken the identifier token of a Firebase application with instance id. It is set to
+   *     null for a FID.
    * @return {@link InstallationResponse} generated from the response body
    *     <ul>
    *       <li>400: return response with status BAD_CONFIG
@@ -111,7 +115,11 @@ public class FirebaseInstallationServiceClient {
    */
   @NonNull
   public InstallationResponse createFirebaseInstallation(
-      @NonNull String apiKey, @NonNull String fid, @NonNull String projectID, @NonNull String appId)
+      @NonNull String apiKey,
+      @NonNull String fid,
+      @NonNull String projectID,
+      @NonNull String appId,
+      @Nullable String iidToken)
       throws IOException {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
     int retryCount = 0;
@@ -127,6 +135,11 @@ public class FirebaseInstallationServiceClient {
       HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
       httpsURLConnection.setRequestMethod("POST");
       httpsURLConnection.setDoOutput(true);
+
+      // Note: Set the iid token header for authenticating the Instance-ID migrating to FIS.
+      if (iidToken != null) {
+        httpsURLConnection.addRequestProperty(X_ANDROID_IID_MIGRATION_KEY, iidToken);
+      }
 
       GZIPOutputStream gzipOutputStream =
           new GZIPOutputStream(httpsURLConnection.getOutputStream());
