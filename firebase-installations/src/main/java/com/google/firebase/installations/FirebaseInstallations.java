@@ -307,8 +307,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *     been persisted.
    */
   private PersistedInstallationEntry getPrefsWithGeneratedIdMultiProcessSafe() {
-    CrossProcessLock lock = CrossProcessLock
-        .acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
+    CrossProcessLock lock =
+        CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
     try {
       synchronized (lockGenerateFid) {
         PersistedInstallationEntry prefs =

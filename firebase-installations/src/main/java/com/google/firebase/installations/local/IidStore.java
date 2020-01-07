@@ -68,14 +68,14 @@ public class IidStore {
       return senderId;
     }
     String appId = app.getOptions().getApplicationId();
-    if (!appId.startsWith("1:")) {
-      // Not v1, server should be updated to accept the full app ID now
+    if (!appId.startsWith("1:") && !appId.startsWith("2:")) {
+      // If applicationId does not contain a (GMP-)App-ID, it contains a Sender identifier
       return appId;
     }
     // For v1 app IDs, fall back to parsing the project number out
     @SuppressWarnings("StringSplitter")
     String[] parts = appId.split(":");
-    if (parts.length < 2) {
+    if (parts.length != 4) {
       return null; // Invalid format
     }
     String projectNumber = parts[1];
