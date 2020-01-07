@@ -33,11 +33,7 @@ import com.google.firebase.installations.remote.FirebaseInstallationServiceClien
 import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.TokenResult;
 import com.google.firebase.platforminfo.UserAgentPublisher;
-import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -311,7 +307,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *     been persisted.
    */
   private PersistedInstallationEntry getPrefsWithGeneratedIdMultiProcessSafe() {
-    FileLock fileLock = getCrossProcessLock();
+    CrossProcessLock lock = CrossProcessLock
+        .acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
     try {
       synchronized (lockGenerateFid) {
         PersistedInstallationEntry prefs =
@@ -332,30 +329,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       }
 
     } finally {
-      releaseCrossProcessLock(fileLock);
-    }
-  }
-
-  /** Use file locking to acquire a lock that will also block other processes. */
-  FileLock getCrossProcessLock() {
-    try {
-      File file =
-          new File(firebaseApp.getApplicationContext().getFilesDir(), LOCKFILE_NAME_GENERATE_FID);
-      FileChannel channel = new RandomAccessFile(file, "rw").getChannel();
-      // Use the file channel to create a lock on the file.
-      // This method blocks until it can retrieve the lock.
-      return channel.lock();
-    } catch (IOException e) {
-      throw new IllegalStateException("exception while using file locks, should never happen", e);
-    }
-  }
-
-  /** Release a previously acquired lock. */
-  void releaseCrossProcessLock(FileLock fileLock) {
-    try {
-      fileLock.release();
-    } catch (IOException e) {
-      throw new IllegalStateException("exception while using file locks, should never happen", e);
+      lock.releaseAndClose();
     }
   }
 

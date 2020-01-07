@@ -35,7 +35,7 @@ package com.google.firebase.inappmessaging {
   public interface FirebaseInAppMessagingDisplayCallbacks {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> displayErrorEncountered(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> impressionDetected();
-    method @Deprecated @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> messageClicked(@NonNull com.google.firebase.inappmessaging.model.Action);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> messageClicked(@NonNull com.google.firebase.inappmessaging.model.Action);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> messageDismissed(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType);
   }
 

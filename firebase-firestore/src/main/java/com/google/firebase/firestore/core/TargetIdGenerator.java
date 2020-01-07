@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 /**
  * Generates monotonically increasing target IDs for sending targets to the watch stream.
  *
- * <p>The client constructs two generators, one for the query cache (via forQueryCache()), and one
+ * <p>The client constructs two generators, one for the query cache (via forTargetCache()), and one
  * for limbo documents (via forSyncEngine()). These two generators produce non-overlapping IDs (by
  * using even and odd IDs respectively).
  *
@@ -36,7 +36,7 @@ public class TargetIdGenerator {
    *
    * @return A shared instance of TargetIdGenerator.
    */
-  public static TargetIdGenerator forQueryCache(int after) {
+  public static TargetIdGenerator forTargetCache(int after) {
     TargetIdGenerator generator = new TargetIdGenerator(QUERY_CACHE_ID, after);
     // Make sure that the next call to `nextId()` returns the first value after 'after'.
     generator.nextId();

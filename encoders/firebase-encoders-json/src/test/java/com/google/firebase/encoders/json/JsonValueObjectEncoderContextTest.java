@@ -32,6 +32,7 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.TimeZone;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,11 +51,15 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   static class DummyClass {
-    static DummyClass INSTANCE = new DummyClass();
+    static final DummyClass INSTANCE = new DummyClass();
   }
 
   static class InnerDummyClass {
-    static InnerDummyClass INSTANCE = new InnerDummyClass();
+    static final InnerDummyClass INSTANCE = new InnerDummyClass();
+  }
+
+  static class InnerInnerDummyClass {
+    static final InnerInnerDummyClass INSTANCE = new InnerInnerDummyClass();
   }
 
   @Test
@@ -481,5 +486,77 @@ public class JsonValueObjectEncoderContextTest {
         new JsonDataEncoderBuilder().registerEncoder(DummyClass.class, objectEncoder).build();
 
     assertThrows(IllegalStateException.class, () -> encoder.encode(DummyClass.INSTANCE));
+  }
+
+  @Test
+  public void testInline_shouldProduceValuesInParentObject() throws EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> ctx.add("name", "value").inline(InnerDummyClass.INSTANCE).add("after1", true);
+    ObjectEncoder<InnerDummyClass> innerEncoder = (o, ctx) -> ctx.add("inner", "class");
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .registerEncoder(InnerDummyClass.class, innerEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result).isEqualTo("{\"name\":\"value\",\"inner\":\"class\",\"after1\":true}");
+  }
+
+  @Test
+  public void testNestedInline_shouldProduceValuesInParentObject() throws EncodingException {
+    ObjectEncoder<DummyClass> objectEncoder =
+        (o, ctx) -> ctx.add("name", "value").inline(InnerDummyClass.INSTANCE).add("after1", true);
+    ObjectEncoder<InnerDummyClass> innerEncoder =
+        (o, ctx) -> ctx.inline(InnerInnerDummyClass.INSTANCE);
+
+    ObjectEncoder<InnerInnerDummyClass> innerInnerEncoder = (o, ctx) -> ctx.add("key", true);
+
+    String result =
+        new JsonDataEncoderBuilder()
+            .registerEncoder(DummyClass.class, objectEncoder)
+            .registerEncoder(InnerDummyClass.class, innerEncoder)
+            .registerEncoder(InnerInnerDummyClass.class, innerInnerEncoder)
+            .build()
+            .encode(DummyClass.INSTANCE);
+
+    assertThat(result).isEqualTo("{\"name\":\"value\",\"key\":true,\"after1\":true}");
+  }
+
+  @Test
+  public void testInline_withNull_shouldThrow() {
+    ObjectEncoder<DummyClass> objectEncoder = (o, ctx) -> ctx.inline(null);
+
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder().registerEncoder(DummyClass.class, objectEncoder).build();
+    assertThrows(EncodingException.class, () -> encoder.encode(DummyClass.INSTANCE));
+  }
+
+  @Test
+  public void testInline_withLong_shouldThrow() {
+    ObjectEncoder<DummyClass> objectEncoder = (o, ctx) -> ctx.inline(Long.valueOf(100));
+
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder().registerEncoder(DummyClass.class, objectEncoder).build();
+    assertThrows(EncodingException.class, () -> encoder.encode(DummyClass.INSTANCE));
+  }
+
+  @Test
+  public void testInline_withArray_shouldThrow() {
+    ObjectEncoder<DummyClass> objectEncoder = (o, ctx) -> ctx.inline(new int[] {1, 2, 3});
+
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder().registerEncoder(DummyClass.class, objectEncoder).build();
+    assertThrows(EncodingException.class, () -> encoder.encode(DummyClass.INSTANCE));
+  }
+
+  @Test
+  public void testInline_withDate_shouldThrow() {
+    ObjectEncoder<DummyClass> objectEncoder = (o, ctx) -> ctx.inline(new Date());
+
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder().registerEncoder(DummyClass.class, objectEncoder).build();
+    assertThrows(EncodingException.class, () -> encoder.encode(DummyClass.INSTANCE));
   }
 }

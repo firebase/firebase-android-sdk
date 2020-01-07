@@ -15,7 +15,6 @@
 package com.google.firebase.encoders;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -26,6 +25,5 @@ import java.io.IOException;
 interface Encoder<TValue, TContext> {
 
   /** Encode {@code obj} using {@code TContext}. */
-  void encode(@Nullable TValue obj, @NonNull TContext context)
-      throws EncodingException, IOException;
+  void encode(@NonNull TValue obj, @NonNull TContext context) throws EncodingException, IOException;
 }

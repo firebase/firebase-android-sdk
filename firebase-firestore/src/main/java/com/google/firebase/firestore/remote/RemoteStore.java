@@ -22,8 +22,8 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Transaction;
 import com.google.firebase.firestore.local.LocalStore;
-import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -120,7 +120,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    * removed with unlistens are removed eagerly without waiting for confirmation from the listen
    * stream.
    */
-  private final Map<Integer, QueryData> listenTargets;
+  private final Map<Integer, TargetData> listenTargets;
 
   private final OnlineStateTracker onlineStateTracker;
 
@@ -324,28 +324,28 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   // Watch Stream
 
   /**
-   * Listens to the target identified by the given QueryData.
+   * Listens to the target identified by the given TargetData.
    *
    * <p>It is a no-op if the target of the given query data is already being listened to.
    */
-  public void listen(QueryData queryData) {
-    Integer targetId = queryData.getTargetId();
+  public void listen(TargetData targetData) {
+    Integer targetId = targetData.getTargetId();
     if (listenTargets.containsKey(targetId)) {
       return;
     }
 
-    listenTargets.put(targetId, queryData);
+    listenTargets.put(targetId, targetData);
 
     if (shouldStartWatchStream()) {
       startWatchStream();
     } else if (watchStream.isOpen()) {
-      sendWatchRequest(queryData);
+      sendWatchRequest(targetData);
     }
   }
 
-  private void sendWatchRequest(QueryData queryData) {
-    watchChangeAggregator.recordPendingTargetRequest(queryData.getTargetId());
-    watchStream.watchQuery(queryData);
+  private void sendWatchRequest(TargetData targetData) {
+    watchChangeAggregator.recordPendingTargetRequest(targetData.getTargetId());
+    watchStream.watchQuery(targetData);
   }
 
   /**
@@ -357,9 +357,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    * be torn down after one minute of inactivity.
    */
   public void stopListening(int targetId) {
-    QueryData queryData = listenTargets.remove(targetId);
+    TargetData targetData = listenTargets.remove(targetId);
     hardAssert(
-        queryData != null, "stopListening called on target no currently watched: %d", targetId);
+        targetData != null, "stopListening called on target no currently watched: %d", targetId);
 
     // The watch stream might not be started if we're in a disconnected state
     if (watchStream.isOpen()) {
@@ -418,8 +418,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void handleWatchStreamOpen() {
     // Restore any existing watches.
-    for (QueryData queryData : listenTargets.values()) {
-      sendWatchRequest(queryData);
+    for (TargetData targetData : listenTargets.values()) {
+      sendWatchRequest(targetData);
     }
   }
 
@@ -505,11 +505,11 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       TargetChange targetChange = entry.getValue();
       if (!targetChange.getResumeToken().isEmpty()) {
         int targetId = entry.getKey();
-        QueryData queryData = this.listenTargets.get(targetId);
+        TargetData targetData = this.listenTargets.get(targetId);
         // A watched target might have been removed already.
-        if (queryData != null) {
+        if (targetData != null) {
           this.listenTargets.put(
-              targetId, queryData.withResumeToken(targetChange.getResumeToken(), snapshotVersion));
+              targetId, targetData.withResumeToken(targetChange.getResumeToken(), snapshotVersion));
         }
       }
     }
@@ -517,12 +517,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     // Re-establish listens for the targets that have been invalidated by  existence filter
     // mismatches.
     for (int targetId : remoteEvent.getTargetMismatches()) {
-      QueryData queryData = this.listenTargets.get(targetId);
+      TargetData targetData = this.listenTargets.get(targetId);
       // A watched target might have been removed already.
-      if (queryData != null) {
+      if (targetData != null) {
         // Clear the resume token for the query, since we're in a known mismatch state.
         this.listenTargets.put(
-            targetId, queryData.withResumeToken(ByteString.EMPTY, queryData.getSnapshotVersion()));
+            targetId,
+            targetData.withResumeToken(ByteString.EMPTY, targetData.getSnapshotVersion()));
 
         // Cause a hard reset by unwatching and rewatching immediately, but deliberately don't send
         // a resume token so that we get a full update.
@@ -532,13 +533,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         // actually retain that in listenTargets. This ensures that we flag the first re-listen this
         // way without impacting future listens of this target (that might happen e.g. on
         // reconnect).
-        QueryData requestQueryData =
-            new QueryData(
-                queryData.getTarget(),
+        TargetData requestTargetData =
+            new TargetData(
+                targetData.getTarget(),
                 targetId,
-                queryData.getSequenceNumber(),
+                targetData.getSequenceNumber(),
                 QueryPurpose.EXISTENCE_FILTER_MISMATCH);
-        this.sendWatchRequest(requestQueryData);
+        this.sendWatchRequest(requestTargetData);
       }
     }
 
@@ -723,7 +724,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   @Nullable
   @Override
-  public QueryData getQueryDataForTarget(int targetId) {
+  public TargetData getTargetDataForTarget(int targetId) {
     return this.listenTargets.get(targetId);
   }
 }
