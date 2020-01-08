@@ -349,13 +349,23 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   /** Registers the created Fid with FIS servers and update the persisted state. */
   private PersistedInstallationEntry registerFidWithServer(PersistedInstallationEntry prefs)
       throws IOException {
+
+    // Note: Default value of instanceIdMigrationAuth: null
+    String iidToken = null;
+
+    if (prefs.getFirebaseInstallationId().equals(iidStore.readIid())) {
+      // For a default firebase installation, read the stored star scoped iid token. This token
+      // will be used for authenticating Instance-ID when migrating to FIS.
+      iidToken = iidStore.readToken();
+    }
+
     InstallationResponse response =
         serviceClient.createFirebaseInstallation(
             /*apiKey= */ firebaseApp.getOptions().getApiKey(),
             /*fid= */ prefs.getFirebaseInstallationId(),
             /*projectID= */ firebaseApp.getOptions().getProjectId(),
             /*appId= */ getApplicationId(),
-            /* migration-header= */ null);
+            /* migration-header= */ iidToken);
 
     switch (response.getResponseCode()) {
       case OK:
