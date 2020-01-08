@@ -29,14 +29,21 @@ public class ExponentialBackoff {
 
   public static final double DEFAULT_BACKOFF_FACTOR = 1.5;
 
-  /** Maximum backoff time in milliseconds */
   public static final long DEFAULT_BACKOFF_MAX_DELAY_MS = 60 * 1000;
 
   private final AsyncQueue queue;
   private final TimerId timerId;
   private final long initialDelayMs;
   private final double backoffFactor;
+
+  /** The maximum backoff time in milliseconds. */
   private final long maxDelayMs;
+
+  /**
+   * The maximum backoff time used when calculating the next backoff. This value can be changed for
+   * a single backoffAndRun call, after which it resets to maxDelayMs.
+   */
+  private long nextMaxDelayMs;
 
   private long currentBaseMs;
   private long lastAttemptTime;
@@ -71,6 +78,7 @@ public class ExponentialBackoff {
     this.initialDelayMs = initialDelayMs;
     this.backoffFactor = backoffFactor;
     this.maxDelayMs = maxDelayMs;
+    this.nextMaxDelayMs = maxDelayMs;
     this.lastAttemptTime = new Date().getTime();
 
     reset();
@@ -100,7 +108,17 @@ public class ExponentialBackoff {
    * Resets the backoff delay to the maximum delay (e.g. for use after a RESOURCE_EXHAUSTED error).
    */
   public void resetToMax() {
-    currentBaseMs = maxDelayMs;
+    currentBaseMs = nextMaxDelayMs;
+  }
+
+  /**
+   * Set the backoff's maximum delay for only the next call to backoffAndRun, after which the delay
+   * will be reset to maxDelayMs.
+   *
+   * @param newMax The temporary maximum delay to set.
+   */
+  public void setTemporaryMaxDelay(long newMax) {
+    nextMaxDelayMs = newMax;
   }
 
   /**
@@ -148,9 +166,12 @@ public class ExponentialBackoff {
     currentBaseMs = (long) (currentBaseMs * backoffFactor);
     if (currentBaseMs < initialDelayMs) {
       currentBaseMs = initialDelayMs;
-    } else if (currentBaseMs > maxDelayMs) {
-      currentBaseMs = maxDelayMs;
+    } else if (currentBaseMs > nextMaxDelayMs) {
+      currentBaseMs = nextMaxDelayMs;
     }
+
+    // Reset max delay to the default.
+    nextMaxDelayMs = maxDelayMs;
   }
 
   public void cancel() {
