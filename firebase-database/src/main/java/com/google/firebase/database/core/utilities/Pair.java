@@ -14,7 +14,7 @@
 
 package com.google.firebase.database.core.utilities;
 
-public class Pair<T, U> {
+public final class Pair<T, U> {
 
   private final T first;
   private final U second;

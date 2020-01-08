@@ -41,8 +41,8 @@ import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.InFilter;
 import com.google.firebase.firestore.core.KeyFieldFilter;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -451,24 +451,25 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesListenRequestLabels() {
     Query query = query("collection/key");
-    QueryData queryData = new QueryData(query.toTarget(), 2, 3, QueryPurpose.LISTEN);
+    TargetData targetData = new TargetData(query.toTarget(), 2, 3, QueryPurpose.LISTEN);
 
-    Map<String, String> result = serializer.encodeListenRequestLabels(queryData);
+    Map<String, String> result = serializer.encodeListenRequestLabels(targetData);
     assertNull(result);
 
-    queryData = new QueryData(query.toTarget(), 2, 3, QueryPurpose.LIMBO_RESOLUTION);
-    result = serializer.encodeListenRequestLabels(queryData);
+    targetData = new TargetData(query.toTarget(), 2, 3, QueryPurpose.LIMBO_RESOLUTION);
+    result = serializer.encodeListenRequestLabels(targetData);
     assertEquals(map("goog-listen-tags", "limbo-document"), result);
 
-    queryData = new QueryData(query.toTarget(), 2, 3, QueryPurpose.EXISTENCE_FILTER_MISMATCH);
-    result = serializer.encodeListenRequestLabels(queryData);
+    targetData = new TargetData(query.toTarget(), 2, 3, QueryPurpose.EXISTENCE_FILTER_MISMATCH);
+    result = serializer.encodeListenRequestLabels(targetData);
     assertEquals(map("goog-listen-tags", "existence-filter-mismatch"), result);
   }
 
   @Test
   public void testEncodesFirstLevelKeyQueries() {
     Query q = Query.atPath(ResourcePath.fromString("docs/1"));
-    Target actual = serializer.encodeTarget(new QueryData(q.toTarget(), 1, 2, QueryPurpose.LISTEN));
+    Target actual =
+        serializer.encodeTarget(new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN));
 
     DocumentsTarget.Builder docs =
         DocumentsTarget.newBuilder().addDocuments("projects/p/databases/d/documents/docs/1");
@@ -488,7 +489,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesFirstLevelAncestorQueries() {
     Query q = Query.atPath(ResourcePath.fromString("messages"));
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -513,7 +514,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesNestedAncestorQueries() {
     Query q = Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"));
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -539,7 +540,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesSingleFilterAtFirstLevelCollections() {
     Query q = Query.atPath(ResourcePath.fromString("docs")).filter(filter("prop", "<", 42));
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -579,7 +580,7 @@ public final class RemoteSerializerTest {
             .filter(filter("prop", "<", 42))
             .filter(filter("author", "==", "dimond"))
             .filter(filter("tags", "array-contains", "pending"));
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -721,7 +722,7 @@ public final class RemoteSerializerTest {
   private void unaryFilterTest(Object equalityValue, UnaryFilter.Operator unaryOperator) {
     Query q =
         Query.atPath(ResourcePath.fromString("docs")).filter(filter("prop", "==", equalityValue));
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -752,7 +753,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesSortOrders() {
     Query q = Query.atPath(ResourcePath.fromString("docs")).orderBy(orderBy("prop"));
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -783,7 +784,7 @@ public final class RemoteSerializerTest {
     Query q =
         Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"))
             .orderBy(orderBy("prop", "desc"));
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -816,7 +817,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesLimits() {
     Query q = Query.atPath(ResourcePath.fromString("docs")).limitToFirst(26);
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -845,7 +846,7 @@ public final class RemoteSerializerTest {
         Query.atPath(ResourcePath.fromString("docs"))
             .startAt(new Bound(asList(ReferenceValue.valueOf(databaseId, key("foo/bar"))), true))
             .endAt(new Bound(asList(ReferenceValue.valueOf(databaseId, key("foo/baz"))), false));
-    Target actual = serializer.encodeTarget(wrapQueryData(q));
+    Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -883,10 +884,10 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesResumeTokens() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
-    QueryData queryData =
-        new QueryData(q.toTarget(), 1, 2, QueryPurpose.LISTEN)
+    TargetData targetData =
+        new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN)
             .withResumeToken(TestUtil.resumeToken(1000), SnapshotVersion.NONE);
-    Target actual = serializer.encodeTarget(queryData);
+    Target actual = serializer.encodeTarget(targetData);
 
     StructuredQuery.Builder structuredQueryBuilder =
         StructuredQuery.newBuilder()
@@ -910,11 +911,11 @@ public final class RemoteSerializerTest {
   }
 
   /**
-   * Wraps the given query in QueryData. This is useful because the APIs we're testing accept
-   * QueryData, but for the most part we're just testing variations on Query.
+   * Wraps the given query in TargetData. This is useful because the APIs we're testing accept
+   * TargetData, but for the most part we're just testing variations on Query.
    */
-  private QueryData wrapQueryData(Query query) {
-    return new QueryData(query.toTarget(), 1, 2, QueryPurpose.LISTEN);
+  private TargetData wrapTargetData(Query query) {
+    return new TargetData(query.toTarget(), 1, 2, QueryPurpose.LISTEN);
   }
 
   @Test

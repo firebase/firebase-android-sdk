@@ -94,7 +94,7 @@ class SQLiteSchema {
 
     if (fromVersion < 1 && toVersion >= 1) {
       createV1MutationQueue();
-      createV1QueryCache();
+      createV1TargetCache();
       createV1RemoteDocumentCache();
     }
 
@@ -105,8 +105,8 @@ class SQLiteSchema {
       // Brand new clients don't need to drop and recreate--only clients that have potentially
       // corrupt data.
       if (fromVersion != 0) {
-        dropV1QueryCache();
-        createV1QueryCache();
+        dropV1TargetCache();
+        createV1TargetCache();
       }
     }
 
@@ -265,7 +265,7 @@ class SQLiteSchema {
         new Object[] {uid, batchId});
   }
 
-  private void createV1QueryCache() {
+  private void createV1TargetCache() {
     ifTablesDontExist(
         new String[] {"targets", "target_globals", "target_documents"},
         () -> {
@@ -302,7 +302,7 @@ class SQLiteSchema {
         });
   }
 
-  private void dropV1QueryCache() {
+  private void dropV1TargetCache() {
     // This might be overkill, but if any future migration drops these, it's possible we could try
     // dropping tables that don't exist.
     if (tableExists("targets")) {

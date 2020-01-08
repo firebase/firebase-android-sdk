@@ -14,13 +14,17 @@
 
 package com.google.firebase.database.tubesock;
 
+import static java.util.logging.Level.WARNING;
+
 import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * This test is used to run the autobahn websocket protocol compliance test suite. {@see
  * http://autobahn.ws/testsuite}
  */
 public class Autobahn {
+  private static Logger LOGGER = Logger.getLogger(Autobahn.class.getName());
 
   private static final Boolean BLOCK_ON_START = false;
 
@@ -30,9 +34,9 @@ public class Autobahn {
     try {
       client.startTest("" + i);
     } catch (WebSocketException e) {
-      e.printStackTrace();
+      LOGGER.log(WARNING, "unexpected error", e);
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      LOGGER.log(WARNING, "unexpected error", e);
     }
   }
 
@@ -41,9 +45,9 @@ public class Autobahn {
     try {
       updateClient.update();
     } catch (WebSocketException e) {
-      e.printStackTrace();
+      LOGGER.log(WARNING, "unexpected error", e);
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      LOGGER.log(WARNING, "unexpected error", e);
     }
   }
 
@@ -64,7 +68,7 @@ public class Autobahn {
       try {
         System.in.read(new byte[1]);
       } catch (IOException e) {
-        e.printStackTrace();
+        LOGGER.log(WARNING, "unexpected error", e);
       }
     }
     runSuite();

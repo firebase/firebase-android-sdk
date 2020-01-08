@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public final class SQLiteQueryCacheTest extends QueryCacheTestCase {
+public final class SQLiteTargetCacheTest extends TargetCacheTestCase {
 
   @Override
   Persistence getPersistence() {
@@ -37,24 +37,24 @@ public final class SQLiteQueryCacheTest extends QueryCacheTestCase {
 
   @Test
   public void testMetadataPersistedAcrossRestarts() {
-    String name = "test-queryCache-restarts";
+    String name = "test-targetCache-restarts";
 
     SQLitePersistence db1 = PersistenceTestHelpers.createSQLitePersistence(name);
-    QueryCache queryCache1 = db1.getQueryCache();
-    assertEquals(0, queryCache1.getHighestListenSequenceNumber());
+    TargetCache targetCache1 = db1.getTargetCache();
+    assertEquals(0, targetCache1.getHighestListenSequenceNumber());
 
     long originalSequenceNumber = 1234;
     int targetId = 5;
     SnapshotVersion snapshotVersion = new SnapshotVersion(new Timestamp(1, 2));
 
     Query query = query("rooms");
-    QueryData queryData =
-        new QueryData(query.toTarget(), targetId, originalSequenceNumber, QueryPurpose.LISTEN);
+    TargetData targetData =
+        new TargetData(query.toTarget(), targetId, originalSequenceNumber, QueryPurpose.LISTEN);
     db1.runTransaction(
         "add query data",
         () -> {
-          queryCache1.addQueryData(queryData);
-          queryCache1.setLastRemoteSnapshotVersion(snapshotVersion);
+          targetCache1.addTargetData(targetData);
+          targetCache1.setLastRemoteSnapshotVersion(snapshotVersion);
         });
 
     db1.shutdown();
@@ -66,10 +66,10 @@ public final class SQLiteQueryCacheTest extends QueryCacheTestCase {
           long newSequenceNumber = db2.getReferenceDelegate().getCurrentSequenceNumber();
           assertTrue(newSequenceNumber > originalSequenceNumber);
         });
-    QueryCache queryCache2 = db2.getQueryCache();
-    assertEquals(targetId, queryCache2.getHighestTargetId());
-    assertEquals(snapshotVersion, queryCache2.getLastRemoteSnapshotVersion());
-    assertEquals(1, queryCache2.getTargetCount());
+    TargetCache targetCache2 = db2.getTargetCache();
+    assertEquals(targetId, targetCache2.getHighestTargetId());
+    assertEquals(snapshotVersion, targetCache2.getLastRemoteSnapshotVersion());
+    assertEquals(1, targetCache2.getTargetCount());
     db2.shutdown();
   }
 }

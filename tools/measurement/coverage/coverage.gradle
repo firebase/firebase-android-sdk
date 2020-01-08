@@ -35,7 +35,7 @@ task uploadCoverageMeasurements(type: UploadMeasurementsTask) {
 }
 
 /* Creates a combined jacoco coverage reports of all products. */
-def jacocoReportTasks = rootProject.subprojects.tasks*.withType(JacocoReport)*.toArray().flatten()
+def jacocoReportTasks = rootProject.subprojects.tasks*.getAt("checkCoverage")
 task createCombinedReport(type: JacocoReport) {
     mustRunAfter jacocoReportTasks
     classDirectories = files(jacocoReportTasks.classDirectories)

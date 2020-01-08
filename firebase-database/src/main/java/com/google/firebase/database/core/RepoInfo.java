@@ -16,7 +16,7 @@ package com.google.firebase.database.core;
 
 import java.net.URI;
 
-public class RepoInfo {
+public final class RepoInfo {
 
   private static final String VERSION_PARAM = "v";
   private static final String LAST_SESSION_ID_PARAM = "ls";

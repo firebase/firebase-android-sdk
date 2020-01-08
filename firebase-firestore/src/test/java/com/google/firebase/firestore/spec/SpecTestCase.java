@@ -50,9 +50,9 @@ import com.google.firebase.firestore.core.SyncEngine;
 import com.google.firebase.firestore.local.IndexFreeQueryEngine;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
-import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -167,7 +167,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private Set<DocumentKey> expectedLimboDocs;
 
   /** Set of expected active targets, keyed by target ID. */
-  private Map<Integer, Pair<List<QueryData>, String>> expectedActiveTargets;
+  private Map<Integer, Pair<List<TargetData>, String>> expectedActiveTargets;
 
   /**
    * The writes that have been sent to the SyncEngine via {@link SyncEngine#writeMutations} but not
@@ -923,12 +923,12 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             // TODO: populate the purpose of the target once it's possible to encode that in the
             // spec tests. For now, hard-code that it's a listen despite the fact that it's not
             // always the right value.
-            QueryData queryData =
-                new QueryData(
+            TargetData targetData =
+                new TargetData(
                         query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN)
                     .withResumeToken(ByteString.copyFromUtf8(resumeToken), SnapshotVersion.NONE);
 
-            expectedActiveTargets.get(targetId).first.add(queryData);
+            expectedActiveTargets.get(targetId).first.add(targetData);
           }
         }
       }
@@ -999,17 +999,17 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
 
     // Create a copy so we can modify it in tests
-    Map<Integer, QueryData> actualTargets = new HashMap<>(datastore.activeTargets());
+    Map<Integer, TargetData> actualTargets = new HashMap<>(datastore.activeTargets());
 
-    for (Map.Entry<Integer, Pair<List<QueryData>, String>> expected :
+    for (Map.Entry<Integer, Pair<List<TargetData>, String>> expected :
         expectedActiveTargets.entrySet()) {
       assertTrue(
           "Expected active target not found: " + expected.getValue(),
           actualTargets.containsKey(expected.getKey()));
 
-      List<QueryData> expectedQueries = expected.getValue().first;
-      QueryData expectedTarget = expectedQueries.get(0);
-      QueryData actualTarget = actualTargets.get(expected.getKey());
+      List<TargetData> expectedQueries = expected.getValue().first;
+      TargetData expectedTarget = expectedQueries.get(0);
+      TargetData actualTarget = actualTargets.get(expected.getKey());
 
       // TODO: validate the purpose of the target once it's possible to encode that in the
       // spec tests. For now, only validate properties that can be validated.
