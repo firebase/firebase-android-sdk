@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.remote;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import android.content.Context;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -208,7 +206,7 @@ public class GrpcCallProvider {
    *
    * <p>We currently cannot configure timeouts in connection attempts for gRPC
    * (https://github.com/grpc/grpc-java/issues/1943), and until they support doing so, the gRPC
-   * connection can stay open for up to 2+ minutes before shutting down.
+   * connection can stay open for up to 2+ minutes before notifying us that it has shut down.
    *
    * <p>We start a timer when the channel enters ConnectivityState.CONNECTING. If the timer elapses,
    * we reset the channel by shutting it down and reinitializing the channelTask. Changes to the
@@ -220,12 +218,11 @@ public class GrpcCallProvider {
   private void onConnectivityStateChange(ManagedChannel channel) {
     ConnectivityState newState = channel.getState(true);
     Logger.debug(LOG_TAG, "Current gRPC connectivity state: " + newState);
-    // Check that the new state is online, then cancel timer.
+    // Clear the timer, so we don't end up with multiple connectivityAttemptTimers.
+    clearConnectivityAttemptTimer();
+
     if (newState == ConnectivityState.CONNECTING) {
       Logger.debug(LOG_TAG, "Setting the connectivityAttemptTimer");
-      hardAssert(
-          connectivityAttemptTimer == null,
-          "connectivityAttemptTimer should be null when setting a new timer.");
       connectivityAttemptTimer =
           asyncQueue.enqueueAfterDelay(
               TimerId.CONNECTIVITY_ATTEMPT_TIMER,
@@ -235,9 +232,6 @@ public class GrpcCallProvider {
                 clearConnectivityAttemptTimer();
                 resetChannel(channel);
               });
-    } else {
-      // Clear the timer otherwise, so we don't end up with multiple connectivityAttemptTimers.
-      clearConnectivityAttemptTimer();
     }
     // Re-listen for next state change.
     channel.notifyWhenStateChanged(
