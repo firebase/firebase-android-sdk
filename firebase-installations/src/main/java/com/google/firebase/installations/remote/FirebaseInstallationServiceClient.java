@@ -176,7 +176,7 @@ public class FirebaseInstallationServiceClient {
     firebaseInstallationData.put("fid", fid);
     firebaseInstallationData.put("appId", appId);
     firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
-    firebaseInstallationData.put("sdkVersion", "t.1.1.0");
+    firebaseInstallationData.put("sdkVersion", "a:1.0.0");
     return firebaseInstallationData;
   }
 
