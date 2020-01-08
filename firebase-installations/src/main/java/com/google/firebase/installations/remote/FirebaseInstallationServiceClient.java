@@ -16,6 +16,7 @@ package com.google.firebase.installations.remote;
 
 import static android.content.ContentValues.TAG;
 import static com.google.android.gms.common.internal.Preconditions.checkArgument;
+import static com.google.firebase.installations.BuildConfig.VERSION_NAME;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -176,7 +177,7 @@ public class FirebaseInstallationServiceClient {
     firebaseInstallationData.put("fid", fid);
     firebaseInstallationData.put("appId", appId);
     firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
-    firebaseInstallationData.put("sdkVersion", "a:1.0.0");
+    firebaseInstallationData.put("sdkVersion", "a:" + VERSION_NAME);
     return firebaseInstallationData;
   }
 
