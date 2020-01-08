@@ -190,10 +190,13 @@ public class ConfigFetchHandler {
                   backoffEndTime.getTime()));
     } else {
       Task<InstanceIdResult> instanceIdTask = firebaseInstanceId.getInstanceId();
-      fetchResponseTask = instanceIdTask
-              .continueWithTask(executor, (completedIidTask) -> {
+      fetchResponseTask =
+          instanceIdTask.continueWithTask(
+              executor,
+              (completedIidTask) -> {
                 if (!instanceIdTask.isSuccessful()) {
-                  return Tasks.forException(new FirebaseRemoteConfigClientException(
+                  return Tasks.forException(
+                      new FirebaseRemoteConfigClientException(
                           "Failed to get Firebase Instance ID token for fetch.",
                           instanceIdTask.getException()));
                 }
@@ -258,7 +261,8 @@ public class ConfigFetchHandler {
    * Fetches configs from the FRC backend. If there are any updates, writes the configs to the
    * {@code fetchedConfigsCache}.
    */
-  private Task<FetchResponse> fetchFromBackendAndCacheResponse(InstanceIdResult instanceId, Date fetchTime) {
+  private Task<FetchResponse> fetchFromBackendAndCacheResponse(
+      InstanceIdResult instanceId, Date fetchTime) {
     try {
       FetchResponse fetchResponse = fetchFromBackend(instanceId, fetchTime);
       if (fetchResponse.getStatus() != Status.BACKEND_UPDATES_FETCHED) {
@@ -282,7 +286,8 @@ public class ConfigFetchHandler {
    *     error connecting to the server.
    */
   @WorkerThread
-  private FetchResponse fetchFromBackend(InstanceIdResult instanceId, Date currentTime) throws FirebaseRemoteConfigException {
+  private FetchResponse fetchFromBackend(InstanceIdResult instanceId, Date currentTime)
+      throws FirebaseRemoteConfigException {
     try {
       HttpURLConnection urlConnection = frcBackendApiClient.createHttpURLConnection();
 
