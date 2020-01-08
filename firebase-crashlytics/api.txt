@@ -1,0 +1,23 @@
+// Signature format: 2.0
+package com.google.firebase.crashlytics {
+
+  public class FirebaseCrashlytics {
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> checkForUnsentReports();
+    method public void deleteUnsentReports();
+    method public boolean didCrashOnPreviousExecution();
+    method @NonNull public static com.google.firebase.crashlytics.FirebaseCrashlytics getInstance();
+    method public void log(@NonNull String);
+    method public void recordException(@NonNull Throwable);
+    method public void sendUnsentReports();
+    method public void setCrashlyticsCollectionEnabled(boolean);
+    method public void setCustomKey(@NonNull String, boolean);
+    method public void setCustomKey(@NonNull String, double);
+    method public void setCustomKey(@NonNull String, float);
+    method public void setCustomKey(@NonNull String, int);
+    method public void setCustomKey(@NonNull String, long);
+    method public void setCustomKey(@NonNull String, @NonNull String);
+    method public void setUserId(@NonNull String);
+  }
+
+}
+
