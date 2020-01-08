@@ -7,6 +7,8 @@ dependencies:
   * `firebase-abt`
   * `firebase-common`
   * `firebase-common-ktx`
+  * `firebase-crashlytics`
+  * `firebase-crashlytics-ndk`
   * `firebase-database`
   * `firebase-database-ktx`
   * `firebase-database-collection`
