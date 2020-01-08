@@ -90,7 +90,7 @@ public class FirebaseInstallationsTest {
 
   public static final String TEST_INSTANCE_ID_1 = "ccccccccccc";
 
-  public static final String TEST_INSTANCE_ID_TOKEN_1 = "iid.token";
+  public static final String TEST_INSTANCE_ID_TOKEN_1 = "iid:token";
 
   public static final InstallationResponse TEST_INSTALLATION_RESPONSE =
       InstallationResponse.builder()
