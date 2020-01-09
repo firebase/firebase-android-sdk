@@ -206,8 +206,8 @@ public final class FirebaseRemoteConfigTest {
   public void ensureInitialized_notInitialized_isNotComplete() {
     loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
     loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
-    when(mockFirebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(INSTANCE_ID_RESULT));
     loadActivatedCacheWithIncompleteTask();
+    loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
 
@@ -221,7 +221,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
     loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
     loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-    when(mockFirebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(INSTANCE_ID_RESULT));
+    loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
 
@@ -1176,6 +1176,10 @@ public final class FirebaseRemoteConfigTest {
   private void load2pFetchHandlerWithResponse() {
     when(mockFireperfFetchHandler.fetch())
         .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
+  }
+
+  private void loadInstanceIdAndToken() {
+    when(mockFirebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(INSTANCE_ID_RESULT));
   }
 
   private static int getResourceId(String xmlResourceName) {

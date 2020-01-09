@@ -194,7 +194,7 @@ public class ConfigFetchHandler {
           instanceIdTask.continueWithTask(
               executor,
               (completedIidTask) -> {
-                if (!instanceIdTask.isSuccessful()) {
+                if (!completedIidTask.isSuccessful()) {
                   return Tasks.forException(
                       new FirebaseRemoteConfigClientException(
                           "Failed to get Firebase Instance ID token for fetch.",
