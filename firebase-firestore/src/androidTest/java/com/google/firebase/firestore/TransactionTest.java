@@ -499,7 +499,7 @@ public class TransactionTest {
   }
 
   @Test
-  public void retriesWhenDocumentThatWasReadWithoutBeingWrittenChanges() {
+  public void testRetriesWhenDocumentThatWasReadWithoutBeingWrittenChanges() {
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc1 = firestore.collection("counters").document();
     DocumentReference doc2 = firestore.collection("counters").document();
