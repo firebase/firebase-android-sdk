@@ -32,6 +32,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
+import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.util.Executors;
 import java.util.ArrayList;
@@ -136,10 +137,9 @@ public class Transaction {
     for (Mutation mutation : mutations) {
       unwritten.remove(mutation.getKey());
     }
-    if (unwritten.size() > 0) {
-      return Tasks.forException(
-          new FirebaseFirestoreException(
-              "Every document read in a transaction must also be written.", Code.INVALID_ARGUMENT));
+    // For each document that was read but not written to, we want to perform a `verify` operation.
+    for (DocumentKey key : unwritten) {
+      mutations.add(new VerifyMutation(key, precondition(key)));
     }
     committed = true;
     return datastore
