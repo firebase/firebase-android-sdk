@@ -30,7 +30,7 @@ package com.google.firebase.installations {
 package com.google.firebase.installations.local {
 
   public class IidStore {
-    ctor public IidStore();
+    ctor public IidStore(@NonNull com.google.firebase.FirebaseApp);
     method @Nullable public String readIid();
     method @Nullable public String readToken();
   }
