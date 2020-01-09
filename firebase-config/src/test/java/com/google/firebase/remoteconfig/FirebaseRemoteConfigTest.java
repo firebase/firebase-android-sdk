@@ -158,6 +158,7 @@ public final class FirebaseRemoteConfigTest {
         new FirebaseRemoteConfig(
             context,
             firebaseApp,
+            mockFirebaseInstanceId,
             mockFirebaseAbt,
             directExecutor,
             mockFetchedCache,
@@ -165,8 +166,7 @@ public final class FirebaseRemoteConfigTest {
             mockDefaultsCache,
             mockFetchHandler,
             mockGetHandler,
-            metadataClient,
-            mockFirebaseInstanceId);
+            metadataClient);
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
@@ -175,6 +175,7 @@ public final class FirebaseRemoteConfigTest {
             .get(
                 firebaseApp,
                 FIREPERF_NAMESPACE,
+                mockFirebaseInstanceId,
                 /*firebaseAbt=*/ null,
                 directExecutor,
                 mockFireperfFetchedCache,

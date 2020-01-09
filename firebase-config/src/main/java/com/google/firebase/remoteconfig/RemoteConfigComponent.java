@@ -156,6 +156,7 @@ public class RemoteConfigComponent {
     return get(
         firebaseApp,
         namespace,
+        firebaseInstanceId,
         firebaseAbt,
         executorService,
         fetchedCacheClient,
@@ -170,6 +171,7 @@ public class RemoteConfigComponent {
   synchronized FirebaseRemoteConfig get(
       FirebaseApp firebaseApp,
       String namespace,
+      FirebaseInstanceId firebaseInstanceId,
       FirebaseABTesting firebaseAbt,
       Executor executor,
       ConfigCacheClient fetchedClient,
@@ -183,6 +185,7 @@ public class RemoteConfigComponent {
           new FirebaseRemoteConfig(
               context,
               firebaseApp,
+              firebaseInstanceId,
               isAbtSupported(firebaseApp, namespace) ? firebaseAbt : null,
               executor,
               fetchedClient,
@@ -190,8 +193,7 @@ public class RemoteConfigComponent {
               defaultsClient,
               fetchHandler,
               getHandler,
-              metadataClient,
-              firebaseInstanceId);
+              metadataClient);
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
     }

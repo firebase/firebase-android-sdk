@@ -159,6 +159,7 @@ public class FirebaseRemoteConfig {
   FirebaseRemoteConfig(
       Context context,
       FirebaseApp firebaseApp,
+      FirebaseInstanceId firebaseInstanceId,
       @Nullable FirebaseABTesting firebaseAbt,
       Executor executor,
       ConfigCacheClient fetchedConfigsCache,
@@ -166,10 +167,10 @@ public class FirebaseRemoteConfig {
       ConfigCacheClient defaultConfigsCache,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient frcMetadata,
-      FirebaseInstanceId firebaseInstanceId) {
+      ConfigMetadataClient frcMetadata) {
     this.context = context;
     this.firebaseApp = firebaseApp;
+    this.firebaseInstanceId = firebaseInstanceId;
     this.firebaseAbt = firebaseAbt;
     this.executor = executor;
     this.fetchedConfigsCache = fetchedConfigsCache;
@@ -178,7 +179,6 @@ public class FirebaseRemoteConfig {
     this.fetchHandler = fetchHandler;
     this.getHandler = getHandler;
     this.frcMetadata = frcMetadata;
-    this.firebaseInstanceId = firebaseInstanceId;
   }
 
   /**

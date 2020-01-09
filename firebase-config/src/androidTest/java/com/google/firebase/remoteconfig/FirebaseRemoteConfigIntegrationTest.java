@@ -96,6 +96,7 @@ public class FirebaseRemoteConfigIntegrationTest {
         new FirebaseRemoteConfig(
             context,
             firebaseApp,
+            mockFirebaseInstanceId,
             mockFirebaseAbt,
             directExecutor,
             mockFetchedCache,
@@ -103,8 +104,7 @@ public class FirebaseRemoteConfigIntegrationTest {
             mockDefaultsCache,
             mockFetchHandler,
             mockGetHandler,
-            metadataClient,
-            mockFirebaseInstanceId);
+            metadataClient);
   }
 
   @Test
