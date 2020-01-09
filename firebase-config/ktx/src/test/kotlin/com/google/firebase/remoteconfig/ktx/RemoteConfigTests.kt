@@ -26,6 +26,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 import com.google.common.util.concurrent.MoreExecutors
+import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import org.junit.After
@@ -127,6 +128,7 @@ class ConfigTests : BaseTestCase() {
         val remoteConfig = createRemoteConfig(
             context = null,
             firebaseApp = Firebase.app(EXISTING_APP),
+            firebaseInstanceId = mock(FirebaseInstanceId::class.java),
             firebaseAbt = null,
             executor = directExecutor,
             fetchedConfigsCache = mock(ConfigCacheClient::class.java),
