@@ -136,6 +136,7 @@ class PublishingPlugin implements Plugin<Project> {
             def publishProjectsToBuildDir = project.task('publishProjectsToBuildDir') {
                 projectsToPublish.each { projectToPublish ->
                     dependsOn getPublishTask(projectToPublish, 'BuildDirRepository')
+                    dependsOn "$projectToPublish.path:kotlindoc"
                 }
             }
             def buildMavenZip = project.task('buildMavenZip', type: Zip) {
@@ -146,6 +147,14 @@ class PublishingPlugin implements Plugin<Project> {
 
                 from "$project.buildDir/m2repository"
             }
+            def buildKotlindocZip = project.task('buildKotlindocZip', type: Zip) {
+                dependsOn publishProjectsToBuildDir
+
+                archiveFileName = 'kotlindoc.zip'
+                destinationDirectory = project.buildDir
+
+                from "$project.buildDir/firebase-kotlindoc"
+            }
 
             def info = project.task('publishPrintInfo') {
                 doLast {
@@ -153,8 +162,9 @@ class PublishingPlugin implements Plugin<Project> {
                 }
             }
             buildMavenZip.mustRunAfter info
+            buildKotlindocZip.mustRunAfter info
 
-            firebasePublish.dependsOn info, buildMavenZip
+            firebasePublish.dependsOn info, buildMavenZip, buildKotlindocZip
 
             try {
                 project.project(':kotlindoc')
