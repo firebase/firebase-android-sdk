@@ -190,7 +190,8 @@ public class RemoteConfigComponent {
               defaultsClient,
               fetchHandler,
               getHandler,
-              metadataClient);
+              metadataClient,
+              firebaseInstanceId);
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
     }
