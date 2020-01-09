@@ -62,6 +62,7 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
+import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteEvent;
@@ -504,6 +505,10 @@ public class TestUtil {
 
   public static DeleteMutation deleteMutation(String path) {
     return new DeleteMutation(key(path), Precondition.NONE);
+  }
+
+  public static VerifyMutation verifyMutation(String path, int micros) {
+    return new VerifyMutation(key(path), Precondition.updateTime(version(micros)));
   }
 
   /**
