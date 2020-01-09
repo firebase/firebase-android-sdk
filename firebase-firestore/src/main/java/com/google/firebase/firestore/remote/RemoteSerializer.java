@@ -51,6 +51,7 @@ import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
+import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.BlobValue;
 import com.google.firebase.firestore.model.value.BooleanValue;
@@ -443,6 +444,8 @@ public final class RemoteSerializer {
       builder.setTransform(transformBuilder);
     } else if (mutation instanceof DeleteMutation) {
       builder.setDelete(encodeKey(mutation.getKey()));
+    } else if (mutation instanceof VerifyMutation) {
+      builder.setVerify(encodeKey(mutation.getKey()));
     } else {
       throw fail("unknown mutation type %s", mutation.getClass());
     }
@@ -488,6 +491,9 @@ public final class RemoteSerializer {
             exists != null && exists, "Transforms only support precondition \"exists == true\"");
         return new TransformMutation(
             decodeKey(mutation.getTransform().getDocument()), fieldTransforms);
+
+      case VERIFY:
+        return new VerifyMutation(decodeKey(mutation.getVerify()), precondition);
 
       default:
         throw fail("Unknown mutation operation: %d", mutation.getOperationCase());

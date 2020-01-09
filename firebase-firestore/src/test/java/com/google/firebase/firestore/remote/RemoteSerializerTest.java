@@ -27,6 +27,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.transformMutation;
+import static com.google.firebase.firestore.testutil.TestUtil.verifyMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -313,6 +314,21 @@ public final class RemoteSerializerTest {
     com.google.firestore.v1.Write expected =
         com.google.firestore.v1.Write.newBuilder()
             .setDelete("projects/p/databases/d/documents/docs/1")
+            .build();
+    assertRoundTripForMutation(mutation, expected);
+  }
+
+  @Test
+  public void testEncodeVerifyMutation() {
+    Mutation mutation = verifyMutation("docs/1", 4);
+
+    com.google.firestore.v1.Write expected =
+        Write.newBuilder()
+            .setVerify("projects/p/databases/d/documents/docs/1")
+            .setCurrentDocument(
+                Precondition.newBuilder()
+                    .setUpdateTime(Timestamp.newBuilder().setNanos(4000).build())
+                    .build())
             .build();
     assertRoundTripForMutation(mutation, expected);
   }
