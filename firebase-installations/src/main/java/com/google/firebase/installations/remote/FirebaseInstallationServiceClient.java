@@ -142,17 +142,15 @@ public class FirebaseInstallationServiceClient {
         httpsURLConnection.addRequestProperty(X_ANDROID_IID_MIGRATION_KEY, iidToken);
       }
 
-      GZIPOutputStream gzipOutputStream = null;
+      GZIPOutputStream gzipOutputStream =
+          new GZIPOutputStream(httpsURLConnection.getOutputStream());
       try {
-        gzipOutputStream = new GZIPOutputStream(httpsURLConnection.getOutputStream());
         gzipOutputStream.write(
             buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
       } catch (JSONException e) {
         throw new IllegalStateException(e);
       } finally {
-        if (gzipOutputStream != null) {
-          gzipOutputStream.close();
-        }
+        gzipOutputStream.close();
       }
 
       int httpResponseCode = httpsURLConnection.getResponseCode();
