@@ -84,7 +84,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
         new PersistedInstallation(firebaseApp),
         new Utils(Calendar.getInstance()),
-        new IidStore(),
+        new IidStore(firebaseApp),
         new RandomFidGenerator());
   }
 
@@ -335,7 +335,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private String readExistingIidOrCreateFid(PersistedInstallationEntry prefs) {
     // Check if this firebase app is the default (first initialized) instance
-    if (!firebaseApp.equals(FirebaseApp.getInstance()) || !prefs.shouldAttemptMigration()) {
+    if (!firebaseApp.isDefaultApp() || !prefs.shouldAttemptMigration()) {
       return fidGenerator.createRandomFid();
     }
     // For a default firebase installation, read the existing iid from shared prefs
