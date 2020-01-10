@@ -142,15 +142,17 @@ public class FirebaseInstallationServiceClient {
         httpsURLConnection.addRequestProperty(X_ANDROID_IID_MIGRATION_KEY, iidToken);
       }
 
-      GZIPOutputStream gzipOutputStream =
-          new GZIPOutputStream(httpsURLConnection.getOutputStream());
+      GZIPOutputStream gzipOutputStream = null;
       try {
+        gzipOutputStream = new GZIPOutputStream(httpsURLConnection.getOutputStream());
         gzipOutputStream.write(
             buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
       } catch (JSONException e) {
         throw new IllegalStateException(e);
       } finally {
-        gzipOutputStream.close();
+        if (gzipOutputStream != null) {
+          gzipOutputStream.close();
+        }
       }
 
       int httpResponseCode = httpsURLConnection.getResponseCode();
@@ -158,6 +160,7 @@ public class FirebaseInstallationServiceClient {
       if (httpResponseCode == 200) {
         return readCreateResponse(httpsURLConnection);
       }
+      httpsURLConnection.disconnect();
 
       if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
         retryCount++;
@@ -213,6 +216,7 @@ public class FirebaseInstallationServiceClient {
       httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
       int httpResponseCode = httpsURLConnection.getResponseCode();
+      httpsURLConnection.disconnect();
 
       if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
         return;
@@ -275,6 +279,8 @@ public class FirebaseInstallationServiceClient {
       if (httpResponseCode == 200) {
         return readGenerateAuthTokenResponse(httpsURLConnection);
       }
+
+      httpsURLConnection.disconnect();
 
       if (httpResponseCode == 401 || httpResponseCode == 404) {
         return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
@@ -345,6 +351,7 @@ public class FirebaseInstallationServiceClient {
       }
     }
     reader.endObject();
+    conn.disconnect();
 
     return builder.setResponseCode(ResponseCode.OK).build();
   }
@@ -365,6 +372,7 @@ public class FirebaseInstallationServiceClient {
       }
     }
     reader.endObject();
+    conn.disconnect();
 
     return builder.setResponseCode(TokenResult.ResponseCode.OK).build();
   }
