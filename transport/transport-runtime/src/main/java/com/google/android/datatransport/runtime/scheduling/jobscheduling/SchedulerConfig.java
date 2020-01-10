@@ -20,9 +20,10 @@ import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.auto.value.AutoValue;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -83,7 +84,7 @@ public abstract class SchedulerConfig {
             ConfigValue.builder()
                 .setDelta(TWENTY_FOUR_HOURS)
                 .setMaxAllowedDelay(TWENTY_FOUR_HOURS)
-                .setFlags(EnumSet.of(Flag.NETWORK_UNMETERED, Flag.DEVICE_IDLE))
+                .setFlags(immutableSetOf(Flag.NETWORK_UNMETERED, Flag.DEVICE_IDLE))
                 .build())
         .setClock(clock)
         .build();
@@ -165,5 +166,9 @@ public abstract class SchedulerConfig {
 
   public Set<Flag> getFlags(Priority priority) {
     return getValues().get(priority).getFlags();
+  }
+
+  private static <T> Set<T> immutableSetOf(T... values) {
+    return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(values)));
   }
 }

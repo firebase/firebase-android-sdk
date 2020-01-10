@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.snapshot.EmptyNode;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,6 +61,11 @@ public class ObjectMapTest {
     public boolean equals(Object o) {
       return (o instanceof Author) && ((Author) o).name.equals(name) && ((Author) o).id == id;
     }
+
+    @Override
+    public int hashCode() {
+      return 31 * name.hashCode() + Integer.hashCode(id);
+    }
   }
 
   @ThrowOnExtraProperties
@@ -94,6 +99,11 @@ public class ObjectMapTest {
           && ((Message) o).text.equals(text)
           && (((((Message) o).author == null) && (author == null))
               || ((Message) o).author.equals(author));
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * text.hashCode() + author.hashCode();
     }
   }
 

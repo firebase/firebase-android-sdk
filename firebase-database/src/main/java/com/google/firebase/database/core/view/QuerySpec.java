@@ -18,7 +18,7 @@ import com.google.firebase.database.core.Path;
 import com.google.firebase.database.snapshot.Index;
 import java.util.Map;
 
-public class QuerySpec {
+public final class QuerySpec {
 
   public static QuerySpec defaultQueryAtPath(Path path) {
     return new QuerySpec(path, QueryParams.DEFAULT_PARAMS);

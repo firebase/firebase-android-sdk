@@ -50,9 +50,9 @@ import com.google.firebase.firestore.core.SyncEngine;
 import com.google.firebase.firestore.local.IndexFreeQueryEngine;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
-import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -167,7 +167,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private Set<DocumentKey> expectedLimboDocs;
 
   /** Set of expected active targets, keyed by target ID. */
-  private Map<Integer, QueryData> expectedActiveTargets;
+  private Map<Integer, Pair<List<TargetData>, String>> expectedActiveTargets;
 
   /**
    * The writes that have been sent to the SyncEngine via {@link SyncEngine#writeMutations} but not
@@ -336,9 +336,15 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       String collectionGroup =
           queryDict.has("collectionGroup") ? queryDict.getString("collectionGroup") : null;
       Query query = new Query(ResourcePath.fromString(path), collectionGroup);
+
       if (queryDict.has("limit")) {
-        query = query.limit(queryDict.getLong("limit"));
+        if (queryDict.getString("limitType").equals("LimitToFirst")) {
+          query = query.limitToFirst(queryDict.getLong("limit"));
+        } else {
+          query = query.limitToLast(queryDict.getLong("limit"));
+        }
       }
+
       if (queryDict.has("filters")) {
         JSONArray array = queryDict.getJSONArray("filters");
         for (int i = 0; i < array.length(); i++) {
@@ -349,6 +355,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           query = query.filter(TestUtil.filter(field, op, value));
         }
       }
+
       if (queryDict.has("orderBys")) {
         JSONArray array = queryDict.getJSONArray("orderBys");
         for (int i = 0; i < array.length(); i++) {
@@ -358,6 +365,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           query = query.orderBy(TestUtil.orderBy(field, direction));
         }
       }
+
       return query;
     } else {
       throw Assert.fail("Invalid query: %s", querySpec);
@@ -904,17 +912,24 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         while (keys.hasNext()) {
           String targetIdString = keys.next();
           int targetId = Integer.parseInt(targetIdString);
-          JSONObject queryDataJson = activeTargets.getJSONObject(targetIdString);
-          Query query = parseQuery(queryDataJson.get("query"));
-          String resumeToken = queryDataJson.getString("resumeToken");
 
-          // TODO: populate the purpose of the target once it's possible to encode that in the
-          // spec tests. For now, hard-code that it's a listen despite the fact that it's not always
-          // the right value.
-          QueryData queryData =
-              new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN)
-                  .withResumeToken(ByteString.copyFromUtf8(resumeToken), SnapshotVersion.NONE);
-          expectedActiveTargets.put(targetId, queryData);
+          JSONObject queryDataJson = activeTargets.getJSONObject(targetIdString);
+          String resumeToken = queryDataJson.getString("resumeToken");
+          JSONArray queryArrayJson = queryDataJson.getJSONArray("queries");
+
+          expectedActiveTargets.put(targetId, new Pair<>(new ArrayList<>(), resumeToken));
+          for (int i = 0; i < queryArrayJson.length(); i++) {
+            Query query = parseQuery(queryArrayJson.getJSONObject(i));
+            // TODO: populate the purpose of the target once it's possible to encode that in the
+            // spec tests. For now, hard-code that it's a listen despite the fact that it's not
+            // always the right value.
+            TargetData targetData =
+                new TargetData(
+                        query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN)
+                    .withResumeToken(ByteString.copyFromUtf8(resumeToken), SnapshotVersion.NONE);
+
+            expectedActiveTargets.get(targetId).first.add(targetData);
+          }
         }
       }
     }
@@ -984,20 +999,22 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
 
     // Create a copy so we can modify it in tests
-    Map<Integer, QueryData> actualTargets = new HashMap<>(datastore.activeTargets());
+    Map<Integer, TargetData> actualTargets = new HashMap<>(datastore.activeTargets());
 
-    for (Map.Entry<Integer, QueryData> expected : expectedActiveTargets.entrySet()) {
+    for (Map.Entry<Integer, Pair<List<TargetData>, String>> expected :
+        expectedActiveTargets.entrySet()) {
       assertTrue(
           "Expected active target not found: " + expected.getValue(),
           actualTargets.containsKey(expected.getKey()));
 
-      QueryData expectedTarget = expected.getValue();
-      QueryData actualTarget = actualTargets.get(expected.getKey());
+      List<TargetData> expectedQueries = expected.getValue().first;
+      TargetData expectedTarget = expectedQueries.get(0);
+      TargetData actualTarget = actualTargets.get(expected.getKey());
 
       // TODO: validate the purpose of the target once it's possible to encode that in the
       // spec tests. For now, only validate properties that can be validated.
       // assertEquals(expectedTarget, actualTarget);
-      assertEquals(expectedTarget.getQuery(), actualTarget.getQuery());
+      assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
       assertEquals(expectedTarget.getTargetId(), actualTarget.getTargetId());
       assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
       assertEquals(

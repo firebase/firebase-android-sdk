@@ -14,7 +14,7 @@
 
 package com.google.firebase.database.integration;
 
-import androidx.test.InstrumentationRegistry;
+import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.DataSnapshot;
@@ -32,7 +32,7 @@ public class ShutdownExample {
 
     FirebaseApp app =
         FirebaseApp.initializeApp(
-            InstrumentationRegistry.getTargetContext(),
+            InstrumentationRegistry.getInstrumentation().getTargetContext(),
             new FirebaseOptions.Builder()
                 .setDatabaseUrl("http://gsoltis.fblocal.com:9000")
                 .build());

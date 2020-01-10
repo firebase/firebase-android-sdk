@@ -33,3 +33,48 @@ task uploadCoverageMeasurements(type: UploadMeasurementsTask) {
     reportFiles = files("$buildDir/coverage-report.json")
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
 }
+
+/* Creates a combined jacoco coverage reports of all products. */
+def jacocoReportTasks = rootProject.subprojects.tasks*.getAt("checkCoverage")
+task createCombinedReport(type: JacocoReport) {
+    mustRunAfter jacocoReportTasks
+    classDirectories = files(jacocoReportTasks.classDirectories)
+    sourceDirectories = files(jacocoReportTasks.sourceDirectories)
+    executionData files(jacocoReportTasks.executionData)
+    reports {
+        xml {
+            enabled true
+            destination file("${jacoco.reportsDir}/jacocoCombinedReport.xml")
+        }
+    }
+}
+
+/* https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables */
+def job = System.getenv("PROW_JOB_ID")
+def build = System.getenv("BUILD_ID")
+def branch = System.getenv("PULL_BASE_REF")
+def base = System.getenv("PULL_BASE_SHA")
+def head = System.getenv("PULL_PULL_SHA")
+def pr = System.getenv("PULL_NUMBER")
+
+def commit = head ?: base
+
+/* Uploads coverage reports to codecov.io. */
+task codecov(type: Exec) {
+    dependsOn createCombinedReport
+
+    environment "VCS_COMMIT_ID", "$commit"
+    environment "VCS_BRANCH_NAME", "$branch"
+    environment "VCS_PULL_REQUEST", "$pr"
+    environment "VCS_SLUG", "firebase/firebase-android-sdk"
+    environment "VCS_TAG", ""
+    environment "CI_BUILD_URL", ""
+    environment "CI_BUILD_ID", "$build"
+    environment "CI_JOB_ID", "$job"
+
+    commandLine 'bash', '/opt/codecov/uploader.sh'
+}
+
+// TODO(yifany@): Uploads coverage reports to coveralls.
+// https://github.com/kt3k/coveralls-gradle-plugin
+// https://docs.coveralls.io/supported-ci-services

@@ -63,7 +63,7 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-inappmessaging')
 
-    implementation ('com.google.firebase:firebase-iid:19.0.0') {
+    implementation ('com.google.firebase:firebase-iid:20.0.1') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
     implementation('com.google.firebase:firebase-measurement-connector:18.0.0') {
@@ -89,6 +89,7 @@ dependencies {
     testImplementation "junit:junit:4.12"
     testImplementation "org.mockito:mockito-core:2.25.0"
     testImplementation "com.google.truth:truth:0.44"
+    testImplementation 'com.google.guava:guava:27.1-android'
 
     androidTestImplementation "org.mockito:mockito-core:2.25.0"
     androidTestImplementation "com.google.dexmaker:dexmaker:1.2"

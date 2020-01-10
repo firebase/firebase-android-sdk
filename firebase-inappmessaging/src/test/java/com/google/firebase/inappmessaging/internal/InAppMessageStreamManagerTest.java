@@ -250,6 +250,7 @@ public class InAppMessageStreamManagerTest {
             .clearMessages()
             .addMessages(t)
             .build();
+
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);

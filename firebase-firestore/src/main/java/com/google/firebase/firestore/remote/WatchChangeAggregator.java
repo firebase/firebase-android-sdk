@@ -20,9 +20,9 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
-import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.local.QueryData;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -52,11 +52,11 @@ public class WatchChangeAggregator {
     ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId);
 
     /**
-     * Returns the QueryData for an active target ID or 'null' if this query is unknown or has
+     * Returns the TargetData for an active target ID or 'null' if this query is unknown or has
      * become inactive.
      */
     @Nullable
-    QueryData getQueryDataForTarget(int targetId);
+    TargetData getTargetDataForTarget(int targetId);
   }
 
   private final TargetMetadataProvider targetMetadataProvider;
@@ -174,16 +174,16 @@ public class WatchChangeAggregator {
     int targetId = watchChange.getTargetId();
     int expectedCount = watchChange.getExistenceFilter().getCount();
 
-    QueryData queryData = queryDataForActiveTarget(targetId);
-    if (queryData != null) {
-      Query query = queryData.getQuery();
-      if (query.isDocumentQuery()) {
+    TargetData targetData = queryDataForActiveTarget(targetId);
+    if (targetData != null) {
+      Target target = targetData.getTarget();
+      if (target.isDocumentQuery()) {
         if (expectedCount == 0) {
           // The existence filter told us the document does not exist. We deduce that this document
           // does not exist and apply a deleted document to our updates. Without applying this
           // deleted document there might be another query that will raise this document as part of
           // a snapshot  until it is resolved, essentially exposing inconsistency between queries.
-          DocumentKey key = DocumentKey.fromPath(query.getPath());
+          DocumentKey key = DocumentKey.fromPath(target.getPath());
           removeDocumentFromTarget(
               targetId,
               key,
@@ -215,14 +215,14 @@ public class WatchChangeAggregator {
       int targetId = entry.getKey();
       TargetState targetState = entry.getValue();
 
-      QueryData queryData = queryDataForActiveTarget(targetId);
-      if (queryData != null) {
-        if (targetState.isCurrent() && queryData.getQuery().isDocumentQuery()) {
+      TargetData targetData = queryDataForActiveTarget(targetId);
+      if (targetData != null) {
+        if (targetState.isCurrent() && targetData.getTarget().isDocumentQuery()) {
           // Document queries for document that don't exist can produce an empty result set. To
           // update our local cache, we synthesize a document delete if we have not previously
           // received the document. This resolves the limbo state of the document, removing it from
           // limboDocumentRefs.
-          DocumentKey key = DocumentKey.fromPath(queryData.getQuery().getPath());
+          DocumentKey key = DocumentKey.fromPath(targetData.getTarget().getPath());
           if (pendingDocumentUpdates.get(key) == null && !targetContainsDocument(targetId, key)) {
             removeDocumentFromTarget(
                 targetId,
@@ -251,8 +251,8 @@ public class WatchChangeAggregator {
       boolean isOnlyLimboTarget = true;
 
       for (int targetId : targets) {
-        QueryData queryData = queryDataForActiveTarget(targetId);
-        if (queryData != null && !queryData.getPurpose().equals(QueryPurpose.LIMBO_RESOLUTION)) {
+        TargetData targetData = queryDataForActiveTarget(targetId);
+        if (targetData != null && !targetData.getPurpose().equals(QueryPurpose.LIMBO_RESOLUTION)) {
           isOnlyLimboTarget = false;
           break;
         }
@@ -379,22 +379,22 @@ public class WatchChangeAggregator {
 
   /**
    * Verifies that the user is still interested in this target (by calling
-   * `getQueryDataForTarget()`) and that we are not waiting for pending ADDs from watch.
+   * `getTargetDataForTarget()`) and that we are not waiting for pending ADDs from watch.
    */
   private boolean isActiveTarget(int targetId) {
     return queryDataForActiveTarget(targetId) != null;
   }
 
   /**
-   * Returns the QueryData for an active target (i.e. a target that the user is still interested in
+   * Returns the TargetData for an active target (i.e. a target that the user is still interested in
    * that has no outstanding target change requests).
    */
   @Nullable
-  private QueryData queryDataForActiveTarget(int targetId) {
+  private TargetData queryDataForActiveTarget(int targetId) {
     TargetState targetState = targetStates.get(targetId);
     return targetState != null && targetState.isPending()
         ? null
-        : targetMetadataProvider.getQueryDataForTarget(targetId);
+        : targetMetadataProvider.getTargetDataForTarget(targetId);
   }
 
   /**

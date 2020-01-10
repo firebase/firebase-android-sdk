@@ -15,6 +15,7 @@
 package com.google.firebase.inappmessaging.model;
 
 import androidx.annotation.Nullable;
+import java.util.Map;
 
 /** Encapsulates a Firebase In App Message. */
 public abstract class InAppMessage {
@@ -30,6 +31,7 @@ public abstract class InAppMessage {
   @Deprecated Boolean isTestMessage;
   MessageType messageType;
   CampaignMetadata campaignMetadata;
+  @Nullable private Map<String, String> data;
 
   /** @hide */
   @Deprecated
@@ -44,7 +46,8 @@ public abstract class InAppMessage {
       String campaignId,
       String campaignName,
       Boolean isTestMessage,
-      MessageType messageType) {
+      MessageType messageType,
+      Map<String, String> data) {
     this.title = title;
     this.body = body;
     this.imageUrl = imageUrl;
@@ -56,43 +59,46 @@ public abstract class InAppMessage {
     this.isTestMessage = isTestMessage;
     this.messageType = messageType;
     this.campaignMetadata = new CampaignMetadata(campaignId, campaignName, isTestMessage);
+    this.data = data;
   }
 
   /** @hide */
-  public InAppMessage(CampaignMetadata campaignMetadata, MessageType messageType) {
+  public InAppMessage(
+      CampaignMetadata campaignMetadata, MessageType messageType, Map<String, String> data) {
     this.campaignMetadata = campaignMetadata;
     this.messageType = messageType;
+    this.data = data;
   }
 
-  /** Deprecated - Use the message specific methods instead. */
+  /** @deprecated Use the message specific methods instead. */
   @Nullable
   @Deprecated
   public Text getTitle() {
     return title;
   }
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) instead. */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
   @Nullable
   @Deprecated
   public Text getBody() {
     return body;
   }
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) instead. */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
   @Nullable
   @Deprecated
   public String getImageUrl() {
     return imageUrl;
   }
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) instead. */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
   @Nullable
   @Deprecated
   public ImageData getImageData() {
     return imageData;
   }
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) */
   @Nullable
   @Deprecated
   public Button getActionButton() {
@@ -102,33 +108,33 @@ public abstract class InAppMessage {
     return actionButton;
   }
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) instead. */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
   @Deprecated
   @Nullable
   public abstract Action getAction();
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) instead. */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
   @Nullable
   @Deprecated
   public String getBackgroundHexColor() {
     return backgroundHexColor;
   }
 
-  /** Deprecated - Use getCampaignMetadata().getCampaignId() instead. */
+  /** @deprecated Use getCampaignMetadata().getCampaignId() instead. */
   @Nullable
   @Deprecated
   public String getCampaignId() {
     return campaignMetadata.getCampaignId();
   }
 
-  /** Deprecated - Use getCampaignMetadata().getCampaignName() instead. */
+  /** @deprecated Use getCampaignMetadata().getCampaignName() instead. */
   @Nullable
   @Deprecated
   public String getCampaignName() {
     return campaignMetadata.getCampaignName();
   }
 
-  /** Deprecated - Use getCampaignMetadata().getIsTestMessage() instead. */
+  /** @deprecated Use getCampaignMetadata().getIsTestMessage() instead. */
   @Nullable
   @Deprecated
   public Boolean getIsTestMessage() {
@@ -144,5 +150,10 @@ public abstract class InAppMessage {
   @Nullable
   public CampaignMetadata getCampaignMetadata() {
     return campaignMetadata;
+  }
+
+  @Nullable
+  public Map<String, String> getData() {
+    return data;
   }
 }

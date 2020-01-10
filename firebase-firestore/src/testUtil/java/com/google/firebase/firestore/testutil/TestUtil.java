@@ -42,8 +42,8 @@ import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.local.LocalViewChanges;
-import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -62,6 +62,7 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
+import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteEvent;
@@ -287,8 +288,9 @@ public class TestUtil {
     }
   }
 
-  public static QueryData queryData(int targetId, QueryPurpose queryPurpose, String path) {
-    return new QueryData(query(path), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
+  public static TargetData targetData(int targetId, QueryPurpose queryPurpose, String path) {
+    return new TargetData(
+        query(path).toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
   }
 
   public static ImmutableSortedMap<DocumentKey, MaybeDocument> docUpdates(MaybeDocument... docs) {
@@ -345,34 +347,36 @@ public class TestUtil {
     return targetChange(ByteString.EMPTY, true, Arrays.asList(docs), null, null);
   }
 
-  public static Map<Integer, QueryData> activeQueries(Iterable<Integer> targets) {
+  public static Map<Integer, TargetData> activeQueries(Iterable<Integer> targets) {
     Query query = query("foo");
-    Map<Integer, QueryData> listenMap = new HashMap<>();
+    Map<Integer, TargetData> listenMap = new HashMap<>();
     for (Integer targetId : targets) {
-      QueryData queryData =
-          new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN);
-      listenMap.put(targetId, queryData);
+      TargetData targetData =
+          new TargetData(
+              query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN);
+      listenMap.put(targetId, targetData);
     }
     return listenMap;
   }
 
-  public static Map<Integer, QueryData> activeQueries(Integer... targets) {
+  public static Map<Integer, TargetData> activeQueries(Integer... targets) {
     return activeQueries(asList(targets));
   }
 
-  public static Map<Integer, QueryData> activeLimboQueries(
+  public static Map<Integer, TargetData> activeLimboQueries(
       String docKey, Iterable<Integer> targets) {
     Query query = query(docKey);
-    Map<Integer, QueryData> listenMap = new HashMap<>();
+    Map<Integer, TargetData> listenMap = new HashMap<>();
     for (Integer targetId : targets) {
-      QueryData queryData =
-          new QueryData(query, targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LIMBO_RESOLUTION);
-      listenMap.put(targetId, queryData);
+      TargetData targetData =
+          new TargetData(
+              query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LIMBO_RESOLUTION);
+      listenMap.put(targetId, targetData);
     }
     return listenMap;
   }
 
-  public static Map<Integer, QueryData> activeLimboQueries(String docKey, Integer... targets) {
+  public static Map<Integer, TargetData> activeLimboQueries(String docKey, Integer... targets) {
     return activeLimboQueries(docKey, asList(targets));
   }
 
@@ -381,9 +385,9 @@ public class TestUtil {
   }
 
   public static RemoteEvent noChangeEvent(int targetId, int version, ByteString resumeToken) {
-    QueryData queryData = TestUtil.queryData(targetId, QueryPurpose.LISTEN, "foo/bar");
+    TargetData targetData = TestUtil.targetData(targetId, QueryPurpose.LISTEN, "foo/bar");
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
-    testTargetMetadataProvider.setSyncedKeys(queryData, DocumentKey.emptyKeySet());
+    testTargetMetadataProvider.setSyncedKeys(targetData, DocumentKey.emptyKeySet());
 
     WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
 
@@ -412,9 +416,9 @@ public class TestUtil {
               }
 
               @Override
-              public QueryData getQueryDataForTarget(int targetId) {
+              public TargetData getTargetDataForTarget(int targetId) {
                 ResourcePath collectionPath = docs.get(0).getKey().getPath().popLast();
-                return queryData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
+                return targetData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
               }
             });
 
@@ -454,9 +458,9 @@ public class TestUtil {
               }
 
               @Override
-              public QueryData getQueryDataForTarget(int targetId) {
+              public TargetData getTargetDataForTarget(int targetId) {
                 return activeTargets.contains(targetId)
-                    ? queryData(targetId, QueryPurpose.LISTEN, doc.getKey().toString())
+                    ? targetData(targetId, QueryPurpose.LISTEN, doc.getKey().toString())
                     : null;
               }
             });
@@ -501,6 +505,10 @@ public class TestUtil {
 
   public static DeleteMutation deleteMutation(String path) {
     return new DeleteMutation(key(path), Precondition.NONE);
+  }
+
+  public static VerifyMutation verifyMutation(String path, int micros) {
+    return new VerifyMutation(key(path), Precondition.updateTime(version(micros)));
   }
 
   /**

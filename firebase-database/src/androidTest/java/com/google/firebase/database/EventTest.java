@@ -14,12 +14,13 @@
 
 package com.google.firebase.database;
 
+import static java.util.logging.Level.WARNING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.core.ZombieVerifier;
 import com.google.firebase.database.core.view.Event;
 import com.google.firebase.database.future.ReadFuture;
@@ -33,12 +34,14 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class EventTest {
+  private static Logger LOGGER = Logger.getLogger(EventTest.class.getName());
   @Rule public RetryRule retryRule = new RetryRule(3);
 
   @After
@@ -623,7 +626,7 @@ public class EventTest {
               try {
                 IntegrationTestHelpers.waitFor(blockSem);
               } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOGGER.log(WARNING, "unexpected error", e);
               }
               ref.removeEventListener(this);
               try {
@@ -631,7 +634,7 @@ public class EventTest {
                 // we kick off the verify and let the unit test block on the endingsemaphore
                 ZombieVerifier.verifyRepoZombies(ref, endingSemaphore);
               } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOGGER.log(WARNING, "unexpected error", e);
               }
             }
           }
@@ -671,7 +674,7 @@ public class EventTest {
                   try {
                     IntegrationTestHelpers.waitFor(blockSem);
                   } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    LOGGER.log(WARNING, "unexpected error", e);
                   }
                   ref.removeEventListener(this);
                   try {
@@ -679,7 +682,7 @@ public class EventTest {
                     // we kick off the verify and let the unit test block on the endingsemaphore
                     ZombieVerifier.verifyRepoZombies(ref, endingSemaphore);
                   } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    LOGGER.log(WARNING, "unexpected error", e);
                   }
                 }
               }
@@ -720,7 +723,7 @@ public class EventTest {
               try {
                 IntegrationTestHelpers.waitFor(blockSem);
               } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOGGER.log(WARNING, "unexpected error", e);
               }
               ref.removeEventListener(this);
               try {
@@ -728,7 +731,7 @@ public class EventTest {
                 // we kick off the verify and let the unit test block on the endingsemaphore
                 ZombieVerifier.verifyRepoZombies(ref, endingSemaphore);
               } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOGGER.log(WARNING, "unexpected error", e);
               }
             }
           }
@@ -769,7 +772,7 @@ public class EventTest {
               try {
                 IntegrationTestHelpers.waitFor(blockSem);
               } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOGGER.log(WARNING, "unexpected error", e);
               }
               ref.removeEventListener(this);
               try {
@@ -777,7 +780,7 @@ public class EventTest {
                 // we kick off the verify and let the unit test block on the endingsemaphore
                 ZombieVerifier.verifyRepoZombies(ref, endingSemaphore);
               } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOGGER.log(WARNING, "unexpected error", e);
               }
             }
           }

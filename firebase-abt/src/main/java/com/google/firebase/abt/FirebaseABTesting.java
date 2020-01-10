@@ -29,6 +29,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -51,15 +52,20 @@ import java.util.Set;
  */
 public class FirebaseABTesting {
 
-  @VisibleForTesting static final String ABT_PREFERENCES = "com.google.firebase.abt";
+  @VisibleForTesting
+  static final String ABT_PREFERENCES = "com.google.firebase.abt";
 
   @VisibleForTesting
   static final String ORIGIN_LAST_KNOWN_START_TIME_KEY_FORMAT = "%s_lastKnownExperimentStartTime";
 
-  /** The App's Firebase Analytics client. */
+  /**
+   * The App's Firebase Analytics client.
+   */
   private final AnalyticsConnector analyticsConnector;
 
-  /** The name of an ABT client. */
+  /**
+   * The name of an ABT client.
+   */
   private final String originService;
 
   /**
@@ -69,7 +75,10 @@ public class FirebaseABTesting {
   @StringDef({REMOTE_CONFIG})
   @Retention(RetentionPolicy.SOURCE)
   public @interface OriginService {
-    /** Must match the origin code in Google Analytics for Firebase. */
+
+    /**
+     * Must match the origin code in Google Analytics for Firebase.
+     */
     String REMOTE_CONFIG = "frc";
   }
 
@@ -77,7 +86,8 @@ public class FirebaseABTesting {
    * Maximum number of conditional user properties allowed for the origin service. Null until
    * retrieved from Analytics.
    */
-  @Nullable private Integer maxUserProperties;
+  @Nullable
+  private Integer maxUserProperties;
 
   /**
    * Creates an instance of the ABT class for the specified App and origin service.
@@ -101,16 +111,16 @@ public class FirebaseABTesting {
    *
    * <p>Note: This is a blocking call and should only be called from a worker thread.
    *
-   * <p>The maps of {@code replacementExperiments} must be in the format defined by the ABT service.
-   * The current SDK's format for experiment maps is specified in {@link
+   * <p>The maps of {@code replacementExperiments} must be in the format defined by the ABT
+   * service. The current SDK's format for experiment maps is specified in {@link
    * AbtExperimentInfo#fromMap(Map)}.
    *
    * @param replacementExperiments list of experiment info {@link Map}s, where each map contains the
-   *     identifiers and metadata of a distinct experiment that is currently running. If the value
-   *     is null, this method is a no-op.
+   * identifiers and metadata of a distinct experiment that is currently running. If the value is
+   * null, this method is a no-op.
    * @throws IllegalArgumentException If {@code replacementExperiments} is null.
    * @throws AbtException If there is no Analytics SDK or if any experiment map in {@code
-   *     replacementExperiments} could not be parsed.
+   * replacementExperiments} could not be parsed.
    */
   @WorkerThread
   public void replaceAllExperiments(List<Map<String, String>> replacementExperiments)
@@ -141,6 +151,28 @@ public class FirebaseABTesting {
   }
 
   /**
+   * Gets the origin service's list of experiments in the app.
+   *
+   * <p>Note: This is a blocking call and therefore should be called from a worker thread.
+   *
+   * @return the origin service's list of experiments in the app.
+   * @throws AbtException If there is no Analytics SDK.
+   */
+  @WorkerThread
+  public List<AbtExperimentInfo> getAllExperiments() throws AbtException {
+    throwAbtExceptionIfAnalyticsIsNull();
+
+    List<ConditionalUserProperty> experimentsInAnalytics = getAllExperimentsInAnalytics();
+    List<AbtExperimentInfo> experimentInfos = new ArrayList<>();
+
+    for (ConditionalUserProperty experimentInAnalytics : experimentsInAnalytics) {
+      experimentInfos.add(AbtExperimentInfo.fromConditionalUserProperty(experimentInAnalytics));
+    }
+
+    return experimentInfos;
+  }
+
+  /**
    * Replaces the origin's list of experiments in the App with {@code replacementExperiments}. If
    * {@code replacementExperiments} is an empty list, then all the origin's experiments in the App
    * are removed.
@@ -148,11 +180,11 @@ public class FirebaseABTesting {
    * <p>The replacement is done as follows:
    *
    * <ol>
-   *   <li>Any experiment in the origin's list that is not in {@code replacementExperiments} is
-   *       removed.
-   *   <li>Any experiment in {@code replacementExperiments} that is not already in the origin's list
-   *       is added. If the origin's list has the maximum number of experiments allowed and an
-   *       experiment needs to be added, the oldest experiment in the list is removed.
+   * <li>Any experiment in the origin's list that is not in {@code replacementExperiments} is
+   * removed.
+   * <li>Any experiment in {@code replacementExperiments} that is not already in the origin's list
+   * is added. If the origin's list has the maximum number of experiments allowed and an experiment
+   * needs to be added, the oldest experiment in the list is removed.
    * </ol>
    *
    * <p>Experiments in {@code replacementExperiments} that have previously been discarded will be
@@ -160,8 +192,8 @@ public class FirebaseABTesting {
    * last start time seen by this instance and it does not exist in the origin's list.
    *
    * @param replacementExperiments list of {@link AbtExperimentInfo}s, each containing the
-   *     identifiers and metadata of a distinct experiment that is currently running. Must contain
-   *     at least one valid experiment.
+   * identifiers and metadata of a distinct experiment that is currently running. Must contain at
+   * least one valid experiment.
    * @throws AbtException If there is no Analytics SDK.
    */
   private void replaceAllExperimentsWith(List<AbtExperimentInfo> replacementExperiments)
@@ -192,7 +224,9 @@ public class FirebaseABTesting {
     addExperiments(experimentsToAdd);
   }
 
-  /** Returns this origin's experiments in Analytics that are no longer assigned to this App. */
+  /**
+   * Returns this origin's experiments in Analytics that are no longer assigned to this App.
+   */
   private ArrayList<ConditionalUserProperty> getExperimentsToRemove(
       List<ConditionalUserProperty> experimentsInAnalytics, Set<String> replacementExperimentIds) {
 
@@ -221,7 +255,9 @@ public class FirebaseABTesting {
     return experimentsToAdd;
   }
 
-  /** Adds the given experiments to the origin's list in Analytics. */
+  /**
+   * Adds the given experiments to the origin's list in Analytics.
+   */
   private void addExperiments(List<AbtExperimentInfo> experimentsToAdd) {
 
     Deque<ConditionalUserProperty> dequeOfExperimentsInAnalytics =
@@ -234,7 +270,7 @@ public class FirebaseABTesting {
         removeExperimentFromAnalytics(dequeOfExperimentsInAnalytics.pollFirst().name);
       }
 
-      ConditionalUserProperty experiment = createConditionalUserProperty(experimentToAdd);
+      ConditionalUserProperty experiment = experimentToAdd.toConditionalUserProperty(originService);
       addExperimentToAnalytics(experiment);
       dequeOfExperimentsInAnalytics.offer(experiment);
     }
@@ -244,30 +280,6 @@ public class FirebaseABTesting {
     for (ConditionalUserProperty experiment : experiments) {
       removeExperimentFromAnalytics(experiment.name);
     }
-  }
-  /**
-   * Returns the {@link ConditionalUserProperty} created from the specified {@link
-   * AbtExperimentInfo}.
-   */
-  private ConditionalUserProperty createConditionalUserProperty(AbtExperimentInfo experimentInfo) {
-
-    ConditionalUserProperty conditionalUserProperty = new ConditionalUserProperty();
-
-    conditionalUserProperty.origin = originService;
-    conditionalUserProperty.creationTimestamp = experimentInfo.getStartTimeInMillisSinceEpoch();
-    conditionalUserProperty.name = experimentInfo.getExperimentId();
-    conditionalUserProperty.value = experimentInfo.getVariantId();
-
-    // For a conditional user property to be immediately activated/triggered, its trigger
-    // event needs to be null, not just an empty string.
-    conditionalUserProperty.triggerEventName =
-        TextUtils.isEmpty(experimentInfo.getTriggerEventName())
-            ? null
-            : experimentInfo.getTriggerEventName();
-    conditionalUserProperty.triggerTimeout = experimentInfo.getTriggerTimeoutInMillis();
-    conditionalUserProperty.timeToLive = experimentInfo.getTimeToLiveInMillis();
-
-    return conditionalUserProperty;
   }
 
   /**
@@ -301,8 +313,7 @@ public class FirebaseABTesting {
    * test. The method itself is tested to make it easier to figure out whether part of ABT is
    * breaking, or if the underlying Analytics clear method is failing.
    */
-  @VisibleForTesting
-  void removeExperimentFromAnalytics(String experimentId) {
+  private void removeExperimentFromAnalytics(String experimentId) {
     analyticsConnector.clearConditionalUserProperty(
         experimentId, /*clearEventName=*/ null, /*clearEventParams=*/ null);
   }

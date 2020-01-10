@@ -23,6 +23,9 @@ buildscript {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven {
+            url 'https://storage.googleapis.com/android-ci/mvn/'
+        }
     }
 
     dependencies {
@@ -80,7 +83,7 @@ configure(subprojects) {
     }
     tasks.googleJavaFormat {
         source '.'
-        include '**/*.java'
+        include '**/java/**/*.java'
         exclude '**/generated/**'
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
@@ -88,7 +91,7 @@ configure(subprojects) {
     }
     tasks.verifyGoogleJavaFormat {
         source '.'
-        include '**/*.java'
+        include '**/java/**/*.java'
         exclude '**/generated/**'
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
