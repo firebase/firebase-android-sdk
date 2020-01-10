@@ -155,6 +155,13 @@ public class FirebaseCrashlytics {
   }
 
   /**
+   * @returns the unique identifier for the current user or empty string if it was not specified.
+   */
+  public @NonNull String getUserId() {
+    return core.getUserId() == null ? "" : core.getUserId();
+  }
+
+  /**
    * Sets a custom key and value that are associated with subsequent fatal and non-fatal reports.
    *
    * <p>Multiple calls to this method with the same key update the value for that key.
@@ -338,5 +345,13 @@ public class FirebaseCrashlytics {
    */
   public void setCrashlyticsCollectionEnabled(boolean enabled) {
     core.setCrashlyticsCollectionEnabled(enabled);
+  }
+
+  /**
+   * Checks whether automatic data collection is enabled by Crashlytics.
+   * @returns true if automatic data collection is enabled.
+   */
+  public boolean getCrashlyticsCollectionEnabled() {
+    return core.getCrashlyticsCollectionEnabled();
   }
 }
