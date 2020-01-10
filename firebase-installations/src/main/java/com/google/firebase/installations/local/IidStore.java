@@ -50,15 +50,13 @@ public class IidStore {
 
   private final String defaultSenderId;
 
-  public IidStore() {
-    // Different FirebaseApp in the same Android application should have the same application
-    // context and same dir path. We only read existing Iids for the default firebase application.
+  public IidStore(@NonNull FirebaseApp firebaseApp) {
     iidPrefs =
-        FirebaseApp.getInstance()
+        firebaseApp
             .getApplicationContext()
             .getSharedPreferences(IID_SHARED_PREFS_NAME, Context.MODE_PRIVATE);
 
-    defaultSenderId = getDefaultSenderId(FirebaseApp.getInstance());
+    defaultSenderId = getDefaultSenderId(firebaseApp);
   }
 
   private static String getDefaultSenderId(FirebaseApp app) {
