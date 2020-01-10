@@ -134,42 +134,51 @@ public class FirebaseInstallationServiceClient {
                 apiKey));
     while (retryCount <= MAX_RETRIES) {
       HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
-      httpsURLConnection.setRequestMethod("POST");
-      httpsURLConnection.setDoOutput(true);
 
-      // Note: Set the iid token header for authenticating the Instance-ID migrating to FIS.
-      if (iidToken != null) {
-        httpsURLConnection.addRequestProperty(X_ANDROID_IID_MIGRATION_KEY, iidToken);
-      }
-
-      GZIPOutputStream gzipOutputStream =
-          new GZIPOutputStream(httpsURLConnection.getOutputStream());
       try {
-        gzipOutputStream.write(
-            buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
-      } catch (JSONException e) {
-        throw new IllegalStateException(e);
+        httpsURLConnection.setRequestMethod("POST");
+        httpsURLConnection.setDoOutput(true);
+
+        // Note: Set the iid token header for authenticating the Instance-ID migrating to FIS.
+        if (iidToken != null) {
+          httpsURLConnection.addRequestProperty(X_ANDROID_IID_MIGRATION_KEY, iidToken);
+        }
+
+        writeToOutputStream(httpsURLConnection, fid, appId);
+
+        int httpResponseCode = httpsURLConnection.getResponseCode();
+
+        if (httpResponseCode == 200) {
+          return readCreateResponse(httpsURLConnection);
+        }
+
+        if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+          retryCount++;
+          continue;
+        }
+
+        // Return empty installation response with BAD_CONFIG response code after max retries
+        return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
       } finally {
-        gzipOutputStream.close();
+        httpsURLConnection.disconnect();
       }
-
-      int httpResponseCode = httpsURLConnection.getResponseCode();
-
-      if (httpResponseCode == 200) {
-        return readCreateResponse(httpsURLConnection);
-      }
-      httpsURLConnection.disconnect();
-
-      if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
-        retryCount++;
-        continue;
-      }
-
-      // Return empty installation response with BAD_CONFIG response code after max retries
-      return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
     }
 
     throw new IOException();
+  }
+
+  private void writeToOutputStream(
+      HttpsURLConnection httpsURLConnection, @NonNull String fid, @NonNull String appId)
+      throws IOException {
+    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(httpsURLConnection.getOutputStream());
+    try {
+      gzipOutputStream.write(
+          buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
+    } catch (JSONException e) {
+      throw new IllegalStateException(e);
+    } finally {
+      gzipOutputStream.close();
+    }
   }
 
   private static JSONObject buildCreateFirebaseInstallationRequestBody(String fid, String appId)
@@ -269,27 +278,29 @@ public class FirebaseInstallationServiceClient {
                 apiKey));
     while (retryCount <= MAX_RETRIES) {
       HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
-      httpsURLConnection.setRequestMethod("POST");
-      httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
+      try {
+        httpsURLConnection.setRequestMethod("POST");
+        httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
-      int httpResponseCode = httpsURLConnection.getResponseCode();
+        int httpResponseCode = httpsURLConnection.getResponseCode();
 
-      if (httpResponseCode == 200) {
-        return readGenerateAuthTokenResponse(httpsURLConnection);
+        if (httpResponseCode == 200) {
+          return readGenerateAuthTokenResponse(httpsURLConnection);
+        }
+
+        if (httpResponseCode == 401 || httpResponseCode == 404) {
+          return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
+        }
+
+        if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+          retryCount++;
+          continue;
+        }
+
+        return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
+      } finally {
+        httpsURLConnection.disconnect();
       }
-
-      httpsURLConnection.disconnect();
-
-      if (httpResponseCode == 401 || httpResponseCode == 404) {
-        return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
-      }
-
-      if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
-        retryCount++;
-        continue;
-      }
-
-      return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
     }
     throw new IOException();
   }
@@ -349,7 +360,6 @@ public class FirebaseInstallationServiceClient {
       }
     }
     reader.endObject();
-    conn.disconnect();
 
     return builder.setResponseCode(ResponseCode.OK).build();
   }
@@ -370,7 +380,6 @@ public class FirebaseInstallationServiceClient {
       }
     }
     reader.endObject();
-    conn.disconnect();
 
     return builder.setResponseCode(TokenResult.ResponseCode.OK).build();
   }
