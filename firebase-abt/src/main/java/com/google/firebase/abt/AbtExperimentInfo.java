@@ -188,37 +188,21 @@ public class AbtExperimentInfo {
     }
   }
 
-  /** Returns the id of this experiment. */
-  static AbtExperimentInfo fromExperimentPayload(FirebaseAbt.ExperimentPayload experimentPayload)
-      throws AbtException {
-    try {
-      Date startTime =
-          protoTimestampStringParser.parse(
-              checkNotNull(experimentPayload.getExperimentStartTimeMillis(), "Missing start time.")
-                  .toString());
-      long timeToLive =
-          checkNotNull(experimentPayload.getTimeToLiveMillis(), "Missing time to live.");
-      long triggerTimeout =
-          checkNotNull(experimentPayload.getTriggerTimeoutMillis(), "Trigger timeout missing");
-      String variantId = checkNotNull(experimentPayload.getVariantId(), "Missing variant id.");
-      String experimentId =
-          checkNotNull(experimentPayload.getExperimentId(), "Missing experiment id.");
-      String triggerEvent = experimentPayload.getTriggerEvent();
-
-      return new AbtExperimentInfo(
-          experimentId,
-          variantId,
-          triggerEvent != null ? triggerEvent : "",
-          startTime,
-          triggerTimeout,
-          timeToLive);
-    } catch (NullPointerException e) {
-      throw new AbtException("Could not process experiment. One or more fields missing.", e);
-
-    } catch (ParseException e) {
-      throw new AbtException(
-          "Could not process experiment: parsing experiment start time failed.", e);
-    }
+  /**
+   * Converts a {@link developers.mobile.abt.FirebaseAbt.ExperimentPayload} to an AbtExperimentInfo.
+   * Does not do any validation due to proto limitations.
+   */
+  static AbtExperimentInfo fromExperimentPayload(FirebaseAbt.ExperimentPayload experimentPayload) {
+    Date startTime =
+        protoTimestampStringParser.parse(
+            Long.toString(experimentPayload.getExperimentStartTimeMillis()));
+    return new AbtExperimentInfo(
+        experimentPayload.getExperimentId(),
+        experimentPayload.getVariantId(),
+        experimentPayload.getTriggerEvent(),
+        startTime,
+        experimentPayload.getTriggerTimeoutMillis(),
+        experimentPayload.getTimeToLiveMillis());
   }
 
   /** Returns the id of this experiment. */
