@@ -143,7 +143,7 @@ public class FirebaseInstallationServiceClient {
           httpURLConnection.addRequestProperty(X_ANDROID_IID_MIGRATION_KEY, iidToken);
         }
 
-        writeToOutputStream(httpURLConnection, fid, appId);
+        writeFIDCreateRequestBodyToOutputStream(httpURLConnection, fid, appId);
 
         int httpResponseCode = httpURLConnection.getResponseCode();
 
@@ -166,7 +166,7 @@ public class FirebaseInstallationServiceClient {
     throw new IOException();
   }
 
-  private void writeToOutputStream(
+  private void writeFIDCreateRequestBodyToOutputStream(
       HttpURLConnection httpURLConnection, @NonNull String fid, @NonNull String appId)
       throws IOException {
     GZIPOutputStream gzipOutputStream = new GZIPOutputStream(httpURLConnection.getOutputStream());
