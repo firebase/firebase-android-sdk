@@ -34,7 +34,12 @@ import dagger.Component;
 @FirebaseAppScope
 @Component(
     dependencies = {UniversalComponent.class},
-    modules = {ApiClientModule.class, AbTestingModule.class, GrpcClientModule.class, TransportClientModule.class})
+    modules = {
+      ApiClientModule.class,
+      AbTestingModule.class,
+      GrpcClientModule.class,
+      TransportClientModule.class
+    })
 public interface AppComponent {
   FirebaseInAppMessaging providesFirebaseInAppMessaging();
 

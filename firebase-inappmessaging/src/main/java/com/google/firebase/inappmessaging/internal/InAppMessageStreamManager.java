@@ -25,7 +25,6 @@ import com.google.firebase.inappmessaging.model.ProtoMarshallerClient;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
-import com.google.internal.firebase.inappmessaging.v1.CampaignProto.VanillaCampaignPayload;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
 import io.reactivex.Completable;
@@ -112,12 +111,15 @@ public class InAppMessageStreamManager {
   private static boolean isActive(Clock clock, ThickContent content) {
     long campaignStartTime;
     long campaignEndTime;
-    if(content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
       campaignStartTime = content.getVanillaPayload().getCampaignStartTimeMillis();
       campaignEndTime = content.getVanillaPayload().getCampaignEndTimeMillis();
     } else {
-      campaignStartTime = content.getExperimentalPayload().getExperimentPayload().getExperimentStartTimeMillis();
-      campaignEndTime = campaignStartTime + content.getExperimentalPayload().getExperimentPayload().getTimeToLiveMillis();
+      campaignStartTime =
+          content.getExperimentalPayload().getExperimentPayload().getExperimentStartTimeMillis();
+      campaignEndTime =
+          campaignStartTime
+              + content.getExperimentalPayload().getExperimentPayload().getTimeToLiveMillis();
     }
     long currentTime = clock.now();
 
@@ -292,10 +294,7 @@ public class InAppMessageStreamManager {
       Function<ThickContent, Maybe<ThickContent>> filterDisplayable,
       FetchEligibleCampaignsResponse response) {
     return Flowable.fromIterable(response.getMessagesList())
-        .filter(
-            content ->
-                testDeviceHelper.isDeviceInTestMode()
-                    || isActive(clock, content))
+        .filter(content -> testDeviceHelper.isDeviceInTestMode() || isActive(clock, content))
         .filter(content -> containsTriggeringCondition(event, content))
         .flatMapMaybe(filterAlreadyImpressed)
         .flatMapMaybe(appForegroundRateLimitFilter)
@@ -305,15 +304,13 @@ public class InAppMessageStreamManager {
         .flatMap(content -> triggeredInAppMessage(content, event));
   }
 
-  private Maybe<TriggeredInAppMessage> triggeredInAppMessage(
-      ThickContent content, String event) {
+  private Maybe<TriggeredInAppMessage> triggeredInAppMessage(ThickContent content, String event) {
     String campaignId;
     String campaignName;
-    if(content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
       campaignId = content.getVanillaPayload().getCampaignId();
       campaignName = content.getVanillaPayload().getCampaignName();
-    }
-    else {
+    } else {
       campaignId = content.getExperimentalPayload().getCampaignId();
       campaignName = "experimental campaign placeholder";
     }

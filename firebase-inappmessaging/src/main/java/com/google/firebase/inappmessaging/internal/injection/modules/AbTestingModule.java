@@ -16,10 +16,8 @@ package com.google.firebase.inappmessaging.internal.injection.modules;
 
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
-
 import dagger.Module;
 import dagger.Provides;
-
 
 /**
  * Provider for ABTesting

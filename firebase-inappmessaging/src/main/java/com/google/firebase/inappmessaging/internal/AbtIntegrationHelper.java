@@ -14,20 +14,15 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.AbtExperimentInfo;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
-
 import java.util.ArrayList;
-
 import javax.inject.Inject;
 
-import developers.mobile.abt.FirebaseAbt;
-
-/**
- * @hide
- */
+/** @hide */
 public class AbtIntegrationHelper {
   private static FirebaseABTesting abTesting;
 
@@ -37,16 +32,22 @@ public class AbtIntegrationHelper {
   }
 
   public void updateRunningExperiments(FetchEligibleCampaignsResponse response) {
-    ArrayList<AbtExperimentInfo> runningExperiments = new ArrayList();
-    for(CampaignProto.ThickContent content: response.getMessagesList()){
-      if(content.getPayloadCase().equals(CampaignProto.ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)){
-        FirebaseAbt.ExperimentPayload p = content.getExperimentalPayload().getExperimentPayload();
-        runningExperiments.add(new AbtExperimentInfo(p.getExperimentId(), p.getVariantId(), p.getTriggerEvent(), ));
+    ArrayList<AbtExperimentInfo> runningExperiments = new ArrayList<>();
+    for (CampaignProto.ThickContent content : response.getMessagesList()) {
+      if (content
+          .getPayloadCase()
+          .equals(CampaignProto.ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+        runningExperiments.add(
+            AbtExperimentInfo.fromExperimentPayload(
+                content.getExperimentalPayload().getExperimentPayload()));
       }
     }
-    ()
-    abTesting.reportRunningExperiments();
+    try {
+      Logging.logd("Updating running experiments with: " + runningExperiments.size() + " experiments");
+      abTesting.reportRunningExperiments(runningExperiments);
+    } catch (AbtException e) {
+      Logging.loge(
+          "Unable to register experiments with ABT, missing analytics?\n" + e.getMessage());
+    }
   }
-
-  public void setExperimentActive(){}
 }

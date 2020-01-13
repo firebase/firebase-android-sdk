@@ -16,7 +16,6 @@ package com.google.firebase.inappmessaging;
 
 import android.app.Application;
 import android.content.Context;
-
 import androidx.annotation.Keep;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
@@ -74,7 +73,8 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     FirebaseInstanceId firebaseInstanceId = container.get(FirebaseInstanceId.class);
     AnalyticsConnector analyticsConnector = container.get(AnalyticsConnector.class);
-    FirebaseABTesting abTesting = container.get(AbtComponent.class).get(FirebaseABTesting.OriginService.INAPP_MESSAGING);
+    FirebaseABTesting abTesting =
+        container.get(AbtComponent.class).get(FirebaseABTesting.OriginService.INAPP_MESSAGING);
     Subscriber firebaseEventsSubscriber = container.get(Subscriber.class);
 
     Application application = (Application) firebaseApp.getApplicationContext();
