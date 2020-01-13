@@ -14,6 +14,7 @@
 
 package com.google.firebase.abt;
 
+import static com.google.firebase.abt.FirebaseABTesting.OriginService.INAPP_MESSAGING;
 import static com.google.firebase.abt.FirebaseABTesting.OriginService.REMOTE_CONFIG;
 
 import android.content.Context;
@@ -23,6 +24,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.analytics.connector.AnalyticsConnector.ConditionalUserProperty;
+import developers.mobile.abt.FirebaseAbt;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayDeque;
@@ -65,12 +67,14 @@ public class FirebaseABTesting {
    * Select keys of fields in the experiment descriptions returned from the Firebase Remote Config
    * server.
    */
-  @StringDef({REMOTE_CONFIG})
+  @StringDef({REMOTE_CONFIG, INAPP_MESSAGING})
   @Retention(RetentionPolicy.SOURCE)
   public @interface OriginService {
 
     /** Must match the origin code in Google Analytics for Firebase. */
     String REMOTE_CONFIG = "frc";
+
+    String INAPP_MESSAGING = "fiam";
   }
 
   /**
@@ -160,6 +164,69 @@ public class FirebaseABTesting {
     }
 
     return experimentInfos;
+  }
+
+  /**
+   * Adds an experiment to be active in GA by setting a null triggering condition on the provided
+   * experiment. This results in the experiment being active as if it was triggered by the
+   * triggering condition event being seen in GA.
+   *
+   * <p>Note: This is a blocking call and therefore should be called from a worker thread.
+   *
+   * @param activeExperiment The {@link AbtExperimentInfo} that should be set as active in GA.
+   * @throws AbtException If there is no Analytics SDK.
+   */
+  @WorkerThread
+  public void reportActiveExperiment(AbtExperimentInfo activeExperiment) throws AbtException {
+    throwAbtExceptionIfAnalyticsIsNull();
+    ArrayList<AbtExperimentInfo> activeExperimentList = new ArrayList<>();
+
+    // Remove trigger event if it exists, this sets the experiment to active.
+    Map<String, String> activeExperimentMap = activeExperiment.toStringMap();
+    activeExperimentMap.remove(AbtExperimentInfo.TRIGGER_EVENT_KEY);
+
+    // Add experiment to GA
+    activeExperimentList.add(AbtExperimentInfo.fromMap(activeExperimentMap));
+    addExperiments(activeExperimentList);
+  }
+
+  /**
+   * Adds an experiment to be active in GA by setting a null triggering condition on the provided
+   * experiment. This results in the experiment being active as if it was triggered by the
+   * triggering condition event being seen in GA.
+   *
+   * <p>Note: This is a blocking call and therefore should be called from a worker thread.
+   *
+   * @param activeExperiment The {@link FirebaseAbt.ExperimentPayload} that should be set as active
+   *     in GA.
+   * @throws AbtException If there is no Analytics SDK.
+   */
+  @WorkerThread
+  public void reportActiveExperiment(FirebaseAbt.ExperimentPayload experimentPayload)
+      throws AbtException {
+    reportActiveExperiment(AbtExperimentInfo.fromExperimentPayload(experimentPayload));
+  }
+
+  /**
+   * Cleans up all experiments which are active in GA but not currently running.
+   *
+   * <p>Note: This is a blocking call and therefore should be called from a worker thread.
+   *
+   * @param runningExperiments the currently running {@link AbtExperimentInfo}s, any active
+   *     experiment that is not in this list will be removed
+   * @throws AbtException If there is no Analytics SDK.
+   */
+  @WorkerThread
+  public void reportRunningExperiments(List<AbtExperimentInfo> runningExperiments)
+      throws AbtException {
+    throwAbtExceptionIfAnalyticsIsNull();
+    Set<String> runningExperimentIds = new HashSet<>();
+    for (AbtExperimentInfo runningExperiment : runningExperiments) {
+      runningExperimentIds.add(runningExperiment.getExperimentId());
+    }
+    List<ConditionalUserProperty> experimentsToRemove =
+        getExperimentsToRemove(getAllExperimentsInAnalytics(), runningExperimentIds);
+    removeExperiments(experimentsToRemove);
   }
 
   /**
@@ -268,31 +335,6 @@ public class FirebaseABTesting {
     }
   }
 
-  /**
-   * Returns the {@link ConditionalUserProperty} created from the specified {@link
-   * AbtExperimentInfo}.
-   */
-  private ConditionalUserProperty createConditionalUserProperty(AbtExperimentInfo experimentInfo) {
-
-    ConditionalUserProperty conditionalUserProperty = new ConditionalUserProperty();
-
-    conditionalUserProperty.origin = originService;
-    conditionalUserProperty.creationTimestamp = experimentInfo.getStartTimeInMillisSinceEpoch();
-    conditionalUserProperty.name = experimentInfo.getExperimentId();
-    conditionalUserProperty.value = experimentInfo.getVariantId();
-
-    // For a conditional user property to be immediately activated/triggered, its trigger
-    // event needs to be null, not just an empty string.
-    conditionalUserProperty.triggerEventName =
-        TextUtils.isEmpty(experimentInfo.getTriggerEventName())
-            ? null
-            : experimentInfo.getTriggerEventName();
-    conditionalUserProperty.triggerTimeout = experimentInfo.getTriggerTimeoutInMillis();
-    conditionalUserProperty.timeToLive = experimentInfo.getTimeToLiveInMillis();
-
-    return conditionalUserProperty;
-  }
-  
   /**
    * Returns the {@link List} of {@link AbtExperimentInfo} converted from the {@link List} of
    * experiment info {@link Map}s.
