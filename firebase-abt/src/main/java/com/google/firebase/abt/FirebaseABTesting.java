@@ -337,31 +337,6 @@ public class FirebaseABTesting {
   }
 
   /**
-   * Returns the {@link ConditionalUserProperty} created from the specified {@link
-   * AbtExperimentInfo}.
-   */
-  private ConditionalUserProperty createConditionalUserProperty(AbtExperimentInfo experimentInfo) {
-
-    ConditionalUserProperty conditionalUserProperty = new ConditionalUserProperty();
-
-    conditionalUserProperty.origin = originService;
-    conditionalUserProperty.creationTimestamp = experimentInfo.getStartTimeInMillisSinceEpoch();
-    conditionalUserProperty.name = experimentInfo.getExperimentId();
-    conditionalUserProperty.value = experimentInfo.getVariantId();
-
-    // For a conditional user property to be immediately activated/triggered, its trigger
-    // event needs to be null, not just an empty string.
-    conditionalUserProperty.triggerEventName =
-        TextUtils.isEmpty(experimentInfo.getTriggerEventName())
-            ? null
-            : experimentInfo.getTriggerEventName();
-    conditionalUserProperty.triggerTimeout = experimentInfo.getTriggerTimeoutInMillis();
-    conditionalUserProperty.timeToLive = experimentInfo.getTimeToLiveInMillis();
-
-    return conditionalUserProperty;
-  }
-  
-  /**
    * Returns the {@link List} of {@link AbtExperimentInfo} converted from the {@link List} of
    * experiment info {@link Map}s.
    */
