@@ -299,8 +299,7 @@ public class FirebaseABTestingTest {
                 TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
 
     // Update to just one experiment running
-    List<AbtExperimentInfo> runningExperiments = Lists.newArrayList(TEST_ABT_EXPERIMENT_1);
-    firebaseAbt.reportRunningExperiments(runningExperiments);
+    firebaseAbt.reportRunningExperiments(Lists.newArrayList(TEST_ABT_EXPERIMENT_1));
 
     // Verify the not running experiment is cleared
     verify(mockAnalyticsConnector).clearConditionalUserProperty(TEST_EXPERIMENT_2_ID, null, null);
@@ -317,9 +316,8 @@ public class FirebaseABTestingTest {
                 TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
 
     // Update still says the same two experiments are running
-    List<AbtExperimentInfo> runningExperiments =
-        Lists.newArrayList(TEST_ABT_EXPERIMENT_1, TEST_ABT_EXPERIMENT_2);
-    firebaseAbt.reportRunningExperiments(runningExperiments);
+    firebaseAbt.reportRunningExperiments(
+        Lists.newArrayList(TEST_ABT_EXPERIMENT_1, TEST_ABT_EXPERIMENT_2));
 
     // Verify nothing cleared
     verify(mockAnalyticsConnector, never()).clearConditionalUserProperty(any(), any(), any());
