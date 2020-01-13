@@ -167,9 +167,9 @@ public class FirebaseABTesting {
   }
 
   /**
-   * Adds an experiment to be active in GA by setting a null triggering condition on the provided
-   * experiment. This results in the experiment being active as if it was triggered by the
-   * triggering condition event being seen in GA.
+   * Sets an experiment to be active in GA metrics reporting by setting a null triggering condition
+   * on the provided experiment. This results in the experiment being active as if it was triggered
+   * by the triggering condition event being seen in GA.
    *
    * <p>Note: This is a blocking call and therefore should be called from a worker thread.
    *
@@ -208,12 +208,13 @@ public class FirebaseABTesting {
   }
 
   /**
-   * Cleans up all experiments which are active in GA but not currently running.
+   * Cleans up all experiments which are active in GA but not currently running. This method is
+   * meant to be used to ensure all running experiments should indeed be running.
    *
    * <p>Note: This is a blocking call and therefore should be called from a worker thread.
    *
    * @param runningExperiments the currently running {@link AbtExperimentInfo}s, any active
-   *     experiment that is not in this list will be removed
+   *     experiment that is not in this list will be removed from GA reporting.
    * @throws AbtException If there is no Analytics SDK.
    */
   @WorkerThread
