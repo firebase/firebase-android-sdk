@@ -218,7 +218,7 @@ public class FirebaseABTesting {
    * @throws AbtException If there is no Analytics SDK.
    */
   @WorkerThread
-  public void reportRunningExperiments(List<AbtExperimentInfo> runningExperiments)
+  public void validateRunningExperiments(List<AbtExperimentInfo> runningExperiments)
       throws AbtException {
     throwAbtExceptionIfAnalyticsIsNull();
     Set<String> runningExperimentIds = new HashSet<>();

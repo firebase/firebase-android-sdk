@@ -300,14 +300,14 @@ public class FirebaseABTestingTest {
                 TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
 
     // Update to just one experiment running
-    firebaseAbt.reportRunningExperiments(Lists.newArrayList(TEST_ABT_EXPERIMENT_1));
+    firebaseAbt.validateRunningExperiments(Lists.newArrayList(TEST_ABT_EXPERIMENT_1));
 
     // Verify the not running experiment is cleared
     verify(mockAnalyticsConnector).clearConditionalUserProperty(TEST_EXPERIMENT_2_ID, null, null);
   }
 
   @Test
-  public void reportRunningExperiments_activeExperimentsInAnalytics_cleansUpNothing()
+  public void reportRunningExperiments_noinactiveExperimentsInAnalytics_cleansUpNothing()
       throws Exception {
     // Two experiments running
     when(mockAnalyticsConnector.getConditionalUserProperties(ORIGIN_SERVICE, ""))
@@ -317,7 +317,7 @@ public class FirebaseABTestingTest {
                 TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
 
     // Update still says the same two experiments are running
-    firebaseAbt.reportRunningExperiments(
+    firebaseAbt.validateRunningExperiments(
         Lists.newArrayList(TEST_ABT_EXPERIMENT_1, TEST_ABT_EXPERIMENT_2));
 
     // Verify nothing cleared
