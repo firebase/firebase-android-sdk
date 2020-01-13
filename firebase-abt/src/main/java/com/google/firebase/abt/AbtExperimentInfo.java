@@ -91,11 +91,11 @@ public class AbtExperimentInfo {
 
   /** The set of all keys required by the ABT SDK to define an experiment. */
   private static final String[] ALL_REQUIRED_KEYS = {
-      EXPERIMENT_ID_KEY,
-      EXPERIMENT_START_TIME_KEY,
-      TIME_TO_LIVE_KEY,
-      TRIGGER_TIMEOUT_KEY,
-      VARIANT_ID_KEY,
+    EXPERIMENT_ID_KEY,
+    EXPERIMENT_START_TIME_KEY,
+    TIME_TO_LIVE_KEY,
+    TRIGGER_TIMEOUT_KEY,
+    VARIANT_ID_KEY,
   };
 
   /**
