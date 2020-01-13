@@ -288,6 +288,43 @@ public class FirebaseABTestingTest {
     assertThat(actualException).hasMessageThat().contains("he Analytics SDK is not available");
   }
 
+  @Test
+  public void reportRunningExperiments_inactiveExperimentsInAnalytics_cleansUpInactiveExperiments()
+      throws Exception {
+    // Two experiments running
+    when(mockAnalyticsConnector.getConditionalUserProperties(ORIGIN_SERVICE, ""))
+        .thenReturn(
+            Lists.newArrayList(
+                TEST_ABT_EXPERIMENT_1.toConditionalUserProperty(ORIGIN_SERVICE),
+                TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
+
+    // Update to just one experiment running
+    List<AbtExperimentInfo> runningExperiments = Lists.newArrayList(TEST_ABT_EXPERIMENT_1);
+    firebaseAbt.reportRunningExperiments(runningExperiments);
+
+    // Verify the not running experiment is cleared
+    verify(mockAnalyticsConnector).clearConditionalUserProperty(TEST_EXPERIMENT_2_ID, null, null);
+  }
+
+  @Test
+  public void reportRunningExperiments_activeExperimentsInAnalytics_cleansUpNothing()
+      throws Exception {
+    // Two experiments running
+    when(mockAnalyticsConnector.getConditionalUserProperties(ORIGIN_SERVICE, ""))
+        .thenReturn(
+            Lists.newArrayList(
+                TEST_ABT_EXPERIMENT_1.toConditionalUserProperty(ORIGIN_SERVICE),
+                TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
+
+    // Update still says the same two experiments are running
+    List<AbtExperimentInfo> runningExperiments =
+        Lists.newArrayList(TEST_ABT_EXPERIMENT_1, TEST_ABT_EXPERIMENT_2);
+    firebaseAbt.reportRunningExperiments(runningExperiments);
+
+    // Verify nothing cleared
+    verify(mockAnalyticsConnector, never()).clearConditionalUserProperty(any(), any(), any());
+  }
+
   private static AbtExperimentInfo createExperimentInfo(
       String experimentId, String triggerEventName, long experimentStartTimeInEpochMillis) {
 
