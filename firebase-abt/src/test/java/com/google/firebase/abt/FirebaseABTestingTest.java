@@ -29,6 +29,7 @@ import com.google.firebase.analytics.connector.AnalyticsConnector.ConditionalUse
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -321,6 +322,26 @@ public class FirebaseABTestingTest {
 
     // Verify nothing cleared
     verify(mockAnalyticsConnector, never()).clearConditionalUserProperty(any(), any(), any());
+  }
+
+  @Test
+  public void reportActiveExperiment_setsNullTriggerCondition() throws Exception {
+
+    // Set trigger event on exp 1
+    Map<String, String> EXP1_MAP = TEST_ABT_EXPERIMENT_1.toStringMap();
+    EXP1_MAP.put(AbtExperimentInfo.TRIGGER_EVENT_KEY, "walrus_event");
+
+    // Report experiment as active
+    firebaseAbt.reportActiveExperiment(AbtExperimentInfo.fromMap(EXP1_MAP));
+
+    // capture conditional user property set in analytics
+    ArgumentCaptor<ConditionalUserProperty> argumentCaptor =
+        ArgumentCaptor.forClass(ConditionalUserProperty.class);
+    verify(mockAnalyticsConnector).setConditionalUserProperty(argumentCaptor.capture());
+    ConditionalUserProperty conditionalUserProperty = argumentCaptor.getValue();
+
+    // verify property has a null trigger event (i.e is active)
+    assertThat(conditionalUserProperty.triggerEventName).isNull();
   }
 
   private static AbtExperimentInfo createExperimentInfo(
