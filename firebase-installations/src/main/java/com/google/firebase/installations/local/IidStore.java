@@ -18,6 +18,7 @@ import static android.content.ContentValues.TAG;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
@@ -91,7 +92,7 @@ public class IidStore {
   public String readToken() {
     synchronized (iidPrefs) {
       String token = iidPrefs.getString(createTokenKey(defaultSenderId), null);
-      if (token.isEmpty()) {
+      if (TextUtils.isEmpty(token)) {
         return null;
       }
 
