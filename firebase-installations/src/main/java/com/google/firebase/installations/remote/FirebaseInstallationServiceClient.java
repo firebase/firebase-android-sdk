@@ -79,6 +79,8 @@ public class FirebaseInstallationServiceClient {
   private static final int MAX_RETRIES = 1;
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
+  private static final String SDK_VERSION_PREFIX = "a:";
+
   @VisibleForTesting
   static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
 
@@ -186,7 +188,28 @@ public class FirebaseInstallationServiceClient {
     firebaseInstallationData.put("fid", fid);
     firebaseInstallationData.put("appId", appId);
     firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
-    firebaseInstallationData.put("sdkVersion", "a:" + VERSION_NAME);
+    firebaseInstallationData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+    return firebaseInstallationData;
+  }
+
+  private void writeGenerateAuthTokenRequestBodyToOutputStream(HttpURLConnection httpURLConnection)
+      throws IOException {
+    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(httpURLConnection.getOutputStream());
+    try {
+      gzipOutputStream.write(buildGenerateAuthTokenRequestBody().toString().getBytes("UTF-8"));
+    } catch (JSONException e) {
+      throw new IllegalStateException(e);
+    } finally {
+      gzipOutputStream.close();
+    }
+  }
+
+  private static JSONObject buildGenerateAuthTokenRequestBody() throws JSONException {
+    JSONObject sdkVersionData = new JSONObject();
+    sdkVersionData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+
+    JSONObject firebaseInstallationData = new JSONObject();
+    firebaseInstallationData.put("installation", sdkVersionData);
     return firebaseInstallationData;
   }
 
@@ -280,6 +303,8 @@ public class FirebaseInstallationServiceClient {
       try {
         httpURLConnection.setRequestMethod("POST");
         httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
+
+        writeGenerateAuthTokenRequestBodyToOutputStream(httpURLConnection);
 
         int httpResponseCode = httpURLConnection.getResponseCode();
 
