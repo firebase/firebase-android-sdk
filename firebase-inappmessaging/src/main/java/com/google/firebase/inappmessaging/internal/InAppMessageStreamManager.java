@@ -244,8 +244,8 @@ public class InAppMessageStreamManager {
                                   Logging.logi(
                                       String.format(
                                           Locale.US,
-                                          "Successfully fetched %s messages from backend",
-                                          resp.getMessagesList())))
+                                          "Successfully fetched %d messages from backend",
+                                          resp.getMessagesList().size())))
                           .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
                           .doOnSuccess(abtIntegrationHelper::updateRunningExperiments)
                           .doOnSuccess(testDeviceHelper::processCampaignFetch)
