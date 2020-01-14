@@ -36,7 +36,7 @@ public class FirebaseInstallationsRegistrarTest {
   }
 
   @Test
-  public void getFirebaseInstallationsInstance() {
+  public void getFirebaseInstallationsInstance() throws FirebaseInstallationsException {
     FirebaseApp defaultApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
@@ -74,7 +74,7 @@ public class FirebaseInstallationsRegistrarTest {
     try {
       FirebaseInstallations.getInstance();
       fail("NullPointerException expected");
-    } catch (NullPointerException expected) {
+    } catch (NullPointerException | FirebaseInstallationsException expected) {
     }
   }
 }

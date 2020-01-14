@@ -123,7 +123,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * @return a {@link FirebaseInstallationsApi} instance
    */
   @NonNull
-  public static FirebaseInstallations getInstance() {
+  public static FirebaseInstallations getInstance() throws FirebaseInstallationsException {
     FirebaseApp defaultFirebaseApp = FirebaseApp.getInstance();
     return getInstance(defaultFirebaseApp);
   }
@@ -135,8 +135,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * @return a {@link FirebaseInstallations} instance
    */
   @NonNull
-  public static FirebaseInstallations getInstance(@NonNull FirebaseApp app) {
+  public static FirebaseInstallations getInstance(@NonNull FirebaseApp app)
+      throws FirebaseInstallationsException {
     Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
+    if (!isIIDVersionCompatible()) {
+      throw new FirebaseInstallationsException(
+          "FirebaseInstallations will not work correctly with current version of Firebase "
+              + "Instance ID. Please update your Firebase Instance ID version",
+          Status.INCOMPATIBLE_VERSIONS);
+    }
     return (FirebaseInstallations) app.get(FirebaseInstallationsApi.class);
   }
 
@@ -451,15 +458,24 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return null;
   }
 
-  private boolean isIIDVersionCompatible() {
+  private static boolean isIIDVersionCompatible() {
     try {
+      // Using Reflection
+      Class.forName(" com.google.firebase.iid.FirebaseInstanceId");
+
+      // Using compileOnly
       Class firebaseInstance = FirebaseInstanceId.class;
+
+      // Can't read hidden value: com.google.firebase.iid.BuildConfig.VERSION_NAME. Trying to find
+      // firebaseInstallations variable that is decalared in the latest version.
       firebaseInstance.getDeclaredField(" firebaseInstallations");
     } catch (NoClassDefFoundError exception) {
       // iid is not there at all, we're good
       return true;
     } catch (NoSuchFieldException exception) {
       return false;
+    } catch (ClassNotFoundException e) {
+      return true;
     }
     return true;
   }

@@ -25,6 +25,8 @@ public class FirebaseInstallationsException extends FirebaseException {
      * Project.
      */
     BAD_CONFIG,
+    /** Indicates that the client has incompatible Instance-ID version installed. */
+    INCOMPATIBLE_VERSIONS,
   }
 
   @NonNull private final Status status;
