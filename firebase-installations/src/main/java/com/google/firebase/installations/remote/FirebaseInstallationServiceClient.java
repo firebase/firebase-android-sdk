@@ -34,14 +34,13 @@ import com.google.firebase.installations.FirebaseInstallationsException;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import com.google.firebase.platforminfo.UserAgentPublisher;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
-import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -79,6 +78,8 @@ public class FirebaseInstallationServiceClient {
 
   private static final int MAX_RETRIES = 1;
   private static final Charset UTF_8 = Charset.forName("UTF-8");
+
+  private static final String SDK_VERSION_PREFIX = "a:";
 
   @VisibleForTesting
   static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
@@ -133,42 +134,52 @@ public class FirebaseInstallationServiceClient {
                 resourceName,
                 apiKey));
     while (retryCount <= MAX_RETRIES) {
-      HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
-      httpsURLConnection.setRequestMethod("POST");
-      httpsURLConnection.setDoOutput(true);
+      HttpURLConnection httpURLConnection = openHttpURLConnection(url);
 
-      // Note: Set the iid token header for authenticating the Instance-ID migrating to FIS.
-      if (iidToken != null) {
-        httpsURLConnection.addRequestProperty(X_ANDROID_IID_MIGRATION_KEY, iidToken);
-      }
-
-      GZIPOutputStream gzipOutputStream =
-          new GZIPOutputStream(httpsURLConnection.getOutputStream());
       try {
-        gzipOutputStream.write(
-            buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
-      } catch (JSONException e) {
-        throw new IllegalStateException(e);
+        httpURLConnection.setRequestMethod("POST");
+        httpURLConnection.setDoOutput(true);
+
+        // Note: Set the iid token header for authenticating the Instance-ID migrating to FIS.
+        if (iidToken != null) {
+          httpURLConnection.addRequestProperty(X_ANDROID_IID_MIGRATION_KEY, iidToken);
+        }
+
+        writeFIDCreateRequestBodyToOutputStream(httpURLConnection, fid, appId);
+
+        int httpResponseCode = httpURLConnection.getResponseCode();
+
+        if (httpResponseCode == 200) {
+          return readCreateResponse(httpURLConnection);
+        }
+
+        if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+          retryCount++;
+          continue;
+        }
+
+        // Return empty installation response with BAD_CONFIG response code after max retries
+        return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
       } finally {
-        gzipOutputStream.close();
+        httpURLConnection.disconnect();
       }
-
-      int httpResponseCode = httpsURLConnection.getResponseCode();
-
-      if (httpResponseCode == 200) {
-        return readCreateResponse(httpsURLConnection);
-      }
-
-      if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
-        retryCount++;
-        continue;
-      }
-
-      // Return empty installation response with BAD_CONFIG response code after max retries
-      return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
     }
 
     throw new IOException();
+  }
+
+  private void writeFIDCreateRequestBodyToOutputStream(
+      HttpURLConnection httpURLConnection, @NonNull String fid, @NonNull String appId)
+      throws IOException {
+    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(httpURLConnection.getOutputStream());
+    try {
+      gzipOutputStream.write(
+          buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
+    } catch (JSONException e) {
+      throw new IllegalStateException(e);
+    } finally {
+      gzipOutputStream.close();
+    }
   }
 
   private static JSONObject buildCreateFirebaseInstallationRequestBody(String fid, String appId)
@@ -177,7 +188,28 @@ public class FirebaseInstallationServiceClient {
     firebaseInstallationData.put("fid", fid);
     firebaseInstallationData.put("appId", appId);
     firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
-    firebaseInstallationData.put("sdkVersion", "a:" + VERSION_NAME);
+    firebaseInstallationData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+    return firebaseInstallationData;
+  }
+
+  private void writeGenerateAuthTokenRequestBodyToOutputStream(HttpURLConnection httpURLConnection)
+      throws IOException {
+    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(httpURLConnection.getOutputStream());
+    try {
+      gzipOutputStream.write(buildGenerateAuthTokenRequestBody().toString().getBytes("UTF-8"));
+    } catch (JSONException e) {
+      throw new IllegalStateException(e);
+    } finally {
+      gzipOutputStream.close();
+    }
+  }
+
+  private static JSONObject buildGenerateAuthTokenRequestBody() throws JSONException {
+    JSONObject sdkVersionData = new JSONObject();
+    sdkVersionData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+
+    JSONObject firebaseInstallationData = new JSONObject();
+    firebaseInstallationData.put("installation", sdkVersionData);
     return firebaseInstallationData;
   }
 
@@ -208,11 +240,12 @@ public class FirebaseInstallationServiceClient {
 
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
-      HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
-      httpsURLConnection.setRequestMethod("DELETE");
-      httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
+      HttpURLConnection httpURLConnection = openHttpURLConnection(url);
+      httpURLConnection.setRequestMethod("DELETE");
+      httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
-      int httpResponseCode = httpsURLConnection.getResponseCode();
+      int httpResponseCode = httpURLConnection.getResponseCode();
+      httpURLConnection.disconnect();
 
       if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
         return;
@@ -266,53 +299,58 @@ public class FirebaseInstallationServiceClient {
                 resourceName,
                 apiKey));
     while (retryCount <= MAX_RETRIES) {
-      HttpsURLConnection httpsURLConnection = openHttpsURLConnection(url);
-      httpsURLConnection.setRequestMethod("POST");
-      httpsURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
+      HttpURLConnection httpURLConnection = openHttpURLConnection(url);
+      try {
+        httpURLConnection.setRequestMethod("POST");
+        httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
-      int httpResponseCode = httpsURLConnection.getResponseCode();
+        writeGenerateAuthTokenRequestBodyToOutputStream(httpURLConnection);
 
-      if (httpResponseCode == 200) {
-        return readGenerateAuthTokenResponse(httpsURLConnection);
+        int httpResponseCode = httpURLConnection.getResponseCode();
+
+        if (httpResponseCode == 200) {
+          return readGenerateAuthTokenResponse(httpURLConnection);
+        }
+
+        if (httpResponseCode == 401 || httpResponseCode == 404) {
+          return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
+        }
+
+        if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+          retryCount++;
+          continue;
+        }
+
+        return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
+      } finally {
+        httpURLConnection.disconnect();
       }
-
-      if (httpResponseCode == 401 || httpResponseCode == 404) {
-        return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
-      }
-
-      if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
-        retryCount++;
-        continue;
-      }
-
-      return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
     }
     throw new IOException();
   }
 
-  private HttpsURLConnection openHttpsURLConnection(URL url) throws IOException {
-    HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
-    httpsURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
-    httpsURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
-    httpsURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
-    httpsURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
-    httpsURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
-    httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+  private HttpURLConnection openHttpURLConnection(URL url) throws IOException {
+    HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+    httpURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
+    httpURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
+    httpURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+    httpURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
+    httpURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+    httpURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
     if (heartbeatInfo != null && userAgentPublisher != null) {
       HeartBeat heartbeat = heartbeatInfo.getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
       if (heartbeat != HeartBeat.NONE) {
-        httpsURLConnection.addRequestProperty(USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
-        httpsURLConnection.addRequestProperty(
+        httpURLConnection.addRequestProperty(USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
+        httpURLConnection.addRequestProperty(
             HEART_BEAT_HEADER, Integer.toString(heartbeat.getCode()));
       }
     }
-    httpsURLConnection.addRequestProperty(
-        X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
-    return httpsURLConnection;
+    httpURLConnection.addRequestProperty(X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
+    return httpURLConnection;
   }
 
   // Read the response from the createFirebaseInstallation API.
-  private InstallationResponse readCreateResponse(HttpsURLConnection conn) throws IOException {
+  private InstallationResponse readCreateResponse(HttpURLConnection conn) throws IOException {
     JsonReader reader = new JsonReader(new InputStreamReader(conn.getInputStream(), UTF_8));
     TokenResult.Builder tokenResult = TokenResult.builder();
     InstallationResponse.Builder builder = InstallationResponse.builder();
@@ -350,7 +388,7 @@ public class FirebaseInstallationServiceClient {
   }
 
   // Read the response from the generateAuthToken FirebaseInstallation API.
-  private TokenResult readGenerateAuthTokenResponse(HttpsURLConnection conn) throws IOException {
+  private TokenResult readGenerateAuthTokenResponse(HttpURLConnection conn) throws IOException {
     JsonReader reader = new JsonReader(new InputStreamReader(conn.getInputStream(), UTF_8));
     TokenResult.Builder builder = TokenResult.builder();
     reader.beginObject();
@@ -367,18 +405,6 @@ public class FirebaseInstallationServiceClient {
     reader.endObject();
 
     return builder.setResponseCode(TokenResult.ResponseCode.OK).build();
-  }
-
-  // Read the error message from the response.
-  private String readErrorResponse(HttpsURLConnection conn) throws IOException {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getErrorStream(), UTF_8));
-    StringBuilder response = new StringBuilder();
-    for (String input = reader.readLine(); input != null; input = reader.readLine()) {
-      response.append(input).append('\n');
-    }
-    return String.format(
-        "The server responded with an error. HTTP response: [%d %s %s]",
-        conn.getResponseCode(), conn.getResponseMessage(), response);
   }
 
   /** Gets the Android package's SHA-1 fingerprint. */

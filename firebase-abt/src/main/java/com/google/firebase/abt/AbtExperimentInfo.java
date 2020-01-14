@@ -38,8 +38,6 @@ import java.util.Map;
  * AbtException} will be thrown. Any keys not defined in {@link #ALL_REQUIRED_KEYS} will be ignored.
  *
  * <p>Changes in the values returned by the ABT server and client SDKs must be reflected here
- *
- * @author Miraziz Yusupov
  */
 public class AbtExperimentInfo {
 
@@ -311,25 +309,15 @@ public class AbtExperimentInfo {
   /**
    * Converts a {@link developers.mobile.abt.FirebaseAbt.ExperimentPayload} to an {@link
    * AbtExperimentInfo}. Does not do any validation due to proto limitations.
-   *
-   * @throws AbtException If the start time is unable to parse.
    */
-  static AbtExperimentInfo fromExperimentPayload(FirebaseAbt.ExperimentPayload experimentPayload)
-      throws AbtException {
-    try {
-      Date startTime =
-          protoTimestampStringParser.parse(
-              Long.toString(experimentPayload.getExperimentStartTimeMillis()));
-      return new AbtExperimentInfo(
-          experimentPayload.getExperimentId(),
-          experimentPayload.getVariantId(),
-          experimentPayload.getTriggerEvent(),
-          startTime,
-          experimentPayload.getTriggerTimeoutMillis(),
-          experimentPayload.getTimeToLiveMillis());
-    } catch (ParseException e) {
-      throw new AbtException(
-          "Could not process experiment: parsing experiment start time failed.", e);
-    }
+  public static AbtExperimentInfo fromExperimentPayload(
+      FirebaseAbt.ExperimentPayload experimentPayload) {
+    return new AbtExperimentInfo(
+        experimentPayload.getExperimentId(),
+        experimentPayload.getVariantId(),
+        experimentPayload.getTriggerEvent(),
+        new Date(experimentPayload.getExperimentStartTimeMillis()),
+        experimentPayload.getTriggerTimeoutMillis(),
+        experimentPayload.getTimeToLiveMillis());
   }
 }

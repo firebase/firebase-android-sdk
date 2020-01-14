@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
@@ -104,6 +105,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.utils = utils;
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
+    preConditionChecks();
+  }
+
+  /**
+   * Perform pre-condition checks to make sure {@link FirebaseOptions#getApiKey()} and {@link
+   * FirebaseOptions#getProjectId()} are not null.
+   */
+  private void preConditionChecks() {
+    Preconditions.checkNotNull(firebaseApp.getOptions().getApiKey());
+    Preconditions.checkNotNull(firebaseApp.getOptions().getProjectId());
   }
 
   /**
