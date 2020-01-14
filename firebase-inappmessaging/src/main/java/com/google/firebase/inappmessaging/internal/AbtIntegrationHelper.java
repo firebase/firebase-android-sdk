@@ -31,6 +31,13 @@ public class AbtIntegrationHelper {
     this.abTesting = abTesting;
   }
 
+  /**
+   * Take a {@link FetchEligibleCampaignsResponse} and update ABT with the currently running
+   * experiments based on the content of the response.
+   *
+   * @param response the {@link FetchEligibleCampaignsResponse} containing an up to date experiment
+   *     list.
+   */
   public void updateRunningExperiments(FetchEligibleCampaignsResponse response) {
     ArrayList<AbtExperimentInfo> runningExperiments = new ArrayList<>();
     for (CampaignProto.ThickContent content : response.getMessagesList()) {
