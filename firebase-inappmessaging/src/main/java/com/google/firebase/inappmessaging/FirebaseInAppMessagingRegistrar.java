@@ -15,9 +15,12 @@
 package com.google.firebase.inappmessaging;
 
 import android.app.Application;
+import android.content.Context;
 import androidx.annotation.Keep;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.abt.component.AbtComponent;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
@@ -30,6 +33,7 @@ import com.google.firebase.inappmessaging.internal.injection.components.AppCompo
 import com.google.firebase.inappmessaging.internal.injection.components.DaggerAppComponent;
 import com.google.firebase.inappmessaging.internal.injection.components.DaggerUniversalComponent;
 import com.google.firebase.inappmessaging.internal.injection.components.UniversalComponent;
+import com.google.firebase.inappmessaging.internal.injection.modules.AbTestingModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.AnalyticsEventsModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApiClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.AppMeasurementModule;
@@ -52,8 +56,10 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseInAppMessaging.class)
+            .add(Dependency.required(Context.class))
             .add(Dependency.required(FirebaseInstanceId.class))
             .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.required(AbtComponent.class))
             .add(Dependency.optional(AnalyticsConnector.class))
             .add(Dependency.required(TransportFactory.class))
             .add(Dependency.required(Subscriber.class))
@@ -67,7 +73,8 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     FirebaseInstanceId firebaseInstanceId = container.get(FirebaseInstanceId.class);
     AnalyticsConnector analyticsConnector = container.get(AnalyticsConnector.class);
-
+    FirebaseABTesting abTesting =
+        container.get(AbtComponent.class).get(FirebaseABTesting.OriginService.INAPP_MESSAGING);
     Subscriber firebaseEventsSubscriber = container.get(Subscriber.class);
 
     Application application = (Application) firebaseApp.getApplicationContext();
@@ -85,6 +92,7 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
 
     AppComponent instance =
         DaggerAppComponent.builder()
+            .abTestingModule(new AbTestingModule(abTesting))
             .apiClientModule(
                 new ApiClientModule(firebaseApp, firebaseInstanceId, universalComponent.clock()))
             .grpcClientModule(new GrpcClientModule(firebaseApp))

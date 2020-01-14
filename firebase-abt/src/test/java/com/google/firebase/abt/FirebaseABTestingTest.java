@@ -290,8 +290,9 @@ public class FirebaseABTestingTest {
   }
 
   @Test
-  public void reportRunningExperiments_inactiveExperimentsInAnalytics_cleansUpInactiveExperiments()
-      throws Exception {
+  public void
+      validateRunningExperiments_inactiveExperimentsInAnalytics_cleansUpInactiveExperiments()
+          throws Exception {
     // Two experiments running
     when(mockAnalyticsConnector.getConditionalUserProperties(ORIGIN_SERVICE, ""))
         .thenReturn(
@@ -307,7 +308,7 @@ public class FirebaseABTestingTest {
   }
 
   @Test
-  public void reportRunningExperiments_noinactiveExperimentsInAnalytics_cleansUpNothing()
+  public void validateRunningExperiments_noinactiveExperimentsInAnalytics_cleansUpNothing()
       throws Exception {
     // Two experiments running
     when(mockAnalyticsConnector.getConditionalUserProperties(ORIGIN_SERVICE, ""))
