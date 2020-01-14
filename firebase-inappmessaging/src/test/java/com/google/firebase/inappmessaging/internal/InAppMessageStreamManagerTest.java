@@ -261,19 +261,43 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onExpiredCampaign_doesNotTrigger() {
-    VanillaCampaignPayload.Builder expiredCampaign =
-        VanillaCampaignPayload.newBuilder()
-            .setCampaignStartTimeMillis(PAST)
-            .setCampaignEndTimeMillis(PAST);
+  public void stream_onValidCampaign_notifiesSubscriber() {
     ThickContent t =
-        ThickContent.newBuilder(thickContent)
-            .clearContent()
-            .setVanillaPayload(expiredCampaign)
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setVanillaPayload(
+                VanillaCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(NOW - 1)
+                    .setCampaignEndTimeMillis(FUTURE))
             .build();
+
     FetchEligibleCampaignsResponse r =
-        FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
-            .clearMessages()
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+
+    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+  }
+
+  @Test
+  public void stream_onExpiredCampaign_doesNotTrigger() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setVanillaPayload(
+                VanillaCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(PAST)
+                    .setCampaignEndTimeMillis(NOW))
+            .build();
+
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
             .addMessages(t)
             .build();
 
@@ -287,8 +311,8 @@ public class InAppMessageStreamManagerTest {
   @Test
   public void stream_onExpiredExperiment_doesNotTrigger() {
     ThickContent t =
-        ThickContent.newBuilder(thickContent)
-            .clearContent()
+        thickContentBuilder
+            .clearVanillaPayload()
             .setExperimentalPayload(
                 CampaignProto.ExperimentalCampaignPayload.newBuilder()
                     .setExperimentPayload(
@@ -297,8 +321,8 @@ public class InAppMessageStreamManagerTest {
                             .setTimeToLiveMillis(1)))
             .build();
     FetchEligibleCampaignsResponse r =
-        FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
-            .clearMessages()
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
             .addMessages(t)
             .build();
 
