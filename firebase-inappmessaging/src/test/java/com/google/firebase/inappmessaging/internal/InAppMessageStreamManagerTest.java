@@ -92,7 +92,7 @@ public class InAppMessageStreamManagerTest {
           .setExperimentPayload(
               FirebaseAbt.ExperimentPayload.newBuilder()
                   .setExperimentStartTimeMillis(PAST)
-                  .setTimeToLiveMillis(FUTURE - PAST));
+                  .setTimeToLiveMillis(PAST));
   private static final ThickContent.Builder thickContentBuilder =
       ThickContent.newBuilder()
           .setPriority(priorityTwo)
@@ -294,7 +294,7 @@ public class InAppMessageStreamManagerTest {
                     .setExperimentPayload(
                         FirebaseAbt.ExperimentPayload.newBuilder()
                             .setExperimentStartTimeMillis(PAST)
-                            .setExperimentStartTimeMillis(1)))
+                            .setTimeToLiveMillis(1)))
             .build();
     FetchEligibleCampaignsResponse r =
         FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
