@@ -20,7 +20,7 @@ import dagger.Module;
 import dagger.Provides;
 
 /**
- * Provider for ABTesting
+ * Provider for ABTesting Module
  *
  * @hide
  */
