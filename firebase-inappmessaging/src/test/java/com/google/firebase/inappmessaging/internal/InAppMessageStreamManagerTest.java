@@ -267,7 +267,7 @@ public class InAppMessageStreamManagerTest {
             .clearVanillaPayload()
             .setVanillaPayload(
                 VanillaCampaignPayload.newBuilder()
-                    .setCampaignStartTimeMillis(NOW - 1)
+                    .setCampaignStartTimeMillis(PAST)
                     .setCampaignEndTimeMillis(FUTURE))
             .build();
 
