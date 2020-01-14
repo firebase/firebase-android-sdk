@@ -294,7 +294,7 @@ public class InAppMessageStreamManagerTest {
                     .setExperimentPayload(
                         FirebaseAbt.ExperimentPayload.newBuilder()
                             .setExperimentStartTimeMillis(PAST)
-                            .setExperimentStartTimeMillis(PAST + NOW)))
+                            .setExperimentStartTimeMillis(1)))
             .build();
     FetchEligibleCampaignsResponse r =
         FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
