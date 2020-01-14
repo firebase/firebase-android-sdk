@@ -17,7 +17,6 @@ package com.google.firebase.installations;
 import static com.google.firebase.installations.FirebaseInstallationsTest.TEST_API_KEY;
 import static com.google.firebase.installations.FirebaseInstallationsTest.TEST_PROJECT_ID;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
@@ -62,19 +61,5 @@ public class FirebaseInstallationsRegistrarTest {
     FirebaseInstallations anotherFirebaseInstallation =
         FirebaseInstallations.getInstance(anotherApp);
     assertNotNull(anotherFirebaseInstallation);
-  }
-
-  @Test
-  public void getFirebaseInstallationsInstance_missingRequiredFirebaseOptions_failed() {
-    FirebaseApp defaultApp =
-        FirebaseApp.initializeApp(
-            ApplicationProvider.getApplicationContext(),
-            new FirebaseOptions.Builder().setApplicationId("1:123456789:android:abcdef").build());
-
-    try {
-      FirebaseInstallations.getInstance();
-      fail("NullPointerException expected");
-    } catch (NullPointerException expected) {
-    }
   }
 }
