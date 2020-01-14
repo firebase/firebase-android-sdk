@@ -105,7 +105,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.utils = utils;
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
-    preConditionChecks();
   }
 
   /**
@@ -166,6 +165,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<String> getId() {
+    preConditionChecks();
     Task<String> task = addGetIdListener();
     executor.execute(this::doGetId);
     return task;
@@ -183,6 +183,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<InstallationTokenResult> getToken(@AuthTokenOption int authTokenOption) {
+    preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
     if (authTokenOption == FORCE_REFRESH) {
       executor.execute(this::doGetAuthTokenForceRefresh);
@@ -200,6 +201,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<Void> delete() {
+    preConditionChecks();
     return Tasks.call(executor, this::deleteFirebaseInstallationId);
   }
 
