@@ -47,6 +47,10 @@ dependencies {
 
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
+    compileOnly ("com.google.firebase:firebase-iid:20.0.2"){
+        exclude group: "com.google.firebase", module: "firebase-common"
+        exclude group: "com.google.firebase", module: "firebase-components"
+    }
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
 
     testImplementation 'androidx.test:core:1.2.0'

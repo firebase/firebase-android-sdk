@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
@@ -437,5 +438,18 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(entry.withNoGeneratedFid());
     return null;
+  }
+
+  private boolean isIIDVersionCompatible() {
+    try {
+      Class firebaseInstance = FirebaseInstanceId.class;
+      firebaseInstance.getDeclaredField(" firebaseInstallations");
+    } catch (NoClassDefFoundError exception) {
+      // iid is not there at all, we're good
+      return true;
+    } catch (NoSuchFieldException exception) {
+      return false;
+    }
+    return true;
   }
 }
