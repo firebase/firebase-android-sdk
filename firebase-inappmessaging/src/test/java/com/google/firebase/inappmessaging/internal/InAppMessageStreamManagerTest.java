@@ -123,6 +123,7 @@ public class InAppMessageStreamManagerTest {
   @Mock private CampaignCacheClient campaignCacheClient;
   @Mock private ImpressionStorageClient impressionStorageClient;
   @Mock private TestDeviceHelper testDeviceHelper;
+  @Mock private AbtIntegrationHelper abtIntegrationHelper;
   @Mock private RateLimiterClient rateLimiterClient;
   @Mock private AnalyticsEventsManager analyticsEventsManager;
   @Captor private ArgumentCaptor<CampaignImpressionList> campaignImpressionListArgumentCaptor;
@@ -177,7 +178,8 @@ public class InAppMessageStreamManagerTest {
             impressionStorageClient,
             rateLimiterClient,
             appForegroundRateLimit,
-            testDeviceHelper);
+            testDeviceHelper,
+            abtIntegrationHelper);
     subscriber = streamManager.createFirebaseInAppMessageStream().test();
     when(application.getApplicationContext()).thenReturn(application);
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(false));

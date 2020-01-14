@@ -42,9 +42,13 @@ public class AbtIntegrationHelper {
                 content.getExperimentalPayload().getExperimentPayload()));
       }
     }
+    if (runningExperiments.isEmpty()) {
+      return;
+    }
     try {
-      Logging.logd("Updating running experiments with: " + runningExperiments.size() + " experiments");
-      abTesting.reportRunningExperiments(runningExperiments);
+      Logging.logd(
+          "Updating running experiments with: " + runningExperiments.size() + " experiments");
+      abTesting.validateRunningExperiments(runningExperiments);
     } catch (AbtException e) {
       Logging.loge(
           "Unable to register experiments with ABT, missing analytics?\n" + e.getMessage());
