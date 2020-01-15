@@ -57,6 +57,7 @@ apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.metrics.MetricsPlugin
+apply plugin: com.google.firebase.gradle.plugins.ci.CheckCoveragePlugin
 
 firebaseContinuousIntegration {
     ignorePaths = [
@@ -96,28 +97,6 @@ configure(subprojects) {
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
         exclude '**/package-info.java'
-    }
-    apply plugin: 'jacoco'
-    jacoco {
-        toolVersion = '0.8.3'
-    }
-    task(['type': JacocoReport, 'dependsOn': 'check', 'group': 'Coverage',
-          'description': 'Generates JaCoCo unit test coverage reports.'], checkCoverage) {
-        def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/proto/**', '**Manifest*.*']
-        classDirectories = files([
-            fileTree(dir: "$buildDir/intermediates/javac/release", excludes: excludes),
-            fileTree(dir: "$buildDir/tmp/kotlin-classes/release", excludes: excludes),
-        ])
-        sourceDirectories = files(['src/main/java', 'src/main/kotlin'])
-        executionData = fileTree(dir: "$buildDir", includes: ['jacoco/*.exec'])
-        reports {
-            html.enabled true
-            xml.enabled true
-            csv.enabled true
-        }
-    }
-    tasks.withType(Test) {
-        jacoco.includeNoLocationClasses true
     }
 
     tasks.withType(JavaCompile) {
