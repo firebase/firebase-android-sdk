@@ -14,6 +14,8 @@
 
 package com.google.firebase.installations;
 
+import android.text.TextUtils;
+import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,10 +38,12 @@ import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.TokenResult;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -73,6 +77,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Object lockGenerateFid = new Object();
   /* file used for process-level syncronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
+
+  private static final String IID_SDK_PROP_FILE = "/firebase-iid.properties";
+  private static final String IID_SDK_VERSION_BEFORE_FIS = "20.0.2";
+
+  private static final String TAG = "FirebaseInstallations";
 
   /** package private constructor. */
   FirebaseInstallations(
@@ -137,12 +146,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public static FirebaseInstallations getInstance(@NonNull FirebaseApp app)
       throws FirebaseInstallationsException {
     Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
+
     if (!isIIDVersionCompatible()) {
       throw new FirebaseInstallationsException(
           "FirebaseInstallations will not work correctly with current version of Firebase "
-              + "Instance ID. Please update your Firebase Instance ID version",
+              + "Instance ID. Please update your Firebase Instance ID version.",
           Status.INCOMPATIBLE_VERSIONS);
     }
+
     return (FirebaseInstallations) app.get(FirebaseInstallationsApi.class);
   }
 
@@ -462,23 +473,31 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private static boolean isIIDVersionCompatible() {
     try {
-      // Using Reflection
-      Class.forName(" com.google.firebase.iid.FirebaseInstanceId");
-
-      // Using compileOnly
-      Class firebaseInstance = FirebaseInstanceId.class;
-
-      // Can't read hidden value: com.google.firebase.iid.BuildConfig.VERSION_NAME. Trying to find
-      // firebaseInstallations variable that is decalared in the latest version.
-      firebaseInstance.getDeclaredField(" firebaseInstallations");
+      final Class<FirebaseInstanceId> firebaseInstanceIdClass = FirebaseInstanceId.class;
+      String iidVersion = getIIDVersion();
+      if (TextUtils.isEmpty(iidVersion)
+          || Utils.compareVersion(IID_SDK_VERSION_BEFORE_FIS, iidVersion) >= 0) {
+        return false;
+      }
     } catch (NoClassDefFoundError exception) {
-      // iid is not there at all, we're good
-      return true;
-    } catch (NoSuchFieldException exception) {
-      return false;
-    } catch (ClassNotFoundException e) {
+      // There is no IID SDK at all.
       return true;
     }
     return true;
+  }
+
+  private static String getIIDVersion() {
+    Properties props = new Properties();
+    try {
+      String propertiesFileName = IID_SDK_PROP_FILE;
+      InputStream fs = FirebaseInstallations.class.getResourceAsStream(propertiesFileName);
+      if (fs != null) {
+        props.load(fs);
+        return props.getProperty("version", /* defaultValue */ null);
+      }
+    } catch (IOException e) {
+      Log.w(TAG, "Could not read IID SDK version.", e);
+    }
+    return null;
   }
 }

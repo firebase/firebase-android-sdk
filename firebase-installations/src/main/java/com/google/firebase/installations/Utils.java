@@ -47,4 +47,28 @@ class Utils {
   public long currentTimeInSecs() {
     return TimeUnit.MILLISECONDS.toSeconds(calendar.getTimeInMillis());
   }
+
+  /**
+   * Compares two version strings.
+   *
+   * @note It assumes version is in the "1.0.1" format.
+   * @param version1 a string of ordinal numbers separated by decimal points.
+   * @param version2 a string of ordinal numbers separated by decimal points.
+   * @return The result is -1 if {@code version1} is numerically less than {@code version2}. The
+   *     result is 1 integer if {@code version1} is numerically greater than {@code version2}. The
+   *     result is zero if the strings are numerically equal.
+   */
+  public static int compareVersion(String version1, String version2) {
+    @SuppressWarnings("StringSplitter")
+    String[] version1Parts = version1.split("\\.");
+    @SuppressWarnings("StringSplitter")
+    String[] version2Parts = version2.split("\\.");
+    for (int i = 0; i < Math.min(version1Parts.length, version2Parts.length); i++) {
+      int comparison = version1Parts[i].compareTo(version2Parts[i]);
+      if (comparison != 0) {
+        return comparison;
+      }
+    }
+    return Integer.compare(version1Parts.length, version2Parts.length);
+  }
 }
