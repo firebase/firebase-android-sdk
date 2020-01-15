@@ -40,6 +40,7 @@ import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
@@ -77,9 +78,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Object lockGenerateFid = new Object();
   /* file used for process-level syncronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
-
+  /* File used to read the version of Instance-ID(IID) SDK if it exists in the dependency tree.
+  This is needed to prevent incompatible versions of IID SDK to be used in parallel with FIS SDK. */
   private static final String IID_SDK_PROP_FILE = "/firebase-iid.properties";
-  private static final String IID_SDK_VERSION_BEFORE_FIS = "20.0.2";
+  /* List of all Instance-ID versions that are incompatible with FIS SDK.*/
+  private static final List<String> IID_SDK_VERSIONS_INCOMPATIBLE_WITH_FIS =
+      Arrays.asList("20.0.2", "20.0.1", "20.0.0", "19.0.1", "19.0.0", "18.0.0");
 
   private static final String TAG = "FirebaseInstallations";
 
@@ -146,15 +150,18 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public static FirebaseInstallations getInstance(@NonNull FirebaseApp app)
       throws FirebaseInstallationsException {
     Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
+    preventParallelUsageOfIncompatibleVersionOfInstanceIdSDk();
+    return (FirebaseInstallations) app.get(FirebaseInstallationsApi.class);
+  }
 
+  private static void preventParallelUsageOfIncompatibleVersionOfInstanceIdSDk()
+      throws FirebaseInstallationsException {
     if (!isIIDVersionCompatible()) {
       throw new FirebaseInstallationsException(
           "FirebaseInstallations will not work correctly with current version of Firebase "
               + "Instance ID. Please update your Firebase Instance ID version.",
           Status.INCOMPATIBLE_VERSIONS);
     }
-
-    return (FirebaseInstallations) app.get(FirebaseInstallationsApi.class);
   }
 
   /** Returns the application id of the {@link FirebaseApp} of this {@link FirebaseInstallations} */
@@ -474,18 +481,19 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private static boolean isIIDVersionCompatible() {
     try {
       final Class<FirebaseInstanceId> firebaseInstanceIdClass = FirebaseInstanceId.class;
-      String iidVersion = getIIDVersion();
-      if (TextUtils.isEmpty(iidVersion)
-          || Utils.compareVersion(IID_SDK_VERSION_BEFORE_FIS, iidVersion) >= 0) {
-        return false;
-      }
     } catch (NoClassDefFoundError exception) {
-      // There is no IID SDK at all.
+      // It is OK if there is no IID SDK at all.
       return true;
+    }
+    String iidVersion = getIIDVersion();
+    if (TextUtils.isEmpty(iidVersion)
+        || IID_SDK_VERSIONS_INCOMPATIBLE_WITH_FIS.contains(iidVersion)) {
+      return false;
     }
     return true;
   }
 
+  @Nullable
   private static String getIIDVersion() {
     Properties props = new Properties();
     try {
