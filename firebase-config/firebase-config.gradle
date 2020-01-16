@@ -28,7 +28,7 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.4.0'
+        artifact = 'com.google.protobuf:protoc:3.10.0'
     }
     plugins {
         javalite {
@@ -39,12 +39,9 @@ protobuf {
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                // In most cases you don't need the full Java output
-                // if you use the lite output.
-                remove java
+                java { option 'lite' }
             }
             task.plugins {
-                javalite {}
             }
         }
     }
@@ -89,7 +86,7 @@ dependencies {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
-    implementation 'com.google.protobuf:protobuf-lite:3.0.1'
+    implementation 'com.google.protobuf:protobuf-javalite:3.11.0'
 
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 

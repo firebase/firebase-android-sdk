@@ -25,11 +25,11 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.4.0'
+        artifact = 'com.google.protobuf:protoc:3.10.0'
     }
     plugins {
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.21.0'
+            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
         }
         javalite {
             // The codegen for lite comes as a separate artifact
@@ -39,15 +39,12 @@ protobuf {
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                // In most cases you don't need the full Java output
-                // if you use the lite output.
-                remove java
+                java { option 'lite' }
             }
             task.plugins {
                 grpc {
                     option 'lite'
                 }
-                javalite {}
             }
         }
     }
@@ -116,9 +113,9 @@ dependencies {
     implementation project(':transport:transport-api')
     implementation project(':firebase-datatransport')
 
-    implementation 'io.grpc:grpc-stub:1.21.0'
-    implementation 'io.grpc:grpc-protobuf-lite:1.21.0'
-    implementation 'io.grpc:grpc-okhttp:1.21.0'
+    implementation "io.grpc:grpc-stub:$grpcVersion"
+    implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
+    implementation "io.grpc:grpc-okhttp:$grpcVersion"
     implementation 'com.google.dagger:dagger:2.24'
     implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
