@@ -198,7 +198,7 @@ public class ConfigFetchHandler {
                   return Tasks.forException(
                       new FirebaseRemoteConfigClientException(
                           "Failed to get Firebase Instance ID token for fetch.",
-                          instanceIdTask.getException()));
+                          completedIidTask.getException()));
                 }
 
                 InstanceIdResult instanceIdResult = completedIidTask.getResult();
