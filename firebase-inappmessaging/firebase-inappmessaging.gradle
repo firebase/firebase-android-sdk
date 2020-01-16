@@ -137,7 +137,7 @@ dependencies {
     testImplementation ('org.robolectric:robolectric:4.2') {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
-    testImplementation 'io.grpc:grpc-testing:1.21.0'
+    testImplementation "io.grpc:grpc-testing:$grpcVersion"
     testImplementation 'com.google.guava:guava:28.1-android'
 
     androidTestImplementation 'junit:junit:4.12'
@@ -147,7 +147,7 @@ dependencies {
     }
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.awaitility:awaitility:3.1.0'
-    androidTestImplementation 'io.grpc:grpc-testing:1.21.0'
+    androidTestImplementation "io.grpc:grpc-testing:$grpcVersion"
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
 
