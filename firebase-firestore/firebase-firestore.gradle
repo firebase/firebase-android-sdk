@@ -117,7 +117,9 @@ dependencies {
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation "io.grpc:grpc-stub:$grpcVersion"
-    implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
+    implementation ("io.grpc:grpc-protobuf-lite:$grpcVersion") {
+        exclude group: "com.google.protobuf", module: "protobuf-javalite"
+    }
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
     implementation "io.grpc:grpc-android:$grpcVersion"
     implementation 'com.google.android.gms:play-services-basement:17.0.0'

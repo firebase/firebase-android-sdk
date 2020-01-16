@@ -110,7 +110,9 @@ dependencies {
     implementation project(':firebase-datatransport')
 
     implementation "io.grpc:grpc-stub:$grpcVersion"
-    implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
+    implementation ("io.grpc:grpc-protobuf-lite:$grpcVersion") {
+        exclude group: "com.google.protobuf", module: "protobuf-javalite"
+    }
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
     implementation 'com.google.dagger:dagger:2.24'
     implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
