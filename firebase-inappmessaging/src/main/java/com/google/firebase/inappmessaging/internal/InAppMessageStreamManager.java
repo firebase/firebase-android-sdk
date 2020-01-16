@@ -310,9 +310,13 @@ public class InAppMessageStreamManager {
     if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
       campaignId = content.getVanillaPayload().getCampaignId();
       campaignName = content.getVanillaPayload().getCampaignName();
-    } else {
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
       campaignId = content.getExperimentalPayload().getCampaignId();
       campaignName = "experimental campaign placeholder";
+      abtIntegrationHelper.setExperimentActive(
+          content.getExperimentalPayload().getExperimentPayload());
+    } else {
+      return Maybe.empty();
     }
     InAppMessage inAppMessage =
         ProtoMarshallerClient.decode(
