@@ -26,11 +26,11 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.4.0'
+        artifact = 'com.google.protobuf:protoc:3.10.0'
     }
     plugins {
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.21.0'
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.26.0'
         }
         javalite {
             // The codegen for lite comes as a separate artifact
@@ -40,15 +40,12 @@ protobuf {
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                // In most cases you don't need the full Java output
-                // if you use the lite output.
-                remove java
+                java { option 'lite' }
             }
             task.plugins {
                 grpc {
                     option 'lite'
                 }
-                javalite {}
             }
         }
     }
@@ -123,10 +120,10 @@ dependencies {
     compileOnly 'javax.annotation:jsr250-api:1.0'
 
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'io.grpc:grpc-stub:1.21.0'
-    implementation 'io.grpc:grpc-protobuf-lite:1.21.0'
-    implementation 'io.grpc:grpc-okhttp:1.21.0'
-    implementation 'io.grpc:grpc-android:1.21.0'
+    implementation 'io.grpc:grpc-stub:1.26.0'
+    implementation 'io.grpc:grpc-protobuf-lite:1.26.0'
+    implementation 'io.grpc:grpc-okhttp:1.26.0'
+    implementation 'io.grpc:grpc-android:1.26.0'
     implementation 'com.google.android.gms:play-services-basement:17.0.0'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
     implementation 'com.google.android.gms:play-services-base:17.0.0'
