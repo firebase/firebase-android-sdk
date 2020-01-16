@@ -73,7 +73,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
 
     // Support Libraries
-    implementation 'com.google.guava:guava:27.1-android'
+    implementation 'com.google.guava:guava:28.1-android'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
     implementation 'androidx.appcompat:appcompat:1.0.2'
