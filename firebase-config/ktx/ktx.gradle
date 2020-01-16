@@ -48,6 +48,9 @@ dependencies {
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-config')
     implementation project (':firebase-abt')
+    implementation ('com.google.firebase:firebase-iid:20.0.1') {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
     implementation 'androidx.annotation:annotation:1.1.0'
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
