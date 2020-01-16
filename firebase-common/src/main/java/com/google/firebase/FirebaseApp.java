@@ -121,6 +121,13 @@ public class FirebaseApp {
   private final List<FirebaseAppLifecycleListener> lifecycleListeners =
       new CopyOnWriteArrayList<>();
 
+  @NonNull
+  public String test() {
+    String a = "Another";
+    String b = "Test";
+    return a + " " + b + ".";
+  }
+
   /** Returns the application {@link Context}. */
   @NonNull
   public Context getApplicationContext() {
