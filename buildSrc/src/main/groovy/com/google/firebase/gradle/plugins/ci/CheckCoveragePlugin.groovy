@@ -120,7 +120,7 @@ class CheckCoveragePlugin implements Plugin<Project> {
             commandLine(
                     "bash",
                     "-c",
-                    "bash <(curl -s https://codecov.io/bash) -f ${report} -F ${flag}"
+                    "bash /opt/codecov/uploader.sh -f ${report} -F ${flag}"
             )
         }
     }
