@@ -105,7 +105,7 @@ class CheckCoveragePlugin implements Plugin<Project> {
         def domain = "android-ci.firebaseopensource.com"
         def bucket = "android-ci"
         def dir = type == "presubmit" ? "pr-logs/pull/${org}_${repo}/${pr}" : "logs"
-        def path = "${name}/${job}"
+        def path = "${name}/${build}"
         def url = URLEncoder.encode("https://${domain}/view/gcs/${bucket}/${dir}/${path}", "UTF-8")
 
         project.exec {
