@@ -107,12 +107,21 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /**
-   * Perform pre-condition checks to make sure {@link FirebaseOptions#getApiKey()} and {@link
-   * FirebaseOptions#getProjectId()} are not null.
+   * Perform pre-condition checks to make sure {@link FirebaseOptions#getApiKey()} and ({@link
+   * FirebaseOptions#getProjectId()} or {@link FirebaseOptions#getGcmSenderId()} ()} are not null.
    */
   private void preConditionChecks() {
+    Preconditions.checkNotNull(getApplicationId());
+    Preconditions.checkNotNull(getProjectIdentifier());
     Preconditions.checkNotNull(firebaseApp.getOptions().getApiKey());
-    Preconditions.checkNotNull(firebaseApp.getOptions().getProjectId());
+  }
+
+  /** Returns the Project Id or Project Number for the Google Cloud Project. */
+  @Nullable
+  String getProjectIdentifier() {
+    return firebaseApp.getOptions().getProjectId() == null
+        ? firebaseApp.getOptions().getGcmSenderId()
+        : firebaseApp.getOptions().getProjectId();
   }
 
   /**
@@ -193,7 +202,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<Void> delete() {
-    preConditionChecks();
     return Tasks.call(executor, this::deleteFirebaseInstallationId);
   }
 
@@ -376,7 +384,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         serviceClient.createFirebaseInstallation(
             /*apiKey= */ firebaseApp.getOptions().getApiKey(),
             /*fid= */ prefs.getFirebaseInstallationId(),
-            /*projectID= */ firebaseApp.getOptions().getProjectId(),
+            /*projectID= */ getProjectIdentifier(),
             /*appId= */ getApplicationId(),
             /* migration-header= */ iidToken);
 
@@ -407,7 +415,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         serviceClient.generateAuthToken(
             /*apiKey= */ firebaseApp.getOptions().getApiKey(),
             /*fid= */ prefs.getFirebaseInstallationId(),
-            /*projectID= */ firebaseApp.getOptions().getProjectId(),
+            /*projectID= */ getProjectIdentifier(),
             /*refreshToken= */ prefs.getRefreshToken());
 
     switch (tokenResult.getResponseCode()) {
@@ -439,7 +447,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         serviceClient.deleteFirebaseInstallation(
             firebaseApp.getOptions().getApiKey(),
             entry.getFirebaseInstallationId(),
-            firebaseApp.getOptions().getProjectId(),
+            getProjectIdentifier(),
             entry.getRefreshToken());
 
       } catch (FirebaseException exception) {
