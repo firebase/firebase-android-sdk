@@ -58,4 +58,8 @@ public class FunctionsRegistrar implements ComponentRegistrar {
             .build(),
         LibraryVersionComponent.create("fire-fn", BuildConfig.VERSION_NAME));
   }
+
+  public String test() {
+    return "Hello world!";
+  }
 }

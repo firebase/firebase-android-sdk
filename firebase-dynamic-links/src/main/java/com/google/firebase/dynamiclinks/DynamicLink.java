@@ -1021,6 +1021,11 @@ public final class DynamicLink {
       public NavigationInfoParameters build() {
         return new NavigationInfoParameters(parameters);
       }
+
+      @NonNull
+      public String test() {
+        return "Need a test.";
+      }
     }
   }
 }
