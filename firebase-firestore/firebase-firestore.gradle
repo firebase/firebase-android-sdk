@@ -32,10 +32,6 @@ protobuf {
         grpc {
             artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
         }
-        javalite {
-            // The codegen for lite comes as a separate artifact
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
-        }
     }
     generateProtoTasks {
         all().each { task ->

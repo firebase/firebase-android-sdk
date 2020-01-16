@@ -30,18 +30,10 @@ protobuf {
         // Download from repositories
         artifact = 'com.google.protobuf:protoc:3.10.0'
     }
-    plugins {
-        javalite {
-            // The codegen for lite comes as a separate artifact
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
-        }
-    }
     generateProtoTasks {
         all().each { task ->
             task.builtins {
                 java { option 'lite' }
-            }
-            task.plugins {
             }
         }
     }
