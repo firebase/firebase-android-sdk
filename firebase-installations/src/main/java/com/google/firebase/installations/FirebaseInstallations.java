@@ -14,6 +14,7 @@
 
 package com.google.firebase.installations;
 
+import android.text.TextUtils;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -107,19 +108,20 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /**
-   * Perform pre-condition checks to make sure {@link FirebaseOptions#getApiKey()} and ({@link
-   * FirebaseOptions#getProjectId()} or {@link FirebaseOptions#getGcmSenderId()} ()} are not null.
+   * Perform pre-condition checks to make sure {@link FirebaseOptions#getApiKey()}, {@link
+   * FirebaseOptions#getApplicationId()} , and ({@link FirebaseOptions#getProjectId()} are not null
+   * or empty.
    */
   private void preConditionChecks() {
-    Preconditions.checkNotNull(getApplicationId());
-    Preconditions.checkNotNull(getProjectIdentifier());
-    Preconditions.checkNotNull(firebaseApp.getOptions().getApiKey());
+    Preconditions.checkNotEmpty(getApplicationId());
+    Preconditions.checkNotEmpty(getProjectIdentifier());
+    Preconditions.checkNotEmpty(getApiKey());
   }
 
-  /** Returns the Project Id or Project Number for the Google Cloud Project. */
+  /** Returns the Project Id or Project Number for the Firebase Project. */
   @Nullable
   String getProjectIdentifier() {
-    return firebaseApp.getOptions().getProjectId() == null
+    return TextUtils.isEmpty(firebaseApp.getOptions().getProjectId())
         ? firebaseApp.getOptions().getGcmSenderId()
         : firebaseApp.getOptions().getProjectId();
   }
@@ -151,6 +153,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @VisibleForTesting
   String getApplicationId() {
     return firebaseApp.getOptions().getApplicationId();
+  }
+
+  /** API key used to identify your app to Google servers. */
+  @Nullable
+  String getApiKey() {
+    return firebaseApp.getOptions().getApiKey();
   }
 
   /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseInstallations} */
@@ -382,7 +390,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     InstallationResponse response =
         serviceClient.createFirebaseInstallation(
-            /*apiKey= */ firebaseApp.getOptions().getApiKey(),
+            /*apiKey= */ getApiKey(),
             /*fid= */ prefs.getFirebaseInstallationId(),
             /*projectID= */ getProjectIdentifier(),
             /*appId= */ getApplicationId(),
@@ -413,7 +421,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       @NonNull PersistedInstallationEntry prefs) throws IOException {
     TokenResult tokenResult =
         serviceClient.generateAuthToken(
-            /*apiKey= */ firebaseApp.getOptions().getApiKey(),
+            /*apiKey= */ getApiKey(),
             /*fid= */ prefs.getFirebaseInstallationId(),
             /*projectID= */ getProjectIdentifier(),
             /*refreshToken= */ prefs.getRefreshToken());
@@ -445,10 +453,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       // Call the FIS servers to delete this Firebase Installation Id.
       try {
         serviceClient.deleteFirebaseInstallation(
-            firebaseApp.getOptions().getApiKey(),
-            entry.getFirebaseInstallationId(),
-            getProjectIdentifier(),
-            entry.getRefreshToken());
+            /*apiKey= */ getApiKey(),
+            /*fid= */ entry.getFirebaseInstallationId(),
+            /*projectID= */ getProjectIdentifier(),
+            /*refreshToken= */ entry.getRefreshToken());
 
       } catch (FirebaseException exception) {
         throw new FirebaseInstallationsException(
