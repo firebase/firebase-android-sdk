@@ -74,7 +74,12 @@ public class AsyncQueue {
      * A timer used to retry transactions. Since there can be multiple concurrent transactions,
      * multiple of these may be in the queue at a given time.
      */
-    RETRY_TRANSACTION
+    RETRY_TRANSACTION,
+    /**
+     * A timer used to monitor when a connection attempt in gRPC is unsuccessful and retry
+     * accordingly.
+     */
+    CONNECTIVITY_ATTEMPT_TIMER
   }
 
   /**

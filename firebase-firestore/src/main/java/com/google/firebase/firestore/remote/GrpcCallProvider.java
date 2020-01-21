@@ -23,6 +23,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
+import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
@@ -30,6 +32,7 @@ import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.CallCredentials;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
+import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
@@ -45,10 +48,21 @@ public class GrpcCallProvider {
 
   private static Supplier<ManagedChannelBuilder<?>> overrideChannelBuilderSupplier;
 
-  private final Task<ManagedChannel> channelTask;
+  private Task<ManagedChannel> channelTask;
   private final AsyncQueue asyncQueue;
 
   private CallOptions callOptions;
+
+  // This timeout is used when attempting to establish a connection in gRPC. If a connection attempt
+  // does not succeed in CONNECTIVITY_ATTEMPT_TIMEOUT_MS, we restart the channel and try
+  // reconnecting again, rather than waiting up to 2+ minutes for gRPC to timeout.
+  // More details about usage can be found in GrpcCallProvider.onConnectivityStateChanged().
+  private static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
+  private DelayedTask connectivityAttemptTimer;
+
+  private final Context context;
+  private final DatabaseInfo databaseInfo;
+  private final CallCredentials firestoreHeaders;
 
   /**
    * Helper function to globally override the channel that RPCs use. Useful for testing when you
@@ -69,24 +83,11 @@ public class GrpcCallProvider {
       DatabaseInfo databaseInfo,
       CallCredentials firestoreHeaders) {
     this.asyncQueue = asyncQueue;
+    this.context = context;
+    this.databaseInfo = databaseInfo;
+    this.firestoreHeaders = firestoreHeaders;
 
-    // We execute network initialization on a separate thread to not block operations that depend on
-    // the AsyncQueue.
-    this.channelTask =
-        Tasks.call(
-            Executors.BACKGROUND_EXECUTOR,
-            () -> {
-              ManagedChannel channel = initChannel(context, databaseInfo);
-              FirestoreGrpc.FirestoreStub firestoreStub =
-                  FirestoreGrpc.newStub(channel)
-                      .withCallCredentials(firestoreHeaders)
-                      // Ensure all callbacks are issued on the worker queue. If this call is
-                      // removed, all calls need to be audited to make sure they are executed on the
-                      // right thread.
-                      .withExecutor(asyncQueue.getExecutor());
-              callOptions = firestoreStub.getCallOptions();
-              return channel;
-            });
+    initChannelTask();
   }
 
   /** Sets up the SSL provider and configures the gRPC channel. */
@@ -196,6 +197,82 @@ public class GrpcCallProvider {
           "Interrupted while shutting down the gRPC Managed Channel");
       // Preserve interrupt status
       Thread.currentThread().interrupt();
+    }
+  }
+
+  /**
+   * Monitors the connectivity state of the gRPC channel and resets the channel when gRPC fails to
+   * connect.
+   *
+   * <p>We currently cannot configure timeouts in connection attempts for gRPC
+   * (https://github.com/grpc/grpc-java/issues/1943), and until they support doing so, the gRPC
+   * connection can stay open for up to 2+ minutes before notifying us that it has shut down.
+   *
+   * <p>We start a timer when the channel enters ConnectivityState.CONNECTING. If the timer elapses,
+   * we reset the channel by shutting it down and reinitializing the channelTask. Changes to the
+   * connectivity state will clear the timer and start a new one-time listener for the next
+   * ConnectivityState change.
+   *
+   * @param channel The channel to monitor the connectivity state of.
+   */
+  private void onConnectivityStateChange(ManagedChannel channel) {
+    ConnectivityState newState = channel.getState(true);
+    Logger.debug(LOG_TAG, "Current gRPC connectivity state: " + newState);
+    // Clear the timer, so we don't end up with multiple connectivityAttemptTimers.
+    clearConnectivityAttemptTimer();
+
+    if (newState == ConnectivityState.CONNECTING) {
+      Logger.debug(LOG_TAG, "Setting the connectivityAttemptTimer");
+      connectivityAttemptTimer =
+          asyncQueue.enqueueAfterDelay(
+              TimerId.CONNECTIVITY_ATTEMPT_TIMER,
+              CONNECTIVITY_ATTEMPT_TIMEOUT_MS,
+              () -> {
+                Logger.debug(LOG_TAG, "connectivityAttemptTimer elapsed. Resetting the channel.");
+                clearConnectivityAttemptTimer();
+                resetChannel(channel);
+              });
+    }
+    // Re-listen for next state change.
+    channel.notifyWhenStateChanged(
+        newState, () -> asyncQueue.enqueueAndForget(() -> onConnectivityStateChange(channel)));
+  }
+
+  private void resetChannel(ManagedChannel channel) {
+    asyncQueue.enqueueAndForget(
+        () -> {
+          channel.shutdownNow();
+          initChannelTask();
+        });
+  }
+
+  private void initChannelTask() {
+    // We execute network initialization on a separate thread to not block operations that depend on
+    // the AsyncQueue.
+    this.channelTask =
+        Tasks.call(
+            Executors.BACKGROUND_EXECUTOR,
+            () -> {
+              ManagedChannel channel = initChannel(context, databaseInfo);
+              onConnectivityStateChange(channel);
+              FirestoreGrpc.FirestoreStub firestoreStub =
+                  FirestoreGrpc.newStub(channel)
+                      .withCallCredentials(firestoreHeaders)
+                      // Ensure all callbacks are issued on the worker queue. If this call is
+                      // removed, all calls need to be audited to make sure they are executed on the
+                      // right thread.
+                      .withExecutor(asyncQueue.getExecutor());
+              callOptions = firestoreStub.getCallOptions();
+              Logger.debug(LOG_TAG, "Channel successfully reset.");
+              return channel;
+            });
+  }
+
+  private void clearConnectivityAttemptTimer() {
+    if (connectivityAttemptTimer != null) {
+      Logger.debug(LOG_TAG, "Clearing the connectivityAttemptTimer");
+      connectivityAttemptTimer.cancel();
+      connectivityAttemptTimer = null;
     }
   }
 }

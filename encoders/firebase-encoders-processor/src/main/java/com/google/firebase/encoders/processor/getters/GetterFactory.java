@@ -105,7 +105,11 @@ public final class GetterFactory {
       getterExpression = getterExpression + ".orElse(null)";
     }
 
-    return Optional.of(Getter.create(fieldName.get(), getterExpression, returnType));
+    Encodable.Field field = element.getAnnotation(Encodable.Field.class);
+
+    return Optional.of(
+        Getter.create(
+            fieldName.get(), getterExpression, returnType, field != null && field.inline()));
   }
 
   private TypeMirror resolveTypeArguments(DeclaredType ownerType, TypeMirror genericType) {

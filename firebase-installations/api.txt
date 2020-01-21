@@ -30,8 +30,9 @@ package com.google.firebase.installations {
 package com.google.firebase.installations.local {
 
   public class IidStore {
-    ctor public IidStore();
+    ctor public IidStore(@NonNull com.google.firebase.FirebaseApp);
     method @Nullable public String readIid();
+    method @Nullable public String readToken();
   }
 
   public class PersistedInstallation {
@@ -92,7 +93,7 @@ package com.google.firebase.installations.remote {
 
   public class FirebaseInstallationServiceClient {
     ctor public FirebaseInstallationServiceClient(@NonNull android.content.Context, @Nullable com.google.firebase.platforminfo.UserAgentPublisher, @Nullable com.google.firebase.heartbeatinfo.HeartBeatInfo);
-    method @NonNull public com.google.firebase.installations.remote.InstallationResponse createFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws java.io.IOException;
+    method @NonNull public com.google.firebase.installations.remote.InstallationResponse createFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String, @Nullable String) throws java.io.IOException;
     method @NonNull public void deleteFirebaseInstallation(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws com.google.firebase.FirebaseException, java.io.IOException;
     method @NonNull public com.google.firebase.installations.remote.TokenResult generateAuthToken(@NonNull String, @NonNull String, @NonNull String, @NonNull String) throws java.io.IOException;
   }

@@ -18,6 +18,7 @@ import static android.content.ContentValues.TAG;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
@@ -30,6 +31,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Read existing iid only for default (first initialized) instance of this firebase application.*
@@ -38,17 +41,77 @@ public class IidStore {
   private static final String IID_SHARED_PREFS_NAME = "com.google.android.gms.appid";
   private static final String STORE_KEY_PUB = "|S||P|";
   private static final String STORE_KEY_ID = "|S|id";
+  private static final String STORE_KEY_TOKEN = "|T|";
+  private static final String DEFAULT_SCOPE = "|*";
+  private static final String JSON_TOKEN_KEY = "token";
+  private static final String JSON_ENCODED_PREFIX = "{";
 
   @GuardedBy("iidPrefs")
   private final SharedPreferences iidPrefs;
 
-  public IidStore() {
-    // Different FirebaseApp in the same Android application should have the same application
-    // context and same dir path. We only read existing Iids for the default firebase application.
+  private final String defaultSenderId;
+
+  public IidStore(@NonNull FirebaseApp firebaseApp) {
     iidPrefs =
-        FirebaseApp.getInstance()
+        firebaseApp
             .getApplicationContext()
             .getSharedPreferences(IID_SHARED_PREFS_NAME, Context.MODE_PRIVATE);
+
+    defaultSenderId = getDefaultSenderId(firebaseApp);
+  }
+
+  private static String getDefaultSenderId(FirebaseApp app) {
+    // Check for an explicit sender id
+    String senderId = app.getOptions().getGcmSenderId();
+    if (senderId != null) {
+      return senderId;
+    }
+    String appId = app.getOptions().getApplicationId();
+    if (!appId.startsWith("1:") && !appId.startsWith("2:")) {
+      // If applicationId does not contain a (GMP-)App-ID, it contains a Sender identifier
+      return appId;
+    }
+    // For v1 app IDs, fall back to parsing the project number out
+    @SuppressWarnings("StringSplitter")
+    String[] parts = appId.split(":");
+    if (parts.length != 4) {
+      return null; // Invalid format
+    }
+    String projectNumber = parts[1];
+    if (projectNumber.isEmpty()) {
+      return null; // No project number
+    }
+    return projectNumber;
+  }
+
+  private String createTokenKey(@NonNull String senderId) {
+    return STORE_KEY_TOKEN + senderId + DEFAULT_SCOPE;
+  }
+
+  @Nullable
+  public String readToken() {
+    synchronized (iidPrefs) {
+      String token = iidPrefs.getString(createTokenKey(defaultSenderId), null);
+      if (TextUtils.isEmpty(token)) {
+        return null;
+      }
+
+      if (token.startsWith(JSON_ENCODED_PREFIX)) {
+        return parseIidTokenFromJson(token);
+      }
+      // Legacy value, token is whole string
+      return token;
+    }
+  }
+
+  private String parseIidTokenFromJson(String token) {
+    // Encoded as JSON
+    try {
+      JSONObject json = new JSONObject(token);
+      return json.getString(JSON_TOKEN_KEY);
+    } catch (JSONException e) {
+      return null;
+    }
   }
 
   @Nullable

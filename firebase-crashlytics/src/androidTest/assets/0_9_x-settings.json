@@ -1,0 +1,27 @@
+{
+  "identifier": "com.hootsuite.droid.full",
+  "status": "activated",
+  "settings": {
+    "cache_duration": 3600,
+    "collect_crash_reports": true,
+    "collect_on_simulator": true,
+    "collect_udids": true,
+    "enable_interactive_prompt": false,
+    "enable_ssl": true,
+    "identifier_mask": 255,
+    "log_buffer_size": 64000,
+    "max_chained_exception_depth": 16,
+    "max_custom_exception_events": 64,
+    "max_custom_key_value_pairs": 64,
+    "prompt_always_send_button_title": "Always Send",
+    "prompt_cancel_button_title": "Don't Send",
+    "prompt_message": "Looks like we crashed! Please help us fix the problem by sending a crash report.",
+    "prompt_send_button_title": "Send",
+    "prompt_show_always_send_button": true,
+    "prompt_show_cancel_button": true,
+    "prompt_title": "Send Crash Report?",
+    "send_session_without_crash": true,
+    "_id": "5135345c75fcaa6b0c306dd2",
+    "crash_submission_url": "https://reports.crashlytics.com/api/v1/a04d0d318ad9464b6661eaa673e914de5a1793a8/android/crashes.json"
+  }
+}

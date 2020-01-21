@@ -72,7 +72,7 @@ val myObject = snapshot.getValue<MyClass>()
 ```kotlin
 val snapshot: DataSnapshot = ...
 val typeIndicator = object : GenericTypeIndicator<List<Message>>() {}
-val messages: List<Message> = snapshot.getValue(t)
+val messages: List<Message> = snapshot.getValue(typeIndicator)
 ```
 
 **Kotlin + KTX**

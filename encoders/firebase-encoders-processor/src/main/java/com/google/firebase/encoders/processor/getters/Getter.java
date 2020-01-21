@@ -33,6 +33,8 @@ public abstract class Getter {
 
   abstract TypeMirror returnType();
 
+  public abstract boolean inline();
+
   /**
    * Getter's underlying Java type.
    *
@@ -46,7 +48,8 @@ public abstract class Getter {
     return ((ArrayType) returnType()).getComponentType();
   }
 
-  public static Getter create(String name, String expression, TypeMirror returnType) {
-    return new AutoValue_Getter(name, expression, returnType);
+  public static Getter create(
+      String name, String expression, TypeMirror returnType, boolean inline) {
+    return new AutoValue_Getter(name, expression, returnType, inline);
   }
 }

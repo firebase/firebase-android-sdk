@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.local.QueryData;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.NoDocument;
@@ -82,7 +82,7 @@ public class RemoteEventTest {
    *     changes are DocumentWatchChange and WatchTargetChange.
    */
   private WatchChangeAggregator createAggregator(
-      Map<Integer, QueryData> targetMap,
+      Map<Integer, TargetData> targetMap,
       Map<Integer, Integer> outstandingResponses,
       ImmutableSortedSet<DocumentKey> existingKeys,
       WatchChange... watchChanges) {
@@ -90,7 +90,7 @@ public class RemoteEventTest {
 
     List<Integer> targetIds = new ArrayList<>();
 
-    for (Map.Entry<Integer, QueryData> entry : targetMap.entrySet()) {
+    for (Map.Entry<Integer, TargetData> entry : targetMap.entrySet()) {
       targetIds.add(entry.getKey());
       targetMetadataProvider.setSyncedKeys(entry.getValue(), existingKeys);
     }
@@ -133,7 +133,7 @@ public class RemoteEventTest {
    */
   private RemoteEvent createRemoteEvent(
       long snapshotVersion,
-      Map<Integer, QueryData> targetMap,
+      Map<Integer, TargetData> targetMap,
       Map<Integer, Integer> outstandingResponses,
       ImmutableSortedSet<DocumentKey> existingKeys,
       WatchChange... watchChanges) {
@@ -144,7 +144,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillAccumulateDocumentAddedAndRemovedEvents() {
-    Map<Integer, QueryData> targetMap = activeQueries(1, 2, 3, 4, 5, 6);
+    Map<Integer, TargetData> targetMap = activeQueries(1, 2, 3, 4, 5, 6);
 
     Document existingDoc = doc("docs/1", 1, map("value", 1));
     Document newDoc = doc("docs/2", 2, map("value", 2));
@@ -186,7 +186,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillIgnoreEventsForPendingTargets() {
-    Map<Integer, QueryData> targetMap = activeQueries(1);
+    Map<Integer, TargetData> targetMap = activeQueries(1);
 
     Document doc1 = doc("docs/1", 1, map("value", 1));
     Document doc2 = doc("docs/2", 2, map("value", 2));
@@ -214,7 +214,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillIgnoreEventsForRemovedTargets() {
-    Map<Integer, QueryData> targetMap = activeQueries();
+    Map<Integer, TargetData> targetMap = activeQueries();
 
     Document doc1 = doc("docs/1", 1, map("value", 1));
 
@@ -236,7 +236,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillKeepResetMappingEvenWithUpdates() {
-    Map<Integer, QueryData> targetMap = activeQueries(1);
+    Map<Integer, TargetData> targetMap = activeQueries(1);
 
     Document doc1 = doc("docs/1", 1, map("value", 1));
     Document doc2 = doc("docs/2", 2, map("value", 2));
@@ -279,7 +279,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillHandleSingleReset() {
-    Map<Integer, QueryData> targetMap = activeQueries(1);
+    Map<Integer, TargetData> targetMap = activeQueries(1);
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys);
@@ -301,7 +301,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillHandleTargetAddAndRemovalInSameBatch() {
-    Map<Integer, QueryData> targetMap = activeQueries(1, 2);
+    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
 
     Document doc1a = doc("docs/1", 1, map("value", 1));
     Document doc1b = doc("docs/1", 1, map("value", 2));
@@ -327,7 +327,7 @@ public class RemoteEventTest {
 
   @Test
   public void testTargetCurrentChangeWillMarkTheTargetCurrent() {
-    Map<Integer, QueryData> targetMap = activeQueries(1);
+    Map<Integer, TargetData> targetMap = activeQueries(1);
 
     WatchChange change = new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
 
@@ -343,7 +343,7 @@ public class RemoteEventTest {
 
   @Test
   public void testTargetAddedChangeWillResetPreviousState() {
-    Map<Integer, QueryData> targetMap = activeQueries(1, 3);
+    Map<Integer, TargetData> targetMap = activeQueries(1, 3);
 
     Document doc1 = doc("docs/1", 1, map("value", 1));
     Document doc2 = doc("docs/2", 2, map("value", 2));
@@ -392,7 +392,7 @@ public class RemoteEventTest {
 
   @Test
   public void testNoChangeWillStillMarkTheAffectedTargets() {
-    Map<Integer, QueryData> targetMap = activeQueries(1);
+    Map<Integer, TargetData> targetMap = activeQueries(1);
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys);
@@ -411,7 +411,7 @@ public class RemoteEventTest {
 
   @Test
   public void testExistenceFilterMismatchClearsTarget() {
-    Map<Integer, QueryData> targetMap = activeQueries(1, 2);
+    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
 
     Document doc1 = doc("docs/1", 1, map("value", 1));
     Document doc2 = doc("docs/2", 2, map("value", 2));
@@ -459,7 +459,7 @@ public class RemoteEventTest {
 
   @Test
   public void testExistenceFilterMismatchRemovesCurrentChanges() {
-    Map<Integer, QueryData> targetMap = activeQueries(1);
+    Map<Integer, TargetData> targetMap = activeQueries(1);
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys);
@@ -491,7 +491,7 @@ public class RemoteEventTest {
 
   @Test
   public void testDocumentUpdate() {
-    Map<Integer, QueryData> targetMap = activeQueries(1);
+    Map<Integer, TargetData> targetMap = activeQueries(1);
 
     Document doc1 = doc("docs/1", 1, map("value", 1));
     WatchChange change1 = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
@@ -544,7 +544,7 @@ public class RemoteEventTest {
 
   @Test
   public void testResumeTokenHandledPerTarget() {
-    Map<Integer, QueryData> targetMap = activeQueries(1, 2);
+    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys);
@@ -570,7 +570,7 @@ public class RemoteEventTest {
 
   @Test
   public void testLastResumeTokenWins() {
-    Map<Integer, QueryData> targetMap = activeQueries(1, 2);
+    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys);
@@ -601,7 +601,7 @@ public class RemoteEventTest {
 
   @Test
   public void testSynthesizeDeletes() {
-    Map<Integer, QueryData> targetMap = activeLimboQueries("foo/doc", 1);
+    Map<Integer, TargetData> targetMap = activeLimboQueries("foo/doc", 1);
 
     WatchTargetChange shouldSynthesize =
         new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
@@ -618,7 +618,7 @@ public class RemoteEventTest {
 
   @Test
   public void testDoesNotSynthesizeDeleteInWrongState() {
-    Map<Integer, QueryData> targetMap = activeLimboQueries("foo/doc", 1);
+    Map<Integer, TargetData> targetMap = activeLimboQueries("foo/doc", 1);
 
     WatchTargetChange wrongState = new WatchTargetChange(WatchTargetChangeType.NoChange, asList(1));
 
@@ -630,7 +630,7 @@ public class RemoteEventTest {
 
   @Test
   public void testDoesNotSynthesizeDeleteWithExistingDocument() {
-    Map<Integer, QueryData> targetMap = activeLimboQueries("foo/doc", 1);
+    Map<Integer, TargetData> targetMap = activeLimboQueries("foo/doc", 1);
 
     WatchTargetChange hasDocument = new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
 
@@ -643,7 +643,7 @@ public class RemoteEventTest {
 
   @Test
   public void testSeparatesUpdates() {
-    Map<Integer, QueryData> targetMap = activeQueries(1);
+    Map<Integer, TargetData> targetMap = activeQueries(1);
 
     Document newDoc = doc("docs/new", 1, map("key", "value"));
     DocumentChange newDocChange =
@@ -679,7 +679,7 @@ public class RemoteEventTest {
 
   @Test
   public void testTracksLimboDocuments() {
-    Map<Integer, QueryData> listens = activeQueries(1);
+    Map<Integer, TargetData> listens = activeQueries(1);
     listens.putAll(activeLimboQueries("doc/2", 2));
 
     // Add 3 docs: 1 is limbo and non-limbo, 2 is limbo-only, 3 is non-limbo

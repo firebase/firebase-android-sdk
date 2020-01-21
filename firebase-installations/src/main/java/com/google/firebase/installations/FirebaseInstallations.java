@@ -14,6 +14,7 @@
 
 package com.google.firebase.installations;
 
+import android.text.TextUtils;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,6 +25,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.local.IidStore;
@@ -33,11 +35,7 @@ import com.google.firebase.installations.remote.FirebaseInstallationServiceClien
 import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.TokenResult;
 import com.google.firebase.platforminfo.UserAgentPublisher;
-import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -88,7 +86,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
         new PersistedInstallation(firebaseApp),
         new Utils(Calendar.getInstance()),
-        new IidStore(),
+        new IidStore(firebaseApp),
         new RandomFidGenerator());
   }
 
@@ -107,6 +105,25 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.utils = utils;
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
+  }
+
+  /**
+   * Perform pre-condition checks to make sure {@link FirebaseOptions#getApiKey()}, {@link
+   * FirebaseOptions#getApplicationId()} , and ({@link FirebaseOptions#getProjectId()} are not null
+   * or empty.
+   */
+  private void preConditionChecks() {
+    Preconditions.checkNotEmpty(getApplicationId());
+    Preconditions.checkNotEmpty(getProjectIdentifier());
+    Preconditions.checkNotEmpty(getApiKey());
+  }
+
+  /** Returns the Project Id or Project Number for the Firebase Project. */
+  @Nullable
+  String getProjectIdentifier() {
+    return TextUtils.isEmpty(firebaseApp.getOptions().getProjectId())
+        ? firebaseApp.getOptions().getGcmSenderId()
+        : firebaseApp.getOptions().getProjectId();
   }
 
   /**
@@ -138,6 +155,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return firebaseApp.getOptions().getApplicationId();
   }
 
+  /** API key used to identify your app to Google servers. */
+  @Nullable
+  String getApiKey() {
+    return firebaseApp.getOptions().getApiKey();
+  }
+
   /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseInstallations} */
   @VisibleForTesting
   String getName() {
@@ -151,6 +174,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<String> getId() {
+    preConditionChecks();
     Task<String> task = addGetIdListener();
     executor.execute(this::doGetId);
     return task;
@@ -168,6 +192,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<InstallationTokenResult> getToken(@AuthTokenOption int authTokenOption) {
+    preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
     if (authTokenOption == FORCE_REFRESH) {
       executor.execute(this::doGetAuthTokenForceRefresh);
@@ -311,7 +336,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *     been persisted.
    */
   private PersistedInstallationEntry getPrefsWithGeneratedIdMultiProcessSafe() {
-    FileLock fileLock = getCrossProcessLock();
+    CrossProcessLock lock =
+        CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
     try {
       synchronized (lockGenerateFid) {
         PersistedInstallationEntry prefs =
@@ -332,36 +358,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       }
 
     } finally {
-      releaseCrossProcessLock(fileLock);
-    }
-  }
-
-  /** Use file locking to acquire a lock that will also block other processes. */
-  private FileLock getCrossProcessLock() {
-    try {
-      File file =
-          new File(firebaseApp.getApplicationContext().getFilesDir(), LOCKFILE_NAME_GENERATE_FID);
-      FileChannel channel = new RandomAccessFile(file, "rw").getChannel();
-      // Use the file channel to create a lock on the file.
-      // This method blocks until it can retrieve the lock.
-      return channel.lock();
-    } catch (IOException e) {
-      throw new IllegalStateException("exception while using file locks, should never happen", e);
-    }
-  }
-
-  /** Release a previously acquired lock. */
-  private void releaseCrossProcessLock(FileLock fileLock) {
-    try {
-      fileLock.release();
-    } catch (IOException e) {
-      throw new IllegalStateException("exception while using file locks, should never happen", e);
+      lock.releaseAndClose();
     }
   }
 
   private String readExistingIidOrCreateFid(PersistedInstallationEntry prefs) {
     // Check if this firebase app is the default (first initialized) instance
-    if (!firebaseApp.equals(FirebaseApp.getInstance()) || !prefs.shouldAttemptMigration()) {
+    if (!firebaseApp.isDefaultApp() || !prefs.shouldAttemptMigration()) {
       return fidGenerator.createRandomFid();
     }
     // For a default firebase installation, read the existing iid from shared prefs
@@ -375,12 +378,23 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   /** Registers the created Fid with FIS servers and update the persisted state. */
   private PersistedInstallationEntry registerFidWithServer(PersistedInstallationEntry prefs)
       throws IOException {
+
+    // Note: Default value of instanceIdMigrationAuth: null
+    String iidToken = null;
+
+    if (prefs.getFirebaseInstallationId().length() == 11) {
+      // For a default firebase installation, read the stored star scoped iid token. This token
+      // will be used for authenticating Instance-ID when migrating to FIS.
+      iidToken = iidStore.readToken();
+    }
+
     InstallationResponse response =
         serviceClient.createFirebaseInstallation(
-            /*apiKey= */ firebaseApp.getOptions().getApiKey(),
+            /*apiKey= */ getApiKey(),
             /*fid= */ prefs.getFirebaseInstallationId(),
-            /*projectID= */ firebaseApp.getOptions().getProjectId(),
-            /*appId= */ getApplicationId());
+            /*projectID= */ getProjectIdentifier(),
+            /*appId= */ getApplicationId(),
+            /* migration-header= */ iidToken);
 
     switch (response.getResponseCode()) {
       case OK:
@@ -407,9 +421,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       @NonNull PersistedInstallationEntry prefs) throws IOException {
     TokenResult tokenResult =
         serviceClient.generateAuthToken(
-            /*apiKey= */ firebaseApp.getOptions().getApiKey(),
+            /*apiKey= */ getApiKey(),
             /*fid= */ prefs.getFirebaseInstallationId(),
-            /*projectID= */ firebaseApp.getOptions().getProjectId(),
+            /*projectID= */ getProjectIdentifier(),
             /*refreshToken= */ prefs.getRefreshToken());
 
     switch (tokenResult.getResponseCode()) {
@@ -439,10 +453,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       // Call the FIS servers to delete this Firebase Installation Id.
       try {
         serviceClient.deleteFirebaseInstallation(
-            firebaseApp.getOptions().getApiKey(),
-            entry.getFirebaseInstallationId(),
-            firebaseApp.getOptions().getProjectId(),
-            entry.getRefreshToken());
+            /*apiKey= */ getApiKey(),
+            /*fid= */ entry.getFirebaseInstallationId(),
+            /*projectID= */ getProjectIdentifier(),
+            /*refreshToken= */ entry.getRefreshToken());
 
       } catch (FirebaseException exception) {
         throw new FirebaseInstallationsException(

@@ -70,7 +70,7 @@ public abstract class GenerateStubsTask extends DefaultTask {
               spec.setArgs(
                   Arrays.asList(
                       getMetalavaJarPath(),
-                      "--quiet",
+                      "--no-banner",
                       "--source-path",
                       sourcePath,
                       "--classpath",

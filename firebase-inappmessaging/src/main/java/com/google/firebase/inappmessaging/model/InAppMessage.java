@@ -70,35 +70,35 @@ public abstract class InAppMessage {
     this.data = data;
   }
 
-  /** Deprecated - Use the message specific methods instead. */
+  /** @deprecated Use the message specific methods instead. */
   @Nullable
   @Deprecated
   public Text getTitle() {
     return title;
   }
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) instead. */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
   @Nullable
   @Deprecated
   public Text getBody() {
     return body;
   }
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) instead. */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
   @Nullable
   @Deprecated
   public String getImageUrl() {
     return imageUrl;
   }
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) instead. */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
   @Nullable
   @Deprecated
   public ImageData getImageData() {
     return imageData;
   }
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) */
   @Nullable
   @Deprecated
   public Button getActionButton() {
@@ -108,33 +108,33 @@ public abstract class InAppMessage {
     return actionButton;
   }
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) instead. */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
   @Deprecated
   @Nullable
   public abstract Action getAction();
 
-  /** Deprecated - Use the message specific methods (see {@link CardMessage}) instead. */
+  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
   @Nullable
   @Deprecated
   public String getBackgroundHexColor() {
     return backgroundHexColor;
   }
 
-  /** Deprecated - Use getCampaignMetadata().getCampaignId() instead. */
+  /** @deprecated Use getCampaignMetadata().getCampaignId() instead. */
   @Nullable
   @Deprecated
   public String getCampaignId() {
     return campaignMetadata.getCampaignId();
   }
 
-  /** Deprecated - Use getCampaignMetadata().getCampaignName() instead. */
+  /** @deprecated Use getCampaignMetadata().getCampaignName() instead. */
   @Nullable
   @Deprecated
   public String getCampaignName() {
     return campaignMetadata.getCampaignName();
   }
 
-  /** Deprecated - Use getCampaignMetadata().getIsTestMessage() instead. */
+  /** @deprecated Use getCampaignMetadata().getIsTestMessage() instead. */
   @Nullable
   @Deprecated
   public Boolean getIsTestMessage() {

@@ -15,7 +15,6 @@
 package com.google.firebase.encoders.json;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
@@ -36,8 +35,15 @@ import java.util.TimeZone;
 
 public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncoderBuilder> {
 
+  private final ObjectEncoder<Object> DEFAULT_FALLBACK_ENCODER =
+      (o, ctx) -> {
+        throw new EncodingException(
+            "Couldn't find encoder for type " + o.getClass().getCanonicalName());
+      };
+
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders = new HashMap<>();
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders = new HashMap<>();
+  private ObjectEncoder<Object> fallbackEncoder = DEFAULT_FALLBACK_ENCODER;
 
   private static final class TimestampEncoder implements ValueEncoder<Date> {
     private static final DateFormat rfc339;
@@ -48,7 +54,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
     }
 
     @Override
-    public void encode(@Nullable Date o, @NonNull ValueEncoderContext ctx)
+    public void encode(@NonNull Date o, @NonNull ValueEncoderContext ctx)
         throws EncodingException, IOException {
       ctx.add(rfc339.format(o));
     }
@@ -84,6 +90,14 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
     return this;
   }
 
+  /** Encoder used if no encoders are found among explicitly registered ones. */
+  @NonNull
+  public JsonDataEncoderBuilder registerFallbackEncoder(
+      @NonNull ObjectEncoder<Object> fallbackEncoder) {
+    this.fallbackEncoder = fallbackEncoder;
+    return this;
+  }
+
   @NonNull
   public JsonDataEncoderBuilder configureWith(@NonNull Configurator config) {
     config.configure(this);
@@ -97,8 +111,9 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
       public void encode(@NonNull Object o, @NonNull Writer writer)
           throws IOException, EncodingException {
         JsonValueObjectEncoderContext encoderContext =
-            new JsonValueObjectEncoderContext(writer, objectEncoders, valueEncoders);
-        encoderContext.add(o);
+            new JsonValueObjectEncoderContext(
+                writer, objectEncoders, valueEncoders, fallbackEncoder);
+        encoderContext.add(o, false);
         encoderContext.close();
       }
 

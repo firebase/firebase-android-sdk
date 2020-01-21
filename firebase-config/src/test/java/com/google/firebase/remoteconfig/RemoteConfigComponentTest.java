@@ -202,6 +202,7 @@ public class RemoteConfigComponentTest {
     return frcComponent.get(
         mockFirebaseApp,
         namespace,
+        mockFirebaseIid,
         mockFirebaseAbt,
         directExecutor,
         mockFetchedCache,

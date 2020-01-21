@@ -81,6 +81,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                     .getKotlinOptions()
                     .setFreeCompilerArgs(
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
+
+    project.afterEvaluate(p -> Dokka.configure(project, android, firebaseLibrary));
   }
 
   private static void setupApiInformationAnalysis(Project project, LibraryExtension android) {
@@ -157,6 +159,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
 
                   task.setSourceSet(mainSourceSet);
                 });
+    project.getTasks().getByName("check").dependsOn(docStubs);
 
     android
         .getLibraryVariants()
