@@ -112,17 +112,18 @@ public class InAppMessageStreamManager {
     long campaignStartTime;
     long campaignEndTime;
     if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      // Handle the campaign case
       campaignStartTime = content.getVanillaPayload().getCampaignStartTimeMillis();
       campaignEndTime = content.getVanillaPayload().getCampaignEndTimeMillis();
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      // Handle the experiment case
+      campaignStartTime = content.getExperimentalPayload().getCampaignStartTimeMillis();
+      campaignEndTime = content.getExperimentalPayload().getCampaignEndTimeMillis();
     } else {
-      campaignStartTime =
-          content.getExperimentalPayload().getExperimentPayload().getExperimentStartTimeMillis();
-      campaignEndTime =
-          campaignStartTime
-              + content.getExperimentalPayload().getExperimentPayload().getTimeToLiveMillis();
+      // If we have no valid payload then don't display
+      return false;
     }
     long currentTime = clock.now();
-
     return currentTime > campaignStartTime && currentTime < campaignEndTime;
   }
 
@@ -312,7 +313,7 @@ public class InAppMessageStreamManager {
       campaignName = content.getVanillaPayload().getCampaignName();
     } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
       campaignId = content.getExperimentalPayload().getCampaignId();
-      campaignName = "experimental campaign placeholder";
+      campaignName = content.getExperimentalPayload().getCampaignName();
       abtIntegrationHelper.setExperimentActive(
           content.getExperimentalPayload().getExperimentPayload());
     } else {
