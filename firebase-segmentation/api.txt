@@ -1,0 +1,72 @@
+// Signature format: 2.0
+package com.google.firebase.segmentation {
+
+  public class FirebaseSegmentation {
+    method @NonNull public static com.google.firebase.segmentation.FirebaseSegmentation getInstance();
+    method @NonNull public static com.google.firebase.segmentation.FirebaseSegmentation getInstance(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setCustomInstallationId(@Nullable String);
+    field public static final String TAG = "FirebaseSegmentation";
+  }
+
+  public class FirebaseSegmentationRegistrar implements com.google.firebase.components.ComponentRegistrar {
+    ctor public FirebaseSegmentationRegistrar();
+    method @NonNull public java.util.List<com.google.firebase.components.Component<?>> getComponents();
+  }
+
+  public class SetCustomInstallationIdException extends com.google.firebase.FirebaseException {
+    method @NonNull public com.google.firebase.segmentation.SetCustomInstallationIdException.Status getStatus();
+  }
+
+  public enum SetCustomInstallationIdException.Status {
+    enum_constant public static final com.google.firebase.segmentation.SetCustomInstallationIdException.Status BACKEND_ERROR;
+    enum_constant public static final com.google.firebase.segmentation.SetCustomInstallationIdException.Status CLIENT_ERROR;
+    enum_constant public static final com.google.firebase.segmentation.SetCustomInstallationIdException.Status DUPLICATED_CUSTOM_INSTALLATION_ID;
+    enum_constant public static final com.google.firebase.segmentation.SetCustomInstallationIdException.Status UNKOWN;
+  }
+
+}
+
+package com.google.firebase.segmentation.local {
+
+  public class CustomInstallationIdCache {
+    ctor public CustomInstallationIdCache(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public boolean clear();
+    method @NonNull public boolean insertOrUpdateCacheEntry(@NonNull com.google.firebase.segmentation.local.CustomInstallationIdCacheEntryValue);
+    method @Nullable public com.google.firebase.segmentation.local.CustomInstallationIdCacheEntryValue readCacheEntryValue();
+  }
+
+  public enum CustomInstallationIdCache.CacheStatus {
+    enum_constant public static final com.google.firebase.segmentation.local.CustomInstallationIdCache.CacheStatus PENDING_CLEAR;
+    enum_constant public static final com.google.firebase.segmentation.local.CustomInstallationIdCache.CacheStatus PENDING_UPDATE;
+    enum_constant public static final com.google.firebase.segmentation.local.CustomInstallationIdCache.CacheStatus SYNCED;
+  }
+
+  public abstract class CustomInstallationIdCacheEntryValue {
+    ctor public CustomInstallationIdCacheEntryValue();
+    method @NonNull public static com.google.firebase.segmentation.local.CustomInstallationIdCacheEntryValue create(@NonNull String, @NonNull String, @NonNull com.google.firebase.segmentation.local.CustomInstallationIdCache.CacheStatus);
+    method @NonNull public abstract com.google.firebase.segmentation.local.CustomInstallationIdCache.CacheStatus getCacheStatus();
+    method @NonNull public abstract String getCustomInstallationId();
+    method @NonNull public abstract String getFirebaseInstanceId();
+  }
+
+}
+
+package com.google.firebase.segmentation.remote {
+
+  public class SegmentationServiceClient {
+    ctor public SegmentationServiceClient(@NonNull android.content.Context);
+    method @NonNull public com.google.firebase.segmentation.remote.SegmentationServiceClient.Code clearCustomInstallationId(long, @NonNull String, @NonNull String, @NonNull String);
+    method @NonNull public com.google.firebase.segmentation.remote.SegmentationServiceClient.Code updateCustomInstallationId(long, @NonNull String, @NonNull String, @NonNull String, @NonNull String);
+  }
+
+  public enum SegmentationServiceClient.Code {
+    enum_constant public static final com.google.firebase.segmentation.remote.SegmentationServiceClient.Code CONFLICT;
+    enum_constant public static final com.google.firebase.segmentation.remote.SegmentationServiceClient.Code HTTP_CLIENT_ERROR;
+    enum_constant public static final com.google.firebase.segmentation.remote.SegmentationServiceClient.Code NETWORK_ERROR;
+    enum_constant public static final com.google.firebase.segmentation.remote.SegmentationServiceClient.Code OK;
+    enum_constant public static final com.google.firebase.segmentation.remote.SegmentationServiceClient.Code SERVER_ERROR;
+    enum_constant public static final com.google.firebase.segmentation.remote.SegmentationServiceClient.Code UNAUTHORIZED;
+  }
+
+}
+
