@@ -76,8 +76,7 @@ public class AbtIntegrationHelper {
    * This is meant to be called on an experimental FIAM that is getting displayed to a user, because
    * that would indicate that the experiment is now active for that user.
    *
-   * @param payload the {@link FirebaseAbt.ExperimentPayload} that should be set as
-   *     active.
+   * @param payload the {@link FirebaseAbt.ExperimentPayload} that should be set as active.
    */
   public void setExperimentActive(FirebaseAbt.ExperimentPayload payload) {
     try {
