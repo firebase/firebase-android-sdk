@@ -478,14 +478,14 @@ public class TestUtil {
 
   public static PatchMutation patchMutation(
       String path, Map<String, Object> values, @Nullable List<FieldPath> updateMask) {
-    ObjectValue objectValue = ObjectValue.emptyObject();
+    ObjectValue.Builder objectValue = ObjectValue.Builder.emptyBuilder();
     ArrayList<FieldPath> objectMask = new ArrayList<>();
     for (Entry<String, Object> entry : values.entrySet()) {
       FieldPath fieldPath = field(entry.getKey());
       objectMask.add(fieldPath);
       if (!entry.getValue().equals(DELETE_SENTINEL)) {
         FieldValue parsedValue = wrap(entry.getValue());
-        objectValue = objectValue.set(fieldPath, parsedValue);
+        objectValue.set(fieldPath, parsedValue);
       }
     }
 
@@ -498,7 +498,7 @@ public class TestUtil {
 
     return new PatchMutation(
         key(path),
-        objectValue,
+        objectValue.build(),
         FieldMask.fromSet(fieldMaskPaths),
         merge ? Precondition.NONE : Precondition.exists(true));
   }

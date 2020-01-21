@@ -369,13 +369,13 @@ public final class RemoteSerializer {
   // involve creating a temporary map.
 
   public ObjectValue decodeFields(Map<String, com.google.firestore.v1.Value> fields) {
-    ObjectValue result = ObjectValue.emptyObject();
+    ObjectValue.Builder result = ObjectValue.Builder.emptyBuilder();
     for (Map.Entry<String, com.google.firestore.v1.Value> entry : fields.entrySet()) {
       FieldPath path = FieldPath.fromSingleSegment(entry.getKey());
       FieldValue value = decodeValue(entry.getValue());
-      result = result.set(path, value);
+      result.set(path, value);
     }
-    return result;
+    return result.build();
   }
 
   // Documents
