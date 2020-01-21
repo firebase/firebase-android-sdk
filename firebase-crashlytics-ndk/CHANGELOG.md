@@ -9,10 +9,10 @@ Firebase. This new SDK has new and improved APIs as well as an artifact name
 change. The following release notes describe changes in the new SDK.
 
  - If you're using Crashlytics for NDK crash reporting in your app for the
- first time, follow the [getting started instructions](/docs/crashlytics/get-started-new-sdk?platform=android).
+ first time, follow the [getting started instructions](https://firebase.google.com/docs/crashlytics/get-started-new-sdk?platform=android).
  - If you're upgrading from the legacy Fabric SDK to the
  Firebase Crashlytics SDK for NDK crash reporting, follow the
- [upgrade instructions](/docs/crashlytics/upgrade-sdk?platform=android)
+ [upgrade instructions](https://firebase.google.com/docs/crashlytics/upgrade-sdk?platform=android)
  to update your app with the following SDK changes.
 
 Note: The following changes are only relevant to Crashlytics NDK users who
@@ -22,5 +22,5 @@ are upgrading from the legacy Fabric SDK.
  when the Crashlytics NDK dependency is included in your app.
  - [changed] The Crashlytics Gradle plugin has new tasks to support
  uploading symbol files to Crashlytics servers. See the
- [Crashlytics Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk)
+ [Crashlytics Gradle plugin documentation](https://firebase.google.com/docs/crashlytics/ndk-reports-new-sdk)
  for more information.
