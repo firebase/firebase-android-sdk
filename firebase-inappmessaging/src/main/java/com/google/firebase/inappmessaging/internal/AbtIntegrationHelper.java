@@ -76,13 +76,20 @@ public class AbtIntegrationHelper {
    * This is meant to be called on an experimental FIAM that is getting displayed to a user, because
    * that would indicate that the experiment is now active for that user.
    *
-   * @param experimentPayload the {@link FirebaseAbt.ExperimentPayload} that should be set as
+   * @param payload the {@link FirebaseAbt.ExperimentPayload} that should be set as
    *     active.
    */
-  public void setExperimentActive(FirebaseAbt.ExperimentPayload experimentPayload) {
+  public void setExperimentActive(FirebaseAbt.ExperimentPayload payload) {
     try {
-      Logging.logd("Updating active experiment: " + experimentPayload.toString());
-      abTesting.reportActiveExperiment(experimentPayload);
+      Logging.logd("Updating active experiment: " + payload.toString());
+      abTesting.reportActiveExperiment(
+          new AbtExperimentInfo(
+              payload.getExperimentId(),
+              payload.getVariantId(),
+              payload.getTriggerEvent(),
+              new Date(payload.getExperimentStartTimeMillis()),
+              payload.getTriggerTimeoutMillis(),
+              payload.getTimeToLiveMillis()));
     } catch (AbtException e) {
       Logging.loge(
           "Unable to set experiment as active with ABT, missing analytics?\n" + e.getMessage());

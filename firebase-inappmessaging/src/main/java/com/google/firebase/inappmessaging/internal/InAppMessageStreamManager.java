@@ -309,11 +309,14 @@ public class InAppMessageStreamManager {
     String campaignId;
     String campaignName;
     if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      // Handle vanilla campaign case
       campaignId = content.getVanillaPayload().getCampaignId();
       campaignName = content.getVanillaPayload().getCampaignName();
     } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      // Handle experiment case
       campaignId = content.getExperimentalPayload().getCampaignId();
       campaignName = content.getExperimentalPayload().getCampaignName();
+      // At this point we set the experiment to become active in analytics.
       abtIntegrationHelper.setExperimentActive(
           content.getExperimentalPayload().getExperimentPayload());
     } else {
