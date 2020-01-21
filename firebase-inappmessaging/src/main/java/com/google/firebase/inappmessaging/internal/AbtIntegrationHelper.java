@@ -19,7 +19,9 @@ import com.google.firebase.abt.AbtExperimentInfo;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
+import developers.mobile.abt.FirebaseAbt;
 import java.util.ArrayList;
+import java.util.Date;
 import javax.inject.Inject;
 
 /** @hide */
@@ -44,9 +46,16 @@ public class AbtIntegrationHelper {
       if (content
           .getPayloadCase()
           .equals(CampaignProto.ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+        FirebaseAbt.ExperimentPayload payload =
+            content.getExperimentalPayload().getExperimentPayload();
         runningExperiments.add(
-            AbtExperimentInfo.fromExperimentPayload(
-                content.getExperimentalPayload().getExperimentPayload()));
+            new AbtExperimentInfo(
+                payload.getExperimentId(),
+                payload.getVariantId(),
+                payload.getTriggerEvent(),
+                new Date(payload.getExperimentStartTimeMillis()),
+                payload.getTriggerTimeoutMillis(),
+                payload.getTimeToLiveMillis()));
       }
     }
     if (runningExperiments.isEmpty()) {

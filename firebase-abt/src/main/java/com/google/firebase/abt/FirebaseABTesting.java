@@ -14,6 +14,7 @@
 
 package com.google.firebase.abt;
 
+import static com.google.firebase.abt.AbtExperimentInfo.validateAbtExperimentInfo;
 import static com.google.firebase.abt.FirebaseABTesting.OriginService.INAPP_MESSAGING;
 import static com.google.firebase.abt.FirebaseABTesting.OriginService.REMOTE_CONFIG;
 
@@ -24,7 +25,6 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.analytics.connector.AnalyticsConnector.ConditionalUserProperty;
-import developers.mobile.abt.FirebaseAbt;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayDeque;
@@ -179,6 +179,7 @@ public class FirebaseABTesting {
   @WorkerThread
   public void reportActiveExperiment(AbtExperimentInfo activeExperiment) throws AbtException {
     throwAbtExceptionIfAnalyticsIsNull();
+    validateAbtExperimentInfo(activeExperiment);
     ArrayList<AbtExperimentInfo> activeExperimentList = new ArrayList<>();
 
     // Remove trigger event if it exists, this sets the experiment to active.
@@ -188,23 +189,6 @@ public class FirebaseABTesting {
     // Add experiment to GA
     activeExperimentList.add(AbtExperimentInfo.fromMap(activeExperimentMap));
     addExperiments(activeExperimentList);
-  }
-
-  /**
-   * Adds an experiment to be active in GA by setting a null triggering condition on the provided
-   * experiment. This results in the experiment being active as if it was triggered by the
-   * triggering condition event being seen in GA.
-   *
-   * <p>Note: This is a blocking call and therefore should be called from a worker thread.
-   *
-   * @param activeExperiment The {@link FirebaseAbt.ExperimentPayload} that should be set as active
-   *     in GA.
-   * @throws AbtException If there is no Analytics SDK.
-   */
-  @WorkerThread
-  public void reportActiveExperiment(FirebaseAbt.ExperimentPayload experimentPayload)
-      throws AbtException {
-    reportActiveExperiment(AbtExperimentInfo.fromExperimentPayload(experimentPayload));
   }
 
   /**
