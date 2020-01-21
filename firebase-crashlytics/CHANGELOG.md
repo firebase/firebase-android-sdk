@@ -9,9 +9,9 @@ new and improved APIs as well as an artifact name change.
 The following release notes describe changes in the new SDK.
 
  - If you're using Crashlytics in your app for the first time, follow the
- [getting started instructions](/docs/crashlytics/get-started-new-sdk?platform=android).
+ [getting started instructions](https://firebase.google.com/docs/crashlytics/get-started-new-sdk?platform=android).
  - If you're upgrading from the legacy Fabric SDK to the
- Firebase Crashlytics SDK, follow the [upgrade instructions](/docs/crashlytics/upgrade-sdk?platform=android)
+ Firebase Crashlytics SDK, follow the [upgrade instructions](https://firebase.google.com/docs/crashlytics/upgrade-sdk?platform=android)
  to update your app with the following SDK changes.
 
 Note: The following changes are only relevant to Crashlytics users who are
