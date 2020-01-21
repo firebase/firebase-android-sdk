@@ -1,9 +1,9 @@
 # Unreleased (21.3.2)
-- [changed] Transactions previously required that every document read in a
-  transaction must also be written to. This requirement has been removed, such
-  that you can now read a document in transaction without writing to it.
-- [changed] Firestore now recovers connectivity more quickly in situations 
-  where Firestore goes offline due to packet loss.
+- [changed] Firestore previously required that every document read in a
+  transaction must also be written. This requirement has been removed, and
+  you can now read a document in transaction without writing to it.
+- [changed] Firestore now recovers more quickly once connections suffering
+  packet loss return to normal. 
 
 # 21.3.1
 - [feature] Added `Query.limitToLast(n: long)`, which returns the last `n`
