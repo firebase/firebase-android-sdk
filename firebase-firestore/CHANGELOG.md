@@ -1,6 +1,11 @@
 # Unreleased (21.3.1)
 - [feature] Added `Query.limitToLast(n: long)`, which returns the last `n`
   documents as the result.
+- [changed] Transactions previously required that every document read in a
+  transaction must also be written to. This requirement has been removed, such
+  that you can now read a document in transaction without writing to it.
+- [changed] Firestore now recovers connectivity more quickly in situations 
+  where Firestore goes offline due to packet loss.
 
 # 21.3.0
 - [feature] Added `Query.whereIn()` and `Query.whereArrayContainsAny()` query
