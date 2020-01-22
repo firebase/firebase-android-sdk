@@ -117,6 +117,7 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':protolite-well-known-types')
     implementation project(':firebase-database-collection')
+    implementation project(':firebase-components')
 
 
     //To provide @Generated annotations
