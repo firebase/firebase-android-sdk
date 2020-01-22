@@ -375,11 +375,11 @@ public class FieldValueTest {
         .testCompare();
   }
 
-  private ObjectValue setField(ObjectValue objectValue, String a, FieldValue mod) {
-    return objectValue.toBuilder().set(field(a), mod).build();
+  private ObjectValue setField(ObjectValue objectValue, String fieldPath, FieldValue value) {
+    return objectValue.toBuilder().set(field(fieldPath), value).build();
   }
 
-  private ObjectValue deleteField(ObjectValue objectValue, String s) {
-    return objectValue.toBuilder().delete(field(s)).build();
+  private ObjectValue deleteField(ObjectValue objectValue, String fieldPath) {
+    return objectValue.toBuilder().delete(field(fieldPath)).build();
   }
 }
