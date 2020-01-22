@@ -232,8 +232,8 @@ public class RemoteConfigComponent {
         appId,
         apiKey,
         namespace,
-        metadataClient.getFetchTimeoutInSeconds(),
-        NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+        /* connectTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds(),
+        /* readTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds());
   }
 
   @VisibleForTesting
