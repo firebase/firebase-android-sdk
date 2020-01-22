@@ -14,7 +14,7 @@
 
 package com.google.firebase.remoteconfig;
 
-import static com.google.firebase.remoteconfig.RemoteConfigComponent.NETWORK_CONNECTION_TIMEOUT_IN_SECONDS;
+import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 
 import androidx.annotation.NonNull;
@@ -75,7 +75,7 @@ public class FirebaseRemoteConfigSettings {
   public static class Builder {
     private boolean enableDeveloperMode = false;
     // TODO(issues/257): Move constants to Constants file.
-    private long fetchTimeoutInSeconds = NETWORK_CONNECTION_TIMEOUT_IN_SECONDS;
+    private long fetchTimeoutInSeconds = CONNECTION_TIMEOUT_IN_SECONDS;
     private long minimumFetchInterval = DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 
     /**

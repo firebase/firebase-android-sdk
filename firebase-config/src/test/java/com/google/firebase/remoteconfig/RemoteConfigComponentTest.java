@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.remoteconfig.AbtExperimentHelper.createAbtExperiment;
 import static com.google.firebase.remoteconfig.AbtExperimentHelper.createAbtExperiments;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.DEFAULT_NAMESPACE;
-import static com.google.firebase.remoteconfig.RemoteConfigComponent.NETWORK_CONNECTION_TIMEOUT_IN_SECONDS;
+import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -143,15 +143,15 @@ public class RemoteConfigComponentTest {
 
     RemoteConfigComponent frcComponent = defaultApp.get(RemoteConfigComponent.class);
     when(mockMetadataClient.getFetchTimeoutInSeconds())
-        .thenReturn(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+        .thenReturn(CONNECTION_TIMEOUT_IN_SECONDS);
 
     ConfigFetchHttpClient frcBackendClient =
         frcComponent.getFrcBackendApiClient(DUMMY_API_KEY, DEFAULT_NAMESPACE, mockMetadataClient);
 
     int actualConnectTimeout = getConnectTimeoutInSeconds(frcBackendClient);
     int actualReadTimeout = getReadTimeoutInSeconds(frcBackendClient);
-    assertThat(actualConnectTimeout).isEqualTo(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
-    assertThat(actualReadTimeout).isEqualTo(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+    assertThat(actualConnectTimeout).isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
+    assertThat(actualReadTimeout).isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
   }
 
   @Test
@@ -160,17 +160,17 @@ public class RemoteConfigComponentTest {
 
     RemoteConfigComponent frcComponent = defaultApp.get(RemoteConfigComponent.class);
 
-    long customNetworkConnectionTimeoutInSeconds = 2 * NETWORK_CONNECTION_TIMEOUT_IN_SECONDS;
+    long customConnectionTimeoutInSeconds = 2 * CONNECTION_TIMEOUT_IN_SECONDS;
     when(mockMetadataClient.getFetchTimeoutInSeconds())
-        .thenReturn(customNetworkConnectionTimeoutInSeconds);
+        .thenReturn(customConnectionTimeoutInSeconds);
 
     ConfigFetchHttpClient frcBackendClient =
         frcComponent.getFrcBackendApiClient(DUMMY_API_KEY, DEFAULT_NAMESPACE, mockMetadataClient);
 
     int actualConnectTimeout = getConnectTimeoutInSeconds(frcBackendClient);
     int actualReadTimeout = getReadTimeoutInSeconds(frcBackendClient);
-    assertThat(actualConnectTimeout).isEqualTo(customNetworkConnectionTimeoutInSeconds);
-    assertThat(actualReadTimeout).isEqualTo(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+    assertThat(actualConnectTimeout).isEqualTo(customConnectionTimeoutInSeconds);
+    assertThat(actualReadTimeout).isEqualTo(customConnectionTimeoutInSeconds);
   }
 
   private RemoteConfigComponent getNewFrcComponent() {
