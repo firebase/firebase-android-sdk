@@ -80,8 +80,7 @@ public class ConfigMetadataClientTest {
 
   @Test
   public void getFetchTimeoutInSeconds_isNotSet_returnsDefault() {
-    assertThat(metadataClient.getFetchTimeoutInSeconds())
-        .isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
+    assertThat(metadataClient.getFetchTimeoutInSeconds()).isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
   }
 
   @Test

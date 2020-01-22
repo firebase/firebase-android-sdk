@@ -123,8 +123,7 @@ public class ConfigMetadataClient {
           new FirebaseRemoteConfigSettings.Builder()
               .setDeveloperModeEnabled(frcMetadata.getBoolean(DEVELOPER_MODE_KEY, false))
               .setFetchTimeoutInSeconds(
-                  frcMetadata.getLong(
-                      FETCH_TIMEOUT_IN_SECONDS_KEY, CONNECTION_TIMEOUT_IN_SECONDS))
+                  frcMetadata.getLong(FETCH_TIMEOUT_IN_SECONDS_KEY, CONNECTION_TIMEOUT_IN_SECONDS))
               .setMinimumFetchIntervalInSeconds(
                   frcMetadata.getLong(
                       MINIMUM_FETCH_INTERVAL_IN_SECONDS_KEY,
