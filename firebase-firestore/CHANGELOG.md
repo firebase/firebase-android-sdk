@@ -1,5 +1,5 @@
-# Unreleased (21.3.2)
-- [changed] Firestore previously required that every document read in a
+# Unreleased (21.4.0)
+- [feature] Firestore previously required that every document read in a
   transaction must also be written. This requirement has been removed, and
   you can now read a document in a transaction without writing to it.
 - [changed] Firestore now recovers more quickly once connections suffering
