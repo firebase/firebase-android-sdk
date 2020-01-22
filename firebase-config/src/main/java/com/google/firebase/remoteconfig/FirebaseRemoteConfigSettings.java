@@ -96,8 +96,8 @@ public class FirebaseRemoteConfigSettings {
      * Sets the connection and read timeouts for fetch requests to the Firebase Remote Config
      * servers in seconds.
      *
-     * <p>A fetch call will fail if it takes longer than the specified timeout to connect to the
-     * Remote Config servers.
+     * <p>A fetch call will fail if it takes longer than the specified timeout to connect to or read
+     * from the Remote Config servers.
      *
      * @param duration Timeout duration in seconds. Should be a non-negative number.
      */
