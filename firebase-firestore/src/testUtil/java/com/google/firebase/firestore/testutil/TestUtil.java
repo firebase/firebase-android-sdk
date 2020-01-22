@@ -478,7 +478,7 @@ public class TestUtil {
 
   public static PatchMutation patchMutation(
       String path, Map<String, Object> values, @Nullable List<FieldPath> updateMask) {
-    ObjectValue.Builder objectValue = ObjectValue.Builder.emptyBuilder();
+    ObjectValue.Builder objectValue = ObjectValue.newBuilder();
     ArrayList<FieldPath> objectMask = new ArrayList<>();
     for (Entry<String, Object> entry : values.entrySet()) {
       FieldPath fieldPath = field(entry.getKey());

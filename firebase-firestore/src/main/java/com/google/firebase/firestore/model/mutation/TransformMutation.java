@@ -135,8 +135,7 @@ public final class TransformMutation extends Mutation {
       FieldValue coercedValue = transform.getOperation().computeBaseValue(existingValue);
       if (coercedValue != null) {
         if (baseObject == null) {
-          baseObject =
-              ObjectValue.Builder.emptyBuilder().set(transform.getFieldPath(), coercedValue);
+          baseObject = ObjectValue.newBuilder().set(transform.getFieldPath(), coercedValue);
         } else {
           baseObject = baseObject.set(transform.getFieldPath(), coercedValue);
         }
@@ -232,7 +231,7 @@ public final class TransformMutation extends Mutation {
     for (int i = 0; i < fieldTransforms.size(); i++) {
       FieldTransform fieldTransform = fieldTransforms.get(i);
       FieldPath fieldPath = fieldTransform.getFieldPath();
-      builder.set(fieldPath, transformResults.get(i)).build();
+      builder.set(fieldPath, transformResults.get(i));
     }
     return builder.build();
   }

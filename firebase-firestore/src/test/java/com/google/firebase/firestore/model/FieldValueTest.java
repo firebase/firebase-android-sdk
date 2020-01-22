@@ -375,8 +375,8 @@ public class FieldValueTest {
         .testCompare();
   }
 
-  private ObjectValue setField(ObjectValue empty, String a, FieldValue mod) {
-    return empty.toBuilder().set(field(a), mod).build();
+  private ObjectValue setField(ObjectValue objectValue, String a, FieldValue mod) {
+    return objectValue.toBuilder().set(field(a), mod).build();
   }
 
   private ObjectValue deleteField(ObjectValue objectValue, String s) {

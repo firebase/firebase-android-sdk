@@ -95,7 +95,7 @@ public final class Document extends MaybeDocument {
     if (objectValue == null) {
       hardAssert(proto != null && converter != null, "Expected proto and converter to be non-null");
 
-      ObjectValue.Builder result = ObjectValue.Builder.emptyBuilder();
+      ObjectValue.Builder result = ObjectValue.newBuilder();
       for (Map.Entry<String, com.google.firestore.v1.Value> entry :
           proto.getFieldsMap().entrySet()) {
         FieldPath path = FieldPath.fromSingleSegment(entry.getKey());

@@ -49,6 +49,11 @@ public class ObjectValue extends FieldValue {
     return EMPTY_INSTANCE;
   }
 
+  /** Returns a new Builder instance that is based on an empty object. */
+  public static Builder newBuilder() {
+    return new Builder(ImmutableSortedMap.Builder.emptyMap(Util.<String>comparator()));
+  }
+
   private final ImmutableSortedMap<String, FieldValue> internalValue;
 
   private ObjectValue(ImmutableSortedMap<String, FieldValue> value) {
@@ -173,10 +178,6 @@ public class ObjectValue extends FieldValue {
 
     Builder(ImmutableSortedMap<String, FieldValue> internalValue) {
       this.internalValue = internalValue;
-    }
-
-    public static Builder emptyBuilder() {
-      return new Builder(ImmutableSortedMap.Builder.emptyMap(Util.<String>comparator()));
     }
 
     /**

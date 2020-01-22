@@ -117,7 +117,7 @@ public final class UserDataConverter {
 
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Update);
     ParseContext context = accumulator.rootContext();
-    ObjectValue.Builder updateData = ObjectValue.Builder.emptyBuilder();
+    ObjectValue.Builder updateData = ObjectValue.newBuilder();
 
     for (Entry<String, Object> entry : data.entrySet()) {
       FieldPath fieldPath =
@@ -155,7 +155,7 @@ public final class UserDataConverter {
 
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Update);
     ParseContext context = accumulator.rootContext();
-    ObjectValue.Builder updateData = ObjectValue.Builder.emptyBuilder();
+    ObjectValue.Builder updateData = ObjectValue.newBuilder();
 
     Iterator<Object> iterator = fieldsAndValues.iterator();
     while (iterator.hasNext()) {
