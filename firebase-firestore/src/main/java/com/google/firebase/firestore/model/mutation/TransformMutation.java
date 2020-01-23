@@ -124,7 +124,7 @@ public final class TransformMutation extends Mutation {
   @Nullable
   @Override
   public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
-    ObjectValue baseObject = null;
+    ObjectValue.Builder baseObject = null;
 
     for (FieldTransform transform : fieldTransforms) {
       FieldValue existingValue = null;
@@ -135,14 +135,14 @@ public final class TransformMutation extends Mutation {
       FieldValue coercedValue = transform.getOperation().computeBaseValue(existingValue);
       if (coercedValue != null) {
         if (baseObject == null) {
-          baseObject = ObjectValue.emptyObject().set(transform.getFieldPath(), coercedValue);
+          baseObject = ObjectValue.newBuilder().set(transform.getFieldPath(), coercedValue);
         } else {
           baseObject = baseObject.set(transform.getFieldPath(), coercedValue);
         }
       }
     }
 
-    return baseObject;
+    return baseObject != null ? baseObject.build() : null;
   }
 
   /**
@@ -227,11 +227,12 @@ public final class TransformMutation extends Mutation {
     hardAssert(
         transformResults.size() == fieldTransforms.size(), "Transform results length mismatch.");
 
+    ObjectValue.Builder builder = objectValue.toBuilder();
     for (int i = 0; i < fieldTransforms.size(); i++) {
       FieldTransform fieldTransform = fieldTransforms.get(i);
       FieldPath fieldPath = fieldTransform.getFieldPath();
-      objectValue = objectValue.set(fieldPath, transformResults.get(i));
+      builder.set(fieldPath, transformResults.get(i));
     }
-    return objectValue;
+    return builder.build();
   }
 }
