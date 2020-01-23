@@ -17,7 +17,11 @@ package com.google.firebase.segmentation;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Util methods used for {@link FirebaseSegmentation} */
+/**
+ * Util methods used for {@link FirebaseSegmentation}
+ *
+ * @hide
+ */
 class Utils {
 
   private static final Pattern APP_ID_PATTERN =

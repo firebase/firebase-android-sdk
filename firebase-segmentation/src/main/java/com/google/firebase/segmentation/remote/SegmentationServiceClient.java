@@ -29,7 +29,11 @@ import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** Http client that sends request to Firebase Segmentation backend API. To be implemented */
+/**
+ * Http client that sends request to Firebase Segmentation backend API. To be implemented
+ *
+ * @hide
+ */
 public class SegmentationServiceClient {
 
   private static final String FIREBASE_SEGMENTATION_API_DOMAIN =

@@ -21,6 +21,8 @@ import com.google.firebase.segmentation.local.CustomInstallationIdCache.CacheSta
 /**
  * This class represents a cache entry value in {@link CustomInstallationIdCache}, which contains a
  * Firebase instance id, a custom installation id and the cache status of this entry.
+ *
+ * @hide
  */
 @AutoValue
 public abstract class CustomInstallationIdCacheEntryValue {

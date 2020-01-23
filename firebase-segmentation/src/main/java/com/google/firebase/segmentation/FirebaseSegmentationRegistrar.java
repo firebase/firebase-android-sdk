@@ -23,6 +23,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 
+/** @hide */
 public class FirebaseSegmentationRegistrar implements ComponentRegistrar {
 
   @Override

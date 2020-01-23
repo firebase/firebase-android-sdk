@@ -21,7 +21,7 @@ import com.google.firebase.FirebaseException;
 public class SetCustomInstallationIdException extends FirebaseException {
 
   public enum Status {
-    UNKOWN(0),
+    UNKNOWN(0),
 
     /** Error in Firebase SDK. */
     CLIENT_ERROR(1),

@@ -28,6 +28,8 @@ import org.json.JSONObject;
 /**
  * A layer that locally caches a few Firebase Segmentation attributes on top the Segmentation
  * backend API.
+ *
+ * @hide
  */
 public class CustomInstallationIdCache {
 
