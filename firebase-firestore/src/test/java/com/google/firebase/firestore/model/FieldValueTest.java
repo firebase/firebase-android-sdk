@@ -14,43 +14,35 @@
 
 package com.google.firebase.firestore.model;
 
+import static com.google.firebase.firestore.ValueUtil.map;
+import static com.google.firebase.firestore.ValueUtil.valueOf;
+import static com.google.firebase.firestore.ValueUtil.wrapRef;
 import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.dbId;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
-import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
-import static com.google.firebase.firestore.testutil.TestUtil.wrap;
-import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.ValueUtil;
 import com.google.firebase.firestore.model.mutation.FieldMask;
-import com.google.firebase.firestore.model.value.BlobValue;
-import com.google.firebase.firestore.model.value.BooleanValue;
-import com.google.firebase.firestore.model.value.DoubleValue;
+import com.google.firebase.firestore.model.protovalue.ObjectValue;
+import com.google.firebase.firestore.model.protovalue.PrimitiveValue;
 import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.GeoPointValue;
-import com.google.firebase.firestore.model.value.IntegerValue;
-import com.google.firebase.firestore.model.value.NullValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.model.value.StringValue;
-import com.google.firebase.firestore.model.value.TimestampValue;
 import com.google.firebase.firestore.testutil.ComparatorTester;
+import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Map;
 import java.util.TimeZone;
-import java.util.TreeMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -74,10 +66,10 @@ public class FieldValueTest {
 
   @Test
   public void testExtractsFields() {
-    FieldValue val = wrapObject("foo", map("a", 1, "b", true, "c", "string"));
-    assertTrue(val instanceof ObjectValue);
-    ObjectValue obj = (ObjectValue) val;
-    assertTrue(obj.get(field("foo")) instanceof ObjectValue);
+    Value nestedValue = map("a", 1, "b", true, "c", "string");
+
+    ObjectValue obj = wrapObject("foo", nestedValue);
+    assertEquals(wrap(nestedValue), obj.get(field("foo")));
     assertEquals(wrap(1), obj.get(field("foo.a")));
     assertEquals(wrap(true), obj.get(field("foo.b")));
     assertEquals(wrap("string"), obj.get(field("foo.c")));
@@ -89,7 +81,7 @@ public class FieldValueTest {
 
   @Test
   public void testExtractsFieldMask() {
-    FieldValue val =
+    ObjectValue val =
         wrapObject(
             "a",
             "b",
@@ -97,8 +89,7 @@ public class FieldValueTest {
             map("a", 1, "b", true, "c", "string", "nested", map("d", "e")),
             "emptymap",
             map());
-    assertTrue(val instanceof ObjectValue);
-    FieldMask mask = ((ObjectValue) val).getFieldMask();
+    FieldMask mask = val.getFieldMask();
     assertEquals(fieldMask("a", "map.a", "map.b", "map.c", "map.nested.d", "emptymap"), mask);
   }
 
@@ -115,7 +106,7 @@ public class FieldValueTest {
   public void testAddsNewFields() {
     ObjectValue empty = ObjectValue.emptyObject();
     ObjectValue mod = setField(empty, "a", wrap("mod"));
-    assertEquals(wrap(new TreeMap<String, FieldValue>()), empty);
+    assertEquals(wrapObject(), empty);
     assertEquals(wrapObject("a", "mod"), mod);
 
     ObjectValue old = mod;
@@ -127,8 +118,8 @@ public class FieldValueTest {
   @Test
   public void testAddsMultipleNewFields() {
     ObjectValue object = ObjectValue.emptyObject();
-    object = object.toBuilder().set(field("a"), wrap("a")).build();
-    object = object.toBuilder().set(field("b"), wrap("b")).set(field("c"), wrap("c")).build();
+    object = object.toBuilder().set(field("a"), valueOf("a")).build();
+    object = object.toBuilder().set(field("b"), valueOf("b")).set(field("c"), valueOf("c")).build();
 
     assertEquals(wrapObject("a", "a", "b", "b", "c", "c"), object);
   }
@@ -146,7 +137,7 @@ public class FieldValueTest {
   @Test
   public void testCanOverwritePrimitivesWithObjects() {
     ObjectValue old = wrapObject("a", map("b", "old"));
-    ObjectValue mod = setField(old, "a", wrapObject("b", "mod"));
+    ObjectValue mod = setField(old, "a", map("b", "mod"));
     assertNotEquals(old, mod);
     assertEquals(wrapObject("a", map("b", "old")), old);
     assertEquals(wrapObject("a", map("b", "mod")), mod);
@@ -184,40 +175,40 @@ public class FieldValueTest {
     assertEquals(wrapObject("a", map("b", 1, "c", 2)), mod);
 
     mod = deleteField(old, "a.d");
-    assertEquals(mod, old);
+    assertEquals(old, mod);
     assertEquals(wrapObject("a", map("b", 1, "c", 2)), mod);
 
     mod = deleteField(old, "a.b.c");
-    assertEquals(mod, old);
+    assertEquals(old, mod);
     assertEquals(wrapObject("a", map("b", 1, "c", 2)), mod);
   }
 
   @Test
   public void testDeletesNestedKeys() {
-    Map<String, Object> orig = map("a", map("b", 1, "c", map("d", 2, "e", 3)));
-    ObjectValue old = wrapObject(orig);
+    Value orig = map("a", map("b", 1, "c", map("d", 2, "e", 3)));
+    ObjectValue old = (ObjectValue) FieldValue.of(orig);
     ObjectValue mod = deleteField(old, "a.c.d");
 
     assertNotEquals(mod, old);
-    assertEquals(wrapObject(orig), old);
+    assertEquals(wrap(orig), old);
 
-    Map<String, Object> second = map("a", map("b", 1, "c", map("e", 3)));
-    assertEquals(wrapObject(second), mod);
+    Value second = map("a", map("b", 1, "c", map("e", 3)));
+    assertEquals(wrap(second), mod);
 
     old = mod;
     mod = deleteField(old, "a.c");
 
     assertNotEquals(old, mod);
-    assertEquals(wrapObject(second), old);
+    assertEquals(wrap(second), old);
 
-    Map<String, Object> third = map("a", map("b", 1));
-    assertEquals(wrapObject(third), mod);
+    Value third = map("a", map("b", 1));
+    assertEquals(wrap(third), mod);
 
     old = mod;
     mod = deleteField(old, "a");
 
     assertNotEquals(old, mod);
-    assertEquals(wrapObject(third), old);
+    assertEquals(wrap(third), old);
     assertEquals(ObjectValue.emptyObject(), mod);
   }
 
@@ -233,46 +224,45 @@ public class FieldValueTest {
   @Test
   public void testValueEquality() {
     new EqualsTester()
-        .addEqualityGroup(wrap(true), BooleanValue.valueOf(true))
-        .addEqualityGroup(wrap(false), BooleanValue.valueOf(false))
-        .addEqualityGroup(wrap(null), NullValue.nullValue())
+        .addEqualityGroup(wrap(true), wrap(true))
+        .addEqualityGroup(wrap(false), wrap(false))
+        .addEqualityGroup(wrap(null), wrap(null))
         .addEqualityGroup(
-            wrap(0.0 / 0.0), wrap(Double.longBitsToDouble(0x7ff8000000000000L)), DoubleValue.NaN)
+            wrap(0.0 / 0.0), wrap(Double.longBitsToDouble(0x7ff8000000000000L)), wrap(Double.NaN))
         // -0.0 and 0.0 compareTo the same but are not equal.
         .addEqualityGroup(wrap(-0.0))
         .addEqualityGroup(wrap(0.0))
-        .addEqualityGroup(wrap(1), IntegerValue.valueOf(1L))
+        .addEqualityGroup(wrap(1), wrap(1))
         // Doubles and Longs aren't equal.
-        .addEqualityGroup(wrap(1.0), DoubleValue.valueOf(1.0))
-        .addEqualityGroup(wrap(1.1), DoubleValue.valueOf(1.1))
-        .addEqualityGroup(wrap(blob(0, 1, 2)), BlobValue.valueOf(blob(0, 1, 2)))
+        .addEqualityGroup(wrap(1.0), wrap(1.0))
+        .addEqualityGroup(wrap(1.1), wrap(1.1))
+        .addEqualityGroup(wrap(blob(0, 1, 2)), wrap(blob(0, 1, 2)))
         .addEqualityGroup(wrap(blob(0, 1)))
-        .addEqualityGroup(wrap("string"), StringValue.valueOf("string"))
-        .addEqualityGroup(StringValue.valueOf("strin"))
+        .addEqualityGroup(wrap("string"), wrap("string"))
+        .addEqualityGroup(wrap("strin"))
         // latin small letter e + combining acute accent
-        .addEqualityGroup(StringValue.valueOf("e\u0301b"))
+        .addEqualityGroup(wrap("e\u0301b"))
         // latin small letter e with acute accent
-        .addEqualityGroup(StringValue.valueOf("\u00e9a"))
-        .addEqualityGroup(wrap(date1), TimestampValue.valueOf(new Timestamp(date1)))
-        .addEqualityGroup(TimestampValue.valueOf(new Timestamp(date2)))
+        .addEqualityGroup(wrap("\u00e9a"))
+        .addEqualityGroup(wrap(new Timestamp(date1)), wrap(new Timestamp(date1)))
+        .addEqualityGroup(wrap(new Timestamp(date2)))
         // NOTE: ServerTimestampValues can't be parsed via wrap().
         .addEqualityGroup(
             new ServerTimestampValue(new Timestamp(date1), null),
             new ServerTimestampValue(new Timestamp(date1), null))
         .addEqualityGroup(new ServerTimestampValue(new Timestamp(date2), null))
-        .addEqualityGroup(wrap(new GeoPoint(0, 1)), GeoPointValue.valueOf(new GeoPoint(0, 1)))
-        .addEqualityGroup(GeoPointValue.valueOf(new GeoPoint(1, 0)))
-        .addEqualityGroup(
-            wrap(ref("coll/doc1")), ReferenceValue.valueOf(dbId("project"), key("coll/doc1")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("project", "bar"), key("coll/doc2")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("project", "baz"), key("coll/doc2")))
+        .addEqualityGroup(wrap(new GeoPoint(0, 1)), wrap(new GeoPoint(0, 1)))
+        .addEqualityGroup(wrap(new GeoPoint(1, 0)))
+        .addEqualityGroup(wrap(ref("coll/doc1")), wrap(ref("coll/doc1")))
+        .addEqualityGroup(wrapRef(dbId("projectId", "bar"), key("coll/doc2")))
+        .addEqualityGroup(wrapRef(dbId("projectId", "baz"), key("coll/doc2")))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar")), wrap(Arrays.asList("foo", "bar")))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar", "baz")))
         .addEqualityGroup(wrap(Arrays.asList("foo")))
-        .addEqualityGroup(wrapObject(map("bar", 1, "foo", 2)), wrapObject(map("foo", 2, "bar", 1)))
-        .addEqualityGroup(wrapObject(map("bar", 2, "foo", 1)))
-        .addEqualityGroup(wrapObject(map("bar", 1)))
-        .addEqualityGroup(wrapObject(map("foo", 1)))
+        .addEqualityGroup(wrapObject("bar", 1, "foo", 2), wrapObject("foo", 2, "bar", 1))
+        .addEqualityGroup(wrapObject("bar", 2, "foo", 1))
+        .addEqualityGroup(wrapObject("bar", 1))
+        .addEqualityGroup(wrapObject("foo", 1))
         .testEquals();
   }
 
@@ -311,8 +301,8 @@ public class FieldValueTest {
         .addEqualityGroup(wrap(Double.POSITIVE_INFINITY))
 
         // dates
-        .addEqualityGroup(wrap(date1))
-        .addEqualityGroup(wrap(date2))
+        .addEqualityGroup(wrap(new Timestamp(date1)))
+        .addEqualityGroup(wrap(new Timestamp(date2)))
 
         // server timestamps come after all concrete timestamps.
         // NOTE: server timestamps can't be parsed with wrap().
@@ -339,12 +329,12 @@ public class FieldValueTest {
         .addEqualityGroup(wrap(blob(255)))
 
         // resource names
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p1", "d1"), key("c1/doc1")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p1", "d1"), key("c1/doc2")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p1", "d1"), key("c10/doc1")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p1", "d1"), key("c2/doc1")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p1", "d2"), key("c1/doc1")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p2", "d1"), key("c1/doc1")))
+        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c1/doc1")))
+        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c1/doc2")))
+        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c10/doc1")))
+        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c2/doc1")))
+        .addEqualityGroup(wrapRef(dbId("p1", "d2"), key("c1/doc1")))
+        .addEqualityGroup(wrapRef(dbId("p2", "d1"), key("c1/doc1")))
 
         // geo points
         .addEqualityGroup(wrap(new GeoPoint(-90, -180)))
@@ -367,19 +357,38 @@ public class FieldValueTest {
         .addEqualityGroup(wrap(Arrays.asList("foo", "0")))
 
         // objects
-        .addEqualityGroup(wrapObject(map("bar", 0)))
-        .addEqualityGroup(wrapObject(map("bar", 0, "foo", 1)))
-        .addEqualityGroup(wrapObject(map("foo", 1)))
-        .addEqualityGroup(wrapObject(map("foo", 2)))
-        .addEqualityGroup(wrapObject(map("foo", "0")))
+        .addEqualityGroup(wrapObject("bar", 0))
+        .addEqualityGroup(wrapObject("bar", 0, "foo", 1))
+        .addEqualityGroup(wrapObject("foo", 1))
+        .addEqualityGroup(wrapObject("foo", 2))
+        .addEqualityGroup(wrapObject("foo", "0"))
         .testCompare();
   }
 
-  private ObjectValue setField(ObjectValue objectValue, String fieldPath, FieldValue value) {
+  private ObjectValue setField(ObjectValue objectValue, String fieldPath, PrimitiveValue value) {
+    return objectValue.toBuilder().set(field(fieldPath), value.toProto()).build();
+  }
+
+  private ObjectValue setField(ObjectValue objectValue, String fieldPath, Value value) {
     return objectValue.toBuilder().set(field(fieldPath), value).build();
   }
 
   private ObjectValue deleteField(ObjectValue objectValue, String fieldPath) {
     return objectValue.toBuilder().delete(field(fieldPath)).build();
+  }
+
+  // TODO(mrschmidt): Clean up the helpers and merge wrap() with TestUtil.wrap()
+  private ObjectValue wrapObject(Object... entries) {
+    FieldValue object = FieldValue.of(map(entries));
+    assertTrue(object instanceof ObjectValue);
+    return (ObjectValue) object;
+  }
+
+  private PrimitiveValue wrap(Object map) {
+    return (PrimitiveValue) FieldValue.of(ValueUtil.valueOf(map));
+  }
+
+  private PrimitiveValue wrapRef(DatabaseId dbId, DocumentKey key) {
+    return (PrimitiveValue) FieldValue.of(ValueUtil.wrapRef(dbId, key));
   }
 }

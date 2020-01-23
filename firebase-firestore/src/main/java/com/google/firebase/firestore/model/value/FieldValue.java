@@ -18,7 +18,10 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.model.protovalue.ObjectValue;
+import com.google.firebase.firestore.model.protovalue.PrimitiveValue;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.Value;
 
 /**
  * A field value represents a data type as stored by Firestore.
@@ -41,6 +44,9 @@ import com.google.firebase.firestore.util.Util;
  * </ul>
  */
 public abstract class FieldValue implements Comparable<FieldValue> {
+
+  // TODO(mrschmidt): Reduce visibility of these types once `protovalue`
+  // is merged into `value` package
   /** The order of types in Firestore; this order is defined by the backend. */
   public static final int TYPE_ORDER_NULL = 0;
 
@@ -53,6 +59,15 @@ public abstract class FieldValue implements Comparable<FieldValue> {
   public static final int TYPE_ORDER_GEOPOINT = 7;
   public static final int TYPE_ORDER_ARRAY = 8;
   public static final int TYPE_ORDER_OBJECT = 9;
+
+  /** Creates a new FieldValue based on the Protobuf Value. */
+  public static FieldValue of(Value value) {
+    if (value.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
+      return new ObjectValue(value);
+    } else {
+      return new PrimitiveValue(value);
+    }
+  }
 
   public abstract int typeOrder();
 
