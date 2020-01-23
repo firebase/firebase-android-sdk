@@ -218,7 +218,7 @@ public class Util {
             });
   }
 
-  public static int compareByteString(ByteString left, ByteString right) {
+  public static int compareByteStrings(ByteString left, ByteString right) {
     int size = Math.min(left.size(), right.size());
     for (int i = 0; i < size; i++) {
       // Make sure the bytes are unsigned
