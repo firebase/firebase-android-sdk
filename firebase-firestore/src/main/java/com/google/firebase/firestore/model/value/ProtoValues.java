@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.model;
+package com.google.firebase.firestore.model.value;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 
 import androidx.annotation.Nullable;
 import com.google.common.base.Splitter;
-import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.MapValue;
