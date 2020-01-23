@@ -82,6 +82,6 @@ public class Blob implements Comparable<Blob> {
 
   @Override
   public int compareTo(@NonNull Blob other) {
-    return Util.compareByteString(bytes, other.bytes);
+    return Util.compareByteStrings(bytes, other.bytes);
   }
 }

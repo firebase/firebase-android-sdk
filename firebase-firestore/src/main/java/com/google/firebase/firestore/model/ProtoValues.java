@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.util;
+package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.util.Assert.fail;
-import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.common.base.Splitter;
 import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
@@ -28,7 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class ProtoValueUtil {
+// TODO(mrschmidt): Make package-private
+public class ProtoValues {
 
   public static int typeOrder(Value value) {
 
@@ -73,33 +74,15 @@ public class ProtoValueUtil {
     }
 
     switch (leftType) {
-      case FieldValue.TYPE_ORDER_ARRAY:
-        return arrayEquals(left, right);
       case FieldValue.TYPE_ORDER_NUMBER:
         return numberEquals(left, right);
+      case FieldValue.TYPE_ORDER_ARRAY:
+        return arrayEquals(left, right);
       case FieldValue.TYPE_ORDER_OBJECT:
         return objectEquals(left, right);
       default:
         return left.equals(right);
     }
-  }
-
-  private static boolean objectEquals(Value left, Value right) {
-    MapValue leftMap = left.getMapValue();
-    MapValue rightMap = right.getMapValue();
-
-    if (leftMap.getFieldsCount() != rightMap.getFieldsCount()) {
-      return false;
-    }
-
-    for (Map.Entry<String, Value> entry : leftMap.getFieldsMap().entrySet()) {
-      Value otherEntry = rightMap.getFieldsMap().get(entry.getKey());
-      if (!entry.getValue().equals(otherEntry)) {
-        return false;
-      }
-    }
-
-    return true;
   }
 
   private static boolean numberEquals(Value left, Value right) {
@@ -132,6 +115,24 @@ public class ProtoValueUtil {
     return true;
   }
 
+  private static boolean objectEquals(Value left, Value right) {
+    MapValue leftMap = left.getMapValue();
+    MapValue rightMap = right.getMapValue();
+
+    if (leftMap.getFieldsCount() != rightMap.getFieldsCount()) {
+      return false;
+    }
+
+    for (Map.Entry<String, Value> entry : leftMap.getFieldsMap().entrySet()) {
+      Value otherEntry = rightMap.getFieldsMap().get(entry.getKey());
+      if (!entry.getValue().equals(otherEntry)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   public static int compare(Value left, Value right) {
     int leftType = typeOrder(left);
     int rightType = typeOrder(right);
@@ -152,7 +153,7 @@ public class ProtoValueUtil {
       case FieldValue.TYPE_ORDER_STRING:
         return left.getStringValue().compareTo(right.getStringValue());
       case FieldValue.TYPE_ORDER_BLOB:
-        return Util.compareByteString(left.getBytesValue(), right.getBytesValue());
+        return Util.compareByteStrings(left.getBytesValue(), right.getBytesValue());
       case FieldValue.TYPE_ORDER_REFERENCE:
         return compareReferences(left, right);
       case FieldValue.TYPE_ORDER_GEOPOINT:
@@ -164,6 +165,72 @@ public class ProtoValueUtil {
       default:
         throw fail("Invalid value type: " + leftType);
     }
+  }
+
+  private static int compareNumbers(Value left, Value right) {
+    if (left.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
+      double thisDouble = left.getDoubleValue();
+      if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
+        return Util.compareDoubles(thisDouble, right.getDoubleValue());
+      } else if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
+        return Util.compareMixed(thisDouble, right.getIntegerValue());
+      }
+    } else if (left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
+      long thisLong = left.getIntegerValue();
+      if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
+        return Util.compareLongs(thisLong, right.getIntegerValue());
+      } else if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
+        return -1 * Util.compareMixed(right.getDoubleValue(), thisLong);
+      }
+    }
+
+    throw fail("Unexpected values: %s vs %s", left, right);
+  }
+
+  private static int compareTimestamps(Value left, Value right) {
+    if (left.getTimestampValue().getSeconds() == right.getTimestampValue().getSeconds()) {
+      return Integer.signum(
+          left.getTimestampValue().getNanos() - right.getTimestampValue().getNanos());
+    }
+    return Long.signum(
+        left.getTimestampValue().getSeconds() - right.getTimestampValue().getSeconds());
+  }
+
+  private static int compareReferences(Value left, Value right) {
+    List<String> leftSegments = Splitter.on('/').splitToList(left.getReferenceValue());
+    List<String> rightSegments = Splitter.on('/').splitToList(right.getReferenceValue());
+    int minLength = Math.min(leftSegments.size(), rightSegments.size());
+    for (int i = 0; i < minLength; i++) {
+      int cmp = leftSegments.get(i).compareTo(rightSegments.get(i));
+      if (cmp != 0) {
+        return cmp;
+      }
+    }
+    return Util.compareIntegers(leftSegments.size(), rightSegments.size());
+  }
+
+  private static int compareGeoPoints(Value left, Value right) {
+    int comparison =
+        Util.compareDoubles(
+            left.getGeoPointValue().getLatitude(), right.getGeoPointValue().getLatitude());
+    if (comparison == 0) {
+      return Util.compareDoubles(
+          left.getGeoPointValue().getLongitude(), right.getGeoPointValue().getLongitude());
+    }
+    return comparison;
+  }
+
+  private static int compareArrays(Value left, Value right) {
+    int minLength =
+        Math.min(left.getArrayValue().getValuesCount(), right.getArrayValue().getValuesCount());
+    for (int i = 0; i < minLength; i++) {
+      int cmp = compare(left.getArrayValue().getValues(i), right.getArrayValue().getValues(i));
+      if (cmp != 0) {
+        return cmp;
+      }
+    }
+    return Util.compareIntegers(
+        left.getArrayValue().getValuesCount(), right.getArrayValue().getValuesCount());
   }
 
   private static int compareMaps(Value left, Value right) {
@@ -186,81 +253,5 @@ public class ProtoValueUtil {
 
     // Only equal if both iterators are exhausted.
     return Util.compareBooleans(iterator1.hasNext(), iterator2.hasNext());
-  }
-
-  private static int compareArrays(Value left, Value right) {
-    int minLength =
-        Math.min(left.getArrayValue().getValuesCount(), right.getArrayValue().getValuesCount());
-    for (int i = 0; i < minLength; i++) {
-      int cmp = compare(left.getArrayValue().getValues(i), right.getArrayValue().getValues(i));
-      if (cmp != 0) {
-        return cmp;
-      }
-    }
-    return Util.compareIntegers(
-        left.getArrayValue().getValuesCount(), right.getArrayValue().getValuesCount());
-  }
-
-  private static int compareGeoPoints(Value left, Value right) {
-    int comparison =
-        Util.compareDoubles(
-            left.getGeoPointValue().getLatitude(), right.getGeoPointValue().getLatitude());
-    if (comparison == 0) {
-      return Util.compareDoubles(
-          left.getGeoPointValue().getLongitude(), right.getGeoPointValue().getLongitude());
-    }
-    return comparison;
-  }
-
-  private static int compareReferences(Value left, Value right) {
-    List<String> leftSegments = Splitter.on('/').splitToList(left.getReferenceValue());
-    List<String> rightSegments = Splitter.on('/').splitToList(right.getReferenceValue());
-    int minLength = Math.min(leftSegments.size(), rightSegments.size());
-    for (int i = 0; i < minLength; i++) {
-      int cmp = leftSegments.get(i).compareTo(rightSegments.get(i));
-      if (cmp != 0) {
-        return cmp;
-      }
-    }
-    return Util.compareIntegers(leftSegments.size(), rightSegments.size());
-  }
-
-  private static int compareTimestamps(Value left, Value right) {
-    if (left.getTimestampValue().getSeconds() == right.getTimestampValue().getSeconds()) {
-      return Integer.signum(
-          left.getTimestampValue().getNanos() - right.getTimestampValue().getNanos());
-    }
-    return Long.signum(
-        left.getTimestampValue().getSeconds() - right.getTimestampValue().getSeconds());
-  }
-
-  private static int compareNumbers(Value left, Value right) {
-    if (left.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
-      double thisDouble = left.getDoubleValue();
-      if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
-        return Util.compareDoubles(thisDouble, right.getDoubleValue());
-      } else {
-        hardAssert(
-            right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE,
-            "Unexpected value type: %s",
-            right);
-        return Util.compareMixed(thisDouble, right.getIntegerValue());
-      }
-    } else {
-      hardAssert(
-          left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE,
-          "Unexpected value type: %s",
-          left);
-      long thisLong = left.getIntegerValue();
-      if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-        return Util.compareLongs(thisLong, right.getIntegerValue());
-      } else {
-        hardAssert(
-            right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE,
-            "Unexpected value type: %s",
-            right);
-        return -1 * Util.compareMixed(right.getDoubleValue(), thisLong);
-      }
-    }
   }
 }
