@@ -158,9 +158,12 @@ public class MutationTest {
     ObjectValue expectedData =
         wrapObject(map("foo", map("bar", "<server-timestamp>"), "baz", "baz-value"));
     expectedData =
-        expectedData.set(
-            field("foo.bar"),
-            new ServerTimestampValue(timestamp, StringValue.valueOf("bar-value")));
+        expectedData
+            .toBuilder()
+            .set(
+                field("foo.bar"),
+                new ServerTimestampValue(timestamp, StringValue.valueOf("bar-value")))
+            .build();
 
     Document expectedDoc =
         new Document(

@@ -151,16 +151,17 @@ public final class PatchMutation extends Mutation {
   }
 
   private ObjectValue patchObject(ObjectValue obj) {
+    ObjectValue.Builder builder = obj.toBuilder();
     for (FieldPath path : mask.getMask()) {
       if (!path.isEmpty()) {
         FieldValue newValue = value.get(path);
         if (newValue == null) {
-          obj = obj.delete(path);
+          builder.delete(path);
         } else {
-          obj = obj.set(path, newValue);
+          builder.set(path, newValue);
         }
       }
     }
-    return obj;
+    return builder.build();
   }
 }

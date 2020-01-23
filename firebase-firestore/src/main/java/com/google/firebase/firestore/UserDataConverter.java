@@ -117,7 +117,7 @@ public final class UserDataConverter {
 
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Update);
     ParseContext context = accumulator.rootContext();
-    ObjectValue updateData = ObjectValue.emptyObject();
+    ObjectValue.Builder updateData = ObjectValue.newBuilder();
 
     for (Entry<String, Object> entry : data.entrySet()) {
       FieldPath fieldPath =
@@ -134,12 +134,12 @@ public final class UserDataConverter {
             convertAndParseFieldData(fieldValue, context.childContext(fieldPath));
         if (parsedValue != null) {
           context.addToFieldMask(fieldPath);
-          updateData = updateData.set(fieldPath, parsedValue);
+          updateData.set(fieldPath, parsedValue);
         }
       }
     }
 
-    return accumulator.toUpdateData(updateData);
+    return accumulator.toUpdateData(updateData.build());
   }
 
   /**
@@ -155,7 +155,7 @@ public final class UserDataConverter {
 
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Update);
     ParseContext context = accumulator.rootContext();
-    ObjectValue updateData = ObjectValue.emptyObject();
+    ObjectValue.Builder updateData = ObjectValue.newBuilder();
 
     Iterator<Object> iterator = fieldsAndValues.iterator();
     while (iterator.hasNext()) {
@@ -185,12 +185,12 @@ public final class UserDataConverter {
             convertAndParseFieldData(fieldValue, context.childContext(parsedField));
         if (parsedValue != null) {
           context.addToFieldMask(parsedField);
-          updateData = updateData.set(parsedField, parsedValue);
+          updateData.set(parsedField, parsedValue);
         }
       }
     }
 
-    return accumulator.toUpdateData(updateData);
+    return accumulator.toUpdateData(updateData.build());
   }
 
   /** Parse a "query value" (e.g. value in a where filter or a value in a cursor bound). */
