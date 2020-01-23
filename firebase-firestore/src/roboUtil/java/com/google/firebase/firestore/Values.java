@@ -22,62 +22,71 @@ import com.google.firestore.v1.Value;
 import com.google.protobuf.NullValue;
 import com.google.type.LatLng;
 import java.util.List;
+import java.util.Map;
 
 /** Test helper to create Firestore Value protos from Java types. */
-public class ValueHelper {
+public class Values {
 
+  // TODO(mrschmidt): Move into UserDataConverter
   public static Value valueOf(Object o) {
     if (o instanceof Value) {
       return (Value) o;
-    } else if (o instanceof String) {
-      return (Value.newBuilder().setStringValue((String) o).build());
-    } else if (o instanceof Integer) {
-      return (Value.newBuilder().setIntegerValue((long) (Integer) o).build());
-    } else if (o instanceof Long) {
-      return (Value.newBuilder().setIntegerValue((Long) o).build());
-    } else if (o instanceof Double) {
-      return (Value.newBuilder().setDoubleValue((Double) o).build());
+    } else if (o == null) {
+      return Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
     } else if (o instanceof Boolean) {
-      return (Value.newBuilder().setBooleanValue((Boolean) o).build());
+      return Value.newBuilder().setBooleanValue((Boolean) o).build();
+    } else if (o instanceof Integer) {
+      return Value.newBuilder().setIntegerValue((Integer) o).build();
+    } else if (o instanceof Long) {
+      return Value.newBuilder().setIntegerValue((Long) o).build();
+    } else if (o instanceof Double) {
+      return Value.newBuilder().setDoubleValue((Double) o).build();
     } else if (o instanceof Timestamp) {
       Timestamp timestamp = (Timestamp) o;
-      return (Value.newBuilder()
+      return Value.newBuilder()
           .setTimestampValue(
               com.google.protobuf.Timestamp.newBuilder()
                   .setSeconds(timestamp.getSeconds())
-                  .setNanos(timestamp.getNanoseconds())
-                  .build())
-          .build());
+                  .setNanos(timestamp.getNanoseconds()))
+          .build();
+    } else if (o instanceof String) {
+      return Value.newBuilder().setStringValue((String) o).build();
+    } else if (o instanceof Blob) {
+      return Value.newBuilder().setBytesValue(((Blob) o).toByteString()).build();
+
+    } else if (o instanceof DocumentReference) {
+      return Value.newBuilder()
+          .setReferenceValue(
+              "projects/project/databases/(default)/documents/" + ((DocumentReference) o).getPath())
+          .build();
     } else if (o instanceof GeoPoint) {
       GeoPoint geoPoint = (GeoPoint) o;
-      return (Value.newBuilder()
+      return Value.newBuilder()
           .setGeoPointValue(
               LatLng.newBuilder()
                   .setLatitude(geoPoint.getLatitude())
-                  .setLongitude(geoPoint.getLongitude())
-                  .build())
-          .build());
-    } else if (o instanceof Blob) {
-      return (Value.newBuilder().setBytesValue(((Blob) o).toByteString()).build());
-    } else if (o instanceof DocumentReference) {
-      return (Value.newBuilder()
-          .setReferenceValue(
-              "projects/projectId/databases/(default)/documents/"
-                  + ((DocumentReference) o).getPath())
-          .build());
+                  .setLongitude(geoPoint.getLongitude()))
+          .build();
+
     } else if (o instanceof List) {
       ArrayValue.Builder list = ArrayValue.newBuilder();
       for (Object element : (List) o) {
         list.addValues(valueOf(element));
       }
-      return (Value.newBuilder().setArrayValue(list).build());
-    } else if (o == null) {
-      return (Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
+      return Value.newBuilder().setArrayValue(list).build();
+    } else if (o instanceof Map) {
+      com.google.firestore.v1.MapValue.Builder builder =
+          com.google.firestore.v1.MapValue.newBuilder();
+      for (Map.Entry<String, Object> entry : ((Map<String, Object>) o).entrySet()) {
+        builder.putFields(entry.getKey(), valueOf(entry.getValue()));
+      }
+      return Value.newBuilder().setMapValue(builder).build();
     }
 
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException("Failed to serialize object: " + o);
   }
 
+  /** Creates a MapValue from a list of key/value arguments. */
   public static Value map(Object... entries) {
     com.google.firestore.v1.MapValue.Builder builder =
         com.google.firestore.v1.MapValue.newBuilder();
@@ -87,7 +96,7 @@ public class ValueHelper {
     return Value.newBuilder().setMapValue(builder).build();
   }
 
-  public static Value wrapRef(DatabaseId dbId, DocumentKey key) {
+  public static Value refValue(DatabaseId dbId, DocumentKey key) {
     return Value.newBuilder()
         .setReferenceValue(
             String.format(
