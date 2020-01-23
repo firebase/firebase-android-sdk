@@ -16,6 +16,7 @@ package com.google.firebase.inappmessaging;
 
 import com.google.firebase.inappmessaging.internal.injection.components.AppComponent;
 import com.google.firebase.inappmessaging.internal.injection.components.UniversalComponent;
+import com.google.firebase.inappmessaging.internal.injection.modules.ApiClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.GrpcClientModule;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import dagger.Component;
@@ -29,6 +30,7 @@ import dagger.Component;
       TestEngagementMetricsLoggerClientModule.class,
 
       // Real modules
+      ApiClientModule.class,
       GrpcClientModule.class
     })
 public interface TestAppComponent extends AppComponent {}
