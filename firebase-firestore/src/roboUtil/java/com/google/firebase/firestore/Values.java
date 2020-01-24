@@ -18,6 +18,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firestore.v1.ArrayValue;
+import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.NullValue;
 import com.google.type.LatLng;
@@ -75,8 +76,7 @@ public class Values {
       }
       return Value.newBuilder().setArrayValue(list).build();
     } else if (o instanceof Map) {
-      com.google.firestore.v1.MapValue.Builder builder =
-          com.google.firestore.v1.MapValue.newBuilder();
+      MapValue.Builder builder = MapValue.newBuilder();
       for (Map.Entry<String, Object> entry : ((Map<String, Object>) o).entrySet()) {
         builder.putFields(entry.getKey(), valueOf(entry.getValue()));
       }
@@ -88,8 +88,7 @@ public class Values {
 
   /** Creates a MapValue from a list of key/value arguments. */
   public static Value map(Object... entries) {
-    com.google.firestore.v1.MapValue.Builder builder =
-        com.google.firestore.v1.MapValue.newBuilder();
+    MapValue.Builder builder = MapValue.newBuilder();
     for (int i = 0; i < entries.length; i += 2) {
       builder.putFields((String) entries[i], valueOf(entries[i + 1]));
     }
