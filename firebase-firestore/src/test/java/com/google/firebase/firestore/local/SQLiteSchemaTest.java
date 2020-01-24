@@ -268,7 +268,7 @@ public class SQLiteSchemaTest {
           Write.newBuilder()
               .setUpdate(
                   Document.newBuilder()
-                      .setName("projects/projectId/databases/(default)/documents/" + doc)));
+                      .setName("projects/project/databases/(default)/documents/" + doc)));
     }
 
     db.execSQL(
