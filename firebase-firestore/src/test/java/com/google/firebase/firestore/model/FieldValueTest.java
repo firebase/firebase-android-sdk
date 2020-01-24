@@ -31,7 +31,6 @@ import static org.junit.Assert.assertNull;
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.Values;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.protovalue.ObjectValue;
 import com.google.firebase.firestore.model.protovalue.PrimitiveValue;
