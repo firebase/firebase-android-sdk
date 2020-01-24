@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.model.protovalue;
 
-import static com.google.firebase.firestore.model.ProtoValues.isType;
+import static com.google.firebase.firestore.model.value.ProtoValues.isType;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
