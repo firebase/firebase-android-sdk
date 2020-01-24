@@ -60,7 +60,7 @@ public class RemoteConfigComponent {
   /** Name of the file where defaults configs are stored. */
   public static final String DEFAULTS_FILE_NAME = "defaults";
   /** Timeout for the call to the Firebase Remote Config servers in second. */
-  public static final long NETWORK_CONNECTION_TIMEOUT_IN_SECONDS = 60;
+  public static final long CONNECTION_TIMEOUT_IN_SECONDS = 60;
 
   private static final String FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX = "frc";
   private static final String PREFERENCES_FILE_NAME = "settings";
@@ -232,8 +232,8 @@ public class RemoteConfigComponent {
         appId,
         apiKey,
         namespace,
-        metadataClient.getFetchTimeoutInSeconds(),
-        NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+        /* connectTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds(),
+        /* readTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds());
   }
 
   @VisibleForTesting
