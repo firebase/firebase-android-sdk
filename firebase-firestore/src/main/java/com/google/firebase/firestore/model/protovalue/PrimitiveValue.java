@@ -22,11 +22,11 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.ProtoValues;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.util.Assert;
-import com.google.firebase.firestore.util.ValueUtil;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ public class PrimitiveValue extends FieldValue {
 
   @Override
   public int typeOrder() {
-    return ValueUtil.typeOrder(internalValue);
+    return ProtoValues.typeOrder(internalValue);
   }
 
   @Nullable
@@ -119,7 +119,7 @@ public class PrimitiveValue extends FieldValue {
 
     if (o instanceof PrimitiveValue) {
       PrimitiveValue value = (PrimitiveValue) o;
-      return ValueUtil.equals(this.internalValue, value.internalValue);
+      return ProtoValues.equals(this.internalValue, value.internalValue);
     }
 
     return false;
@@ -133,8 +133,8 @@ public class PrimitiveValue extends FieldValue {
   @Override
   public int compareTo(@NonNull FieldValue other) {
     if (other instanceof PrimitiveValue) {
-      return ValueUtil.compare(this.internalValue, ((PrimitiveValue) other).internalValue);
-    } else if (ValueUtil.isType(this.internalValue, TYPE_ORDER_TIMESTAMP)
+      return ProtoValues.compare(this.internalValue, ((PrimitiveValue) other).internalValue);
+    } else if (ProtoValues.isType(this.internalValue, TYPE_ORDER_TIMESTAMP)
         && other instanceof ServerTimestampValue) {
       // TODO(mrschmidt): Handle timestamps directly in PrimitiveValue
       return -1;

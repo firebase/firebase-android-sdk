@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.model.protovalue;
 
+import static com.google.firebase.firestore.model.ProtoValues.isType;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
-import static com.google.firebase.firestore.util.ValueUtil.isType;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.FieldPath;
@@ -185,7 +185,7 @@ public class ObjectValue extends PrimitiveValue {
      * Overlays are expanded recursively based on their location in the backing ObjectValue's
      * subtree and are processed by nesting level.
      *
-     * <p>Example: Overlays { 'a.b.c' : 'foo',  'a.b.d' : 'bar', 'a.e' :  'foobar' }
+     * <p>Example: Overlays { 'a.b.c' : 'foo', 'a.b.d' : 'bar', 'a.e' : 'foobar' }
      *
      * <p>To apply these overlays, the methods first creates a MapValue.Builder for `a`. It then
      * calls applyOverlay() with a current path of `a` and the newly created MapValue.Builder. In
