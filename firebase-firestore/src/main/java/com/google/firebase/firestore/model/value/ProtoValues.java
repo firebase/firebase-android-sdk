@@ -22,6 +22,8 @@ import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.Timestamp;
+import com.google.type.LatLng;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -148,19 +150,19 @@ public class ProtoValues {
       case FieldValue.TYPE_ORDER_NUMBER:
         return compareNumbers(left, right);
       case FieldValue.TYPE_ORDER_TIMESTAMP:
-        return compareTimestamps(left, right);
+        return compareTimestamps(left.getTimestampValue(), right.getTimestampValue());
       case FieldValue.TYPE_ORDER_STRING:
         return left.getStringValue().compareTo(right.getStringValue());
       case FieldValue.TYPE_ORDER_BLOB:
         return Util.compareByteStrings(left.getBytesValue(), right.getBytesValue());
       case FieldValue.TYPE_ORDER_REFERENCE:
-        return compareReferences(left, right);
+        return compareReferences(left.getReferenceValue(), right.getReferenceValue());
       case FieldValue.TYPE_ORDER_GEOPOINT:
-        return compareGeoPoints(left, right);
+        return compareGeoPoints(left.getGeoPointValue(), right.getGeoPointValue());
       case FieldValue.TYPE_ORDER_ARRAY:
-        return compareArrays(left, right);
+        return compareArrays(left.getArrayValue(), right.getArrayValue());
       case FieldValue.TYPE_ORDER_OBJECT:
-        return compareMaps(left, right);
+        return compareMaps(left.getMapValue(), right.getMapValue());
       default:
         throw fail("Invalid value type: " + leftType);
     }
@@ -186,18 +188,17 @@ public class ProtoValues {
     throw fail("Unexpected values: %s vs %s", left, right);
   }
 
-  private static int compareTimestamps(Value left, Value right) {
-    if (left.getTimestampValue().getSeconds() == right.getTimestampValue().getSeconds()) {
-      return Integer.signum(
-          left.getTimestampValue().getNanos() - right.getTimestampValue().getNanos());
+  private static int compareTimestamps(Timestamp left, Timestamp right) {
+    int comparison = Util.compareLongs(left.getSeconds(), right.getSeconds());
+    if (comparison != 0) {
+      return comparison;
     }
-    return Long.signum(
-        left.getTimestampValue().getSeconds() - right.getTimestampValue().getSeconds());
+    return Util.compareIntegers(left.getNanos(), right.getNanos());
   }
 
-  private static int compareReferences(Value left, Value right) {
-    List<String> leftSegments = Splitter.on('/').splitToList(left.getReferenceValue());
-    List<String> rightSegments = Splitter.on('/').splitToList(right.getReferenceValue());
+  private static int compareReferences(String leftPath, String rightPath) {
+    List<String> leftSegments = Splitter.on('/').splitToList(leftPath);
+    List<String> rightSegments = Splitter.on('/').splitToList(rightPath);
     int minLength = Math.min(leftSegments.size(), rightSegments.size());
     for (int i = 0; i < minLength; i++) {
       int cmp = leftSegments.get(i).compareTo(rightSegments.get(i));
@@ -208,35 +209,30 @@ public class ProtoValues {
     return Util.compareIntegers(leftSegments.size(), rightSegments.size());
   }
 
-  private static int compareGeoPoints(Value left, Value right) {
-    int comparison =
-        Util.compareDoubles(
-            left.getGeoPointValue().getLatitude(), right.getGeoPointValue().getLatitude());
+  private static int compareGeoPoints(LatLng left, LatLng right) {
+    int comparison = Util.compareDoubles(left.getLatitude(), right.getLatitude());
     if (comparison == 0) {
-      return Util.compareDoubles(
-          left.getGeoPointValue().getLongitude(), right.getGeoPointValue().getLongitude());
+      return Util.compareDoubles(left.getLongitude(), right.getLongitude());
     }
     return comparison;
   }
 
-  private static int compareArrays(Value left, Value right) {
-    int minLength =
-        Math.min(left.getArrayValue().getValuesCount(), right.getArrayValue().getValuesCount());
+  private static int compareArrays(ArrayValue left, ArrayValue right) {
+    int minLength = Math.min(left.getValuesCount(), right.getValuesCount());
     for (int i = 0; i < minLength; i++) {
-      int cmp = compare(left.getArrayValue().getValues(i), right.getArrayValue().getValues(i));
+      int cmp = compare(left.getValues(i), right.getValues(i));
       if (cmp != 0) {
         return cmp;
       }
     }
-    return Util.compareIntegers(
-        left.getArrayValue().getValuesCount(), right.getArrayValue().getValuesCount());
+    return Util.compareIntegers(left.getValuesCount(), right.getValuesCount());
   }
 
-  private static int compareMaps(Value left, Value right) {
+  private static int compareMaps(MapValue left, MapValue right) {
     Iterator<Map.Entry<String, Value>> iterator1 =
-        new TreeMap<>(left.getMapValue().getFieldsMap()).entrySet().iterator();
+        new TreeMap<>(left.getFieldsMap()).entrySet().iterator();
     Iterator<Map.Entry<String, Value>> iterator2 =
-        new TreeMap<>(right.getMapValue().getFieldsMap()).entrySet().iterator();
+        new TreeMap<>(right.getFieldsMap()).entrySet().iterator();
     while (iterator1.hasNext() && iterator2.hasNext()) {
       Map.Entry<String, Value> entry1 = iterator1.next();
       Map.Entry<String, Value> entry2 = iterator2.next();
