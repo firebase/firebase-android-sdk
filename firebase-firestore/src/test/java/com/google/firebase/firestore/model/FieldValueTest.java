@@ -14,9 +14,9 @@
 
 package com.google.firebase.firestore.model;
 
-import static com.google.firebase.firestore.ValueUtil.map;
-import static com.google.firebase.firestore.ValueUtil.valueOf;
-import static com.google.firebase.firestore.ValueUtil.wrapRef;
+import static com.google.firebase.firestore.Values.map;
+import static com.google.firebase.firestore.Values.refValue;
+import static com.google.firebase.firestore.Values.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.dbId;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertNull;
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.ValueUtil;
+import com.google.firebase.firestore.Values;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.protovalue.ObjectValue;
 import com.google.firebase.firestore.model.protovalue.PrimitiveValue;
@@ -385,10 +385,10 @@ public class FieldValueTest {
   }
 
   private PrimitiveValue wrap(Object map) {
-    return (PrimitiveValue) FieldValue.of(ValueUtil.valueOf(map));
+    return (PrimitiveValue) FieldValue.of(valueOf(map));
   }
 
   private PrimitiveValue wrapRef(DatabaseId dbId, DocumentKey key) {
-    return (PrimitiveValue) FieldValue.of(ValueUtil.wrapRef(dbId, key));
+    return (PrimitiveValue) FieldValue.of(refValue(dbId, key));
   }
 }

@@ -14,12 +14,12 @@
 
 package com.google.firebase.firestore.model;
 
-import static com.google.firebase.firestore.ValueUtil.map;
+import static com.google.firebase.firestore.Values.map;
+import static com.google.firebase.firestore.Values.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
-import com.google.firebase.firestore.ValueUtil;
 import com.google.firebase.firestore.model.protovalue.ObjectValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firestore.v1.Value;
@@ -32,9 +32,9 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class ObjectValueBuilderTest {
-  private Value fooValue = ValueUtil.valueOf("foo");
-  private Value barValue = ValueUtil.valueOf("bar");
-  private Value emptyObject = ValueUtil.valueOf(Collections.emptyMap());
+  private Value fooValue = valueOf("foo");
+  private Value barValue = valueOf("bar");
+  private Value emptyObject = valueOf(Collections.emptyMap());
 
   @Test
   public void emptyBuilder() {
