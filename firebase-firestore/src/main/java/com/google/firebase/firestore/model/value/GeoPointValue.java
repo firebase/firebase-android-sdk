@@ -16,6 +16,7 @@ package com.google.firebase.firestore.model.value;
 
 import com.google.firestore.v1.Value;
 
+/** A wrapper for geo point values in Firestore. */
 public class GeoPointValue extends FieldValue {
   GeoPointValue(Value value) {
     super(value);
