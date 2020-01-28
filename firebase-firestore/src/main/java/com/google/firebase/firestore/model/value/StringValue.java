@@ -14,45 +14,14 @@
 
 package com.google.firebase.firestore.model.value;
 
-/** A wrapper for string values in Firestore. */
-// TODO: Add truncation support
+import com.google.firestore.v1.Value;
+
 public class StringValue extends FieldValue {
-  private final String internalValue;
-
-  private StringValue(String s) {
-    internalValue = s;
+  StringValue(Value value) {
+    super(value);
   }
 
-  @Override
-  public int typeOrder() {
-    return TYPE_ORDER_STRING;
-  }
-
-  @Override
-  public String value() {
-    return internalValue;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return o instanceof StringValue && internalValue.equals(((StringValue) o).internalValue);
-  }
-
-  @Override
-  public int hashCode() {
-    return internalValue.hashCode();
-  }
-
-  @Override
-  public int compareTo(FieldValue o) {
-    if (o instanceof StringValue) {
-      return internalValue.compareTo(((StringValue) o).internalValue);
-    } else {
-      return defaultCompareTo(o);
-    }
-  }
-
-  public static StringValue valueOf(String s) {
-    return new StringValue(s);
+  public static StringValue valueOf(String string) {
+    return new StringValue(Value.newBuilder().setStringValue(string).build());
   }
 }

@@ -25,8 +25,7 @@ import com.google.firebase.firestore.model.value.ReferenceValue;
 public class KeyFieldInFilter extends FieldFilter {
   KeyFieldInFilter(FieldPath field, ArrayValue value) {
     super(field, Operator.IN, value);
-    ArrayValue arrayValue = (ArrayValue) getValue();
-    for (FieldValue refValue : arrayValue.getInternalValue()) {
+    for (FieldValue refValue : value.getValues()) {
       hardAssert(
           refValue instanceof ReferenceValue,
           "Comparing on key with IN, but an array value was not a ReferenceValue");
@@ -36,8 +35,8 @@ public class KeyFieldInFilter extends FieldFilter {
   @Override
   public boolean matches(Document doc) {
     ArrayValue arrayValue = (ArrayValue) getValue();
-    for (FieldValue refValue : arrayValue.getInternalValue()) {
-      if (doc.getKey().equals(((ReferenceValue) refValue).value())) {
+    for (FieldValue refValue : arrayValue.getValues()) {
+      if (doc.getKey().equals(((ReferenceValue) refValue).getKey())) {
         return true;
       }
     }

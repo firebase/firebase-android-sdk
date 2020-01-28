@@ -14,43 +14,10 @@
 
 package com.google.firebase.firestore.model.value;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
+import com.google.firestore.v1.Value;
 
-import com.google.firebase.firestore.util.Util;
-
-/**
- * Base class inherited from by IntegerValue and DoubleValue. It implements proper number
- * comparisons between the two types.
- */
-public abstract class NumberValue extends FieldValue {
-
-  @Override
-  public int typeOrder() {
-    return TYPE_ORDER_NUMBER;
-  }
-
-  @Override
-  public int compareTo(FieldValue o) {
-    if (!(o instanceof NumberValue)) {
-      return defaultCompareTo(o);
-    }
-    if (this instanceof DoubleValue) {
-      double thisDouble = ((DoubleValue) this).getInternalValue();
-      if (o instanceof DoubleValue) {
-        return Util.compareDoubles(thisDouble, ((DoubleValue) o).getInternalValue());
-      } else {
-        hardAssert(o instanceof IntegerValue, "Unknown NumberValue: %s", o);
-        return Util.compareMixed(thisDouble, ((IntegerValue) o).getInternalValue());
-      }
-    } else {
-      hardAssert(this instanceof IntegerValue, "Unknown NumberValue: %s", this);
-      long thisLong = ((IntegerValue) this).getInternalValue();
-      if (o instanceof IntegerValue) {
-        return Util.compareLongs(thisLong, ((IntegerValue) o).getInternalValue());
-      } else {
-        hardAssert(o instanceof DoubleValue, "Unknown NumberValue: %s", o);
-        return -1 * Util.compareMixed(((DoubleValue) o).getInternalValue(), thisLong);
-      }
-    }
+public class NumberValue extends FieldValue {
+  NumberValue(Value value) {
+    super(value);
   }
 }

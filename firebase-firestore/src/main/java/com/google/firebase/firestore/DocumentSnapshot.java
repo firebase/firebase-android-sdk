@@ -15,25 +15,18 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.UserDataWriter.FieldValueOptions;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.model.value.TimestampValue;
 import com.google.firebase.firestore.util.CustomClassMapper;
-import com.google.firebase.firestore.util.Logger;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -78,19 +71,9 @@ public class DocumentSnapshot {
     static final ServerTimestampBehavior DEFAULT = ServerTimestampBehavior.NONE;
   }
 
-  /** Holds settings that define field value deserialization options. */
-  static class FieldValueOptions {
-    final ServerTimestampBehavior serverTimestampBehavior;
-    final boolean timestampsInSnapshotsEnabled;
-
-    private FieldValueOptions(
-        ServerTimestampBehavior serverTimestampBehavior, boolean timestampsInSnapshotsEnabled) {
-      this.serverTimestampBehavior = serverTimestampBehavior;
-      this.timestampsInSnapshotsEnabled = timestampsInSnapshotsEnabled;
-    }
-  }
-
   private final FirebaseFirestore firestore;
+
+  private final UserDataWriter userDataWriter;
 
   private final DocumentKey key;
 
@@ -109,6 +92,7 @@ public class DocumentSnapshot {
     this.key = checkNotNull(key);
     this.doc = doc;
     this.metadata = new SnapshotMetadata(hasPendingWrites, isFromCache);
+    this.userDataWriter = firestore.getUserDataWriter();
   }
 
   static DocumentSnapshot fromDocument(
@@ -546,77 +530,10 @@ public class DocumentSnapshot {
     return clazz.cast(value);
   }
 
-  @Nullable
-  private Object convertValue(FieldValue value, FieldValueOptions options) {
-    if (value instanceof ObjectValue) {
-      return convertObject((ObjectValue) value, options);
-    } else if (value instanceof ArrayValue) {
-      return convertArray((ArrayValue) value, options);
-    } else if (value instanceof ReferenceValue) {
-      return convertReference((ReferenceValue) value);
-    } else if (value instanceof TimestampValue) {
-      return convertTimestamp((TimestampValue) value, options);
-    } else if (value instanceof ServerTimestampValue) {
-      return convertServerTimestamp((ServerTimestampValue) value, options);
-    } else {
-      return value.value();
-    }
-  }
-
-  private Object convertServerTimestamp(ServerTimestampValue value, FieldValueOptions options) {
-    switch (options.serverTimestampBehavior) {
-      case PREVIOUS:
-        return value.getPreviousValue();
-      case ESTIMATE:
-        return value.getLocalWriteTime();
-      default:
-        return value.value();
-    }
-  }
-
-  private Object convertTimestamp(TimestampValue value, FieldValueOptions options) {
-    Timestamp timestamp = value.value();
-    if (options.timestampsInSnapshotsEnabled) {
-      return timestamp;
-    } else {
-      return timestamp.toDate();
-    }
-  }
-
-  private Object convertReference(ReferenceValue value) {
-    DocumentKey key = value.value();
-    DatabaseId refDatabase = value.getDatabaseId();
-    DatabaseId database = this.firestore.getDatabaseId();
-    if (!refDatabase.equals(database)) {
-      // TODO: Somehow support foreign references.
-      Logger.warn(
-          "DocumentSnapshot",
-          "Document %s contains a document reference within a different database "
-              + "(%s/%s) which is not supported. It will be treated as a reference in "
-              + "the current database (%s/%s) instead.",
-          key.getPath(),
-          refDatabase.getProjectId(),
-          refDatabase.getDatabaseId(),
-          database.getProjectId(),
-          database.getDatabaseId());
-    }
-    return new DocumentReference(key, firestore);
-  }
-
   private Map<String, Object> convertObject(ObjectValue objectValue, FieldValueOptions options) {
-    Map<String, Object> result = new HashMap<>();
-    for (Map.Entry<String, FieldValue> entry : objectValue.getInternalValue()) {
-      result.put(entry.getKey(), convertValue(entry.getValue(), options));
-    }
-    return result;
-  }
-
-  private List<Object> convertArray(ArrayValue arrayValue, FieldValueOptions options) {
-    ArrayList<Object> result = new ArrayList<>(arrayValue.getInternalValue().size());
-    for (FieldValue v : arrayValue.getInternalValue()) {
-      result.add(convertValue(v, options));
-    }
-    return result;
+    Object result = userDataWriter.convertValue(objectValue.getProto(), options);
+    hardAssert(objectValue instanceof Map, "Unexpected type after document conversion");
+    return (Map<String, Object>) result;
   }
 
   @Nullable
@@ -626,7 +543,7 @@ public class DocumentSnapshot {
     if (doc != null) {
       FieldValue val = doc.getField(fieldPath);
       if (val != null) {
-        return convertValue(val, options);
+        return userDataWriter.convertValue(val.getProto(), options);
       }
     }
     return null;

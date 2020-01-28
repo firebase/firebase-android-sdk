@@ -22,17 +22,18 @@ import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
-import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-// TODO(mrschmidt): Make package-private
-public class ProtoValues {
+class ProtoValues {
 
-  public static int typeOrder(Value value) {
+  static int typeOrder(Value value) {
+    if (ServerTimestampValue.isServerTimestamp(value)) {
+      return FieldValue.TYPE_ORDER_TIMESTAMP;
+    }
 
     switch (value.getValueTypeCase()) {
       case NULL_VALUE:
@@ -56,6 +57,9 @@ public class ProtoValues {
       case ARRAY_VALUE:
         return FieldValue.TYPE_ORDER_ARRAY;
       case MAP_VALUE:
+        if (ServerTimestampValue.isServerTimestamp(value)) {
+          return FieldValue.TYPE_ORDER_TIMESTAMP;
+        }
         return FieldValue.TYPE_ORDER_OBJECT;
       default:
         throw fail("Invalid value type: " + value.getValueTypeCase());
@@ -63,11 +67,19 @@ public class ProtoValues {
   }
 
   /** Returns whether `value` is non-null and corresponds to the given type order. */
-  public static boolean isType(@Nullable Value value, int typeOrder) {
+  static boolean isType(@Nullable Value value, int typeOrder) {
     return value != null && typeOrder(value) == typeOrder;
   }
 
-  public static boolean equals(Value left, Value right) {
+  static boolean equals(Value left, Value right) {
+    if (left == null && right == null) {
+      return true;
+    }
+
+    if (left == null || right == null) {
+      return false;
+    }
+
     int leftType = typeOrder(left);
     int rightType = typeOrder(right);
     if (leftType != rightType) {
@@ -81,9 +93,28 @@ public class ProtoValues {
         return arrayEquals(left, right);
       case FieldValue.TYPE_ORDER_OBJECT:
         return objectEquals(left, right);
+      case FieldValue.TYPE_ORDER_TIMESTAMP:
+        return timestampEquals(left, right);
       default:
         return left.equals(right);
     }
+  }
+
+  private static boolean timestampEquals(Value left, Value right) {
+    if (ServerTimestampValue.isServerTimestamp(left)
+        && ServerTimestampValue.isServerTimestamp(right)) {
+      return new ServerTimestampValue(left)
+          .getLocalWriteTime()
+          .equals(new ServerTimestampValue(right).getLocalWriteTime());
+    } else if (ServerTimestampValue.isServerTimestamp(left)) {
+      // Server timestamps come after all concrete timestamps.
+      return false;
+    } else if (ServerTimestampValue.isServerTimestamp(right)) {
+      // Server timestamps come after all concrete timestamps.
+      return false;
+    }
+
+    return left.getTimestampValue().equals(right.getTimestampValue());
   }
 
   private static boolean numberEquals(Value left, Value right) {
@@ -126,7 +157,7 @@ public class ProtoValues {
 
     for (Map.Entry<String, Value> entry : leftMap.getFieldsMap().entrySet()) {
       Value otherEntry = rightMap.getFieldsMap().get(entry.getKey());
-      if (!entry.getValue().equals(otherEntry)) {
+      if (!equals(entry.getValue(), otherEntry)) {
         return false;
       }
     }
@@ -150,7 +181,7 @@ public class ProtoValues {
       case FieldValue.TYPE_ORDER_NUMBER:
         return compareNumbers(left, right);
       case FieldValue.TYPE_ORDER_TIMESTAMP:
-        return compareTimestamps(left.getTimestampValue(), right.getTimestampValue());
+        return compareTimestamps(left, right);
       case FieldValue.TYPE_ORDER_STRING:
         return left.getStringValue().compareTo(right.getStringValue());
       case FieldValue.TYPE_ORDER_BLOB:
@@ -188,12 +219,28 @@ public class ProtoValues {
     throw fail("Unexpected values: %s vs %s", left, right);
   }
 
-  private static int compareTimestamps(Timestamp left, Timestamp right) {
-    int comparison = Util.compareLongs(left.getSeconds(), right.getSeconds());
+  private static int compareTimestamps(Value left, Value right) {
+    if (ServerTimestampValue.isServerTimestamp(left)
+        && ServerTimestampValue.isServerTimestamp(right)) {
+      return new ServerTimestampValue(left)
+          .getLocalWriteTime()
+          .compareTo(new ServerTimestampValue(right).getLocalWriteTime());
+    } else if (ServerTimestampValue.isServerTimestamp(left)) {
+      // Server timestamps come after all concrete timestamps.
+      return 1;
+    } else if (ServerTimestampValue.isServerTimestamp(right)) {
+      // Server timestamps come after all concrete timestamps.
+      return -1;
+    }
+
+    int comparison =
+        Util.compareLongs(
+            left.getTimestampValue().getSeconds(), right.getTimestampValue().getSeconds());
     if (comparison != 0) {
       return comparison;
     }
-    return Util.compareIntegers(left.getNanos(), right.getNanos());
+    return Util.compareIntegers(
+        left.getTimestampValue().getNanos(), right.getTimestampValue().getNanos());
   }
 
   private static int compareReferences(String leftPath, String rightPath) {

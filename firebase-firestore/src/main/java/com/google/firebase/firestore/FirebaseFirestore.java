@@ -74,7 +74,8 @@ public class FirebaseFirestore {
   private final CredentialsProvider credentialsProvider;
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
-  private final UserDataConverter dataConverter;
+  private final UserDataParser userDataParser;
+  private final UserDataWriter userDataWriter;
   // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
   // this instance.
   private final InstanceRegistry instanceRegistry;
@@ -160,7 +161,8 @@ public class FirebaseFirestore {
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
-    this.dataConverter = new UserDataConverter(databaseId);
+    this.userDataParser = new UserDataParser(databaseId);
+    this.userDataWriter = UserDataWriter.forDocumentSnapshots(this);
     this.persistenceKey = checkNotNull(persistenceKey);
     this.credentialsProvider = checkNotNull(credentialsProvider);
     this.asyncQueue = checkNotNull(asyncQueue);
@@ -577,8 +579,12 @@ public class FirebaseFirestore {
     return databaseId;
   }
 
-  UserDataConverter getDataConverter() {
-    return dataConverter;
+  UserDataParser getUserDataParser() {
+    return userDataParser;
+  }
+
+  UserDataWriter getUserDataWriter() {
+    return userDataWriter;
   }
 
   /**

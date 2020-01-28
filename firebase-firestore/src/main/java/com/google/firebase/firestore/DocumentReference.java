@@ -162,8 +162,8 @@ public class DocumentReference {
     checkNotNull(options, "Provided options must not be null.");
     ParsedSetData parsed =
         options.isMerge()
-            ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
-            : firestore.getDataConverter().parseSetData(data);
+            ? firestore.getUserDataParser().parseMergeData(data, options.getFieldMask())
+            : firestore.getUserDataParser().parseSetData(data);
     return firestore
         .getClient()
         .write(parsed.toMutationList(key, Precondition.NONE))
@@ -180,7 +180,7 @@ public class DocumentReference {
    */
   @NonNull
   public Task<Void> update(@NonNull Map<String, Object> data) {
-    ParsedUpdateData parsedData = firestore.getDataConverter().parseUpdateData(data);
+    ParsedUpdateData parsedData = firestore.getUserDataParser().parseUpdateData(data);
     return update(parsedData);
   }
 
@@ -199,7 +199,7 @@ public class DocumentReference {
       @NonNull String field, @Nullable Object value, Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
-            .getDataConverter()
+            .getUserDataParser()
             .parseUpdateData(
                 Util.collectUpdateArguments(
                     /* fieldPathOffset= */ 1, field, value, moreFieldsAndValues));
@@ -220,7 +220,7 @@ public class DocumentReference {
       @NonNull FieldPath fieldPath, @Nullable Object value, Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
-            .getDataConverter()
+            .getUserDataParser()
             .parseUpdateData(
                 Util.collectUpdateArguments(
                     /* fieldPathOffset= */ 1, fieldPath, value, moreFieldsAndValues));

@@ -16,61 +16,47 @@ package com.google.firebase.firestore.model.value;
 
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.util.Assert;
+import com.google.firestore.v1.Value;
 
 /** A wrapper for reference values in Firestore. */
 public class ReferenceValue extends FieldValue {
+
   private final DatabaseId databaseId;
-  private final DocumentKey key;
+  private final DocumentKey documentKey;
 
-  private ReferenceValue(DatabaseId databaseId, DocumentKey documentKey) {
-    this.databaseId = databaseId;
-    key = documentKey;
+  ReferenceValue(Value value) {
+    super(value);
+
+    ResourcePath resourceName = ResourcePath.fromString(value.getReferenceValue());
+    Assert.hardAssert(
+        resourceName.length() >= 4
+            && resourceName.getSegment(0).equals("projects")
+            && resourceName.getSegment(2).equals("databases")
+            && resourceName.getSegment(4).equals("documents"),
+        "Tried to deserialize invalid key %s",
+        resourceName);
+    databaseId = DatabaseId.forDatabase(resourceName.getSegment(1), resourceName.getSegment(3));
+    documentKey = DocumentKey.fromPath(resourceName.popFirst(5));
   }
 
-  @Override
-  public int typeOrder() {
-    return TYPE_ORDER_REFERENCE;
-  }
-
-  @Override
-  public DocumentKey value() {
-    return key;
+  public DocumentKey getKey() {
+    return documentKey;
   }
 
   public DatabaseId getDatabaseId() {
     return databaseId;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (o instanceof ReferenceValue) {
-      ReferenceValue ref = (ReferenceValue) o;
-      return key.equals(ref.key) && databaseId.equals(ref.databaseId);
-    } else {
-      return false;
-    }
-  }
-
-  @Override
-  public int hashCode() {
-    int result = 31;
-    result = 31 * result + databaseId.hashCode();
-    result = 31 * result + key.hashCode();
-    return result;
-  }
-
-  @Override
-  public int compareTo(FieldValue o) {
-    if (o instanceof ReferenceValue) {
-      ReferenceValue ref = (ReferenceValue) o;
-      int cmp = databaseId.compareTo(ref.databaseId);
-      return cmp != 0 ? cmp : key.compareTo(ref.key);
-    } else {
-      return defaultCompareTo(o);
-    }
-  }
-
-  public static ReferenceValue valueOf(DatabaseId databaseId, DocumentKey documentKey) {
-    return new ReferenceValue(databaseId, documentKey);
+  public static ReferenceValue valueOf(DatabaseId databaseId, DocumentKey key) {
+    Value value =
+        Value.newBuilder()
+            .setReferenceValue(
+                String.format(
+                    "projects/%s/databases/%s/documents/%s",
+                    databaseId.getProjectId(), databaseId.getDatabaseId(), key.toString()))
+            .build();
+    return new ReferenceValue(value);
   }
 }

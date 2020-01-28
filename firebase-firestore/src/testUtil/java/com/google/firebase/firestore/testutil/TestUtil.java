@@ -33,7 +33,7 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.TestAccessHelper;
-import com.google.firebase.firestore.UserDataConverter;
+import com.google.firebase.firestore.UserDataParser;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
@@ -128,7 +128,7 @@ public class TestUtil {
 
   public static FieldValue wrap(Object value) {
     DatabaseId databaseId = DatabaseId.forProject("project");
-    UserDataConverter dataConverter = new UserDataConverter(databaseId);
+    UserDataParser dataConverter = new UserDataParser(databaseId);
     // HACK: We use parseQueryValue() since it accepts scalars as well as arrays / objects, and
     // our tests currently use wrap() pretty generically so we don't know the intent.
     return dataConverter.parseQueryValue(value);
@@ -485,7 +485,7 @@ public class TestUtil {
       objectMask.add(fieldPath);
       if (!entry.getValue().equals(DELETE_SENTINEL)) {
         FieldValue parsedValue = wrap(entry.getValue());
-        objectValue.set(fieldPath, parsedValue);
+        objectValue.set(fieldPath, parsedValue.getProto());
       }
     }
 
@@ -517,7 +517,7 @@ public class TestUtil {
    * must not contain any non-sentinel data.
    */
   public static TransformMutation transformMutation(String path, Map<String, Object> data) {
-    UserDataConverter dataConverter = new UserDataConverter(DatabaseId.forProject("project"));
+    UserDataParser dataConverter = new UserDataParser(DatabaseId.forProject("project"));
     ParsedUpdateData result = dataConverter.parseUpdateData(data);
 
     // The order of the transforms doesn't matter, but we sort them so tests can assume a particular

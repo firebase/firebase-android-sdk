@@ -80,15 +80,15 @@ public abstract class ArrayTransformOperation implements TransformOperation {
   }
 
   /** Applies this ArrayTransformOperation against the specified previousValue. */
-  protected abstract ArrayValue apply(@Nullable FieldValue previousValue);
+  protected abstract FieldValue apply(@Nullable FieldValue previousValue);
 
   /**
    * Inspects the provided value, returning an ArrayList copy of the internal array if it's an
    * ArrayValue and an empty ArrayList if it's null or any other type of FSTFieldValue.
    */
-  static ArrayList<FieldValue> coercedFieldValuesArray(@Nullable FieldValue value) {
+  static List<FieldValue> coercedFieldValuesArray(@Nullable FieldValue value) {
     if (value instanceof ArrayValue) {
-      return new ArrayList<>(((ArrayValue) value).getInternalValue());
+      return ((ArrayValue) value).getValues();
     } else {
       // coerce to empty array.
       return new ArrayList<>();
@@ -102,8 +102,8 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     }
 
     @Override
-    protected ArrayValue apply(@Nullable FieldValue previousValue) {
-      ArrayList<FieldValue> result = coercedFieldValuesArray(previousValue);
+    protected FieldValue apply(@Nullable FieldValue previousValue) {
+      List<FieldValue> result = coercedFieldValuesArray(previousValue);
       for (FieldValue element : getElements()) {
         if (!result.contains(element)) {
           result.add(element);
@@ -120,10 +120,12 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     }
 
     @Override
-    protected ArrayValue apply(@Nullable FieldValue previousValue) {
-      ArrayList<FieldValue> result = coercedFieldValuesArray(previousValue);
+    protected FieldValue apply(@Nullable FieldValue previousValue) {
+      List<FieldValue> result = coercedFieldValuesArray(previousValue);
       for (FieldValue element : getElements()) {
-        result.removeAll(Collections.singleton(element));
+        if (result.contains(element)) {
+          result.removeAll(Collections.singleton(element));
+        }
       }
       return ArrayValue.fromList(result);
     }

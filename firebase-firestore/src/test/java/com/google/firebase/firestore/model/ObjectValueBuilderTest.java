@@ -14,16 +14,14 @@
 
 package com.google.firebase.firestore.model;
 
-import static com.google.firebase.firestore.Values.map;
-import static com.google.firebase.firestore.Values.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.wrap;
+import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
 
-import com.google.firebase.firestore.model.protovalue.ObjectValue;
-import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firestore.v1.Value;
-import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -32,9 +30,9 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class ObjectValueBuilderTest {
-  private Value fooValue = valueOf("foo");
-  private Value barValue = valueOf("bar");
-  private Value emptyObject = valueOf(Collections.emptyMap());
+  private Value fooValue = wrap("foo").getProto();
+  private Value barValue = wrap("bar").getProto();
+  private Value emptyObject = ObjectValue.emptyObject().getProto();
 
   @Test
   public void emptyBuilder() {
@@ -98,7 +96,7 @@ public class ObjectValueBuilderTest {
   @Test
   public void setFieldInNestedObject() {
     ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
-    builder.set(field("a"), map("b", fooValue));
+    builder.set(field("a"), wrapObject("b", fooValue).getProto());
     builder.set(field("a.c"), fooValue);
     ObjectValue object = builder.build();
     assertEquals(wrapObject("a", map("b", fooValue, "c", fooValue)), object);
@@ -108,7 +106,7 @@ public class ObjectValueBuilderTest {
   public void setNestedFieldMultipleTimes() {
     ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
     builder.set(field("a.c"), fooValue);
-    builder.set(field("a"), map("b", fooValue));
+    builder.set(field("a"), wrapObject("b", fooValue).getProto());
     ObjectValue object = builder.build();
     assertEquals(wrapObject("a", map("b", fooValue)), object);
   }
@@ -217,12 +215,5 @@ public class ObjectValueBuilderTest {
     builder.delete(field("a.b.c"));
     ObjectValue object = builder.build();
     assertEquals(wrapObject("a", map("b", fooValue)), object);
-  }
-
-  /** Creates a new ObjectValue based on key/value argument pairs. */
-  private ObjectValue wrapObject(Object... entries) {
-    FieldValue object = FieldValue.of(map(entries));
-    assertTrue(object instanceof ObjectValue);
-    return (ObjectValue) object;
   }
 }

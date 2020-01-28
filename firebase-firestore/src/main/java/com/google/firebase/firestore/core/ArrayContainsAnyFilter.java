@@ -21,7 +21,7 @@ import com.google.firebase.firestore.model.value.FieldValue;
 
 /** A Filter that implements the array-contains-any operator. */
 public class ArrayContainsAnyFilter extends FieldFilter {
-  ArrayContainsAnyFilter(FieldPath field, FieldValue value) {
+  ArrayContainsAnyFilter(FieldPath field, ArrayValue value) {
     super(field, Operator.ARRAY_CONTAINS_ANY, value);
   }
 
@@ -32,8 +32,8 @@ public class ArrayContainsAnyFilter extends FieldFilter {
     if (!(other instanceof ArrayValue)) {
       return false;
     }
-    for (FieldValue val : ((ArrayValue) other).getInternalValue()) {
-      if (arrayValue.getInternalValue().contains(val)) {
+    for (FieldValue val : ((ArrayValue) other).getValues()) {
+      if (arrayValue.getValues().contains(val)) {
         return true;
       }
     }

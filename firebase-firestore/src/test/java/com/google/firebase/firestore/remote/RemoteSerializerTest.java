@@ -50,7 +50,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.NullValue;
 import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
@@ -118,15 +117,15 @@ public final class RemoteSerializerTest {
 
   private void assertRoundTrip(
       FieldValue value, com.google.firestore.v1.Value proto, ValueTypeCase typeCase) {
-    com.google.firestore.v1.Value actual = serializer.encodeValue(value);
+    com.google.firestore.v1.Value actual = value.getProto();
     assertEquals(typeCase, actual.getValueTypeCase());
     assertEquals(proto, actual);
-    assertEquals(value, serializer.decodeValue(proto));
+    assertEquals(value, FieldValue.valueOf(proto));
   }
 
   @Test
   public void testEncodesNull() {
-    FieldValue value = NullValue.nullValue();
+    FieldValue value = wrap(null);
     com.google.firestore.v1.Value proto = valueBuilder().setNullValueValue(0).build();
     assertRoundTrip(value, proto, ValueTypeCase.NULL_VALUE);
   }
@@ -435,14 +434,13 @@ public final class RemoteSerializerTest {
                             .setFieldPath("a")
                             .setAppendMissingElements(
                                 ArrayValue.newBuilder()
-                                    .addValues(serializer.encodeValue(wrap("a")))
-                                    .addValues(serializer.encodeValue(wrap(2)))))
+                                    .addValues(wrap("a").getProto())
+                                    .addValues(wrap(2).getProto())))
                     .addFieldTransforms(
                         DocumentTransform.FieldTransform.newBuilder()
                             .setFieldPath("bar.baz")
                             .setRemoveAllFromArray(
-                                ArrayValue.newBuilder()
-                                    .addValues(serializer.encodeValue(wrap(map("x", 1)))))))
+                                ArrayValue.newBuilder().addValues(wrap(map("x", 1)).getProto()))))
             .setCurrentDocument(Precondition.newBuilder().setExists(true))
             .build();
 
@@ -715,9 +713,9 @@ public final class RemoteSerializerTest {
                     .build())
             .build();
 
-    assertEquals(apiFilter, expectedFilter);
+    assertEquals(expectedFilter, apiFilter);
     FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
-    assertEquals(roundTripped, inputFilter);
+    assertEquals(inputFilter, roundTripped);
     assertTrue(roundTripped instanceof KeyFieldFilter);
   }
 

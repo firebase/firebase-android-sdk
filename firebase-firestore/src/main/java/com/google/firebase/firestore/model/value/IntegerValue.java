@@ -14,39 +14,18 @@
 
 package com.google.firebase.firestore.model.value;
 
-/** A wrapper for integer/long values in Firestore. */
-public final class IntegerValue extends NumberValue {
-  private final long internalValue;
+import com.google.firestore.v1.Value;
 
-  private IntegerValue(Long val) {
-    super();
-    internalValue = val;
+public class IntegerValue extends NumberValue {
+  IntegerValue(Value value) {
+    super(value);
   }
 
-  public static IntegerValue valueOf(Long val) {
-    return new IntegerValue(val);
+  public long getIntegerValue() {
+    return internalValue.getIntegerValue();
   }
 
-  @Override
-  public Long value() {
-    return internalValue;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    // NOTE: DoubleValue and IntegerValue instances may compareTo() the same,
-    // but that doesn't make them equal via equals().
-    return o instanceof IntegerValue && internalValue == ((IntegerValue) o).internalValue;
-  }
-
-  @Override
-  public int hashCode() {
-    return (int) (internalValue ^ (internalValue >>> 32));
-  }
-
-  // NOTE: compareTo() is implemented in NumberValue.
-
-  public long getInternalValue() {
-    return internalValue;
+  public static IntegerValue valueOf(long l) {
+    return new IntegerValue(Value.newBuilder().setIntegerValue(l).build());
   }
 }

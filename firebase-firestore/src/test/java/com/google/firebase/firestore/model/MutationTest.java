@@ -45,7 +45,6 @@ import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.value.IntegerValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.model.value.StringValue;
 import com.google.firebase.firestore.model.value.TimestampValue;
 import java.util.Arrays;
 import java.util.Collections;
@@ -157,13 +156,9 @@ public class MutationTest {
     // Server timestamps aren't parsed, so we manually insert it.
     ObjectValue expectedData =
         wrapObject(map("foo", map("bar", "<server-timestamp>"), "baz", "baz-value"));
-    expectedData =
-        expectedData
-            .toBuilder()
-            .set(
-                field("foo.bar"),
-                new ServerTimestampValue(timestamp, StringValue.valueOf("bar-value")))
-            .build();
+    com.google.firebase.firestore.model.value.FieldValue fieldValue =
+        ServerTimestampValue.valueOf(timestamp, wrap("bar-value"));
+    expectedData = expectedData.toBuilder().set(field("foo.bar"), fieldValue.getProto()).build();
 
     Document expectedDoc =
         new Document(
@@ -306,7 +301,7 @@ public class MutationTest {
     verifyTransform(baseDoc, transform, expected);
   }
 
-  // NOTE: This is more a test of UserDataConverter code than Mutation code but we don't have unit
+  // NOTE: This is more a test of UserDataParser code than Mutation code but we don't have unit
   // tests for it currently. We could consider removing this test once we have integration tests.
   @Test
   public void testCreateArrayUnionTransform() {
@@ -333,7 +328,7 @@ public class MutationTest {
         second.getOperation());
   }
 
-  // NOTE: This is more a test of UserDataConverter code than Mutation code but
+  // NOTE: This is more a test of UserDataParser code than Mutation code but
   // we don't have unit tests for it currently. We could consider removing this
   // test once we have integration tests.
   @Test

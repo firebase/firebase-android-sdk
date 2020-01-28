@@ -17,6 +17,8 @@ package com.google.firebase.firestore.model.value;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firestore.v1.MapValue;
+import com.google.firestore.v1.Value;
 
 /**
  * Represents a locally-applied Server Timestamp.
@@ -28,26 +30,44 @@ import com.google.firebase.firestore.DocumentSnapshot;
  * respect to other ServerTimestampValues, they sort by their localWriteTime.
  */
 public final class ServerTimestampValue extends FieldValue {
-  private final Timestamp localWriteTime;
-  @Nullable private final FieldValue previousValue;
+  private static final String SERVER_TIMESTAMP_SENTINEL = "server_timestamp";
+  private static final String TYPE_KEY = "__type__";
+  private static final String PREVIOUS_VALUE_KEY = "previous_value";
+  private static final String LOCAL_WRITE_TIME_KEY = "local_write_time";
 
-  // TODO(mrschmidt): Represent ServerTimestamps as a PrimitiveType with a Map containing a private
-  //  `__type__` field (or similar).
-
-  public ServerTimestampValue(Timestamp localWriteTime, @Nullable FieldValue previousValue) {
-    this.localWriteTime = localWriteTime;
-    this.previousValue = previousValue;
+  public ServerTimestampValue(Value value) {
+    super(value);
   }
 
-  @Override
-  public int typeOrder() {
-    return TYPE_ORDER_TIMESTAMP;
+  public static boolean isServerTimestamp(Value value) {
+    Value type = value.getMapValue().getFieldsOrDefault(TYPE_KEY, null);
+    return type != null && SERVER_TIMESTAMP_SENTINEL.equals(type.getStringValue());
   }
 
-  @Override
-  @Nullable
-  public Object value() {
-    return null;
+  public static ServerTimestampValue valueOf(Value value) {
+    return new ServerTimestampValue(value);
+  }
+
+  public static FieldValue valueOf(Timestamp localWriteTime, @Nullable FieldValue previousValue) {
+    Value encodedType = Value.newBuilder().setStringValue(SERVER_TIMESTAMP_SENTINEL).build();
+    Value encodeWriteTime =
+        Value.newBuilder()
+            .setTimestampValue(
+                com.google.protobuf.Timestamp.newBuilder()
+                    .setSeconds(localWriteTime.getSeconds())
+                    .setNanos(localWriteTime.getNanoseconds()))
+            .build();
+
+    MapValue.Builder mapRepresentation =
+        MapValue.newBuilder()
+            .putFields(TYPE_KEY, encodedType)
+            .putFields(LOCAL_WRITE_TIME_KEY, encodeWriteTime);
+
+    if (previousValue != null) {
+      mapRepresentation.putFields(PREVIOUS_VALUE_KEY, previousValue.getProto());
+    }
+
+    return new ServerTimestampValue(Value.newBuilder().setMapValue(mapRepresentation).build());
   }
 
   /**
@@ -57,43 +77,19 @@ public final class ServerTimestampValue extends FieldValue {
    * backend responds with the timestamp {@link DocumentSnapshot.ServerTimestampBehavior}.
    */
   @Nullable
-  public Object getPreviousValue() {
+  public FieldValue getPreviousValue() {
+    Value previous = internalValue.getMapValue().getFieldsOrDefault(PREVIOUS_VALUE_KEY, null);
+
+    FieldValue previousValue = FieldValue.valueOf(previous);
     if (previousValue instanceof ServerTimestampValue) {
       return ((ServerTimestampValue) previousValue).getPreviousValue();
     }
-
-    return previousValue != null ? previousValue.value() : null;
+    return previousValue;
   }
 
   public Timestamp getLocalWriteTime() {
-    return localWriteTime;
-  }
-
-  @Override
-  public String toString() {
-    return "<ServerTimestamp localTime=" + localWriteTime.toString() + ">";
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return (o instanceof ServerTimestampValue)
-        && localWriteTime.equals(((ServerTimestampValue) o).localWriteTime);
-  }
-
-  @Override
-  public int hashCode() {
-    return localWriteTime.hashCode();
-  }
-
-  @Override
-  public int compareTo(FieldValue o) {
-    if (o instanceof ServerTimestampValue) {
-      return localWriteTime.compareTo(((ServerTimestampValue) o).localWriteTime);
-    } else if (o.typeOrder() == TYPE_ORDER_TIMESTAMP) {
-      // Server timestamps come after all concrete timestamps.
-      return 1;
-    } else {
-      return defaultCompareTo(o);
-    }
+    com.google.protobuf.Timestamp localWriteTime =
+        internalValue.getMapValue().getFieldsOrThrow(LOCAL_WRITE_TIME_KEY).getTimestampValue();
+    return new Timestamp(localWriteTime.getSeconds(), localWriteTime.getNanos());
   }
 }

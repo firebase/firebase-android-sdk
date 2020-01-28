@@ -14,49 +14,22 @@
 
 package com.google.firebase.firestore.model.value;
 
+import com.google.firestore.v1.Value;
+
 /** A wrapper for float/double values in Firestore. */
-public final class DoubleValue extends NumberValue {
-  public static final DoubleValue NaN = new DoubleValue(Double.NaN);
+public class DoubleValue extends NumberValue {
+  public static final DoubleValue NaN =
+      new DoubleValue(Value.newBuilder().setDoubleValue(Double.NaN).build());
 
-  private final double internalValue;
-
-  private DoubleValue(Double val) {
-    internalValue = val;
+  DoubleValue(Value value) {
+    super(value);
   }
 
-  public static DoubleValue valueOf(Double val) {
-    if (Double.isNaN(val)) {
-      return NaN;
-    } else {
-      return new DoubleValue(val);
-    }
+  public double getDoubleValue() {
+    return internalValue.getDoubleValue();
   }
 
-  @Override
-  public Double value() {
-    return internalValue;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    // NOTE: DoubleValue and IntegerValue instances may compareTo() the same,
-    // but that doesn't make them equal via equals().
-
-    // NOTE: equals() should compare NaN equal to itself and -0.0 not equal to 0.0.
-    return o instanceof DoubleValue
-        && Double.doubleToLongBits(internalValue)
-            == Double.doubleToLongBits(((DoubleValue) o).internalValue);
-  }
-
-  @Override
-  public int hashCode() {
-    long bits = Double.doubleToLongBits(internalValue);
-    return (int) (bits ^ (bits >>> 32));
-  }
-
-  // NOTE: compareTo() is implemented in NumberValue.
-
-  public double getInternalValue() {
-    return internalValue;
+  public static DoubleValue valueOf(double d) {
+    return Double.isNaN(d) ? NaN : new DoubleValue(Value.newBuilder().setDoubleValue(d).build());
   }
 }

@@ -35,6 +35,7 @@ import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.BooleanValue;
 import com.google.firebase.firestore.model.value.DoubleValue;
 import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.NullValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.util.Assert;
 import java.util.Arrays;
@@ -165,7 +166,8 @@ public class IndexedQueryEngine implements QueryEngine {
   private static double estimateFilterSelectivity(Filter filter) {
     hardAssert(filter instanceof FieldFilter, "Filter type expected to be FieldFilter");
     FieldFilter fieldFilter = (FieldFilter) filter;
-    if (fieldFilter.getValue().equals(null) || fieldFilter.getValue().equals(DoubleValue.NaN)) {
+    FieldValue filterValue = fieldFilter.getValue();
+    if (NullValue.nullValue().equals(filterValue) || DoubleValue.NaN.equals(filterValue)) {
       return HIGH_SELECTIVITY;
     } else {
       double operatorSelectivity =
