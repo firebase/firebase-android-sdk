@@ -31,22 +31,30 @@ import java.util.Map;
 
 final class JsonValueObjectEncoderContext implements ObjectEncoderContext, ValueEncoderContext {
 
+  private interface AddMethod {
+    JsonValueObjectEncoderContext invoke(@NonNull String name, @Nullable Object o)
+        throws IOException, EncodingException;
+  }
+
   private JsonValueObjectEncoderContext childContext = null;
   private boolean active = true;
   private final JsonWriter jsonWriter;
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders;
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders;
   private final ObjectEncoder<Object> fallbackEncoder;
+  private final AddMethod addMethod;
 
   JsonValueObjectEncoderContext(
       @NonNull Writer writer,
       @NonNull Map<Class<?>, ObjectEncoder<?>> objectEncoders,
       @NonNull Map<Class<?>, ValueEncoder<?>> valueEncoders,
-      ObjectEncoder<Object> fallbackEncoder) {
+      ObjectEncoder<Object> fallbackEncoder,
+      boolean ignoreNulls) {
     this.jsonWriter = new JsonWriter(writer);
     this.objectEncoders = objectEncoders;
     this.valueEncoders = valueEncoders;
     this.fallbackEncoder = fallbackEncoder;
+    this.addMethod = ignoreNulls ? this::internalAddIgnoreNulls : this::internalAdd;
   }
 
   private JsonValueObjectEncoderContext(JsonValueObjectEncoderContext anotherContext) {
@@ -54,19 +62,14 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     this.objectEncoders = anotherContext.objectEncoders;
     this.valueEncoders = anotherContext.valueEncoders;
     this.fallbackEncoder = anotherContext.fallbackEncoder;
+    this.addMethod = anotherContext.addMethod;
   }
 
   @NonNull
   @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, @Nullable Object o)
       throws IOException, EncodingException {
-    maybeUnNest();
-    jsonWriter.name(name);
-    if (o == null) {
-      jsonWriter.nullValue();
-      return this;
-    }
-    return add(o, false);
+    return addMethod.invoke(name, o);
   }
 
   @NonNull
@@ -310,5 +313,26 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       childContext = null;
       jsonWriter.endObject();
     }
+  }
+
+  private JsonValueObjectEncoderContext internalAdd(@NonNull String name, @Nullable Object o)
+      throws IOException, EncodingException {
+    maybeUnNest();
+    jsonWriter.name(name);
+    if (o == null) {
+      jsonWriter.nullValue();
+      return this;
+    }
+    return add(o, false);
+  }
+
+  private JsonValueObjectEncoderContext internalAddIgnoreNulls(
+      @NonNull String name, @Nullable Object o) throws IOException, EncodingException {
+    if (o == null) {
+      return this;
+    }
+    maybeUnNest();
+    jsonWriter.name(name);
+    return add(o, false);
   }
 }

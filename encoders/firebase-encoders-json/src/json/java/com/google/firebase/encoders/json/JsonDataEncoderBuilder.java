@@ -35,7 +35,7 @@ import java.util.TimeZone;
 
 public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncoderBuilder> {
 
-  private final ObjectEncoder<Object> DEFAULT_FALLBACK_ENCODER =
+  private static final ObjectEncoder<Object> DEFAULT_FALLBACK_ENCODER =
       (o, ctx) -> {
         throw new EncodingException(
             "Couldn't find encoder for type " + o.getClass().getCanonicalName());
@@ -44,6 +44,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders = new HashMap<>();
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders = new HashMap<>();
   private ObjectEncoder<Object> fallbackEncoder = DEFAULT_FALLBACK_ENCODER;
+  private boolean ignoreNulls = false;
 
   private static final class TimestampEncoder implements ValueEncoder<Date> {
     private static final DateFormat rfc339;
@@ -105,6 +106,12 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
   }
 
   @NonNull
+  public JsonDataEncoderBuilder ignoreNulls(boolean ignore) {
+    this.ignoreNulls = ignore;
+    return this;
+  }
+
+  @NonNull
   public DataEncoder build() {
     return new DataEncoder() {
       @Override
@@ -112,7 +119,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
           throws IOException, EncodingException {
         JsonValueObjectEncoderContext encoderContext =
             new JsonValueObjectEncoderContext(
-                writer, objectEncoders, valueEncoders, fallbackEncoder);
+                writer, objectEncoders, valueEncoders, fallbackEncoder, ignoreNulls);
         encoderContext.add(o, false);
         encoderContext.close();
       }
