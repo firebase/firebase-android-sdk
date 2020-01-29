@@ -116,6 +116,27 @@ public class EncodableProcessorTest {
   }
 
   @Test
+  public void compile_withGenericClass_ShouldWarnAboutPotentialProblems() {
+    Compilation result =
+        javac()
+            .withProcessors(new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "GenericClass",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "@Encodable public class GenericClass<T, U> {",
+                    "public T getT() { return null; }",
+                    "public U getU() { return null; }",
+                    "}"));
+
+    assertThat(result).hadWarningContaining("GenericClass<T,U> is a generic type");
+    assertThat(result)
+        .generatedSourceFile("AutoGenericClassEncoder")
+        .hasSourceEquivalentTo(
+            JavaFileObjects.forResource("ExpectedGenericsEncoderWithUnknownType.java"));
+  }
+
+  @Test
   public void compile_withMultipleGenericArgs_shouldCreateEncodersForAllKnownGenericArgs() {
     Compilation result =
         javac()
