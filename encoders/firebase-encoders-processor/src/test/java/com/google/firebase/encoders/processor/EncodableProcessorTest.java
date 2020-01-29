@@ -277,9 +277,8 @@ public class EncodableProcessorTest {
                     "}",
                     "}"));
 
-    final StringSubject compiled = assertThat(result)
-        .generatedSourceFile("AutoFooEncoder")
-        .contentsAsUtf8String();
+    final StringSubject compiled =
+        assertThat(result).generatedSourceFile("AutoFooEncoder").contentsAsUtf8String();
 
     compiled.contains("cfg.registerEncoder(AutoValue_Foo.class");
     compiled.contains("cfg.registerEncoder(AutoValue_Foo_Bar.class");
@@ -319,7 +318,8 @@ public class EncodableProcessorTest {
                 + "com.example.sub.EncodableComExampleFooMemberSubMemberAutoValueSupport.TYPE,"
                 + " MemberSubMemberEncoder.INSTANCE)");
     assertThat(result)
-        .generatedSourceFile("com/example/sub/EncodableComExampleFooMemberSubMemberAutoValueSupport")
+        .generatedSourceFile(
+            "com/example/sub/EncodableComExampleFooMemberSubMemberAutoValueSupport")
         .contentsAsUtf8String()
         .contains("Class<? extends Member.SubMember> TYPE = AutoValue_Member_SubMember.class");
   }
