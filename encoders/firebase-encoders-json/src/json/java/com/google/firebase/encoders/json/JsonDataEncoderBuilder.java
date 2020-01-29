@@ -44,7 +44,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders = new HashMap<>();
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders = new HashMap<>();
   private ObjectEncoder<Object> fallbackEncoder = DEFAULT_FALLBACK_ENCODER;
-  private boolean ignoreNulls = false;
+  private boolean ignoreNullValues = false;
 
   private static final class TimestampEncoder implements ValueEncoder<Date> {
     private static final DateFormat rfc339;
@@ -106,8 +106,8 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
   }
 
   @NonNull
-  public JsonDataEncoderBuilder ignoreNulls(boolean ignore) {
-    this.ignoreNulls = ignore;
+  public JsonDataEncoderBuilder ignoreNullValues(boolean ignore) {
+    this.ignoreNullValues = ignore;
     return this;
   }
 
@@ -119,7 +119,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
           throws IOException, EncodingException {
         JsonValueObjectEncoderContext encoderContext =
             new JsonValueObjectEncoderContext(
-                writer, objectEncoders, valueEncoders, fallbackEncoder, ignoreNulls);
+                writer, objectEncoders, valueEncoders, fallbackEncoder, ignoreNullValues);
         encoderContext.add(o, false);
         encoderContext.close();
       }

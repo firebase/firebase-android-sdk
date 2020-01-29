@@ -49,12 +49,12 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       @NonNull Map<Class<?>, ObjectEncoder<?>> objectEncoders,
       @NonNull Map<Class<?>, ValueEncoder<?>> valueEncoders,
       ObjectEncoder<Object> fallbackEncoder,
-      boolean ignoreNulls) {
+      boolean ignoreNullValues) {
     this.jsonWriter = new JsonWriter(writer);
     this.objectEncoders = objectEncoders;
     this.valueEncoders = valueEncoders;
     this.fallbackEncoder = fallbackEncoder;
-    this.addMethod = ignoreNulls ? this::internalAddIgnoreNulls : this::internalAdd;
+    this.addMethod = ignoreNullValues ? this::internalAddIgnoreNullValues : this::internalAdd;
   }
 
   private JsonValueObjectEncoderContext(JsonValueObjectEncoderContext anotherContext) {
@@ -326,7 +326,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     return add(o, false);
   }
 
-  private JsonValueObjectEncoderContext internalAddIgnoreNulls(
+  private JsonValueObjectEncoderContext internalAddIgnoreNullValues(
       @NonNull String name, @Nullable Object o) throws IOException, EncodingException {
     if (o == null) {
       return this;

@@ -64,7 +64,7 @@ public class JsonDataEncoderBuilderTests {
   }
 
   @Test
-  public void ignoreNulls_shouldCorrectlyEncodeObjectIgnoringNullObjects()
+  public void ignoreNullValues_shouldCorrectlyEncodeObjectIgnoringNullObjects()
       throws EncodingException {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
@@ -76,14 +76,15 @@ public class JsonDataEncoderBuilderTests {
                           ctx.add("foo", "value");
                           ctx.add("bar", null);
                         }))
-            .ignoreNulls(true)
+            .ignoreNullValues(true)
             .build();
 
     assertThat(encoder.encode(new Foo())).isEqualTo("{\"foo\":\"value\"}");
   }
 
   @Test
-  public void ignoreNulls_shouldCorrectlyEncodeValueIgnoringNullObjects() throws EncodingException {
+  public void ignoreNullValues_shouldCorrectlyEncodeValueIgnoringNullObjects()
+      throws EncodingException {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .configureWith(
@@ -93,7 +94,7 @@ public class JsonDataEncoderBuilderTests {
                         (Foo s, ValueEncoderContext ctx) -> {
                           ctx.add("value");
                         }))
-            .ignoreNulls(true)
+            .ignoreNullValues(true)
             .build();
 
     HashMap<String, Foo> fooMap = new HashMap<>();
