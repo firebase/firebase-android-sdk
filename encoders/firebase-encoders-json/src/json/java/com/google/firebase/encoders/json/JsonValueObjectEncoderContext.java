@@ -42,7 +42,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders;
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders;
   private final ObjectEncoder<Object> fallbackEncoder;
-  private final AddMethod addMethod;
+  private final boolean ignoreNullValues;
 
   JsonValueObjectEncoderContext(
       @NonNull Writer writer,
@@ -54,7 +54,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     this.objectEncoders = objectEncoders;
     this.valueEncoders = valueEncoders;
     this.fallbackEncoder = fallbackEncoder;
-    this.addMethod = ignoreNullValues ? this::internalAddIgnoreNullValues : this::internalAdd;
+    this.ignoreNullValues = ignoreNullValues;
   }
 
   private JsonValueObjectEncoderContext(JsonValueObjectEncoderContext anotherContext) {
@@ -62,14 +62,17 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     this.objectEncoders = anotherContext.objectEncoders;
     this.valueEncoders = anotherContext.valueEncoders;
     this.fallbackEncoder = anotherContext.fallbackEncoder;
-    this.addMethod = anotherContext.addMethod;
+    this.ignoreNullValues = anotherContext.ignoreNullValues;
   }
 
   @NonNull
   @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, @Nullable Object o)
       throws IOException, EncodingException {
-    return addMethod.invoke(name, o);
+    if (ignoreNullValues) {
+      return internalAddIgnoreNullValues(name, o);
+    }
+    return internalAdd(name, o);
   }
 
   @NonNull
