@@ -60,6 +60,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.remoteconfig.FakeInstanceIdResult;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
@@ -169,6 +170,37 @@ public class ConfigFetchHandlerTest {
         .isTrue();
 
     verifyBackendIsCalled();
+  }
+
+  @Test
+  public void fetch_firstFetch_includesIidToken() throws Exception {
+    fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
+
+    assertWithMessage("Fetch() does not include IID token.")
+        .that(fetchHandler.fetch().isSuccessful())
+        .isTrue();
+
+    verify(mockBackendFetchApiClient)
+        .fetch(
+            any(HttpURLConnection.class),
+            /* instanceId= */ any(),
+            /* instanceIdToken= */ eq(INSTANCE_ID_TOKEN_STRING),
+            /* analyticsUserProperties= */ any(),
+            /* lastFetchETag= */ any(),
+            /* customHeaders= */ any(),
+            /* currentTime= */ any());
+  }
+
+  @Test
+  public void fetch_failToGetIidToken_throwsRemoteConfigException() throws Exception {
+    when(mockFirebaseInstanceId.getInstanceId())
+        .thenReturn(Tasks.forException(new IOException("SERVICE_NOT_AVAILABLE")));
+    fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
+
+    assertThrowsClientException(
+        fetchHandler.fetch(), "Failed to get Firebase Instance ID token for fetch.");
+
+    verifyBackendIsNeverCalled();
   }
 
   @Test
@@ -866,8 +898,10 @@ public class ConfigFetchHandlerTest {
   }
 
   private void loadInstanceIdAndToken() {
-    when(mockFirebaseInstanceId.getId()).thenReturn(INSTANCE_ID_STRING);
-    when(mockFirebaseInstanceId.getToken()).thenReturn(INSTANCE_ID_TOKEN_STRING);
+    when(mockFirebaseInstanceId.getInstanceId())
+        .thenReturn(
+            Tasks.forResult(
+                new FakeInstanceIdResult(INSTANCE_ID_STRING, INSTANCE_ID_TOKEN_STRING)));
   }
 
   private void loadCacheAndClockWithConfig(

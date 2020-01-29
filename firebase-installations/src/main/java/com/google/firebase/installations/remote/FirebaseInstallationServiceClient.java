@@ -383,6 +383,7 @@ public class FirebaseInstallationServiceClient {
       }
     }
     reader.endObject();
+    reader.close();
 
     return builder.setResponseCode(ResponseCode.OK).build();
   }
@@ -403,6 +404,7 @@ public class FirebaseInstallationServiceClient {
       }
     }
     reader.endObject();
+    reader.close();
 
     return builder.setResponseCode(TokenResult.ResponseCode.OK).build();
   }

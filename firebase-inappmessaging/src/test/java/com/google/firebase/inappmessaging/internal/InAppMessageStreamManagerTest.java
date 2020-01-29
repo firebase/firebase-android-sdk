@@ -89,10 +89,10 @@ public class InAppMessageStreamManagerTest {
   private static final CampaignProto.ExperimentalCampaignPayload.Builder experimentalCampaign =
       CampaignProto.ExperimentalCampaignPayload.newBuilder()
           .setCampaignId(CAMPAIGN_ID_STRING)
-          .setExperimentPayload(
-              FirebaseAbt.ExperimentPayload.newBuilder()
-                  .setExperimentStartTimeMillis(PAST)
-                  .setTimeToLiveMillis(PAST));
+          .setCampaignName(CAMPAIGN_NAME_STRING)
+          .setCampaignStartTimeMillis(PAST)
+          .setCampaignEndTimeMillis(FUTURE)
+          .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance());
   private static final ThickContent.Builder thickContentBuilder =
       ThickContent.newBuilder()
           .setPriority(priorityTwo)
@@ -309,16 +309,64 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
+  public void stream_onFutureCampaign_doesNotTrigger() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setVanillaPayload(
+                VanillaCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(FUTURE)
+                    .setCampaignEndTimeMillis(FUTURE))
+            .build();
+
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+
+    subscriber.assertNoValues();
+  }
+
+  @Test
+  public void stream_onValidExperiment_notifiesSubscriber() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setExperimentalPayload(
+                CampaignProto.ExperimentalCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(PAST)
+                    .setCampaignEndTimeMillis(FUTURE)
+                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+            .build();
+
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+
+    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+  }
+
+  @Test
   public void stream_onExpiredExperiment_doesNotTrigger() {
     ThickContent t =
         thickContentBuilder
             .clearVanillaPayload()
             .setExperimentalPayload(
                 CampaignProto.ExperimentalCampaignPayload.newBuilder()
-                    .setExperimentPayload(
-                        FirebaseAbt.ExperimentPayload.newBuilder()
-                            .setExperimentStartTimeMillis(PAST)
-                            .setTimeToLiveMillis(1)))
+                    .setCampaignStartTimeMillis(PAST)
+                    .setCampaignEndTimeMillis(NOW)
+                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
             .build();
     FetchEligibleCampaignsResponse r =
         FetchEligibleCampaignsResponse.newBuilder()
@@ -334,16 +382,27 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onExperimentalCampaign_notifiesSubscriber() {
+  public void stream_onFutureExperiment_doesNotTrigger() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setExperimentalPayload(
+                CampaignProto.ExperimentalCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(FUTURE)
+                    .setCampaignEndTimeMillis(FUTURE)
+                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+            .build();
     FetchEligibleCampaignsResponse r =
         FetchEligibleCampaignsResponse.newBuilder()
             .setExpirationEpochTimestampMillis(FUTURE)
-            .addMessages(experimentalContent)
+            .addMessages(t)
             .build();
 
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
-    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+
+    subscriber.assertNoValues();
   }
 
   @Test
