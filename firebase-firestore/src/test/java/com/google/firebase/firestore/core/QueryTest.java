@@ -23,16 +23,22 @@ import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.testEquality;
+import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -552,5 +558,58 @@ public class QueryTest {
 
     query = baseQuery.endAt(new Bound(Collections.emptyList(), true));
     assertFalse(query.matchesAllDocuments());
+  }
+
+  @Test
+  public void testCanonicalIdsAreStable() {
+    // This test aims to ensure that we do not break canonical IDs, as they are used as keys in
+    // the TargetCache.
+
+    Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
+
+    Map<Query, String> queryToCanoncialIdMap = new LinkedHashMap<>();
+    queryToCanoncialIdMap.put(baseQuery, "collection|f:|ob:__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.filter(filter("a", ">", "a")),
+        "collection|f:a>a|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.filter(filter("a", "<=", new GeoPoint(90.0, 90.0))),
+        "collection|f:a<=GeoPoint { latitude=90.0, longitude=90.0 }|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.filter(filter("a", ">=", Blob.fromBytes(new byte[] {1, 2, 3}))),
+        "collection|f:a>=Blob { bytes=010203 }|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.filter(filter("a", "==", Arrays.asList(1, 2, 3))),
+        "collection|f:a==[1, 2, 3]|ob:__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.filter(filter("a", "==", Double.NaN)),
+        "collection|f:a==NaN|ob:__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.filter(filter("a", "==", map("a", "b", "inner", map("d", "c")))),
+        "collection|f:a==ArraySortedMap{(a=>b), (inner=>ArraySortedMap{(d=>c)};)};|ob:__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.filter(filter("a", "in", Arrays.asList(1, 2, 3))),
+        "collection|f:ain[1, 2, 3]|ob:__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.filter(filter("a", "array-contains-any", Arrays.asList(1, 2, 3))),
+        "collection|f:aarray_contains_any[1, 2, 3]|ob:__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.filter(filter("a", "array-contains", "a")),
+        "collection|f:aarray_containsa|ob:__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.orderBy(orderBy("a")), "collection|f:|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery
+            .orderBy(orderBy("a"))
+            .startAt(new Bound(Arrays.asList(wrap("foo"), wrap(Arrays.asList(1, 2, 3))), true)),
+        "collection|f:|ob:aasc__name__asc|lb:b:foo[1, 2, 3]|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.limitToLast(5), "collection|f:|ob:__name__asc|l:5|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
+        baseQuery.limitToLast(5), "collection|f:|ob:__name__desc|l:5|lt:LIMIT_TO_LAST");
+
+    for (Map.Entry<Query, String> entry : queryToCanoncialIdMap.entrySet()) {
+      assertEquals(entry.getValue(), entry.getKey().getCanonicalId());
+    }
   }
 }
