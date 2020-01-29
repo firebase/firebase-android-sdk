@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +14,9 @@
 
 package com.google.firebase.firestore;
 
-import com.google.firebase.firestore.model.DocumentKey;
 import org.mockito.Mockito;
 
-public final class TestAccessHelper {
-
-  /** Makes the DocumentReference constructor accessible. */
-  public static DocumentReference createDocumentReference(DocumentKey documentKey) {
-    // We can use null here because the tests only use this as a wrapper for documentKeys.
-    return new DocumentReference(documentKey, null);
-  }
-
-  /** Makes the getKey() method accessible. */
-  public static DocumentKey referenceKey(DocumentReference documentReference) {
-    return documentReference.getKey();
-  }
-
+public class TestAccessHelper {
   /**
    * Install mocks for `FirebaseFirestore.getFirestoreSettings()` and
    * `FirebaseFirestore.getUserDataWriter()`, which are used in DocumentSnapshot tests.
