@@ -67,8 +67,6 @@ public class IndexedQueryEngineTest {
     SQLiteCollectionIndex index = new SQLiteCollectionIndex(persistence, User.UNAUTHENTICATED);
     MutationQueue mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
     remoteDocuments = persistence.getRemoteDocumentCache();
-    LocalDocumentsView localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
     queryEngine = new IndexedQueryEngine(index);
   }
 

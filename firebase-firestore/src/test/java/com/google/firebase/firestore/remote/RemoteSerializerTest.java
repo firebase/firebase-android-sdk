@@ -668,7 +668,7 @@ public final class RemoteSerializerTest {
                     .build())
             .build();
 
-    assertEquals(apiFilter, expectedFilter);
+    assertEquals(expectedFilter, apiFilter);
     FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
     assertEquals(roundTripped, inputFilter);
     assertTrue(roundTripped instanceof InFilter);
@@ -691,7 +691,7 @@ public final class RemoteSerializerTest {
                     .build())
             .build();
 
-    assertEquals(apiFilter, expectedFilter);
+    assertEquals(expectedFilter, apiFilter);
     FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
     assertEquals(roundTripped, inputFilter);
     assertTrue(roundTripped instanceof ArrayContainsAnyFilter);
@@ -715,7 +715,7 @@ public final class RemoteSerializerTest {
                     .build())
             .build();
 
-    assertEquals(apiFilter, expectedFilter);
+    assertEquals(expectedFilter, apiFilter);
     FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
     assertEquals(roundTripped, inputFilter);
     assertTrue(roundTripped instanceof KeyFieldFilter);

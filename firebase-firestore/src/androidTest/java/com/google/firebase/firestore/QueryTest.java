@@ -549,7 +549,6 @@ public class QueryTest {
     Map<String, Object> docD = map("array", asList(42L), "array2", asList("bingo"));
     Map<String, Object> docE = map("array", asList(43L));
     Map<String, Object> docF = map("array", asList(map("a", 42L)));
-    Map<String, Object> docG = map("array", 42L);
 
     CollectionReference collection =
         testCollectionWithDocs(
