@@ -582,6 +582,9 @@ public class QueryTest {
         baseQuery.filter(filter("a", "==", Double.NaN)),
         "collection|f:a==NaN|ob:__name__asc|lt:LIMIT_TO_FIRST");
     assertCanonicalId(
+        baseQuery.filter(filter("__name__", "==", ref("collection/id"))),
+        "collection|f:__name__==collection/id|ob:__name__asc|lt:LIMIT_TO_FIRST");
+    assertCanonicalId(
         baseQuery.filter(filter("a", "==", map("a", "b", "inner", map("d", "c")))),
         "collection|f:a==ArraySortedMap{(a=>b), (inner=>ArraySortedMap{(d=>c)};)};|ob:__name__asc|lt:LIMIT_TO_FIRST");
     assertCanonicalId(
