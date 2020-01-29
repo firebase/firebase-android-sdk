@@ -277,7 +277,7 @@ public class EncodableProcessorTest {
                     "}",
                     "}"));
 
-    final StringSubject compiled =
+    StringSubject compiled =
         assertThat(result).generatedSourceFile("AutoFooEncoder").contentsAsUtf8String();
 
     compiled.contains("cfg.registerEncoder(AutoValue_Foo.class");
