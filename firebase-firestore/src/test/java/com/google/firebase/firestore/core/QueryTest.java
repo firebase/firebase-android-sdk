@@ -29,6 +29,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.Document;
@@ -572,6 +573,9 @@ public class QueryTest {
     assertCanonicalId(
         baseQuery.filter(filter("a", "<=", new GeoPoint(90.0, 90.0))),
         "collection|f:a<=GeoPoint { latitude=90.0, longitude=90.0 }|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", new Timestamp(60, 600))),
+        "collection|f:a<=Timestamp(seconds=60, nanoseconds=0)|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
     assertCanonicalId(
         baseQuery.filter(filter("a", ">=", Blob.fromBytes(new byte[] {1, 2, 3}))),
         "collection|f:a>=Blob { bytes=010203 }|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
