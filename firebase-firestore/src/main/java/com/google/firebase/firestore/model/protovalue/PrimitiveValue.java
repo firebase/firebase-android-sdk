@@ -34,6 +34,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents a FieldValue that is backed by a single Firestore V1 Value proto and implements
+ * Firestore's Value semantics for ordering and equality.
+ */
 public class PrimitiveValue extends FieldValue {
   protected final Value internalValue;
 

@@ -23,12 +23,10 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 public class ObjectValue extends PrimitiveValue {
   private static final ObjectValue EMPTY_VALUE =
@@ -37,13 +35,18 @@ public class ObjectValue extends PrimitiveValue {
               .setMapValue(com.google.firestore.v1.MapValue.getDefaultInstance())
               .build());
 
+  public ObjectValue(Value value) {
+    super(value);
+    hardAssert(isType(value, TYPE_ORDER_OBJECT), "ObjectValues must be backed by a MapValue");
+  }
+
   public static ObjectValue emptyObject() {
     return EMPTY_VALUE;
   }
 
-  public ObjectValue(Value value) {
-    super(value);
-    hardAssert(isType(value, TYPE_ORDER_OBJECT), "ObjectValues must be backed by a MapValue");
+  /** Returns a new Builder instance that is based on an empty object. */
+  public static ObjectValue.Builder newBuilder() {
+    return EMPTY_VALUE.toBuilder();
   }
 
   /**
@@ -53,17 +56,19 @@ public class ObjectValue extends PrimitiveValue {
    * @return The value at the path or if there it doesn't exist.
    */
   public @Nullable FieldValue get(FieldPath fieldPath) {
-    Value value = internalValue;
-
-    for (int i = 0; i < fieldPath.length() - 1; ++i) {
-      value = value.getMapValue().getFieldsOrDefault(fieldPath.getSegment(i), null);
-      if (!isType(value, TYPE_ORDER_OBJECT)) {
-        return null;
+    if (fieldPath.isEmpty()) {
+      return this;
+    } else {
+      Value value = internalValue;
+      for (int i = 0; i < fieldPath.length() - 1; ++i) {
+        value = value.getMapValue().getFieldsOrDefault(fieldPath.getSegment(i), null);
+        if (!isType(value, TYPE_ORDER_OBJECT)) {
+          return null;
+        }
       }
+      value = value.getMapValue().getFieldsOrDefault(fieldPath.getLastSegment(), null);
+      return value != null ? FieldValue.of(value) : null;
     }
-
-    value = value.getMapValue().getFieldsOrDefault(fieldPath.getLastSegment(), null);
-    return value != null ? FieldValue.of(value) : null;
   }
 
   /** Recursively extracts the FieldPaths that are set in this ObjectValue. */
@@ -106,15 +111,15 @@ public class ObjectValue extends PrimitiveValue {
     private ObjectValue baseObject;
 
     /**
-     * A list of FieldPath/Value pairs to apply to the base object. `null` values indicate field
-     * deletes. MapValues are expanded before they are stored in the overlay map, so that an entry
-     * exists for each leaf node.
+     * A nested map that contains the accumulated changes in this builder. Values can either be
+     * `Value` protos, `Map<String, Object>` values (to represent additional nesting) or `null` (to
+     * represent field deletes).
      */
-    private SortedMap<FieldPath, Value> overlayMap;
+    private Map<String, Object> overlayMap;
 
     Builder(ObjectValue baseObject) {
       this.baseObject = baseObject;
-      this.overlayMap = new TreeMap<>();
+      this.overlayMap = new HashMap<>();
     }
 
     /**
@@ -126,7 +131,6 @@ public class ObjectValue extends PrimitiveValue {
      */
     public Builder set(FieldPath path, Value value) {
       hardAssert(!path.isEmpty(), "Cannot set field for empty path on ObjectValue");
-      removeConflictingOverlays(path);
       setOverlay(path, value);
       return this;
     }
@@ -140,127 +144,94 @@ public class ObjectValue extends PrimitiveValue {
      */
     public Builder delete(FieldPath path) {
       hardAssert(!path.isEmpty(), "Cannot delete field for empty path on ObjectValue");
-      removeConflictingOverlays(path);
       setOverlay(path, null);
       return this;
     }
 
-    /** Remove any existing overlays that would be replaced by setting `path` to a new value. */
-    private void removeConflictingOverlays(FieldPath path) {
-      Iterator<FieldPath> iterator =
-          overlayMap.subMap(path, createSuccessor(path)).keySet().iterator();
-      while (iterator.hasNext()) {
-        iterator.next();
-        iterator.remove();
-      }
-    }
-
-    /**
-     * Adds `value` to the overlay map at `path`. MapValues are recursively expanded into one
-     * overlay per leaf node.
-     */
+    /** Adds `value` to the overlay map at `path`. Creates nested map entries if needed. */
     private void setOverlay(FieldPath path, @Nullable Value value) {
-      if (!isType(value, TYPE_ORDER_OBJECT) || value.getMapValue().getFieldsCount() == 0) {
-        overlayMap.put(path, value);
-      } else {
-        for (Map.Entry<String, Value> entry : value.getMapValue().getFieldsMap().entrySet()) {
-          setOverlay(path.append(entry.getKey()), entry.getValue());
+      Map<String, Object> currentLevel = overlayMap;
+
+      for (int i = 0; i < path.length() - 1; ++i) {
+        String currentSegment = path.getSegment(i);
+        Object currentValue = currentLevel.get(currentSegment);
+
+        if (currentValue instanceof Map) {
+          // Re-use a previously created map
+          currentLevel = (Map<String, Object>) currentValue;
+        } else if (currentValue instanceof Value
+            && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
+          // Convert the existing Protobuf MapValue into a Java map
+          Map<String, Object> nextLevel =
+              new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
+          currentLevel.put(currentSegment, nextLevel);
+          currentLevel = nextLevel;
+        } else {
+          // Create an empty hash map to represent the current nesting level
+          Map<String, Object> nextLevel = new HashMap<>();
+          currentLevel.put(currentSegment, nextLevel);
+          currentLevel = nextLevel;
         }
       }
+
+      currentLevel.put(path.getLastSegment(), value);
     }
 
     /** Returns an ObjectValue with all mutations applied. */
     public ObjectValue build() {
-      if (overlayMap.isEmpty()) {
-        return baseObject;
+      MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
+      if (mergedResult != null) {
+        return new ObjectValue(Value.newBuilder().setMapValue(mergedResult).build());
       } else {
-        MapValue.Builder result = baseObject.internalValue.getMapValue().toBuilder();
-        applyOverlay(FieldPath.EMPTY_PATH, result);
-        return new ObjectValue(Value.newBuilder().setMapValue(result).build());
+        return this.baseObject;
       }
     }
 
     /**
-     * Applies any overlays from `overlayMap` that exist at `currentPath` to the `resultAtPath` map.
-     * Overlays are expanded recursively based on their location in the backing ObjectValue's
-     * subtree and are processed by nesting level.
-     *
-     * <p>Example: Overlays { 'a.b.c' : 'foo', 'a.b.d' : 'bar', 'a.e' : 'foobar' }
-     *
-     * <p>To apply these overlays, the methods first creates a MapValue.Builder for `a`. It then
-     * calls applyOverlay() with a current path of `a` and the newly created MapValue.Builder. In
-     * its second call, `applyOverlay` assigns `a.b` to a new MapBuilder and `a.e` to 'foobar'. The
-     * third call assigns `a.b.c` and `a.b.d` to the MapValue.Builder created in the second step.
-     *
-     * <p>The overall aim of this method is to minimize conversions between MapValues and their
-     * builders.
+     * Applies any overlays from `currentOverlays` that exist at `currentPath` and returns the
+     * merged data at `currentPath` (or null if there were no changes).
      *
      * @param currentPath The path at the current nesting level. Can be set toFieldValue.EMPTY_PATH
      *     to represent the root.
-     * @param resultAtPath A mutable copy of the existing data at the current nesting level.
-     *     Overlays are applied to this argument.
-     * @return Whether any modifications were applied (in any part of the subtree under
-     *     currentPath).
+     * @param currentOverlays The overlays at the current nesting level in the same format as
+     *     `overlayMap`.
+     * @return The merged data at `currentPath` or null if no modifications were applied.
      */
-    private boolean applyOverlay(FieldPath currentPath, MapValue.Builder resultAtPath) {
-      // Extract the data that exists at or below the current path. Te extracted subtree is
-      // subdivided during each iteration. The iteration stops when the slice becomes empty.
-      SortedMap<FieldPath, Value> currentSlice =
-          currentPath.isEmpty()
-              ? overlayMap
-              : overlayMap.subMap(currentPath, createSuccessor(currentPath));
-
+    private @Nullable MapValue applyOverlay(
+        FieldPath currentPath, Map<String, Object> currentOverlays) {
       boolean modified = false;
 
-      while (!currentSlice.isEmpty()) {
-        FieldPath fieldPath = currentSlice.firstKey();
+      @Nullable FieldValue existingValue = baseObject.get(currentPath);
+      MapValue.Builder resultAtPath =
+          existingValue instanceof ObjectValue
+              // If there is already data at the current path, base our modifications on top
+              // of the existing data.
+              ? ((ObjectValue) existingValue).internalValue.getMapValue().toBuilder()
+              : MapValue.newBuilder();
 
-        if (fieldPath.length() == currentPath.length() + 1) {
-          // The key in the slice is a leaf node. We can apply the value directly.
-          String fieldName = fieldPath.getLastSegment();
-          Value overlayValue = overlayMap.get(fieldPath);
-          if (overlayValue != null) {
-            resultAtPath.putFields(fieldName, overlayValue);
-            modified = true;
-          } else if (resultAtPath.containsFields(fieldName)) {
-            resultAtPath.removeFields(fieldName);
+      for (Map.Entry<String, Object> entry : currentOverlays.entrySet()) {
+        String pathSegment = entry.getKey();
+        Object value = entry.getValue();
+
+        if (value instanceof Map) {
+          @Nullable
+          MapValue nested =
+              applyOverlay(currentPath.append(pathSegment), (Map<String, Object>) value);
+          if (nested != null) {
+            resultAtPath.putFields(pathSegment, Value.newBuilder().setMapValue(nested).build());
             modified = true;
           }
-        } else {
-          // Since we need a MapValue.Builder at each nesting level (e.g. to create the field for
-          // `a.b.c` we need to create a MapValue.Builder for `a` as well as `a.b`), we invoke
-          // applyOverlay() recursively with the next nesting level.
-          FieldPath nextSliceStart = fieldPath.keepFirst(currentPath.length() + 1);
-          @Nullable FieldValue existingValue = baseObject.get(nextSliceStart);
-          MapValue.Builder nextSliceBuilder =
-              existingValue instanceof ObjectValue
-                  // If there is already data at the current path, base our modifications on top
-                  // of the existing data.
-                  ? ((ObjectValue) existingValue).internalValue.getMapValue().toBuilder()
-                  : MapValue.newBuilder();
-          modified = applyOverlay(nextSliceStart, nextSliceBuilder) || modified;
-          if (modified) {
-            // Only apply the result if a field has been modified. This avoids adding an empty
-            // map entry for deletes of non-existing fields.
-            resultAtPath.putFields(
-                nextSliceStart.getLastSegment(),
-                Value.newBuilder().setMapValue(nextSliceBuilder).build());
-          }
+        } else if (value instanceof Value) {
+          resultAtPath.putFields(pathSegment, (Value) value);
+          modified = true;
+        } else if (resultAtPath.containsFields(pathSegment)) {
+          hardAssert(value == null, "Expected entry to be a Map, a Value or null");
+          resultAtPath.removeFields(pathSegment);
+          modified = true;
         }
-
-        // Shrink the subtree to contain only values after the current field path. Note that we are
-        // still bound by the subtree created at the initial method invocation. The current loop
-        // exits when the subtree becomes empty.
-        currentSlice = currentSlice.tailMap(createSuccessor(fieldPath));
       }
 
-      return modified;
-    }
-
-    /** Create the first field path that is not part of the subtree created by `currentPath`. */
-    private FieldPath createSuccessor(FieldPath currentPath) {
-      hardAssert(!currentPath.isEmpty(), "Can't create a successor for an empty path");
-      return currentPath.popLast().append(currentPath.getLastSegment() + '0');
+      return modified ? resultAtPath.build() : null;
     }
   }
 }

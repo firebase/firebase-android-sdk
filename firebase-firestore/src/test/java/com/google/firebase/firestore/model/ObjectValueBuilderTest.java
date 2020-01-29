@@ -37,31 +37,31 @@ public class ObjectValueBuilderTest {
   private Value emptyObject = valueOf(Collections.emptyMap());
 
   @Test
-  public void emptyBuilder() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
+  public void supportsEmptyBuilders() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
     ObjectValue object = builder.build();
-    assertEquals(wrapObject(), object);
+    assertEquals(ObjectValue.emptyObject(), object);
   }
 
   @Test
-  public void setSingleField() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
+  public void setsSingleField() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("foo"), fooValue);
     ObjectValue object = builder.build();
     assertEquals(wrapObject("foo", fooValue), object);
   }
 
   @Test
-  public void setEmptyObject() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
+  public void setsEmptyObject() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("foo"), emptyObject);
     ObjectValue object = builder.build();
     assertEquals(wrapObject("foo", emptyObject), object);
   }
 
   @Test
-  public void setMultipleFields() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
+  public void setsMultipleFields() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("foo"), fooValue);
     builder.set(field("bar"), fooValue);
     ObjectValue object = builder.build();
@@ -69,17 +69,8 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void setSuccessorField() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
-    builder.set(field("a"), fooValue);
-    builder.set(field("a0"), fooValue);
-    ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", fooValue, "a0", fooValue), object);
-  }
-
-  @Test
-  public void setNestedField() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
+  public void setsNestedField() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("a.b"), fooValue);
     builder.set(field("c.d.e"), fooValue);
     ObjectValue object = builder.build();
@@ -87,8 +78,8 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void setTwoFieldsInNestedObject() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
+  public void setsTwoFieldsInNestedObject() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("a.b"), fooValue);
     builder.set(field("a.c"), fooValue);
     ObjectValue object = builder.build();
@@ -96,8 +87,8 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void setFieldInNestedObject() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
+  public void setsFieldInNestedObject() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("a"), map("b", fooValue));
     builder.set(field("a.c"), fooValue);
     ObjectValue object = builder.build();
@@ -105,8 +96,17 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void setNestedFieldMultipleTimes() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
+  public void setsDeeplyNestedFieldInNestedObject() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
+    builder.set(field("a.b.c.d.e.f"), fooValue);
+    ObjectValue object = builder.build();
+    assertEquals(
+        wrapObject("a", map("b", map("c", map("d", map("e", map("f", fooValue)))))), object);
+  }
+
+  @Test
+  public void setsNestedFieldMultipleTimes() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("a.c"), fooValue);
     builder.set(field("a"), map("b", fooValue));
     ObjectValue object = builder.build();
@@ -114,8 +114,8 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void setAndDeleteField() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
+  public void setsAndDeletesField() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("foo"), fooValue);
     builder.delete(field("foo"));
     ObjectValue object = builder.build();
@@ -123,8 +123,8 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void setAndDeleteNestedField() {
-    ObjectValue.Builder builder = ObjectValue.emptyObject().toBuilder();
+  public void setsAndDeletesNestedField() {
+    ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("a.b.c"), fooValue);
     builder.set(field("a.b.d"), fooValue);
     builder.set(field("f.g"), fooValue);
@@ -136,7 +136,7 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void setSingleFieldInExistingObject() {
+  public void setsSingleFieldInExistingObject() {
     ObjectValue.Builder builder = wrapObject("a", fooValue).toBuilder();
     builder.set(field("b"), fooValue);
     ObjectValue object = builder.build();
@@ -144,7 +144,7 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void overwriteField() {
+  public void overwritesField() {
     ObjectValue.Builder builder = wrapObject("a", fooValue).toBuilder();
     builder.set(field("a"), barValue);
     ObjectValue object = builder.build();
@@ -152,7 +152,7 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void overwriteNestedFields() {
+  public void overwritesNestedFields() {
     ObjectValue.Builder builder =
         wrapObject("a", map("b", fooValue, "c", map("d", fooValue))).toBuilder();
     builder.set(field("a.b"), barValue);
@@ -162,7 +162,7 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void overwriteDeeplyNestedField() {
+  public void overwritesDeeplyNestedField() {
     ObjectValue.Builder builder = wrapObject("a", map("b", fooValue)).toBuilder();
     builder.set(field("a.b.c"), barValue);
     ObjectValue object = builder.build();
@@ -170,7 +170,7 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void mergeExistingObject() {
+  public void mergesExistingObject() {
     ObjectValue.Builder builder = wrapObject("a", map("b", fooValue)).toBuilder();
     builder.set(field("a.c"), fooValue);
     ObjectValue object = builder.build();
@@ -178,7 +178,7 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void overwriteNestedObject() {
+  public void overwritesNestedObject() {
     ObjectValue.Builder builder =
         wrapObject("a", map("b", map("c", fooValue, "d", fooValue))).toBuilder();
     builder.set(field("a.b"), barValue);
@@ -187,7 +187,16 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void deleteSingleField() {
+  public void replacesNestedObject() {
+    Value singleValueObject = valueOf(map("c", barValue));
+    ObjectValue.Builder builder = wrapObject("a", map("b", fooValue)).toBuilder();
+    builder.set(field("a"), singleValueObject);
+    ObjectValue object = builder.build();
+    assertEquals(wrapObject("a", map("c", barValue)), object);
+  }
+
+  @Test
+  public void deletesSingleField() {
     ObjectValue.Builder builder = wrapObject("a", fooValue, "b", fooValue).toBuilder();
     builder.delete(field("a"));
     ObjectValue object = builder.build();
@@ -195,7 +204,7 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void deleteNestedObject() {
+  public void deletesNestedObject() {
     ObjectValue.Builder builder =
         wrapObject("a", map("b", map("c", fooValue, "d", fooValue), "f", fooValue)).toBuilder();
     builder.delete(field("a.b"));
@@ -204,7 +213,7 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void deleteNonExistingField() {
+  public void deletesNonExistingField() {
     ObjectValue.Builder builder = wrapObject("a", fooValue).toBuilder();
     builder.delete(field("b"));
     ObjectValue object = builder.build();
@@ -212,7 +221,7 @@ public class ObjectValueBuilderTest {
   }
 
   @Test
-  public void deleteNonExistingNestedField() {
+  public void deletesNonExistingNestedField() {
     ObjectValue.Builder builder = wrapObject("a", map("b", fooValue)).toBuilder();
     builder.delete(field("a.b.c"));
     ObjectValue object = builder.build();

@@ -223,27 +223,29 @@ public class FieldValueTest {
   @Test
   public void testValueEquality() {
     new EqualsTester()
-        .addEqualityGroup(wrap(true), wrap(true))
-        .addEqualityGroup(wrap(false), wrap(false))
-        .addEqualityGroup(wrap(null), wrap(null))
+        .addEqualityGroup(wrap(true), wrap(valueOf(true)))
+        .addEqualityGroup(wrap(false), wrap(valueOf(false)))
+        .addEqualityGroup(wrap(null), wrap(valueOf(null)))
         .addEqualityGroup(
-            wrap(0.0 / 0.0), wrap(Double.longBitsToDouble(0x7ff8000000000000L)), wrap(Double.NaN))
+            wrap(0.0 / 0.0),
+            wrap(Double.longBitsToDouble(0x7ff8000000000000L)),
+            wrap(valueOf(Double.NaN)))
         // -0.0 and 0.0 compareTo the same but are not equal.
         .addEqualityGroup(wrap(-0.0))
         .addEqualityGroup(wrap(0.0))
-        .addEqualityGroup(wrap(1), wrap(1))
+        .addEqualityGroup(wrap(1), wrap(valueOf(1)))
         // Doubles and Longs aren't equal.
-        .addEqualityGroup(wrap(1.0), wrap(1.0))
-        .addEqualityGroup(wrap(1.1), wrap(1.1))
-        .addEqualityGroup(wrap(blob(0, 1, 2)), wrap(blob(0, 1, 2)))
+        .addEqualityGroup(wrap(1.0), wrap(valueOf(1.0)))
+        .addEqualityGroup(wrap(1.1), wrap(valueOf(1.1)))
+        .addEqualityGroup(wrap(blob(0, 1, 2)), wrap(valueOf(blob(0, 1, 2))))
         .addEqualityGroup(wrap(blob(0, 1)))
-        .addEqualityGroup(wrap("string"), wrap("string"))
+        .addEqualityGroup(wrap("string"), wrap(valueOf("string")))
         .addEqualityGroup(wrap("strin"))
         // latin small letter e + combining acute accent
         .addEqualityGroup(wrap("e\u0301b"))
         // latin small letter e with acute accent
         .addEqualityGroup(wrap("\u00e9a"))
-        .addEqualityGroup(wrap(new Timestamp(date1)), wrap(new Timestamp(date1)))
+        .addEqualityGroup(wrap(new Timestamp(date1)), wrap(valueOf(new Timestamp(date1))))
         .addEqualityGroup(wrap(new Timestamp(date2)))
         // NOTE: ServerTimestampValues can't be parsed via wrap().
         .addEqualityGroup(
@@ -383,8 +385,8 @@ public class FieldValueTest {
     return (ObjectValue) object;
   }
 
-  private PrimitiveValue wrap(Object map) {
-    return (PrimitiveValue) FieldValue.of(valueOf(map));
+  private PrimitiveValue wrap(Object value) {
+    return (PrimitiveValue) FieldValue.of(valueOf(value));
   }
 
   private PrimitiveValue wrapRef(DatabaseId dbId, DocumentKey key) {
