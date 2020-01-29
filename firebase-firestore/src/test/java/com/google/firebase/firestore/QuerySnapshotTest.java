@@ -84,6 +84,8 @@ public class QuerySnapshotTest {
     // Prevent NPE on trying to access non-existent settings on the mock.
     when(TestUtil.firestore().getFirestoreSettings())
         .thenReturn(new FirebaseFirestoreSettings.Builder().build());
+    when(TestUtil.firestore().getUserDataWriter())
+            .thenReturn(new UserDataWriter(TestUtil.firestore()));
 
     ObjectValue objectData =
         ObjectValue.fromMap(map("timestamp", new ServerTimestampValue(Timestamp.now(), null)));

@@ -28,7 +28,7 @@ import java.util.Map;
 /** Test helper to create Firestore Value protos from Java types. */
 public class Values {
 
-  // TODO(mrschmidt): Move into UserDataConverter
+  // TODO(mrschmidt): Move into UserDataReader
   public static Value valueOf(Object o) {
     if (o instanceof Value) {
       return (Value) o;
