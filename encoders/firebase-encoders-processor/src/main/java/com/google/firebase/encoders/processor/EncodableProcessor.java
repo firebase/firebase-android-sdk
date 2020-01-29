@@ -166,14 +166,14 @@ public class EncodableProcessor extends AbstractProcessor {
       String containingClassName,
       Encoder encoder,
       MethodSpec.Builder configureMethod) {
-    final Element element = types.asElement(encoder.type());
+    Element element = types.asElement(encoder.type());
     AutoValue autoValue = element.getAnnotation(AutoValue.class);
     if (autoValue == null) {
       return Optional.empty();
     }
 
-    final String typePackageName = Names.packageName(element);
-    final ClassName autoValueClass =
+    String typePackageName = Names.packageName(element);
+    ClassName autoValueClass =
         ClassName.get(
             typePackageName,
             Names.autoValueClassName(types.asElement(types.erasure(encoder.type()))));
