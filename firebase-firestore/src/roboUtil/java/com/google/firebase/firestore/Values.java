@@ -54,7 +54,6 @@ public class Values {
       return Value.newBuilder().setStringValue((String) o).build();
     } else if (o instanceof Blob) {
       return Value.newBuilder().setBytesValue(((Blob) o).toByteString()).build();
-
     } else if (o instanceof DocumentReference) {
       return Value.newBuilder()
           .setReferenceValue(
