@@ -604,6 +604,11 @@ public class QueryTest {
             .startAt(new Bound(Arrays.asList(wrap("foo"), wrap(Arrays.asList(1, 2, 3))), true)),
         "collection|f:|ob:aasc__name__asc|lb:b:foo[1, 2, 3]|lt:LIMIT_TO_FIRST");
     queryToCanoncialIdMap.put(
+        baseQuery
+            .orderBy(orderBy("a"))
+            .endAt(new Bound(Arrays.asList(wrap("foo"), wrap(Arrays.asList(1, 2, 3))), false)),
+        "collection|f:|ob:aasc__name__asc|ub:a:foo[1, 2, 3]|lt:LIMIT_TO_FIRST");
+    queryToCanoncialIdMap.put(
         baseQuery.limitToLast(5), "collection|f:|ob:__name__asc|l:5|lt:LIMIT_TO_FIRST");
     queryToCanoncialIdMap.put(
         baseQuery.limitToLast(5), "collection|f:|ob:__name__desc|l:5|lt:LIMIT_TO_LAST");
