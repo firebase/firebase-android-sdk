@@ -31,11 +31,6 @@ import java.util.Map;
 
 final class JsonValueObjectEncoderContext implements ObjectEncoderContext, ValueEncoderContext {
 
-  private interface AddMethod {
-    JsonValueObjectEncoderContext invoke(@NonNull String name, @Nullable Object o)
-        throws IOException, EncodingException;
-  }
-
   private JsonValueObjectEncoderContext childContext = null;
   private boolean active = true;
   private final JsonWriter jsonWriter;
