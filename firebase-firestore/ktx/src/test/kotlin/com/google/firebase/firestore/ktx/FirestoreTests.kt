@@ -159,7 +159,7 @@ class DocumentSnapshotTests {
 class QuerySnapshotTests {
     @Before
     fun setup() {
-        Mockito.`when`(TestUtil.firestore().firestoreSettings).thenReturn(FirebaseFirestoreSettings.Builder().build())
+        TestAccessHelper.installDocumentSnapshotMocks(TestUtil.firestore())
     }
 
     @After
