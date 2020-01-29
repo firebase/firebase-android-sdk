@@ -31,6 +31,9 @@ public final class ServerTimestampValue extends FieldValue {
   private final Timestamp localWriteTime;
   @Nullable private final FieldValue previousValue;
 
+  // TODO(mrschmidt): Represent ServerTimestamps as a PrimitiveType with a Map containing a private
+  //  `__type__` field (or similar).
+
   public ServerTimestampValue(Timestamp localWriteTime, @Nullable FieldValue previousValue) {
     this.localWriteTime = localWriteTime;
     this.previousValue = previousValue;
@@ -86,7 +89,7 @@ public final class ServerTimestampValue extends FieldValue {
   public int compareTo(FieldValue o) {
     if (o instanceof ServerTimestampValue) {
       return localWriteTime.compareTo(((ServerTimestampValue) o).localWriteTime);
-    } else if (o instanceof TimestampValue) {
+    } else if (o.typeOrder() == TYPE_ORDER_TIMESTAMP) {
       // Server timestamps come after all concrete timestamps.
       return 1;
     } else {
