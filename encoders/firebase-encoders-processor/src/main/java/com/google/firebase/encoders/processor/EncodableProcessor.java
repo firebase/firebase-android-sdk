@@ -171,13 +171,16 @@ public class EncodableProcessor extends AbstractProcessor {
     if (autoValue == null) {
       return Optional.empty();
     }
+
     String typePackageName = Names.packageName(element);
+    ClassName autoValueClass =
+        ClassName.get(
+            typePackageName,
+            Names.autoValueClassName(types.asElement(types.erasure(encoder.type()))));
 
     if (rootPackageName.equals(typePackageName)) {
       configureMethod.addCode(
-          "cfg.registerEncoder(AutoValue_$T.class, $N.INSTANCE);\n",
-          types.erasure(encoder.type()),
-          encoder.code());
+          "cfg.registerEncoder($T.class, $N.INSTANCE);\n", autoValueClass, encoder.code());
       return Optional.empty();
     }
 
@@ -188,25 +191,24 @@ public class EncodableProcessor extends AbstractProcessor {
                     "Encodable%s%s%sAutoValueSupport",
                     packageNameToCamelCase(rootPackageName),
                     containingClassName,
-                    element.getSimpleName()))
+                    Names.generatedClassName(element)))
             .addModifiers(Modifier.FINAL, Modifier.PUBLIC)
             .addField(
                 FieldSpec.builder(
                         ParameterizedTypeName.get(
                             ClassName.get(Class.class),
-                            WildcardTypeName.subtypeOf(ClassName.get(encoder.type()))),
+                            WildcardTypeName.subtypeOf(TypeName.get(encoder.type()))),
                         "TYPE",
                         Modifier.PUBLIC,
                         Modifier.STATIC,
                         Modifier.FINAL)
-                    .initializer("AutoValue_$T.class", encoder.type())
+                    .initializer("$T.class", autoValueClass)
                     .build())
             .build();
 
-    String packageName = Names.packageName(types.asElement(encoder.type()));
     configureMethod.addCode(
         "cfg.registerEncoder($L.$N.TYPE, $N.INSTANCE);\n",
-        packageName,
+        typePackageName,
         supportClass,
         encoder.code());
 
