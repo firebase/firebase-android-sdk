@@ -574,8 +574,8 @@ public class QueryTest {
         baseQuery.filter(filter("a", "<=", new GeoPoint(90.0, -90.0))),
         "collection|f:a<=GeoPoint { latitude=90.0, longitude=-90.0 }|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
     assertCanonicalId(
-        baseQuery.filter(filter("a", "<=", new Timestamp(60, 30))),
-        "collection|f:a<=Timestamp(seconds=60, nanoseconds=30)|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+        baseQuery.filter(filter("a", "<=", new Timestamp(60, 3000))),
+        "collection|f:a<=Timestamp(seconds=60, nanoseconds=3000)|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
     assertCanonicalId(
         baseQuery.filter(filter("a", ">=", Blob.fromBytes(new byte[] {1, 2, 3}))),
         "collection|f:a>=Blob { bytes=010203 }|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
