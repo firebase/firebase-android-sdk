@@ -22,6 +22,7 @@ import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.ValueEncoderContext;
 import java.util.Collections;
+import java.util.HashMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -60,5 +61,45 @@ public class JsonDataEncoderBuilderTests {
 
     assertThat(encoder.encode(Collections.singletonMap("foo", new Foo())))
         .isEqualTo("{\"foo\":\"value\"}");
+  }
+
+  @Test
+  public void ignoreNullValues_shouldCorrectlyEncodeObjectIgnoringNullObjects()
+      throws EncodingException {
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder()
+            .configureWith(
+                cfg ->
+                    cfg.registerEncoder(
+                        Foo.class,
+                        (Foo s, ObjectEncoderContext ctx) -> {
+                          ctx.add("foo", "value");
+                          ctx.add("bar", null);
+                        }))
+            .ignoreNullValues(true)
+            .build();
+
+    assertThat(encoder.encode(new Foo())).isEqualTo("{\"foo\":\"value\"}");
+  }
+
+  @Test
+  public void ignoreNullValues_shouldCorrectlyEncodeValueIgnoringNullObjects()
+      throws EncodingException {
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder()
+            .configureWith(
+                cfg ->
+                    cfg.registerEncoder(
+                        Foo.class,
+                        (Foo s, ValueEncoderContext ctx) -> {
+                          ctx.add("value");
+                        }))
+            .ignoreNullValues(true)
+            .build();
+
+    HashMap<String, Foo> fooMap = new HashMap<>();
+    fooMap.put("foo", new Foo());
+    fooMap.put("bar", null);
+    assertThat(encoder.encode(fooMap)).isEqualTo("{\"foo\":\"value\"}");
   }
 }
