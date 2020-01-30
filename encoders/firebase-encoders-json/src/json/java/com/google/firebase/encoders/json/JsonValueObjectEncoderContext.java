@@ -37,16 +37,19 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders;
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders;
   private final ObjectEncoder<Object> fallbackEncoder;
+  private final boolean ignoreNullValues;
 
   JsonValueObjectEncoderContext(
       @NonNull Writer writer,
       @NonNull Map<Class<?>, ObjectEncoder<?>> objectEncoders,
       @NonNull Map<Class<?>, ValueEncoder<?>> valueEncoders,
-      ObjectEncoder<Object> fallbackEncoder) {
+      ObjectEncoder<Object> fallbackEncoder,
+      boolean ignoreNullValues) {
     this.jsonWriter = new JsonWriter(writer);
     this.objectEncoders = objectEncoders;
     this.valueEncoders = valueEncoders;
     this.fallbackEncoder = fallbackEncoder;
+    this.ignoreNullValues = ignoreNullValues;
   }
 
   private JsonValueObjectEncoderContext(JsonValueObjectEncoderContext anotherContext) {
@@ -54,19 +57,17 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
     this.objectEncoders = anotherContext.objectEncoders;
     this.valueEncoders = anotherContext.valueEncoders;
     this.fallbackEncoder = anotherContext.fallbackEncoder;
+    this.ignoreNullValues = anotherContext.ignoreNullValues;
   }
 
   @NonNull
   @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, @Nullable Object o)
       throws IOException {
-    maybeUnNest();
-    jsonWriter.name(name);
-    if (o == null) {
-      jsonWriter.nullValue();
-      return this;
+    if (ignoreNullValues) {
+      return internalAddIgnoreNullValues(name, o);
     }
-    return add(o, false);
+    return internalAdd(name, o);
   }
 
   @NonNull
@@ -303,5 +304,26 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
       childContext = null;
       jsonWriter.endObject();
     }
+  }
+
+  private JsonValueObjectEncoderContext internalAdd(@NonNull String name, @Nullable Object o)
+      throws IOException, EncodingException {
+    maybeUnNest();
+    jsonWriter.name(name);
+    if (o == null) {
+      jsonWriter.nullValue();
+      return this;
+    }
+    return add(o, false);
+  }
+
+  private JsonValueObjectEncoderContext internalAddIgnoreNullValues(
+      @NonNull String name, @Nullable Object o) throws IOException, EncodingException {
+    if (o == null) {
+      return this;
+    }
+    maybeUnNest();
+    jsonWriter.name(name);
+    return add(o, false);
   }
 }

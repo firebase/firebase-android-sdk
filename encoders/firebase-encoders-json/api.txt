@@ -72,6 +72,7 @@ package com.google.firebase.encoders.json {
     ctor public JsonDataEncoderBuilder();
     method @NonNull public com.google.firebase.encoders.DataEncoder build();
     method @NonNull public com.google.firebase.encoders.json.JsonDataEncoderBuilder configureWith(@NonNull com.google.firebase.encoders.config.Configurator);
+    method @NonNull public com.google.firebase.encoders.json.JsonDataEncoderBuilder ignoreNullValues(boolean);
     method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ObjectEncoder<? super T>);
     method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ValueEncoder<? super T>);
     method @NonNull public com.google.firebase.encoders.json.JsonDataEncoderBuilder registerFallbackEncoder(@NonNull com.google.firebase.encoders.ObjectEncoder<java.lang.Object>);
