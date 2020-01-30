@@ -33,10 +33,10 @@ public class TestUtil {
 
   public static FieldValue wrap(Object value) {
     DatabaseId databaseId = DatabaseId.forProject("project");
-    UserDataReader dataConverter = new UserDataReader(databaseId);
+    UserDataReader dataReader = new UserDataReader(databaseId);
     // HACK: We use parseQueryValue() since it accepts scalars as well as arrays / objects, and
     // our tests currently use wrap() pretty generically so we don't know the intent.
-    return dataConverter.parseQueryValue(value);
+    return dataReader.parseQueryValue(value);
   }
 
   public static ObjectValue wrapObject(Map<String, Object> value) {

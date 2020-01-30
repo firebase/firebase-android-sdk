@@ -15,16 +15,13 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.UserDataWriter.UserDataWriterOptions;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.util.CustomClassMapper;
 import java.util.Date;
 import java.util.Map;
@@ -73,8 +70,6 @@ public class DocumentSnapshot {
 
   private final FirebaseFirestore firestore;
 
-  private final UserDataWriter userDataWriter;
-
   private final DocumentKey key;
 
   /** Is {@code null} if the document doesn't exist */
@@ -92,7 +87,6 @@ public class DocumentSnapshot {
     this.key = checkNotNull(key);
     this.doc = doc;
     this.metadata = new SnapshotMetadata(hasPendingWrites, isFromCache);
-    this.userDataWriter = firestore.getUserDataWriter();
   }
 
   static DocumentSnapshot fromDocument(
@@ -150,13 +144,8 @@ public class DocumentSnapshot {
   public Map<String, Object> getData(@NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
-    return doc == null
-        ? null
-        : convertObject(
-            doc.getData(),
-            new UserDataWriterOptions(
-                serverTimestampBehavior,
-                firestore.getFirestoreSettings().areTimestampsInSnapshotsEnabled()));
+    UserDataWriter userDataWriter = new UserDataWriter(firestore, serverTimestampBehavior);
+    return doc == null ? null : userDataWriter.convertObject(doc.getData());
   }
 
   /**
@@ -267,11 +256,7 @@ public class DocumentSnapshot {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
-    return getInternal(
-        fieldPath.getInternalPath(),
-        new UserDataWriterOptions(
-            serverTimestampBehavior,
-            firestore.getFirestoreSettings().areTimestampsInSnapshotsEnabled()));
+    return getInternal(fieldPath.getInternalPath(), serverTimestampBehavior);
   }
 
   /**
@@ -421,9 +406,7 @@ public class DocumentSnapshot {
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
     Object maybeDate =
         getInternal(
-            FieldPath.fromDotSeparatedPath(field).getInternalPath(),
-            new UserDataWriterOptions(
-                serverTimestampBehavior, /*timestampsInSnapshotsEnabled=*/ false));
+            FieldPath.fromDotSeparatedPath(field).getInternalPath(), serverTimestampBehavior);
     return castTypedValue(maybeDate, field, Date.class);
   }
 
@@ -462,9 +445,7 @@ public class DocumentSnapshot {
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
     Object maybeTimestamp =
         getInternal(
-            FieldPath.fromDotSeparatedPath(field).getInternalPath(),
-            new UserDataWriterOptions(
-                serverTimestampBehavior, /*timestampsInSnapshotsEnabled=*/ true));
+            FieldPath.fromDotSeparatedPath(field).getInternalPath(), serverTimestampBehavior);
     return castTypedValue(maybeTimestamp, field, Timestamp.class);
   }
 
@@ -531,21 +512,15 @@ public class DocumentSnapshot {
     return clazz.cast(value);
   }
 
-  private Map<String, Object> convertObject(
-      ObjectValue objectValue, UserDataWriterOptions options) {
-    Object result = userDataWriter.convertValue(objectValue, options);
-    hardAssert(result instanceof Map, "Documens should be decoded into Maps");
-    return (Map<String, Object>) result;
-  }
-
   @Nullable
   private Object getInternal(
       @NonNull com.google.firebase.firestore.model.FieldPath fieldPath,
-      @NonNull UserDataWriterOptions options) {
+      @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     if (doc != null) {
       FieldValue val = doc.getField(fieldPath);
       if (val != null) {
-        return userDataWriter.convertValue(val, options);
+        UserDataWriter userDataWriter = new UserDataWriter(firestore, serverTimestampBehavior);
+        return userDataWriter.convertValue(val);
       }
     }
     return null;

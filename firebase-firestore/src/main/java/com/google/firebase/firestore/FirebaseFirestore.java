@@ -75,7 +75,6 @@ public class FirebaseFirestore {
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataReader userDataReader;
-  private final UserDataWriter userDataWriter;
   // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
   // this instance.
   private final InstanceRegistry instanceRegistry;
@@ -162,7 +161,6 @@ public class FirebaseFirestore {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.userDataReader = new UserDataReader(databaseId);
-    this.userDataWriter = new UserDataWriter(this);
     this.persistenceKey = checkNotNull(persistenceKey);
     this.credentialsProvider = checkNotNull(credentialsProvider);
     this.asyncQueue = checkNotNull(asyncQueue);
@@ -581,10 +579,6 @@ public class FirebaseFirestore {
 
   UserDataReader getUserDataReader() {
     return userDataReader;
-  }
-
-  UserDataWriter getUserDataWriter() {
-    return userDataWriter;
   }
 
   /**

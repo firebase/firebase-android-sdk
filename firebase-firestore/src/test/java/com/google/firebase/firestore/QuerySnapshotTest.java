@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.when;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior;
@@ -81,7 +82,8 @@ public class QuerySnapshotTest {
   @Test
   public void testToObjects() {
     // Prevent NPE on trying to access non-existent settings on the mock.
-    TestAccessHelper.installDocumentSnapshotMocks(TestUtil.firestore());
+    when(TestUtil.firestore().getFirestoreSettings())
+        .thenReturn(new FirebaseFirestoreSettings.Builder().build());
 
     ObjectValue objectData =
         ObjectValue.fromMap(map("timestamp", new ServerTimestampValue(Timestamp.now(), null)));

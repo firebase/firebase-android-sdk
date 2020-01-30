@@ -39,43 +39,45 @@ import java.util.Map;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class UserDataWriter {
   private final FirebaseFirestore firestore;
+  private final boolean timestampsInSnapshotsEnabled;
+  private final DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior;
 
-  /** Holds settings that define field value deserialization options. */
-  static class UserDataWriterOptions {
-    final DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior;
-    final boolean timestampsInSnapshotsEnabled;
-
-    UserDataWriterOptions(
-        DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior,
-        boolean timestampsInSnapshotsEnabled) {
-      this.serverTimestampBehavior = serverTimestampBehavior;
-      this.timestampsInSnapshotsEnabled = timestampsInSnapshotsEnabled;
-    }
-  }
-
-  UserDataWriter(FirebaseFirestore firestore) {
+  UserDataWriter(
+      FirebaseFirestore firestore,
+      DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior) {
     this.firestore = firestore;
+    this.timestampsInSnapshotsEnabled =
+        firestore.getFirestoreSettings().areTimestampsInSnapshotsEnabled();
+    this.serverTimestampBehavior = serverTimestampBehavior;
   }
 
   @Nullable
-  Object convertValue(FieldValue value, UserDataWriterOptions options) {
+  Object convertValue(FieldValue value) {
     if (value instanceof ObjectValue) {
-      return convertObject((ObjectValue) value, options);
+      return convertObject((ObjectValue) value);
     } else if (value instanceof com.google.firebase.firestore.model.value.ArrayValue) {
-      return convertArray((com.google.firebase.firestore.model.value.ArrayValue) value, options);
+      return convertArray((com.google.firebase.firestore.model.value.ArrayValue) value);
     } else if (value instanceof ReferenceValue) {
       return convertReference((ReferenceValue) value);
     } else if (value instanceof TimestampValue) {
-      return convertTimestamp((TimestampValue) value, options);
+      return convertTimestamp((TimestampValue) value);
     } else if (value instanceof ServerTimestampValue) {
-      return convertServerTimestamp((ServerTimestampValue) value, options);
+      return convertServerTimestamp((ServerTimestampValue) value);
     } else {
       return value.value();
     }
   }
 
-  private Object convertServerTimestamp(ServerTimestampValue value, UserDataWriterOptions options) {
-    switch (options.serverTimestampBehavior) {
+  Map<String, Object> convertObject(ObjectValue objectValue) {
+    Map<String, Object> result = new HashMap<>();
+    for (Map.Entry<String, FieldValue> entry : objectValue.getInternalValue()) {
+      result.put(entry.getKey(), convertValue(entry.getValue()));
+    }
+    return result;
+  }
+
+  private Object convertServerTimestamp(ServerTimestampValue value) {
+    switch (serverTimestampBehavior) {
       case PREVIOUS:
         return value.getPreviousValue();
       case ESTIMATE:
@@ -85,28 +87,19 @@ public class UserDataWriter {
     }
   }
 
-  private Object convertTimestamp(TimestampValue value, UserDataWriterOptions options) {
+  private Object convertTimestamp(TimestampValue value) {
     Timestamp timestamp = value.value();
-    if (options.timestampsInSnapshotsEnabled) {
+    if (timestampsInSnapshotsEnabled) {
       return timestamp;
     } else {
       return timestamp.toDate();
     }
   }
 
-  private Map<String, Object> convertObject(
-      ObjectValue objectValue, UserDataWriterOptions options) {
-    Map<String, Object> result = new HashMap<>();
-    for (Map.Entry<String, FieldValue> entry : objectValue.getInternalValue()) {
-      result.put(entry.getKey(), convertValue(entry.getValue(), options));
-    }
-    return result;
-  }
-
-  private List<Object> convertArray(ArrayValue arrayValue, UserDataWriterOptions options) {
+  private List<Object> convertArray(ArrayValue arrayValue) {
     ArrayList<Object> result = new ArrayList<>(arrayValue.getInternalValue().size());
     for (FieldValue v : arrayValue.getInternalValue()) {
-      result.add(convertValue(v, options));
+      result.add(convertValue(v));
     }
     return result;
   }

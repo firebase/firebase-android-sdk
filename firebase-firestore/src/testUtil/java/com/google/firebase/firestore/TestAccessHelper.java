@@ -15,7 +15,6 @@
 package com.google.firebase.firestore;
 
 import com.google.firebase.firestore.model.DocumentKey;
-import org.mockito.Mockito;
 
 public final class TestAccessHelper {
 
@@ -28,15 +27,5 @@ public final class TestAccessHelper {
   /** Makes the getKey() method accessible. */
   public static DocumentKey referenceKey(DocumentReference documentReference) {
     return documentReference.getKey();
-  }
-
-  /**
-   * Install mocks for `FirebaseFirestore.getFirestoreSettings()` and
-   * `FirebaseFirestore.getUserDataWriter()`, which are used in DocumentSnapshot tests.
-   */
-  public static void installDocumentSnapshotMocks(FirebaseFirestore firestore) {
-    Mockito.when(firestore.getFirestoreSettings())
-        .thenReturn(new FirebaseFirestoreSettings.Builder().build());
-    Mockito.when(firestore.getUserDataWriter()).thenReturn(new UserDataWriter(firestore));
   }
 }
