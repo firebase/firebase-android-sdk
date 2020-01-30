@@ -64,21 +64,21 @@ public class TestUtil {
 
   public static Document doc(String key, long version, Map<String, Object> data) {
     return new Document(
-        key(key), version(version), Document.DocumentState.SYNCED, wrapObject(data));
+        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key, version(version), Document.DocumentState.SYNCED, wrapObject(data));
+    return new Document(key, version(version), wrapObject(data), Document.DocumentState.SYNCED);
   }
 
   public static Document doc(
       String key, long version, ObjectValue data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), documentState, data);
+    return new Document(key(key), version(version), data, documentState);
   }
 
   public static Document doc(
       String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), documentState, wrapObject(data));
+    return new Document(key(key), version(version), wrapObject(data), documentState);
   }
 
   public static DocumentSet docSet(Comparator<Document> comparator, Document... documents) {
