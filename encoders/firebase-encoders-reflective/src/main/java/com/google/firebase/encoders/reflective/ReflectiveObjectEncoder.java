@@ -38,8 +38,7 @@ public class ReflectiveObjectEncoder implements ObjectEncoder<Object> {
   }
 
   @Override
-  public void encode(@NonNull Object obj, @NonNull ObjectEncoderContext ctx)
-      throws IOException {
+  public void encode(@NonNull Object obj, @NonNull ObjectEncoderContext ctx) throws IOException {
 
     @SuppressWarnings("unchecked")
     ObjectEncoder<Object> encoder = getEncoder((Class<Object>) obj.getClass());

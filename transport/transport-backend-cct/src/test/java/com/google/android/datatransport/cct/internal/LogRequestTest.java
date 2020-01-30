@@ -180,8 +180,7 @@ public class LogRequestTest {
   }
 
   @Test
-  public void testLogRequest_jsontToProto()
-      throws InvalidProtocolBufferException {
+  public void testLogRequest_jsontToProto() throws InvalidProtocolBufferException {
     List<LogEvent> events = new ArrayList<>();
     events.add(
         LogEvent.protoBuilder(EMPTY_BYTE_ARRAY)

@@ -63,8 +63,7 @@ public class JsonDataEncoderBuilderTests {
   }
 
   @Test
-  public void ignoreNullValues_shouldCorrectlyEncodeObjectIgnoringNullObjects()
-      throws EncodingException {
+  public void ignoreNullValues_shouldCorrectlyEncodeObjectIgnoringNullObjects() {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .configureWith(
@@ -82,8 +81,7 @@ public class JsonDataEncoderBuilderTests {
   }
 
   @Test
-  public void ignoreNullValues_shouldCorrectlyEncodeValueIgnoringNullObjects()
-      throws EncodingException {
+  public void ignoreNullValues_shouldCorrectlyEncodeValueIgnoringNullObjects() {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .configureWith(
