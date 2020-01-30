@@ -169,8 +169,8 @@ public class MutationTest {
         new Document(
             key("collection/key"),
             version(0),
-            Document.DocumentState.LOCAL_MUTATIONS,
-            expectedData);
+            expectedData,
+            Document.DocumentState.LOCAL_MUTATIONS);
     assertEquals(expectedDoc, transformedDoc);
   }
 

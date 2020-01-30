@@ -55,12 +55,7 @@ public final class LocalSerializer {
       builder.setHasCommittedMutations(noDocument.hasCommittedMutations());
     } else if (document instanceof Document) {
       Document existingDocument = (Document) document;
-      // Use the memoized encoded form if it exists.
-      if (existingDocument.getProto() != null) {
-        builder.setDocument(existingDocument.getProto());
-      } else {
-        builder.setDocument(encodeDocument(existingDocument));
-      }
+      builder.setDocument(encodeDocument(existingDocument));
       builder.setHasCommittedMutations(existingDocument.hasCommittedMutations());
     } else if (document instanceof UnknownDocument) {
       builder.setUnknownDocument(encodeUnknownDocument((UnknownDocument) document));
@@ -112,15 +107,15 @@ public final class LocalSerializer {
   private Document decodeDocument(
       com.google.firestore.v1.Document document, boolean hasCommittedMutations) {
     DocumentKey key = rpcSerializer.decodeKey(document.getName());
+    ObjectValue value = rpcSerializer.decodeFields(document.getFieldsMap());
     SnapshotVersion version = rpcSerializer.decodeVersion(document.getUpdateTime());
     return new Document(
         key,
         version,
+        value,
         hasCommittedMutations
             ? Document.DocumentState.COMMITTED_MUTATIONS
-            : Document.DocumentState.SYNCED,
-        document,
-        rpcSerializer::decodeValue);
+            : Document.DocumentState.SYNCED);
   }
 
   /** Encodes a NoDocument value to the equivalent proto. */
