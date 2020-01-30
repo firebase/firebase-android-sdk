@@ -18,11 +18,7 @@ import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
 import dagger.Module;
 import dagger.Provides;
 
-/**
- * Test Provider for ABTesting Module
- *
- * @hide
- */
+/** Test Provider for ABTesting Module */
 @Module
 class TestAbTestingModule {
   private final AbtIntegrationHelper abtIntegrationHelper;
