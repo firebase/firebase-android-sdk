@@ -58,6 +58,7 @@ import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
+import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
 import com.google.firebase.inappmessaging.internal.MetricsLoggerClient;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
@@ -167,6 +168,8 @@ public class FirebaseInAppMessagingFlowableTest {
   @Mock private FirebaseInstanceId instanceId;
   @Mock private TestDeviceHelper testDeviceHelper;
   @Mock private Subscriber firebaseEventSubscriber;
+  @Mock private AbtIntegrationHelper abtIntegrationHelper;
+
   private TestSubscriber<InAppMessage> subscriber;
   private FirebaseInAppMessaging instance;
   private TestForegroundNotifier foregroundNotifier;
@@ -246,6 +249,7 @@ public class FirebaseInAppMessagingFlowableTest {
     appComponentBuilder =
         DaggerTestAppComponent.builder()
             .universalComponent(universalComponent)
+            .testAbTestingModule(new TestAbTestingModule(abtIntegrationHelper))
             .testEngagementMetricsLoggerClientModule(
                 new TestEngagementMetricsLoggerClientModule(app, engagementMetricsLoggerInterface))
             .grpcClientModule(new GrpcClientModule(app))
