@@ -253,7 +253,6 @@ public class EncodableProcessor extends AbstractProcessor {
                   ClassName.get("com.google.firebase.encoders", "ObjectEncoderContext"), "ctx")
               .addModifiers(Modifier.PUBLIC)
               .addException(IOException.class)
-              .addException(ClassName.get("com.google.firebase.encoders", "EncodingException"))
               .addAnnotation(Override.class);
 
       Set<TypeMirror> result = new LinkedHashSet<>();

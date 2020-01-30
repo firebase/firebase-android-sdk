@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.encoders.DataEncoder;
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
 import java.math.BigDecimal;
@@ -55,7 +54,7 @@ public class ReflectiveObjectEncoderTest {
   }
 
   @Test
-  public void test() throws EncodingException {
+  public void test() {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .registerFallbackEncoder(ReflectiveObjectEncoder.DEFAULT)

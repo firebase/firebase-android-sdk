@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
-import com.google.firebase.encoders.EncodingException;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
@@ -182,7 +181,7 @@ public class LogRequestTest {
 
   @Test
   public void testLogRequest_jsontToProto()
-      throws EncodingException, InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException {
     List<LogEvent> events = new ArrayList<>();
     events.add(
         LogEvent.protoBuilder(EMPTY_BYTE_ARRAY)

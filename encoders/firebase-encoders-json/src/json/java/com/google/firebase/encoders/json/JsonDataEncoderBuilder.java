@@ -54,8 +54,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
     }
 
     @Override
-    public void encode(@NonNull Date o, @NonNull ValueEncoderContext ctx)
-        throws EncodingException, IOException {
+    public void encode(@NonNull Date o, @NonNull ValueEncoderContext ctx) throws IOException {
       ctx.add(rfc339.format(o));
     }
   }
@@ -108,8 +107,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
   public DataEncoder build() {
     return new DataEncoder() {
       @Override
-      public void encode(@NonNull Object o, @NonNull Writer writer)
-          throws IOException, EncodingException {
+      public void encode(@NonNull Object o, @NonNull Writer writer) throws IOException {
         JsonValueObjectEncoderContext encoderContext =
             new JsonValueObjectEncoderContext(
                 writer, objectEncoders, valueEncoders, fallbackEncoder);
@@ -118,7 +116,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
       }
 
       @Override
-      public String encode(@NonNull Object o) throws EncodingException {
+      public String encode(@NonNull Object o) {
         StringWriter stringWriter = new StringWriter();
         try {
           encode(o, stringWriter);

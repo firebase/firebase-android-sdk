@@ -40,7 +40,7 @@ final class ReflectiveObjectEncoderProvider implements ObjectEncoderProvider {
 
     @Override
     public void encode(@Nullable Object obj, @NonNull ObjectEncoderContext ctx)
-        throws EncodingException, IOException {
+        throws IOException {
       for (Map.Entry<String, EncodingDescriptor> entry : fields.entrySet()) {
         String fieldName = entry.getKey();
         EncodingDescriptor descriptor = entry.getValue();
