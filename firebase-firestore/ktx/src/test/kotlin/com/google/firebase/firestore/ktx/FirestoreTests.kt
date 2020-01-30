@@ -20,7 +20,6 @@ import com.google.firebase.FirebaseOptions
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.TestAccessHelper
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.value.IntegerValue
