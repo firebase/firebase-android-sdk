@@ -20,7 +20,7 @@ import androidx.annotation.NonNull;
  * An exception thrown when an {@code Encoder} ends up in an invalid state, or if the provided
  * object is in an state that cannot be encoded.
  */
-public final class EncodingException extends Exception {
+public final class EncodingException extends RuntimeException {
 
   /** Creates a {@code EncodingException} with the given message. */
   public EncodingException(@NonNull String message) {

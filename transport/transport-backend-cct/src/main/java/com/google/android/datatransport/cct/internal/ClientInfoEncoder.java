@@ -16,7 +16,6 @@ package com.google.android.datatransport.cct.internal;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import java.io.IOException;
@@ -25,7 +24,7 @@ public final class ClientInfoEncoder implements ObjectEncoder<AutoValue_ClientIn
   @Override
   public void encode(
       @Nullable AutoValue_ClientInfo obj, @NonNull ObjectEncoderContext objectEncoderContext)
-      throws EncodingException, IOException {
+      throws IOException {
     if (obj.getClientType() != null) {
       objectEncoderContext.add("clientType", obj.getClientType().name());
     }

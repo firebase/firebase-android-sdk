@@ -63,7 +63,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   @NonNull
   @Override
   public JsonValueObjectEncoderContext add(@NonNull String name, @Nullable Object o)
-      throws IOException, EncodingException {
+      throws IOException {
     if (ignoreNullValues) {
       return internalAddIgnoreNullValues(name, o);
     }
@@ -72,8 +72,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(@NonNull String name, double value)
-      throws IOException, EncodingException {
+  public JsonValueObjectEncoderContext add(@NonNull String name, double value) throws IOException {
     maybeUnNest();
     jsonWriter.name(name);
     return add(value);
@@ -81,8 +80,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(@NonNull String name, int value)
-      throws IOException, EncodingException {
+  public JsonValueObjectEncoderContext add(@NonNull String name, int value) throws IOException {
     maybeUnNest();
     jsonWriter.name(name);
     return add(value);
@@ -90,8 +88,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(@NonNull String name, long value)
-      throws IOException, EncodingException {
+  public JsonValueObjectEncoderContext add(@NonNull String name, long value) throws IOException {
     maybeUnNest();
     jsonWriter.name(name);
     return add(value);
@@ -99,8 +96,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(@NonNull String name, boolean value)
-      throws IOException, EncodingException {
+  public JsonValueObjectEncoderContext add(@NonNull String name, boolean value) throws IOException {
     maybeUnNest();
     jsonWriter.name(name);
     return add(value);
@@ -108,7 +104,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public ObjectEncoderContext inline(@Nullable Object value) throws IOException, EncodingException {
+  public ObjectEncoderContext inline(@Nullable Object value) throws IOException {
     return add(value, true);
   }
 
@@ -124,8 +120,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(@Nullable String value)
-      throws IOException, EncodingException {
+  public JsonValueObjectEncoderContext add(@Nullable String value) throws IOException {
     maybeUnNest();
     jsonWriter.value(value);
     return this;
@@ -133,7 +128,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(double value) throws IOException, EncodingException {
+  public JsonValueObjectEncoderContext add(double value) throws IOException {
     maybeUnNest();
     jsonWriter.value(value);
     return this;
@@ -141,7 +136,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(int value) throws IOException, EncodingException {
+  public JsonValueObjectEncoderContext add(int value) throws IOException {
     maybeUnNest();
     jsonWriter.value(value);
     return this;
@@ -149,7 +144,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(long value) throws IOException, EncodingException {
+  public JsonValueObjectEncoderContext add(long value) throws IOException {
     maybeUnNest();
     jsonWriter.value(value);
     return this;
@@ -157,7 +152,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(boolean value) throws IOException, EncodingException {
+  public JsonValueObjectEncoderContext add(boolean value) throws IOException {
     maybeUnNest();
     jsonWriter.value(value);
     return this;
@@ -165,8 +160,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
-  public JsonValueObjectEncoderContext add(@Nullable byte[] bytes)
-      throws IOException, EncodingException {
+  public JsonValueObjectEncoderContext add(@Nullable byte[] bytes) throws IOException {
     maybeUnNest();
     if (bytes == null) {
       jsonWriter.nullValue();
@@ -177,8 +171,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   }
 
   @NonNull
-  JsonValueObjectEncoderContext add(@Nullable Object o, boolean inline)
-      throws IOException, EncodingException {
+  JsonValueObjectEncoderContext add(@Nullable Object o, boolean inline) throws IOException {
     if (inline && cannotBeInline(o)) {
       throw new EncodingException(
           String.format("%s cannot be encoded inline", o == null ? null : o.getClass()));
@@ -279,7 +272,7 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
   }
 
   JsonValueObjectEncoderContext doEncode(ObjectEncoder<Object> encoder, Object o, boolean inline)
-      throws IOException, EncodingException {
+      throws IOException {
     if (!inline) jsonWriter.beginObject();
     encoder.encode(o, this);
     if (!inline) jsonWriter.endObject();

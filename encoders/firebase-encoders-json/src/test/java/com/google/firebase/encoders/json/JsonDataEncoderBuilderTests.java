@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.encoders.DataEncoder;
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.ValueEncoderContext;
 import java.util.Collections;
@@ -31,7 +30,7 @@ public class JsonDataEncoderBuilderTests {
   static class Foo {}
 
   @Test
-  public void configureWith_shouldCorrectlyRegisterObjectEncoder() throws EncodingException {
+  public void configureWith_shouldCorrectlyRegisterObjectEncoder() {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .configureWith(
@@ -47,7 +46,7 @@ public class JsonDataEncoderBuilderTests {
   }
 
   @Test
-  public void configureWith_shouldCorrectlyRegisterValueEncoder() throws EncodingException {
+  public void configureWith_shouldCorrectlyRegisterValueEncoder() {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .configureWith(
@@ -64,8 +63,7 @@ public class JsonDataEncoderBuilderTests {
   }
 
   @Test
-  public void ignoreNullValues_shouldCorrectlyEncodeObjectIgnoringNullObjects()
-      throws EncodingException {
+  public void ignoreNullValues_shouldCorrectlyEncodeObjectIgnoringNullObjects() {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .configureWith(
@@ -83,8 +81,7 @@ public class JsonDataEncoderBuilderTests {
   }
 
   @Test
-  public void ignoreNullValues_shouldCorrectlyEncodeValueIgnoringNullObjects()
-      throws EncodingException {
+  public void ignoreNullValues_shouldCorrectlyEncodeValueIgnoringNullObjects() {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .configureWith(
