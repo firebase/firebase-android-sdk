@@ -306,7 +306,7 @@ public class MutationTest {
     verifyTransform(baseDoc, transform, expected);
   }
 
-  // NOTE: This is more a test of UserDataConverter code than Mutation code but we don't have unit
+  // NOTE: This is more a test of UserDataReader code than Mutation code but we don't have unit
   // tests for it currently. We could consider removing this test once we have integration tests.
   @Test
   public void testCreateArrayUnionTransform() {
@@ -333,7 +333,7 @@ public class MutationTest {
         second.getOperation());
   }
 
-  // NOTE: This is more a test of UserDataConverter code than Mutation code but
+  // NOTE: This is more a test of UserDataReader code than Mutation code but
   // we don't have unit tests for it currently. We could consider removing this
   // test once we have integration tests.
   @Test
