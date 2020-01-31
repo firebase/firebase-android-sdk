@@ -39,15 +39,15 @@ import java.util.Map;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class UserDataWriter {
   private final FirebaseFirestore firestore;
-  private final boolean timestampsInSnapshotsEnabled;
+  private final boolean timestampsInSnapshots;
   private final DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior;
 
   UserDataWriter(
       FirebaseFirestore firestore,
+      boolean timestampsInSnapshots,
       DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior) {
     this.firestore = firestore;
-    this.timestampsInSnapshotsEnabled =
-        firestore.getFirestoreSettings().areTimestampsInSnapshotsEnabled();
+    this.timestampsInSnapshots = timestampsInSnapshots;
     this.serverTimestampBehavior = serverTimestampBehavior;
   }
 
@@ -89,7 +89,7 @@ public class UserDataWriter {
 
   private Object convertTimestamp(TimestampValue value) {
     Timestamp timestamp = value.value();
-    if (timestampsInSnapshotsEnabled) {
+    if (timestampsInSnapshots) {
       return timestamp;
     } else {
       return timestamp.toDate();
