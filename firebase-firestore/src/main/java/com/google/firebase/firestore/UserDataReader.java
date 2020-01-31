@@ -65,11 +65,11 @@ import java.util.Map.Entry;
  * @hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public final class UserDataConverter {
+public final class UserDataReader {
 
   private final DatabaseId databaseId;
 
-  public UserDataConverter(DatabaseId databaseId) {
+  public UserDataReader(DatabaseId databaseId) {
     this.databaseId = databaseId;
   }
 
@@ -398,7 +398,6 @@ public final class UserDataConverter {
    * @return The parsed value, or {@code null} if the value was a FieldValue sentinel that should
    *     not be included in the resulting parsed data.
    */
-  @Nullable
   private FieldValue parseScalarValue(Object input, ParseContext context) {
     if (input == null) {
       return NullValue.nullValue();

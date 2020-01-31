@@ -51,7 +51,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class UserDataConverterTest {
+public class UserDataReaderTest {
 
   @Test
   public void testConvertsNullValue() {
