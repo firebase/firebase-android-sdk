@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.testutil;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.UserDataConverter;
+import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
@@ -33,10 +33,10 @@ public class TestUtil {
 
   public static FieldValue wrap(Object value) {
     DatabaseId databaseId = DatabaseId.forProject("project");
-    UserDataConverter dataConverter = new UserDataConverter(databaseId);
+    UserDataReader dataReader = new UserDataReader(databaseId);
     // HACK: We use parseQueryValue() since it accepts scalars as well as arrays / objects, and
     // our tests currently use wrap() pretty generically so we don't know the intent.
-    return dataConverter.parseQueryValue(value);
+    return dataReader.parseQueryValue(value);
   }
 
   public static ObjectValue wrapObject(Map<String, Object> value) {

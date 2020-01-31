@@ -112,17 +112,18 @@ public class InAppMessageStreamManager {
     long campaignStartTime;
     long campaignEndTime;
     if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      // Handle the campaign case
       campaignStartTime = content.getVanillaPayload().getCampaignStartTimeMillis();
       campaignEndTime = content.getVanillaPayload().getCampaignEndTimeMillis();
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      // Handle the experiment case
+      campaignStartTime = content.getExperimentalPayload().getCampaignStartTimeMillis();
+      campaignEndTime = content.getExperimentalPayload().getCampaignEndTimeMillis();
     } else {
-      campaignStartTime =
-          content.getExperimentalPayload().getExperimentPayload().getExperimentStartTimeMillis();
-      campaignEndTime =
-          campaignStartTime
-              + content.getExperimentalPayload().getExperimentPayload().getTimeToLiveMillis();
+      // If we have no valid payload then don't display
+      return false;
     }
     long currentTime = clock.now();
-
     return currentTime > campaignStartTime && currentTime < campaignEndTime;
   }
 
@@ -308,11 +309,18 @@ public class InAppMessageStreamManager {
     String campaignId;
     String campaignName;
     if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      // Handle vanilla campaign case
       campaignId = content.getVanillaPayload().getCampaignId();
       campaignName = content.getVanillaPayload().getCampaignName();
-    } else {
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      // Handle experiment case
       campaignId = content.getExperimentalPayload().getCampaignId();
-      campaignName = "experimental campaign placeholder";
+      campaignName = content.getExperimentalPayload().getCampaignName();
+      // At this point we set the experiment to become active in analytics.
+      abtIntegrationHelper.setExperimentActive(
+          content.getExperimentalPayload().getExperimentPayload());
+    } else {
+      return Maybe.empty();
     }
     InAppMessage inAppMessage =
         ProtoMarshallerClient.decode(

@@ -48,26 +48,23 @@ public interface ObjectEncoderContext {
    * by the encoders will be propagated.
    */
   @NonNull
-  ObjectEncoderContext add(@NonNull String name, @Nullable Object obj)
-      throws IOException, EncodingException;
+  ObjectEncoderContext add(@NonNull String name, @Nullable Object obj) throws IOException;
 
   /** Add an entry with {@code name} mapped to the encoded primitive type of {@code value}. */
   @NonNull
-  ObjectEncoderContext add(@NonNull String name, double value)
-      throws IOException, EncodingException;
+  ObjectEncoderContext add(@NonNull String name, double value) throws IOException;
 
   /** Add an entry with {@code name} mapped to the encoded primitive type of {@code value}. */
   @NonNull
-  ObjectEncoderContext add(@NonNull String name, int value) throws IOException, EncodingException;
+  ObjectEncoderContext add(@NonNull String name, int value) throws IOException;
 
   /** Add an entry with {@code name} mapped to the encoded primitive type of {@code value}. */
   @NonNull
-  ObjectEncoderContext add(@NonNull String name, long value) throws IOException, EncodingException;
+  ObjectEncoderContext add(@NonNull String name, long value) throws IOException;
 
   /** Add an entry with {@code name} mapped to the encoded primitive type of {@code value}. */
   @NonNull
-  ObjectEncoderContext add(@NonNull String name, boolean value)
-      throws IOException, EncodingException;
+  ObjectEncoderContext add(@NonNull String name, boolean value) throws IOException;
 
   /**
    * Encodes a given object inline in current context.
@@ -87,7 +84,7 @@ public interface ObjectEncoderContext {
    * }</pre>
    */
   @NonNull
-  ObjectEncoderContext inline(@Nullable Object value) throws IOException, EncodingException;
+  ObjectEncoderContext inline(@Nullable Object value) throws IOException;
 
   /**
    * Begin a nested JSON object.

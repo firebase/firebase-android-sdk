@@ -33,7 +33,7 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.TestAccessHelper;
-import com.google.firebase.firestore.UserDataConverter;
+import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
@@ -128,10 +128,10 @@ public class TestUtil {
 
   public static FieldValue wrap(Object value) {
     DatabaseId databaseId = DatabaseId.forProject("project");
-    UserDataConverter dataConverter = new UserDataConverter(databaseId);
+    UserDataReader dataReader = new UserDataReader(databaseId);
     // HACK: We use parseQueryValue() since it accepts scalars as well as arrays / objects, and
     // our tests currently use wrap() pretty generically so we don't know the intent.
-    return dataConverter.parseQueryValue(value);
+    return dataReader.parseQueryValue(value);
   }
 
   public static ObjectValue wrapObject(Map<String, Object> value) {
@@ -517,8 +517,8 @@ public class TestUtil {
    * must not contain any non-sentinel data.
    */
   public static TransformMutation transformMutation(String path, Map<String, Object> data) {
-    UserDataConverter dataConverter = new UserDataConverter(DatabaseId.forProject("project"));
-    ParsedUpdateData result = dataConverter.parseUpdateData(data);
+    UserDataReader dataReader = new UserDataReader(DatabaseId.forProject("project"));
+    ParsedUpdateData result = dataReader.parseUpdateData(data);
 
     // The order of the transforms doesn't matter, but we sort them so tests can assume a particular
     // order.

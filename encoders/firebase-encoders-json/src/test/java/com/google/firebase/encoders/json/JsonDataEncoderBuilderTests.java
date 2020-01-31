@@ -18,10 +18,10 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.encoders.DataEncoder;
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.ValueEncoderContext;
 import java.util.Collections;
+import java.util.HashMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -30,7 +30,7 @@ public class JsonDataEncoderBuilderTests {
   static class Foo {}
 
   @Test
-  public void configureWith_shouldCorrectlyRegisterObjectEncoder() throws EncodingException {
+  public void configureWith_shouldCorrectlyRegisterObjectEncoder() {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .configureWith(
@@ -46,7 +46,7 @@ public class JsonDataEncoderBuilderTests {
   }
 
   @Test
-  public void configureWith_shouldCorrectlyRegisterValueEncoder() throws EncodingException {
+  public void configureWith_shouldCorrectlyRegisterValueEncoder() {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .configureWith(
@@ -60,5 +60,43 @@ public class JsonDataEncoderBuilderTests {
 
     assertThat(encoder.encode(Collections.singletonMap("foo", new Foo())))
         .isEqualTo("{\"foo\":\"value\"}");
+  }
+
+  @Test
+  public void ignoreNullValues_shouldCorrectlyEncodeObjectIgnoringNullObjects() {
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder()
+            .configureWith(
+                cfg ->
+                    cfg.registerEncoder(
+                        Foo.class,
+                        (Foo s, ObjectEncoderContext ctx) -> {
+                          ctx.add("foo", "value");
+                          ctx.add("bar", null);
+                        }))
+            .ignoreNullValues(true)
+            .build();
+
+    assertThat(encoder.encode(new Foo())).isEqualTo("{\"foo\":\"value\"}");
+  }
+
+  @Test
+  public void ignoreNullValues_shouldCorrectlyEncodeValueIgnoringNullObjects() {
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder()
+            .configureWith(
+                cfg ->
+                    cfg.registerEncoder(
+                        Foo.class,
+                        (Foo s, ValueEncoderContext ctx) -> {
+                          ctx.add("value");
+                        }))
+            .ignoreNullValues(true)
+            .build();
+
+    HashMap<String, Foo> fooMap = new HashMap<>();
+    fooMap.put("foo", new Foo());
+    fooMap.put("bar", null);
+    assertThat(encoder.encode(fooMap)).isEqualTo("{\"foo\":\"value\"}");
   }
 }

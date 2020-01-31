@@ -553,7 +553,7 @@ public class QueryTest {
 
     CollectionReference collection =
         testCollectionWithDocs(
-            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF));
+            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF, "g", docG));
 
     // Search for "array" to contain [42, 43].
     QuerySnapshot snapshot =
