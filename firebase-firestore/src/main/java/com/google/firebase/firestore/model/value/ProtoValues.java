@@ -24,10 +24,11 @@ import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 // TODO(mrschmidt): Make package-private
@@ -254,12 +255,12 @@ public class ProtoValues {
   /** Generate the canonical ID for the provided field value (as used in Target serialization). */
   public static String canonicalId(Value value) {
     StringBuilder builder = new StringBuilder();
-    stringifyValue(builder, value);
+    canonifyValue(builder, value);
     return builder.toString();
   }
 
   // TODO(mrschmidt): Use in target serialization and migrate all existing TargetData
-  private static void stringifyValue(StringBuilder builder, Value value) {
+  private static void canonifyValue(StringBuilder builder, Value value) {
     switch (value.getValueTypeCase()) {
       case NULL_VALUE:
         builder.append("null");
@@ -274,7 +275,7 @@ public class ProtoValues {
         builder.append(value.getDoubleValue());
         break;
       case TIMESTAMP_VALUE:
-        stringifyTimestamp(builder, value.getTimestampValue());
+        canonifyTimestamp(builder, value.getTimestampValue());
         break;
       case STRING_VALUE:
         builder.append(value.getStringValue());
@@ -287,51 +288,52 @@ public class ProtoValues {
         builder.append(value.getReferenceValue());
         break;
       case GEO_POINT_VALUE:
-        stringifyGeoPoint(builder, value.getGeoPointValue());
+        canonifyGeoPoint(builder, value.getGeoPointValue());
         break;
       case ARRAY_VALUE:
-        stringifyArray(builder, value.getArrayValue());
+        canonifyArray(builder, value.getArrayValue());
         break;
       case MAP_VALUE:
-        stringifyObject(builder, value.getMapValue());
+        canonifyObject(builder, value.getMapValue());
         break;
       default:
         throw fail("Invalid value type: " + value.getValueTypeCase());
     }
   }
 
-  private static void stringifyTimestamp(StringBuilder builder, Timestamp timestamp) {
+  private static void canonifyTimestamp(StringBuilder builder, Timestamp timestamp) {
     builder.append(String.format("time(%s,%s)", timestamp.getSeconds(), timestamp.getNanos()));
   }
 
-  private static void stringifyGeoPoint(StringBuilder builder, LatLng latLng) {
+  private static void canonifyGeoPoint(StringBuilder builder, LatLng latLng) {
     builder.append(String.format("geo(%s,%s)", latLng.getLatitude(), latLng.getLongitude()));
   }
 
-  private static void stringifyObject(StringBuilder builder, MapValue mapValue) {
+  private static void canonifyObject(StringBuilder builder, MapValue mapValue) {
     // Even though MapValue are likely sorted correctly based on their insertion order (e.g. when
     // received from the backend), local modifications can bring elements out of order. We need to
     // re-sort the elements to ensure that canonical IDs are independent of insertion time.
-    SortedMap<String, Value> sortedMap = new TreeMap<>(mapValue.getFieldsMap());
+    List<String> keys = new ArrayList<>(mapValue.getFieldsMap().keySet());
+    Collections.sort(keys);
 
     builder.append("{");
     boolean first = true;
-    for (Map.Entry<String, Value> entry : sortedMap.entrySet()) {
+    for (String key : keys) {
       if (!first) {
         builder.append(",");
       } else {
         first = false;
       }
-      builder.append(entry.getKey()).append(":");
-      stringifyValue(builder, entry.getValue());
+      builder.append(key).append(":");
+      canonifyValue(builder, mapValue.getFieldsOrThrow(key));
     }
     builder.append("}");
   }
 
-  private static void stringifyArray(StringBuilder builder, ArrayValue arrayValue) {
+  private static void canonifyArray(StringBuilder builder, ArrayValue arrayValue) {
     builder.append("[");
     for (int i = 0; i < arrayValue.getValuesCount(); ++i) {
-      stringifyValue(builder, arrayValue.getValues(i));
+      canonifyValue(builder, arrayValue.getValues(i));
       if (i != arrayValue.getValuesCount() - 1) {
         builder.append(",");
       }
