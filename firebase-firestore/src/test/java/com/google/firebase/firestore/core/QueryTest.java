@@ -566,59 +566,54 @@ public class QueryTest {
 
     Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
 
-    assertCanonicalId(baseQuery, "collection|f:|ob:__name__asc|lt:LIMIT_TO_FIRST");
+    assertCanonicalId(baseQuery, "collection|f:|ob:__name__asc");
     assertCanonicalId(
-        baseQuery.filter(filter("a", ">", "a")),
-        "collection|f:a>a|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+        baseQuery.filter(filter("a", ">", "a")), "collection|f:a>a|ob:aasc__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "<=", new GeoPoint(90.0, -90.0))),
-        "collection|f:a<=GeoPoint { latitude=90.0, longitude=-90.0 }|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+        "collection|f:a<=GeoPoint { latitude=90.0, longitude=-90.0 }|ob:aasc__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "<=", new Timestamp(60, 3000))),
-        "collection|f:a<=Timestamp(seconds=60, nanoseconds=3000)|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+        "collection|f:a<=Timestamp(seconds=60, nanoseconds=3000)|ob:aasc__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", ">=", Blob.fromBytes(new byte[] {1, 2, 3}))),
-        "collection|f:a>=Blob { bytes=010203 }|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+        "collection|f:a>=Blob { bytes=010203 }|ob:aasc__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "==", Arrays.asList(1, 2, 3))),
-        "collection|f:a==[1, 2, 3]|ob:__name__asc|lt:LIMIT_TO_FIRST");
+        "collection|f:a==[1, 2, 3]|ob:__name__asc");
     assertCanonicalId(
-        baseQuery.filter(filter("a", "==", Double.NaN)),
-        "collection|f:a==NaN|ob:__name__asc|lt:LIMIT_TO_FIRST");
+        baseQuery.filter(filter("a", "==", Double.NaN)), "collection|f:a==NaN|ob:__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("__name__", "==", ref("collection/id"))),
-        "collection|f:__name__==collection/id|ob:__name__asc|lt:LIMIT_TO_FIRST");
+        "collection|f:__name__==collection/id|ob:__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "==", map("a", "b", "inner", map("d", "c")))),
-        "collection|f:a==ArraySortedMap{(a=>b), (inner=>ArraySortedMap{(d=>c)};)};|ob:__name__asc|lt:LIMIT_TO_FIRST");
+        "collection|f:a==ArraySortedMap{(a=>b), (inner=>ArraySortedMap{(d=>c)};)};|ob:__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "in", Arrays.asList(1, 2, 3))),
-        "collection|f:ain[1, 2, 3]|ob:__name__asc|lt:LIMIT_TO_FIRST");
+        "collection|f:ain[1, 2, 3]|ob:__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "array-contains-any", Arrays.asList(1, 2, 3))),
-        "collection|f:aarray_contains_any[1, 2, 3]|ob:__name__asc|lt:LIMIT_TO_FIRST");
+        "collection|f:aarray_contains_any[1, 2, 3]|ob:__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "array-contains", "a")),
-        "collection|f:aarray_containsa|ob:__name__asc|lt:LIMIT_TO_FIRST");
-    assertCanonicalId(
-        baseQuery.orderBy(orderBy("a")), "collection|f:|ob:aasc__name__asc|lt:LIMIT_TO_FIRST");
+        "collection|f:aarray_containsa|ob:__name__asc");
+    assertCanonicalId(baseQuery.orderBy(orderBy("a")), "collection|f:|ob:aasc__name__asc");
     assertCanonicalId(
         baseQuery
             .orderBy(orderBy("a"))
             .startAt(new Bound(Arrays.asList(wrap("foo"), wrap(Arrays.asList(1, 2, 3))), true)),
-        "collection|f:|ob:aasc__name__asc|lb:b:foo[1, 2, 3]|lt:LIMIT_TO_FIRST");
+        "collection|f:|ob:aasc__name__asc|lb:b:foo[1, 2, 3]");
     assertCanonicalId(
         baseQuery
             .orderBy(orderBy("a"))
             .endAt(new Bound(Arrays.asList(wrap("foo"), wrap(Arrays.asList(1, 2, 3))), false)),
-        "collection|f:|ob:aasc__name__asc|ub:a:foo[1, 2, 3]|lt:LIMIT_TO_FIRST");
-    assertCanonicalId(
-        baseQuery.limitToFirst(5), "collection|f:|ob:__name__asc|l:5|lt:LIMIT_TO_FIRST");
-    assertCanonicalId(
-        baseQuery.limitToLast(5), "collection|f:|ob:__name__desc|l:5|lt:LIMIT_TO_LAST");
+        "collection|f:|ob:aasc__name__asc|ub:a:foo[1, 2, 3]");
+    assertCanonicalId(baseQuery.limitToFirst(5), "collection|f:|ob:__name__asc|l:5");
+    assertCanonicalId(baseQuery.limitToLast(5), "collection|f:|ob:__name__desc|l:5");
   }
 
   private void assertCanonicalId(Query query, String expectedCanonicalId) {
-    assertEquals(expectedCanonicalId, query.getCanonicalId());
+    assertEquals(expectedCanonicalId, query.toTarget().getCanonicalId());
   }
 }
