@@ -85,7 +85,7 @@ public class RemoteConfigComponent {
   @GuardedBy("this")
   private Map<String, String> customHeaders = new HashMap<>();
 
-  /** Firebase Remote Config Component constructor. */
+  /** Firebase Remote Config Component constructor. bom*/
   RemoteConfigComponent(
       Context context,
       FirebaseApp firebaseApp,
