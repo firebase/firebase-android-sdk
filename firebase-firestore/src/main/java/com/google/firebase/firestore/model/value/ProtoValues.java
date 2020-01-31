@@ -27,6 +27,7 @@ import com.google.type.LatLng;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 // TODO(mrschmidt): Make package-private
@@ -253,12 +254,12 @@ public class ProtoValues {
   /** Generate the canonical ID for the provided field value (as used in Target serialization). */
   public static String canonicalId(Value value) {
     StringBuilder builder = new StringBuilder();
-    buildCanonicalId(builder, value);
+    stringifyValue(builder, value);
     return builder.toString();
   }
 
   // TODO(mrschmidt): Use in target serialization and migrate all existing TargetData
-  private static void buildCanonicalId(StringBuilder builder, Value value) {
+  private static void stringifyValue(StringBuilder builder, Value value) {
     switch (value.getValueTypeCase()) {
       case NULL_VALUE:
         builder.append("null");
@@ -273,7 +274,7 @@ public class ProtoValues {
         builder.append(value.getDoubleValue());
         break;
       case TIMESTAMP_VALUE:
-        buildTimestampCanonicalId(builder, value.getTimestampValue());
+        stringifyTimestamp(builder, value.getTimestampValue());
         break;
       case STRING_VALUE:
         builder.append(value.getStringValue());
@@ -286,46 +287,51 @@ public class ProtoValues {
         builder.append(value.getReferenceValue());
         break;
       case GEO_POINT_VALUE:
-        buildGeoPointCanonicalId(builder, value.getGeoPointValue());
+        stringifyGeoPoint(builder, value.getGeoPointValue());
         break;
       case ARRAY_VALUE:
-        buildArrayCanonicalId(builder, value.getArrayValue());
+        stringifyArray(builder, value.getArrayValue());
         break;
       case MAP_VALUE:
-        buildObjectCanonicalId(builder, value.getMapValue());
+        stringifyObject(builder, value.getMapValue());
         break;
       default:
         throw fail("Invalid value type: " + value.getValueTypeCase());
     }
   }
 
-  private static void buildTimestampCanonicalId(StringBuilder builder, Timestamp timestamp) {
-    builder.append(String.format("{s:%s,n:%s}", timestamp.getSeconds(), timestamp.getNanos()));
+  private static void stringifyTimestamp(StringBuilder builder, Timestamp timestamp) {
+    builder.append(String.format("time(%s,%s)", timestamp.getSeconds(), timestamp.getNanos()));
   }
 
-  private static void buildGeoPointCanonicalId(StringBuilder builder, LatLng latLng) {
-    builder.append(String.format("{lat:%s,lng:%s}", latLng.getLatitude(), latLng.getLongitude()));
+  private static void stringifyGeoPoint(StringBuilder builder, LatLng latLng) {
+    builder.append(String.format("geo(%s,%s)", latLng.getLatitude(), latLng.getLongitude()));
   }
 
-  private static void buildObjectCanonicalId(StringBuilder builder, MapValue mapValue) {
+  private static void stringifyObject(StringBuilder builder, MapValue mapValue) {
+    // Even though MapValue are likely sorted correctly based on their insertion order (e.g. when
+    // received from the backend), local modifications can bring elements out of order. We need to
+    // re-sort the elements to ensure that canonical IDs are independent of insertion time.
+    SortedMap<String, Value> sortedMap = new TreeMap<>(mapValue.getFieldsMap());
+
     builder.append("{");
     boolean first = true;
-    for (Map.Entry<String, Value> entry : mapValue.getFieldsMap().entrySet()) {
+    for (Map.Entry<String, Value> entry : sortedMap.entrySet()) {
       if (!first) {
         builder.append(",");
       } else {
         first = false;
       }
       builder.append(entry.getKey()).append(":");
-      buildCanonicalId(builder, entry.getValue());
+      stringifyValue(builder, entry.getValue());
     }
     builder.append("}");
   }
 
-  private static void buildArrayCanonicalId(StringBuilder builder, ArrayValue arrayValue) {
+  private static void stringifyArray(StringBuilder builder, ArrayValue arrayValue) {
     builder.append("[");
     for (int i = 0; i < arrayValue.getValuesCount(); ++i) {
-      buildCanonicalId(builder, arrayValue.getValues(i));
+      stringifyValue(builder, arrayValue.getValues(i));
       if (i != arrayValue.getValuesCount() - 1) {
         builder.append(",");
       }

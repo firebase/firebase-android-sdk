@@ -374,17 +374,23 @@ public class FieldValueTest {
     assertCanonicalId(wrap(false), "false");
     assertCanonicalId(wrap(1), "1");
     assertCanonicalId(wrap(1.0), "1.0");
-    assertCanonicalId(wrap(new Timestamp(30, 60)), "{s:30,n:60}");
+    assertCanonicalId(wrap(new Timestamp(30, 60)), "time(30,60)");
     assertCanonicalId(wrap("a"), "a");
     assertCanonicalId(wrap(blob(1, 2, 3)), "010203");
     assertCanonicalId(
         wrapRef(dbId("p1", "d1"), key("c1/doc1")), "projects/p1/databases/d1/documents/c1/doc1");
-    assertCanonicalId(wrap(new GeoPoint(30, 60)), "{lat:30.0,lng:60.0}");
+    assertCanonicalId(wrap(new GeoPoint(30, 60)), "geo(30.0,60.0)");
     assertCanonicalId(wrap(Arrays.asList(1, 2, 3)), "[1,2,3]");
     assertCanonicalId(wrap(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");
     assertCanonicalId(
-        wrap(map("a", Arrays.asList("b", map("c", new GeoPoint(1, 2))))),
-        "{a:[b,{c:{lat:1.0,lng:2.0}}]}");
+        wrap(map("a", Arrays.asList("b", map("c", new GeoPoint(30, 60))))),
+        "{a:[b,{c:geo(30.0,60.0)}]}");
+  }
+
+  @Test
+  public void testObjectCanonicalIdsIgnoreSortOrder() {
+    assertCanonicalId(wrap(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");
+    assertCanonicalId(wrap(map("c", 3, "b", 2, "a", "1")), "{a:1,b:2,c:3}");
   }
 
   private void assertCanonicalId(PrimitiveValue fieldValue, String expectedCanonicalId) {
