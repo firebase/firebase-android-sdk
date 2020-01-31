@@ -311,7 +311,7 @@ public class ProtoValues {
   private static void stringifyObject(StringBuilder builder, MapValue mapValue) {
     // Even though MapValue are likely sorted correctly based on their insertion order (e.g. when
     // received from the backend), local modifications can bring elements out of order. We need to
-    // re-sort the elements to ensure that canonical IDs are independent of insertion time.
+    // re-sort the elements to ensure that canonical IDs are independent of insertion order.
     SortedMap<String, Value> sortedMap = new TreeMap<>(mapValue.getFieldsMap());
 
     builder.append("{");
