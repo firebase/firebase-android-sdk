@@ -25,6 +25,7 @@ import com.google.firestore.v1.Value;
 import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -313,7 +314,7 @@ public class ProtoValues {
     // received from the backend), local modifications can bring elements out of order. We need to
     // re-sort the elements to ensure that canonical IDs are independent of insertion order.
     List<String> keys = new ArrayList<>(mapValue.getFieldsMap().keySet());
-    keys.sort();
+    Collections.sort(keys);
 
     builder.append("{");
     boolean first = true;
