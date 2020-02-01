@@ -35,6 +35,7 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.protovalue.ObjectValue;
 import com.google.firebase.firestore.model.protovalue.PrimitiveValue;
 import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import com.google.firestore.v1.Value;
@@ -364,6 +365,36 @@ public class FieldValueTest {
         .addEqualityGroup(wrapObject("foo", 2))
         .addEqualityGroup(wrapObject("foo", "0"))
         .testCompare();
+  }
+
+  @Test
+  public void testCanonicalIds() {
+    assertCanonicalId(wrap(null), "null");
+    assertCanonicalId(wrap(true), "true");
+    assertCanonicalId(wrap(false), "false");
+    assertCanonicalId(wrap(1), "1");
+    assertCanonicalId(wrap(1.0), "1.0");
+    assertCanonicalId(wrap(new Timestamp(30, 60)), "time(30,60)");
+    assertCanonicalId(wrap("a"), "a");
+    assertCanonicalId(wrap(blob(1, 2, 3)), "010203");
+    assertCanonicalId(
+        wrapRef(dbId("p1", "d1"), key("c1/doc1")), "projects/p1/databases/d1/documents/c1/doc1");
+    assertCanonicalId(wrap(new GeoPoint(30, 60)), "geo(30.0,60.0)");
+    assertCanonicalId(wrap(Arrays.asList(1, 2, 3)), "[1,2,3]");
+    assertCanonicalId(wrap(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");
+    assertCanonicalId(
+        wrap(map("a", Arrays.asList("b", map("c", new GeoPoint(30, 60))))),
+        "{a:[b,{c:geo(30.0,60.0)}]}");
+  }
+
+  @Test
+  public void testObjectCanonicalIdsIgnoreSortOrder() {
+    assertCanonicalId(wrap(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");
+    assertCanonicalId(wrap(map("c", 3, "b", 2, "a", "1")), "{a:1,b:2,c:3}");
+  }
+
+  private void assertCanonicalId(PrimitiveValue fieldValue, String expectedCanonicalId) {
+    assertEquals(expectedCanonicalId, ProtoValues.canonicalId(fieldValue.toProto()));
   }
 
   private ObjectValue setField(ObjectValue objectValue, String fieldPath, PrimitiveValue value) {

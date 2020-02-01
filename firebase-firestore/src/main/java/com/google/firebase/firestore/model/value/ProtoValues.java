@@ -24,6 +24,8 @@ import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -248,5 +250,94 @@ public class ProtoValues {
 
     // Only equal if both iterators are exhausted.
     return Util.compareBooleans(iterator1.hasNext(), iterator2.hasNext());
+  }
+
+  /** Generate the canonical ID for the provided field value (as used in Target serialization). */
+  public static String canonicalId(Value value) {
+    StringBuilder builder = new StringBuilder();
+    canonifyValue(builder, value);
+    return builder.toString();
+  }
+
+  // TODO(mrschmidt): Use in target serialization and migrate all existing TargetData
+  private static void canonifyValue(StringBuilder builder, Value value) {
+    switch (value.getValueTypeCase()) {
+      case NULL_VALUE:
+        builder.append("null");
+        break;
+      case BOOLEAN_VALUE:
+        builder.append(value.getBooleanValue());
+        break;
+      case INTEGER_VALUE:
+        builder.append(value.getIntegerValue());
+        break;
+      case DOUBLE_VALUE:
+        builder.append(value.getDoubleValue());
+        break;
+      case TIMESTAMP_VALUE:
+        canonifyTimestamp(builder, value.getTimestampValue());
+        break;
+      case STRING_VALUE:
+        builder.append(value.getStringValue());
+        break;
+      case BYTES_VALUE:
+        builder.append(Util.toDebugString(value.getBytesValue()));
+        break;
+      case REFERENCE_VALUE:
+        // TODO(mrschmidt): Use document key only
+        builder.append(value.getReferenceValue());
+        break;
+      case GEO_POINT_VALUE:
+        canonifyGeoPoint(builder, value.getGeoPointValue());
+        break;
+      case ARRAY_VALUE:
+        canonifyArray(builder, value.getArrayValue());
+        break;
+      case MAP_VALUE:
+        canonifyObject(builder, value.getMapValue());
+        break;
+      default:
+        throw fail("Invalid value type: " + value.getValueTypeCase());
+    }
+  }
+
+  private static void canonifyTimestamp(StringBuilder builder, Timestamp timestamp) {
+    builder.append(String.format("time(%s,%s)", timestamp.getSeconds(), timestamp.getNanos()));
+  }
+
+  private static void canonifyGeoPoint(StringBuilder builder, LatLng latLng) {
+    builder.append(String.format("geo(%s,%s)", latLng.getLatitude(), latLng.getLongitude()));
+  }
+
+  private static void canonifyObject(StringBuilder builder, MapValue mapValue) {
+    // Even though MapValue are likely sorted correctly based on their insertion order (e.g. when
+    // received from the backend), local modifications can bring elements out of order. We need to
+    // re-sort the elements to ensure that canonical IDs are independent of insertion order.
+    List<String> keys = new ArrayList<>(mapValue.getFieldsMap().keySet());
+    Collections.sort(keys);
+
+    builder.append("{");
+    boolean first = true;
+    for (String key : keys) {
+      if (!first) {
+        builder.append(",");
+      } else {
+        first = false;
+      }
+      builder.append(key).append(":");
+      canonifyValue(builder, mapValue.getFieldsOrThrow(key));
+    }
+    builder.append("}");
+  }
+
+  private static void canonifyArray(StringBuilder builder, ArrayValue arrayValue) {
+    builder.append("[");
+    for (int i = 0; i < arrayValue.getValuesCount(); ++i) {
+      canonifyValue(builder, arrayValue.getValues(i));
+      if (i != arrayValue.getValuesCount() - 1) {
+        builder.append(",");
+      }
+    }
+    builder.append("]");
   }
 }
