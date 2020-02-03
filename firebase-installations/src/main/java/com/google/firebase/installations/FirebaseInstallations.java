@@ -365,8 +365,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private String readExistingIidOrCreateFid(PersistedInstallationEntry prefs) {
     // Check if this firebase app is the default (first initialized) instance or is a chime app
-    if (!firebaseApp.getName().equals(CHIME_FIREBASE_APP_NAME)
-        && (!firebaseApp.isDefaultApp() || !prefs.shouldAttemptMigration())) {
+    if ((!firebaseApp.getName().equals(CHIME_FIREBASE_APP_NAME) && !firebaseApp.isDefaultApp())
+        || !prefs.shouldAttemptMigration()) {
       return fidGenerator.createRandomFid();
     }
     // For a default/chime firebase installation, read the existing iid from shared prefs
