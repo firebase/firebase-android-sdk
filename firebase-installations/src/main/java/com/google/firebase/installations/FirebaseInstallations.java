@@ -62,6 +62,7 @@ import java.util.concurrent.TimeUnit;
  * </ul>
  */
 public class FirebaseInstallations implements FirebaseInstallationsApi {
+  public static final String CHIME_ANDROID_SDK = "CHIME_ANDROID_SDK";
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationServiceClient serviceClient;
   private final PersistedInstallation persistedInstallation;
@@ -118,6 +119,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.utils = utils;
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
+    preventParallelUsageOfIncompatibleVersionOfInstanceIdSDk();
   }
 
   /**
@@ -312,6 +314,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     triggerOnStateReached(prefs);
 
+    if (firebaseApp.getName().equals(CHIME_ANDROID_SDK)
+        && prefs.getFirebaseInstallationId().length() == 11) {
+      return;
+    }
+
     // There are two possible cleanup steps to perform at this stage: the FID may need to
     // be registered with the server or the FID is registered but we need a fresh authtoken.
     // Registering will also result in a fresh authtoken. Do the appropriate step here.
@@ -372,9 +379,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           // Only one single thread from one single process can execute this block
           // at any given time.
           String fid = readExistingIidOrCreateFid(prefs);
-          prefs =
-              persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-                  prefs.withUnregisteredFid(fid));
+
+          if (firebaseApp.getName().equals("CHIME_ANDROID_SDK") && fid.length() == 11) {
+            return persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+                prefs.withRegisteredFid(fid, "", 0, "", 0));
+          }
+          return persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+              prefs.withUnregisteredFid(fid));
         }
         return prefs;
       }
@@ -386,12 +397,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private String readExistingIidOrCreateFid(PersistedInstallationEntry prefs) {
     // Check if this firebase app is the default (first initialized) instance
-    if (!firebaseApp.isDefaultApp() || !prefs.shouldAttemptMigration()) {
+    if (!firebaseApp.getName().equals("CHIME_ANDROID_SDK")
+        && (!firebaseApp.isDefaultApp() || !prefs.shouldAttemptMigration())) {
       return fidGenerator.createRandomFid();
     }
     // For a default firebase installation, read the existing iid from shared prefs
     String fid = iidStore.readIid();
-    if (fid == null) {
+    if (TextUtils.isEmpty(fid)) {
       fid = fidGenerator.createRandomFid();
     }
     return fid;
