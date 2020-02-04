@@ -27,3 +27,5 @@ Before upgrading your application(s) to the latest SDK version, please **make su
 - **Scroll down** to the `API restrictions` section.
 - If the radio button shows `Don't restrict key`, the API key is not affected.
 Otherwise, from the dropdown menu, **add** the `Firebase Installations API` to the list of permitted APIs, and click `Save`.
+
+**Note:** If you cannot find the [Firebase Installations API](https://console.cloud.google.com/apis/library/firebaseinstallations.googleapis.com) in the list of APIs, you might first have to enable the API for your project (to do so [click here](https://console.cloud.google.com/apis/library/firebaseinstallations.googleapis.com)).
