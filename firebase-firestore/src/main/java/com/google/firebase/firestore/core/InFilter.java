@@ -29,6 +29,6 @@ public class InFilter extends FieldFilter {
   public boolean matches(Document doc) {
     ArrayValue arrayValue = (ArrayValue) getValue();
     FieldValue other = doc.getField(getField());
-    return other != null && arrayValue.getInternalValue().contains(other);
+    return other != null && arrayValue.contains(other);
   }
 }

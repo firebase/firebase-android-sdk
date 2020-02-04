@@ -32,8 +32,8 @@ public class ArrayContainsAnyFilter extends FieldFilter {
     if (!(other instanceof ArrayValue)) {
       return false;
     }
-    for (FieldValue val : ((ArrayValue) other).getInternalValue()) {
-      if (arrayValue.getInternalValue().contains(val)) {
+    for (FieldValue val : ((ArrayValue) other).getValues()) {
+      if (arrayValue.contains(val)) {
         return true;
       }
     }

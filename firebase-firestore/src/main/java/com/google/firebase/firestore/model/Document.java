@@ -66,11 +66,6 @@ public final class Document extends MaybeDocument {
     return objectValue.get(path);
   }
 
-  public @Nullable Object getFieldValue(FieldPath path) {
-    FieldValue value = getField(path);
-    return (value == null) ? null : value.value();
-  }
-
   public boolean hasLocalMutations() {
     return documentState.equals(DocumentState.LOCAL_MUTATIONS);
   }

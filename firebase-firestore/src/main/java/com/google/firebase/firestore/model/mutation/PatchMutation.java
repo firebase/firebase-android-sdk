@@ -158,7 +158,7 @@ public final class PatchMutation extends Mutation {
         if (newValue == null) {
           builder.delete(path);
         } else {
-          builder.set(path, newValue);
+          builder.set(path, newValue.getProto());
         }
       }
     }

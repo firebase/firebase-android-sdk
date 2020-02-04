@@ -14,18 +14,19 @@
 
 package com.google.firebase.firestore;
 
-import androidx.annotation.Nullable;
+import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import androidx.annotation.RestrictTo;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.model.value.TimestampValue;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firestore.v1.ArrayValue;
+import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,26 +52,42 @@ public class UserDataWriter {
     this.serverTimestampBehavior = serverTimestampBehavior;
   }
 
-  @Nullable
-  Object convertValue(FieldValue value) {
-    if (value instanceof ObjectValue) {
-      return convertObject((ObjectValue) value);
-    } else if (value instanceof com.google.firebase.firestore.model.value.ArrayValue) {
-      return convertArray((com.google.firebase.firestore.model.value.ArrayValue) value);
-    } else if (value instanceof ReferenceValue) {
-      return convertReference((ReferenceValue) value);
-    } else if (value instanceof TimestampValue) {
-      return convertTimestamp((TimestampValue) value);
-    } else if (value instanceof ServerTimestampValue) {
-      return convertServerTimestamp((ServerTimestampValue) value);
-    } else {
-      return value.value();
+  Object convertValue(Value value) {
+    switch (value.getValueTypeCase()) {
+      case MAP_VALUE:
+        if (ServerTimestampValue.isServerTimestamp(value)) {
+          return convertServerTimestamp(ServerTimestampValue.valueOf(value));
+        }
+        return convertObject(value.getMapValue().getFieldsMap());
+      case ARRAY_VALUE:
+        return convertArray(value.getArrayValue());
+      case REFERENCE_VALUE:
+        return convertReference(value);
+      case TIMESTAMP_VALUE:
+        return convertTimestamp(value.getTimestampValue());
+      case NULL_VALUE:
+        return null;
+      case BOOLEAN_VALUE:
+        return value.getBooleanValue();
+      case INTEGER_VALUE:
+        return value.getIntegerValue();
+      case DOUBLE_VALUE:
+        return value.getDoubleValue();
+      case STRING_VALUE:
+        return value.getStringValue();
+      case BYTES_VALUE:
+        return Blob.fromByteString(value.getBytesValue());
+      case GEO_POINT_VALUE:
+        return new GeoPoint(
+            value.getGeoPointValue().getLatitude(), value.getGeoPointValue().getLongitude());
+      default:
+        throw fail("Unknown value type: " + value.getValueTypeCase());
     }
   }
 
-  Map<String, Object> convertObject(ObjectValue objectValue) {
+  Map<String, Object> convertObject(Map<String, Value> mapValue) {
     Map<String, Object> result = new HashMap<>();
-    for (Map.Entry<String, FieldValue> entry : objectValue.getInternalValue()) {
+    for (Map.Entry<String, Value> entry : mapValue.entrySet()) {
       result.put(entry.getKey(), convertValue(entry.getValue()));
     }
     return result;
@@ -79,16 +96,20 @@ public class UserDataWriter {
   private Object convertServerTimestamp(ServerTimestampValue value) {
     switch (serverTimestampBehavior) {
       case PREVIOUS:
-        return value.getPreviousValue();
+        return value.getPreviousValue() == null
+            ? null
+            : convertValue(value.getPreviousValue().getProto());
       case ESTIMATE:
-        return value.getLocalWriteTime();
+        return !timestampsInSnapshots
+            ? value.getLocalWriteTime().toDate()
+            : value.getLocalWriteTime();
       default:
-        return value.value();
+        return null;
     }
   }
 
-  private Object convertTimestamp(TimestampValue value) {
-    Timestamp timestamp = value.value();
+  private Object convertTimestamp(com.google.protobuf.Timestamp value) {
+    Timestamp timestamp = new Timestamp(value.getSeconds(), value.getNanos());
     if (timestampsInSnapshots) {
       return timestamp;
     } else {
@@ -97,17 +118,23 @@ public class UserDataWriter {
   }
 
   private List<Object> convertArray(ArrayValue arrayValue) {
-    ArrayList<Object> result = new ArrayList<>(arrayValue.getInternalValue().size());
-    for (FieldValue v : arrayValue.getInternalValue()) {
+    ArrayList<Object> result = new ArrayList<>(arrayValue.getValuesCount());
+    for (Value v : arrayValue.getValuesList()) {
       result.add(convertValue(v));
     }
     return result;
   }
 
-  protected Object convertReference(ReferenceValue value) {
-    DocumentKey key = value.value();
-    DatabaseId refDatabase = value.getDatabaseId();
-    DatabaseId database = this.firestore.getDatabaseId();
+  protected Object convertReference(Value value) {
+    FieldValue fieldValue = FieldValue.valueOf(value);
+    hardAssert(
+        fieldValue instanceof ReferenceValue,
+        "FieldValue conversion returned invalid type for %s",
+        value);
+
+    DatabaseId refDatabase = ((ReferenceValue) fieldValue).getDatabaseId();
+    DocumentKey key = ((ReferenceValue) fieldValue).getKey();
+    DatabaseId database = firestore.getDatabaseId();
     if (!refDatabase.equals(database)) {
       // TODO: Somehow support foreign references.
       Logger.warn(

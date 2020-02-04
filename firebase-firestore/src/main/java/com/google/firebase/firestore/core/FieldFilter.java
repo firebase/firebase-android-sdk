@@ -145,7 +145,7 @@ public class FieldFilter extends Filter {
   public String getCanonicalId() {
     // TODO: Technically, this won't be unique if two values have the same description,
     // such as the int 3 and the string "3". So we should add the types in here somehow, too.
-    return getField().canonicalString() + getOperator().toString() + getValue().toString();
+    return getField().canonicalString() + getOperator().toString() + getValue().getCanonicalId();
   }
 
   @Override

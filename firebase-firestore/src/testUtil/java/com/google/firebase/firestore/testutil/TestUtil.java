@@ -485,7 +485,7 @@ public class TestUtil {
       objectMask.add(fieldPath);
       if (!entry.getValue().equals(DELETE_SENTINEL)) {
         FieldValue parsedValue = wrap(entry.getValue());
-        objectValue.set(fieldPath, parsedValue);
+        objectValue.set(fieldPath, parsedValue.getProto());
       }
     }
 

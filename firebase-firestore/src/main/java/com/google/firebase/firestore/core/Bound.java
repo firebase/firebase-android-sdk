@@ -18,9 +18,9 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.ReferenceValue;
 import java.util.List;
 
 /**
@@ -78,12 +78,11 @@ public final class Bound {
       OrderBy orderByComponent = orderBy.get(i);
       FieldValue component = position.get(i);
       if (orderByComponent.field.equals(FieldPath.KEY_PATH)) {
-        Object refValue = component.value();
         hardAssert(
-            refValue instanceof DocumentKey,
+            component instanceof ReferenceValue,
             "Bound has a non-key value where the key path is being used %s",
             component);
-        comparison = ((DocumentKey) refValue).compareTo(document.getKey());
+        comparison = ((ReferenceValue) component).getKey().compareTo(document.getKey());
       } else {
         FieldValue docValue = document.getField(orderByComponent.getField());
         hardAssert(

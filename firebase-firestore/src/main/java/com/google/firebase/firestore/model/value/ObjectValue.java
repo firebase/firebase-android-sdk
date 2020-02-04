@@ -17,32 +17,35 @@ package com.google.firebase.firestore.model.value;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.mutation.FieldMask;
-import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.MapValue;
+import com.google.firestore.v1.Value;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 /** A structured object value stored in Firestore. */
 public class ObjectValue extends FieldValue {
   private static final ObjectValue EMPTY_INSTANCE =
-      new ObjectValue(ImmutableSortedMap.Builder.emptyMap(Util.<String>comparator()));
+      new ObjectValue(
+          com.google.firestore.v1.Value.newBuilder()
+              .setMapValue(com.google.firestore.v1.MapValue.getDefaultInstance())
+              .build());
 
-  public static ObjectValue fromMap(Map<String, FieldValue> value) {
-    return fromImmutableMap(ImmutableSortedMap.Builder.fromMap(value, Util.comparator()));
+  public static ObjectValue fromMap(Map<String, Value> value) {
+    return new ObjectValue(
+        com.google.firestore.v1.Value.newBuilder()
+            .setMapValue(com.google.firestore.v1.MapValue.newBuilder().putAllFields(value))
+            .build());
   }
 
-  public static ObjectValue fromImmutableMap(ImmutableSortedMap<String, FieldValue> value) {
-    if (value.isEmpty()) {
-      return EMPTY_INSTANCE;
-    } else {
-      return new ObjectValue(value);
-    }
+  public ObjectValue(Value value) {
+    super(value);
+    hardAssert(
+        !ServerTimestampValue.isServerTimestamp(value),
+        "ServerTimestamps should be converted to ServerTimestampValue");
   }
 
   public static ObjectValue emptyObject() {
@@ -51,28 +54,24 @@ public class ObjectValue extends FieldValue {
 
   /** Returns a new Builder instance that is based on an empty object. */
   public static Builder newBuilder() {
-    return new Builder(ImmutableSortedMap.Builder.emptyMap(Util.<String>comparator()));
+    return EMPTY_INSTANCE.toBuilder();
   }
 
-  private final ImmutableSortedMap<String, FieldValue> internalValue;
-
-  private ObjectValue(ImmutableSortedMap<String, FieldValue> value) {
-    internalValue = value;
-  }
-
-  @Override
-  public int typeOrder() {
-    return TYPE_ORDER_OBJECT;
+  public Map<String, Value> getFieldsMap() {
+    return internalValue.getMapValue().getFieldsMap();
   }
 
   /** Recursively extracts the FieldPaths that are set in this ObjectValue. */
   public FieldMask getFieldMask() {
+    return extractFieldMask(internalValue.getMapValue());
+  }
+
+  private FieldMask extractFieldMask(MapValue value) {
     Set<FieldPath> fields = new HashSet<>();
-    for (Map.Entry<String, FieldValue> entry : internalValue) {
+    for (Map.Entry<String, Value> entry : value.getFieldsMap().entrySet()) {
       FieldPath currentPath = FieldPath.fromSingleSegment(entry.getKey());
-      FieldValue value = entry.getValue();
-      if (value instanceof ObjectValue) {
-        FieldMask nestedMask = ((ObjectValue) value).getFieldMask();
+      if (ProtoValues.typeOrder(entry.getValue()) == TYPE_ORDER_OBJECT) {
+        FieldMask nestedMask = extractFieldMask(entry.getValue().getMapValue());
         Set<FieldPath> nestedFields = nestedMask.getMask();
         if (nestedFields.isEmpty()) {
           // Preserve the empty map by adding it to the FieldMask.
@@ -90,62 +89,6 @@ public class ObjectValue extends FieldValue {
     return FieldMask.fromSet(fields);
   }
 
-  /** Recursively converts the Map into the value that users will see in document snapshots. */
-  @Override
-  public Map<String, Object> value() {
-    Map<String, Object> res = new HashMap<>();
-    for (Map.Entry<String, FieldValue> entry : internalValue) {
-      res.put(entry.getKey(), entry.getValue().value());
-    }
-    return res;
-  }
-
-  public ImmutableSortedMap<String, FieldValue> getInternalValue() {
-    return internalValue;
-  }
-
-  @Override
-  public String toString() {
-    return internalValue.toString();
-  }
-
-  @Override
-  public int hashCode() {
-    return internalValue.hashCode();
-  }
-
-  @Override
-  public int compareTo(FieldValue o) {
-    if (o instanceof ObjectValue) {
-      ObjectValue other = (ObjectValue) o;
-      Iterator<Entry<String, FieldValue>> iterator1 = internalValue.iterator();
-      Iterator<Entry<String, FieldValue>> iterator2 = other.internalValue.iterator();
-      while (iterator1.hasNext() && iterator2.hasNext()) {
-        Entry<String, FieldValue> entry1 = iterator1.next();
-        Entry<String, FieldValue> entry2 = iterator2.next();
-        int keyCompare = entry1.getKey().compareTo(entry2.getKey());
-        if (keyCompare != 0) {
-          return keyCompare;
-        }
-        int valueCompare = entry1.getValue().compareTo(entry2.getValue());
-        if (valueCompare != 0) {
-          return valueCompare;
-        }
-      }
-
-      // Only equal if both iterators are exhausted.
-      return Util.compareBooleans(iterator1.hasNext(), iterator2.hasNext());
-    } else {
-      return defaultCompareTo(o);
-    }
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    return other instanceof ObjectValue
-        && internalValue.equals(((ObjectValue) other).internalValue);
-  }
-
   /**
    * Returns the value at the given path or null.
    *
@@ -153,19 +96,24 @@ public class ObjectValue extends FieldValue {
    * @return The value at the path or if there it doesn't exist.
    */
   public @Nullable FieldValue get(FieldPath fieldPath) {
-    FieldValue current = this;
-    for (int i = 0; i < fieldPath.length(); i++) {
-      if (!(current instanceof ObjectValue)) {
-        return null;
+    if (fieldPath.isEmpty()) {
+      return this;
+    } else {
+      Value value = internalValue;
+      for (int i = 0; i < fieldPath.length() - 1; ++i) {
+        value = value.getMapValue().getFieldsOrDefault(fieldPath.getSegment(i), null);
+        if (value == null || ProtoValues.typeOrder(value) != TYPE_ORDER_OBJECT) {
+          return null;
+        }
       }
-      current = ((ObjectValue) current).internalValue.get(fieldPath.getSegment(i));
+      value = value.getMapValue().getFieldsOrDefault(fieldPath.getLastSegment(), null);
+      return value != null ? FieldValue.valueOf(value) : null;
     }
-    return current;
   }
 
   /** Creates a ObjectValue.Builder instance that is based on the current value. */
-  public Builder toBuilder() {
-    return new Builder(internalValue);
+  public ObjectValue.Builder toBuilder() {
+    return new ObjectValue.Builder(this);
   }
 
   /**
@@ -174,10 +122,19 @@ public class ObjectValue extends FieldValue {
    */
   public static class Builder {
 
-    private ImmutableSortedMap<String, FieldValue> internalValue;
+    /** The existing data to mutate. */
+    private ObjectValue baseObject;
 
-    Builder(ImmutableSortedMap<String, FieldValue> internalValue) {
-      this.internalValue = internalValue;
+    /**
+     * A nested map that contains the accumulated changes in this builder. Values can either be
+     * `Value` protos, `Map<String, Object>` values (to represent additional nesting) or `null` (to
+     * represent field deletes).
+     */
+    private Map<String, Object> overlayMap;
+
+    Builder(ObjectValue baseObject) {
+      this.baseObject = baseObject;
+      this.overlayMap = new HashMap<>();
     }
 
     /**
@@ -187,53 +144,109 @@ public class ObjectValue extends FieldValue {
      * @param value The value to set.
      * @return The current Builder instance.
      */
-    public Builder set(FieldPath path, FieldValue value) {
+    public ObjectValue.Builder set(FieldPath path, Value value) {
       hardAssert(!path.isEmpty(), "Cannot set field for empty path on ObjectValue");
-      String childName = path.getFirstSegment();
-      if (path.length() == 1) {
-        internalValue = internalValue.insert(childName, value);
-      } else {
-        FieldValue child = internalValue.get(childName);
-        ObjectValue obj;
-        if (child instanceof ObjectValue) {
-          obj = (ObjectValue) child;
-        } else {
-          obj = emptyObject();
-        }
-        ObjectValue newChild = obj.toBuilder().set(path.popFirst(), value).build();
-        internalValue = internalValue.insert(childName, newChild);
-      }
-
+      setOverlay(path, value);
       return this;
     }
 
     /**
-     * Removes the field at the current path. If there is no field at the specified path nothing is
-     * changed.
+     * Removes the field at the specified path. If there is no field at the specified path nothing
+     * is changed.
      *
      * @param path The field path to remove
      * @return The current Builder instance.
      */
-    public Builder delete(FieldPath path) {
+    public ObjectValue.Builder delete(FieldPath path) {
       hardAssert(!path.isEmpty(), "Cannot delete field for empty path on ObjectValue");
-      String childName = path.getFirstSegment();
-      if (path.length() == 1) {
-        internalValue = internalValue.remove(childName);
-      } else {
-        FieldValue child = internalValue.get(childName);
-        if (child instanceof ObjectValue) {
-          ObjectValue newChild = ((ObjectValue) child).toBuilder().delete(path.popFirst()).build();
-          internalValue = internalValue.insert(childName, newChild);
-        } else {
-          // Don't actually change a primitive value to an object for a delete.
-        }
-      }
-
+      setOverlay(path, null);
       return this;
     }
 
+    /** Adds `value` to the overlay map at `path`. Creates nested map entries if needed. */
+    private void setOverlay(FieldPath path, @Nullable Value value) {
+      Map<String, Object> currentLevel = overlayMap;
+
+      for (int i = 0; i < path.length() - 1; ++i) {
+        String currentSegment = path.getSegment(i);
+        Object currentValue = currentLevel.get(currentSegment);
+
+        if (currentValue instanceof Map) {
+          // Re-use a previously created map
+          currentLevel = (Map<String, Object>) currentValue;
+        } else if (currentValue instanceof Value
+            && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
+          // Convert the existing Protobuf MapValue into a Java map
+          Map<String, Object> nextLevel =
+              new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
+          currentLevel.put(currentSegment, nextLevel);
+          currentLevel = nextLevel;
+        } else {
+          // Create an empty hash map to represent the current nesting level
+          Map<String, Object> nextLevel = new HashMap<>();
+          currentLevel.put(currentSegment, nextLevel);
+          currentLevel = nextLevel;
+        }
+      }
+
+      currentLevel.put(path.getLastSegment(), value);
+    }
+
+    /** Returns an ObjectValue with all mutations applied. */
     public ObjectValue build() {
-      return new ObjectValue(internalValue);
+      MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
+      if (mergedResult != null) {
+        return new ObjectValue(Value.newBuilder().setMapValue(mergedResult).build());
+      } else {
+        return this.baseObject;
+      }
+    }
+
+    /**
+     * Applies any overlays from `currentOverlays` that exist at `currentPath` and returns the
+     * merged data at `currentPath` (or null if there were no changes).
+     *
+     * @param currentPath The path at the current nesting level. Can be set toFieldValue.EMPTY_PATH
+     *     to represent the root.
+     * @param currentOverlays The overlays at the current nesting level in the same format as
+     *     `overlayMap`.
+     * @return The merged data at `currentPath` or null if no modifications were applied.
+     */
+    private @Nullable MapValue applyOverlay(
+        FieldPath currentPath, Map<String, Object> currentOverlays) {
+      boolean modified = false;
+
+      @Nullable FieldValue existingValue = baseObject.get(currentPath);
+      MapValue.Builder resultAtPath =
+          existingValue instanceof ObjectValue
+              // If there is already data at the current path, base our modifications on top
+              // of the existing data.
+              ? ((ObjectValue) existingValue).internalValue.getMapValue().toBuilder()
+              : MapValue.newBuilder();
+
+      for (Map.Entry<String, Object> entry : currentOverlays.entrySet()) {
+        String pathSegment = entry.getKey();
+        Object value = entry.getValue();
+
+        if (value instanceof Map) {
+          @Nullable
+          MapValue nested =
+              applyOverlay(currentPath.append(pathSegment), (Map<String, Object>) value);
+          if (nested != null) {
+            resultAtPath.putFields(pathSegment, Value.newBuilder().setMapValue(nested).build());
+            modified = true;
+          }
+        } else if (value instanceof Value) {
+          resultAtPath.putFields(pathSegment, (Value) value);
+          modified = true;
+        } else if (resultAtPath.containsFields(pathSegment)) {
+          hardAssert(value == null, "Expected entry to be a Map, a Value or null");
+          resultAtPath.removeFields(pathSegment);
+          modified = true;
+        }
+      }
+
+      return modified ? resultAtPath.build() : null;
     }
   }
 }

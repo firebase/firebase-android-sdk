@@ -14,42 +14,16 @@
 
 package com.google.firebase.firestore.model.value;
 
-import androidx.annotation.Nullable;
+import com.google.firestore.v1.Value;
 
 /** A wrapper for null values in Firestore. */
 public class NullValue extends FieldValue {
+  private static final Value INTERNAL_VALUE =
+      Value.newBuilder().setNullValue(com.google.protobuf.NullValue.NULL_VALUE).build();
   private static final NullValue INSTANCE = new NullValue();
 
-  private NullValue() {}
-
-  @Override
-  public int typeOrder() {
-    return TYPE_ORDER_NULL;
-  }
-
-  @Override
-  @Nullable
-  public Object value() {
-    return null;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return o instanceof NullValue;
-  }
-
-  @Override
-  public int hashCode() {
-    return -1;
-  }
-
-  @Override
-  public int compareTo(FieldValue other) {
-    if (other instanceof NullValue) {
-      return 0;
-    } else {
-      return defaultCompareTo(other);
-    }
+  private NullValue() {
+    super(INTERNAL_VALUE);
   }
 
   public static NullValue nullValue() {
