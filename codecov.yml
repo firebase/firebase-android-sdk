@@ -9,12 +9,14 @@ coverage:
       default: off
       FirebaseCommon:
         flags: FirebaseCommon
-        informational: true
+        informational: false
+        threshold: 5
     patch:
       default: off
       FirebaseCommon:
         flags: FirebaseCommon
-        informational: true
+        informational: false
+        threshold: 5
 
 comment:
-  layout: "header, flags, files, footer"
+  layout: "flags, files, footer"
