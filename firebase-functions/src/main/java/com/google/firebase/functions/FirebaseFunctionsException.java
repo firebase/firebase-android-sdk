@@ -170,6 +170,8 @@ public class FirebaseFunctionsException extends FirebaseException {
           return Code.UNAVAILABLE;
         case 504:
           return Code.DEADLINE_EXCEEDED;
+        case 505:
+          return Code.UNKNOWN;
       }
       return Code.UNKNOWN;
     }
