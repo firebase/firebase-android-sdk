@@ -73,6 +73,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Object lockGenerateFid = new Object();
   /* file used for process-level syncronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
+  private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
 
   /** package private constructor. */
   FirebaseInstallations(
@@ -363,13 +364,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   private String readExistingIidOrCreateFid(PersistedInstallationEntry prefs) {
-    // Check if this firebase app is the default (first initialized) instance
-    if (!firebaseApp.isDefaultApp() || !prefs.shouldAttemptMigration()) {
+    // Check if this firebase app is the default (first initialized) instance or is a chime app
+    if ((!firebaseApp.getName().equals(CHIME_FIREBASE_APP_NAME) && !firebaseApp.isDefaultApp())
+        || !prefs.shouldAttemptMigration()) {
       return fidGenerator.createRandomFid();
     }
-    // For a default firebase installation, read the existing iid from shared prefs
+    // For a default/chime firebase installation, read the existing iid from shared prefs
     String fid = iidStore.readIid();
-    if (fid == null) {
+    if (TextUtils.isEmpty(fid)) {
       fid = fidGenerator.createRandomFid();
     }
     return fid;
