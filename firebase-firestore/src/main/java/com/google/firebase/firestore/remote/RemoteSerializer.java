@@ -50,11 +50,8 @@ import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
-import com.google.firebase.firestore.model.value.DoubleValue;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.NullValue;
-import com.google.firebase.firestore.model.value.NumberValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
@@ -403,7 +400,7 @@ public final class RemoteSerializer {
           (NumericIncrementTransformOperation) transform;
       return DocumentTransform.FieldTransform.newBuilder()
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
-          .setIncrement(incrementOperation.getOperand().getProto())
+          .setIncrement(incrementOperation.getOperand())
           .build();
     } else {
       throw fail("Unknown transform: %s", transform);
@@ -432,17 +429,9 @@ public final class RemoteSerializer {
             new ArrayTransformOperation.Remove(
                 fieldTransform.getRemoveAllFromArray().getValuesList()));
       case INCREMENT:
-        {
-          FieldValue operand = FieldValue.valueOf(fieldTransform.getIncrement());
-          hardAssert(
-              operand instanceof NumberValue,
-              "Expected NUMERIC_ADD transform to be of number type, but was %s",
-              operand.getClass().getCanonicalName());
-          return new FieldTransform(
-              FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
-              new NumericIncrementTransformOperation(
-                  (NumberValue) FieldValue.valueOf(fieldTransform.getIncrement())));
-        }
+        return new FieldTransform(
+            FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
+            new NumericIncrementTransformOperation(fieldTransform.getIncrement()));
       default:
         throw fail("Unknown FieldTransform proto: %s", fieldTransform);
     }
@@ -699,10 +688,10 @@ public final class RemoteSerializer {
     if (filter.getOperator() == Filter.Operator.EQUAL) {
       UnaryFilter.Builder unaryProto = UnaryFilter.newBuilder();
       unaryProto.setField(encodeFieldPath(filter.getField()));
-      if (filter.getValue().equals(DoubleValue.NaN)) {
+      if (ProtoValues.isNanValue(filter.getValue())) {
         unaryProto.setOp(UnaryFilter.Operator.IS_NAN);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
-      } else if (filter.getValue().equals(NullValue.NULL)) {
+      } else if (ProtoValues.isNullValue(filter.getValue())) {
         unaryProto.setOp(UnaryFilter.Operator.IS_NULL);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
       }
@@ -710,7 +699,7 @@ public final class RemoteSerializer {
     StructuredQuery.FieldFilter.Builder proto = StructuredQuery.FieldFilter.newBuilder();
     proto.setField(encodeFieldPath(filter.getField()));
     proto.setOp(encodeFieldFilterOperator(filter.getOperator()));
-    proto.setValue(filter.getValue().getProto());
+    proto.setValue(filter.getValue());
     return StructuredQuery.Filter.newBuilder().setFieldFilter(proto).build();
   }
 
@@ -718,17 +707,17 @@ public final class RemoteSerializer {
   FieldFilter decodeFieldFilter(StructuredQuery.FieldFilter proto) {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     FieldFilter.Operator filterOperator = decodeFieldFilterOperator(proto.getOp());
-    return FieldFilter.create(fieldPath, filterOperator, FieldValue.valueOf(proto.getValue()));
+    return FieldFilter.create(fieldPath, filterOperator, proto.getValue());
   }
 
   private Filter decodeUnaryFilter(StructuredQuery.UnaryFilter proto) {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     switch (proto.getOp()) {
       case IS_NAN:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, DoubleValue.NaN);
+        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, ProtoValues.NAN_VALUE);
 
       case IS_NULL:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, NullValue.NULL);
+        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, ProtoValues.NULL_VALUE);
 
       default:
         throw fail("Unrecognized UnaryFilter.operator %d", proto.getOp());
@@ -820,22 +809,13 @@ public final class RemoteSerializer {
 
   private Cursor encodeBound(Bound bound) {
     Cursor.Builder builder = Cursor.newBuilder();
+    builder.addAllValues(bound.getPosition());
     builder.setBefore(bound.isBefore());
-    for (FieldValue component : bound.getPosition()) {
-      builder.addValues(component.getProto());
-    }
     return builder.build();
   }
 
   private Bound decodeBound(Cursor proto) {
-    int valuesCount = proto.getValuesCount();
-    List<FieldValue> indexComponents = new ArrayList<>(valuesCount);
-
-    for (int i = 0; i < valuesCount; i++) {
-      Value valueProto = proto.getValues(i);
-      indexComponents.add(FieldValue.valueOf(valueProto));
-    }
-    return new Bound(indexComponents, proto.getBefore());
+    return new Bound(proto.getValuesList(), proto.getBefore());
   }
 
   // Watch changes

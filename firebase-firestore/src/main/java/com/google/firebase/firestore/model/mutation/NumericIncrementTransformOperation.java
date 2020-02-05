@@ -19,10 +19,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.value.DoubleValue;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.IntegerValue;
-import com.google.firebase.firestore.model.value.NumberValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firestore.v1.Value;
 
@@ -32,9 +28,12 @@ import com.google.firestore.v1.Value;
  * Long.MAX_VALUE/Long.MIN_VALUE.
  */
 public class NumericIncrementTransformOperation implements TransformOperation {
-  private NumberValue operand;
+  private Value operand;
 
-  public NumericIncrementTransformOperation(NumberValue operand) {
+  public NumericIncrementTransformOperation(Value operand) {
+    hardAssert(
+        ProtoValues.isNumber(operand),
+        "NumericIncrementTransformOperation expects a NumberValue operand");
     this.operand = operand;
   }
 
@@ -43,7 +42,7 @@ public class NumericIncrementTransformOperation implements TransformOperation {
     Value baseValue = computeBaseValue(previousValue);
 
     // Return an integer value only if the previous value and the operand is an integer.
-    if (isInteger(baseValue) && operand instanceof IntegerValue) {
+    if (isInteger(baseValue) && isInteger(operand)) {
       long sum = safeIncrement(baseValue.getIntegerValue(), operandAsLong());
       return Value.newBuilder().setIntegerValue(sum).build();
     } else if (isInteger(baseValue)) {
@@ -64,7 +63,7 @@ public class NumericIncrementTransformOperation implements TransformOperation {
     return transformResult;
   }
 
-  public FieldValue getOperand() {
+  public Value getOperand() {
     return operand;
   }
 
@@ -99,10 +98,10 @@ public class NumericIncrementTransformOperation implements TransformOperation {
   }
 
   private double operandAsDouble() {
-    if (operand instanceof DoubleValue) {
-      return ((DoubleValue) operand).getDoubleValue();
-    } else if (operand instanceof IntegerValue) {
-      return ((IntegerValue) operand).getIntegerValue();
+    if (isDouble(operand)) {
+      return operand.getDoubleValue();
+    } else if (isInteger(operand)) {
+      return operand.getIntegerValue();
     } else {
       throw fail(
           "Expected 'operand' to be of Number type, but was "
@@ -111,10 +110,10 @@ public class NumericIncrementTransformOperation implements TransformOperation {
   }
 
   private long operandAsLong() {
-    if (operand instanceof DoubleValue) {
-      return (long) ((DoubleValue) operand).getDoubleValue();
-    } else if (operand instanceof IntegerValue) {
-      return ((IntegerValue) operand).getIntegerValue();
+    if (isDouble(operand)) {
+      return (long) operand.getDoubleValue();
+    } else if (isInteger(operand)) {
+      return operand.getIntegerValue();
     } else {
       throw fail(
           "Expected 'operand' to be of Number type, but was "

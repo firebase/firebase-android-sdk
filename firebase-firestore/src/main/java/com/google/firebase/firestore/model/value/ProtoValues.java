@@ -19,10 +19,14 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.common.base.Splitter;
+import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
+import com.google.firestore.v1.ArrayValueOrBuilder;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.NullValue;
 import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
 import java.util.ArrayList;
@@ -33,9 +37,12 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class ProtoValues {
+  public static final Value NAN_VALUE = Value.newBuilder().setDoubleValue(Double.NaN).build();
+  public static final Value NULL_VALUE =
+      Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
 
   /** Returns the backend's type order of the given Value type. */
-  static int typeOrder(Value value) {
+  public static int typeOrder(Value value) {
     switch (value.getValueTypeCase()) {
       case NULL_VALUE:
         return FieldValue.TYPE_ORDER_NULL;
@@ -157,8 +164,8 @@ public class ProtoValues {
   }
 
   /** Returns true if the Value list contains the specified element. */
-  public static boolean contains(List<Value> haystack, Value needle) {
-    for (Value haystackEl : haystack) {
+  public static boolean contains(ArrayValueOrBuilder haystack, Value needle) {
+    for (Value haystackEl : haystack.getValuesList()) {
       if (equals(haystackEl, needle)) {
         return true;
       }
@@ -354,9 +361,8 @@ public class ProtoValues {
   }
 
   private static void canonifyReference(StringBuilder builder, Value value) {
-    FieldValue fieldValue = FieldValue.valueOf(value);
-    hardAssert(fieldValue instanceof ReferenceValue, "Value should be a ReferenceValue");
-    builder.append(((ReferenceValue) fieldValue).getKey());
+    hardAssert(isReferenceValue(value), "Value should be a ReferenceValue");
+    builder.append(DocumentKey.fromName(value.getReferenceValue()));
   }
 
   private static void canonifyObject(StringBuilder builder, MapValue mapValue) {
@@ -399,7 +405,30 @@ public class ProtoValues {
   }
 
   /** Returns true if `value` is an ARRAY_VALUE. */
-  public static boolean isArray(Value value) {
+  public static boolean isArray(@Nullable Value value) {
     return value != null && value.getValueTypeCase() == Value.ValueTypeCase.ARRAY_VALUE;
+  }
+
+  public static boolean isReferenceValue(@Nullable Value value) {
+    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.REFERENCE_VALUE;
+  }
+
+  public static boolean isNullValue(@Nullable Value value) {
+    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.NULL_VALUE;
+  }
+
+  public static boolean isNanValue(@Nullable Value value) {
+    return value != null && Double.isNaN(value.getDoubleValue());
+  }
+
+  public static Value refValue(DatabaseId databaseId, DocumentKey key) {
+    Value value =
+        Value.newBuilder()
+            .setReferenceValue(
+                String.format(
+                    "projects/%s/databases/%s/documents/%s",
+                    databaseId.getProjectId(), databaseId.getDatabaseId(), key.toString()))
+            .build();
+    return value;
   }
 }

@@ -70,13 +70,13 @@ public class FieldValue implements Comparable<FieldValue> {
 
     switch (value.getValueTypeCase()) {
       case NULL_VALUE:
-        return NullValue.NULL;
+        return new FieldValue(value);
       case BOOLEAN_VALUE:
         return new BooleanValue(value);
       case INTEGER_VALUE:
-        return new IntegerValue(value);
+        return new FieldValue(value);
       case DOUBLE_VALUE:
-        return new DoubleValue(value);
+        return new FieldValue(value);
       case TIMESTAMP_VALUE:
         return new TimestampValue(value);
       case STRING_VALUE:
@@ -84,11 +84,11 @@ public class FieldValue implements Comparable<FieldValue> {
       case BYTES_VALUE:
         return new BlobValue(value);
       case REFERENCE_VALUE:
-        return new ReferenceValue(value);
+        return new FieldValue(value);
       case GEO_POINT_VALUE:
         return new GeoPointValue(value);
       case ARRAY_VALUE:
-        return new ArrayValue(value);
+        return new FieldValue(value);
       case MAP_VALUE:
         if (ServerTimestampValue.isServerTimestamp(value)) {
           return new ServerTimestampValue(value);
@@ -99,19 +99,9 @@ public class FieldValue implements Comparable<FieldValue> {
     }
   }
 
-  /** Returns the type order as defined by the backend. */
-  public int typeOrder() {
-    return ProtoValues.typeOrder(internalValue);
-  }
-
   /** Returns Firestore Value Protobuf that backs this FieldValuee */
   public Value getProto() {
     return internalValue;
-  }
-
-  /** Returns the canonical ID representation for the contents of this FieldValue. */
-  public String getCanonicalId() {
-    return ProtoValues.canonicalId(internalValue);
   }
 
   @Override
@@ -136,6 +126,6 @@ public class FieldValue implements Comparable<FieldValue> {
 
   @Override
   public String toString() {
-    return getCanonicalId();
+    return ProtoValues.canonicalId(internalValue);
   }
 }

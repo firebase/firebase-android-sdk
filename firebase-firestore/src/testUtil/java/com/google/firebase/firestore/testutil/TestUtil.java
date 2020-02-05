@@ -35,7 +35,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.TestAccessHelper;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
@@ -65,6 +64,7 @@ import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
@@ -132,7 +132,11 @@ public class TestUtil {
     UserDataReader dataReader = new UserDataReader(databaseId);
     // HACK: We use parseQueryValue() since it accepts scalars as well as arrays / objects, and
     // our tests currently use wrap() pretty generically so we don't know the intent.
-    return dataReader.parseQueryValue(value);
+    return FieldValue.valueOf(dataReader.parseQueryValue(value));
+  }
+
+  public static FieldValue wrapRef(DatabaseId databaseId, DocumentKey key) {
+    return FieldValue.valueOf(ProtoValues.refValue(databaseId, key));
   }
 
   public static ObjectValue wrapObject(Map<String, Object> value) {
@@ -230,12 +234,7 @@ public class TestUtil {
   }
 
   public static FieldFilter filter(String key, String operator, Object value) {
-    Filter filter = FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
-    if (filter instanceof FieldFilter) {
-      return (FieldFilter) filter;
-    } else {
-      throw new IllegalArgumentException("Unrecognized filter: " + filter.toString());
-    }
+    return FieldFilter.create(field(key), operatorFromString(operator), valueOf(value));
   }
 
   public static Operator operatorFromString(String s) {

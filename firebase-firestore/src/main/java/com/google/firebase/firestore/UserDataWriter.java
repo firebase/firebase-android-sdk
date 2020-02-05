@@ -15,14 +15,11 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.util.Assert.fail;
-import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.RestrictTo;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.ArrayValue;
@@ -125,15 +122,9 @@ public class UserDataWriter {
     return result;
   }
 
-  protected Object convertReference(Value value) {
-    FieldValue fieldValue = FieldValue.valueOf(value);
-    hardAssert(
-        fieldValue instanceof ReferenceValue,
-        "FieldValue conversion returned invalid type for %s",
-        value);
-
-    DatabaseId refDatabase = ((ReferenceValue) fieldValue).getDatabaseId();
-    DocumentKey key = ((ReferenceValue) fieldValue).getKey();
+  private Object convertReference(Value value) {
+    DatabaseId refDatabase = DatabaseId.fromName(value.getReferenceValue());
+    DocumentKey key = DocumentKey.fromName(value.getReferenceValue());
     DatabaseId database = firestore.getDatabaseId();
     if (!refDatabase.equals(database)) {
       // TODO: Somehow support foreign references.

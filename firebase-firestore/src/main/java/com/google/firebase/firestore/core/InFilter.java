@@ -14,23 +14,24 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firestore.v1.Value;
 
 /** A Filter that implements the IN operator. */
 public class InFilter extends FieldFilter {
-  InFilter(FieldPath field, ArrayValue value) {
+  InFilter(FieldPath field, Value value) {
     super(field, Operator.IN, value);
+    hardAssert(ProtoValues.isArray(value), "InFilter expects an ArrayValue");
   }
 
   @Override
   public boolean matches(Document doc) {
     FieldValue other = doc.getField(getField());
-    return other != null
-        && ProtoValues.contains(
-            getValue().getProto().getArrayValue().getValuesList(), other.getProto());
+    return other != null && ProtoValues.contains(getValue().getArrayValue(), other.getProto());
   }
 }

@@ -18,9 +18,10 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firestore.v1.Value;
 import java.util.List;
 
 /**
@@ -41,14 +42,14 @@ public final class Bound {
   private final boolean before;
 
   /** The index position of this bound */
-  private final List<FieldValue> position;
+  private final List<Value> position;
 
-  public Bound(List<FieldValue> position, boolean before) {
+  public Bound(List<Value> position, boolean before) {
     this.position = position;
     this.before = before;
   }
 
-  public List<FieldValue> getPosition() {
+  public List<Value> getPosition() {
     return position;
   }
 
@@ -64,8 +65,8 @@ public final class Bound {
     } else {
       builder.append("a:");
     }
-    for (FieldValue indexComponent : position) {
-      builder.append(indexComponent.toString());
+    for (Value indexComponent : position) {
+      builder.append(ProtoValues.canonicalId(indexComponent));
     }
     return builder.toString();
   }
@@ -76,18 +77,19 @@ public final class Bound {
     int comparison = 0;
     for (int i = 0; i < position.size(); i++) {
       OrderBy orderByComponent = orderBy.get(i);
-      FieldValue component = position.get(i);
+      Value component = position.get(i);
       if (orderByComponent.field.equals(FieldPath.KEY_PATH)) {
         hardAssert(
-            component instanceof ReferenceValue,
+            ProtoValues.isReferenceValue(component),
             "Bound has a non-key value where the key path is being used %s",
             component);
-        comparison = ((ReferenceValue) component).getKey().compareTo(document.getKey());
+        comparison =
+            DocumentKey.fromName(component.getReferenceValue()).compareTo(document.getKey());
       } else {
-        FieldValue docValue = document.getField(orderByComponent.getField());
+        Value docValue = document.getFieldProto(orderByComponent.getField());
         hardAssert(
             docValue != null, "Field should exist since document matched the orderBy already.");
-        comparison = component.compareTo(docValue);
+        comparison = ProtoValues.compare(component, docValue);
       }
 
       if (orderByComponent.getDirection().equals(Direction.DESCENDING)) {

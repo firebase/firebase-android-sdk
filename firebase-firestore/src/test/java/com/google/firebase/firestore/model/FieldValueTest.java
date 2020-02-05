@@ -24,6 +24,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
+import static com.google.firebase.firestore.testutil.TestUtil.wrapRef;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -35,13 +36,10 @@ import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.value.BlobValue;
 import com.google.firebase.firestore.model.value.BooleanValue;
-import com.google.firebase.firestore.model.value.DoubleValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.GeoPointValue;
-import com.google.firebase.firestore.model.value.NullValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
-import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.model.value.StringValue;
 import com.google.firebase.firestore.model.value.TimestampValue;
@@ -74,9 +72,7 @@ public class FieldValueTest {
 
   @Test
   public void testExtractsFields() {
-    FieldValue val = wrapObject("foo", map("a", 1, "b", true, "c", "string"));
-    assertTrue(val instanceof ObjectValue);
-    ObjectValue obj = (ObjectValue) val;
+    ObjectValue obj = wrapObject("foo", map("a", 1, "b", true, "c", "string"));
     assertTrue(obj.get(field("foo")) instanceof ObjectValue);
     assertEquals(wrap(1), obj.get(field("foo.a")));
     assertEquals(wrap(true), obj.get(field("foo.b")));
@@ -235,9 +231,11 @@ public class FieldValueTest {
     new EqualsTester()
         .addEqualityGroup(wrap(true), BooleanValue.valueOf(true))
         .addEqualityGroup(wrap(false), BooleanValue.valueOf(false))
-        .addEqualityGroup(wrap(null), NullValue.NULL)
+        .addEqualityGroup(wrap(null), FieldValue.valueOf(ProtoValues.NULL_VALUE))
         .addEqualityGroup(
-            wrap(0.0 / 0.0), wrap(Double.longBitsToDouble(0x7ff8000000000000L)), DoubleValue.NaN)
+            wrap(0.0 / 0.0),
+            wrap(Double.longBitsToDouble(0x7ff8000000000000L)),
+            FieldValue.valueOf(ProtoValues.NAN_VALUE))
         // -0.0 and 0.0 compareTo the same but are not equal.
         .addEqualityGroup(wrap(-0.0))
         .addEqualityGroup(wrap(0.0))
@@ -262,10 +260,9 @@ public class FieldValueTest {
         .addEqualityGroup(ServerTimestampValue.valueOf(new Timestamp(date2), null))
         .addEqualityGroup(wrap(new GeoPoint(0, 1)), GeoPointValue.valueOf(new GeoPoint(0, 1)))
         .addEqualityGroup(GeoPointValue.valueOf(new GeoPoint(1, 0)))
-        .addEqualityGroup(
-            wrap(ref("coll/doc1")), ReferenceValue.valueOf(dbId("project"), key("coll/doc1")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("project", "bar"), key("coll/doc2")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("project", "baz"), key("coll/doc2")))
+        .addEqualityGroup(wrap(ref("coll/doc1")), wrapRef(dbId("project"), key("coll/doc1")))
+        .addEqualityGroup(wrapRef(dbId("project", "bar"), key("coll/doc2")))
+        .addEqualityGroup(wrapRef(dbId("project", "baz"), key("coll/doc2")))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar")), wrap(Arrays.asList("foo", "bar")))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar", "baz")))
         .addEqualityGroup(wrap(Arrays.asList("foo")))
@@ -339,12 +336,12 @@ public class FieldValueTest {
         .addEqualityGroup(wrap(blob(255)))
 
         // resource names
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p1", "d1"), key("c1/doc1")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p1", "d1"), key("c1/doc2")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p1", "d1"), key("c10/doc1")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p1", "d1"), key("c2/doc1")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p1", "d2"), key("c1/doc1")))
-        .addEqualityGroup(ReferenceValue.valueOf(dbId("p2", "d1"), key("c1/doc1")))
+        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c1/doc1")))
+        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c1/doc2")))
+        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c10/doc1")))
+        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c2/doc1")))
+        .addEqualityGroup(wrapRef(dbId("p1", "d2"), key("c1/doc1")))
+        .addEqualityGroup(wrapRef(dbId("p2", "d1"), key("c1/doc1")))
 
         // geo points
         .addEqualityGroup(wrap(new GeoPoint(-90, -180)))
@@ -385,7 +382,7 @@ public class FieldValueTest {
     assertCanonicalId(wrap(new Timestamp(30, 1000)), "time(30,1000)");
     assertCanonicalId(wrap("a"), "a");
     assertCanonicalId(wrap(blob(1, 2, 3)), "010203");
-    assertCanonicalId(ReferenceValue.valueOf(dbId("p1", "d1"), key("c1/doc1")), "c1/doc1");
+    assertCanonicalId(wrapRef(dbId("p1", "d1"), key("c1/doc1")), "c1/doc1");
     assertCanonicalId(wrap(new GeoPoint(30, 60)), "geo(30.0,60.0)");
     assertCanonicalId(wrap(Arrays.asList(1, 2, 3)), "[1,2,3]");
     assertCanonicalId(wrap(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");

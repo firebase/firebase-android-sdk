@@ -43,8 +43,8 @@ public final class ServerTimestampValue extends FieldValue {
   private static final String PREVIOUS_VALUE_KEY = "__previous_value__";
   private static final String LOCAL_WRITE_TIME_KEY = "__local_write_time__";
 
-  public static boolean isServerTimestamp(Value value) {
-    Value type = value.getMapValue().getFieldsOrDefault(TYPE_KEY, null);
+  public static boolean isServerTimestamp(@Nullable Value value) {
+    Value type = value == null ? null : value.getMapValue().getFieldsOrDefault(TYPE_KEY, null);
     return type != null && SERVER_TIMESTAMP_SENTINEL.equals(type.getStringValue());
   }
 
