@@ -18,8 +18,11 @@ import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -28,13 +31,13 @@ import java.util.List;
  * <p>Implementations are: ArrayTransformOperation.Union and ArrayTransformOperation.Remove
  */
 public abstract class ArrayTransformOperation implements TransformOperation {
-  private final List<FieldValue> elements;
+  private final List<Value> elements;
 
-  ArrayTransformOperation(List<FieldValue> elements) {
+  ArrayTransformOperation(List<Value> elements) {
     this.elements = Collections.unmodifiableList(elements);
   }
 
-  public List<FieldValue> getElements() {
+  public List<Value> getElements() {
     return elements;
   }
 
@@ -86,9 +89,9 @@ public abstract class ArrayTransformOperation implements TransformOperation {
    * Inspects the provided value, returning an ArrayList copy of the internal array if it's an
    * ArrayValue and an empty ArrayList if it's null or any other type of FSTFieldValue.
    */
-  static List<FieldValue> coercedFieldValuesArray(@Nullable FieldValue value) {
+  static ArrayList<Value> coercedFieldValuesArray(@Nullable FieldValue value) {
     if (value instanceof ArrayValue) {
-      return ((ArrayValue) value).getValues();
+      return new ArrayList<>(value.getProto().getArrayValue().getValuesList());
     } else {
       // coerce to empty array.
       return new ArrayList<>();
@@ -97,17 +100,16 @@ public abstract class ArrayTransformOperation implements TransformOperation {
 
   /** An array union transform operation. */
   public static class Union extends ArrayTransformOperation {
-    // TODO(mrschmidt): Migrate to list of Value protos
-    public Union(List<FieldValue> elements) {
+    public Union(List<Value> elements) {
       super(elements);
     }
 
     @Override
     protected ArrayValue apply(@Nullable FieldValue previousValue) {
-      List<FieldValue> result = coercedFieldValuesArray(previousValue);
-      for (FieldValue element : getElements()) {
-        if (!result.contains(element)) {
-          result.add(element);
+      List<Value> result = coercedFieldValuesArray(previousValue);
+      for (Value unionElement : getElements()) {
+        if (!ProtoValues.contains(result, unionElement)) {
+          result.add(unionElement);
         }
       }
       return ArrayValue.fromList(result);
@@ -116,15 +118,21 @@ public abstract class ArrayTransformOperation implements TransformOperation {
 
   /** An array remove transform operation. */
   public static class Remove extends ArrayTransformOperation {
-    public Remove(List<FieldValue> elements) {
+    public Remove(List<Value> elements) {
       super(elements);
     }
 
     @Override
     protected ArrayValue apply(@Nullable FieldValue previousValue) {
-      List<FieldValue> result = coercedFieldValuesArray(previousValue);
-      for (FieldValue element : getElements()) {
-        result.removeAll(Collections.singleton(element));
+      List<Value> result = coercedFieldValuesArray(previousValue);
+      for (Value removeElement : getElements()) {
+        Iterator<Value> existingValuesIterator = result.iterator();
+        while (existingValuesIterator.hasNext()) {
+          Value existingElement = existingValuesIterator.next();
+          if (ProtoValues.equals(existingElement, removeElement)) {
+            existingValuesIterator.remove();
+          }
+        }
       }
       return ArrayValue.fromList(result);
     }

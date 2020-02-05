@@ -27,6 +27,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.transformMutation;
+import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.verifyMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static java.util.Arrays.asList;
@@ -435,8 +436,8 @@ public final class RemoteSerializerTest {
                             .setFieldPath("a")
                             .setAppendMissingElements(
                                 ArrayValue.newBuilder()
-                                    .addValues(wrap("a").getProto())
-                                    .addValues(wrap(2).getProto())))
+                                    .addValues(valueOf("a"))
+                                    .addValues(valueOf(2))))
                     .addFieldTransforms(
                         DocumentTransform.FieldTransform.newBuilder()
                             .setFieldPath("bar.baz")

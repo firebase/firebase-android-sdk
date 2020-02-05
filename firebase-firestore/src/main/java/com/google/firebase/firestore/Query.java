@@ -45,6 +45,7 @@ import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -336,9 +337,9 @@ public class Query {
                 + "' queries on FieldPath.documentId().");
       } else if (op == Operator.IN) {
         validateDisjunctiveFilterElements(value, op);
-        List<FieldValue> referenceList = new ArrayList<>();
+        List<Value> referenceList = new ArrayList<>();
         for (Object arrayValue : (List) value) {
-          referenceList.add(parseDocumentIdValue(arrayValue));
+          referenceList.add(parseDocumentIdValue(arrayValue).getProto());
         }
         fieldValue = ArrayValue.fromList(referenceList);
       } else {

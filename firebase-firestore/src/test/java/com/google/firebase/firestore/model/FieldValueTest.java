@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
+import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static junit.framework.TestCase.assertTrue;
@@ -128,12 +129,7 @@ public class FieldValueTest {
   public void testAddsMultipleNewFields() {
     ObjectValue object = ObjectValue.emptyObject();
     object = setField(object, "a", wrap("a"));
-    object =
-        object
-            .toBuilder()
-            .set(field("b"), wrap("b").getProto())
-            .set(field("c"), wrap("c").getProto())
-            .build();
+    object = object.toBuilder().set(field("b"), valueOf("b")).set(field("c"), valueOf("c")).build();
 
     assertEquals(wrapObject("a", "a", "b", "b", "c", "c"), object);
   }

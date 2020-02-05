@@ -357,13 +357,13 @@ public final class UserDataReader {
       context.addToFieldTransforms(context.getPath(), ServerTimestampOperation.getInstance());
 
     } else if (value instanceof ArrayUnionFieldValue) {
-      List<FieldValue> parsedElements =
+      List<Value> parsedElements =
           parseArrayTransformElements(((ArrayUnionFieldValue) value).getElements());
       ArrayTransformOperation arrayUnion = new ArrayTransformOperation.Union(parsedElements);
       context.addToFieldTransforms(context.getPath(), arrayUnion);
 
     } else if (value instanceof ArrayRemoveFieldValue) {
-      List<FieldValue> parsedElements =
+      List<Value> parsedElements =
           parseArrayTransformElements(((ArrayRemoveFieldValue) value).getElements());
       ArrayTransformOperation arrayRemove = new ArrayTransformOperation.Remove(parsedElements);
       context.addToFieldTransforms(context.getPath(), arrayRemove);
@@ -464,17 +464,17 @@ public final class UserDataReader {
         .build();
   }
 
-  private List<FieldValue> parseArrayTransformElements(List<Object> elements) {
+  private List<Value> parseArrayTransformElements(List<Object> elements) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Argument);
 
-    ArrayList<FieldValue> result = new ArrayList<>(elements.size());
+    List<Value> result = new ArrayList<>(elements.size());
     for (int i = 0; i < elements.size(); i++) {
       Object element = elements.get(i);
       // Although array transforms are used with writes, the actual elements
       // being unioned or removed are not considered writes since they cannot
       // contain any FieldValue sentinels, etc.
       ParseContext context = accumulator.rootContext();
-      result.add(FieldValue.valueOf(convertAndParseFieldData(element, context.childContext(i))));
+      result.add(convertAndParseFieldData(element, context.childContext(i)));
     }
     return result;
   }

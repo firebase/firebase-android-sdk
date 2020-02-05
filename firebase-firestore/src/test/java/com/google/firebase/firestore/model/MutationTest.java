@@ -26,6 +26,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.transformMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
+import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
@@ -317,14 +318,14 @@ public class MutationTest {
     FieldTransform first = transform.getFieldTransforms().get(0);
     assertEquals(field("a"), first.getFieldPath());
     assertEquals(
-        new ArrayTransformOperation.Union(Collections.singletonList(wrap("tag"))),
+        new ArrayTransformOperation.Union(Collections.singletonList(valueOf("tag"))),
         first.getOperation());
 
     FieldTransform second = transform.getFieldTransforms().get(1);
     assertEquals(field("bar.baz"), second.getFieldPath());
     assertEquals(
         new ArrayTransformOperation.Union(
-            Arrays.asList(wrap(true), wrapObject(map("nested", map("a", Arrays.asList(1, 2)))))),
+            Arrays.asList(valueOf(true), valueOf(map("nested", map("a", Arrays.asList(1, 2)))))),
         second.getOperation());
   }
 
@@ -340,7 +341,7 @@ public class MutationTest {
     FieldTransform first = transform.getFieldTransforms().get(0);
     assertEquals(field("foo"), first.getFieldPath());
     assertEquals(
-        new ArrayTransformOperation.Remove(Collections.singletonList(wrap("tag"))),
+        new ArrayTransformOperation.Remove(Collections.singletonList(valueOf("tag"))),
         first.getOperation());
   }
 
