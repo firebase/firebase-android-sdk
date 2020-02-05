@@ -23,6 +23,10 @@ repositories {
     }
     jcenter()
     mavenCentral()
+
+    maven {
+        url 'https://storage.googleapis.com/android-ci/mvn/'
+    }
 }
 
 sourceSets {
@@ -43,6 +47,8 @@ dependencies {
     implementation 'io.opencensus:opencensus-exporter-stats-stackdriver:0.18.0'
     runtime 'io.opencensus:opencensus-impl:0.18.0'
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+
+    implementation 'org.jetbrains.dokka:dokka-android-gradle-plugin:0.9.17-g005'
 
     implementation 'com.android.tools.build:gradle:3.5.2'
     testImplementation 'junit:junit:4.12'

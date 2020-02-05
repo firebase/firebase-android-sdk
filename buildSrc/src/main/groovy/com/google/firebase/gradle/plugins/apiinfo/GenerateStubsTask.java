@@ -14,11 +14,16 @@
 
 package com.google.firebase.gradle.plugins.apiinfo;
 
+import com.android.build.gradle.api.AndroidSourceSet;
+import com.google.firebase.gradle.plugins.SdkUtil;
+
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.gradle.api.DefaultTask;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
@@ -30,10 +35,14 @@ public abstract class GenerateStubsTask extends DefaultTask {
 
   public abstract void setMetalavaJarPath(String path);
 
-  @InputFiles
-  public abstract Collection<File> getSourceDirs();
+  public abstract AndroidSourceSet getSourceSet();
 
-  public abstract void setSourceDirs(Collection<File> dirs);
+  @InputFiles
+  public abstract FileCollection getClassPath();
+
+  public abstract void setSourceSet(AndroidSourceSet sourceSet);
+
+  public abstract void setClassPath(FileCollection value);
 
   @OutputDirectory
   public abstract File getOutputDir();
@@ -43,7 +52,16 @@ public abstract class GenerateStubsTask extends DefaultTask {
   @TaskAction
   public void run() {
     String sourcePath =
-        getSourceDirs().stream().map(File::getAbsolutePath).collect(Collectors.joining(":"));
+        getSourceSet().getJava().getSrcDirs().stream()
+            .filter(File::exists)
+            .map(File::getAbsolutePath)
+            .collect(Collectors.joining(":"));
+
+    String classPath =
+        Stream.concat(
+                getClassPath().getFiles().stream(), Stream.of(SdkUtil.getAndroidJar(getProject())))
+            .map(File::getAbsolutePath)
+            .collect(Collectors.joining(":"));
 
     getProject()
         .javaexec(
@@ -52,9 +70,11 @@ public abstract class GenerateStubsTask extends DefaultTask {
               spec.setArgs(
                   Arrays.asList(
                       getMetalavaJarPath(),
-                      "--quiet",
+                      "--no-banner",
                       "--source-path",
                       sourcePath,
+                      "--classpath",
+                      classPath,
                       "--include-annotations",
                       "--doc-stubs",
                       getOutputDir().getAbsolutePath()));

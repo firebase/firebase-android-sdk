@@ -27,7 +27,7 @@ import com.google.firebase.database.snapshot.IndexedNode;
 import com.google.firebase.database.snapshot.NamedNode;
 import com.google.firebase.database.snapshot.Node;
 import com.google.firebase.database.snapshot.PriorityUtilities;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.robolectric.RobolectricTestRunner;

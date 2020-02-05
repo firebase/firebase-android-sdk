@@ -40,7 +40,7 @@ public class ViewCache {
   }
 
   public Node getCompleteEventSnap() {
-    return (this.eventSnap.isFullyInitialized()) ? this.eventSnap.getNode() : null;
+    return this.eventSnap.isFullyInitialized() ? this.eventSnap.getNode() : null;
   }
 
   public CacheNode getServerCache() {

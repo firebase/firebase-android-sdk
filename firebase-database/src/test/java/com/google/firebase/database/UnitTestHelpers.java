@@ -14,6 +14,7 @@
 
 package com.google.firebase.database;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -48,7 +49,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.robolectric.RuntimeEnvironment;
 
 public class UnitTestHelpers {
 
@@ -289,7 +289,7 @@ public class UnitTestHelpers {
     if (!appInitialized) {
       appInitialized = true;
       FirebaseApp.initializeApp(
-          RuntimeEnvironment.application.getApplicationContext(),
+          getApplicationContext(),
           new FirebaseOptions.Builder()
               .setApiKey("apiKey")
               .setApplicationId("appId")

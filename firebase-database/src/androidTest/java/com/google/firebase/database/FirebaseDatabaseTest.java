@@ -20,8 +20,8 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
-import androidx.test.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.core.DatabaseConfig;
@@ -566,7 +566,7 @@ public class FirebaseDatabaseTest {
 
   private static FirebaseApp appForDatabaseUrl(String url, String name) {
     return FirebaseApp.initializeApp(
-        InstrumentationRegistry.getTargetContext(),
+        InstrumentationRegistry.getInstrumentation().getTargetContext(),
         new FirebaseOptions.Builder()
             .setApplicationId("appid")
             .setApiKey("apikey")

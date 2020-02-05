@@ -172,9 +172,9 @@ public abstract class LocalStoreTestCase {
   }
 
   private int allocateQuery(Query query) {
-    QueryData queryData = localStore.allocateTarget(query.toTarget());
-    lastTargetId = queryData.getTargetId();
-    return queryData.getTargetId();
+    TargetData targetData = localStore.allocateTarget(query.toTarget());
+    lastTargetId = targetData.getTargetId();
+    return targetData.getTargetId();
   }
 
   private void executeQuery(Query query) {
@@ -932,8 +932,8 @@ public abstract class LocalStoreTestCase {
     localStore.releaseTarget(targetId);
 
     // Should come back with the same resume token
-    QueryData queryData2 = localStore.allocateTarget(query.toTarget());
-    assertEquals(resumeToken(1000), queryData2.getResumeToken());
+    TargetData targetData2 = localStore.allocateTarget(query.toTarget());
+    assertEquals(resumeToken(1000), targetData2.getResumeToken());
   }
 
   @Test
@@ -952,8 +952,8 @@ public abstract class LocalStoreTestCase {
     localStore.releaseTarget(targetId);
 
     // Should come back with the same resume token
-    QueryData queryData2 = localStore.allocateTarget(query.toTarget());
-    assertEquals(resumeToken(1000), queryData2.getResumeToken());
+    TargetData targetData2 = localStore.allocateTarget(query.toTarget());
+    assertEquals(resumeToken(1000), targetData2.getResumeToken());
   }
 
   @Test
@@ -1061,7 +1061,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testLastLimboFreeSnapshotIsAdvancedDuringViewProcessing() {
-    // This test verifies that the `lastLimboFreeSnapshot` version for QueryData is advanced when
+    // This test verifies that the `lastLimboFreeSnapshot` version for TargetData is advanced when
     // we compute a limbo-free free view and that the mapping is persisted when we release a target.
 
     Query query = Query.atPath(ResourcePath.fromString("foo"));
@@ -1072,20 +1072,20 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(noChangeEvent(targetId, 10));
 
     // At this point, we have not yet confirmed that the target is limbo free.
-    QueryData cachedQueryData = localStore.getQueryData(target);
-    Assert.assertEquals(SnapshotVersion.NONE, cachedQueryData.getLastLimboFreeSnapshotVersion());
+    TargetData cachedTargetData = localStore.getTargetData(target);
+    Assert.assertEquals(SnapshotVersion.NONE, cachedTargetData.getLastLimboFreeSnapshotVersion());
 
     // Mark the view synced, which updates the last limbo free snapshot version.
     udpateViews(targetId, /* fromCache=*/ false);
-    cachedQueryData = localStore.getQueryData(target);
-    Assert.assertEquals(version(10), cachedQueryData.getLastLimboFreeSnapshotVersion());
+    cachedTargetData = localStore.getTargetData(target);
+    Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
 
     // The last limbo free snapshot version is persisted even if we release the target.
     releaseTarget(targetId);
 
     if (!garbageCollectorIsEager()) {
-      cachedQueryData = localStore.getQueryData(target);
-      Assert.assertEquals(version(10), cachedQueryData.getLastLimboFreeSnapshotVersion());
+      cachedTargetData = localStore.getTargetData(target);
+      Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
     }
   }
 

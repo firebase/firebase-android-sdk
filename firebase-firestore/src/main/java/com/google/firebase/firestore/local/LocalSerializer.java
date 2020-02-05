@@ -192,25 +192,25 @@ public final class LocalSerializer {
     return new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
   }
 
-  com.google.firebase.firestore.proto.Target encodeQueryData(QueryData queryData) {
+  com.google.firebase.firestore.proto.Target encodeTargetData(TargetData targetData) {
     hardAssert(
-        QueryPurpose.LISTEN.equals(queryData.getPurpose()),
+        QueryPurpose.LISTEN.equals(targetData.getPurpose()),
         "Only queries with purpose %s may be stored, got %s",
         QueryPurpose.LISTEN,
-        queryData.getPurpose());
+        targetData.getPurpose());
 
     com.google.firebase.firestore.proto.Target.Builder result =
         com.google.firebase.firestore.proto.Target.newBuilder();
 
     result
-        .setTargetId(queryData.getTargetId())
-        .setLastListenSequenceNumber(queryData.getSequenceNumber())
+        .setTargetId(targetData.getTargetId())
+        .setLastListenSequenceNumber(targetData.getSequenceNumber())
         .setLastLimboFreeSnapshotVersion(
-            rpcSerializer.encodeVersion(queryData.getLastLimboFreeSnapshotVersion()))
-        .setSnapshotVersion(rpcSerializer.encodeVersion(queryData.getSnapshotVersion()))
-        .setResumeToken(queryData.getResumeToken());
+            rpcSerializer.encodeVersion(targetData.getLastLimboFreeSnapshotVersion()))
+        .setSnapshotVersion(rpcSerializer.encodeVersion(targetData.getSnapshotVersion()))
+        .setResumeToken(targetData.getResumeToken());
 
-    Target target = queryData.getTarget();
+    Target target = targetData.getTarget();
     if (target.isDocumentQuery()) {
       result.setDocuments(rpcSerializer.encodeDocumentsTarget(target));
     } else {
@@ -220,7 +220,7 @@ public final class LocalSerializer {
     return result.build();
   }
 
-  QueryData decodeQueryData(com.google.firebase.firestore.proto.Target targetProto) {
+  TargetData decodeTargetData(com.google.firebase.firestore.proto.Target targetProto) {
     int targetId = targetProto.getTargetId();
     SnapshotVersion version = rpcSerializer.decodeVersion(targetProto.getSnapshotVersion());
     SnapshotVersion lastLimboFreeSnapshotVersion =
@@ -242,7 +242,7 @@ public final class LocalSerializer {
         throw fail("Unknown targetType %d", targetProto.getTargetTypeCase());
     }
 
-    return new QueryData(
+    return new TargetData(
         target,
         targetId,
         sequenceNumber,

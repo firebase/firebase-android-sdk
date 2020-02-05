@@ -25,7 +25,6 @@ import com.google.firebase.inappmessaging.model.ProtoMarshallerClient;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
-import com.google.internal.firebase.inappmessaging.v1.CampaignProto.VanillaCampaignPayload;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
 import io.reactivex.Completable;
@@ -58,6 +57,7 @@ public class InAppMessageStreamManager {
   private final RateLimit appForegroundRateLimit;
   private final AnalyticsEventsManager analyticsEventsManager;
   private final TestDeviceHelper testDeviceHelper;
+  private final AbtIntegrationHelper abtIntegrationHelper;
 
   @Inject
   public InAppMessageStreamManager(
@@ -71,7 +71,8 @@ public class InAppMessageStreamManager {
       ImpressionStorageClient impressionStorageClient,
       RateLimiterClient rateLimiterClient,
       @AppForeground RateLimit appForegroundRateLimit,
-      TestDeviceHelper testDeviceHelper) {
+      TestDeviceHelper testDeviceHelper,
+      AbtIntegrationHelper abtIntegrationHelper) {
     this.appForegroundEventFlowable = appForegroundEventFlowable;
     this.programmaticTriggerEventFlowable = programmaticTriggerEventFlowable;
     this.campaignCacheClient = campaignCacheClient;
@@ -83,6 +84,7 @@ public class InAppMessageStreamManager {
     this.rateLimiterClient = rateLimiterClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.testDeviceHelper = testDeviceHelper;
+    this.abtIntegrationHelper = abtIntegrationHelper;
   }
 
   private static boolean containsTriggeringCondition(String event, ThickContent content) {
@@ -106,11 +108,22 @@ public class InAppMessageStreamManager {
     return tc.getEvent().getName().equals(event);
   }
 
-  private static boolean isActive(Clock clock, VanillaCampaignPayload vanillaPayload) {
-    long campaignStartTime = vanillaPayload.getCampaignStartTimeMillis();
-    long campaignEndTime = vanillaPayload.getCampaignEndTimeMillis();
+  private static boolean isActive(Clock clock, ThickContent content) {
+    long campaignStartTime;
+    long campaignEndTime;
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      // Handle the campaign case
+      campaignStartTime = content.getVanillaPayload().getCampaignStartTimeMillis();
+      campaignEndTime = content.getVanillaPayload().getCampaignEndTimeMillis();
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      // Handle the experiment case
+      campaignStartTime = content.getExperimentalPayload().getCampaignStartTimeMillis();
+      campaignEndTime = content.getExperimentalPayload().getCampaignEndTimeMillis();
+    } else {
+      // If we have no valid payload then don't display
+      return false;
+    }
     long currentTime = clock.now();
-
     return currentTime > campaignStartTime && currentTime < campaignEndTime;
   }
 
@@ -147,7 +160,7 @@ public class InAppMessageStreamManager {
             appForegroundEventFlowable,
             analyticsEventsManager.getAnalyticsEventsFlowable(),
             programmaticTriggerEventFlowable)
-        .doOnNext(e -> Logging.logd("Event Triggered: " + e.toString()))
+        .doOnNext(e -> Logging.logd("Event Triggered: " + e))
         .observeOn(schedulers.io())
         .concatMap(
             event -> {
@@ -196,14 +209,12 @@ public class InAppMessageStreamManager {
                   thickContent -> {
                     switch (thickContent.getContent().getMessageDetailsCase()) {
                       case BANNER:
-                        return Maybe.just(thickContent);
                       case IMAGE_ONLY:
-                        return Maybe.just(thickContent);
                       case MODAL:
-                        return Maybe.just(thickContent);
                       case CARD:
                         return Maybe.just(thickContent);
                       default:
+                        Logging.logd("Filtering non-displayable message");
                         return Maybe.empty();
                     }
                   };
@@ -237,6 +248,7 @@ public class InAppMessageStreamManager {
                                           "Successfully fetched %d messages from backend",
                                           resp.getMessagesList().size())))
                           .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
+                          .doOnSuccess(abtIntegrationHelper::updateRunningExperiments)
                           .doOnSuccess(testDeviceHelper::processCampaignFetch)
                           .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))
                           .onErrorResumeNext(Maybe.empty()); // Absorb service failures
@@ -283,12 +295,7 @@ public class InAppMessageStreamManager {
       Function<ThickContent, Maybe<ThickContent>> filterDisplayable,
       FetchEligibleCampaignsResponse response) {
     return Flowable.fromIterable(response.getMessagesList())
-        .filter(
-            content -> content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD))
-        .filter(
-            content ->
-                testDeviceHelper.isDeviceInTestMode()
-                    || isActive(clock, content.getVanillaPayload()))
+        .filter(content -> testDeviceHelper.isDeviceInTestMode() || isActive(clock, content))
         .filter(content -> containsTriggeringCondition(event, content))
         .flatMapMaybe(filterAlreadyImpressed)
         .flatMapMaybe(appForegroundRateLimitFilter)
@@ -298,15 +305,30 @@ public class InAppMessageStreamManager {
         .flatMap(content -> triggeredInAppMessage(content, event));
   }
 
-  private Maybe<TriggeredInAppMessage> triggeredInAppMessage(
-      ThickContent thickContent, String event) {
+  private Maybe<TriggeredInAppMessage> triggeredInAppMessage(ThickContent content, String event) {
+    String campaignId;
+    String campaignName;
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      // Handle vanilla campaign case
+      campaignId = content.getVanillaPayload().getCampaignId();
+      campaignName = content.getVanillaPayload().getCampaignName();
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      // Handle experiment case
+      campaignId = content.getExperimentalPayload().getCampaignId();
+      campaignName = content.getExperimentalPayload().getCampaignName();
+      // At this point we set the experiment to become active in analytics.
+      abtIntegrationHelper.setExperimentActive(
+          content.getExperimentalPayload().getExperimentPayload());
+    } else {
+      return Maybe.empty();
+    }
     InAppMessage inAppMessage =
         ProtoMarshallerClient.decode(
-            thickContent.getContent(),
-            thickContent.getVanillaPayload().getCampaignId(),
-            thickContent.getVanillaPayload().getCampaignName(),
-            thickContent.getIsTestCampaign(),
-            thickContent.getDataBundleMap());
+            content.getContent(),
+            campaignId,
+            campaignName,
+            content.getIsTestCampaign(),
+            content.getDataBundleMap());
     if (inAppMessage.getMessageType().equals(MessageType.UNSUPPORTED)) {
       return Maybe.empty();
     }

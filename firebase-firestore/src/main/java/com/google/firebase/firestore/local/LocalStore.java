@@ -119,10 +119,10 @@ public final class LocalStore {
   private final ReferenceSet localViewReferences;
 
   /** Maps a query to the data about that query. */
-  private final QueryCache queryCache;
+  private final TargetCache targetCache;
 
   /** Maps a targetId to data about its query. */
-  private final SparseArray<QueryData> queryDataByTarget;
+  private final SparseArray<TargetData> queryDataByTarget;
 
   /** Maps a target to its targetID. */
   private final Map<Target, Integer> targetIdByTarget;
@@ -134,8 +134,8 @@ public final class LocalStore {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
-    queryCache = persistence.getQueryCache();
-    targetIdGenerator = TargetIdGenerator.forQueryCache(queryCache.getHighestTargetId());
+    targetCache = persistence.getTargetCache();
+    targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
     mutationQueue = persistence.getMutationQueue(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
     localDocuments =
@@ -320,7 +320,7 @@ public final class LocalStore {
    * buffer incoming snapshots from the backend).
    */
   public SnapshotVersion getLastRemoteSnapshotVersion() {
-    return queryCache.getLastRemoteSnapshotVersion();
+    return targetCache.getLastRemoteSnapshotVersion();
   }
 
   /**
@@ -345,29 +345,29 @@ public final class LocalStore {
             int targetId = boxedTargetId;
             TargetChange change = entry.getValue();
 
-            QueryData oldQueryData = queryDataByTarget.get(targetId);
-            if (oldQueryData == null) {
+            TargetData oldTargetData = queryDataByTarget.get(targetId);
+            if (oldTargetData == null) {
               // We don't update the remote keys if the query is not active. This ensures that
               // we persist the updated query data along with the updated assignment.
               continue;
             }
 
-            queryCache.removeMatchingKeys(change.getRemovedDocuments(), targetId);
-            queryCache.addMatchingKeys(change.getAddedDocuments(), targetId);
+            targetCache.removeMatchingKeys(change.getRemovedDocuments(), targetId);
+            targetCache.addMatchingKeys(change.getAddedDocuments(), targetId);
 
             ByteString resumeToken = change.getResumeToken();
             // Update the resume token if the change includes one.
             if (!resumeToken.isEmpty()) {
-              QueryData newQueryData =
-                  oldQueryData
+              TargetData newTargetData =
+                  oldTargetData
                       .withResumeToken(resumeToken, remoteEvent.getSnapshotVersion())
                       .withSequenceNumber(sequenceNumber);
-              queryDataByTarget.put(targetId, newQueryData);
+              queryDataByTarget.put(targetId, newTargetData);
 
               // Update the query data if there are target changes (or if sufficient time has
               // passed since the last update).
-              if (shouldPersistQueryData(oldQueryData, newQueryData, change)) {
-                queryCache.updateQueryData(newQueryData);
+              if (shouldPersistTargetData(oldTargetData, newTargetData, change)) {
+                targetCache.updateTargetData(newTargetData);
               }
             }
           }
@@ -420,14 +420,14 @@ public final class LocalStore {
           // HACK: The only reason we allow snapshot version NONE is so that we can synthesize
           // remote events when we get permission denied errors while trying to resolve the
           // state of a locally cached document that is in limbo.
-          SnapshotVersion lastRemoteVersion = queryCache.getLastRemoteSnapshotVersion();
+          SnapshotVersion lastRemoteVersion = targetCache.getLastRemoteSnapshotVersion();
           if (!remoteVersion.equals(SnapshotVersion.NONE)) {
             hardAssert(
                 remoteVersion.compareTo(lastRemoteVersion) >= 0,
                 "Watch stream reverted to previous snapshot?? (%s < %s)",
                 remoteVersion,
                 lastRemoteVersion);
-            queryCache.setLastRemoteSnapshotVersion(remoteVersion);
+            targetCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
           return localDocuments.getLocalViewOfDocuments(changedDocs);
@@ -435,30 +435,30 @@ public final class LocalStore {
   }
 
   /**
-   * Returns true if the newQueryData should be persisted during an update of an active target.
-   * QueryData should always be persisted when a target is being released and should not call this
+   * Returns true if the newTargetData should be persisted during an update of an active target.
+   * TargetData should always be persisted when a target is being released and should not call this
    * function.
    *
-   * <p>While the target is active, QueryData updates can be omitted when nothing about the target
+   * <p>While the target is active, TargetData updates can be omitted when nothing about the target
    * has changed except metadata like the resume token or snapshot version. Occasionally it's worth
    * the extra write to prevent these values from getting too stale after a crash, but this doesn't
    * have to be too frequent.
    */
-  private static boolean shouldPersistQueryData(
-      QueryData oldQueryData, QueryData newQueryData, TargetChange change) {
+  private static boolean shouldPersistTargetData(
+      TargetData oldTargetData, TargetData newTargetData, TargetChange change) {
     hardAssert(
-        !newQueryData.getResumeToken().isEmpty(),
+        !newTargetData.getResumeToken().isEmpty(),
         "Attempted to persist query data with empty resume token");
 
     // Always persist query data if we don't already have a resume token.
-    if (oldQueryData.getResumeToken().isEmpty()) return true;
+    if (oldTargetData.getResumeToken().isEmpty()) return true;
 
     // Don't allow resume token changes to be buffered indefinitely. This allows us to be reasonably
     // up-to-date after a crash and avoids needing to loop over all active queries on shutdown.
     // Especially in the browser we may not get time to do anything interesting while the current
     // tab is closing.
-    long newSeconds = newQueryData.getSnapshotVersion().getTimestamp().getSeconds();
-    long oldSeconds = oldQueryData.getSnapshotVersion().getTimestamp().getSeconds();
+    long newSeconds = newTargetData.getSnapshotVersion().getTimestamp().getSeconds();
+    long oldSeconds = oldTargetData.getSnapshotVersion().getTimestamp().getSeconds();
     long timeDelta = newSeconds - oldSeconds;
     if (timeDelta >= RESUME_TOKEN_MAX_AGE_SECONDS) return true;
 
@@ -489,17 +489,17 @@ public final class LocalStore {
             localViewReferences.removeReferences(removed, targetId);
 
             if (!viewChange.isFromCache()) {
-              QueryData queryData = queryDataByTarget.get(targetId);
+              TargetData targetData = queryDataByTarget.get(targetId);
               hardAssert(
-                  queryData != null,
+                  targetData != null,
                   "Can't set limbo-free snapshot version for unknown target: %s",
                   targetId);
 
               // Advance the last limbo free snapshot version
-              SnapshotVersion lastLimboFreeSnapshotVersion = queryData.getSnapshotVersion();
-              QueryData updatedQueryData =
-                  queryData.withLastLimboFreeSnapshotVersion(lastLimboFreeSnapshotVersion);
-              queryDataByTarget.put(targetId, updatedQueryData);
+              SnapshotVersion lastLimboFreeSnapshotVersion = targetData.getSnapshotVersion();
+              TargetData updatedTargetData =
+                  targetData.withLastLimboFreeSnapshotVersion(lastLimboFreeSnapshotVersion);
+              queryDataByTarget.put(targetId, updatedTargetData);
             }
           }
         });
@@ -526,12 +526,12 @@ public final class LocalStore {
    * GC'd. A query must be allocated in the local store before the store can be used to manage its
    * view.
    *
-   * <p>Allocating an already allocated target will return the existing @{code QueryData} for that
+   * <p>Allocating an already allocated target will return the existing @{code TargetData} for that
    * target.
    */
-  public QueryData allocateTarget(Target target) {
+  public TargetData allocateTarget(Target target) {
     int targetId;
-    QueryData cached = queryCache.getQueryData(target);
+    TargetData cached = targetCache.getTargetData(target);
     if (cached != null) {
       // This query has been listened to previously, so reuse the previous targetID.
       // TODO: freshen last accessed date?
@@ -543,12 +543,12 @@ public final class LocalStore {
           () -> {
             holder.targetId = targetIdGenerator.nextId();
             holder.cached =
-                new QueryData(
+                new TargetData(
                     target,
                     holder.targetId,
                     persistence.getReferenceDelegate().getCurrentSequenceNumber(),
                     QueryPurpose.LISTEN);
-            queryCache.addQueryData(holder.cached);
+            targetCache.addTargetData(holder.cached);
           });
       targetId = holder.targetId;
       cached = holder.cached;
@@ -562,22 +562,22 @@ public final class LocalStore {
   }
 
   /**
-   * Returns the QueryData as seen by the LocalStore, including updates that may have not yet been
-   * persisted to the QueryCache.
+   * Returns the TargetData as seen by the LocalStore, including updates that may have not yet been
+   * persisted to the TargetCache.
    */
   @VisibleForTesting
   @Nullable
-  QueryData getQueryData(Target target) {
+  TargetData getTargetData(Target target) {
     Integer targetId = targetIdByTarget.get(target);
     if (targetId != null) {
       return queryDataByTarget.get(targetId);
     }
-    return queryCache.getQueryData(target);
+    return targetCache.getTargetData(target);
   }
 
   /** Mutable state for the transaction in allocateQuery. */
   private static class AllocateQueryHolder {
-    QueryData cached;
+    TargetData cached;
     int targetId;
   }
 
@@ -590,8 +590,8 @@ public final class LocalStore {
     persistence.runTransaction(
         "Release target",
         () -> {
-          QueryData queryData = queryDataByTarget.get(targetId);
-          hardAssert(queryData != null, "Tried to release nonexistent target: %s", targetId);
+          TargetData targetData = queryDataByTarget.get(targetId);
+          hardAssert(targetData != null, "Tried to release nonexistent target: %s", targetId);
 
           // References for documents sent via Watch are automatically removed when we delete a
           // query's target data from the reference delegate. Since this does not remove references
@@ -604,9 +604,9 @@ public final class LocalStore {
           }
 
           // Note: This also updates the query cache
-          persistence.getReferenceDelegate().removeTarget(queryData);
+          persistence.getReferenceDelegate().removeTarget(targetData);
           queryDataByTarget.remove(targetId);
-          targetIdByTarget.remove(queryData.getTarget());
+          targetIdByTarget.remove(targetData.getTarget());
         });
   }
 
@@ -618,13 +618,13 @@ public final class LocalStore {
    *     query execution.
    */
   public QueryResult executeQuery(Query query, boolean usePreviousResults) {
-    QueryData queryData = getQueryData(query.toTarget());
+    TargetData targetData = getTargetData(query.toTarget());
     SnapshotVersion lastLimboFreeSnapshotVersion = SnapshotVersion.NONE;
     ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
 
-    if (queryData != null) {
-      lastLimboFreeSnapshotVersion = queryData.getLastLimboFreeSnapshotVersion();
-      remoteKeys = this.queryCache.getMatchingKeysForTargetId(queryData.getTargetId());
+    if (targetData != null) {
+      lastLimboFreeSnapshotVersion = targetData.getLastLimboFreeSnapshotVersion();
+      remoteKeys = this.targetCache.getMatchingKeysForTargetId(targetData.getTargetId());
     }
 
     ImmutableSortedMap<DocumentKey, Document> documents =
@@ -640,7 +640,7 @@ public final class LocalStore {
    * table.
    */
   public ImmutableSortedSet<DocumentKey> getRemoteDocumentKeys(int targetId) {
-    return queryCache.getMatchingKeysForTargetId(targetId);
+    return targetCache.getMatchingKeysForTargetId(targetId);
   }
 
   private void applyWriteToRemoteDocuments(MutationBatchResult batchResult) {

@@ -30,7 +30,7 @@ import java.util.Map;
 // TOOD(b/140938512): Drop SimpleQueryEngine and rename IndexFreeQueryEngine.
 
 /**
- * A query engine that takes advantage of the target document mapping in the QueryCache. The
+ * A query engine that takes advantage of the target document mapping in the TargetCache. The
  * IndexFreeQueryEngine optimizes query execution by only reading the documents that previously
  * matched a query plus any documents that were edited after the query was last listened to.
  *
