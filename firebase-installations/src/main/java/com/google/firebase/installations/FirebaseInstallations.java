@@ -42,8 +42,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Entry point for Firebase Installations.
@@ -75,13 +77,30 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
   private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
 
+  private static final ThreadFactory threadFactory =
+      new ThreadFactory() {
+        private final AtomicInteger mCount = new AtomicInteger(1);
+
+        @Override
+        public Thread newThread(Runnable r) {
+          return new Thread(
+              r, String.format("firebase-installations-executor-%d", mCount.getAndIncrement()));
+        }
+      };
+
   /** package private constructor. */
   FirebaseInstallations(
       FirebaseApp firebaseApp,
       @Nullable UserAgentPublisher publisher,
       @Nullable HeartBeatInfo heartbeatInfo) {
     this(
-        new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>()),
+        new ThreadPoolExecutor(
+            /* corePoolSize= */ 0,
+            /* maximumPoolSize= */ 1,
+            /* keepAliveTime= */ 30L,
+            TimeUnit.SECONDS,
+            /* workQueue= */ new LinkedBlockingQueue<>(),
+            /* threadFactory= */ threadFactory),
         firebaseApp,
         new FirebaseInstallationServiceClient(
             firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
