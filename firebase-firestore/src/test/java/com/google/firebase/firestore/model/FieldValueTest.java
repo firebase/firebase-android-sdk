@@ -38,7 +38,6 @@ import com.google.firebase.firestore.model.value.BooleanValue;
 import com.google.firebase.firestore.model.value.DoubleValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.GeoPointValue;
-import com.google.firebase.firestore.model.value.IntegerValue;
 import com.google.firebase.firestore.model.value.NullValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
@@ -242,10 +241,10 @@ public class FieldValueTest {
         // -0.0 and 0.0 compareTo the same but are not equal.
         .addEqualityGroup(wrap(-0.0))
         .addEqualityGroup(wrap(0.0))
-        .addEqualityGroup(wrap(1), IntegerValue.valueOf(1L))
+        .addEqualityGroup(wrap(1), FieldValue.valueOf(valueOf(1)))
         // Doubles and Longs aren't equal.
-        .addEqualityGroup(wrap(1.0), DoubleValue.valueOf(1.0))
-        .addEqualityGroup(wrap(1.1), DoubleValue.valueOf(1.1))
+        .addEqualityGroup(wrap(1.0), FieldValue.valueOf(valueOf(1.0)))
+        .addEqualityGroup(wrap(1.1), FieldValue.valueOf(valueOf(1.1)))
         .addEqualityGroup(wrap(blob(0, 1, 2)), BlobValue.valueOf(blob(0, 1, 2)))
         .addEqualityGroup(wrap(blob(0, 1)))
         .addEqualityGroup(wrap("string"), StringValue.valueOf("string"))

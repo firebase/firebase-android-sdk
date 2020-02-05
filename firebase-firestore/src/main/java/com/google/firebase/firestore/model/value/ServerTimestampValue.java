@@ -59,7 +59,7 @@ public final class ServerTimestampValue extends FieldValue {
     return new ServerTimestampValue(value);
   }
 
-  public static FieldValue valueOf(Timestamp localWriteTime, @Nullable FieldValue previousValue) {
+  public static FieldValue valueOf(Timestamp localWriteTime, @Nullable Value previousValue) {
     Value encodedType = Value.newBuilder().setStringValue(SERVER_TIMESTAMP_SENTINEL).build();
     Value encodeWriteTime =
         Value.newBuilder()
@@ -75,7 +75,7 @@ public final class ServerTimestampValue extends FieldValue {
             .putFields(LOCAL_WRITE_TIME_KEY, encodeWriteTime);
 
     if (previousValue != null) {
-      mapRepresentation.putFields(PREVIOUS_VALUE_KEY, previousValue.getProto());
+      mapRepresentation.putFields(PREVIOUS_VALUE_KEY, previousValue);
     }
 
     return new ServerTimestampValue(Value.newBuilder().setMapValue(mapRepresentation).build());

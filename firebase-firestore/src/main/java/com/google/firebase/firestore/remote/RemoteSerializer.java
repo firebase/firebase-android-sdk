@@ -459,13 +459,12 @@ public final class RemoteSerializer {
       version = commitVersion;
     }
 
-    // TODO(mrschmidt): Migrate to list of Value protos
-    ArrayList<FieldValue> transformResults = null;
+    List<Value> transformResults = null;
     int transformResultsCount = proto.getTransformResultsCount();
     if (transformResultsCount > 0) {
       transformResults = new ArrayList<>(transformResultsCount);
       for (int i = 0; i < transformResultsCount; i++) {
-        transformResults.add(FieldValue.valueOf(proto.getTransformResults(i)));
+        transformResults.add(proto.getTransformResults(i));
       }
     }
     return new MutationResult(version, transformResults);

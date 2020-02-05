@@ -17,6 +17,7 @@ package com.google.firebase.firestore.model.value;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.common.base.Splitter;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
@@ -388,5 +389,17 @@ public class ProtoValues {
       }
     }
     builder.append("]");
+  }
+
+  /** Returns true if `value` is either a INTEGER_VALUE or a DOUBLE_VALUE. */
+  public static boolean isNumber(@Nullable Value value) {
+    return value != null
+        && (value.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE
+            || value.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE);
+  }
+
+  /** Returns true if `value` is an ARRAY_VALUE. */
+  public static boolean isArray(Value value) {
+    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.ARRAY_VALUE;
   }
 }

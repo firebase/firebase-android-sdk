@@ -242,8 +242,8 @@ public class UserDataWriterTest {
     ObjectValue wrappedExpected =
         fromMap(
             "a", StringValue.valueOf("foo"),
-            "b", IntegerValue.valueOf(1L),
-            "c", BooleanValue.valueOf(true),
+            "b", wrap(1L),
+            "c", wrap(true),
             "d", NullValue.NULL);
 
     FieldValue wrappedActual = wrapObject(actual);
