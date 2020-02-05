@@ -155,6 +155,16 @@ public class ProtoValues {
     return true;
   }
 
+  /** Returns true if the Value list contains the specified element. */
+  public static boolean contains(List<Value> haystack, Value needle) {
+    for (Value haystackEl : haystack) {
+      if (equals(haystackEl, needle)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public static int compare(Value left, Value right) {
     int leftType = typeOrder(left);
     int rightType = typeOrder(right);
