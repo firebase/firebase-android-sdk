@@ -23,6 +23,7 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
@@ -45,7 +46,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Entry point for Firebase Installations.
@@ -78,15 +78,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
 
   private static final ThreadFactory threadFactory =
-      new ThreadFactory() {
-        private final AtomicInteger mCount = new AtomicInteger(1);
-
-        @Override
-        public Thread newThread(Runnable r) {
-          return new Thread(
-              r, String.format("firebase-installations-executor-%d", mCount.getAndIncrement()));
-        }
-      };
+      new ThreadFactoryBuilder().setNameFormat("firebase-installations-executor-%d").build();
 
   /** package private constructor. */
   FirebaseInstallations(
