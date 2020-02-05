@@ -176,11 +176,11 @@ public class UserDataWriterTest {
   @Test
   public void testConvertsTimestampValue() {
     List<Timestamp> testCases = asList(new Timestamp(0, 0), new Timestamp(1356048000L, 0));
-    for (Timestamp d : testCases) {
-      FieldValue value = wrap(d);
+    for (Timestamp t : testCases) {
+      FieldValue value = wrap(t);
       assertTrue(value instanceof TimestampValue);
       Object convertedValue = convertValue(value);
-      assertEquals(d, convertedValue);
+      assertEquals(t, convertedValue);
     }
   }
 
