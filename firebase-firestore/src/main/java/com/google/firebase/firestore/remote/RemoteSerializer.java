@@ -410,9 +410,9 @@ public final class RemoteSerializer {
     }
   }
 
-  private ArrayValue encodeArrayTransformElements(List<FieldValue> elementsProto) {
+  private ArrayValue encodeArrayTransformElements(List<FieldValue> elements) {
     ArrayValue.Builder result = ArrayValue.newBuilder();
-    for (FieldValue element : elementsProto) {
+    for (FieldValue element : elements) {
       result.addValues(element.getProto());
     }
     return result.build();
@@ -477,6 +477,7 @@ public final class RemoteSerializer {
       version = commitVersion;
     }
 
+    // TODO(mrschmidt): Migrate to list of Value protos
     ArrayList<FieldValue> transformResults = null;
     int transformResultsCount = proto.getTransformResultsCount();
     if (transformResultsCount > 0) {
@@ -720,7 +721,7 @@ public final class RemoteSerializer {
       if (filter.getValue().equals(DoubleValue.NaN)) {
         unaryProto.setOp(UnaryFilter.Operator.IS_NAN);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
-      } else if (filter.getValue().equals(NullValue.nullValue())) {
+      } else if (filter.getValue().equals(NullValue.NULL)) {
         unaryProto.setOp(UnaryFilter.Operator.IS_NULL);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
       }
@@ -746,7 +747,7 @@ public final class RemoteSerializer {
         return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, DoubleValue.NaN);
 
       case IS_NULL:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, NullValue.nullValue());
+        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, NullValue.NULL);
 
       default:
         throw fail("Unrecognized UnaryFilter.operator %d", proto.getOp());

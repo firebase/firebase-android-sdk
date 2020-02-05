@@ -79,7 +79,7 @@ public class FieldFilter extends Filter {
             operator.toString() + "queries don't make sense on document keys");
         return new KeyFieldFilter(path, operator, (ReferenceValue) value);
       }
-    } else if (value.equals(NullValue.nullValue())) {
+    } else if (value.equals(NullValue.NULL)) {
       if (operator != Filter.Operator.EQUAL) {
         throw new IllegalArgumentException(
             "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");

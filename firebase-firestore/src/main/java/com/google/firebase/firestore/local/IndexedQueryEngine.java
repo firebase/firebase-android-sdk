@@ -167,7 +167,7 @@ public class IndexedQueryEngine implements QueryEngine {
     hardAssert(filter instanceof FieldFilter, "Filter type expected to be FieldFilter");
     FieldFilter fieldFilter = (FieldFilter) filter;
     FieldValue filterValue = fieldFilter.getValue();
-    if (NullValue.nullValue().equals(filterValue) || DoubleValue.NaN.equals(filterValue)) {
+    if (NullValue.NULL.equals(filterValue) || DoubleValue.NaN.equals(filterValue)) {
       return HIGH_SELECTIVITY;
     } else {
       double operatorSelectivity =

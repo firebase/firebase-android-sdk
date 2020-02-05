@@ -18,6 +18,8 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firestore.v1.Value;
 
 /** A Filter that implements the IN operator. */
 public class InFilter extends FieldFilter {
@@ -27,8 +29,15 @@ public class InFilter extends FieldFilter {
 
   @Override
   public boolean matches(Document doc) {
-    ArrayValue arrayValue = (ArrayValue) getValue();
     FieldValue other = doc.getField(getField());
-    return other != null && arrayValue.contains(other);
+    if (other == null) {
+      return false;
+    }
+    for (Value otherVal : getValue().getProto().getArrayValue().getValuesList()) {
+      if (ProtoValues.equals(otherVal, other.getProto())) {
+        return true;
+      }
+    }
+    return false;
   }
 }

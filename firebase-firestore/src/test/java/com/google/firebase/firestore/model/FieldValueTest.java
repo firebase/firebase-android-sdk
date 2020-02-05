@@ -127,7 +127,7 @@ public class FieldValueTest {
   @Test
   public void testAddsMultipleNewFields() {
     ObjectValue object = ObjectValue.emptyObject();
-    object = object.toBuilder().set(field("a"), wrap("a").getProto()).build();
+    object = setField(object, "a", wrap("a"));
     object =
         object
             .toBuilder()
@@ -151,7 +151,7 @@ public class FieldValueTest {
   @Test
   public void testCanOverwritePrimitivesWithObjects() {
     ObjectValue old = wrapObject("a", map("b", "old"));
-    ObjectValue mod = setField(old, "a", wrapObject("b", "mod"));
+    ObjectValue mod = setField(old, "a", map("b", "mod"));
     assertNotEquals(old, mod);
     assertEquals(wrapObject("a", map("b", "old")), old);
     assertEquals(wrapObject("a", map("b", "mod")), mod);
@@ -240,7 +240,7 @@ public class FieldValueTest {
     new EqualsTester()
         .addEqualityGroup(wrap(true), BooleanValue.valueOf(true))
         .addEqualityGroup(wrap(false), BooleanValue.valueOf(false))
-        .addEqualityGroup(wrap(null), NullValue.nullValue())
+        .addEqualityGroup(wrap(null), NullValue.NULL)
         .addEqualityGroup(
             wrap(0.0 / 0.0), wrap(Double.longBitsToDouble(0x7ff8000000000000L)), DoubleValue.NaN)
         // -0.0 and 0.0 compareTo the same but are not equal.
@@ -411,6 +411,11 @@ public class FieldValueTest {
 
   private ObjectValue setField(ObjectValue objectValue, String fieldPath, FieldValue value) {
     return objectValue.toBuilder().set(field(fieldPath), value.getProto()).build();
+  }
+
+  private ObjectValue setField(
+      ObjectValue objectValue, String fieldPath, Map<String, Object> value) {
+    return objectValue.toBuilder().set(field(fieldPath), wrapObject(value).getProto()).build();
   }
 
   private ObjectValue deleteField(ObjectValue objectValue, String fieldPath) {

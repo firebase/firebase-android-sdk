@@ -66,7 +66,7 @@ public class ProtoValues {
     }
   }
 
-  static boolean equals(Value left, Value right) {
+  public static boolean equals(Value left, Value right) {
     if (left == null && right == null) {
       return true;
     } else if (left == null || right == null) {

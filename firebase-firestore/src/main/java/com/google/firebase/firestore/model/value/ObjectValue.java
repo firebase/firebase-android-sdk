@@ -29,16 +29,11 @@ import java.util.Set;
 /** A structured object value stored in Firestore. */
 public class ObjectValue extends FieldValue {
   private static final ObjectValue EMPTY_INSTANCE =
-      new ObjectValue(
-          com.google.firestore.v1.Value.newBuilder()
-              .setMapValue(com.google.firestore.v1.MapValue.getDefaultInstance())
-              .build());
+      new ObjectValue(Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build());
 
   public static ObjectValue fromMap(Map<String, Value> value) {
     return new ObjectValue(
-        com.google.firestore.v1.Value.newBuilder()
-            .setMapValue(com.google.firestore.v1.MapValue.newBuilder().putAllFields(value))
-            .build());
+        Value.newBuilder().setMapValue(MapValue.newBuilder().putAllFields(value)).build());
   }
 
   public ObjectValue(Value value) {

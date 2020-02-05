@@ -137,7 +137,7 @@ public final class TransformMutation extends Mutation {
         if (baseObject == null) {
           baseObject = ObjectValue.newBuilder();
         }
-        baseObject = baseObject.set(transform.getFieldPath(), coercedValue.getProto());
+        baseObject.set(transform.getFieldPath(), coercedValue.getProto());
       }
     }
 

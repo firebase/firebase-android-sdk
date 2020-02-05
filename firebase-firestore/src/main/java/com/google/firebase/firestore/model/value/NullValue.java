@@ -20,13 +20,9 @@ import com.google.firestore.v1.Value;
 public class NullValue extends FieldValue {
   private static final Value INTERNAL_VALUE =
       Value.newBuilder().setNullValue(com.google.protobuf.NullValue.NULL_VALUE).build();
-  private static final NullValue INSTANCE = new NullValue();
+  public static final NullValue NULL = new NullValue();
 
   private NullValue() {
     super(INTERNAL_VALUE);
-  }
-
-  public static NullValue nullValue() {
-    return INSTANCE;
   }
 }

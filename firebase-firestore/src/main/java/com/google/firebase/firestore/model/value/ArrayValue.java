@@ -34,26 +34,12 @@ public class ArrayValue extends FieldValue {
   }
 
   /** Converts all elements to a list of FieldValues. */
+  // TODO(mrschmidt): Remove
   public List<FieldValue> getValues() {
     List<FieldValue> result = new ArrayList<>();
     for (Value element : internalValue.getArrayValue().getValuesList()) {
       result.add(FieldValue.valueOf(element));
     }
     return result;
-  }
-
-  /**
-   * Returns true if this ArrayValue contains the specified element.
-   *
-   * <p>This method creates fewer temporary objects than invoking `getValues().contains()` (if the
-   * value is contained in the backing ArrayValue).
-   */
-  public boolean contains(FieldValue value) {
-    for (Value element : internalValue.getArrayValue().getValuesList()) {
-      if (value.equals(FieldValue.valueOf(element))) {
-        return true;
-      }
-    }
-    return false;
   }
 }

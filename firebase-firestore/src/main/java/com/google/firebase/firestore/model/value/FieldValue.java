@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,39 +62,41 @@ public class FieldValue implements Comparable<FieldValue> {
   }
 
   /** Creates a new FieldValue based on the Protobuf Value. */
+  // TODO(mrschmidt): Unify with UserDataReader.parseScalarValue()
   public static @Nullable FieldValue valueOf(@Nullable Value value) {
-    if (value != null) {
-      switch (value.getValueTypeCase()) {
-        case NULL_VALUE:
-          return NullValue.nullValue();
-        case BOOLEAN_VALUE:
-          return new BooleanValue(value);
-        case INTEGER_VALUE:
-          return new IntegerValue(value);
-        case DOUBLE_VALUE:
-          return new DoubleValue(value);
-        case TIMESTAMP_VALUE:
-          return new TimestampValue(value);
-        case STRING_VALUE:
-          return new StringValue(value);
-        case BYTES_VALUE:
-          return new BlobValue(value);
-        case REFERENCE_VALUE:
-          return new ReferenceValue(value);
-        case GEO_POINT_VALUE:
-          return new GeoPointValue(value);
-        case ARRAY_VALUE:
-          return new ArrayValue(value);
-        case MAP_VALUE:
-          if (ServerTimestampValue.isServerTimestamp(value)) {
-            return new ServerTimestampValue(value);
-          }
-          return new ObjectValue(value);
-        default:
-          throw fail("Invlaid value type: %s", value.getValueTypeCase());
-      }
+    if (value == null) {
+      return null;
     }
-    return null;
+
+    switch (value.getValueTypeCase()) {
+      case NULL_VALUE:
+        return NullValue.NULL;
+      case BOOLEAN_VALUE:
+        return new BooleanValue(value);
+      case INTEGER_VALUE:
+        return new IntegerValue(value);
+      case DOUBLE_VALUE:
+        return new DoubleValue(value);
+      case TIMESTAMP_VALUE:
+        return new TimestampValue(value);
+      case STRING_VALUE:
+        return new StringValue(value);
+      case BYTES_VALUE:
+        return new BlobValue(value);
+      case REFERENCE_VALUE:
+        return new ReferenceValue(value);
+      case GEO_POINT_VALUE:
+        return new GeoPointValue(value);
+      case ARRAY_VALUE:
+        return new ArrayValue(value);
+      case MAP_VALUE:
+        if (ServerTimestampValue.isServerTimestamp(value)) {
+          return new ServerTimestampValue(value);
+        }
+        return new ObjectValue(value);
+      default:
+        throw fail("Invlaid value type: %s", value.getValueTypeCase());
+    }
   }
 
   /** Returns the type order as defined by the backend. */
@@ -117,7 +119,7 @@ public class FieldValue implements Comparable<FieldValue> {
     if (this == o) {
       return true;
     } else if (o instanceof FieldValue) {
-      return ProtoValues.equals(this.internalValue, ((FieldValue) o).internalValue);
+      return ProtoValues.equals(internalValue, ((FieldValue) o).internalValue);
     }
     return false;
   }
@@ -129,7 +131,7 @@ public class FieldValue implements Comparable<FieldValue> {
 
   @Override
   public int compareTo(@NonNull FieldValue other) {
-    return ProtoValues.compare(this.internalValue, other.internalValue);
+    return ProtoValues.compare(internalValue, other.internalValue);
   }
 
   @Override

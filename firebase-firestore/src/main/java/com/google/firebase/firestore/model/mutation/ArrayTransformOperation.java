@@ -97,6 +97,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
 
   /** An array union transform operation. */
   public static class Union extends ArrayTransformOperation {
+    // TODO(mrschmidt): Migrate to list of Value protos
     public Union(List<FieldValue> elements) {
       super(elements);
     }

@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.model.value;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -46,8 +48,11 @@ public final class ServerTimestampValue extends FieldValue {
     return type != null && SERVER_TIMESTAMP_SENTINEL.equals(type.getStringValue());
   }
 
-  public ServerTimestampValue(Value value) {
+  ServerTimestampValue(Value value) {
     super(value);
+    hardAssert(
+        ServerTimestampValue.isServerTimestamp(value),
+        "Backing value is not a ServerTimestampValue");
   }
 
   public static ServerTimestampValue valueOf(Value value) {

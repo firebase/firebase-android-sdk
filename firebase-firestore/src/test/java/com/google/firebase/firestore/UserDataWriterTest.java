@@ -68,7 +68,7 @@ public class UserDataWriterTest {
     for (Boolean b : testCases) {
       FieldValue value = wrap(b);
       assertTrue(value instanceof BooleanValue);
-      Object convertedValue = writer.convertValue(value.getProto());
+      Object convertedValue = convertValue(value);
       assertEquals(b, convertedValue);
     }
   }
@@ -79,7 +79,7 @@ public class UserDataWriterTest {
     for (Integer i : testCases) {
       FieldValue value = wrap(i);
       assertTrue(value instanceof IntegerValue);
-      Object convertedValue = writer.convertValue(value.getProto());
+      Object convertedValue = convertValue(value);
       assertEquals(i.longValue(), convertedValue);
     }
   }
@@ -99,7 +99,7 @@ public class UserDataWriterTest {
     for (Long l : testCases) {
       FieldValue value = wrap(l);
       assertTrue(value instanceof IntegerValue);
-      Object convertedValue = writer.convertValue(value.getProto());
+      Object convertedValue = convertValue(value);
       assertEquals(l, convertedValue);
     }
   }
@@ -121,7 +121,7 @@ public class UserDataWriterTest {
     for (Float f : testCases) {
       FieldValue value = wrap(f);
       assertTrue(value instanceof DoubleValue);
-      Object convertedValue = writer.convertValue(value.getProto());
+      Object convertedValue = convertValue(value);
       assertEquals(f.doubleValue(), convertedValue);
     }
   }
@@ -152,7 +152,7 @@ public class UserDataWriterTest {
     for (Double d : testCases) {
       FieldValue value = wrap(d);
       assertTrue(value instanceof DoubleValue);
-      Object convertedValue = writer.convertValue(value.getProto());
+      Object convertedValue = convertValue(value);
       assertEquals(d, convertedValue);
     }
   }
@@ -179,7 +179,7 @@ public class UserDataWriterTest {
     for (Timestamp d : testCases) {
       FieldValue value = wrap(d);
       assertTrue(value instanceof TimestampValue);
-      Object convertedValue = writer.convertValue(value.getProto());
+      Object convertedValue = convertValue(value);
       assertEquals(d, convertedValue);
     }
   }
@@ -189,7 +189,7 @@ public class UserDataWriterTest {
     List<String> testCases = asList("", "foo");
     for (String s : testCases) {
       FieldValue value = wrap(s);
-      Object convertedValue = writer.convertValue(value.getProto());
+      Object convertedValue = convertValue(value);
       assertEquals(s, convertedValue);
     }
   }
@@ -199,7 +199,7 @@ public class UserDataWriterTest {
     List<Blob> testCases = asList(blob(1, 2, 3), blob(1, 2));
     for (Blob b : testCases) {
       FieldValue value = wrap(b);
-      Object convertedValue = writer.convertValue(value.getProto());
+      Object convertedValue = convertValue(value);
       assertEquals(b, convertedValue);
     }
   }
@@ -222,7 +222,7 @@ public class UserDataWriterTest {
     List<GeoPoint> testCases = asList(new GeoPoint(1.24, 4.56), new GeoPoint(-20, 100));
     for (GeoPoint p : testCases) {
       FieldValue value = wrap(p);
-      Object convertedValue = writer.convertValue(value.getProto());
+      Object convertedValue = convertValue(value);
       assertEquals(p, convertedValue);
     }
   }
@@ -243,7 +243,7 @@ public class UserDataWriterTest {
             "a", StringValue.valueOf("foo"),
             "b", IntegerValue.valueOf(1L),
             "c", BooleanValue.valueOf(true),
-            "d", NullValue.nullValue());
+            "d", NullValue.NULL);
 
     FieldValue wrappedActual = wrapObject(actual);
     assertEquals(wrappedActual, wrappedExpected);
@@ -285,5 +285,9 @@ public class UserDataWriterTest {
     } catch (IllegalArgumentException e) {
       assertNotEquals(-1, e.getMessage().indexOf("use Lists instead"));
     }
+  }
+
+  private Object convertValue(FieldValue value) {
+    return writer.convertValue(value.getProto());
   }
 }
