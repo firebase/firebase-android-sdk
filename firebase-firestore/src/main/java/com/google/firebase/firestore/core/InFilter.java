@@ -30,7 +30,7 @@ public class InFilter extends FieldFilter {
 
   @Override
   public boolean matches(Document doc) {
-    Value other = doc.getFieldProto(getField());
+    Value other = doc.getField(getField());
     return other != null && ProtoValues.contains(getValue().getArrayValue(), other);
   }
 }

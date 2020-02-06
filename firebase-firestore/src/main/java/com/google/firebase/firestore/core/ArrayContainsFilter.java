@@ -27,7 +27,7 @@ public class ArrayContainsFilter extends FieldFilter {
 
   @Override
   public boolean matches(Document doc) {
-    Value other = doc.getFieldProto(getField());
+    Value other = doc.getField(getField());
     return ProtoValues.isArray(other) && ProtoValues.contains(other.getArrayValue(), getValue());
   }
 }

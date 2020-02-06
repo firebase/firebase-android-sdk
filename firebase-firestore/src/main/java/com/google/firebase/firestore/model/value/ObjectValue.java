@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 /** A structured object value stored in Firestore. */
+// TODO(mrschmidt): Rename to DocumentValue
 public class ObjectValue extends FieldValue {
   private static final ObjectValue EMPTY_INSTANCE =
       new ObjectValue(Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build());
@@ -68,7 +69,7 @@ public class ObjectValue extends FieldValue {
     Set<FieldPath> fields = new HashSet<>();
     for (Map.Entry<String, Value> entry : value.getFieldsMap().entrySet()) {
       FieldPath currentPath = FieldPath.fromSingleSegment(entry.getKey());
-      if (ProtoValues.typeOrder(entry.getValue()) == TYPE_ORDER_OBJECT) {
+      if (ProtoValues.isMapValue(entry.getValue())) {
         FieldMask nestedMask = extractFieldMask(entry.getValue().getMapValue());
         Set<FieldPath> nestedFields = nestedMask.getMask();
         if (nestedFields.isEmpty()) {
@@ -91,21 +92,20 @@ public class ObjectValue extends FieldValue {
    * Returns the value at the given path or null.
    *
    * @param fieldPath the path to search
-   * @return The value at the path or if there it doesn't exist.
+   * @return The value at the path or null if it doesn't exist.
    */
-  public @Nullable FieldValue get(FieldPath fieldPath) {
+  public @Nullable Value get(FieldPath fieldPath) {
     if (fieldPath.isEmpty()) {
-      return this;
+      return internalValue;
     } else {
       Value value = internalValue;
       for (int i = 0; i < fieldPath.length() - 1; ++i) {
         value = value.getMapValue().getFieldsOrDefault(fieldPath.getSegment(i), null);
-        if (value == null || ProtoValues.typeOrder(value) != TYPE_ORDER_OBJECT) {
+        if (!ProtoValues.isMapValue(value)) {
           return null;
         }
       }
-      value = value.getMapValue().getFieldsOrDefault(fieldPath.getLastSegment(), null);
-      return value != null ? FieldValue.valueOf(value) : null;
+      return value.getMapValue().getFieldsOrDefault(fieldPath.getLastSegment(), null);
     }
   }
 
@@ -214,12 +214,12 @@ public class ObjectValue extends FieldValue {
         FieldPath currentPath, Map<String, Object> currentOverlays) {
       boolean modified = false;
 
-      @Nullable FieldValue existingValue = baseObject.get(currentPath);
+      @Nullable Value existingValue = baseObject.get(currentPath);
       MapValue.Builder resultAtPath =
-          existingValue instanceof ObjectValue
+          ProtoValues.isMapValue(existingValue)
               // If there is already data at the current path, base our modifications on top
               // of the existing data.
-              ? ((ObjectValue) existingValue).internalValue.getMapValue().toBuilder()
+              ? existingValue.getMapValue().toBuilder()
               : MapValue.newBuilder();
 
       for (Map.Entry<String, Object> entry : currentOverlays.entrySet()) {

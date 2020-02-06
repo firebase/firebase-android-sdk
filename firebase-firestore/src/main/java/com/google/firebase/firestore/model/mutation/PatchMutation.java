@@ -24,8 +24,8 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.UnknownDocument;
-import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firestore.v1.Value;
 
 /**
  * A mutation that modifies fields of the document at the given key with the given values. The
@@ -154,11 +154,11 @@ public final class PatchMutation extends Mutation {
     ObjectValue.Builder builder = obj.toBuilder();
     for (FieldPath path : mask.getMask()) {
       if (!path.isEmpty()) {
-        FieldValue newValue = value.get(path);
+        Value newValue = value.get(path);
         if (newValue == null) {
           builder.delete(path);
         } else {
-          builder.set(path, newValue.getProto());
+          builder.set(path, newValue);
         }
       }
     }

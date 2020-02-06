@@ -41,34 +41,47 @@ public class ProtoValues {
   public static final Value NULL_VALUE =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
 
+  /** The order of types in Firestore; this order is defined by the backend. */
+  public static final int TYPE_ORDER_NULL = 0;
+
+  public static final int TYPE_ORDER_BOOLEAN = 1;
+  public static final int TYPE_ORDER_NUMBER = 2;
+  public static final int TYPE_ORDER_TIMESTAMP = 3;
+  public static final int TYPE_ORDER_STRING = 4;
+  public static final int TYPE_ORDER_BLOB = 5;
+  public static final int TYPE_ORDER_REFERENCE = 6;
+  public static final int TYPE_ORDER_GEOPOINT = 7;
+  public static final int TYPE_ORDER_ARRAY = 8;
+  public static final int TYPE_ORDER_MAP = 9;
+
   /** Returns the backend's type order of the given Value type. */
   public static int typeOrder(Value value) {
     switch (value.getValueTypeCase()) {
       case NULL_VALUE:
-        return FieldValue.TYPE_ORDER_NULL;
+        return TYPE_ORDER_NULL;
       case BOOLEAN_VALUE:
-        return FieldValue.TYPE_ORDER_BOOLEAN;
+        return TYPE_ORDER_BOOLEAN;
       case INTEGER_VALUE:
-        return FieldValue.TYPE_ORDER_NUMBER;
+        return TYPE_ORDER_NUMBER;
       case DOUBLE_VALUE:
-        return FieldValue.TYPE_ORDER_NUMBER;
+        return TYPE_ORDER_NUMBER;
       case TIMESTAMP_VALUE:
-        return FieldValue.TYPE_ORDER_TIMESTAMP;
+        return TYPE_ORDER_TIMESTAMP;
       case STRING_VALUE:
-        return FieldValue.TYPE_ORDER_STRING;
+        return TYPE_ORDER_STRING;
       case BYTES_VALUE:
-        return FieldValue.TYPE_ORDER_BLOB;
+        return TYPE_ORDER_BLOB;
       case REFERENCE_VALUE:
-        return FieldValue.TYPE_ORDER_REFERENCE;
+        return TYPE_ORDER_REFERENCE;
       case GEO_POINT_VALUE:
-        return FieldValue.TYPE_ORDER_GEOPOINT;
+        return TYPE_ORDER_GEOPOINT;
       case ARRAY_VALUE:
-        return FieldValue.TYPE_ORDER_ARRAY;
+        return TYPE_ORDER_ARRAY;
       case MAP_VALUE:
         if (ServerTimestampValue.isServerTimestamp(value)) {
-          return FieldValue.TYPE_ORDER_TIMESTAMP;
+          return TYPE_ORDER_TIMESTAMP;
         }
-        return FieldValue.TYPE_ORDER_OBJECT;
+        return TYPE_ORDER_MAP;
       default:
         throw fail("Invalid value type: " + value.getValueTypeCase());
     }
@@ -88,13 +101,13 @@ public class ProtoValues {
     }
 
     switch (leftType) {
-      case FieldValue.TYPE_ORDER_NUMBER:
+      case TYPE_ORDER_NUMBER:
         return numberEquals(left, right);
-      case FieldValue.TYPE_ORDER_ARRAY:
+      case TYPE_ORDER_ARRAY:
         return arrayEquals(left, right);
-      case FieldValue.TYPE_ORDER_OBJECT:
+      case TYPE_ORDER_MAP:
         return objectEquals(left, right);
-      case FieldValue.TYPE_ORDER_TIMESTAMP:
+      case TYPE_ORDER_TIMESTAMP:
         return timestampEquals(left, right);
       default:
         return left.equals(right);
@@ -182,25 +195,25 @@ public class ProtoValues {
     }
 
     switch (leftType) {
-      case FieldValue.TYPE_ORDER_NULL:
+      case TYPE_ORDER_NULL:
         return 0;
-      case FieldValue.TYPE_ORDER_BOOLEAN:
+      case TYPE_ORDER_BOOLEAN:
         return Util.compareBooleans(left.getBooleanValue(), right.getBooleanValue());
-      case FieldValue.TYPE_ORDER_NUMBER:
+      case TYPE_ORDER_NUMBER:
         return compareNumbers(left, right);
-      case FieldValue.TYPE_ORDER_TIMESTAMP:
+      case TYPE_ORDER_TIMESTAMP:
         return compareTimestamps(left, right);
-      case FieldValue.TYPE_ORDER_STRING:
+      case TYPE_ORDER_STRING:
         return left.getStringValue().compareTo(right.getStringValue());
-      case FieldValue.TYPE_ORDER_BLOB:
+      case TYPE_ORDER_BLOB:
         return Util.compareByteStrings(left.getBytesValue(), right.getBytesValue());
-      case FieldValue.TYPE_ORDER_REFERENCE:
+      case TYPE_ORDER_REFERENCE:
         return compareReferences(left.getReferenceValue(), right.getReferenceValue());
-      case FieldValue.TYPE_ORDER_GEOPOINT:
+      case TYPE_ORDER_GEOPOINT:
         return compareGeoPoints(left.getGeoPointValue(), right.getGeoPointValue());
-      case FieldValue.TYPE_ORDER_ARRAY:
+      case TYPE_ORDER_ARRAY:
         return compareArrays(left.getArrayValue(), right.getArrayValue());
-      case FieldValue.TYPE_ORDER_OBJECT:
+      case TYPE_ORDER_MAP:
         return compareMaps(left.getMapValue(), right.getMapValue());
       default:
         throw fail("Invalid value type: " + leftType);
@@ -427,6 +440,10 @@ public class ProtoValues {
 
   public static boolean isNanValue(@Nullable Value value) {
     return value != null && Double.isNaN(value.getDoubleValue());
+  }
+
+  public static boolean isMapValue(@Nullable Value value) {
+    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE;
   }
 
   public static Value refValue(DatabaseId databaseId, DocumentKey key) {

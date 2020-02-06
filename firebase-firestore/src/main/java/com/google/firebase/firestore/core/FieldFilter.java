@@ -95,7 +95,7 @@ public class FieldFilter extends Filter {
 
   @Override
   public boolean matches(Document doc) {
-    Value other = doc.getFieldProto(field);
+    Value other = doc.getField(field);
     // Only compare types with matching backend order (such as double and int).
     return other != null
         && ProtoValues.typeOrder(other) == ProtoValues.typeOrder(value)
