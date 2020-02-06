@@ -53,7 +53,7 @@ public class UserDataWriter {
     switch (value.getValueTypeCase()) {
       case MAP_VALUE:
         if (ServerTimestampValue.isServerTimestamp(value)) {
-          return convertServerTimestamp(ServerTimestampValue.valueOf(value));
+          return convertServerTimestamp(new ServerTimestampValue(value));
         }
         return convertObject(value.getMapValue().getFieldsMap());
       case ARRAY_VALUE:

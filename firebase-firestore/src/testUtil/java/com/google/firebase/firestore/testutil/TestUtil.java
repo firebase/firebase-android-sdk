@@ -135,8 +135,8 @@ public class TestUtil {
     return new FieldValue(dataReader.parseQueryValue(value));
   }
 
-  public static FieldValue wrapRef(DatabaseId databaseId, DocumentKey key) {
-    return new FieldValue(ProtoValues.refValue(databaseId, key));
+  public static Value wrapRef(DatabaseId databaseId, DocumentKey key) {
+    return ProtoValues.refValue(databaseId, key);
   }
 
   public static ObjectValue wrapObject(Map<String, Object> value) {

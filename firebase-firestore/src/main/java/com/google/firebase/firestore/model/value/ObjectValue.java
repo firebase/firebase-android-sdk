@@ -28,7 +28,9 @@ import java.util.Set;
 
 /** A structured object value stored in Firestore. */
 // TODO(mrschmidt): Rename to DocumentValue
-public class ObjectValue extends FieldValue {
+public class ObjectValue {
+  private Value internalValue;
+
   private static final ObjectValue EMPTY_INSTANCE =
       new ObjectValue(Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build());
 
@@ -38,13 +40,13 @@ public class ObjectValue extends FieldValue {
   }
 
   public ObjectValue(Value value) {
-    super(value);
     hardAssert(
         value.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE,
         "ObjectValues should be backed by a MapValue");
     hardAssert(
         !ServerTimestampValue.isServerTimestamp(value),
-        "ServerTimestamps should be converted to ServerTimestampValue");
+        "ServerTimestamps should not be used as an ObjectValue");
+    this.internalValue = value;
   }
 
   public static ObjectValue emptyObject() {
@@ -107,6 +109,26 @@ public class ObjectValue extends FieldValue {
       }
       return value.getMapValue().getFieldsOrDefault(fieldPath.getLastSegment(), null);
     }
+  }
+
+  /** Returns the Protobuf that backs this ObjectValue. */
+  public Value getProto() {
+    return internalValue;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    } else if (o instanceof ObjectValue) {
+      return ProtoValues.equals(internalValue, ((ObjectValue) o).internalValue);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return internalValue.hashCode();
   }
 
   /** Creates a ObjectValue.Builder instance that is based on the current value. */

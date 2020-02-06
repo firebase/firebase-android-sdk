@@ -39,7 +39,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -226,7 +225,7 @@ public class UserDataWriterTest {
 
   @Test
   public void testConvertsEmptyObjects() {
-    assertEquals(wrap(new TreeMap<String, FieldValue>()), ObjectValue.emptyObject());
+    assertEquals(wrapObject(), ObjectValue.emptyObject());
   }
 
   @Test
@@ -242,7 +241,7 @@ public class UserDataWriterTest {
             "c", wrap(true),
             "d", wrap(null));
 
-    FieldValue wrappedActual = wrapObject(actual);
+    ObjectValue wrappedActual = wrapObject(actual);
     assertEquals(wrappedActual, wrappedExpected);
   }
 
@@ -256,7 +255,7 @@ public class UserDataWriterTest {
 
   @Test
   public void testConvertsNestedObjects() {
-    FieldValue actual = wrapObject("a", map("b", map("c", "foo"), "d", true));
+    ObjectValue actual = wrapObject("a", map("b", map("c", "foo"), "d", true));
     ObjectValue.Builder expected = ObjectValue.newBuilder();
     expected.set(field("a.b.c"), valueOf("foo"));
     expected.set(field("a.d"), valueOf(true));
