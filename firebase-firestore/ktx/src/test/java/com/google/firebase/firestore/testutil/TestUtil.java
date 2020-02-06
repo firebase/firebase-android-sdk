@@ -41,7 +41,7 @@ public class TestUtil {
 
   public static ObjectValue wrapObject(Map<String, Object> value) {
     // Cast is safe here because value passed in is a map
-    return (ObjectValue) wrap(value);
+    return new ObjectValue(wrap(value).getProto());
   }
 
   public static DocumentKey key(String key) {
