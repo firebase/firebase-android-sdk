@@ -36,7 +36,7 @@ public class TestUtil {
     UserDataReader dataReader = new UserDataReader(databaseId);
     // HACK: We use parseQueryValue() since it accepts scalars as well as arrays / objects, and
     // our tests currently use wrap() pretty generically so we don't know the intent.
-    return dataReader.parseQueryValue(value);
+    return FieldValue.valueOf(dataReader.parseQueryValue(value));
   }
 
   public static ObjectValue wrapObject(Map<String, Object> value) {

@@ -51,8 +51,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.NullValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -127,7 +126,7 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesNull() {
-    FieldValue value = NullValue.NULL;
+    FieldValue value = wrap(null);
     com.google.firestore.v1.Value proto = valueBuilder().setNullValueValue(0).build();
     assertRoundTrip(value, proto, ValueTypeCase.NULL_VALUE);
   }
@@ -860,8 +859,8 @@ public final class RemoteSerializerTest {
   public void testEncodesBounds() {
     Query q =
         Query.atPath(ResourcePath.fromString("docs"))
-            .startAt(new Bound(asList(ReferenceValue.valueOf(databaseId, key("foo/bar"))), true))
-            .endAt(new Bound(asList(ReferenceValue.valueOf(databaseId, key("foo/baz"))), false));
+            .startAt(new Bound(asList(ProtoValues.refValue(databaseId, key("foo/bar"))), true))
+            .endAt(new Bound(asList(ProtoValues.refValue(databaseId, key("foo/baz"))), false));
     Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =

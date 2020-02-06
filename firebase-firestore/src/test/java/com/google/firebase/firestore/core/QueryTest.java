@@ -23,7 +23,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.testEquality;
-import static com.google.firebase.firestore.testutil.TestUtil.wrap;
+import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -602,13 +602,15 @@ public class QueryTest {
     assertCanonicalId(
         baseQuery
             .orderBy(orderBy("a"))
-            .startAt(new Bound(Arrays.asList(wrap("foo"), wrap(Arrays.asList(1, 2, 3))), true)),
-        "collection|f:|ob:aasc__name__asc|lb:b:foo[1,2,3]");
+            .startAt(
+                new Bound(Arrays.asList(valueOf("foo"), valueOf(Arrays.asList(1, 2, 3))), true)),
+        "collection|f:|ob:aasc__name__asc|lb:b:foo,[1,2,3]");
     assertCanonicalId(
         baseQuery
             .orderBy(orderBy("a"))
-            .endAt(new Bound(Arrays.asList(wrap("foo"), wrap(Arrays.asList(1, 2, 3))), false)),
-        "collection|f:|ob:aasc__name__asc|ub:a:foo[1,2,3]");
+            .endAt(
+                new Bound(Arrays.asList(valueOf("foo"), valueOf(Arrays.asList(1, 2, 3))), false)),
+        "collection|f:|ob:aasc__name__asc|ub:a:foo,[1,2,3]");
     assertCanonicalId(baseQuery.limitToFirst(5), "collection|f:|ob:__name__asc|l:5");
     assertCanonicalId(baseQuery.limitToLast(5), "collection|f:|ob:__name__desc|l:5");
   }

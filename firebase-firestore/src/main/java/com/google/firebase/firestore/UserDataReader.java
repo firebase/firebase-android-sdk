@@ -35,8 +35,6 @@ import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.NumberValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.CustomClassMapper;
@@ -186,7 +184,7 @@ public final class UserDataReader {
   }
 
   /** Parse a "query value" (e.g. value in a where filter or a value in a cursor bound). */
-  public FieldValue parseQueryValue(Object input) {
+  public Value parseQueryValue(Object input) {
     return parseQueryValue(input, false);
   }
 
@@ -196,7 +194,7 @@ public final class UserDataReader {
    * @param allowArrays Whether the query value is an array that may directly contain additional
    *     arrays (e.g. the operand of a `whereIn` query).
    */
-  public FieldValue parseQueryValue(Object input, boolean allowArrays) {
+  public Value parseQueryValue(Object input, boolean allowArrays) {
     ParseAccumulator accumulator =
         new ParseAccumulator(
             allowArrays ? UserData.Source.ArrayArgument : UserData.Source.Argument);
@@ -206,7 +204,7 @@ public final class UserDataReader {
     hardAssert(
         accumulator.getFieldTransforms().isEmpty(),
         "Field transforms should have been disallowed.");
-    return FieldValue.valueOf(parsed);
+    return parsed;
   }
 
   /** Converts a POJO to native types and then parses it into model types. */
@@ -231,12 +229,11 @@ public final class UserDataReader {
     }
 
     Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
-    FieldValue value = FieldValue.valueOf(parseData(converted, context));
-
-    if (!(value instanceof ObjectValue)) {
+    Value parsedValue = parseData(converted, context);
+    if (parsedValue.getValueTypeCase() != Value.ValueTypeCase.MAP_VALUE) {
       throw new IllegalArgumentException(badDocReason + "of type: " + Util.typeName(input));
     }
-    return (ObjectValue) value;
+    return new ObjectValue(parsedValue);
   }
 
   /**
@@ -373,7 +370,7 @@ public final class UserDataReader {
       com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue
           numericIncrementFieldValue =
               (com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue) value;
-      NumberValue operand = (NumberValue) parseQueryValue(numericIncrementFieldValue.getOperand());
+      Value operand = parseQueryValue(numericIncrementFieldValue.getOperand());
       NumericIncrementTransformOperation incrementOperation =
           new NumericIncrementTransformOperation(operand);
       context.addToFieldTransforms(context.getPath(), incrementOperation);
