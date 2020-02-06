@@ -17,14 +17,14 @@ package com.google.firebase.installations;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+
 import com.google.android.gms.tasks.Task;
 import java.lang.annotation.Retention;
 
 /**
  * This is an interface of {@code FirebaseInstallations} that is only exposed to 2p via component
  * injection.
- *
- * @hide
  */
 public interface FirebaseInstallationsApi {
 
@@ -47,9 +47,11 @@ public interface FirebaseInstallationsApi {
    * Async function that returns a globally unique identifier of this Firebase app installation.
    * This is a url-safe base64 string of a 128-bit integer.
    */
+  @NonNull
   Task<String> getId();
 
   /** Async function that returns a auth token(public key) of this Firebase app installation. */
+  @NonNull
   Task<InstallationTokenResult> getToken(@AuthTokenOption int authTokenOption);
 
   /**
@@ -57,5 +59,6 @@ public interface FirebaseInstallationsApi {
    * would possibly lead Firebase Notification, Firebase RemoteConfig, Firebase Predictions or
    * Firebase In-App Messaging not function properly.
    */
+  @NonNull
   Task<Void> delete();
 }

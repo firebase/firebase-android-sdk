@@ -44,7 +44,11 @@ import java.util.zip.GZIPOutputStream;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** Http client that sends request to Firebase Installations backend API. */
+/**
+ * Http client that sends request to Firebase Installations backend API.
+ *
+ * @hide
+ */
 public class FirebaseInstallationServiceClient {
   private static final String FIREBASE_INSTALLATIONS_API_DOMAIN =
       "firebaseinstallations.googleapis.com";
