@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
+import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static java.util.Arrays.asList;
@@ -241,8 +242,8 @@ public class UserDataWriterTest {
     ObjectValue wrappedExpected =
         fromMap(
             "a", StringValue.valueOf("foo"),
-            "b", IntegerValue.valueOf(1L),
-            "c", BooleanValue.valueOf(true),
+            "b", wrap(1L),
+            "c", wrap(true),
             "d", NullValue.NULL);
 
     FieldValue wrappedActual = wrapObject(actual);
@@ -270,8 +271,7 @@ public class UserDataWriterTest {
 
   @Test
   public void testConvertsLists() {
-    ArrayValue expected =
-        ArrayValue.fromList(asList(StringValue.valueOf("value"), BooleanValue.valueOf(true)));
+    ArrayValue expected = ArrayValue.fromList(asList(valueOf("value"), valueOf(true)));
     FieldValue actual = wrap(asList("value", true));
     assertEquals(expected, actual);
   }

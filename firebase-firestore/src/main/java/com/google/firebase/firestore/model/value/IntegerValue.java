@@ -25,8 +25,4 @@ public class IntegerValue extends NumberValue {
   public long getIntegerValue() {
     return internalValue.getIntegerValue();
   }
-
-  public static IntegerValue valueOf(long l) {
-    return new IntegerValue(Value.newBuilder().setIntegerValue(l).build());
-  }
 }

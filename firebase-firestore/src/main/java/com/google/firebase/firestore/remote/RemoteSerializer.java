@@ -390,13 +390,13 @@ public final class RemoteSerializer {
       ArrayTransformOperation.Union union = (ArrayTransformOperation.Union) transform;
       return DocumentTransform.FieldTransform.newBuilder()
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
-          .setAppendMissingElements(encodeArrayTransformElements(union.getElements()))
+          .setAppendMissingElements(ArrayValue.newBuilder().addAllValues(union.getElements()))
           .build();
     } else if (transform instanceof ArrayTransformOperation.Remove) {
       ArrayTransformOperation.Remove remove = (ArrayTransformOperation.Remove) transform;
       return DocumentTransform.FieldTransform.newBuilder()
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
-          .setRemoveAllFromArray(encodeArrayTransformElements(remove.getElements()))
+          .setRemoveAllFromArray(ArrayValue.newBuilder().addAllValues(remove.getElements()))
           .build();
     } else if (transform instanceof NumericIncrementTransformOperation) {
       NumericIncrementTransformOperation incrementOperation =
@@ -408,14 +408,6 @@ public final class RemoteSerializer {
     } else {
       throw fail("Unknown transform: %s", transform);
     }
-  }
-
-  private ArrayValue encodeArrayTransformElements(List<FieldValue> elements) {
-    ArrayValue.Builder result = ArrayValue.newBuilder();
-    for (FieldValue element : elements) {
-      result.addValues(element.getProto());
-    }
-    return result.build();
   }
 
   private FieldTransform decodeFieldTransform(DocumentTransform.FieldTransform fieldTransform) {
@@ -433,14 +425,12 @@ public final class RemoteSerializer {
         return new FieldTransform(
             FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
             new ArrayTransformOperation.Union(
-                decodeArrayTransformElements(
-                    fieldTransform.getAppendMissingElements().getValuesList())));
+                fieldTransform.getAppendMissingElements().getValuesList()));
       case REMOVE_ALL_FROM_ARRAY:
         return new FieldTransform(
             FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
             new ArrayTransformOperation.Remove(
-                decodeArrayTransformElements(
-                    fieldTransform.getRemoveAllFromArray().getValuesList())));
+                fieldTransform.getRemoveAllFromArray().getValuesList()));
       case INCREMENT:
         {
           FieldValue operand = FieldValue.valueOf(fieldTransform.getIncrement());
@@ -458,14 +448,6 @@ public final class RemoteSerializer {
     }
   }
 
-  private List<FieldValue> decodeArrayTransformElements(List<Value> elementsProto) {
-    List<FieldValue> result = new ArrayList<>(elementsProto.size());
-    for (Value element : elementsProto) {
-      result.add(FieldValue.valueOf(element));
-    }
-    return result;
-  }
-
   public MutationResult decodeMutationResult(
       com.google.firestore.v1.WriteResult proto, SnapshotVersion commitVersion) {
     // NOTE: Deletes don't have an updateTime but the commit timestamp from the containing
@@ -477,13 +459,12 @@ public final class RemoteSerializer {
       version = commitVersion;
     }
 
-    // TODO(mrschmidt): Migrate to list of Value protos
-    ArrayList<FieldValue> transformResults = null;
+    List<Value> transformResults = null;
     int transformResultsCount = proto.getTransformResultsCount();
     if (transformResultsCount > 0) {
       transformResults = new ArrayList<>(transformResultsCount);
       for (int i = 0; i < transformResultsCount; i++) {
-        transformResults.add(FieldValue.valueOf(proto.getTransformResults(i)));
+        transformResults.add(proto.getTransformResults(i));
       }
     }
     return new MutationResult(version, transformResults);

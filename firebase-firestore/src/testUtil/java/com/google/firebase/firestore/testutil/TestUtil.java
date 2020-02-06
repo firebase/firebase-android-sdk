@@ -70,6 +70,7 @@ import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
+import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -141,6 +142,10 @@ public class TestUtil {
 
   public static ObjectValue wrapObject(Object... entries) {
     return wrapObject(map(entries));
+  }
+
+  public static Value valueOf(Object value) {
+    return wrap(value).getProto();
   }
 
   public static DocumentKey key(String key) {

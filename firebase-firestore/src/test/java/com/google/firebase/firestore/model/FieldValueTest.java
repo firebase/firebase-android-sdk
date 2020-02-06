@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
+import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static junit.framework.TestCase.assertTrue;
@@ -37,7 +38,6 @@ import com.google.firebase.firestore.model.value.BooleanValue;
 import com.google.firebase.firestore.model.value.DoubleValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.GeoPointValue;
-import com.google.firebase.firestore.model.value.IntegerValue;
 import com.google.firebase.firestore.model.value.NullValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
@@ -128,12 +128,7 @@ public class FieldValueTest {
   public void testAddsMultipleNewFields() {
     ObjectValue object = ObjectValue.emptyObject();
     object = setField(object, "a", wrap("a"));
-    object =
-        object
-            .toBuilder()
-            .set(field("b"), wrap("b").getProto())
-            .set(field("c"), wrap("c").getProto())
-            .build();
+    object = object.toBuilder().set(field("b"), valueOf("b")).set(field("c"), valueOf("c")).build();
 
     assertEquals(wrapObject("a", "a", "b", "b", "c", "c"), object);
   }
@@ -246,10 +241,10 @@ public class FieldValueTest {
         // -0.0 and 0.0 compareTo the same but are not equal.
         .addEqualityGroup(wrap(-0.0))
         .addEqualityGroup(wrap(0.0))
-        .addEqualityGroup(wrap(1), IntegerValue.valueOf(1L))
+        .addEqualityGroup(wrap(1), FieldValue.valueOf(valueOf(1)))
         // Doubles and Longs aren't equal.
-        .addEqualityGroup(wrap(1.0), DoubleValue.valueOf(1.0))
-        .addEqualityGroup(wrap(1.1), DoubleValue.valueOf(1.1))
+        .addEqualityGroup(wrap(1.0), FieldValue.valueOf(valueOf(1.0)))
+        .addEqualityGroup(wrap(1.1), FieldValue.valueOf(valueOf(1.1)))
         .addEqualityGroup(wrap(blob(0, 1, 2)), BlobValue.valueOf(blob(0, 1, 2)))
         .addEqualityGroup(wrap(blob(0, 1)))
         .addEqualityGroup(wrap("string"), StringValue.valueOf("string"))

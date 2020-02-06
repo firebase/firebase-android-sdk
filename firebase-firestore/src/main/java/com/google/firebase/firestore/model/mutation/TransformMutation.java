@@ -23,8 +23,8 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.UnknownDocument;
-import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,7 +97,7 @@ public final class TransformMutation extends Mutation {
     }
 
     Document doc = requireDocument(maybeDoc);
-    List<FieldValue> transformResults =
+    List<Value> transformResults =
         serverTransformResults(doc, mutationResult.getTransformResults());
     ObjectValue newData = transformObject(doc.getData(), transformResults);
     return new Document(
@@ -115,7 +115,7 @@ public final class TransformMutation extends Mutation {
     }
 
     Document doc = requireDocument(maybeDoc);
-    List<FieldValue> transformResults = localTransformResults(localWriteTime, maybeDoc, baseDoc);
+    List<Value> transformResults = localTransformResults(localWriteTime, maybeDoc, baseDoc);
     ObjectValue newData = transformObject(doc.getData(), transformResults);
     return new Document(
         getKey(), doc.getVersion(), newData, Document.DocumentState.LOCAL_MUTATIONS);
@@ -127,17 +127,17 @@ public final class TransformMutation extends Mutation {
     ObjectValue.Builder baseObject = null;
 
     for (FieldTransform transform : fieldTransforms) {
-      FieldValue existingValue = null;
+      Value existingValue = null;
       if (maybeDoc instanceof Document) {
-        existingValue = ((Document) maybeDoc).getField(transform.getFieldPath());
+        existingValue = ((Document) maybeDoc).getFieldProto(transform.getFieldPath());
       }
 
-      FieldValue coercedValue = transform.getOperation().computeBaseValue(existingValue);
+      Value coercedValue = transform.getOperation().computeBaseValue(existingValue);
       if (coercedValue != null) {
         if (baseObject == null) {
           baseObject = ObjectValue.newBuilder();
         }
-        baseObject.set(transform.getFieldPath(), coercedValue.getProto());
+        baseObject.set(transform.getFieldPath(), coercedValue);
       }
     }
 
@@ -165,9 +165,9 @@ public final class TransformMutation extends Mutation {
    * @param serverTransformResults The transform results received by the server.
    * @return The transform results list.
    */
-  private List<FieldValue> serverTransformResults(
-      @Nullable MaybeDocument baseDoc, List<FieldValue> serverTransformResults) {
-    ArrayList<FieldValue> transformResults = new ArrayList<>(fieldTransforms.size());
+  private List<Value> serverTransformResults(
+      @Nullable MaybeDocument baseDoc, List<Value> serverTransformResults) {
+    ArrayList<Value> transformResults = new ArrayList<>(fieldTransforms.size());
     hardAssert(
         fieldTransforms.size() == serverTransformResults.size(),
         "server transform count (%d) should match field transform count (%d)",
@@ -178,9 +178,9 @@ public final class TransformMutation extends Mutation {
       FieldTransform fieldTransform = fieldTransforms.get(i);
       TransformOperation transform = fieldTransform.getOperation();
 
-      FieldValue previousValue = null;
+      Value previousValue = null;
       if (baseDoc instanceof Document) {
-        previousValue = ((Document) baseDoc).getField(fieldTransform.getFieldPath());
+        previousValue = ((Document) baseDoc).getFieldProto(fieldTransform.getFieldPath());
       }
 
       transformResults.add(
@@ -199,22 +199,22 @@ public final class TransformMutation extends Mutation {
    * @param baseDoc The document prior to applying this mutation batch.
    * @return The transform results list.
    */
-  private List<FieldValue> localTransformResults(
+  private List<Value> localTransformResults(
       Timestamp localWriteTime, @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc) {
-    ArrayList<FieldValue> transformResults = new ArrayList<>(fieldTransforms.size());
+    ArrayList<Value> transformResults = new ArrayList<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
 
-      FieldValue previousValue = null;
+      Value previousValue = null;
       if (maybeDoc instanceof Document) {
-        previousValue = ((Document) maybeDoc).getField(fieldTransform.getFieldPath());
+        previousValue = ((Document) maybeDoc).getFieldProto(fieldTransform.getFieldPath());
       }
 
       if (previousValue == null && baseDoc instanceof Document) {
         // If the current document does not contain a value for the mutated field, use the value
         // that existed before applying this mutation batch. This solves an edge case where a
         // PatchMutation clears the values in a nested map before the TransformMutation is applied.
-        previousValue = ((Document) baseDoc).getField(fieldTransform.getFieldPath());
+        previousValue = ((Document) baseDoc).getFieldProto(fieldTransform.getFieldPath());
       }
 
       transformResults.add(transform.applyToLocalView(previousValue, localWriteTime));
@@ -222,7 +222,7 @@ public final class TransformMutation extends Mutation {
     return transformResults;
   }
 
-  private ObjectValue transformObject(ObjectValue objectValue, List<FieldValue> transformResults) {
+  private ObjectValue transformObject(ObjectValue objectValue, List<Value> transformResults) {
     hardAssert(
         transformResults.size() == fieldTransforms.size(), "Transform results length mismatch.");
 
@@ -230,7 +230,7 @@ public final class TransformMutation extends Mutation {
     for (int i = 0; i < fieldTransforms.size(); i++) {
       FieldTransform fieldTransform = fieldTransforms.get(i);
       FieldPath fieldPath = fieldTransform.getFieldPath();
-      builder.set(fieldPath, transformResults.get(i).getProto());
+      builder.set(fieldPath, transformResults.get(i));
     }
     return builder.build();
   }

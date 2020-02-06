@@ -26,6 +26,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.transformMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
+import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
@@ -42,10 +43,8 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
-import com.google.firebase.firestore.model.value.IntegerValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.model.value.TimestampValue;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -157,7 +156,7 @@ public class MutationTest {
     ObjectValue expectedData =
         wrapObject(map("foo", map("bar", "<server-timestamp>"), "baz", "baz-value"));
     com.google.firebase.firestore.model.value.FieldValue fieldValue =
-        ServerTimestampValue.valueOf(timestamp, wrap("bar-value"));
+        ServerTimestampValue.valueOf(timestamp, valueOf("bar-value"));
     expectedData = expectedData.toBuilder().set(field("foo.bar"), fieldValue.getProto()).build();
 
     Document expectedDoc =
@@ -317,14 +316,14 @@ public class MutationTest {
     FieldTransform first = transform.getFieldTransforms().get(0);
     assertEquals(field("a"), first.getFieldPath());
     assertEquals(
-        new ArrayTransformOperation.Union(Collections.singletonList(wrap("tag"))),
+        new ArrayTransformOperation.Union(Collections.singletonList(valueOf("tag"))),
         first.getOperation());
 
     FieldTransform second = transform.getFieldTransforms().get(1);
     assertEquals(field("bar.baz"), second.getFieldPath());
     assertEquals(
         new ArrayTransformOperation.Union(
-            Arrays.asList(wrap(true), wrapObject(map("nested", map("a", Arrays.asList(1, 2)))))),
+            Arrays.asList(valueOf(true), valueOf(map("nested", map("a", Arrays.asList(1, 2)))))),
         second.getOperation());
   }
 
@@ -340,7 +339,7 @@ public class MutationTest {
     FieldTransform first = transform.getFieldTransforms().get(0);
     assertEquals(field("foo"), first.getFieldPath());
     assertEquals(
-        new ArrayTransformOperation.Remove(Collections.singletonList(wrap("tag"))),
+        new ArrayTransformOperation.Remove(Collections.singletonList(valueOf("tag"))),
         first.getOperation());
   }
 
@@ -487,7 +486,7 @@ public class MutationTest {
 
     Mutation transform = transformMutation("collection/key", map("sum", FieldValue.increment(2)));
     MutationResult mutationResult =
-        new MutationResult(version(1), Collections.singletonList(IntegerValue.valueOf(3L)));
+        new MutationResult(version(1), Collections.singletonList(valueOf(3L)));
 
     MaybeDocument transformedDoc = transform.applyToRemoteDocument(baseDoc, mutationResult);
 
@@ -508,8 +507,7 @@ public class MutationTest {
     Timestamp serverTimestamp = new Timestamp(2, 0);
 
     MutationResult mutationResult =
-        new MutationResult(
-            version(1), Collections.singletonList(TimestampValue.valueOf(serverTimestamp)));
+        new MutationResult(version(1), Collections.singletonList(valueOf(serverTimestamp)));
 
     MaybeDocument transformedDoc = transform.applyToRemoteDocument(baseDoc, mutationResult);
 
@@ -532,7 +530,7 @@ public class MutationTest {
 
     // Server just sends null transform results for array operations.
     MutationResult mutationResult =
-        new MutationResult(version(1), Arrays.asList(wrap(null), wrap(null)));
+        new MutationResult(version(1), Arrays.asList(valueOf(null), valueOf(null)));
     MaybeDocument transformedDoc = transform.applyToRemoteDocument(baseDoc, mutationResult);
 
     Map<String, Object> expectedData =

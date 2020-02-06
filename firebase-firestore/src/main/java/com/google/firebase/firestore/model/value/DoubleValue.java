@@ -28,12 +28,4 @@ public class DoubleValue extends NumberValue {
   public double getDoubleValue() {
     return internalValue.getDoubleValue();
   }
-
-  public static DoubleValue valueOf(Double val) {
-    if (Double.isNaN(val)) {
-      return NaN;
-    } else {
-      return new DoubleValue(Value.newBuilder().setDoubleValue(val).build());
-    }
-  }
 }
