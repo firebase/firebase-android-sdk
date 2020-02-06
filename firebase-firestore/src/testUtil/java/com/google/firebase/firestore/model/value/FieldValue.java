@@ -21,6 +21,7 @@ import com.google.firestore.v1.Value;
  * Represents a FieldValue that is backed by a single Firestore V1 Value proto and implements
  * Firestore's Value semantics for ordering and equality.
  */
+// TODO(mrschmidt): Drop this class
 public class FieldValue implements Comparable<FieldValue> {
   final Value internalValue;
 

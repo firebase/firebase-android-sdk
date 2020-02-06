@@ -32,6 +32,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
@@ -44,6 +45,7 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import java.util.Arrays;
 import java.util.Collections;
@@ -156,7 +158,8 @@ public class MutationTest {
     ObjectValue expectedData =
         wrapObject(map("foo", map("bar", "<server-timestamp>"), "baz", "baz-value"));
     com.google.firebase.firestore.model.value.FieldValue fieldValue =
-        ServerTimestampValue.valueOf(timestamp, valueOf("bar-value"));
+        new com.google.firebase.firestore.model.value.FieldValue(
+            ServerTimestampValue.valueOf(timestamp, valueOf("bar-value")));
     expectedData = expectedData.toBuilder().set(field("foo.bar"), fieldValue.getProto()).build();
 
     Document expectedDoc =
@@ -308,9 +311,10 @@ public class MutationTest {
         transformMutation(
             "collection/key",
             map(
-                "a", FieldValue.arrayUnion("tag"),
+                "a",
+                FieldValue.arrayUnion("tag"),
                 "bar.baz",
-                    FieldValue.arrayUnion(true, map("nested", map("a", Arrays.asList(1, 2))))));
+                FieldValue.arrayUnion(true, map("nested", map("a", Arrays.asList(1, 2))))));
     assertEquals(2, transform.getFieldTransforms().size());
 
     FieldTransform first = transform.getFieldTransforms().get(0);
@@ -688,7 +692,7 @@ public class MutationTest {
                 0,
                 "nested",
                 map("double", 42.0, "long", 42, "string", 0, "map", 0, "missing", 0)));
-    assertEquals(expected, baseValue);
+    assertTrue(ProtoValues.equals(expected.getProto(), baseValue.getProto()));
   }
 
   @Test

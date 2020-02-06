@@ -80,7 +80,7 @@ public class FieldValueTest {
 
   @Test
   public void testExtractsFieldMask() {
-    FieldValue val =
+    ObjectValue val =
         wrapObject(
             "a",
             "b",
@@ -88,8 +88,7 @@ public class FieldValueTest {
             map("a", 1, "b", true, "c", "string", "nested", map("d", "e")),
             "emptymap",
             map());
-    assertTrue(val instanceof ObjectValue);
-    FieldMask mask = ((ObjectValue) val).getFieldMask();
+    FieldMask mask = val.getFieldMask();
     assertEquals(fieldMask("a", "map.a", "map.b", "map.c", "map.nested.d", "emptymap"), mask);
   }
 
@@ -254,21 +253,22 @@ public class FieldValueTest {
         .addEqualityGroup(wrap(timestamp2))
         // NOTE: ServerTimestampValues can't be parsed via wrap().
         .addEqualityGroup(
-            ServerTimestampValue.valueOf(new Timestamp(date1), null),
-            ServerTimestampValue.valueOf(new Timestamp(date1), null))
-        .addEqualityGroup(ServerTimestampValue.valueOf(new Timestamp(date2), null))
+            new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date1), null)),
+            new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date1), null)))
+        .addEqualityGroup(new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date2), null)))
         .addEqualityGroup(wrap(geoPoint1), wrap(new GeoPoint(1, 0)))
         .addEqualityGroup(wrap(geoPoint2))
-        .addEqualityGroup(wrap(ref("coll/doc1")), wrapRef(dbId("project"), key("coll/doc1")))
-        .addEqualityGroup(wrapRef(dbId("project", "bar"), key("coll/doc2")))
-        .addEqualityGroup(wrapRef(dbId("project", "baz"), key("coll/doc2")))
+        .addEqualityGroup(
+            wrap(ref("coll/doc1")), new FieldValue(wrapRef(dbId("project"), key("coll/doc1"))))
+        .addEqualityGroup(new FieldValue(wrapRef(dbId("project", "bar"), key("coll/doc2"))))
+        .addEqualityGroup(new FieldValue(wrapRef(dbId("project", "baz"), key("coll/doc2"))))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar")), wrap(Arrays.asList("foo", "bar")))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar", "baz")))
         .addEqualityGroup(wrap(Arrays.asList("foo")))
-        .addEqualityGroup(wrapObject(map("bar", 1, "foo", 2)), wrapObject(map("foo", 2, "bar", 1)))
-        .addEqualityGroup(wrapObject(map("bar", 2, "foo", 1)))
-        .addEqualityGroup(wrapObject(map("bar", 1)))
-        .addEqualityGroup(wrapObject(map("foo", 1)))
+        .addEqualityGroup(wrap(map("bar", 1, "foo", 2)), wrap(map("foo", 2, "bar", 1)))
+        .addEqualityGroup(wrap(map("bar", 2, "foo", 1)))
+        .addEqualityGroup(wrap(map("bar", 1)))
+        .addEqualityGroup(wrap(map("foo", 1)))
         .testEquals();
   }
 
@@ -312,8 +312,8 @@ public class FieldValueTest {
 
         // server timestamps come after all concrete timestamps.
         // NOTE: server timestamps can't be parsed with wrap().
-        .addEqualityGroup(ServerTimestampValue.valueOf(new Timestamp(date1), null))
-        .addEqualityGroup(ServerTimestampValue.valueOf(new Timestamp(date2), null))
+        .addEqualityGroup(new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date1), null)))
+        .addEqualityGroup(new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date2), null)))
 
         // strings
         .addEqualityGroup(wrap(""))
@@ -335,12 +335,12 @@ public class FieldValueTest {
         .addEqualityGroup(wrap(blob(255)))
 
         // resource names
-        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c1/doc1")))
-        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c1/doc2")))
-        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c10/doc1")))
-        .addEqualityGroup(wrapRef(dbId("p1", "d1"), key("c2/doc1")))
-        .addEqualityGroup(wrapRef(dbId("p1", "d2"), key("c1/doc1")))
-        .addEqualityGroup(wrapRef(dbId("p2", "d1"), key("c1/doc1")))
+        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c1/doc1"))))
+        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c1/doc2"))))
+        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c10/doc1"))))
+        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c2/doc1"))))
+        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d2"), key("c1/doc1"))))
+        .addEqualityGroup(new FieldValue(wrapRef(dbId("p2", "d1"), key("c1/doc1"))))
 
         // geo points
         .addEqualityGroup(wrap(new GeoPoint(-90, -180)))
@@ -363,11 +363,11 @@ public class FieldValueTest {
         .addEqualityGroup(wrap(Arrays.asList("foo", "0")))
 
         // objects
-        .addEqualityGroup(wrapObject(map("bar", 0)))
-        .addEqualityGroup(wrapObject(map("bar", 0, "foo", 1)))
-        .addEqualityGroup(wrapObject(map("foo", 1)))
-        .addEqualityGroup(wrapObject(map("foo", 2)))
-        .addEqualityGroup(wrapObject(map("foo", "0")))
+        .addEqualityGroup(wrap(map("bar", 0)))
+        .addEqualityGroup(wrap(map("bar", 0, "foo", 1)))
+        .addEqualityGroup(wrap(map("foo", 1)))
+        .addEqualityGroup(wrap(map("foo", 2)))
+        .addEqualityGroup(wrap(map("foo", "0")))
         .testCompare();
   }
 
@@ -381,7 +381,7 @@ public class FieldValueTest {
     assertCanonicalId(wrap(new Timestamp(30, 1000)), "time(30,1000)");
     assertCanonicalId(wrap("a"), "a");
     assertCanonicalId(wrap(blob(1, 2, 3)), "010203");
-    assertCanonicalId(wrapRef(dbId("p1", "d1"), key("c1/doc1")), "c1/doc1");
+    assertCanonicalId(new FieldValue(wrapRef(dbId("p1", "d1"), key("c1/doc1"))), "c1/doc1");
     assertCanonicalId(wrap(new GeoPoint(30, 60)), "geo(30.0,60.0)");
     assertCanonicalId(wrap(Arrays.asList(1, 2, 3)), "[1,2,3]");
     assertCanonicalId(wrap(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");

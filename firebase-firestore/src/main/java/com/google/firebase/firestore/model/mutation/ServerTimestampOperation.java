@@ -31,7 +31,7 @@ public class ServerTimestampOperation implements TransformOperation {
 
   @Override
   public Value applyToLocalView(@Nullable Value previousValue, Timestamp localWriteTime) {
-    return ServerTimestampValue.valueOf(localWriteTime, previousValue).getProto();
+    return ServerTimestampValue.valueOf(localWriteTime, previousValue);
   }
 
   @Override

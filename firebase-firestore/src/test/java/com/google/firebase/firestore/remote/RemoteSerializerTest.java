@@ -51,6 +51,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
@@ -121,7 +122,7 @@ public final class RemoteSerializerTest {
     com.google.firestore.v1.Value actual = value.getProto();
     assertEquals(typeCase, actual.getValueTypeCase());
     assertEquals(proto, actual);
-    assertEquals(value, new FieldValue(proto));
+    assertTrue(ProtoValues.equals(value.getProto(), proto));
   }
 
   @Test
@@ -258,7 +259,7 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesNestedObjects() {
-    FieldValue model =
+    ObjectValue model =
         TestUtil.wrapObject(
             map(
                 "b",
@@ -304,7 +305,7 @@ public final class RemoteSerializerTest {
             .putFields("o", valueBuilder().setMapValue(middle).build());
 
     com.google.firestore.v1.Value proto = valueBuilder().setMapValue(obj).build();
-    assertRoundTrip(model, proto, ValueTypeCase.MAP_VALUE);
+    assertRoundTrip(new FieldValue(model.getProto()), proto, ValueTypeCase.MAP_VALUE);
   }
 
   @Test
