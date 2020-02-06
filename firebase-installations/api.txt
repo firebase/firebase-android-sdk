@@ -6,7 +6,7 @@ package com.google.firebase.installations {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.String> getId();
     method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance();
     method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance(@NonNull com.google.firebase.FirebaseApp);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.installations.InstallationTokenResult> getToken(@com.google.firebase.installations.FirebaseInstallationsApi.AuthTokenOption int);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.installations.InstallationTokenResult> getToken(boolean);
   }
 
   public class FirebaseInstallationsException extends com.google.firebase.FirebaseException {
