@@ -147,9 +147,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /**
-   * Returns the {@link FirebaseInstallationsApi} initialized with the default {@link FirebaseApp}.
+   * Returns the {@link FirebaseInstallations} initialized with the default {@link FirebaseApp}.
    *
-   * @return a {@link FirebaseInstallationsApi} instance
+   * @return a {@link FirebaseInstallations} instance
    */
   @NonNull
   public static FirebaseInstallations getInstance() {
@@ -206,15 +206,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *
    * <p>Should only be called if the Firebase Installation is registered.
    *
-   * @param authTokenOption Options to get FIS Auth Token either by force refreshing or not. Accepts
-   *     {@link AuthTokenOption} values. Default value of AuthTokenOption = DO_NOT_FORCE_REFRESH.
+   * @param forceRefresh Options to get FIS Auth Token either by force refreshing or not.
    */
   @NonNull
   @Override
-  public Task<InstallationTokenResult> getToken(@AuthTokenOption int authTokenOption) {
+  public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
     preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
-    if (authTokenOption == FORCE_REFRESH) {
+    if (forceRefresh) {
       executor.execute(this::doGetAuthTokenForceRefresh);
     } else {
       executor.execute(this::doGetAuthTokenWithoutForceRefresh);
