@@ -34,15 +34,10 @@ import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.mutation.FieldMask;
-import com.google.firebase.firestore.model.value.BlobValue;
-import com.google.firebase.firestore.model.value.BooleanValue;
 import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.GeoPointValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.model.value.StringValue;
-import com.google.firebase.firestore.model.value.TimestampValue;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -73,10 +68,10 @@ public class FieldValueTest {
   @Test
   public void testExtractsFields() {
     ObjectValue obj = wrapObject("foo", map("a", 1, "b", true, "c", "string"));
-    assertTrue(obj.get(field("foo")) instanceof ObjectValue);
-    assertEquals(wrap(1), obj.get(field("foo.a")));
-    assertEquals(wrap(true), obj.get(field("foo.b")));
-    assertEquals(wrap("string"), obj.get(field("foo.c")));
+    assertTrue(ProtoValues.isMapValue(obj.get(field("foo"))));
+    assertEquals(valueOf(1), obj.get(field("foo.a")));
+    assertEquals(valueOf(true), obj.get(field("foo.b")));
+    assertEquals(valueOf("string"), obj.get(field("foo.c")));
 
     assertNull(obj.get(field("foo.a.b")));
     assertNull(obj.get(field("bar")));
@@ -228,38 +223,42 @@ public class FieldValueTest {
 
   @Test
   public void testValueEquality() {
+    GeoPoint geoPoint1 = new GeoPoint(1, 0);
+    GeoPoint geoPoint2 = new GeoPoint(0, 2);
+    Timestamp timestamp1 = new Timestamp(date1);
+    Timestamp timestamp2 = new Timestamp(date2);
     new EqualsTester()
-        .addEqualityGroup(wrap(true), BooleanValue.valueOf(true))
-        .addEqualityGroup(wrap(false), BooleanValue.valueOf(false))
-        .addEqualityGroup(wrap(null), FieldValue.valueOf(ProtoValues.NULL_VALUE))
+        .addEqualityGroup(wrap(true), new FieldValue(valueOf(true)))
+        .addEqualityGroup(wrap(false), new FieldValue(valueOf(false)))
+        .addEqualityGroup(wrap(null), new FieldValue(ProtoValues.NULL_VALUE))
         .addEqualityGroup(
             wrap(0.0 / 0.0),
             wrap(Double.longBitsToDouble(0x7ff8000000000000L)),
-            FieldValue.valueOf(ProtoValues.NAN_VALUE))
+            new FieldValue(ProtoValues.NAN_VALUE))
         // -0.0 and 0.0 compareTo the same but are not equal.
         .addEqualityGroup(wrap(-0.0))
         .addEqualityGroup(wrap(0.0))
-        .addEqualityGroup(wrap(1), FieldValue.valueOf(valueOf(1)))
+        .addEqualityGroup(wrap(1), new FieldValue(valueOf(1)))
         // Doubles and Longs aren't equal.
-        .addEqualityGroup(wrap(1.0), FieldValue.valueOf(valueOf(1.0)))
-        .addEqualityGroup(wrap(1.1), FieldValue.valueOf(valueOf(1.1)))
-        .addEqualityGroup(wrap(blob(0, 1, 2)), BlobValue.valueOf(blob(0, 1, 2)))
+        .addEqualityGroup(wrap(1.0), new FieldValue(valueOf(1.0)))
+        .addEqualityGroup(wrap(1.1), new FieldValue(valueOf(1.1)))
+        .addEqualityGroup(wrap(blob(0, 1, 2)), new FieldValue(valueOf(blob(0, 1, 2))))
         .addEqualityGroup(wrap(blob(0, 1)))
-        .addEqualityGroup(wrap("string"), StringValue.valueOf("string"))
-        .addEqualityGroup(StringValue.valueOf("strin"))
+        .addEqualityGroup(wrap("string"), new FieldValue(valueOf("string")))
+        .addEqualityGroup(wrap("strin"))
         // latin small letter e + combining acute accent
-        .addEqualityGroup(StringValue.valueOf("e\u0301b"))
+        .addEqualityGroup(wrap("e\u0301b"))
         // latin small letter e with acute accent
-        .addEqualityGroup(StringValue.valueOf("\u00e9a"))
-        .addEqualityGroup(wrap(date1), TimestampValue.valueOf(new Timestamp(date1)))
-        .addEqualityGroup(TimestampValue.valueOf(new Timestamp(date2)))
+        .addEqualityGroup(wrap("\u00e9a"))
+        .addEqualityGroup(wrap(date1), wrap(timestamp1))
+        .addEqualityGroup(wrap(timestamp2))
         // NOTE: ServerTimestampValues can't be parsed via wrap().
         .addEqualityGroup(
             ServerTimestampValue.valueOf(new Timestamp(date1), null),
             ServerTimestampValue.valueOf(new Timestamp(date1), null))
         .addEqualityGroup(ServerTimestampValue.valueOf(new Timestamp(date2), null))
-        .addEqualityGroup(wrap(new GeoPoint(0, 1)), GeoPointValue.valueOf(new GeoPoint(0, 1)))
-        .addEqualityGroup(GeoPointValue.valueOf(new GeoPoint(1, 0)))
+        .addEqualityGroup(wrap(geoPoint1), wrap(new GeoPoint(1, 0)))
+        .addEqualityGroup(wrap(geoPoint2))
         .addEqualityGroup(wrap(ref("coll/doc1")), wrapRef(dbId("project"), key("coll/doc1")))
         .addEqualityGroup(wrapRef(dbId("project", "bar"), key("coll/doc2")))
         .addEqualityGroup(wrapRef(dbId("project", "baz"), key("coll/doc2")))

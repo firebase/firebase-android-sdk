@@ -129,7 +129,7 @@ public final class TransformMutation extends Mutation {
     for (FieldTransform transform : fieldTransforms) {
       Value existingValue = null;
       if (maybeDoc instanceof Document) {
-        existingValue = ((Document) maybeDoc).getFieldProto(transform.getFieldPath());
+        existingValue = ((Document) maybeDoc).getField(transform.getFieldPath());
       }
 
       Value coercedValue = transform.getOperation().computeBaseValue(existingValue);
@@ -180,7 +180,7 @@ public final class TransformMutation extends Mutation {
 
       Value previousValue = null;
       if (baseDoc instanceof Document) {
-        previousValue = ((Document) baseDoc).getFieldProto(fieldTransform.getFieldPath());
+        previousValue = ((Document) baseDoc).getField(fieldTransform.getFieldPath());
       }
 
       transformResults.add(
@@ -207,14 +207,14 @@ public final class TransformMutation extends Mutation {
 
       Value previousValue = null;
       if (maybeDoc instanceof Document) {
-        previousValue = ((Document) maybeDoc).getFieldProto(fieldTransform.getFieldPath());
+        previousValue = ((Document) maybeDoc).getField(fieldTransform.getFieldPath());
       }
 
       if (previousValue == null && baseDoc instanceof Document) {
         // If the current document does not contain a value for the mutated field, use the value
         // that existed before applying this mutation batch. This solves an edge case where a
         // PatchMutation clears the values in a nested map before the TransformMutation is applied.
-        previousValue = ((Document) baseDoc).getFieldProto(fieldTransform.getFieldPath());
+        previousValue = ((Document) baseDoc).getField(fieldTransform.getFieldPath());
       }
 
       transformResults.add(transform.applyToLocalView(previousValue, localWriteTime));

@@ -750,7 +750,7 @@ public class Query {
       if (orderBy.getField().equals(com.google.firebase.firestore.model.FieldPath.KEY_PATH)) {
         components.add(ProtoValues.refValue(firestore.getDatabaseId(), document.getKey()));
       } else {
-        Value value = document.getFieldProto(orderBy.getField());
+        Value value = document.getField(orderBy.getField());
         if (ServerTimestampValue.isServerTimestamp(value)) {
           throw new IllegalArgumentException(
               "Invalid query. You are trying to start or end a query using a document for which "

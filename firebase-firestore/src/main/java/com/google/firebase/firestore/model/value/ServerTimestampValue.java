@@ -88,12 +88,10 @@ public final class ServerTimestampValue extends FieldValue {
    * backend responds with the timestamp {@link DocumentSnapshot.ServerTimestampBehavior}.
    */
   @Nullable
-  public FieldValue getPreviousValue() {
-    Value previous = internalValue.getMapValue().getFieldsOrDefault(PREVIOUS_VALUE_KEY, null);
-
-    FieldValue previousValue = FieldValue.valueOf(previous);
-    if (previousValue instanceof ServerTimestampValue) {
-      return ((ServerTimestampValue) previousValue).getPreviousValue();
+  public Value getPreviousValue() {
+    Value previousValue = internalValue.getMapValue().getFieldsOrDefault(PREVIOUS_VALUE_KEY, null);
+    if (ServerTimestampValue.isServerTimestamp(previousValue)) {
+      return new ServerTimestampValue(previousValue).getPreviousValue();
     }
     return previousValue;
   }

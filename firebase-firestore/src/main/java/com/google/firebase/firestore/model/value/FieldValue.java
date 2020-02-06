@@ -14,89 +14,18 @@
 
 package com.google.firebase.firestore.model.value;
 
-import static com.google.firebase.firestore.util.Assert.fail;
-
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firestore.v1.Value;
 
 /**
  * Represents a FieldValue that is backed by a single Firestore V1 Value proto and implements
  * Firestore's Value semantics for ordering and equality.
- *
- * <p>Supported types are:
- *
- * <ul>
- *   <li>Null
- *   <li>Boolean
- *   <li>Long
- *   <li>Double
- *   <li>Timestamp
- *   <li>ServerTimestamp (a sentinel used in uncommitted writes)
- *   <li>String
- *   <li>Binary
- *   <li>(Document) References
- *   <li>GeoPoint
- *   <li>Array
- *   <li>Object
- * </ul>
  */
 public class FieldValue implements Comparable<FieldValue> {
-  /** The order of types in Firestore; this order is defined by the backend. */
-  static final int TYPE_ORDER_NULL = 0;
-
-  static final int TYPE_ORDER_BOOLEAN = 1;
-  static final int TYPE_ORDER_NUMBER = 2;
-  static final int TYPE_ORDER_TIMESTAMP = 3;
-  static final int TYPE_ORDER_STRING = 4;
-  static final int TYPE_ORDER_BLOB = 5;
-  static final int TYPE_ORDER_REFERENCE = 6;
-  static final int TYPE_ORDER_GEOPOINT = 7;
-  static final int TYPE_ORDER_ARRAY = 8;
-  static final int TYPE_ORDER_OBJECT = 9;
-
   final Value internalValue;
 
-  FieldValue(Value value) {
+  public FieldValue(Value value) {
     this.internalValue = value;
-  }
-
-  /** Creates a new FieldValue based on the Protobuf Value. */
-  // TODO(mrschmidt): Unify with UserDataReader.parseScalarValue()
-  public static @Nullable FieldValue valueOf(@Nullable Value value) {
-    if (value == null) {
-      return null;
-    }
-
-    switch (value.getValueTypeCase()) {
-      case NULL_VALUE:
-        return new FieldValue(value);
-      case BOOLEAN_VALUE:
-        return new BooleanValue(value);
-      case INTEGER_VALUE:
-        return new FieldValue(value);
-      case DOUBLE_VALUE:
-        return new FieldValue(value);
-      case TIMESTAMP_VALUE:
-        return new TimestampValue(value);
-      case STRING_VALUE:
-        return new StringValue(value);
-      case BYTES_VALUE:
-        return new BlobValue(value);
-      case REFERENCE_VALUE:
-        return new FieldValue(value);
-      case GEO_POINT_VALUE:
-        return new GeoPointValue(value);
-      case ARRAY_VALUE:
-        return new FieldValue(value);
-      case MAP_VALUE:
-        if (ServerTimestampValue.isServerTimestamp(value)) {
-          return new ServerTimestampValue(value);
-        }
-        return new ObjectValue(value);
-      default:
-        throw fail("Invlaid value type: %s", value.getValueTypeCase());
-    }
   }
 
   /** Returns Firestore Value Protobuf that backs this FieldValuee */
