@@ -57,8 +57,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li>provide auth token of a Firebase installation
  *   <li>provide a API to GDPR-delete a Firebase installation
  * </ul>
- *
- * @hide
  */
 public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final FirebaseApp firebaseApp;

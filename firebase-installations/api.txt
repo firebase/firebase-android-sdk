@@ -1,6 +1,14 @@
 // Signature format: 2.0
 package com.google.firebase.installations {
 
+  public class FirebaseInstallations implements com.google.firebase.installations.FirebaseInstallationsApi {
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> delete();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.String> getId();
+    method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance();
+    method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.installations.InstallationTokenResult> getToken(@com.google.firebase.installations.FirebaseInstallationsApi.AuthTokenOption int);
+  }
+
   public class FirebaseInstallationsException extends com.google.firebase.FirebaseException {
     ctor public FirebaseInstallationsException(@NonNull com.google.firebase.installations.FirebaseInstallationsException.Status);
     ctor public FirebaseInstallationsException(@NonNull String, @NonNull com.google.firebase.installations.FirebaseInstallationsException.Status);

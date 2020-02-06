@@ -1,17 +1,6 @@
 // Signature format: 2.0
 package com.google.firebase.installations {
 
-  public interface FirebaseInstallationsApi {
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> delete();
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.String> getId();
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.installations.InstallationTokenResult> getToken(@com.google.firebase.installations.FirebaseInstallationsApi.AuthTokenOption int);
-    field public static final int DO_NOT_FORCE_REFRESH = 0; // 0x0
-    field public static final int FORCE_REFRESH = 1; // 0x1
-  }
-
-  @IntDef({com.google.firebase.installations.FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH, com.google.firebase.installations.FirebaseInstallationsApi.FORCE_REFRESH}) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface FirebaseInstallationsApi.AuthTokenOption {
-  }
-
   public abstract class InstallationTokenResult {
     ctor public InstallationTokenResult();
     method @NonNull public static com.google.firebase.installations.InstallationTokenResult.Builder builder();
