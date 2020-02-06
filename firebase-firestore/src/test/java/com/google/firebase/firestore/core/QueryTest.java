@@ -604,13 +604,13 @@ public class QueryTest {
             .orderBy(orderBy("a"))
             .startAt(
                 new Bound(Arrays.asList(valueOf("foo"), valueOf(Arrays.asList(1, 2, 3))), true)),
-        "collection|f:|ob:aasc__name__asc|lb:b:foo[1,2,3]");
+        "collection|f:|ob:aasc__name__asc|lb:b:foo,[1,2,3]");
     assertCanonicalId(
         baseQuery
             .orderBy(orderBy("a"))
             .endAt(
                 new Bound(Arrays.asList(valueOf("foo"), valueOf(Arrays.asList(1, 2, 3))), false)),
-        "collection|f:|ob:aasc__name__asc|ub:a:foo[1,2,3]");
+        "collection|f:|ob:aasc__name__asc|ub:a:foo,[1,2,3]");
     assertCanonicalId(baseQuery.limitToFirst(5), "collection|f:|ob:__name__asc|l:5");
     assertCanonicalId(baseQuery.limitToLast(5), "collection|f:|ob:__name__desc|l:5");
   }

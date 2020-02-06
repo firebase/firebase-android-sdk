@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firestore.v1.Value;
 
@@ -31,7 +30,7 @@ public class InFilter extends FieldFilter {
 
   @Override
   public boolean matches(Document doc) {
-    FieldValue other = doc.getField(getField());
-    return other != null && ProtoValues.contains(getValue().getArrayValue(), other.getProto());
+    Value other = doc.getFieldProto(getField());
+    return other != null && ProtoValues.contains(getValue().getArrayValue(), other);
   }
 }

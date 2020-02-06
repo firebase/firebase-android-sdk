@@ -65,7 +65,12 @@ public final class Bound {
     } else {
       builder.append("a:");
     }
+    boolean first = true;
     for (Value indexComponent : position) {
+      if (!first) {
+        builder.append(",");
+      }
+      first = false;
       builder.append(ProtoValues.canonicalId(indexComponent));
     }
     return builder.toString();

@@ -165,8 +165,8 @@ public class ProtoValues {
 
   /** Returns true if the Value list contains the specified element. */
   public static boolean contains(ArrayValueOrBuilder haystack, Value needle) {
-    for (Value haystackEl : haystack.getValuesList()) {
-      if (equals(haystackEl, needle)) {
+    for (Value haystackElement : haystack.getValuesList()) {
+      if (equals(haystackElement, needle)) {
         return true;
       }
     }
