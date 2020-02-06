@@ -42,17 +42,17 @@ public class ProtoValues {
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
 
   /** The order of types in Firestore; this order is defined by the backend. */
-  private static final int TYPE_ORDER_NULL = 0;
+  public static final int TYPE_ORDER_NULL = 0;
 
-  private static final int TYPE_ORDER_BOOLEAN = 1;
-  private static final int TYPE_ORDER_NUMBER = 2;
-  private static final int TYPE_ORDER_TIMESTAMP = 3;
-  private static final int TYPE_ORDER_STRING = 4;
-  private static final int TYPE_ORDER_BLOB = 5;
-  private static final int TYPE_ORDER_REFERENCE = 6;
-  private static final int TYPE_ORDER_GEOPOINT = 7;
-  private static final int TYPE_ORDER_ARRAY = 8;
-  private static final int TYPE_ORDER_MAP = 9;
+  public static final int TYPE_ORDER_BOOLEAN = 1;
+  public static final int TYPE_ORDER_NUMBER = 2;
+  public static final int TYPE_ORDER_TIMESTAMP = 3;
+  public static final int TYPE_ORDER_STRING = 4;
+  public static final int TYPE_ORDER_BLOB = 5;
+  public static final int TYPE_ORDER_REFERENCE = 6;
+  public static final int TYPE_ORDER_GEOPOINT = 7;
+  public static final int TYPE_ORDER_ARRAY = 8;
+  public static final int TYPE_ORDER_MAP = 9;
 
   /** Returns the backend's type order of the given Value type. */
   public static int typeOrder(Value value) {
@@ -178,8 +178,8 @@ public class ProtoValues {
 
   /** Returns true if the Value list contains the specified element. */
   public static boolean contains(ArrayValueOrBuilder haystack, Value needle) {
-    for (Value haystackEl : haystack.getValuesList()) {
-      if (equals(haystackEl, needle)) {
+    for (Value haystackElement : haystack.getValuesList()) {
+      if (equals(haystackElement, needle)) {
         return true;
       }
     }
@@ -410,11 +410,19 @@ public class ProtoValues {
     builder.append("]");
   }
 
+  /** Returns true if `value` is either a INTEGER_VALUE. */
+  public static boolean isInteger(@Nullable Value value) {
+    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE;
+  }
+
+  /** Returns true if `value` is either a DOUBLE_VALUE. */
+  public static boolean isDouble(@Nullable Value value) {
+    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE;
+  }
+
   /** Returns true if `value` is either a INTEGER_VALUE or a DOUBLE_VALUE. */
   public static boolean isNumber(@Nullable Value value) {
-    return value != null
-        && (value.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE
-            || value.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE);
+    return isInteger(value) || isDouble(value);
   }
 
   /** Returns true if `value` is an ARRAY_VALUE. */
