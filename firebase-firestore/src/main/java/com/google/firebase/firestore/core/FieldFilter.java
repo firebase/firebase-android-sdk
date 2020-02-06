@@ -79,7 +79,7 @@ public class FieldFilter extends Filter {
             operator.toString() + "queries don't make sense on document keys");
         return new KeyFieldFilter(path, operator, (ReferenceValue) value);
       }
-    } else if (value.equals(NullValue.nullValue())) {
+    } else if (value.equals(NullValue.NULL)) {
       if (operator != Filter.Operator.EQUAL) {
         throw new IllegalArgumentException(
             "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
@@ -145,7 +145,7 @@ public class FieldFilter extends Filter {
   public String getCanonicalId() {
     // TODO: Technically, this won't be unique if two values have the same description,
     // such as the int 3 and the string "3". So we should add the types in here somehow, too.
-    return getField().canonicalString() + getOperator().toString() + getValue().toString();
+    return getField().canonicalString() + getOperator().toString() + getValue().getCanonicalId();
   }
 
   @Override

@@ -27,7 +27,7 @@ public class KeyFieldFilter extends FieldFilter {
   @Override
   public boolean matches(Document doc) {
     ReferenceValue referenceValue = (ReferenceValue) getValue();
-    int comparator = doc.getKey().compareTo(referenceValue.value());
+    int comparator = doc.getKey().compareTo(referenceValue.getKey());
     return this.matchesComparison(comparator);
   }
 }

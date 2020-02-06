@@ -42,17 +42,17 @@ public class NumericIncrementTransformOperation implements TransformOperation {
 
     // Return an integer value only if the previous value and the operand is an integer.
     if (baseValue instanceof IntegerValue && operand instanceof IntegerValue) {
-      long sum = safeIncrement(((IntegerValue) baseValue).getInternalValue(), operandAsLong());
+      long sum = safeIncrement(((IntegerValue) baseValue).getIntegerValue(), operandAsLong());
       return IntegerValue.valueOf(sum);
     } else if (baseValue instanceof IntegerValue) {
-      double sum = ((IntegerValue) baseValue).getInternalValue() + operandAsDouble();
+      double sum = ((IntegerValue) baseValue).getIntegerValue() + operandAsDouble();
       return DoubleValue.valueOf(sum);
     } else {
       hardAssert(
           baseValue instanceof DoubleValue,
           "Expected NumberValue to be of type DoubleValue, but was ",
           previousValue.getClass().getCanonicalName());
-      double sum = ((DoubleValue) baseValue).getInternalValue() + operandAsDouble();
+      double sum = ((DoubleValue) baseValue).getDoubleValue() + operandAsDouble();
       return DoubleValue.valueOf(sum);
     }
   }
@@ -99,9 +99,9 @@ public class NumericIncrementTransformOperation implements TransformOperation {
 
   private double operandAsDouble() {
     if (operand instanceof DoubleValue) {
-      return ((DoubleValue) operand).getInternalValue();
+      return ((DoubleValue) operand).getDoubleValue();
     } else if (operand instanceof IntegerValue) {
-      return ((IntegerValue) operand).getInternalValue();
+      return ((IntegerValue) operand).getIntegerValue();
     } else {
       throw fail(
           "Expected 'operand' to be of Number type, but was "
@@ -111,9 +111,9 @@ public class NumericIncrementTransformOperation implements TransformOperation {
 
   private long operandAsLong() {
     if (operand instanceof DoubleValue) {
-      return (long) ((DoubleValue) operand).getInternalValue();
+      return (long) ((DoubleValue) operand).getDoubleValue();
     } else if (operand instanceof IntegerValue) {
-      return ((IntegerValue) operand).getInternalValue();
+      return ((IntegerValue) operand).getIntegerValue();
     } else {
       throw fail(
           "Expected 'operand' to be of Number type, but was "

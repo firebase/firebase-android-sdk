@@ -18,6 +18,8 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firestore.v1.Value;
 
 /** A Filter that implements the array-contains-any operator. */
 public class ArrayContainsAnyFilter extends FieldFilter {
@@ -27,13 +29,12 @@ public class ArrayContainsAnyFilter extends FieldFilter {
 
   @Override
   public boolean matches(Document doc) {
-    ArrayValue arrayValue = (ArrayValue) getValue();
     FieldValue other = doc.getField(getField());
     if (!(other instanceof ArrayValue)) {
       return false;
     }
-    for (FieldValue val : ((ArrayValue) other).getInternalValue()) {
-      if (arrayValue.getInternalValue().contains(val)) {
+    for (Value val : other.getProto().getArrayValue().getValuesList()) {
+      if (ProtoValues.contains(getValue().getProto().getArrayValue().getValuesList(), val)) {
         return true;
       }
     }
