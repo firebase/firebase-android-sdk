@@ -45,7 +45,7 @@ public class ObjectValue {
         "ObjectValues should be backed by a MapValue");
     hardAssert(
         !ServerTimestampValue.isServerTimestamp(value),
-        "ServerTimestamps should not be treated as ObjectValues");
+        "ServerTimestamps should not be used as an ObjectValue");
     this.internalValue = value;
   }
 
