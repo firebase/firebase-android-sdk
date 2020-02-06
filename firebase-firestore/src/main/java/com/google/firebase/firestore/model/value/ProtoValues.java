@@ -397,11 +397,19 @@ public class ProtoValues {
     builder.append("]");
   }
 
+  /** Returns true if `value` is either a INTEGER_VALUE. */
+  public static boolean isInteger(@Nullable Value value) {
+    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE;
+  }
+
+  /** Returns true if `value` is either a DOUBLE_VALUE. */
+  public static boolean isDouble(@Nullable Value value) {
+    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE;
+  }
+
   /** Returns true if `value` is either a INTEGER_VALUE or a DOUBLE_VALUE. */
   public static boolean isNumber(@Nullable Value value) {
-    return value != null
-        && (value.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE
-            || value.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE);
+    return isInteger(value) || isDouble(value);
   }
 
   /** Returns true if `value` is an ARRAY_VALUE. */
