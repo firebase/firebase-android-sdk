@@ -14,61 +14,22 @@
 
 package com.google.firebase.firestore.model.value;
 
-import androidx.annotation.NonNull;
 import com.google.firebase.Timestamp;
+import com.google.firestore.v1.Value;
 
 /** A wrapper for Date values in Timestamp. */
-public final class TimestampValue extends FieldValue {
-  private final Timestamp internalValue;
-
-  TimestampValue(Timestamp t) {
-    internalValue = t;
+public class TimestampValue extends FieldValue {
+  TimestampValue(Value value) {
+    super(value);
   }
 
-  @Override
-  public int typeOrder() {
-    return TYPE_ORDER_TIMESTAMP;
-  }
-
-  @Override
-  @NonNull
-  public Timestamp value() {
-    return internalValue;
-  }
-
-  public Timestamp getInternalValue() {
-    return internalValue;
-  }
-
-  @Override
-  public String toString() {
-    return internalValue.toString();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return (o instanceof TimestampValue)
-        && internalValue.equals(((TimestampValue) o).internalValue);
-  }
-
-  @Override
-  public int hashCode() {
-    return internalValue.hashCode();
-  }
-
-  @Override
-  public int compareTo(FieldValue o) {
-    if (o instanceof TimestampValue) {
-      return internalValue.compareTo(((TimestampValue) o).internalValue);
-    } else if (o instanceof ServerTimestampValue) {
-      // Concrete timestamps come before server timestamps.
-      return -1;
-    } else {
-      return defaultCompareTo(o);
-    }
-  }
-
-  public static TimestampValue valueOf(Timestamp t) {
-    return new TimestampValue(t);
+  public static TimestampValue valueOf(Timestamp timestamp) {
+    return new TimestampValue(
+        Value.newBuilder()
+            .setTimestampValue(
+                com.google.protobuf.Timestamp.newBuilder()
+                    .setSeconds(timestamp.getSeconds())
+                    .setNanos(timestamp.getNanoseconds()))
+            .build());
   }
 }

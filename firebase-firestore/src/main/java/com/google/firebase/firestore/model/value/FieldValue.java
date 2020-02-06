@@ -14,17 +14,15 @@
 
 package com.google.firebase.firestore.model.value;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Assert.fail;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.model.protovalue.ObjectValue;
-import com.google.firebase.firestore.model.protovalue.PrimitiveValue;
-import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.Value;
 
 /**
- * A field value represents a data type as stored by Firestore.
+ * Represents a FieldValue that is backed by a single Firestore V1 Value proto and implements
+ * Firestore's Value semantics for ordering and equality.
  *
  * <p>Supported types are:
  *
@@ -43,59 +41,101 @@ import com.google.firestore.v1.Value;
  *   <li>Object
  * </ul>
  */
-public abstract class FieldValue implements Comparable<FieldValue> {
-
-  // TODO(mrschmidt): Reduce visibility of these types once `protovalue`
-  // is merged into `value` package
+public class FieldValue implements Comparable<FieldValue> {
   /** The order of types in Firestore; this order is defined by the backend. */
-  public static final int TYPE_ORDER_NULL = 0;
+  static final int TYPE_ORDER_NULL = 0;
 
-  public static final int TYPE_ORDER_BOOLEAN = 1;
-  public static final int TYPE_ORDER_NUMBER = 2;
-  public static final int TYPE_ORDER_TIMESTAMP = 3;
-  public static final int TYPE_ORDER_STRING = 4;
-  public static final int TYPE_ORDER_BLOB = 5;
-  public static final int TYPE_ORDER_REFERENCE = 6;
-  public static final int TYPE_ORDER_GEOPOINT = 7;
-  public static final int TYPE_ORDER_ARRAY = 8;
-  public static final int TYPE_ORDER_OBJECT = 9;
+  static final int TYPE_ORDER_BOOLEAN = 1;
+  static final int TYPE_ORDER_NUMBER = 2;
+  static final int TYPE_ORDER_TIMESTAMP = 3;
+  static final int TYPE_ORDER_STRING = 4;
+  static final int TYPE_ORDER_BLOB = 5;
+  static final int TYPE_ORDER_REFERENCE = 6;
+  static final int TYPE_ORDER_GEOPOINT = 7;
+  static final int TYPE_ORDER_ARRAY = 8;
+  static final int TYPE_ORDER_OBJECT = 9;
+
+  final Value internalValue;
+
+  FieldValue(Value value) {
+    this.internalValue = value;
+  }
 
   /** Creates a new FieldValue based on the Protobuf Value. */
-  public static FieldValue of(Value value) {
-    if (value.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
-      return new ObjectValue(value);
-    } else {
-      return new PrimitiveValue(value);
+  // TODO(mrschmidt): Unify with UserDataReader.parseScalarValue()
+  public static @Nullable FieldValue valueOf(@Nullable Value value) {
+    if (value == null) {
+      return null;
+    }
+
+    switch (value.getValueTypeCase()) {
+      case NULL_VALUE:
+        return NullValue.NULL;
+      case BOOLEAN_VALUE:
+        return new BooleanValue(value);
+      case INTEGER_VALUE:
+        return new IntegerValue(value);
+      case DOUBLE_VALUE:
+        return new DoubleValue(value);
+      case TIMESTAMP_VALUE:
+        return new TimestampValue(value);
+      case STRING_VALUE:
+        return new StringValue(value);
+      case BYTES_VALUE:
+        return new BlobValue(value);
+      case REFERENCE_VALUE:
+        return new ReferenceValue(value);
+      case GEO_POINT_VALUE:
+        return new GeoPointValue(value);
+      case ARRAY_VALUE:
+        return new ArrayValue(value);
+      case MAP_VALUE:
+        if (ServerTimestampValue.isServerTimestamp(value)) {
+          return new ServerTimestampValue(value);
+        }
+        return new ObjectValue(value);
+      default:
+        throw fail("Invlaid value type: %s", value.getValueTypeCase());
     }
   }
 
-  public abstract int typeOrder();
+  /** Returns the type order as defined by the backend. */
+  public int typeOrder() {
+    return ProtoValues.typeOrder(internalValue);
+  }
 
-  /**
-   * Converts a FieldValue into the value that users will see in document snapshots using the
-   * default deserialization options.
-   */
-  @Nullable
-  public abstract Object value();
+  /** Returns Firestore Value Protobuf that backs this FieldValuee */
+  public Value getProto() {
+    return internalValue;
+  }
+
+  /** Returns the canonical ID representation for the contents of this FieldValue. */
+  public String getCanonicalId() {
+    return ProtoValues.canonicalId(internalValue);
+  }
 
   @Override
-  public abstract boolean equals(Object o);
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    } else if (o instanceof FieldValue) {
+      return ProtoValues.equals(internalValue, ((FieldValue) o).internalValue);
+    }
+    return false;
+  }
 
   @Override
-  public abstract int hashCode();
+  public int hashCode() {
+    return internalValue.hashCode();
+  }
 
   @Override
-  public abstract int compareTo(@NonNull FieldValue o);
+  public int compareTo(@NonNull FieldValue other) {
+    return ProtoValues.compare(internalValue, other.internalValue);
+  }
 
   @Override
   public String toString() {
-    Object val = value();
-    return val == null ? "null" : val.toString();
-  }
-
-  protected int defaultCompareTo(FieldValue other) {
-    int cmp = Util.compareIntegers(typeOrder(), other.typeOrder());
-    hardAssert(cmp != 0, "Default compareTo should not be used for values of same type.");
-    return cmp;
+    return getCanonicalId();
   }
 }

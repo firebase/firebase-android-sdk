@@ -14,47 +14,17 @@
 
 package com.google.firebase.firestore.model.value;
 
-import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.Value;
 
 /** A wrapper for boolean value in Firestore. */
 public class BooleanValue extends FieldValue {
-  private static final BooleanValue TRUE_VALUE = new BooleanValue(Boolean.TRUE);
-  private static final BooleanValue FALSE_VALUE = new BooleanValue(Boolean.FALSE);
+  private static final BooleanValue TRUE_VALUE =
+      new BooleanValue(Value.newBuilder().setBooleanValue(true).build());
+  private static final BooleanValue FALSE_VALUE =
+      new BooleanValue(Value.newBuilder().setBooleanValue(false).build());
 
-  private final boolean internalValue;
-
-  private BooleanValue(Boolean b) {
-    internalValue = b;
-  }
-
-  @Override
-  public int typeOrder() {
-    return TYPE_ORDER_BOOLEAN;
-  }
-
-  @Override
-  public Boolean value() {
-    return internalValue;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    // Since we create shared instances for true / false, we can use reference equality.
-    return this == o;
-  }
-
-  @Override
-  public int hashCode() {
-    return internalValue ? 1 : 0;
-  }
-
-  @Override
-  public int compareTo(FieldValue o) {
-    if (o instanceof BooleanValue) {
-      return Util.compareBooleans(internalValue, ((BooleanValue) o).internalValue);
-    } else {
-      return defaultCompareTo(o);
-    }
+  BooleanValue(Value value) {
+    super(value);
   }
 
   public static BooleanValue valueOf(Boolean b) {

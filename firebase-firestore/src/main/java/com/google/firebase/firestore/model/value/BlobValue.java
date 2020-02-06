@@ -15,45 +15,15 @@
 package com.google.firebase.firestore.model.value;
 
 import com.google.firebase.firestore.Blob;
+import com.google.firestore.v1.Value;
 
 /** A wrapper for blob values in Firestore. */
 public class BlobValue extends FieldValue {
-  private final Blob internalValue;
-
-  private BlobValue(Blob blob) {
-    internalValue = blob;
-  }
-
-  @Override
-  public int typeOrder() {
-    return TYPE_ORDER_BLOB;
-  }
-
-  @Override
-  public Blob value() {
-    return internalValue;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return (o instanceof BlobValue) && internalValue.equals(((BlobValue) o).internalValue);
-  }
-
-  @Override
-  public int hashCode() {
-    return internalValue.hashCode();
-  }
-
-  @Override
-  public int compareTo(FieldValue o) {
-    if (o instanceof BlobValue) {
-      return internalValue.compareTo(((BlobValue) o).internalValue);
-    } else {
-      return defaultCompareTo(o);
-    }
+  BlobValue(Value value) {
+    super(value);
   }
 
   public static BlobValue valueOf(Blob blob) {
-    return new BlobValue(blob);
+    return new BlobValue(Value.newBuilder().setBytesValue(blob.toByteString()).build());
   }
 }

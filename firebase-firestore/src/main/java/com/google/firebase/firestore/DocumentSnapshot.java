@@ -149,7 +149,7 @@ public class DocumentSnapshot {
             firestore,
             firestore.getFirestoreSettings().areTimestampsInSnapshotsEnabled(),
             serverTimestampBehavior);
-    return doc == null ? null : userDataWriter.convertObject(doc.getData());
+    return doc == null ? null : userDataWriter.convertObject(doc.getData().getFieldsMap());
   }
 
   /**
@@ -533,7 +533,7 @@ public class DocumentSnapshot {
       if (val != null) {
         UserDataWriter userDataWriter =
             new UserDataWriter(firestore, timestampsInSnapshots, serverTimestampBehavior);
-        return userDataWriter.convertValue(val);
+        return userDataWriter.convertValue(val.getProto());
       }
     }
     return null;

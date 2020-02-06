@@ -18,6 +18,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
 
 /** A Filter that implements the array-contains operator. */
 public class ArrayContainsFilter extends FieldFilter {
@@ -29,6 +30,7 @@ public class ArrayContainsFilter extends FieldFilter {
   public boolean matches(Document doc) {
     FieldValue other = doc.getField(getField());
     return other instanceof ArrayValue
-        && ((ArrayValue) other).getInternalValue().contains(getValue());
+        && ProtoValues.contains(
+            other.getProto().getArrayValue().getValuesList(), getValue().getProto());
   }
 }

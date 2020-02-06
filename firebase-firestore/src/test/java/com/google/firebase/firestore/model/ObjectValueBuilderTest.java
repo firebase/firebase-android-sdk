@@ -14,16 +14,14 @@
 
 package com.google.firebase.firestore.model;
 
-import static com.google.firebase.firestore.Values.map;
-import static com.google.firebase.firestore.Values.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.wrap;
+import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
 
-import com.google.firebase.firestore.model.protovalue.ObjectValue;
-import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firestore.v1.Value;
-import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -32,9 +30,11 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class ObjectValueBuilderTest {
-  private Value fooValue = valueOf("foo");
-  private Value barValue = valueOf("bar");
-  private Value emptyObject = valueOf(Collections.emptyMap());
+  private String fooString = "foo";
+  private Value fooValue = wrap(fooString).getProto();
+  private String barString = "bar";
+  private Value barValue = wrap(barString).getProto();
+  private Value emptyObject = ObjectValue.emptyObject().getProto();
 
   @Test
   public void supportsEmptyBuilders() {
@@ -48,7 +48,7 @@ public class ObjectValueBuilderTest {
     ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("foo"), fooValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("foo", fooValue), object);
+    assertEquals(wrapObject(fooString, fooString), object);
   }
 
   @Test
@@ -56,7 +56,7 @@ public class ObjectValueBuilderTest {
     ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("foo"), emptyObject);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("foo", emptyObject), object);
+    assertEquals(wrapObject(fooString, map()), object);
   }
 
   @Test
@@ -65,7 +65,7 @@ public class ObjectValueBuilderTest {
     builder.set(field("foo"), fooValue);
     builder.set(field("bar"), fooValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("foo", fooValue, "bar", fooValue), object);
+    assertEquals(wrapObject(fooString, fooString, "bar", fooString), object);
   }
 
   @Test
@@ -74,7 +74,7 @@ public class ObjectValueBuilderTest {
     builder.set(field("a.b"), fooValue);
     builder.set(field("c.d.e"), fooValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("b", fooValue), "c", map("d", map("e", fooValue))), object);
+    assertEquals(wrapObject("a", map("b", fooString), "c", map("d", map("e", fooString))), object);
   }
 
   @Test
@@ -83,16 +83,16 @@ public class ObjectValueBuilderTest {
     builder.set(field("a.b"), fooValue);
     builder.set(field("a.c"), fooValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("b", fooValue, "c", fooValue)), object);
+    assertEquals(wrapObject("a", map("b", fooString, "c", fooString)), object);
   }
 
   @Test
   public void setsFieldInNestedObject() {
     ObjectValue.Builder builder = ObjectValue.newBuilder();
-    builder.set(field("a"), map("b", fooValue));
+    builder.set(field("a"), wrapObject("b", fooString).getProto());
     builder.set(field("a.c"), fooValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("b", fooValue, "c", fooValue)), object);
+    assertEquals(wrapObject("a", map("b", fooString, "c", fooString)), object);
   }
 
   @Test
@@ -101,23 +101,23 @@ public class ObjectValueBuilderTest {
     builder.set(field("a.b.c.d.e.f"), fooValue);
     ObjectValue object = builder.build();
     assertEquals(
-        wrapObject("a", map("b", map("c", map("d", map("e", map("f", fooValue)))))), object);
+        wrapObject("a", map("b", map("c", map("d", map("e", map("f", fooString)))))), object);
   }
 
   @Test
   public void setsNestedFieldMultipleTimes() {
     ObjectValue.Builder builder = ObjectValue.newBuilder();
     builder.set(field("a.c"), fooValue);
-    builder.set(field("a"), map("b", fooValue));
+    builder.set(field("a"), wrapObject("b", fooString).getProto());
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("b", fooValue)), object);
+    assertEquals(wrapObject("a", map("b", fooString)), object);
   }
 
   @Test
   public void setsAndDeletesField() {
     ObjectValue.Builder builder = ObjectValue.newBuilder();
-    builder.set(field("foo"), fooValue);
-    builder.delete(field("foo"));
+    builder.set(field(fooString), fooValue);
+    builder.delete(field(fooString));
     ObjectValue object = builder.build();
     assertEquals(wrapObject(), object);
   }
@@ -132,106 +132,99 @@ public class ObjectValueBuilderTest {
     builder.delete(field("a.b.c"));
     builder.delete(field("h"));
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("b", map("d", fooValue)), "f", map("g", fooValue)), object);
+    assertEquals(wrapObject("a", map("b", map("d", fooString)), "f", map("g", fooString)), object);
   }
 
   @Test
   public void setsSingleFieldInExistingObject() {
-    ObjectValue.Builder builder = wrapObject("a", fooValue).toBuilder();
+    ObjectValue.Builder builder = wrapObject("a", fooString).toBuilder();
     builder.set(field("b"), fooValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", fooValue, "b", fooValue), object);
+    assertEquals(wrapObject("a", fooString, "b", fooString), object);
   }
 
   @Test
   public void overwritesField() {
-    ObjectValue.Builder builder = wrapObject("a", fooValue).toBuilder();
+    ObjectValue.Builder builder = wrapObject("a", fooString).toBuilder();
     builder.set(field("a"), barValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", barValue), object);
+    assertEquals(wrapObject("a", barString), object);
   }
 
   @Test
   public void overwritesNestedFields() {
     ObjectValue.Builder builder =
-        wrapObject("a", map("b", fooValue, "c", map("d", fooValue))).toBuilder();
+        wrapObject("a", map("b", fooString, "c", map("d", fooString))).toBuilder();
     builder.set(field("a.b"), barValue);
     builder.set(field("a.c.d"), barValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("b", barValue, "c", map("d", barValue))), object);
+    assertEquals(wrapObject("a", map("b", barString, "c", map("d", barString))), object);
   }
 
   @Test
   public void overwritesDeeplyNestedField() {
-    ObjectValue.Builder builder = wrapObject("a", map("b", fooValue)).toBuilder();
+    ObjectValue.Builder builder = wrapObject("a", map("b", fooString)).toBuilder();
     builder.set(field("a.b.c"), barValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("b", map("c", barValue))), object);
+    assertEquals(wrapObject("a", map("b", map("c", barString))), object);
   }
 
   @Test
   public void mergesExistingObject() {
-    ObjectValue.Builder builder = wrapObject("a", map("b", fooValue)).toBuilder();
+    ObjectValue.Builder builder = wrapObject("a", map("b", fooString)).toBuilder();
     builder.set(field("a.c"), fooValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("b", fooValue, "c", fooValue)), object);
+    assertEquals(wrapObject("a", map("b", fooString, "c", fooString)), object);
   }
 
   @Test
   public void overwritesNestedObject() {
     ObjectValue.Builder builder =
-        wrapObject("a", map("b", map("c", fooValue, "d", fooValue))).toBuilder();
+        wrapObject("a", map("b", map("c", fooString, "d", fooString))).toBuilder();
     builder.set(field("a.b"), barValue);
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("b", barValue)), object);
+    assertEquals(wrapObject("a", map("b", "bar")), object);
   }
 
   @Test
   public void replacesNestedObject() {
-    Value singleValueObject = valueOf(map("c", barValue));
-    ObjectValue.Builder builder = wrapObject("a", map("b", fooValue)).toBuilder();
-    builder.set(field("a"), singleValueObject);
+    ObjectValue singleValueObject = wrapObject(map("c", barString));
+    ObjectValue.Builder builder = wrapObject("a", map("b", fooString)).toBuilder();
+    builder.set(field("a"), singleValueObject.getProto());
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("c", barValue)), object);
+    assertEquals(wrapObject("a", map("c", barString)), object);
   }
 
   @Test
   public void deletesSingleField() {
-    ObjectValue.Builder builder = wrapObject("a", fooValue, "b", fooValue).toBuilder();
+    ObjectValue.Builder builder = wrapObject("a", fooString, "b", fooString).toBuilder();
     builder.delete(field("a"));
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("b", fooValue), object);
+    assertEquals(wrapObject("b", fooString), object);
   }
 
   @Test
   public void deletesNestedObject() {
     ObjectValue.Builder builder =
-        wrapObject("a", map("b", map("c", fooValue, "d", fooValue), "f", fooValue)).toBuilder();
+        wrapObject("a", map("b", map("c", fooString, "d", fooString), "f", fooString)).toBuilder();
     builder.delete(field("a.b"));
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("f", fooValue)), object);
+    assertEquals(wrapObject("a", map("f", fooString)), object);
   }
 
   @Test
   public void deletesNonExistingField() {
-    ObjectValue.Builder builder = wrapObject("a", fooValue).toBuilder();
+    ObjectValue.Builder builder = wrapObject("a", fooString).toBuilder();
     builder.delete(field("b"));
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", fooValue), object);
+    assertEquals(wrapObject("a", fooString), object);
   }
 
   @Test
   public void deletesNonExistingNestedField() {
-    ObjectValue.Builder builder = wrapObject("a", map("b", fooValue)).toBuilder();
+    ObjectValue.Builder builder = wrapObject("a", map("b", fooString)).toBuilder();
     builder.delete(field("a.b.c"));
     ObjectValue object = builder.build();
-    assertEquals(wrapObject("a", map("b", fooValue)), object);
-  }
-
-  /** Creates a new ObjectValue based on key/value argument pairs. */
-  private ObjectValue wrapObject(Object... entries) {
-    FieldValue object = FieldValue.of(map(entries));
-    assertTrue(object instanceof ObjectValue);
-    return (ObjectValue) object;
+    assertEquals(wrapObject("a", map("b", fooString)), object);
   }
 }
