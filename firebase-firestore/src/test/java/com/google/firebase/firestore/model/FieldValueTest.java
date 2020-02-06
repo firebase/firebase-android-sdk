@@ -36,7 +36,8 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class ObjectValueTest {
+// TODO(mrschmidt): Rename to ObjectValueTest
+public class FieldValueTest {
 
   @Test
   public void testExtractsFields() {
