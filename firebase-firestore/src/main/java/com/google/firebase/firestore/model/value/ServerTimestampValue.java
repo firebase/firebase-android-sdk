@@ -37,7 +37,7 @@ import com.google.firestore.v1.Value;
  * <li>They sort after all TimestampValues. With respect to other ServerTimestampValues, they sort
  *     by their localWriteTime.
  */
-public final class ServerTimestampValue extends FieldValue {
+public final class ServerTimestampValue {
   private static final String SERVER_TIMESTAMP_SENTINEL = "server_timestamp";
   private static final String TYPE_KEY = "__type__";
   private static final String PREVIOUS_VALUE_KEY = "__previous_value__";
@@ -48,18 +48,16 @@ public final class ServerTimestampValue extends FieldValue {
     return type != null && SERVER_TIMESTAMP_SENTINEL.equals(type.getStringValue());
   }
 
-  ServerTimestampValue(Value value) {
-    super(value);
+  private final Value internalValue;
+
+  public ServerTimestampValue(Value value) {
     hardAssert(
         ServerTimestampValue.isServerTimestamp(value),
         "Backing value is not a ServerTimestampValue");
+    this.internalValue = value;
   }
 
-  public static ServerTimestampValue valueOf(Value value) {
-    return new ServerTimestampValue(value);
-  }
-
-  public static FieldValue valueOf(Timestamp localWriteTime, @Nullable Value previousValue) {
+  public static Value valueOf(Timestamp localWriteTime, @Nullable Value previousValue) {
     Value encodedType = Value.newBuilder().setStringValue(SERVER_TIMESTAMP_SENTINEL).build();
     Value encodeWriteTime =
         Value.newBuilder()
@@ -78,7 +76,7 @@ public final class ServerTimestampValue extends FieldValue {
       mapRepresentation.putFields(PREVIOUS_VALUE_KEY, previousValue);
     }
 
-    return new ServerTimestampValue(Value.newBuilder().setMapValue(mapRepresentation).build());
+    return Value.newBuilder().setMapValue(mapRepresentation).build();
   }
 
   /**
