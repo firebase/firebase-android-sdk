@@ -57,7 +57,7 @@ public class FieldValue implements Comparable<FieldValue> {
 
   final Value internalValue;
 
-  public FieldValue(Value value) {
+  FieldValue(Value value) {
     this.internalValue = value;
   }
 
