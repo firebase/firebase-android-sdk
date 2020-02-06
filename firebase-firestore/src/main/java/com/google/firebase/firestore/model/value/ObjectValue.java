@@ -39,6 +39,9 @@ public class ObjectValue extends FieldValue {
   public ObjectValue(Value value) {
     super(value);
     hardAssert(
+        value.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE,
+        "ObjectValues should be backed by a MapValue");
+    hardAssert(
         !ServerTimestampValue.isServerTimestamp(value),
         "ServerTimestamps should be converted to ServerTimestampValue");
   }

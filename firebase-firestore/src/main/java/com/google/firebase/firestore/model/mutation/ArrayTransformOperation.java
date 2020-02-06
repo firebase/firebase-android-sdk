@@ -104,7 +104,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     protected Value apply(@Nullable Value previousValue) {
       ArrayValue.Builder result = coercedFieldValuesArray(previousValue);
       for (Value unionElement : getElements()) {
-        if (!ProtoValues.contains(result.getValuesList(), unionElement)) {
+        if (!ProtoValues.contains(result, unionElement)) {
           result.addValues(unionElement);
         }
       }
