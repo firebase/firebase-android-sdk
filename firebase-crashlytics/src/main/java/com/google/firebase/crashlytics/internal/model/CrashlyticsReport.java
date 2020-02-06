@@ -17,16 +17,21 @@ package com.google.firebase.crashlytics.internal.model;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Application.Organization;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.annotations.Encodable.Field;
 import com.google.firebase.encoders.annotations.Encodable.Ignore;
 import java.nio.charset.Charset;
-import java.util.List;
 
+/**
+ * This class represents the data captured by and reported to Crashlytics.
+ *
+ * <p>It is an immutable value class implemented by AutoValue.
+ *
+ * @see <a
+ *     href="https://github.com/google/auto/tree/master/value">https://github.com/google/auto/tree/master/value</a>
+ */
 @Encodable
 @AutoValue
 public abstract class CrashlyticsReport {
@@ -58,11 +63,22 @@ public abstract class CrashlyticsReport {
   @NonNull
   public abstract Session getSession();
 
+  /**
+   * Augment an existing {@link CrashlyticsReport} with a given list of events.
+   *
+   * @return a new {@link CrashlyticsReport} with its events list set to the given list of events.
+   */
   @NonNull
-  public CrashlyticsReport withEvents(@NonNull List<Event> events) {
+  public CrashlyticsReport withEvents(@NonNull ImmutableList<Event> events) {
     return toBuilder().setSession(getSession().withEvents(events)).build();
   }
 
+  /**
+   * Augment an existing {@link CrashlyticsReport} with a given organization ID.
+   *
+   * @return a new {@link CrashlyticsReport} with its Session.Application.Organization object
+   *     containing the given organization ID.
+   */
   @NonNull
   public CrashlyticsReport withOrganizationId(@NonNull String organizationId) {
     return toBuilder().setSession(getSession().withOrganizationId(organizationId)).build();
@@ -127,11 +143,11 @@ public abstract class CrashlyticsReport {
 
     public abstract long getStartedAt();
 
-    @Nullable
-    public abstract User getUser();
+    @NonNull
+    public abstract Application getApp();
 
     @Nullable
-    public abstract Application getApp();
+    public abstract User getUser();
 
     @Nullable
     public abstract OperatingSystem getOs();
@@ -146,18 +162,13 @@ public abstract class CrashlyticsReport {
     protected abstract Builder toBuilder();
 
     @NonNull
-    Session withEvents(@NonNull List<Event> events) {
-      return toBuilder().setEvents(ImmutableList.from(events)).build();
+    Session withEvents(@NonNull ImmutableList<Event> events) {
+      return toBuilder().setEvents(events).build();
     }
 
     @NonNull
     Session withOrganizationId(@NonNull String organizationId) {
-      final Application app =
-          (getApp() != null)
-              ? getApp().withOrganizationId(organizationId)
-              : Application.builder()
-                  .setOrganization(Organization.builder().setClsId(organizationId).build())
-                  .build();
+      final Application app = getApp().withOrganizationId(organizationId);
       return toBuilder().setApp(app).build();
     }
 
@@ -443,7 +454,7 @@ public abstract class CrashlyticsReport {
         @NonNull
         public abstract Execution getExecution();
 
-        @NonNull
+        @Nullable
         public abstract ImmutableList<CustomAttribute> getCustomAttributes();
 
         public abstract boolean isBackground();
