@@ -21,26 +21,26 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firestore.v1.Value;
+import java.util.ArrayList;
+import java.util.List;
 
 public class KeyFieldInFilter extends FieldFilter {
+  private final List<DocumentKey> keys = new ArrayList<>();
+
   KeyFieldInFilter(FieldPath field, Value value) {
     super(field, Operator.IN, value);
+
     hardAssert(ProtoValues.isArray(value), "KeyFieldInFilter expects an ArrayValue");
     for (Value element : value.getArrayValue().getValuesList()) {
       hardAssert(
           ProtoValues.isReferenceValue(element),
           "Comparing on key with IN, but an array value was not a ReferenceValue");
+      keys.add(DocumentKey.fromName(element.getReferenceValue()));
     }
   }
 
   @Override
   public boolean matches(Document doc) {
-    for (Value refValue : getValue().getArrayValue().getValuesList()) {
-      DocumentKey referencedKey = DocumentKey.fromName(refValue.getReferenceValue());
-      if (doc.getKey().equals(referencedKey)) {
-        return true;
-      }
-    }
-    return false;
+    return keys.contains(doc.getKey());
   }
 }

@@ -24,15 +24,17 @@ import com.google.firestore.v1.Value;
 
 /** Filter that matches on key fields (i.e. '__name__'). */
 public class KeyFieldFilter extends FieldFilter {
+  private final DocumentKey key;
+
   KeyFieldFilter(FieldPath field, Operator operator, Value value) {
     super(field, operator, value);
     hardAssert(ProtoValues.isReferenceValue(value), "KeyFieldFilter expects a ReferenceValue");
+    key = DocumentKey.fromName(getValue().getReferenceValue());
   }
 
   @Override
   public boolean matches(Document doc) {
-    DocumentKey referencedKey = DocumentKey.fromName(getValue().getReferenceValue());
-    int comparator = doc.getKey().compareTo(referencedKey);
+    int comparator = doc.getKey().compareTo(key);
     return this.matchesComparison(comparator);
   }
 }
