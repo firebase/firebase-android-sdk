@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import static com.google.firebase.firestore.model.value.ProtoValues.isDouble;
+import static com.google.firebase.firestore.model.value.ProtoValues.isInteger;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
@@ -120,13 +122,5 @@ public class NumericIncrementTransformOperation implements TransformOperation {
           "Expected 'operand' to be of Number type, but was "
               + operand.getClass().getCanonicalName());
     }
-  }
-
-  private boolean isInteger(@Nullable Value value) {
-    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE;
-  }
-
-  private boolean isDouble(@Nullable Value value) {
-    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE;
   }
 }
