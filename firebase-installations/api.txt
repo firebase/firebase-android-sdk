@@ -9,16 +9,5 @@ package com.google.firebase.installations {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.installations.InstallationTokenResult> getToken(boolean);
   }
 
-  public class FirebaseInstallationsException extends com.google.firebase.FirebaseException {
-    ctor public FirebaseInstallationsException(@NonNull com.google.firebase.installations.FirebaseInstallationsException.Status);
-    ctor public FirebaseInstallationsException(@NonNull String, @NonNull com.google.firebase.installations.FirebaseInstallationsException.Status);
-    ctor public FirebaseInstallationsException(@NonNull String, @NonNull com.google.firebase.installations.FirebaseInstallationsException.Status, @NonNull Throwable);
-    method @NonNull public com.google.firebase.installations.FirebaseInstallationsException.Status getStatus();
-  }
-
-  public enum FirebaseInstallationsException.Status {
-    enum_constant public static final com.google.firebase.installations.FirebaseInstallationsException.Status BAD_CONFIG;
-  }
-
 }
 
