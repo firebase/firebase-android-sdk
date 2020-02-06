@@ -19,18 +19,16 @@ import static com.google.firebase.firestore.testutil.TestUtil.dbId;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
-import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
-import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapRef;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.testutil.ComparatorTester;
+import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -61,11 +59,11 @@ public class ProtoValuesTest {
     new EqualsTester()
         .addEqualityGroup(wrap(true), wrap(true))
         .addEqualityGroup(wrap(false), wrap(false))
-        .addEqualityGroup(wrap(null), new FieldValue(ProtoValues.NULL_VALUE))
+        .addEqualityGroup(wrap(null), new EqualsWrapper(ProtoValues.NULL_VALUE))
         .addEqualityGroup(
             wrap(0.0 / 0.0),
             wrap(Double.longBitsToDouble(0x7ff8000000000000L)),
-            new FieldValue(ProtoValues.NAN_VALUE))
+            new EqualsWrapper(ProtoValues.NAN_VALUE))
         // -0.0 and 0.0 compareTo the same but are not equal.
         .addEqualityGroup(wrap(-0.0))
         .addEqualityGroup(wrap(0.0))
@@ -85,15 +83,16 @@ public class ProtoValuesTest {
         .addEqualityGroup(wrap(timestamp2))
         // NOTE: ServerTimestampValues can't be parsed via wrap().
         .addEqualityGroup(
-            new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date1), null)),
-            new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date1), null)))
-        .addEqualityGroup(new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date2), null)))
+            new EqualsWrapper(ServerTimestampValue.valueOf(new Timestamp(date1), null)),
+            new EqualsWrapper(ServerTimestampValue.valueOf(new Timestamp(date1), null)))
+        .addEqualityGroup(
+            new EqualsWrapper(ServerTimestampValue.valueOf(new Timestamp(date2), null)))
         .addEqualityGroup(wrap(geoPoint1), wrap(new GeoPoint(1, 0)))
         .addEqualityGroup(wrap(geoPoint2))
         .addEqualityGroup(
-            wrap(ref("coll/doc1")), new FieldValue(wrapRef(dbId("project"), key("coll/doc1"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("project", "bar"), key("coll/doc2"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("project", "baz"), key("coll/doc2"))))
+            wrap(ref("coll/doc1")), new EqualsWrapper(wrapRef(dbId("project"), key("coll/doc1"))))
+        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("project", "bar"), key("coll/doc2"))))
+        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("project", "baz"), key("coll/doc2"))))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar")), wrap(Arrays.asList("foo", "bar")))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar", "baz")))
         .addEqualityGroup(wrap(Arrays.asList("foo")))
@@ -144,8 +143,10 @@ public class ProtoValuesTest {
 
         // server timestamps come after all concrete timestamps.
         // NOTE: server timestamps can't be parsed with wrap().
-        .addEqualityGroup(new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date1), null)))
-        .addEqualityGroup(new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date2), null)))
+        .addEqualityGroup(
+            new EqualsWrapper(ServerTimestampValue.valueOf(new Timestamp(date1), null)))
+        .addEqualityGroup(
+            new EqualsWrapper(ServerTimestampValue.valueOf(new Timestamp(date2), null)))
 
         // strings
         .addEqualityGroup(wrap(""))
@@ -167,12 +168,12 @@ public class ProtoValuesTest {
         .addEqualityGroup(wrap(blob(255)))
 
         // resource names
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c1/doc1"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c1/doc2"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c10/doc1"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c2/doc1"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d2"), key("c1/doc1"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p2", "d1"), key("c1/doc1"))))
+        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p1", "d1"), key("c1/doc1"))))
+        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p1", "d1"), key("c1/doc2"))))
+        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p1", "d1"), key("c10/doc1"))))
+        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p1", "d1"), key("c2/doc1"))))
+        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p1", "d2"), key("c1/doc1"))))
+        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p2", "d1"), key("c1/doc1"))))
 
         // geo points
         .addEqualityGroup(wrap(new GeoPoint(-90, -180)))
@@ -205,30 +206,58 @@ public class ProtoValuesTest {
 
   @Test
   public void testCanonicalIds() {
-    assertCanonicalId(valueOf(null), "null");
-    assertCanonicalId(valueOf(true), "true");
-    assertCanonicalId(valueOf(false), "false");
-    assertCanonicalId(valueOf(1), "1");
-    assertCanonicalId(valueOf(1.0), "1.0");
-    assertCanonicalId(valueOf(new Timestamp(30, 1000)), "time(30,1000)");
-    assertCanonicalId(valueOf("a"), "a");
-    assertCanonicalId(valueOf(blob(1, 2, 3)), "010203");
+    assertCanonicalId(TestUtil.wrap(null), "null");
+    assertCanonicalId(TestUtil.wrap(true), "true");
+    assertCanonicalId(TestUtil.wrap(false), "false");
+    assertCanonicalId(TestUtil.wrap(1), "1");
+    assertCanonicalId(TestUtil.wrap(1.0), "1.0");
+    assertCanonicalId(TestUtil.wrap(new Timestamp(30, 1000)), "time(30,1000)");
+    assertCanonicalId(TestUtil.wrap("a"), "a");
+    assertCanonicalId(TestUtil.wrap(blob(1, 2, 3)), "010203");
     assertCanonicalId(wrapRef(dbId("p1", "d1"), key("c1/doc1")), "c1/doc1");
-    assertCanonicalId(valueOf(new GeoPoint(30, 60)), "geo(30.0,60.0)");
-    assertCanonicalId(valueOf(Arrays.asList(1, 2, 3)), "[1,2,3]");
-    assertCanonicalId(valueOf(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");
+    assertCanonicalId(TestUtil.wrap(new GeoPoint(30, 60)), "geo(30.0,60.0)");
+    assertCanonicalId(TestUtil.wrap(Arrays.asList(1, 2, 3)), "[1,2,3]");
+    assertCanonicalId(TestUtil.wrap(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");
     assertCanonicalId(
-        valueOf(map("a", Arrays.asList("b", map("c", new GeoPoint(30, 60))))),
+        TestUtil.wrap(map("a", Arrays.asList("b", map("c", new GeoPoint(30, 60))))),
         "{a:[b,{c:geo(30.0,60.0)}]}");
   }
 
   @Test
   public void testObjectCanonicalIdsIgnoreSortOrder() {
-    assertCanonicalId(valueOf(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");
-    assertCanonicalId(valueOf(map("c", 3, "b", 2, "a", "1")), "{a:1,b:2,c:3}");
+    assertCanonicalId(TestUtil.wrap(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");
+    assertCanonicalId(TestUtil.wrap(map("c", 3, "b", 2, "a", "1")), "{a:1,b:2,c:3}");
   }
 
   private void assertCanonicalId(Value proto, String expectedCanonicalId) {
     assertEquals(expectedCanonicalId, ProtoValues.canonicalId(proto));
+  }
+
+  /** Small helper class that uses ProtoValues for equals() and compareTo(). */
+  static class EqualsWrapper implements Comparable<EqualsWrapper> {
+    final Value proto;
+
+    EqualsWrapper(Value proto) {
+      this.proto = proto;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      return o instanceof EqualsWrapper && ProtoValues.equals(proto, ((EqualsWrapper) o).proto);
+    }
+
+    @Override
+    public int hashCode() {
+      return proto.hashCode();
+    }
+
+    @Override
+    public int compareTo(EqualsWrapper o) {
+      return ProtoValues.compare(proto, o.proto);
+    }
+  }
+
+  private EqualsWrapper wrap(Object entry) {
+    return new EqualsWrapper(TestUtil.wrap(entry));
   }
 }

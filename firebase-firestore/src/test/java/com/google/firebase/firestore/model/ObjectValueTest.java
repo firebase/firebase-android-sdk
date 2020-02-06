@@ -17,7 +17,6 @@ package com.google.firebase.firestore.model;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static junit.framework.TestCase.assertTrue;
@@ -26,13 +25,10 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.firestore.model.mutation.FieldMask;
-import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
-import java.util.Calendar;
-import java.util.Date;
+import com.google.firestore.v1.Value;
 import java.util.Map;
-import java.util.TimeZone;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -40,15 +36,15 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class FieldValueTest {
+public class ObjectValueTest {
 
   @Test
   public void testExtractsFields() {
     ObjectValue obj = wrapObject("foo", map("a", 1, "b", true, "c", "string"));
     assertTrue(ProtoValues.isMapValue(obj.get(field("foo"))));
-    assertEquals(valueOf(1), obj.get(field("foo.a")));
-    assertEquals(valueOf(true), obj.get(field("foo.b")));
-    assertEquals(valueOf("string"), obj.get(field("foo.c")));
+    assertEquals(wrap(1), obj.get(field("foo.a")));
+    assertEquals(wrap(true), obj.get(field("foo.b")));
+    assertEquals(wrap("string"), obj.get(field("foo.c")));
 
     assertNull(obj.get(field("foo.a.b")));
     assertNull(obj.get(field("bar")));
@@ -95,7 +91,7 @@ public class FieldValueTest {
   public void testAddsMultipleNewFields() {
     ObjectValue object = ObjectValue.emptyObject();
     object = setField(object, "a", wrap("a"));
-    object = object.toBuilder().set(field("b"), valueOf("b")).set(field("c"), valueOf("c")).build();
+    object = object.toBuilder().set(field("b"), wrap("b")).set(field("c"), wrap("c")).build();
 
     assertEquals(wrapObject("a", "a", "b", "b", "c", "c"), object);
   }
@@ -197,8 +193,8 @@ public class FieldValueTest {
     assertEquals(ObjectValue.emptyObject(), object);
   }
 
-  private ObjectValue setField(ObjectValue objectValue, String fieldPath, FieldValue value) {
-    return objectValue.toBuilder().set(field(fieldPath), value.getProto()).build();
+  private ObjectValue setField(ObjectValue objectValue, String fieldPath, Value value) {
+    return objectValue.toBuilder().set(field(fieldPath), value).build();
   }
 
   private ObjectValue setField(

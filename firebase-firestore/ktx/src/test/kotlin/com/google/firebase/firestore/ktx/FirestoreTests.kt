@@ -171,7 +171,7 @@ class QuerySnapshotTests {
         val qs = TestUtil.querySnapshot(
                 "rooms",
                 mapOf(),
-                mapOf("id" to ObjectValue.fromMap(mapOf("a" to wrap(1).proto, "b" to wrap(2).proto))),
+                mapOf("id" to ObjectValue.fromMap(mapOf("a" to wrap(1), "b" to wrap(2)))),
                 false,
                 false)
 

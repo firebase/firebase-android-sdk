@@ -23,25 +23,25 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firestore.v1.Value;
 import java.util.Comparator;
 import java.util.Map;
 
 /** A set of utilities for tests */
 public class TestUtil {
 
-  public static FieldValue wrap(Object value) {
+  public static Value wrap(Object value) {
     DatabaseId databaseId = DatabaseId.forProject("project");
     UserDataReader dataReader = new UserDataReader(databaseId);
     // HACK: We use parseQueryValue() since it accepts scalars as well as arrays / objects, and
     // our tests currently use wrap() pretty generically so we don't know the intent.
-    return new FieldValue(dataReader.parseQueryValue(value));
+    return dataReader.parseQueryValue(value);
   }
 
   public static ObjectValue wrapObject(Map<String, Object> value) {
     // Cast is safe here because value passed in is a map
-    return new ObjectValue(wrap(value).getProto());
+    return new ObjectValue(wrap(value));
   }
 
   public static DocumentKey key(String key) {
