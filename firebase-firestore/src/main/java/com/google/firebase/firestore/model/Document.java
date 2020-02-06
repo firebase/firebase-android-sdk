@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firestore.v1.Value;
 import java.util.Comparator;
 
 /**
@@ -64,6 +65,11 @@ public final class Document extends MaybeDocument {
 
   public @Nullable FieldValue getField(FieldPath path) {
     return objectValue.get(path);
+  }
+
+  public @Nullable Value getFieldProto(FieldPath path) {
+    FieldValue fieldValue = getField(path);
+    return fieldValue != null ? fieldValue.getProto() : null;
   }
 
   public boolean hasLocalMutations() {

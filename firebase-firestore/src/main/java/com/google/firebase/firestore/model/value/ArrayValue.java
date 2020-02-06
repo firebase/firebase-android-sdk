@@ -24,11 +24,11 @@ public class ArrayValue extends FieldValue {
     super(value);
   }
 
-  public static ArrayValue fromList(List<FieldValue> list) {
+  public static ArrayValue fromList(List<Value> list) {
     com.google.firestore.v1.ArrayValue.Builder builder =
         com.google.firestore.v1.ArrayValue.newBuilder();
-    for (FieldValue value : list) {
-      builder.addValues(value.getProto());
+    for (Value value : list) {
+      builder.addValues(value);
     }
     return new ArrayValue(Value.newBuilder().setArrayValue(builder).build());
   }

@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import static com.google.firebase.firestore.model.value.ProtoValues.isDouble;
+import static com.google.firebase.firestore.model.value.ProtoValues.isInteger;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
@@ -23,6 +25,8 @@ import com.google.firebase.firestore.model.value.DoubleValue;
 import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.IntegerValue;
 import com.google.firebase.firestore.model.value.NumberValue;
+import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firestore.v1.Value;
 
 /**
  * Implements the backend semantics for locally computed NUMERIC_ADD (increment) transforms.
@@ -37,29 +41,28 @@ public class NumericIncrementTransformOperation implements TransformOperation {
   }
 
   @Override
-  public FieldValue applyToLocalView(@Nullable FieldValue previousValue, Timestamp localWriteTime) {
-    NumberValue baseValue = computeBaseValue(previousValue);
+  public Value applyToLocalView(@Nullable Value previousValue, Timestamp localWriteTime) {
+    Value baseValue = computeBaseValue(previousValue);
 
     // Return an integer value only if the previous value and the operand is an integer.
-    if (baseValue instanceof IntegerValue && operand instanceof IntegerValue) {
-      long sum = safeIncrement(((IntegerValue) baseValue).getIntegerValue(), operandAsLong());
-      return IntegerValue.valueOf(sum);
-    } else if (baseValue instanceof IntegerValue) {
-      double sum = ((IntegerValue) baseValue).getIntegerValue() + operandAsDouble();
-      return DoubleValue.valueOf(sum);
+    if (isInteger(baseValue) && operand instanceof IntegerValue) {
+      long sum = safeIncrement(baseValue.getIntegerValue(), operandAsLong());
+      return Value.newBuilder().setIntegerValue(sum).build();
+    } else if (isInteger(baseValue)) {
+      double sum = baseValue.getIntegerValue() + operandAsDouble();
+      return Value.newBuilder().setDoubleValue(sum).build();
     } else {
       hardAssert(
-          baseValue instanceof DoubleValue,
+          isDouble(baseValue),
           "Expected NumberValue to be of type DoubleValue, but was ",
           previousValue.getClass().getCanonicalName());
-      double sum = ((DoubleValue) baseValue).getDoubleValue() + operandAsDouble();
-      return DoubleValue.valueOf(sum);
+      double sum = baseValue.getDoubleValue() + operandAsDouble();
+      return Value.newBuilder().setDoubleValue(sum).build();
     }
   }
 
   @Override
-  public FieldValue applyToRemoteDocument(
-      @Nullable FieldValue previousValue, FieldValue transformResult) {
+  public Value applyToRemoteDocument(@Nullable Value previousValue, Value transformResult) {
     return transformResult;
   }
 
@@ -72,10 +75,10 @@ public class NumericIncrementTransformOperation implements TransformOperation {
    * otherwise returning a coerced IntegerValue of 0.
    */
   @Override
-  public NumberValue computeBaseValue(@Nullable FieldValue previousValue) {
-    return previousValue instanceof NumberValue
-        ? (NumberValue) previousValue
-        : IntegerValue.valueOf(0L);
+  public Value computeBaseValue(@Nullable Value previousValue) {
+    return ProtoValues.isNumber(previousValue)
+        ? previousValue
+        : Value.newBuilder().setIntegerValue(0).build();
   }
 
   /**

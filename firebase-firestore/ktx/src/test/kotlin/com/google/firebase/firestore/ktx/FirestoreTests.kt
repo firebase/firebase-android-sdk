@@ -22,8 +22,8 @@ import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.TestUtil
-import com.google.firebase.firestore.model.value.IntegerValue
 import com.google.firebase.firestore.model.value.ObjectValue
+import com.google.firebase.firestore.testutil.TestUtil.wrap
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
@@ -171,7 +171,7 @@ class QuerySnapshotTests {
         val qs = TestUtil.querySnapshot(
                 "rooms",
                 mapOf(),
-                mapOf("id" to ObjectValue.fromMap(mapOf("a" to IntegerValue.valueOf(1).proto, "b" to IntegerValue.valueOf(2).proto))),
+                mapOf("id" to ObjectValue.fromMap(mapOf("a" to wrap(1).proto, "b" to wrap(2).proto))),
                 false,
                 false)
 

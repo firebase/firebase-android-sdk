@@ -30,10 +30,10 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.transformMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
+import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.values;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.viewChanges;
-import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -154,7 +154,7 @@ public abstract class LocalStoreTestCase {
     MutationResult mutationResult =
         new MutationResult(
             version,
-            transformResult != null ? Collections.singletonList(wrap(transformResult)) : null);
+            transformResult != null ? Collections.singletonList(valueOf(transformResult)) : null);
     MutationBatchResult result =
         MutationBatchResult.create(
             batch, version, singletonList(mutationResult), WriteStream.EMPTY_STREAM_TOKEN);
