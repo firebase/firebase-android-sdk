@@ -18,7 +18,6 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
-
 import com.google.android.gms.tasks.Task;
 import java.lang.annotation.Retention;
 
