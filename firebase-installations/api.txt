@@ -22,30 +22,3 @@ package com.google.firebase.installations {
 
 }
 
-package com.google.firebase.installations.remote {
-
-  public abstract class TokenResult {
-    ctor public TokenResult();
-    method @NonNull public static com.google.firebase.installations.remote.TokenResult.Builder builder();
-    method @Nullable public abstract com.google.firebase.installations.remote.TokenResult.ResponseCode getResponseCode();
-    method @Nullable public abstract String getToken();
-    method @NonNull public abstract long getTokenExpirationTimestamp();
-    method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder toBuilder();
-  }
-
-  public abstract static class TokenResult.Builder {
-    ctor public TokenResult.Builder();
-    method @NonNull public abstract com.google.firebase.installations.remote.TokenResult build();
-    method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder setResponseCode(@NonNull com.google.firebase.installations.remote.TokenResult.ResponseCode);
-    method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder setToken(@NonNull String);
-    method @NonNull public abstract com.google.firebase.installations.remote.TokenResult.Builder setTokenExpirationTimestamp(long);
-  }
-
-  public enum TokenResult.ResponseCode {
-    enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode AUTH_ERROR;
-    enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode BAD_CONFIG;
-    enum_constant public static final com.google.firebase.installations.remote.TokenResult.ResponseCode OK;
-  }
-
-}
-

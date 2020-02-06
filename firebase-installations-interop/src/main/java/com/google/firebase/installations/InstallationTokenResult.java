@@ -21,30 +21,44 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class InstallationTokenResult {
 
-  /** A new FIS Auth-Token, created for this Firebase Installation. */
+  /**
+   * A new FIS Auth-Token, created for this Firebase Installation.
+   *
+   * @hide
+   */
   @NonNull
   public abstract String getToken();
   /**
    * The amount of time, in seconds, before the auth-token expires for this Firebase Installation.
+   *
+   * @hide
    */
   @NonNull
   public abstract long getTokenExpirationTimestamp();
 
   /**
    * The amount of time, in seconds, when the auth-token was created for this Firebase Installation.
+   *
+   * @hide
    */
   @NonNull
   public abstract long getTokenCreationTimestamp();
 
+  /** @hide */
   @NonNull
   public abstract Builder toBuilder();
 
-  /** Returns a default Builder object to create an InstallationResponse object */
+  /**
+   * Returns a default Builder object to create an InstallationResponse object.
+   *
+   * @hide
+   */
   @NonNull
   public static InstallationTokenResult.Builder builder() {
     return new AutoValue_InstallationTokenResult.Builder();
   }
 
+  /** @hide */
   @AutoValue.Builder
   public abstract static class Builder {
     @NonNull
