@@ -93,9 +93,7 @@ public class UserDataWriter {
   private Object convertServerTimestamp(ServerTimestampValue value) {
     switch (serverTimestampBehavior) {
       case PREVIOUS:
-        return value.getPreviousValue() == null
-            ? null
-            : convertValue(value.getPreviousValue().getProto());
+        return value.getPreviousValue() == null ? null : convertValue(value.getPreviousValue());
       case ESTIMATE:
         return !timestampsInSnapshots
             ? value.getLocalWriteTime().toDate()

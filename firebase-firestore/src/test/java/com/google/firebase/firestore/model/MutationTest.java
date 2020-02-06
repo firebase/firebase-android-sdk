@@ -702,6 +702,6 @@ public class MutationTest {
         transformMutation.applyToLocalView(baseDoc, baseDoc, Timestamp.now());
     mutatedDoc = transformMutation.applyToLocalView(mutatedDoc, baseDoc, Timestamp.now());
 
-    assertEquals(wrap(2L), ((Document) mutatedDoc).getField(field("sum")));
+    assertEquals(valueOf(2L), ((Document) mutatedDoc).getField(field("sum")));
   }
 }

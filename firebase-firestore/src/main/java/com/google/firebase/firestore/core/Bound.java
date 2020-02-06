@@ -86,7 +86,7 @@ public final class Bound {
         comparison =
             DocumentKey.fromName(component.getReferenceValue()).compareTo(document.getKey());
       } else {
-        Value docValue = document.getFieldProto(orderByComponent.getField());
+        Value docValue = document.getField(orderByComponent.getField());
         hardAssert(
             docValue != null, "Field should exist since document matched the orderBy already.");
         comparison = ProtoValues.compare(component, docValue);

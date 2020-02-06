@@ -30,7 +30,7 @@ public class ArrayContainsAnyFilter extends FieldFilter {
 
   @Override
   public boolean matches(Document doc) {
-    Value other = doc.getFieldProto(getField());
+    Value other = doc.getField(getField());
     if (!ProtoValues.isArray(other)) {
       return false;
     }

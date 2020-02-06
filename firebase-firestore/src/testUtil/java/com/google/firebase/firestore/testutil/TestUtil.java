@@ -132,16 +132,16 @@ public class TestUtil {
     UserDataReader dataReader = new UserDataReader(databaseId);
     // HACK: We use parseQueryValue() since it accepts scalars as well as arrays / objects, and
     // our tests currently use wrap() pretty generically so we don't know the intent.
-    return FieldValue.valueOf(dataReader.parseQueryValue(value));
+    return new FieldValue(dataReader.parseQueryValue(value));
   }
 
   public static FieldValue wrapRef(DatabaseId databaseId, DocumentKey key) {
-    return FieldValue.valueOf(ProtoValues.refValue(databaseId, key));
+    return new FieldValue(ProtoValues.refValue(databaseId, key));
   }
 
   public static ObjectValue wrapObject(Map<String, Object> value) {
     // Cast is safe here because value passed in is a map
-    return (ObjectValue) wrap(value);
+    return new ObjectValue(valueOf(value));
   }
 
   public static ObjectValue wrapObject(Object... entries) {

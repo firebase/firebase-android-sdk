@@ -121,7 +121,7 @@ public final class RemoteSerializerTest {
     com.google.firestore.v1.Value actual = value.getProto();
     assertEquals(typeCase, actual.getValueTypeCase());
     assertEquals(proto, actual);
-    assertEquals(value, FieldValue.valueOf(proto));
+    assertEquals(value, new FieldValue(proto));
   }
 
   @Test
