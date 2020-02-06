@@ -64,7 +64,7 @@ public class UserDataWriterTest {
     List<Boolean> testCases = asList(true, false);
     for (Boolean b : testCases) {
       FieldValue value = wrap(b);
-      assertValueType(value, Value.ValueTypeCase.BOOLEAN_VALUE);
+      assertValueType(Value.ValueTypeCase.BOOLEAN_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(b, convertedValue);
     }
@@ -75,7 +75,7 @@ public class UserDataWriterTest {
     List<Integer> testCases = asList(Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE);
     for (Integer i : testCases) {
       FieldValue value = wrap(i);
-      assertValueType(value, Value.ValueTypeCase.INTEGER_VALUE);
+      assertValueType(Value.ValueTypeCase.INTEGER_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(i.longValue(), convertedValue);
     }
@@ -95,7 +95,7 @@ public class UserDataWriterTest {
             Long.MAX_VALUE);
     for (Long l : testCases) {
       FieldValue value = wrap(l);
-      assertValueType(value, Value.ValueTypeCase.INTEGER_VALUE);
+      assertValueType(Value.ValueTypeCase.INTEGER_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(l, convertedValue);
     }
@@ -117,7 +117,7 @@ public class UserDataWriterTest {
             Float.MAX_VALUE);
     for (Float f : testCases) {
       FieldValue value = wrap(f);
-      assertValueType(value, Value.ValueTypeCase.DOUBLE_VALUE);
+      assertValueType(Value.ValueTypeCase.DOUBLE_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(f.doubleValue(), convertedValue);
     }
@@ -148,7 +148,7 @@ public class UserDataWriterTest {
             Double.NaN);
     for (Double d : testCases) {
       FieldValue value = wrap(d);
-      assertValueType(value, Value.ValueTypeCase.DOUBLE_VALUE);
+      assertValueType(Value.ValueTypeCase.DOUBLE_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(d, convertedValue);
     }
@@ -164,7 +164,7 @@ public class UserDataWriterTest {
     List<Date> testCases = asList(new Date(0), new Date(1356048000000L));
     for (Date d : testCases) {
       FieldValue value = wrap(d);
-      assertValueType(value, Value.ValueTypeCase.TIMESTAMP_VALUE);
+      assertValueType(Value.ValueTypeCase.TIMESTAMP_VALUE, value);
       Object convertedValue = dateWriter.convertValue(value.getProto());
       assertEquals(d, convertedValue);
     }
@@ -175,7 +175,7 @@ public class UserDataWriterTest {
     List<Timestamp> testCases = asList(new Timestamp(0, 0), new Timestamp(1356048000L, 0));
     for (Timestamp t : testCases) {
       FieldValue value = wrap(t);
-      assertValueType(value, Value.ValueTypeCase.TIMESTAMP_VALUE);
+      assertValueType(Value.ValueTypeCase.TIMESTAMP_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(t, convertedValue);
     }
@@ -288,7 +288,7 @@ public class UserDataWriterTest {
     return writer.convertValue(value.getProto());
   }
 
-  private void assertValueType(FieldValue value, Value.ValueTypeCase booleanValue) {
+  private void assertValueType(Value.ValueTypeCase booleanValue, FieldValue value) {
     assertEquals(booleanValue, value.getProto().getValueTypeCase());
   }
 }

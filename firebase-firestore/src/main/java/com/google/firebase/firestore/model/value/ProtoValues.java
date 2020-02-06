@@ -42,17 +42,17 @@ public class ProtoValues {
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
 
   /** The order of types in Firestore; this order is defined by the backend. */
-  private static final int TYPE_ORDER_NULL = 0;
+  public static final int TYPE_ORDER_NULL = 0;
 
-  private static final int TYPE_ORDER_BOOLEAN = 1;
-  private static final int TYPE_ORDER_NUMBER = 2;
-  private static final int TYPE_ORDER_TIMESTAMP = 3;
-  private static final int TYPE_ORDER_STRING = 4;
-  private static final int TYPE_ORDER_BLOB = 5;
-  private static final int TYPE_ORDER_REFERENCE = 6;
-  private static final int TYPE_ORDER_GEOPOINT = 7;
-  private static final int TYPE_ORDER_ARRAY = 8;
-  private static final int TYPE_ORDER_MAP = 9;
+  public static final int TYPE_ORDER_BOOLEAN = 1;
+  public static final int TYPE_ORDER_NUMBER = 2;
+  public static final int TYPE_ORDER_TIMESTAMP = 3;
+  public static final int TYPE_ORDER_STRING = 4;
+  public static final int TYPE_ORDER_BLOB = 5;
+  public static final int TYPE_ORDER_REFERENCE = 6;
+  public static final int TYPE_ORDER_GEOPOINT = 7;
+  public static final int TYPE_ORDER_ARRAY = 8;
+  public static final int TYPE_ORDER_MAP = 9;
 
   /** Returns the backend's type order of the given Value type. */
   public static int typeOrder(Value value) {

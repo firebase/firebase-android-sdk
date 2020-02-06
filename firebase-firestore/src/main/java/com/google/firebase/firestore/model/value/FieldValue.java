@@ -24,7 +24,7 @@ import com.google.firestore.v1.Value;
 public class FieldValue implements Comparable<FieldValue> {
   final Value internalValue;
 
-  FieldValue(Value value) {
+  public FieldValue(Value value) {
     this.internalValue = value;
   }
 
