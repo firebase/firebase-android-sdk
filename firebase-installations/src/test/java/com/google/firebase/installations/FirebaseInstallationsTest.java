@@ -578,8 +578,7 @@ public class FirebaseInstallationsTest {
 
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener2 =
         new TestOnCompleteListener<>();
-    Task<InstallationTokenResult> task =
-        firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+    Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
     task.addOnCompleteListener(executor, onCompleteListener2);
     InstallationTokenResult installationTokenResult = onCompleteListener2.await();
 
@@ -602,8 +601,7 @@ public class FirebaseInstallationsTest {
 
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
         new TestOnCompleteListener<>();
-    Task<InstallationTokenResult> task =
-        firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+    Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
     task.addOnCompleteListener(executor, onCompleteListener);
     onCompleteListener.await();
 
@@ -623,8 +621,7 @@ public class FirebaseInstallationsTest {
 
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
         new TestOnCompleteListener<>();
-    Task<InstallationTokenResult> task =
-        firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+    Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
     task.addOnCompleteListener(executor, onCompleteListener);
     InstallationTokenResult installationTokenResult = onCompleteListener.await();
 
@@ -655,8 +652,7 @@ public class FirebaseInstallationsTest {
 
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
         new TestOnCompleteListener<>();
-    Task<InstallationTokenResult> task =
-        firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+    Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
     task.addOnCompleteListener(executor, onCompleteListener);
     InstallationTokenResult installationTokenResult = onCompleteListener.await();
 
@@ -677,8 +673,7 @@ public class FirebaseInstallationsTest {
 
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
         new TestOnCompleteListener<>();
-    Task<InstallationTokenResult> task =
-        firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+    Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
     task.addOnCompleteListener(executor, onCompleteListener);
     InstallationTokenResult installationTokenResult = onCompleteListener.await();
 
@@ -706,8 +701,7 @@ public class FirebaseInstallationsTest {
     try {
       TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
           new TestOnCompleteListener<>();
-      Task<InstallationTokenResult> task =
-          firebaseInstallations.getToken(FirebaseInstallationsApi.FORCE_REFRESH);
+      Task<InstallationTokenResult> task = firebaseInstallations.getToken(true);
       task.addOnCompleteListener(executor, onCompleteListener);
       onCompleteListener.await();
       fail("the getAuthToken() call should have failed due to Auth Error.");
@@ -745,8 +739,7 @@ public class FirebaseInstallationsTest {
     try {
       TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
           new TestOnCompleteListener<>();
-      Task<InstallationTokenResult> task =
-          firebaseInstallations.getToken(FirebaseInstallationsApi.FORCE_REFRESH);
+      Task<InstallationTokenResult> task = firebaseInstallations.getToken(true);
       task.addOnCompleteListener(executor, onCompleteListener);
       onCompleteListener.await();
       fail(
@@ -783,10 +776,8 @@ public class FirebaseInstallationsTest {
     fakeCalendar.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
 
     // Call getToken multiple times with DO_NOT_FORCE_REFRESH option
-    Task<InstallationTokenResult> task1 =
-        firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
-    Task<InstallationTokenResult> task2 =
-        firebaseInstallations.getToken(FirebaseInstallationsApi.DO_NOT_FORCE_REFRESH);
+    Task<InstallationTokenResult> task1 = firebaseInstallations.getToken(false);
+    Task<InstallationTokenResult> task2 = firebaseInstallations.getToken(false);
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener1 =
         new TestOnCompleteListener<>();
     task1.addOnCompleteListener(executor, onCompleteListener1);
@@ -845,10 +836,8 @@ public class FirebaseInstallationsTest {
 
     // Call getToken multiple times with FORCE_REFRESH option.
     // Call getToken multiple times with DO_NOT_FORCE_REFRESH option
-    Task<InstallationTokenResult> task1 =
-        firebaseInstallations.getToken(FirebaseInstallationsApi.FORCE_REFRESH);
-    Task<InstallationTokenResult> task2 =
-        firebaseInstallations.getToken(FirebaseInstallationsApi.FORCE_REFRESH);
+    Task<InstallationTokenResult> task1 = firebaseInstallations.getToken(true);
+    Task<InstallationTokenResult> task2 = firebaseInstallations.getToken(true);
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener1 =
         new TestOnCompleteListener<>();
     task1.addOnCompleteListener(executor, onCompleteListener1);

@@ -14,11 +14,7 @@
 
 package com.google.firebase.installations;
 
-import static java.lang.annotation.RetentionPolicy.SOURCE;
-
-import androidx.annotation.IntDef;
 import com.google.android.gms.tasks.Task;
-import java.lang.annotation.Retention;
 
 /**
  * This is an interface of {@code FirebaseInstallations} that is only exposed to 2p via component
@@ -28,21 +24,6 @@ import java.lang.annotation.Retention;
  */
 public interface FirebaseInstallationsApi {
 
-  /** Specifies the options to get a FIS AuthToken. */
-  @IntDef({DO_NOT_FORCE_REFRESH, FORCE_REFRESH})
-  @Retention(SOURCE)
-  @interface AuthTokenOption {}
-  /**
-   * AuthToken is not refreshed until requested by the developer or if one doesn't exist, is expired
-   * or about to expire.
-   */
-  int DO_NOT_FORCE_REFRESH = 0;
-  /**
-   * AuthToken is forcefully refreshed on calling the {@link
-   * FirebaseInstallationsApi#getToken(int)}.
-   */
-  int FORCE_REFRESH = 1;
-
   /**
    * Async function that returns a globally unique identifier of this Firebase app installation.
    * This is a url-safe base64 string of a 128-bit integer.
@@ -50,7 +31,7 @@ public interface FirebaseInstallationsApi {
   Task<String> getId();
 
   /** Async function that returns a auth token(public key) of this Firebase app installation. */
-  Task<InstallationTokenResult> getToken(@AuthTokenOption int authTokenOption);
+  Task<InstallationTokenResult> getToken(boolean forceRefresh);
 
   /**
    * Async function that deletes this Firebase app installation from Firebase backend. This call
