@@ -36,8 +36,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class handles persisting report and event data to disk, combining reports with their
- * associated events into "finalized" report files, reading reports from disk, parsing them to
- * be returned as CrashlyticsReport objects, and deleting them.
+ * associated events into "finalized" report files, reading reports from disk, parsing them to be
+ * returned as CrashlyticsReport objects, and deleting them.
  */
 public class CrashlyticsReportPersistence {
 
@@ -90,7 +90,8 @@ public class CrashlyticsReportPersistence {
       return;
     }
     final String json = TRANSFORM.eventToJson(event);
-    final String eventNumber = String.format(Locale.US, EVENT_COUNTER_FORMAT, eventCounter.getAndIncrement());
+    final String eventNumber =
+        String.format(Locale.US, EVENT_COUNTER_FORMAT, eventCounter.getAndIncrement());
     final String fileName = String.format(EVENT_FILE_NAME_FORMAT, eventNumber);
     writeTextFile(new File(sessionDirectory, fileName), json);
   }
@@ -115,16 +116,21 @@ public class CrashlyticsReportPersistence {
     // TODO: Need to implement procedure to skip finalizing the current session when this is
     //  called on app start, but keep the current session when called at crash time. Currently
     //  this only works when called at app start.
-    final FileFilter sessionDirectoryFilter = (f) -> f.isDirectory() && !f.getName().equals(currentSessionId);
+    final FileFilter sessionDirectoryFilter =
+        (f) -> f.isDirectory() && !f.getName().equals(currentSessionId);
 
-    final List<File> sessionDirectories = getFilesInDirectory(openSessionsDirectory, sessionDirectoryFilter);
+    final List<File> sessionDirectories =
+        getFilesInDirectory(openSessionsDirectory, sessionDirectoryFilter);
     for (File sessionDirectory : sessionDirectories) {
-      final List<File> eventFiles = getFilesInDirectory(sessionDirectory, (f, name) -> name.startsWith(EVENT_FILE_NAME_PREFIX));
+      final List<File> eventFiles =
+          getFilesInDirectory(
+              sessionDirectory, (f, name) -> name.startsWith(EVENT_FILE_NAME_PREFIX));
       Collections.sort(eventFiles);
       // TODO: Fix nulls
       // Only process the session if it has associated events
       if (!eventFiles.isEmpty()) {
-        final CrashlyticsReport report = TRANSFORM.reportFromJson(readTextFile(new File(sessionDirectory, REPORT_FILE_NAME)));
+        final CrashlyticsReport report =
+            TRANSFORM.reportFromJson(readTextFile(new File(sessionDirectory, REPORT_FILE_NAME)));
         final String sessionId = report.getSession().getIdentifier();
         final List<Event> events = new ArrayList<>();
         boolean hasFatal = false;
@@ -134,8 +140,11 @@ public class CrashlyticsReportPersistence {
           events.add(event);
         }
         // FIXME: If we fail to parse the events, we'll need to bail.
-        final File outputDirectory = prepareDirectory(hasFatal ? fatalReportsDirectory : nonFatalReportsDirectory);
-        writeTextFile(new File(outputDirectory, sessionId), TRANSFORM.reportToJson(report.withEvents(ImmutableList.from(events))));
+        final File outputDirectory =
+            prepareDirectory(hasFatal ? fatalReportsDirectory : nonFatalReportsDirectory);
+        writeTextFile(
+            new File(outputDirectory, sessionId),
+            TRANSFORM.reportToJson(report.withEvents(ImmutableList.from(events))));
       }
       recursiveDelete(sessionDirectory);
     }

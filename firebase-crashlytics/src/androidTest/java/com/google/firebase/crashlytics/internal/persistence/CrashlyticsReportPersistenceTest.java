@@ -25,8 +25,6 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Signal;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,8 +37,7 @@ public class CrashlyticsReportPersistenceTest {
 
   private CrashlyticsReportPersistence reportPersistence;
 
-  @Rule
-  public TemporaryFolder folder = new TemporaryFolder();
+  @Rule public TemporaryFolder folder = new TemporaryFolder();
 
   @Before
   public void setUp() throws Exception {
@@ -96,7 +93,8 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
-  public void testLoadFinalizedReports_reportsWithEventsInMultipleSessions_returnsReportsWithProperEvents() {
+  public void
+      testLoadFinalizedReports_reportsWithEventsInMultipleSessions_returnsReportsWithProperEvents() {
     final String sessionId1 = "testSession1";
     final CrashlyticsReport testReport1 = makeTestReport(sessionId1);
     final String sessionId2 = "testSession2";
