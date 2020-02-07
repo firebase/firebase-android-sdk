@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,10 +30,10 @@ public class KeyFieldInFilter extends FieldFilter {
   KeyFieldInFilter(FieldPath field, Value value) {
     super(field, Operator.IN, value);
 
-    hardAssert(ProtoValues.isArray(value), "KeyFieldInFilter expects an ArrayValue");
+    hardAssert(Values.isArray(value), "KeyFieldInFilter expects an ArrayValue");
     for (Value element : value.getArrayValue().getValuesList()) {
       hardAssert(
-          ProtoValues.isReferenceValue(element),
+          Values.isReferenceValue(element),
           "Comparing on key with IN, but an array value was not a ReferenceValue");
       keys.add(DocumentKey.fromName(element.getReferenceValue()));
     }

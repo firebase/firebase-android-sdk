@@ -34,8 +34,10 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
@@ -50,8 +52,6 @@ import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
@@ -688,10 +688,10 @@ public final class RemoteSerializer {
     if (filter.getOperator() == Filter.Operator.EQUAL) {
       UnaryFilter.Builder unaryProto = UnaryFilter.newBuilder();
       unaryProto.setField(encodeFieldPath(filter.getField()));
-      if (ProtoValues.isNanValue(filter.getValue())) {
+      if (Values.isNanValue(filter.getValue())) {
         unaryProto.setOp(UnaryFilter.Operator.IS_NAN);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
-      } else if (ProtoValues.isNullValue(filter.getValue())) {
+      } else if (Values.isNullValue(filter.getValue())) {
         unaryProto.setOp(UnaryFilter.Operator.IS_NULL);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
       }
@@ -714,10 +714,10 @@ public final class RemoteSerializer {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     switch (proto.getOp()) {
       case IS_NAN:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, ProtoValues.NAN_VALUE);
+        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, Values.NAN_VALUE);
 
       case IS_NULL:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, ProtoValues.NULL_VALUE);
+        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, Values.NULL_VALUE);
 
       default:
         throw fail("Unrecognized UnaryFilter.operator %d", proto.getOp());

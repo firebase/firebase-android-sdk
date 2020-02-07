@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static junit.framework.TestCase.assertEquals;
 
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firestore.v1.Value;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -16,7 +16,7 @@ package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 
 /** A Filter that implements the array-contains operator. */
@@ -28,6 +28,6 @@ public class ArrayContainsFilter extends FieldFilter {
   @Override
   public boolean matches(Document doc) {
     Value other = doc.getField(getField());
-    return ProtoValues.isArray(other) && ProtoValues.contains(other.getArrayValue(), getValue());
+    return Values.isArray(other) && Values.contains(other.getArrayValue(), getValue());
   }
 }
