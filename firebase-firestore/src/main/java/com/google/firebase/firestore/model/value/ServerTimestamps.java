@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.model.value;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -23,38 +21,31 @@ import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
 
 /**
- * Represents a locally-applied Server Timestamp.
+ * Methods for manipulating locally-applied Server Timestamps.
  *
  * <p>Server Timestamps are backed by MapValues that contain an internal field `__type__` with a
  * value of `server_timestamp`. The previous value and local write time are stored in its
  * `__previous_value__` and `__local_write_time__` fields respectively.
  *
  * <p>Notes:
- * <li>ServerTimestampValue instances are created as the result of applying a TransformMutation (see
+ * <li>ServerTimestamp Values are created as the result of applying a TransformMutation (see
  *     TransformMutation.applyTo()). They can only exist in the local view of a document. Therefore
  *     they do not need to be parsed or serialized.
  * <li>When evaluated locally (e.g. via DocumentSnapshot data), they evaluate to null.
- * <li>They sort after all TimestampValues. With respect to other ServerTimestampValues, they sort
+ * <li>They sort after all Timestamp Values. With respect to other ServerTimestamp Values, they sort
  *     by their localWriteTime.
  */
-public final class ServerTimestampValue {
+public final class ServerTimestamps {
   private static final String SERVER_TIMESTAMP_SENTINEL = "server_timestamp";
   private static final String TYPE_KEY = "__type__";
   private static final String PREVIOUS_VALUE_KEY = "__previous_value__";
   private static final String LOCAL_WRITE_TIME_KEY = "__local_write_time__";
 
+  private ServerTimestamps() {}
+
   public static boolean isServerTimestamp(@Nullable Value value) {
     Value type = value == null ? null : value.getMapValue().getFieldsOrDefault(TYPE_KEY, null);
     return type != null && SERVER_TIMESTAMP_SENTINEL.equals(type.getStringValue());
-  }
-
-  private final Value internalValue;
-
-  public ServerTimestampValue(Value value) {
-    hardAssert(
-        ServerTimestampValue.isServerTimestamp(value),
-        "Backing value is not a ServerTimestampValue");
-    this.internalValue = value;
   }
 
   public static Value valueOf(Timestamp localWriteTime, @Nullable Value previousValue) {
@@ -86,17 +77,19 @@ public final class ServerTimestampValue {
    * backend responds with the timestamp {@link DocumentSnapshot.ServerTimestampBehavior}.
    */
   @Nullable
-  public Value getPreviousValue() {
-    Value previousValue = internalValue.getMapValue().getFieldsOrDefault(PREVIOUS_VALUE_KEY, null);
-    if (ServerTimestampValue.isServerTimestamp(previousValue)) {
-      return new ServerTimestampValue(previousValue).getPreviousValue();
+  public static Value getPreviousValue(Value serverTimestampValue) {
+    Value previousValue =
+        serverTimestampValue.getMapValue().getFieldsOrDefault(PREVIOUS_VALUE_KEY, null);
+    if (isServerTimestamp(previousValue)) {
+      return getPreviousValue(previousValue);
     }
     return previousValue;
   }
 
-  public Timestamp getLocalWriteTime() {
-    com.google.protobuf.Timestamp localWriteTime =
-        internalValue.getMapValue().getFieldsOrThrow(LOCAL_WRITE_TIME_KEY).getTimestampValue();
-    return new Timestamp(localWriteTime.getSeconds(), localWriteTime.getNanos());
+  public static com.google.protobuf.Timestamp getLocalWriteTime(Value serverTimestampValue) {
+    return serverTimestampValue
+        .getMapValue()
+        .getFieldsOrThrow(LOCAL_WRITE_TIME_KEY)
+        .getTimestampValue();
   }
 }

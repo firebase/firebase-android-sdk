@@ -26,7 +26,7 @@ import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.value.ProtoValues;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
+import com.google.firebase.firestore.model.value.ServerTimestamps;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firestore.v1.Value;
@@ -81,12 +81,11 @@ public class ProtoValuesTest {
         .addEqualityGroup(wrap("\u00e9a"))
         .addEqualityGroup(wrap(date1), wrap(timestamp1))
         .addEqualityGroup(wrap(timestamp2))
-        // NOTE: ServerTimestampValues can't be parsed via wrap().
+        // NOTE: ServerTimestamps can't be parsed via wrap().
         .addEqualityGroup(
-            new EqualsWrapper(ServerTimestampValue.valueOf(new Timestamp(date1), null)),
-            new EqualsWrapper(ServerTimestampValue.valueOf(new Timestamp(date1), null)))
-        .addEqualityGroup(
-            new EqualsWrapper(ServerTimestampValue.valueOf(new Timestamp(date2), null)))
+            new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date1), null)),
+            new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date1), null)))
+        .addEqualityGroup(new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date2), null)))
         .addEqualityGroup(wrap(geoPoint1), wrap(new GeoPoint(1, 0)))
         .addEqualityGroup(wrap(geoPoint2))
         .addEqualityGroup(
@@ -143,10 +142,8 @@ public class ProtoValuesTest {
 
         // server timestamps come after all concrete timestamps.
         // NOTE: server timestamps can't be parsed with wrap().
-        .addEqualityGroup(
-            new EqualsWrapper(ServerTimestampValue.valueOf(new Timestamp(date1), null)))
-        .addEqualityGroup(
-            new EqualsWrapper(ServerTimestampValue.valueOf(new Timestamp(date2), null)))
+        .addEqualityGroup(new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date1), null)))
+        .addEqualityGroup(new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date2), null)))
 
         // strings
         .addEqualityGroup(wrap(""))
