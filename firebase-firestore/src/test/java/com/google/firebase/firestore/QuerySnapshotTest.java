@@ -34,7 +34,6 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ServerTimestamps;
-
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;

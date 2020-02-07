@@ -85,8 +85,7 @@ public class ProtoValuesTest {
         .addEqualityGroup(
             new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date1), null)),
             new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date1), null)))
-        .addEqualityGroup(
-            new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date2), null)))
+        .addEqualityGroup(new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date2), null)))
         .addEqualityGroup(wrap(geoPoint1), wrap(new GeoPoint(1, 0)))
         .addEqualityGroup(wrap(geoPoint2))
         .addEqualityGroup(
@@ -143,10 +142,8 @@ public class ProtoValuesTest {
 
         // server timestamps come after all concrete timestamps.
         // NOTE: server timestamps can't be parsed with wrap().
-        .addEqualityGroup(
-            new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date1), null)))
-        .addEqualityGroup(
-            new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date2), null)))
+        .addEqualityGroup(new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date1), null)))
+        .addEqualityGroup(new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date2), null)))
 
         // strings
         .addEqualityGroup(wrap(""))

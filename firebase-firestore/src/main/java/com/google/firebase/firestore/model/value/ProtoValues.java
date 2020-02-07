@@ -117,12 +117,9 @@ public class ProtoValues {
   }
 
   private static boolean timestampEquals(Value left, Value right) {
-    if (isServerTimestamp(left)
-        && isServerTimestamp(right)) {
-      return getLocalWriteTime(left)
-          .equals(getLocalWriteTime(right));
-    } else if (isServerTimestamp(left)
-        || isServerTimestamp(right)) {
+    if (isServerTimestamp(left) && isServerTimestamp(right)) {
+      return getLocalWriteTime(left).equals(getLocalWriteTime(right));
+    } else if (isServerTimestamp(left) || isServerTimestamp(right)) {
       return false;
     }
 

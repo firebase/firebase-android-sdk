@@ -28,7 +28,6 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firestore.v1.Value;
-
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;

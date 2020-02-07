@@ -41,8 +41,7 @@ public final class ServerTimestamps {
   private static final String PREVIOUS_VALUE_KEY = "__previous_value__";
   private static final String LOCAL_WRITE_TIME_KEY = "__local_write_time__";
 
-  private ServerTimestamps() {
-  }
+  private ServerTimestamps() {}
 
   public static boolean isServerTimestamp(@Nullable Value value) {
     Value type = value == null ? null : value.getMapValue().getFieldsOrDefault(TYPE_KEY, null);
@@ -79,7 +78,8 @@ public final class ServerTimestamps {
    */
   @Nullable
   public static Value getPreviousValue(Value serverTimestampValue) {
-    Value previousValue = serverTimestampValue.getMapValue().getFieldsOrDefault(PREVIOUS_VALUE_KEY, null);
+    Value previousValue =
+        serverTimestampValue.getMapValue().getFieldsOrDefault(PREVIOUS_VALUE_KEY, null);
     if (isServerTimestamp(previousValue)) {
       return getPreviousValue(previousValue);
     }
@@ -87,7 +87,9 @@ public final class ServerTimestamps {
   }
 
   public static com.google.protobuf.Timestamp getLocalWriteTime(Value serverTimestampValue) {
-    return
-        serverTimestampValue.getMapValue().getFieldsOrThrow(LOCAL_WRITE_TIME_KEY).getTimestampValue();
+    return serverTimestampValue
+        .getMapValue()
+        .getFieldsOrThrow(LOCAL_WRITE_TIME_KEY)
+        .getTimestampValue();
   }
 }
