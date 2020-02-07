@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 
 /** Filter that matches on key fields (i.e. '__name__'). */
@@ -28,7 +28,7 @@ public class KeyFieldFilter extends FieldFilter {
 
   KeyFieldFilter(FieldPath field, Operator operator, Value value) {
     super(field, operator, value);
-    hardAssert(ProtoValues.isReferenceValue(value), "KeyFieldFilter expects a ReferenceValue");
+    hardAssert(Values.isReferenceValue(value), "KeyFieldFilter expects a ReferenceValue");
     key = DocumentKey.fromName(getValue().getReferenceValue());
   }
 

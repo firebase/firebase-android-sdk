@@ -18,7 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
@@ -70,13 +70,13 @@ public class FieldFilter extends Filter {
             operator.toString() + "queries don't make sense on document keys");
         return new KeyFieldFilter(path, operator, value);
       }
-    } else if (ProtoValues.isNullValue(value)) {
+    } else if (Values.isNullValue(value)) {
       if (operator != Filter.Operator.EQUAL) {
         throw new IllegalArgumentException(
             "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
       }
       return new FieldFilter(path, operator, value);
-    } else if (ProtoValues.isNanValue(value)) {
+    } else if (Values.isNanValue(value)) {
       if (operator != Filter.Operator.EQUAL) {
         throw new IllegalArgumentException(
             "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
@@ -98,8 +98,8 @@ public class FieldFilter extends Filter {
     Value other = doc.getField(field);
     // Only compare types with matching backend order (such as double and int).
     return other != null
-        && ProtoValues.typeOrder(other) == ProtoValues.typeOrder(value)
-        && this.matchesComparison(ProtoValues.compare(other, value));
+        && Values.typeOrder(other) == Values.typeOrder(value)
+        && this.matchesComparison(Values.compare(other, value));
   }
 
   protected boolean matchesComparison(int comp) {
@@ -132,9 +132,7 @@ public class FieldFilter extends Filter {
   public String getCanonicalId() {
     // TODO: Technically, this won't be unique if two values have the same description,
     // such as the int 3 and the string "3". So we should add the types in here somehow, too.
-    return getField().canonicalString()
-        + getOperator().toString()
-        + ProtoValues.canonicalId(getValue());
+    return getField().canonicalString() + getOperator().toString() + Values.canonicalId(getValue());
   }
 
   @Override

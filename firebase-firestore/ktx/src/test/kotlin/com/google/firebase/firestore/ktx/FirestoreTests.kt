@@ -22,7 +22,7 @@ import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.TestUtil
-import com.google.firebase.firestore.model.value.ObjectValue
+import com.google.firebase.firestore.model.ObjectValue
 import com.google.firebase.firestore.testutil.TestUtil.wrap
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app

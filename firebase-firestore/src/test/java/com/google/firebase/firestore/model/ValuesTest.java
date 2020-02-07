@@ -25,8 +25,6 @@ import static org.junit.Assert.assertEquals;
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.model.value.ProtoValues;
-import com.google.firebase.firestore.model.value.ServerTimestamps;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firestore.v1.Value;
@@ -36,11 +34,11 @@ import java.util.Date;
 import java.util.TimeZone;
 import org.junit.Test;
 
-public class ProtoValuesTest {
+public class ValuesTest {
   private final Date date1;
   private final Date date2;
 
-  public ProtoValuesTest() {
+  public ValuesTest() {
     // Create a couple date objects for use in tests.
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     calendar.set(2016, 5, 20, 10, 20, 0);
@@ -59,11 +57,11 @@ public class ProtoValuesTest {
     new EqualsTester()
         .addEqualityGroup(wrap(true), wrap(true))
         .addEqualityGroup(wrap(false), wrap(false))
-        .addEqualityGroup(wrap(null), new EqualsWrapper(ProtoValues.NULL_VALUE))
+        .addEqualityGroup(wrap(null), new EqualsWrapper(Values.NULL_VALUE))
         .addEqualityGroup(
             wrap(0.0 / 0.0),
             wrap(Double.longBitsToDouble(0x7ff8000000000000L)),
-            new EqualsWrapper(ProtoValues.NAN_VALUE))
+            new EqualsWrapper(Values.NAN_VALUE))
         // -0.0 and 0.0 compareTo the same but are not equal.
         .addEqualityGroup(wrap(-0.0))
         .addEqualityGroup(wrap(0.0))
@@ -227,7 +225,7 @@ public class ProtoValuesTest {
   }
 
   private void assertCanonicalId(Value proto, String expectedCanonicalId) {
-    assertEquals(expectedCanonicalId, ProtoValues.canonicalId(proto));
+    assertEquals(expectedCanonicalId, Values.canonicalId(proto));
   }
 
   /** Small helper class that uses ProtoValues for equals() and compareTo(). */
@@ -240,7 +238,7 @@ public class ProtoValuesTest {
 
     @Override
     public boolean equals(Object o) {
-      return o instanceof EqualsWrapper && ProtoValues.equals(proto, ((EqualsWrapper) o).proto);
+      return o instanceof EqualsWrapper && Values.equals(proto, ((EqualsWrapper) o).proto);
     }
 
     @Override
@@ -250,7 +248,7 @@ public class ProtoValuesTest {
 
     @Override
     public int compareTo(EqualsWrapper o) {
-      return ProtoValues.compare(proto, o.proto);
+      return Values.compare(proto, o.proto);
     }
   }
 

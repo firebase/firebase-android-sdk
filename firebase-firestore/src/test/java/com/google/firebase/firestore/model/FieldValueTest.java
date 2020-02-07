@@ -25,8 +25,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.firestore.model.mutation.FieldMask;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firestore.v1.Value;
 import java.util.Map;
 import org.junit.Test;
@@ -36,13 +34,12 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-// TODO(mrschmidt): Rename to ObjectValueTest
 public class FieldValueTest {
 
   @Test
   public void testExtractsFields() {
     ObjectValue obj = wrapObject("foo", map("a", 1, "b", true, "c", "string"));
-    assertTrue(ProtoValues.isMapValue(obj.get(field("foo"))));
+    assertTrue(Values.isMapValue(obj.get(field("foo"))));
     assertEquals(wrap(1), obj.get(field("foo.a")));
     assertEquals(wrap(true), obj.get(field("foo.b")));
     assertEquals(wrap("string"), obj.get(field("foo.c")));

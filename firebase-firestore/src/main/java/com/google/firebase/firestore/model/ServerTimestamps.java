@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.model.value;
+package com.google.firebase.firestore.model;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;

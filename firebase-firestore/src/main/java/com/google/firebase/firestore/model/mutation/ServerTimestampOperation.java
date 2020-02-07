@@ -16,7 +16,7 @@ package com.google.firebase.firestore.model.mutation;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.value.ServerTimestamps;
+import com.google.firebase.firestore.model.ServerTimestamps;
 import com.google.firestore.v1.Value;
 
 /** Transforms a value into a server-generated timestamp. */

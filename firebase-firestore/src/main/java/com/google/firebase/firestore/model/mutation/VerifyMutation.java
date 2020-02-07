@@ -18,7 +18,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.util.Assert;
 
 /**

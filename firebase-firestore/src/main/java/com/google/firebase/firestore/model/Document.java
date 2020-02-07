@@ -16,7 +16,6 @@ package com.google.firebase.firestore.model;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firestore.v1.Value;
 import java.util.Comparator;
 

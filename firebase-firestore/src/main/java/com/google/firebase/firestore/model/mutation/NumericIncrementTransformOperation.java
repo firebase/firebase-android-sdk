@@ -14,14 +14,14 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.firebase.firestore.model.value.ProtoValues.isDouble;
-import static com.google.firebase.firestore.model.value.ProtoValues.isInteger;
+import static com.google.firebase.firestore.model.Values.isDouble;
+import static com.google.firebase.firestore.model.Values.isInteger;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 
 /**
@@ -34,7 +34,7 @@ public class NumericIncrementTransformOperation implements TransformOperation {
 
   public NumericIncrementTransformOperation(Value operand) {
     hardAssert(
-        ProtoValues.isNumber(operand),
+        Values.isNumber(operand),
         "NumericIncrementTransformOperation expects a NumberValue operand");
     this.operand = operand;
   }
@@ -75,7 +75,7 @@ public class NumericIncrementTransformOperation implements TransformOperation {
    */
   @Override
   public Value computeBaseValue(@Nullable Value previousValue) {
-    return ProtoValues.isNumber(previousValue)
+    return Values.isNumber(previousValue)
         ? previousValue
         : Value.newBuilder().setIntegerValue(0).build();
   }
