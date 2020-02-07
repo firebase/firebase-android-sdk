@@ -27,8 +27,8 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 /**
- * This class is responsible for sending CrashlyticsReport objects to Crashlytics through
- * Google DataTransport.
+ * This class is responsible for sending CrashlyticsReport objects to Crashlytics through Google
+ * DataTransport.
  */
 public class DataTransportCrashlyticsReportSender {
 

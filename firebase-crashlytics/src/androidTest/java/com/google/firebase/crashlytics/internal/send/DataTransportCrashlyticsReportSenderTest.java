@@ -34,11 +34,9 @@ import org.mockito.MockitoAnnotations;
 @RunWith(AndroidJUnit4.class)
 public class DataTransportCrashlyticsReportSenderTest {
 
-  @Mock
-  private Transport<CrashlyticsReport> mockTransport;
+  @Mock private Transport<CrashlyticsReport> mockTransport;
 
-  @Mock
-  private SendCallback<CrashlyticsReport> mockCallback;
+  @Mock private SendCallback<CrashlyticsReport> mockCallback;
 
   private DataTransportCrashlyticsReportSender reportSender;
 
@@ -50,11 +48,14 @@ public class DataTransportCrashlyticsReportSenderTest {
 
   @Test
   public void testSendReportsSuccessful() {
-    doAnswer((i) -> {
-      final Event<CrashlyticsReport> event = i.getArgument(0);
-      mockCallback.onSendComplete(event.getPayload(), null);
-      return null;
-    }).when(mockTransport).schedule(any(), any());
+    doAnswer(
+            (i) -> {
+              final Event<CrashlyticsReport> event = i.getArgument(0);
+              mockCallback.onSendComplete(event.getPayload(), null);
+              return null;
+            })
+        .when(mockTransport)
+        .schedule(any(), any());
 
     final CrashlyticsReport report1 = mock(CrashlyticsReport.class);
     final CrashlyticsReport report2 = mock(CrashlyticsReport.class);
@@ -71,11 +72,14 @@ public class DataTransportCrashlyticsReportSenderTest {
   @Test
   public void testSendReportsFailure() {
     final IllegalStateException error = new IllegalStateException();
-    doAnswer((i) -> {
-      final Event<CrashlyticsReport> event = i.getArgument(0);
-      mockCallback.onSendComplete(event.getPayload(), error);
-      return null;
-    }).when(mockTransport).schedule(any(), any());
+    doAnswer(
+            (i) -> {
+              final Event<CrashlyticsReport> event = i.getArgument(0);
+              mockCallback.onSendComplete(event.getPayload(), error);
+              return null;
+            })
+        .when(mockTransport)
+        .schedule(any(), any());
 
     final CrashlyticsReport report1 = mock(CrashlyticsReport.class);
     final CrashlyticsReport report2 = mock(CrashlyticsReport.class);
