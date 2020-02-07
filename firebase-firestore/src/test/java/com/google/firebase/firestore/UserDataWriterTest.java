@@ -30,8 +30,8 @@ import static org.junit.Assert.fail;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.Date;
@@ -206,7 +206,7 @@ public class UserDataWriterTest {
     List<DocumentReference> testCases = asList(ref("foo/bar"), ref("foo/baz"));
     for (DocumentReference docRef : testCases) {
       Value value = wrap(docRef);
-      assertTrue(ProtoValues.isReferenceValue(value));
+      assertTrue(Values.isReferenceValue(value));
       assertEquals(
           TestAccessHelper.referenceKey(docRef), DocumentKey.fromName(value.getReferenceValue()));
       assertEquals(id, DatabaseId.fromName(value.getReferenceValue()));
@@ -267,7 +267,7 @@ public class UserDataWriterTest {
     ArrayValue.Builder expectedArray =
         ArrayValue.newBuilder().addValues(wrap("value")).addValues(wrap(true));
     Value actual = wrap(asList("value", true));
-    assertTrue(ProtoValues.equals(Value.newBuilder().setArrayValue(expectedArray).build(), actual));
+    assertTrue(Values.equals(Value.newBuilder().setArrayValue(expectedArray).build(), actual));
   }
 
   @Test

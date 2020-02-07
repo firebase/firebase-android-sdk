@@ -31,7 +31,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
@@ -166,7 +166,7 @@ public class IndexedQueryEngine implements QueryEngine {
     hardAssert(filter instanceof FieldFilter, "Filter type expected to be FieldFilter");
     FieldFilter fieldFilter = (FieldFilter) filter;
     Value filterValue = fieldFilter.getValue();
-    if (ProtoValues.isNullValue(filterValue) || ProtoValues.isNanValue(filterValue)) {
+    if (Values.isNullValue(filterValue) || Values.isNanValue(filterValue)) {
       return HIGH_SELECTIVITY;
     } else {
       double operatorSelectivity =

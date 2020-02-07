@@ -39,8 +39,8 @@ import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.value.ProtoValues;
-import com.google.firebase.firestore.model.value.ServerTimestamps;
+import com.google.firebase.firestore.model.ServerTimestamps;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
@@ -392,10 +392,10 @@ public class Query {
                 + path.length()
                 + ").");
       }
-      return ProtoValues.refValue(this.getFirestore().getDatabaseId(), DocumentKey.fromPath(path));
+      return Values.refValue(this.getFirestore().getDatabaseId(), DocumentKey.fromPath(path));
     } else if (documentIdValue instanceof DocumentReference) {
       DocumentReference ref = (DocumentReference) documentIdValue;
-      return ProtoValues.refValue(this.getFirestore().getDatabaseId(), ref.getKey());
+      return Values.refValue(this.getFirestore().getDatabaseId(), ref.getKey());
     } else {
       throw new IllegalArgumentException(
           "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
@@ -748,7 +748,7 @@ public class Query {
     // orders), multiple documents could match the position, yielding duplicate results.
     for (OrderBy orderBy : query.getOrderBy()) {
       if (orderBy.getField().equals(com.google.firebase.firestore.model.FieldPath.KEY_PATH)) {
-        components.add(ProtoValues.refValue(firestore.getDatabaseId(), document.getKey()));
+        components.add(Values.refValue(firestore.getDatabaseId(), document.getKey()));
       } else {
         Value value = document.getField(orderBy.getField());
         if (ServerTimestamps.isServerTimestamp(value)) {
@@ -818,7 +818,7 @@ public class Query {
                   + "' is not because it contains an odd number of segments.");
         }
         DocumentKey key = DocumentKey.fromPath(path);
-        components.add(ProtoValues.refValue(firestore.getDatabaseId(), key));
+        components.add(Values.refValue(firestore.getDatabaseId(), key));
       } else {
         Value wrapped = firestore.getUserDataReader().parseQueryValue(rawValue);
         components.add(wrapped);

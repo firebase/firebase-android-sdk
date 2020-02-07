@@ -14,9 +14,9 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.firebase.firestore.model.value.ServerTimestamps.getLocalWriteTime;
-import static com.google.firebase.firestore.model.value.ServerTimestamps.getPreviousValue;
-import static com.google.firebase.firestore.model.value.ServerTimestamps.isServerTimestamp;
+import static com.google.firebase.firestore.model.ServerTimestamps.getLocalWriteTime;
+import static com.google.firebase.firestore.model.ServerTimestamps.getPreviousValue;
+import static com.google.firebase.firestore.model.ServerTimestamps.isServerTimestamp;
 import static com.google.firebase.firestore.util.Assert.fail;
 
 import androidx.annotation.RestrictTo;

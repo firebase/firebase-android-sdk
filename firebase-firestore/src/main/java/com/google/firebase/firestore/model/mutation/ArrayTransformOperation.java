@@ -16,7 +16,7 @@ package com.google.firebase.firestore.model.mutation;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.Collections;
@@ -86,7 +86,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
    * elements or an empty builder if `value` is not an array.
    */
   static ArrayValue.Builder coercedFieldValuesArray(@Nullable Value value) {
-    if (ProtoValues.isArray(value)) {
+    if (Values.isArray(value)) {
       return value.getArrayValue().toBuilder();
     } else {
       // coerce to empty array.
@@ -104,7 +104,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     protected Value apply(@Nullable Value previousValue) {
       ArrayValue.Builder result = coercedFieldValuesArray(previousValue);
       for (Value unionElement : getElements()) {
-        if (!ProtoValues.contains(result, unionElement)) {
+        if (!Values.contains(result, unionElement)) {
           result.addValues(unionElement);
         }
       }
@@ -123,7 +123,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
       ArrayValue.Builder result = coercedFieldValuesArray(previousValue);
       for (Value removeElement : getElements()) {
         for (int i = 0; i < result.getValuesCount(); ) {
-          if (ProtoValues.equals(result.getValues(i), removeElement)) {
+          if (Values.equals(result.getValues(i), removeElement)) {
             result.removeValues(i);
           } else {
             ++i;

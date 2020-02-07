@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.model.value;
+package com.google.firebase.firestore.model;
 
-import static com.google.firebase.firestore.model.value.ServerTimestamps.getLocalWriteTime;
-import static com.google.firebase.firestore.model.value.ServerTimestamps.isServerTimestamp;
+import static com.google.firebase.firestore.model.ServerTimestamps.getLocalWriteTime;
+import static com.google.firebase.firestore.model.ServerTimestamps.isServerTimestamp;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.common.base.Splitter;
-import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.ArrayValueOrBuilder;
@@ -38,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class ProtoValues {
+public class Values {
   public static final Value NAN_VALUE = Value.newBuilder().setDoubleValue(Double.NaN).build();
   public static final Value NULL_VALUE =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();

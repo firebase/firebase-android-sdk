@@ -20,7 +20,7 @@ import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.ProtoValues;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 import java.util.List;
 
@@ -71,7 +71,7 @@ public final class Bound {
         builder.append(",");
       }
       first = false;
-      builder.append(ProtoValues.canonicalId(indexComponent));
+      builder.append(Values.canonicalId(indexComponent));
     }
     return builder.toString();
   }
@@ -85,7 +85,7 @@ public final class Bound {
       Value component = position.get(i);
       if (orderByComponent.field.equals(FieldPath.KEY_PATH)) {
         hardAssert(
-            ProtoValues.isReferenceValue(component),
+            Values.isReferenceValue(component),
             "Bound has a non-key value where the key path is being used %s",
             component);
         comparison =
@@ -94,7 +94,7 @@ public final class Bound {
         Value docValue = document.getField(orderByComponent.getField());
         hardAssert(
             docValue != null, "Field should exist since document matched the orderBy already.");
-        comparison = ProtoValues.compare(component, docValue);
+        comparison = Values.compare(component, docValue);
       }
 
       if (orderByComponent.getDirection().equals(Direction.DESCENDING)) {

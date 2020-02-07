@@ -21,8 +21,8 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.value.ObjectValue;
 
 /**
  * A mutation that creates or replaces the document at the given key with the object value contents.

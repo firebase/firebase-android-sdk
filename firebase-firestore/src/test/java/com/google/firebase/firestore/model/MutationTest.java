@@ -43,9 +43,6 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ProtoValues;
-import com.google.firebase.firestore.model.value.ServerTimestamps;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.Collections;
@@ -690,7 +687,7 @@ public class MutationTest {
                 0,
                 "nested",
                 map("double", 42.0, "long", 42, "string", 0, "map", 0, "missing", 0)));
-    assertTrue(ProtoValues.equals(expected, baseValue.getProto()));
+    assertTrue(Values.equals(expected, baseValue.getProto()));
   }
 
   @Test

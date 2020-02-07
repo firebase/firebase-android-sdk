@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.model.value;
+package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 
 /** A structured object value stored in Firestore. */
-// TODO(mrschmidt): Rename to DocumentValue
 public class ObjectValue {
   private Value internalValue;
 
@@ -71,7 +69,7 @@ public class ObjectValue {
     Set<FieldPath> fields = new HashSet<>();
     for (Map.Entry<String, Value> entry : value.getFieldsMap().entrySet()) {
       FieldPath currentPath = FieldPath.fromSingleSegment(entry.getKey());
-      if (ProtoValues.isMapValue(entry.getValue())) {
+      if (Values.isMapValue(entry.getValue())) {
         FieldMask nestedMask = extractFieldMask(entry.getValue().getMapValue());
         Set<FieldPath> nestedFields = nestedMask.getMask();
         if (nestedFields.isEmpty()) {
@@ -103,7 +101,7 @@ public class ObjectValue {
       Value value = internalValue;
       for (int i = 0; i < fieldPath.length() - 1; ++i) {
         value = value.getMapValue().getFieldsOrDefault(fieldPath.getSegment(i), null);
-        if (!ProtoValues.isMapValue(value)) {
+        if (!Values.isMapValue(value)) {
           return null;
         }
       }
@@ -121,7 +119,7 @@ public class ObjectValue {
     if (this == o) {
       return true;
     } else if (o instanceof ObjectValue) {
-      return ProtoValues.equals(internalValue, ((ObjectValue) o).internalValue);
+      return Values.equals(internalValue, ((ObjectValue) o).internalValue);
     }
     return false;
   }
@@ -238,7 +236,7 @@ public class ObjectValue {
 
       @Nullable Value existingValue = baseObject.get(currentPath);
       MapValue.Builder resultAtPath =
-          ProtoValues.isMapValue(existingValue)
+          Values.isMapValue(existingValue)
               // If there is already data at the current path, base our modifications on top
               // of the existing data.
               ? existingValue.getMapValue().toBuilder()
