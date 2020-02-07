@@ -1,4 +1,9 @@
-# Unreleased (21.4.0)
+# Unreleased 
+- [changed] Internal changes to the in-memory representation of Firestore
+  documents. You should see an overall decrease in object allocations and 
+  a performance improvement for `DocumentSnapshot.getData()` calls.
+
+# 21.4.0
 - [feature] Firestore previously required that every document read in a
   transaction must also be written. This requirement has been removed, and
   you can now read a document in a transaction without writing to it.
